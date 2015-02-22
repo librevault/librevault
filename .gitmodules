@@ -1,0 +1,3 @@
+[submodule "contrib/dir_monitor"]
+	path = contrib/dir_monitor
+	url = git://github.com/GamePad64/dir_monitor.git

@@ -25,6 +25,7 @@ SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIC")
 IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 # Use -flto flag to enable GCC's link-time optimization.
 	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -use-gold-plugin")
+	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -use-gold-plugin")
 	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -use-gold-plugin")
 	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -use-gold-plugin")
 ENDIF()
@@ -32,6 +33,7 @@ ENDIF()
 IF(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 # Use -flto flag to enable GCC's link-time optimization.
 	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto")
 	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
 ENDIF()
@@ -40,7 +42,7 @@ ENDIF()
 find_package(Protobuf REQUIRED)
 if(PROTOBUF_FOUND)
   file(GLOB_RECURSE PROTO_COMMON_LIST "src/*.proto")
-#  PROTOBUF_GENERATE_CPP(PROTO_COMMON_SOURCES PROTO_COMMON_HEADERS ${PROTO_COMMON_LIST})
+  PROTOBUF_GENERATE_CPP(PROTO_COMMON_SOURCES PROTO_COMMON_HEADERS ${PROTO_COMMON_LIST})
 endif()
 
 #============================================================================
@@ -48,8 +50,13 @@ endif()
 #============================================================================
 
 file(GLOB_RECURSE SRCS "src/*")
+# Protobuf
 list(APPEND SRCS ${PROTO_COMMON_SOURCES})
 list(APPEND SRCS ${PROTO_COMMON_HEADERS})
+# SQLite
+#list(APPEND SRCS "contrib/sqlite/sqlite3.c")
+#list(APPEND SRCS "contrib/sqlite/sqlite3.h")
+
 #add_library(${PROJECT_NAME}1 ${LIBRARY_SRCS})
 include_directories("src/include")
 
@@ -71,6 +78,7 @@ set (Boost_COMPONENTS
 # set (Boost_USE_STATIC_LIBS ON)
 set (Boost_USE_MULTITHREADED ON)
 
+add_definitions(-DBOOST_LOG_DYN_LINK)
 find_package(Boost COMPONENTS ${Boost_COMPONENTS} REQUIRED)
 
 if(Boost_FOUND)
@@ -88,6 +96,15 @@ if(BOTAN_FOUND)
 endif()
 # /Botan
 
+# SQLite
+find_package(Sqlite3 REQUIRED)
+
+if(SQLITE3_FOUND)
+  include_directories(${SQLITE3_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
+endif()
+# /SQLite
+
 # Protobuf
 # Found lately
 
@@ -96,6 +113,15 @@ if(PROTOBUF_FOUND)
   target_link_libraries(${PROJECT_NAME} ${PROTOBUF_LIBRARIES})
 endif()
 # /Protobuf
+
+# SQLite
+find_package(Cryptodiff REQUIRED)
+
+if(CRYPTODIFF_FOUND)
+  include_directories(${CRYPTODIFF_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${CRYPTODIFF_LIBRARIES})
+endif()
+# /SQLite
 
 #============================================================================
 # Documentation generation

@@ -30,8 +30,7 @@ struct Node {
 };
 
 class NodeDB {
-	const boost::property_tree::ptree& properties;
-	const boost::property_tree::ptree& properties_global;
+	const boost::property_tree::ptree& properties, properties_global;
 	boost::asio::io_service& io_service;
 
 	using node_addr_t = std::pair<boost::asio::ip::address, uint16_t>;

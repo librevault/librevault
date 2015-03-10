@@ -87,15 +87,6 @@ if(Boost_FOUND)
 endif()
 # /Boost
 
-# Botan
-find_package(Botan REQUIRED)
-
-if(BOTAN_FOUND)
-  include_directories(${BOTAN_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} ${BOTAN_LIBRARIES})
-endif()
-# /Botan
-
 # SQLite
 find_package(Sqlite3 REQUIRED)
 

@@ -47,7 +47,9 @@ int main(int argc, char** argv){
 	//	std::cout << ev << std::endl;
 	//}
 
-	librevault::OpenFSBlockStorage open_fs_block_storage("/home/gamepad/synced", "/home/gamepad/.librevault/dir.db");
+	const char* key_c = "12345678901234567890123456789012";
+	std::array<uint8_t, 32> key; std::copy(key_c, key_c+32, &*key.begin());
+	librevault::OpenFSBlockStorage open_fs_block_storage("/home/gamepad/synced", "/home/gamepad/.librevault/dir.db", key);
 	open_fs_block_storage.init();
 	open_fs_block_storage.index();
 

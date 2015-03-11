@@ -24,9 +24,12 @@ namespace librevault {
 
 class OpenFSBlockStorage : public BlockStorage {
 	boost::filesystem::path directory_path;
+	cryptodiff::key_t encryption_key;
 	sqlite3* directory_db = 0;
+
+	void index_file(const boost::filesystem::path& filepath);
 public:
-	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath);
+	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, cryptodiff::key_t key);
 	virtual ~OpenFSBlockStorage();
 
 	void init();

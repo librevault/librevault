@@ -27,17 +27,17 @@ class OpenFSBlockStorage : public BlockStorage {
 	cryptodiff::key_t encryption_key;
 	sqlite3* directory_db = 0;
 
-	void index_file(const boost::filesystem::path& filepath);
+	void create_index_file(const boost::filesystem::path& filepath);
+	void update_index_file(const boost::filesystem::path& filepath);
 public:
 	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, cryptodiff::key_t key);
 	virtual ~OpenFSBlockStorage();
 
-	void init();
-	void index();
+	void create_index();
 
 	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath);
 //	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	void put_FileMap(const boost::filesystem::path& filepath, const cryptodiff::FileMap& filemap, const std::string& signature);
+	void put_FileMap(const boost::filesystem::path& filepath, const cryptodiff::FileMap& filemap, const std::string& signature, boost::optional<bool> force_ready = boost::optional());
 
 	std::vector<uint8_t> get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta);
 	void put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data);

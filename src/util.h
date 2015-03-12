@@ -16,9 +16,11 @@
 #ifndef SRC_UTIL_H_
 #define SRC_UTIL_H_
 
-#include <botan/botan.h>
-#include <botan/keccak.h>
-#include <botan/aes.h>
+#include <cryptopp/sha3.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/ccm.h>
+#include <cryptopp/hex.h>
 
 #include <boost/algorithm/string.hpp>
 
@@ -28,8 +30,15 @@
 #include <iostream>
 #include <string>
 
+namespace librevault {
+
 constexpr size_t SHASH_LENGTH = 28;
-using hash_t = std::array<uint8_t, SHASH_LENGTH>;
+constexpr size_t AES_BLOCKSIZE = 16;
+constexpr size_t AES_KEYSIZE = 32;
+
+using key_t = std::array<uint8_t, AES_KEYSIZE>;
+using iv_t = std::array<uint8_t, AES_BLOCKSIZE>;
+using shash_t = std::array<uint8_t, SHASH_LENGTH>;
 
 inline uint64_t filesize(std::istream& ifile){
 	auto cur_pos = ifile.tellg();
@@ -47,27 +56,44 @@ inline uint64_t filesize(std::ostream& ofile){
 	return size;
 }
 
-inline std::vector<uint8_t> encrypt(const uint8_t* data, size_t size, Botan::SymmetricKey key, Botan::InitializationVector iv, bool nopad = false) {
-	Botan::Pipe pipe(get_cipher(nopad ? "AES-256/CBC/NoPadding" : "AES-256/CBC", key, iv, Botan::ENCRYPTION));
-	pipe.process_msg(data, size);
-	auto processed_str = pipe.read_all_as_string(0);
+inline std::vector<uint8_t> encrypt(const uint8_t* data, size_t size, std::array<uint8_t, AES_KEYSIZE> key, std::array<uint8_t, AES_BLOCKSIZE> iv, bool nopad = false) {
+	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryptor;
+	encryptor.SetKeyWithIV(key.data(), key.size(), iv.data());
 
-	return std::vector<uint8_t>(processed_str.begin(), processed_str.end());
+	std::vector<uint8_t> ciphertext( size - (size % AES_BLOCKSIZE) + AES_BLOCKSIZE );
+	CryptoPP::StringSource str_source(data, size, true,
+			new CryptoPP::StreamTransformationFilter(encryptor,
+					new CryptoPP::ArraySink(ciphertext.data(), ciphertext.size()),
+					nopad ? CryptoPP::StreamTransformationFilter::NO_PADDING : CryptoPP::StreamTransformationFilter::PKCS_PADDING
+			)
+	);
+
+	return ciphertext;
 }
 
-inline std::vector<uint8_t> decrypt(const uint8_t* data, size_t size, Botan::SymmetricKey key, Botan::InitializationVector iv, bool nopad = false) {
-	Botan::Pipe pipe(get_cipher(nopad ? "AES-256/CBC/NoPadding" : "AES-256/CBC", key, iv, Botan::DECRYPTION));
-	pipe.process_msg(data, size);
-	auto processed_str = pipe.read_all_as_string(0);
+inline std::vector<uint8_t> decrypt(const uint8_t* data, size_t size, std::array<uint8_t, AES_KEYSIZE> key, std::array<uint8_t, AES_BLOCKSIZE> iv, bool nopad = false) {
+	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryptor;
+	decryptor.SetKeyWithIV(key.data(), key.size(), iv.data());
 
-	return std::vector<uint8_t>(processed_str.begin(), processed_str.end());
+	std::string text;
+	CryptoPP::StringSource(data, size, true,
+			new CryptoPP::StreamTransformationFilter(decryptor,
+					new CryptoPP::StringSink(text),
+					nopad ? CryptoPP::StreamTransformationFilter::NO_PADDING : CryptoPP::StreamTransformationFilter::PKCS_PADDING
+			)
+	);
+
+	return std::vector<uint8_t>(text.begin(), text.end());
 }
 
 inline std::string to_hex(const uint8_t* data, size_t size){
-	Botan::Pipe pipe(new Botan::Hex_Encoder);
-	pipe.process_msg(data, size);
+	std::string hexdata;
+	CryptoPP::StringSource(data, size, true,
+			new CryptoPP::HexEncoder(
+					new CryptoPP::StringSink(hexdata)
+			)
+	);
 
-	std::string hexdata(pipe.read_all_as_string(0));
 	boost::algorithm::to_lower(hexdata);
 
 	return hexdata;
@@ -84,13 +110,15 @@ inline std::string to_hex(const uint32_t& s){
 	return ret.str();
 }
 
-inline hash_t compute_shash(const uint8_t* data, size_t size) {
-	Botan::Keccak_1600 hasher(SHASH_LENGTH*8);
+inline std::array<uint8_t, SHASH_LENGTH> compute_shash(const uint8_t* data, size_t size) {
+	CryptoPP::SHA3_224 hasher;
 
-	auto hash = hasher.process(data, size);
-	hash_t hash_array;
-	std::move(hash.begin(), hash.end(), hash_array.begin());
-	return hash_array;
+	std::array<uint8_t, SHASH_LENGTH> hash;
+	hasher.CalculateDigest(hash.data(), data, size);
+
+	return hash;
 }
+
+} /* namespace librevault */
 
 #endif /* SRC_UTIL_H_ */

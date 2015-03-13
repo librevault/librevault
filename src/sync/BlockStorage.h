@@ -19,6 +19,7 @@
 #include "../util.h"
 #include <cryptodiff.h>
 #include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 namespace librevault {
 
@@ -29,7 +30,10 @@ public:
 
 	virtual cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath) = 0;
 //	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	virtual void put_FileMap(const boost::filesystem::path& filepath, const cryptodiff::FileMap& filemap, const std::string& signature) = 0;
+	virtual void put_FileMap(const boost::filesystem::path& filepath,
+			const cryptodiff::FileMap& filemap,
+			const std::string& signature,
+			boost::optional<bool> force_ready = boost::none) = 0;
 
 	virtual std::vector<uint8_t> get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta) = 0;
 	virtual void put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data) = 0;

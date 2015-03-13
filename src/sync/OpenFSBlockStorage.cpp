@@ -14,8 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OpenFSBlockStorage.h"
+#include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
 #include <fstream>
+#include <set>
 
 namespace librevault {
 
@@ -30,9 +32,9 @@ OpenFSBlockStorage::OpenFSBlockStorage(const boost::filesystem::path& dirpath, c
 
 	sql_err_code = sqlite3_exec(directory_db, "BEGIN TRANSACTION;", 0, 0, &sql_err_text);
 	sqlite3_free(sql_err_text);
-	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path STRING NOT NULL UNIQUE, filemap BLOB NOT NULL, signature BLOB NOT NULL)", 0, 0, &sql_err_text);
+	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path STRING NOT NULL UNIQUE, filemap BLOB NOT NULL, mtime DATETIME NOT NULL, signature BLOB NOT NULL)", 0, 0, &sql_err_text);
 	sqlite3_free(sql_err_text);
-	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB PRIMARY KEY NOT NULL, blocksize INTEGER NOT NULL, iv BLOB NOT NULL, fileid INTEGER REFERENCES files (id) ON DELETE CASCADE NOT NULL, offset INTEGER, ready BOOLEAN DEFAULT FALSE)", 0, 0, &sql_err_text);
+	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB PRIMARY KEY NOT NULL, blocksize INTEGER NOT NULL, iv BLOB NOT NULL, fileid INTEGER REFERENCES files (id) ON DELETE CASCADE NOT NULL, offset INTEGER, ready BOOLEAN DEFAULT 0)", 0, 0, &sql_err_text);
 	sqlite3_free(sql_err_text);
 	sql_err_code = sqlite3_exec(directory_db, "COMMIT TRANSACTION;", 0, 0, &sql_err_text);
 	sqlite3_free(sql_err_text);
@@ -43,72 +45,31 @@ OpenFSBlockStorage::~OpenFSBlockStorage() {
 }
 
 void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepath){
-	const char* SQL_files = "INSERT INTO files (path, filemap, signature) VALUES (?, ?, ?);";
-	const char* SQL_blocks = "INSERT INTO blocks (encrypted_hash, blocksize, iv, fileid, offset, ready) VALUES (?, ?, ?, ?, ?, true);";
-	sqlite3_stmt* sqlite_stmt;
-	char* sql_err_text = 0;
-	int sql_err_code = 0;
-
-	if(boost::filesystem::is_regular_file(filepath)){
+	if(boost::filesystem::is_regular_file(filepath) && !boost::filesystem::is_symlink(filepath)){
 		BOOST_LOG_TRIVIAL(debug) << filepath;
 
-		std::ifstream fs(filepath.string().c_str());
+		boost::filesystem::ifstream fs(filepath);
 		cryptodiff::FileMap filemap(encryption_key);
 		filemap.create(fs);
 
-		put_FileMap(filepath, filemap, "durrr");
-
-		auto inserted_fileid = sqlite3_last_insert_rowid(directory_db);
-		uint64_t offset = 0;
-
-		// Iterating blocks from filemap to push necessary info into database.
-		for(auto block : filemap.blocks()){
-			sql_err_code = sqlite3_prepare_v2(directory_db, SQL_blocks, -1, &sqlite_stmt, 0);
-			sqlite3_bind_blob(sqlite_stmt, 1, block.get_encrypted_hash().data(), block.get_encrypted_hash().size(), SQLITE_STATIC);
-			sqlite3_bind_int(sqlite_stmt, 2, block.get_blocksize());
-			sqlite3_bind_blob(sqlite_stmt, 3, block.get_iv().data(), block.get_iv().size(), SQLITE_STATIC);
-			sqlite3_bind_int64(sqlite_stmt, 4, inserted_fileid);
-			sqlite3_bind_int64(sqlite_stmt, 5, offset);
-			sql_err_code = sqlite3_step(sqlite_stmt);
-			sql_err_code = sqlite3_finalize(sqlite_stmt);
-
-			offset += block.get_blocksize();
-		}
+		put_FileMap(filepath, filemap, "durrr", true);	// TODO: signature, of course
+	}else{
+		// TODO: Do something useful
 	}
 }
 
 void OpenFSBlockStorage::update_index_file(const boost::filesystem::path& filepath){
-	const char* SQL_files = "INSERT INTO files (path, filemap, signature) VALUES (?, ?, ?);";
-	const char* SQL_blocks = "INSERT INTO blocks (encrypted_hash, blocksize, iv, fileid, offset, ready) VALUES (?, ?, ?, ?, ?, true);";
-	sqlite3_stmt* sqlite_stmt;
-	char* sql_err_text = 0;
-	int sql_err_code = 0;
-
-	if(boost::filesystem::is_regular_file(filepath)){
+	if(boost::filesystem::is_regular_file(filepath) && !boost::filesystem::is_symlink(filepath)){
 		BOOST_LOG_TRIVIAL(debug) << filepath;
 
-		std::ifstream fs(filepath.string().c_str());
-		cryptodiff::FileMap filemap(encryption_key);
-		filemap.create(fs);
+		boost::filesystem::ifstream fs(filepath);
 
-		put_FileMap(filepath, filemap, "durrr");
+		auto old_filemap = get_FileMap(filepath);
+		auto new_filemap = old_filemap.update(fs);
 
-		auto inserted_fileid = sqlite3_last_insert_rowid(directory_db);
-		uint64_t offset = 0;
-
-		// Iterating blocks from filemap to push necessary info into database.
-		for(auto block : filemap.blocks()){
-			sql_err_code = sqlite3_prepare_v2(directory_db, SQL_blocks, -1, &sqlite_stmt, 0);
-			sqlite3_bind_blob(sqlite_stmt, 1, block.get_encrypted_hash().data(), block.get_encrypted_hash().size(), SQLITE_STATIC);
-			sqlite3_bind_int(sqlite_stmt, 2, block.get_blocksize());
-			sqlite3_bind_blob(sqlite_stmt, 3, block.get_iv().data(), block.get_iv().size(), SQLITE_STATIC);
-			sqlite3_bind_int64(sqlite_stmt, 4, inserted_fileid);
-			sqlite3_bind_int64(sqlite_stmt, 5, offset);
-			sql_err_code = sqlite3_step(sqlite_stmt);
-			sql_err_code = sqlite3_finalize(sqlite_stmt);
-
-			offset += block.get_blocksize();
-		}
+		put_FileMap(filepath, new_filemap, "durrr", true);	// TODO: signature, of course
+	}else{
+		// TODO: Do something useful
 	}
 }
 
@@ -140,31 +101,98 @@ cryptodiff::FileMap OpenFSBlockStorage::get_FileMap(
 		sql_err_code = sqlite3_finalize(sqlite_stmt);
 		return filemap;
 	}else{
-		throw;
+		throw;	// TODO
 	}
 }
 
 void OpenFSBlockStorage::put_FileMap(const boost::filesystem::path& filepath,
-		const cryptodiff::FileMap& filemap, const std::string& signature, boost::optional<bool> force_ready = boost::optional()) {
-	const char* SQL = "INSERT OR REPLACE INTO files (path, filemap, signature) VALUES (?, ?, ?);";
+		const cryptodiff::FileMap& filemap, const std::string& signature, boost::optional<bool> force_ready) {
+	const char* SQL_files = "INSERT OR REPLACE INTO files (path, filemap, mtime, signature) VALUES (?, ?, ?, ?);";
+	const char* SQL_blocks = "INSERT OR REPLACE INTO blocks (encrypted_hash, blocksize, iv, fileid, offset, ready) VALUES (?, ?, ?, ?, ?, ?);";
 	sqlite3_stmt* sqlite_stmt;
 	char* sql_err_text = 0;
 	int sql_err_code = 0;
 
 	auto filemap_s = filemap.to_string();
 
-	sql_err_code = sqlite3_prepare_v2(directory_db, SQL, -1, &sqlite_stmt, 0);
+	sql_err_code = sqlite3_prepare_v2(directory_db, SQL_files, -1, &sqlite_stmt, 0);
 	sqlite3_bind_text(sqlite_stmt, 1, filepath.string().c_str(), -1, SQLITE_STATIC);
 	sqlite3_bind_blob(sqlite_stmt, 2, filemap_s.c_str(), filemap_s.size(), SQLITE_STATIC);
-	sqlite3_bind_blob(sqlite_stmt, 3, signature.data(), signature.size(), SQLITE_STATIC);
+	sqlite3_bind_int64(sqlite_stmt, 3, boost::filesystem::last_write_time(filepath));
+	sqlite3_bind_blob(sqlite_stmt, 4, signature.data(), signature.size(), SQLITE_STATIC);
 	sql_err_code = sqlite3_step(sqlite_stmt);
 	sql_err_code = sqlite3_finalize(sqlite_stmt);
+
+	auto inserted_fileid = sqlite3_last_insert_rowid(directory_db);
+
+	std::set<cryptodiff::shash_t> real_filemap_hashes;
+	if(force_ready == boost::none){
+		boost::filesystem::ifstream fs(filepath);
+		cryptodiff::FileMap real_filemap(encryption_key);
+		real_filemap.create(fs);	// Performace-eater on large datasets. But will be useful on filemaps from other node to check block presence.
+
+		for(auto real_block : real_filemap.blocks()){
+			real_filemap_hashes.insert(real_block.get_encrypted_hash());
+		}
+	}
+
+	uint64_t offset = 0;
+
+	// Iterating blocks from filemap to push necessary info into database.
+	for(auto block : filemap.blocks()){
+		sql_err_code = sqlite3_prepare_v2(directory_db, SQL_blocks, -1, &sqlite_stmt, 0);
+		sqlite3_bind_blob(sqlite_stmt, 1, block.get_encrypted_hash().data(), block.get_encrypted_hash().size(), SQLITE_STATIC);
+		sqlite3_bind_int(sqlite_stmt, 2, block.get_blocksize());
+		sqlite3_bind_blob(sqlite_stmt, 3, block.get_iv().data(), block.get_iv().size(), SQLITE_STATIC);
+		sqlite3_bind_int64(sqlite_stmt, 4, inserted_fileid);
+		sqlite3_bind_int64(sqlite_stmt, 5, offset);
+		if(force_ready == boost::none){
+			sqlite3_bind_int(sqlite_stmt, 6, real_filemap_hashes.count(block.get_encrypted_hash()));
+		}else{
+			sqlite3_bind_int(sqlite_stmt, 6, force_ready.get());
+		}
+		sql_err_code = sqlite3_step(sqlite_stmt);
+		sql_err_code = sqlite3_finalize(sqlite_stmt);
+
+		offset += block.get_blocksize();
+	}
 }
 
 std::vector<uint8_t> OpenFSBlockStorage::get_block(
 		const std::array<uint8_t, SHASH_LENGTH>& block_hash,
 		cryptodiff::Block& block_meta) {
+	const char* SQL = "SELECT blocks.blocksize, blocks.iv, files.path, blocks.offset, blocks.ready FROM blocks LEFT OUTER JOIN files ON blocks.fileid = files.id WHERE encrypted_hash=?";
+	sqlite3_stmt* sqlite_stmt;
+	char* sql_err_text = 0;
+	int sql_err_code = 0;
 
+	std::vector<uint8_t> result;
+
+	sql_err_code = sqlite3_prepare_v2(directory_db, SQL, -1, &sqlite_stmt, 0);
+	sqlite3_bind_blob(sqlite_stmt, 1, block_hash.data(), block_hash.size(), SQLITE_STATIC);
+	if(sqlite3_step(sqlite_stmt) == SQLITE_ROW){
+		auto blocksize = sqlite3_column_int(sqlite_stmt, 0);
+		block_meta.set_blocksize(blocksize);
+		std::string iv_s(reinterpret_cast<const char*>(sqlite3_column_blob(sqlite_stmt, 1)), sqlite3_column_bytes(sqlite_stmt, 1));
+		cryptodiff::iv_t iv; std::move(iv_s.begin(), iv_s.end(), iv.begin());
+		block_meta.set_iv(iv);
+
+		boost::filesystem::path filepath(reinterpret_cast<const char*>(sqlite3_column_text(sqlite_stmt, 2)));
+		uint64_t offset = sqlite3_column_int64(sqlite_stmt, 3);
+		bool ready = sqlite3_column_int(sqlite_stmt, 4);
+
+		sql_err_code = sqlite3_finalize(sqlite_stmt);
+
+		if(ready){
+			boost::filesystem::ifstream fs(filepath);
+			fs.seekg(offset);
+			result.resize(blocksize);
+			fs.read(reinterpret_cast<char*>(result.data()), blocksize);
+		}
+		return result;
+	}else{
+		throw;	//TODO: Remove this
+	}
 }
 
 void OpenFSBlockStorage::put_block(

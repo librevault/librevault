@@ -28,10 +28,10 @@ public:
 	BlockStorage();
 	virtual ~BlockStorage();
 
-	virtual cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath) = 0;
+	virtual cryptodiff::EncFileMap get_EncFileMap(const boost::filesystem::path& filepath) = 0;
 //	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	virtual void put_FileMap(const boost::filesystem::path& filepath,
-			const cryptodiff::FileMap& filemap,
+	virtual void put_EncFileMap(const boost::filesystem::path& filepath,
+			const cryptodiff::EncFileMap& filemap,
 			const std::string& signature,
 			boost::optional<bool> force_ready = boost::none) = 0;
 

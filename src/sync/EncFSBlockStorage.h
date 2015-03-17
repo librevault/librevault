@@ -16,6 +16,11 @@
 #ifndef SRC_SYNC_ENCFSBLOCKSTORAGE_H_
 #define SRC_SYNC_ENCFSBLOCKSTORAGE_H_
 
+#include <cryptodiff.h>
+#include <sqlite3.h>
+#include <boost/optional.hpp>
+#include <boost/filesystem.hpp>
+
 namespace librevault {
 
 class EncFSBlockStorage {
@@ -40,8 +45,8 @@ public:
 			const std::string& signature,
 			boost::optional<bool> force_ready = boost::none);
 
-	std::vector<uint8_t> get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta);
-	void put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data);
+	std::vector<uint8_t> get_block(const cryptodiff::shash_t& block_hash, cryptodiff::Block& block_meta);
+	void put_block(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
 };
 
 } /* namespace librevault */

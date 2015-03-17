@@ -42,11 +42,15 @@ cryptodiff::EncFileMap EncFSBlockStorage::get_EncFileMap(const boost::filesystem
 void EncFSBlockStorage::put_EncFileMap(const boost::filesystem::path& filepath,
 		const cryptodiff::EncFileMap& filemap,
 		const std::string& signature,
-		boost::optional<bool> force_ready = boost::none){
+		boost::optional<bool> force_ready){
 
 }
 
-std::vector<uint8_t> EncFSBlockStorage::get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta);
-void EncFSBlockStorage::put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data);
+std::vector<uint8_t> EncFSBlockStorage::get_block(const cryptodiff::shash_t& block_hash, cryptodiff::Block& block_meta){
+
+}
+void EncFSBlockStorage::put_block(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data){
+
+}
 
 } /* namespace librevault */

@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "FileMeta.pb.h"
 #include "OpenFSBlockStorage.h"
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
@@ -60,29 +61,56 @@ boost::optional<boost::filesystem::path> OpenFSBlockStorage::relpath(boost::file
 }
 
 void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepath){
-	boost::property_tree::ptree file_meta;
+	FileMeta_s file_meta;
+
+	// Type
+	auto file_status = boost::filesystem::symlink_status(filepath);
+	switch(file_status.type()){
+		case boost::filesystem::regular_file:
+			file_meta.set_type(FileMeta_s::FileType::FileMeta_s_FileType_FILE);
+			break;
+		case boost::filesystem::directory_file:
+			file_meta.set_type(FileMeta_s::FileType::FileMeta_s_FileType_DIRECTORY);
+			break;
+		case boost::filesystem::symlink_file:
+			file_meta.set_type(FileMeta_s::FileType::FileMeta_s_FileType_SYMLINK);
+			file_meta.set_symlink_to(boost::filesystem::read_symlink(filepath).generic_string());
+			break;
+	}
 
 	// IV
 	cryptodiff::iv_t iv;
 	CryptoPP::AutoSeededRandomPool rng;
 	rng.GenerateBlock(iv.data(), iv.size());
+	file_meta.set_iv(iv.data(), iv.size());
 
 	// EncPath
 	auto relfilepath = relpath(filepath); if(relfilepath == boost::none) throw;
 	std::string portable_path = relfilepath.get().generic_string();
-	//file_meta.put("encpath", encrypt(portable_path.c_str(), portable_path.size(), encryption_key, encryption_key));
+	auto encpath = encrypt(reinterpret_cast<const uint8_t*>(portable_path.c_str()), portable_path.size(), encryption_key, iv);
+	file_meta.set_encpath(encpath.data(), encpath.size());
 
-	if(boost::filesystem::is_regular_file(filepath) && !boost::filesystem::is_symlink(filepath)){
+	// mtime
+	file_meta.set_mtime(boost::filesystem::last_write_time(filepath));
+
+	if(file_status.type() == boost::filesystem::regular_file){
 		BOOST_LOG_TRIVIAL(debug) << filepath;
 
 		boost::filesystem::ifstream fs(filepath);
 		cryptodiff::FileMap filemap(encryption_key);
 		filemap.create(fs);
 
-		put_EncFileMap(filepath, filemap, "durrr", true);	// TODO: signature, of course
-	}else{
-		// TODO: Do something useful
+		file_meta.mutable_filemap()->ParseFromString(filemap.to_string());	// TODO: Amazingly dirty.
 	}
+
+
+	// Windows attributes (I don't have Windows now to test it)
+#ifdef _WIN32
+	file_meta.set_windows_attrib(GetFileAttributes(filepath.native().c_str()));
+#endif
+
+	// We need a new method something like put_FileMeta
+	put_EncFileMap(filepath, file_meta.filemap(), "durrr", true);	// TODO: signature, of course
 }
 
 void OpenFSBlockStorage::update_index_file(const boost::filesystem::path& filepath){

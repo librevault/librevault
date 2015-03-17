@@ -14,8 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OpenFSBlockStorage.h"
+#include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <fstream>
 #include <set>
 
@@ -27,16 +29,12 @@ OpenFSBlockStorage::OpenFSBlockStorage(const boost::filesystem::path& dirpath, c
 
 	char* sql_err_text = 0;
 	int sql_err_code = 0;
-	sql_err_code = sqlite3_exec(directory_db, "PRAGMA foreign_keys = ON;", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
 
-	sql_err_code = sqlite3_exec(directory_db, "BEGIN TRANSACTION;", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
-	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path STRING NOT NULL UNIQUE, filemap BLOB NOT NULL, mtime DATETIME NOT NULL, signature BLOB NOT NULL)", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
-	sql_err_code = sqlite3_exec(directory_db, "CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB PRIMARY KEY NOT NULL, blocksize INTEGER NOT NULL, iv BLOB NOT NULL, fileid INTEGER REFERENCES files (id) ON DELETE CASCADE NOT NULL, offset INTEGER, ready BOOLEAN DEFAULT 0)", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
-	sql_err_code = sqlite3_exec(directory_db, "COMMIT TRANSACTION;", 0, 0, &sql_err_text);
+	sql_err_code = sqlite3_exec(directory_db,
+			"PRAGMA foreign_keys = ON;" \
+			"CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path STRING NOT NULL UNIQUE, filemap BLOB NOT NULL, mtime DATETIME NOT NULL, signature BLOB NOT NULL);" \
+			"CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB PRIMARY KEY NOT NULL, blocksize INTEGER NOT NULL, iv BLOB NOT NULL, fileid INTEGER REFERENCES files (id) ON DELETE CASCADE NOT NULL, offset INTEGER, ready BOOLEAN DEFAULT 0);",
+			0, 0, &sql_err_text);
 	sqlite3_free(sql_err_text);
 }
 
@@ -44,7 +42,36 @@ OpenFSBlockStorage::~OpenFSBlockStorage() {
 	sqlite3_close(directory_db);
 }
 
+boost::optional<boost::filesystem::path> OpenFSBlockStorage::relpath(boost::filesystem::path path) const {
+	boost::filesystem::path relpath;
+	path = absolute(path);
+
+	auto path_elem_it = path.begin();
+	for(auto dir_elem : directory_path){
+		if(dir_elem != *(path_elem_it++))
+			return boost::none;
+	}
+	for(; path_elem_it != path.end(); path_elem_it++){
+		if(*path_elem_it == "." || *path_elem_it == "..")
+			return boost::none;
+		relpath /= *path_elem_it;
+	}
+	return relpath;
+}
+
 void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepath){
+	boost::property_tree::ptree file_meta;
+
+	// IV
+	cryptodiff::iv_t iv;
+	CryptoPP::AutoSeededRandomPool rng;
+	rng.GenerateBlock(iv.data(), iv.size());
+
+	// EncPath
+	auto relfilepath = relpath(filepath); if(relfilepath == boost::none) throw;
+	std::string portable_path = relfilepath.get().generic_string();
+	//file_meta.put("encpath", encrypt(portable_path.c_str(), portable_path.size(), encryption_key, encryption_key));
+
 	if(boost::filesystem::is_regular_file(filepath) && !boost::filesystem::is_symlink(filepath)){
 		BOOST_LOG_TRIVIAL(debug) << filepath;
 
@@ -52,7 +79,7 @@ void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepa
 		cryptodiff::FileMap filemap(encryption_key);
 		filemap.create(fs);
 
-		put_FileMap(filepath, filemap, "durrr", true);	// TODO: signature, of course
+		put_EncFileMap(filepath, filemap, "durrr", true);	// TODO: signature, of course
 	}else{
 		// TODO: Do something useful
 	}
@@ -67,7 +94,7 @@ void OpenFSBlockStorage::update_index_file(const boost::filesystem::path& filepa
 		auto old_filemap = get_FileMap(filepath);
 		auto new_filemap = old_filemap.update(fs);
 
-		put_FileMap(filepath, new_filemap, "durrr", true);	// TODO: signature, of course
+		put_EncFileMap(filepath, new_filemap, "durrr", true);	// TODO: signature, of course
 	}else{
 		// TODO: Do something useful
 	}
@@ -105,8 +132,12 @@ cryptodiff::FileMap OpenFSBlockStorage::get_FileMap(
 	}
 }
 
-void OpenFSBlockStorage::put_FileMap(const boost::filesystem::path& filepath,
-		const cryptodiff::FileMap& filemap, const std::string& signature, boost::optional<bool> force_ready) {
+cryptodiff::EncFileMap OpenFSBlockStorage::get_EncFileMap(const boost::filesystem::path& filepath){
+	return get_FileMap(filepath);
+}
+
+void OpenFSBlockStorage::put_EncFileMap(const boost::filesystem::path& filepath,
+		const cryptodiff::EncFileMap& filemap, const std::string& signature, boost::optional<bool> force_ready) {
 	const char* SQL_files = "INSERT OR REPLACE INTO files (path, filemap, mtime, signature) VALUES (?, ?, ?, ?);";
 	const char* SQL_blocks = "INSERT OR REPLACE INTO blocks (encrypted_hash, blocksize, iv, fileid, offset, ready) VALUES (?, ?, ?, ?, ?, ?);";
 	sqlite3_stmt* sqlite_stmt;
@@ -198,6 +229,40 @@ std::vector<uint8_t> OpenFSBlockStorage::get_block(
 void OpenFSBlockStorage::put_block(
 		const std::array<uint8_t, SHASH_LENGTH>& block_hash,
 		const std::vector<uint8_t>& data) {
+/*	const char* SQL_exists_and_update =	"SELECT SELECT 1 FROM blocks WHERE encrypted_hash=:hash LIMIT 1;" \
+										"UPDATE OR IGNORE blocks SET ready=1 WHERE encrypted_hash=:hash LIMIT 1;";
+	sqlite3_stmt* sqlite_stmt;
+	char* sql_err_text = 0;
+	int sql_err_code = 0;
+
+	sql_err_code = sqlite3_prepare_v2(directory_db, SQL_exists_and_update, -1, &sqlite_stmt, 0);
+	sqlite3_bind_blob(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, ":hash"), block_hash.data(), block_hash.size(), SQLITE_STATIC);
+	if(sqlite3_step(sqlite_stmt) == SQLITE_ROW){
+		bool exists = sqlite3_column_int(sqlite_stmt, 0);
+		sql_err_code = sqlite3_finalize(sqlite_stmt);
+		if(!exists) throw;
+
+		block_meta.set_blocksize(blocksize);
+		std::string iv_s(reinterpret_cast<const char*>(sqlite3_column_blob(sqlite_stmt, 1)), sqlite3_column_bytes(sqlite_stmt, 1));
+		cryptodiff::iv_t iv; std::move(iv_s.begin(), iv_s.end(), iv.begin());
+		block_meta.set_iv(iv);
+
+		boost::filesystem::path filepath(reinterpret_cast<const char*>(sqlite3_column_text(sqlite_stmt, 2)));
+		uint64_t offset = sqlite3_column_int64(sqlite_stmt, 3);
+		bool ready = sqlite3_column_int(sqlite_stmt, 4);
+
+
+
+		if(ready){
+			boost::filesystem::ifstream fs(filepath);
+			fs.seekg(offset);
+			result.resize(blocksize);
+			fs.read(reinterpret_cast<char*>(result.data()), blocksize);
+		}
+		return result;
+	}else{
+		throw;	//TODO: Remove this
+	}*/
 }
 
 } /* namespace librevault */

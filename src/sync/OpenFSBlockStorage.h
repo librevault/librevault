@@ -29,15 +29,20 @@ class OpenFSBlockStorage : public BlockStorage {
 	cryptodiff::key_t encryption_key;
 	sqlite3* directory_db = 0;
 
+	//
+	boost::optional<boost::filesystem::path> relpath(boost::filesystem::path path) const;
+
 	void create_index_file(const boost::filesystem::path& filepath);
 	void update_index_file(const boost::filesystem::path& filepath);
+
+	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath);
 public:
 	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, cryptodiff::key_t key);
 	virtual ~OpenFSBlockStorage();
 
 	void create_index();
 
-	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath);
+	cryptodiff::EncFileMap get_EncFileMap(const boost::filesystem::path& filepath);
 //	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
 	/**
 	 * Writes FileMap to database.
@@ -46,8 +51,8 @@ public:
 	 * @param signature
 	 * @param force_ready Sets "ready" flag for specific block. If not set (or equal to boost::none) this function will check if blocks are ready. For this it will create new filemap internally, which is really io- and cpu-heavy process.
 	 */
-	void put_FileMap(const boost::filesystem::path& filepath,
-			const cryptodiff::FileMap& filemap,
+	void put_EncFileMap(const boost::filesystem::path& filepath,
+			const cryptodiff::EncFileMap& filemap,
 			const std::string& signature,
 			boost::optional<bool> force_ready = boost::none);
 

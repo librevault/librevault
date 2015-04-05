@@ -27,16 +27,6 @@ class BlockStorage {
 public:
 	BlockStorage();
 	virtual ~BlockStorage();
-
-	virtual cryptodiff::EncFileMap get_EncFileMap(const boost::filesystem::path& filepath) = 0;
-//	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	virtual void put_EncFileMap(const boost::filesystem::path& filepath,
-			const cryptodiff::EncFileMap& filemap,
-			const std::string& signature,
-			boost::optional<bool> force_ready = boost::none) = 0;
-
-	virtual std::vector<uint8_t> get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta) = 0;
-	virtual void put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data) = 0;
 };
 
 } /* namespace librevault */

@@ -4,3 +4,6 @@
 [submodule "contrib/cryptodiff"]
 	path = contrib/cryptodiff
 	url = https://github.com/GamePad64/cryptodiff.git
+[submodule "contrib/lvsqlite3"]
+	path = contrib/lvsqlite3
+	url = https://github.com/GamePad64/lvsqlite3.git

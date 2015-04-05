@@ -16,18 +16,15 @@
 #ifndef SRC_SYNC_OPENFSBLOCKSTORAGE_H_
 #define SRC_SYNC_OPENFSBLOCKSTORAGE_H_
 
-#include "BlockStorage.h"
+#include "EncFSBlockStorage.h"
 #include <sqlite3.h>
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
 namespace librevault {
 
-class OpenFSBlockStorage : public BlockStorage {
-	boost::filesystem::path temp_path;
-	boost::filesystem::path directory_path;
+class OpenFSBlockStorage : public EncFSBlockStorage {
 	cryptodiff::key_t encryption_key;
-	sqlite3* directory_db = 0;
 
 	//
 	boost::optional<boost::filesystem::path> relpath(boost::filesystem::path path) const;
@@ -35,29 +32,20 @@ class OpenFSBlockStorage : public BlockStorage {
 	void create_index_file(const boost::filesystem::path& filepath);
 	void update_index_file(const boost::filesystem::path& filepath);
 
-	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath);
+	std::vector<uint8_t> sign(const FileMeta& file_meta);
+protected:
 public:
-	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, cryptodiff::key_t key);
+	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, const cryptodiff::key_t& key);
 	virtual ~OpenFSBlockStorage();
 
 	void create_index();
+	void update_index();
 
-	cryptodiff::EncFileMap get_EncFileMap(const boost::filesystem::path& filepath);
-//	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	/**
-	 * Writes FileMap to database.
-	 * @param filepath
-	 * @param filemap
-	 * @param signature
-	 * @param force_ready Sets "ready" flag for specific block. If not set (or equal to boost::none) this function will check if blocks are ready. For this it will create new filemap internally, which is really io- and cpu-heavy process.
-	 */
-	void put_EncFileMap(const boost::filesystem::path& filepath,
-			const cryptodiff::EncFileMap& filemap,
-			const std::string& signature,
-			boost::optional<bool> force_ready = boost::none);
+	virtual int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
+	//virtual FileMeta get_FileMeta(int64_t rowid, std::vector<uint8_t>& signature);
 
-	std::vector<uint8_t> get_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, cryptodiff::Block& block_meta);
-	void put_block(const std::array<uint8_t, SHASH_LENGTH>& block_hash, const std::vector<uint8_t>& data);
+	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
+	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
 };
 
 } /* namespace librevault */

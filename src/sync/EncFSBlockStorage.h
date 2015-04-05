@@ -16,6 +16,8 @@
 #ifndef SRC_SYNC_ENCFSBLOCKSTORAGE_H_
 #define SRC_SYNC_ENCFSBLOCKSTORAGE_H_
 
+#include "FileMeta.pb.h"
+
 #include <cryptodiff.h>
 #include <sqlite3.h>
 #include <boost/optional.hpp>
@@ -24,29 +26,23 @@
 namespace librevault {
 
 class EncFSBlockStorage {
+protected:
 	boost::filesystem::path encblocks_path;
 	boost::filesystem::path directory_path;
 	sqlite3* directory_db = 0;
+
+	boost::filesystem::path encrypted_block_path(const cryptodiff::shash_t& block_hash);
 public:
 	EncFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath);
 	virtual ~EncFSBlockStorage();
 
-	cryptodiff::EncFileMap get_EncFileMap(const boost::filesystem::path& filepath);
-//	cryptodiff::FileMap get_FileMap(const boost::filesystem::path& filepath, std::string& signature);
-	/**
-	 * Writes FileMap to database.
-	 * @param filepath
-	 * @param filemap
-	 * @param signature
-	 * @param force_ready Sets "ready" flag for specific block. If not set (or equal to boost::none) this function will check if blocks are ready. For this it will create new filemap internally, which is really io- and cpu-heavy process.
-	 */
-	void put_EncFileMap(const boost::filesystem::path& filepath,
-			const cryptodiff::EncFileMap& filemap,
-			const std::string& signature,
-			boost::optional<bool> force_ready = boost::none);
+	virtual int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
+	//int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
+	virtual FileMeta get_FileMeta(int64_t rowid, std::vector<uint8_t>& signature);
+	virtual FileMeta get_FileMeta(std::vector<uint8_t> encpath, std::vector<uint8_t>& signature);
 
-	std::vector<uint8_t> get_block(const cryptodiff::shash_t& block_hash, cryptodiff::Block& block_meta);
-	void put_block(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
+	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
+	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
 };
 
 } /* namespace librevault */

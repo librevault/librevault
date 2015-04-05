@@ -17,9 +17,9 @@ syntax = "proto2";
 import "EncFileMap.proto";
 package librevault;
 
-message FileMeta_s {
-	optional bytes encpath = 1;
-	optional bytes iv = 2;
+message FileMeta {
+	optional bytes encpath = 1;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
+	optional bytes iv = 2;	// IV for AES-256-CBC encrtypted encpath.
 
 	enum FileType {
 		FILE = 0;
@@ -33,5 +33,5 @@ message FileMeta_s {
 	optional bytes symlink_to = 6;
 
 
-	optional uint32 windows_attrib = 17;
+	optional uint32 windows_attrib = 16;
 }

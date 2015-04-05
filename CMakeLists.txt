@@ -56,8 +56,8 @@ list(APPEND SRCS ${PROTO_COMMON_HEADERS})
 # SQLite
 #list(APPEND SRCS "contrib/sqlite/sqlite3.c")
 #list(APPEND SRCS "contrib/sqlite/sqlite3.h")
+file(GLOB_RECURSE CONTRIB_lvsqlite3 "contrib/*")
 
-#add_library(${PROJECT_NAME}1 ${LIBRARY_SRCS})
 include_directories("src/include")
 
 add_executable(${PROJECT_NAME} ${SRCS})

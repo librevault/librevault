@@ -19,6 +19,8 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
+#include <array>
+#include <vector>
 
 namespace librevault {
 

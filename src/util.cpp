@@ -45,7 +45,7 @@ uint64_t filesize(std::ostream& ofile){
 	return size;
 }
 
-std::vector<uint8_t> encrypt(const uint8_t* data, size_t size, key_t key, iv_t iv, bool nopad = false) {
+std::vector<uint8_t> encrypt(const uint8_t* data, size_t size, key_t key, iv_t iv, bool nopad) {
 	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryptor;
 	encryptor.SetKeyWithIV(key.data(), key.size(), iv.data());
 
@@ -60,7 +60,7 @@ std::vector<uint8_t> encrypt(const uint8_t* data, size_t size, key_t key, iv_t i
 	return ciphertext;
 }
 
-std::vector<uint8_t> decrypt(const uint8_t* data, size_t size, key_t key, iv_t iv, bool nopad = false) {
+std::vector<uint8_t> decrypt(const uint8_t* data, size_t size, key_t key, iv_t iv, bool nopad) {
 	if(data == nullptr || size == 0) return std::vector<uint8_t>();
 	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryptor;
 	decryptor.SetKeyWithIV(key.data(), key.size(), iv.data());

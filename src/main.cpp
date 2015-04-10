@@ -49,8 +49,9 @@ int main(int argc, char** argv){
 
 	const char* key_c = "12345678901234567890123456789012";
 	std::array<uint8_t, 32> key; std::copy(key_c, key_c+32, &*key.begin());
-	librevault::OpenFSBlockStorage open_fs_block_storage("/home/gamepad/synced", "/home/gamepad/.librevault/dir.db", key);
-	open_fs_block_storage.create_index();
+	auto open_fs_block_storage = new librevault::OpenFSBlockStorage("/home/gamepad/synced", "/home/gamepad/.librevault/dir.db", key);
+	open_fs_block_storage->create_index();
+	delete open_fs_block_storage;
 
 	boost::asio::io_service ios;
 	boost::property_tree::ptree pt;

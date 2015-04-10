@@ -18,6 +18,7 @@
 
 #include "FileMeta.pb.h"
 
+#include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 #include <cryptodiff.h>
 #include <sqlite3.h>
 #include <boost/optional.hpp>
@@ -29,20 +30,23 @@ class EncFSBlockStorage {
 protected:
 	boost::filesystem::path encblocks_path;
 	boost::filesystem::path directory_path;
-	sqlite3* directory_db = 0;
+	sqlite3* directory_db_handle = 0;
+	SQLiteDB directory_db;
 
 	boost::filesystem::path encrypted_block_path(const cryptodiff::shash_t& block_hash);
+	bool block_exists(const cryptodiff::shash_t& block_hash);
 public:
 	EncFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath);
 	virtual ~EncFSBlockStorage();
 
-	virtual int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
+	virtual int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature, bool post_locations = false);
 	//int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
 	virtual FileMeta get_FileMeta(int64_t rowid, std::vector<uint8_t>& signature);
 	virtual FileMeta get_FileMeta(std::vector<uint8_t> encpath, std::vector<uint8_t>& signature);
 
 	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
 	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
+	virtual void remove_block_data(const cryptodiff::shash_t& block_hash);
 };
 
 } /* namespace librevault */

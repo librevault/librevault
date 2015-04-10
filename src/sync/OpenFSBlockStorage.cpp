@@ -15,6 +15,7 @@
  */
 #include "FileMeta.pb.h"
 #include "OpenFSBlockStorage.h"
+#include "../util.h"
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -74,17 +75,15 @@ void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepa
 	// EncPath
 	auto relfilepath = relpath(filepath); if(relfilepath == boost::none) throw;
 	std::string portable_path = relfilepath.get().generic_string();
-	auto encpath = encrypt(reinterpret_cast<const uint8_t*>(portable_path.c_str()), portable_path.size(), encryption_key, iv);
+	auto encpath = encrypt(reinterpret_cast<const uint8_t*>(portable_path.data()), portable_path.size(), encryption_key, iv);
 	file_meta.set_encpath(encpath.data(), encpath.size());
 
 	// mtime
 	file_meta.set_mtime(boost::filesystem::last_write_time(filepath));
 
 	// FileMap
-	if(file_status.type() == boost::filesystem::regular_file){
-		BOOST_LOG_TRIVIAL(debug) << filepath;
-
-		boost::filesystem::ifstream fs(filepath);
+	if(file_meta.type() == FileMeta::FileType::FileMeta_FileType_FILE){
+		boost::filesystem::ifstream fs(filepath, std::ios_base::binary);
 		cryptodiff::FileMap filemap(encryption_key);
 		filemap.create(fs);
 
@@ -96,154 +95,202 @@ void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepa
 	file_meta.set_windows_attrib(GetFileAttributes(filepath.native().c_str()));
 #endif
 
-	put_FileMeta(file_meta, sign(file_meta));	// TODO: signature, of course
+	auto fileid = put_FileMeta(file_meta, sign(file_meta));
+
+	std::string filetype_string;
+	switch(file_meta.type()){
+		case FileMeta::FileType::FileMeta_FileType_FILE:
+			filetype_string = "FILE";
+			break;
+		case FileMeta::FileType::FileMeta_FileType_DIRECTORY:
+			filetype_string = "DIRECTORY";
+			break;
+		case FileMeta::FileType::FileMeta_FileType_SYMLINK:
+			filetype_string = "SYMLINK";
+			break;
+	}
+
+	BOOST_LOG_TRIVIAL(debug) << "Created new index entry. Path=" << filepath << " Type=" << filetype_string << " ID=" << fileid;
 }
 
 void OpenFSBlockStorage::update_index_file(const boost::filesystem::path& filepath){
 	if(boost::filesystem::is_regular_file(filepath) && !boost::filesystem::is_symlink(filepath)){
 		BOOST_LOG_TRIVIAL(debug) << filepath;
 
-		boost::filesystem::ifstream fs(filepath);
+		boost::filesystem::ifstream fs(filepath, std::ios_base::binary);
 
-		auto old_filemap = get_FileMap(filepath);
-		auto new_filemap = old_filemap.update(fs);
+		std::vector<uint8_t> signature;
+		auto old_filemap = get_FileMeta(filepath, signature);
+		//auto new_filemap = old_filemap.update(fs);
 
-		put_EncFileMap(filepath, new_filemap, "durrr", true);	// TODO: signature, of course
+		//put_EncFileMap(filepath, new_filemap, "durrr", true);	// TODO: signature, of course
 	}else{
 		// TODO: Do something useful
 	}
 }
 
+std::vector<uint8_t> OpenFSBlockStorage::sign(const FileMeta& file_meta){
+	return std::vector<uint8_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+}
+
 void OpenFSBlockStorage::create_index(){
-	char* sql_err_text = 0;
-	int sql_err_code = 0;
-	sql_err_code = sqlite3_exec(directory_db, "BEGIN TRANSACTION; DELETE FROM files; DELETE FROM blocks; DELETE FROM block_locations;", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
+	directory_db.exec("SAVEPOINT create_index;");
+	directory_db.exec("DELETE FROM files;");
+	directory_db.exec("DELETE FROM blocks;");
+	directory_db.exec("DELETE FROM block_locations;");
+
 	for(auto dir_entry_it = boost::filesystem::recursive_directory_iterator(directory_path); dir_entry_it != boost::filesystem::recursive_directory_iterator(); dir_entry_it++){
 		create_index_file(dir_entry_it->path());
 	}
-	sql_err_code = sqlite3_exec(directory_db, "COMMIT TRANSACTION;", 0, 0, &sql_err_text);
-	sqlite3_free(sql_err_text);
+	directory_db.exec("RELEASE create_index;");
+}
+
+FileMeta OpenFSBlockStorage::get_FileMeta(const boost::filesystem::path& filepath, std::vector<uint8_t>& signature){
+	auto query_result = directory_db.exec("SELECT meta, signature FROM files WHERE path=:path;", {
+			{":path", SQLValue(filepath.generic_string())},
+	});
+
+	FileMeta meta;
+	if(query_result.have_rows()){
+		meta.ParseFromString((*query_result.begin())[0].as_text());
+		signature = ((*query_result.begin())[1].as_blob());
+	}
+
+	return meta;
 }
 
 int64_t OpenFSBlockStorage::put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature) {
 	std::vector<uint8_t> old_signature;
 	auto old_filemeta = get_FileMeta(std::vector<uint8_t>(meta.encpath().data(), meta.encpath().data()+meta.encpath().size()), old_signature);
-	if(old_filemeta.SerializeAsString() != meta.SerializeAsString()){
+
+	auto old_filemeta_s = old_filemeta.SerializeAsString();
+	auto new_filemeta_s = meta.SerializeAsString();
+	if(old_filemeta_s != FileMeta().SerializeAsString() && old_filemeta_s != new_filemeta_s){
+		cryptodiff::EncFileMap filemap_old;
+		filemap_old.from_string(old_filemeta_s);
+		cryptodiff::EncFileMap filemap_new;
+		filemap_new.from_string(new_filemeta_s);
+
+		auto blocks_to_remove = filemap_old.delta(filemap_new);	// Yes, blocks to remove are new.delta(old). Blocks to obtain are old.delta(new)
+		for(auto block : blocks_to_remove){
+			auto result = directory_db.exec("SELECT count(id) FROM blocks WHERE encrypted_hash=:encrypted_hash;", {
+					{"encrypted_hash", SQLValue(block.get_encrypted_hash().data(), block.get_encrypted_hash().size())}
+			});
+			int64_t block_count = (*result.begin()).at(0).as_int();
+			result.finalize();
+			if(block_count <= 1){
+				EncFSBlockStorage::remove_block_data(block.get_encrypted_hash());
+			}
+		}
 
 	}
 
-	auto fileid = EncFSBlockStorage::put_FileMeta(meta, signature);
-
-	const char* SQL_files = "UPDATE files SET path=:path WHERE id=:id;";
-	sqlite3_stmt* sqlite_stmt;
-	char* sql_err_text = 0;
-	int sql_err_code = 0;
-
-	sql_err_code = sqlite3_prepare_v2(directory_db, SQL_files, -1, &sqlite_stmt, 0);
-
-	// Path
+	auto fileid = EncFSBlockStorage::put_FileMeta(meta, signature, true);
+	//
 	cryptodiff::iv_t iv; std::copy(meta.iv().begin(), meta.iv().end(), &*iv.begin());
 	auto decrypted_path = decrypt(reinterpret_cast<const uint8_t*>(meta.encpath().data()), meta.encpath().size(), encryption_key, iv);
-	sqlite3_bind_text(sqlite_stmt,
-			sqlite3_bind_parameter_index(sqlite_stmt, ":path"),
-			reinterpret_cast<const char*>(decrypted_path.size() == 0 ? nullptr : decrypted_path.data()),
-			-1,
-			SQLITE_STATIC);
-	sqlite3_bind_int64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, ":id"), fileid);
 
-	sql_err_code = sqlite3_step(sqlite_stmt);
-	sql_err_code = sqlite3_finalize(sqlite_stmt);
+	directory_db.exec("UPDATE files SET path=:path WHERE id=:id;", {
+			{":path", decrypted_path},
+			{":id", fileid}
+	});
 
 	return fileid;
 }
 
 std::vector<uint8_t> OpenFSBlockStorage::get_block_data(const cryptodiff::shash_t& block_hash) {
 	auto block_data = EncFSBlockStorage::get_block_data(block_hash);
-	if(block_data.size() == 0){
-		const char* SQL = "SELECT blocks.blocksize, blocks.iv, files.path, block_locations.offset FROM block_locations "
+	if(block_data.size() != 0){
+		return block_data;
+	}else{
+		auto result = directory_db.exec("SELECT blocks.blocksize, blocks.iv, files.path, block_locations.offset FROM block_locations "
 				"LEFT OUTER JOIN files ON blocks.fileid = files.id "
 				"LEFT OUTER JOIN blocks ON blocks.blockid = blocks.id "
-				"WHERE encrypted_hash=?";
-		sqlite3_stmt* sqlite_stmt;
-		char* sql_err_text = 0;
-		int sql_err_code = 0;
+				"WHERE encrypted_hash=:encrypted_hash", {
+						{":encrypted_hash", SQLValue(block_hash.data(), block_hash.size())}
+		});
 
-		sql_err_code = sqlite3_prepare_v2(directory_db, SQL, -1, &sqlite_stmt, 0);
-		sqlite3_bind_blob(sqlite_stmt, 1, block_hash.data(), block_hash.size(), SQLITE_STATIC);
-		while(sqlite3_step(sqlite_stmt) == SQLITE_ROW){
+		for(auto row : result){
 			// Blocksize
-			auto blocksize = sqlite3_column_int(sqlite_stmt, 0);
+			auto blocksize = row.at(0).as_int();
 
 			// IV
-			std::string iv_s(reinterpret_cast<const char*>(sqlite3_column_blob(sqlite_stmt, 1)), sqlite3_column_bytes(sqlite_stmt, 1));
-			cryptodiff::iv_t iv; std::move(iv_s.begin(), iv_s.end(), iv.begin());
+			cryptodiff::iv_t iv = row.at(1).as_blob<AES_BLOCKSIZE>();
 
 			// Path
-			boost::filesystem::path filepath(reinterpret_cast<const char*>(sqlite3_column_text(sqlite_stmt, 2)));
-			filepath = boost::filesystem::absolute(filepath, directory_path);
+			auto filepath = boost::filesystem::absolute(boost::filesystem::path(row.at(2).as_text()), directory_path);
 
 			// Offset
-			uint64_t offset = sqlite3_column_int64(sqlite_stmt, 3);
+			uint64_t offset = row.at(3).as_int();
 
-			boost::filesystem::ifstream fs(filepath);
+			boost::filesystem::ifstream fs(filepath, std::ios_base::binary);
 			fs.seekg(offset);
 			block_data.resize(blocksize);
 
 			fs.read(reinterpret_cast<char*>(block_data.data()), blocksize);
-			if(!fs){
-				block_data.resize(0); continue;
-			}
-
-			block_data = encrypt(block_data.data(), block_data.size(), encryption_key, iv);
-			// Check
-			if(compute_shash(block_data.data(), block_data.size()) == block_hash){
-				break;
-			}else{
-				block_data.resize(0);
+			if(fs){
+				block_data = encrypt(block_data.data(), block_data.size(), encryption_key, iv);
+				// Check
+				if(compute_shash(block_data.data(), block_data.size()) == block_hash){
+					return block_data;
+				}
 			}
 		}
-		sql_err_code = sqlite3_finalize(sqlite_stmt);
-	}
 
-	return block_data;
+		return std::vector<uint8_t>();
+	}
 }
 
 void OpenFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data) {
-/*	const char* SQL_exists_and_update =	"SELECT SELECT 1 FROM blocks WHERE encrypted_hash=:hash LIMIT 1;" \
-										"UPDATE OR IGNORE blocks SET ready=1 WHERE encrypted_hash=:hash LIMIT 1;";
-	sqlite3_stmt* sqlite_stmt;
-	char* sql_err_text = 0;
-	int sql_err_code = 0;
+	EncFSBlockStorage::put_block_data(block_hash, data);
 
-	sql_err_code = sqlite3_prepare_v2(directory_db, SQL_exists_and_update, -1, &sqlite_stmt, 0);
-	sqlite3_bind_blob(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, ":hash"), block_hash.data(), block_hash.size(), SQLITE_STATIC);
-	if(sqlite3_step(sqlite_stmt) == SQLITE_ROW){
-		bool exists = sqlite3_column_int(sqlite_stmt, 0);
-		sql_err_code = sqlite3_finalize(sqlite_stmt);
-		if(!exists) throw;
+	auto blocks_to_write = directory_db.exec("SELECT files.path, blocks.encrypted_hash, block_locations.[offset], blocks.iv "
+			"FROM ("
+				"SELECT DISTINCT blocks.fileid AS unique_fileid "
+				"FROM blocks "
+				"WHERE blocks.encrypted_hash = :encrypted_hash"
+			")"
+			"JOIN files ON unique_fileid = files.id "
+			"JOIN blocks ON unique_fileid = blocks.fileid "
+			"JOIN block_locations ON block_locations.blockid = blocks.id "
+			"ORDER BY path;", {
+					{":encrypted_hash", SQLValue(block_hash.data(), block_hash.size())}
+			});
 
-		block_meta.set_blocksize(blocksize);
-		std::string iv_s(reinterpret_cast<const char*>(sqlite3_column_blob(sqlite_stmt, 1)), sqlite3_column_bytes(sqlite_stmt, 1));
-		cryptodiff::iv_t iv; std::move(iv_s.begin(), iv_s.end(), iv.begin());
-		block_meta.set_iv(iv);
+	std::map<std::string, boost::optional<std::map<uint64_t, std::pair<cryptodiff::shash_t, cryptodiff::iv_t>>>> files_to_renew;
 
-		boost::filesystem::path filepath(reinterpret_cast<const char*>(sqlite3_column_text(sqlite_stmt, 2)));
-		uint64_t offset = sqlite3_column_int64(sqlite_stmt, 3);
-		bool ready = sqlite3_column_int(sqlite_stmt, 4);
+	for(auto block : blocks_to_write){
+		auto path = block[0].as_text();
+		auto encrypted_hash = block[1].as_blob<SHASH_LENGTH>();
+		auto offset = block[2].as_int();
+		auto iv = block[3].as_blob<AES_BLOCKSIZE>();
 
-
-
-		if(ready){
-			boost::filesystem::ifstream fs(filepath);
-			fs.seekg(offset);
-			result.resize(blocksize);
-			fs.read(reinterpret_cast<char*>(result.data()), blocksize);
+		auto renew_it = files_to_renew.find(path);
+		if(renew_it == files_to_renew.end()){
+			files_to_renew.insert(std::make_pair(path, std::map<uint64_t, std::pair<cryptodiff::shash_t, cryptodiff::iv_t>>()));
+		}else if(renew_it->second == boost::none){
+			continue;
 		}
-		return result;
-	}else{
-		throw;	//TODO: Remove this
-	}*/
+
+		if(EncFSBlockStorage::block_exists(encrypted_hash)){
+			renew_it->second->insert(std::make_pair((uint64_t)offset, std::make_pair(encrypted_hash, iv)));
+		}else{
+			renew_it->second = boost::none;
+		}
+	}
+
+	for(auto file_to_renew : files_to_renew){
+		if(file_to_renew.second != boost::none){
+			auto filepath = boost::filesystem::absolute(boost::filesystem::path(file_to_renew.first), directory_path);
+
+			boost::filesystem::ofstream fs(filepath, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+			for(auto block : file_to_renew.second.get()){
+				auto block_encrypted = EncFSBlockStorage::get_block_data(block.second.first);
+				auto block_decrypted = decrypt(block_encrypted.data(), block_encrypted.size(), encryption_key, block.second.second);
+				fs.write((const char*)block_decrypted.data(), block_decrypted.size());
+			}
+		}
+	}
 }
 
 } /* namespace librevault */

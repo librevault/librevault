@@ -42,7 +42,8 @@ public:
 	void update_index();
 
 	virtual int64_t put_FileMeta(const FileMeta& meta, const std::vector<uint8_t>& signature);
-	//virtual FileMeta get_FileMeta(int64_t rowid, std::vector<uint8_t>& signature);
+	virtual FileMeta get_FileMeta(const boost::filesystem::path& filepath, std::vector<uint8_t>& signature);
+	using EncFSBlockStorage::get_FileMeta;
 
 	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
 	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);

@@ -56,7 +56,7 @@ list(APPEND SRCS ${PROTO_COMMON_HEADERS})
 # SQLite
 #list(APPEND SRCS "contrib/sqlite/sqlite3.c")
 #list(APPEND SRCS "contrib/sqlite/sqlite3.h")
-file(GLOB_RECURSE CONTRIB_lvsqlite3 "contrib/*")
+list(APPEND SRCS "contrib/lvsqlite3/SQLiteWrapper.cpp")
 
 include_directories("src/include")
 
@@ -113,6 +113,15 @@ if(CRYPTODIFF_FOUND)
   target_link_libraries(${PROJECT_NAME} ${CRYPTODIFF_LIBRARIES})
 endif()
 # /SQLite
+
+# CryptoPP
+find_package(CryptoPP REQUIRED)
+
+if(CRYPTOPP_FOUND)
+  include_directories(${CRYPTOPP_INCLUDE_DIRS})
+  target_link_libraries(${PROJECT_NAME} ${CRYPTOPP_LIBRARIES})
+endif()
+# /CryptoPP
 
 #============================================================================
 # Documentation generation

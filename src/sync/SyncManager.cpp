@@ -17,13 +17,18 @@
 
 namespace librevault {
 
-SyncManager::SyncManager() {
+SyncManager::SyncManager(boost::asio::io_service& io_service) : io_service(io_service), dir_monitor(io_service) {
 	// TODO Auto-generated constructor stub
 
 }
 
 SyncManager::~SyncManager() {
 	// TODO Auto-generated destructor stub
+}
+
+void SyncManager::addDirectory(std::shared_ptr<Directory> directory_ptr){
+	//dir_monitor.add_directory(path.native());	// Must be added in Directory itself.
+
 }
 
 } /* namespace librevault */

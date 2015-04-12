@@ -23,8 +23,7 @@ namespace librevault {
 class BlockStorage;
 class Directory {
 	boost::filesystem::path directory_path;
-
-	//std::unique_ptr<BlockStorage> block_storage;
+	std::unique_ptr<BlockStorage> block_storage;
 public:
 	Directory(const boost::filesystem::path& path);
 	virtual ~Directory();

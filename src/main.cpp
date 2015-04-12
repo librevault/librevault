@@ -32,28 +32,30 @@ void print_endpoint(boost::asio::ip::udp::endpoint endpoint){
 
 int main(int argc, char** argv){
 	//std::array<uint8_t, 32> key; std::copy(argv[2], argv[2]+32, &*key.begin());
-
-	//boost::asio::io_service io_service;
-	//boost::asio::dir_monitor dir_monitor(io_service);
-	//dir_monitor.add_directory("./test");
-	//for(;;){
-	//	boost::asio::dir_monitor_event ev = dir_monitor.monitor();
-	//	if(ev.type == boost::asio::dir_monitor_event::added){
-	//		cryptodiff::FileMap map(key);
-	//		std::ifstream istream(ev.path.c_str(), std::ios_base::in | std::ios_base::binary);
-	//		map.create(istream);
-	//	}
-
-	//	std::cout << ev << std::endl;
-	//}
-
 	const char* key_c = "12345678901234567890123456789012";
 	std::array<uint8_t, 32> key; std::copy(key_c, key_c+32, &*key.begin());
-	auto open_fs_block_storage = new librevault::OpenFSBlockStorage("/home/gamepad/synced", "/home/gamepad/.librevault/dir.db", key);
+
+	boost::asio::io_service ios;
+
+	// Directory monitor part
+	boost::asio::dir_monitor dir_monitor(ios);
+	dir_monitor.add_directory(argv[1]);
+	dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
+		if(ev.type == boost::asio::dir_monitor_event::added){
+			cryptodiff::FileMap map(key);
+			std::ifstream istream(ev.path.c_str(), std::ios_base::in | std::ios_base::binary);
+			map.create(istream);
+		}
+
+		std::cout << ev << std::endl;
+	});
+
+	// OpenBlockStorage part
+	auto open_fs_block_storage = new librevault::OpenFSBlockStorage(argv[1], "/home/gamepad/.librevault/dir.db", key);
 	open_fs_block_storage->create_index();
 	delete open_fs_block_storage;
 
-	boost::asio::io_service ios;
+	// NodeDB part
 	boost::property_tree::ptree pt;
 	pt.put("nodedb.udplpdv4.repeat_interval", 30);
 	pt.put("nodedb.udplpdv4.multicast_port", 28914);

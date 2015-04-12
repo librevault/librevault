@@ -183,6 +183,9 @@ int64_t OpenFSBlockStorage::put_FileMeta(const FileMeta& meta, const std::vector
 			}
 		}
 
+		for(auto block_to_backup : filemap_new.blocks()){
+			EncFSBlockStorage::put_block_data(block_to_backup.get_encrypted_hash(), get_block_data(block_to_backup.get_encrypted_hash()));	// TODO: Check.
+		}
 	}
 
 	auto fileid = EncFSBlockStorage::put_FileMeta(meta, signature, true);
@@ -290,7 +293,7 @@ void OpenFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, c
 				fs.write((const char*)block_decrypted.data(), block_decrypted.size());
 			}
 		}
-	}
+	}	// TODO: MUST remove unnecessary blocks after operation
 }
 
 } /* namespace librevault */

@@ -16,20 +16,24 @@
 #ifndef SRC_SYNC_SYNCMANAGER_H_
 #define SRC_SYNC_SYNCMANAGER_H_
 
+#include "../../contrib/dir_monitor/include/dir_monitor.hpp"
 #include <boost/filesystem.hpp>
-#include <set>
+#include <map>
 
 namespace librevault {
 class Directory;
 
 class SyncManager {
-	std::set<Directory*> directories;
+	std::map<boost::filesystem::path, std::shared_ptr<Directory>> directories;
 	boost::filesystem::path configdir;
+
+	boost::asio::io_service& io_service;
+	boost::asio::dir_monitor dir_monitor;
 public:
-	SyncManager();
+	SyncManager(boost::asio::io_service& io_service);
 	virtual ~SyncManager();
 
-	void addDirectory(Directory* directory);
+	void addDirectory(std::shared_ptr<Directory> directory_ptr);
 };
 
 } /* namespace librevault */

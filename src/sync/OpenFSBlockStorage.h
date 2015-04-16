@@ -24,7 +24,7 @@
 namespace librevault {
 
 class OpenFSBlockStorage : public EncFSBlockStorage {
-	cryptodiff::key_t encryption_key;
+	cryptodiff::Key encryption_key;
 
 	//
 	boost::optional<boost::filesystem::path> relpath(boost::filesystem::path path) const;
@@ -35,7 +35,7 @@ class OpenFSBlockStorage : public EncFSBlockStorage {
 	std::vector<uint8_t> sign(const FileMeta& file_meta);
 protected:
 public:
-	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, const cryptodiff::key_t& key);
+	OpenFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath, const cryptodiff::Key& key);
 	virtual ~OpenFSBlockStorage();
 
 	void create_index();
@@ -45,8 +45,8 @@ public:
 	virtual FileMeta get_FileMeta(const boost::filesystem::path& filepath, std::vector<uint8_t>& signature);
 	using EncFSBlockStorage::get_FileMeta;
 
-	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
-	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
+	virtual std::vector<uint8_t> get_block_data(const cryptodiff::StrongHash& block_hash);
+	virtual void put_block_data(const cryptodiff::StrongHash& block_hash, const std::vector<uint8_t>& data);
 };
 
 } /* namespace librevault */

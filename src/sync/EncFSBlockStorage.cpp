@@ -46,11 +46,11 @@ EncFSBlockStorage::EncFSBlockStorage(const boost::filesystem::path& dirpath, con
 
 EncFSBlockStorage::~EncFSBlockStorage() {}
 
-boost::filesystem::path EncFSBlockStorage::encrypted_block_path(const cryptodiff::shash_t& block_hash){
+boost::filesystem::path EncFSBlockStorage::encrypted_block_path(const cryptodiff::StrongHash& block_hash){
 	return boost::filesystem::canonical(encblocks_path / to_base32(block_hash.data(), block_hash.size()));
 }
 
-bool EncFSBlockStorage::block_exists(const cryptodiff::shash_t& block_hash){
+bool EncFSBlockStorage::block_exists(const cryptodiff::StrongHash& block_hash){
 	return boost::filesystem::exists(encrypted_block_path(block_hash));
 }
 
@@ -116,7 +116,7 @@ FileMeta EncFSBlockStorage::get_FileMeta(std::vector<uint8_t> encpath, std::vect
 	return meta;
 }
 
-std::vector<uint8_t> EncFSBlockStorage::get_block_data(const cryptodiff::shash_t& block_hash){
+std::vector<uint8_t> EncFSBlockStorage::get_block_data(const cryptodiff::StrongHash& block_hash){
 	std::vector<uint8_t> return_value;
 	if(block_exists(block_hash)){
 		auto block_path = encrypted_block_path(block_hash);
@@ -129,13 +129,13 @@ std::vector<uint8_t> EncFSBlockStorage::get_block_data(const cryptodiff::shash_t
 	return return_value;
 }
 
-void EncFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data){
+void EncFSBlockStorage::put_block_data(const cryptodiff::StrongHash& block_hash, const std::vector<uint8_t>& data){
 	auto block_path = encrypted_block_path(block_hash);
 	boost::filesystem::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-void EncFSBlockStorage::remove_block_data(const cryptodiff::shash_t& block_hash){
+void EncFSBlockStorage::remove_block_data(const cryptodiff::StrongHash& block_hash){
 	boost::filesystem::remove(encrypted_block_path(block_hash));
 }
 

@@ -33,8 +33,8 @@ protected:
 	sqlite3* directory_db_handle = 0;
 	SQLiteDB directory_db;
 
-	boost::filesystem::path encrypted_block_path(const cryptodiff::shash_t& block_hash);
-	bool block_exists(const cryptodiff::shash_t& block_hash);
+	boost::filesystem::path encrypted_block_path(const cryptodiff::StrongHash& block_hash);
+	bool block_exists(const cryptodiff::StrongHash& block_hash);
 public:
 	EncFSBlockStorage(const boost::filesystem::path& dirpath, const boost::filesystem::path& dbpath);
 	virtual ~EncFSBlockStorage();
@@ -44,9 +44,9 @@ public:
 	virtual FileMeta get_FileMeta(int64_t rowid, std::vector<uint8_t>& signature);
 	virtual FileMeta get_FileMeta(std::vector<uint8_t> encpath, std::vector<uint8_t>& signature);
 
-	virtual std::vector<uint8_t> get_block_data(const cryptodiff::shash_t& block_hash);
-	virtual void put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data);
-	virtual void remove_block_data(const cryptodiff::shash_t& block_hash);
+	virtual std::vector<uint8_t> get_block_data(const cryptodiff::StrongHash& block_hash);
+	virtual void put_block_data(const cryptodiff::StrongHash& block_hash, const std::vector<uint8_t>& data);
+	virtual void remove_block_data(const cryptodiff::StrongHash& block_hash);
 };
 
 } /* namespace librevault */

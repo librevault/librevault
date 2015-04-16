@@ -26,7 +26,7 @@ namespace librevault {
 
 OpenFSBlockStorage::OpenFSBlockStorage(const boost::filesystem::path& dirpath,
 		const boost::filesystem::path& dbpath,
-		const cryptodiff::key_t& key) : EncFSBlockStorage(dirpath, dbpath), encryption_key(key) {
+		const cryptodiff::Key& key) : EncFSBlockStorage(dirpath, dbpath), encryption_key(key) {
 }
 
 OpenFSBlockStorage::~OpenFSBlockStorage() {}
@@ -55,11 +55,9 @@ void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepa
 	auto file_status = boost::filesystem::symlink_status(filepath);
 	switch(file_status.type()){
 		case boost::filesystem::regular_file:
-			file_meta.set_type(FileMeta::FileType::FileMeta_FileType_FILE);
-			break;
+			file_meta.set_type(FileMeta::FileType::FileMeta_FileType_FILE); break;
 		case boost::filesystem::directory_file:
-			file_meta.set_type(FileMeta::FileType::FileMeta_FileType_DIRECTORY);
-			break;
+			file_meta.set_type(FileMeta::FileType::FileMeta_FileType_DIRECTORY); break;
 		case boost::filesystem::symlink_file:
 			file_meta.set_type(FileMeta::FileType::FileMeta_FileType_SYMLINK);
 			file_meta.set_symlink_to(boost::filesystem::read_symlink(filepath).generic_string());
@@ -67,7 +65,7 @@ void OpenFSBlockStorage::create_index_file(const boost::filesystem::path& filepa
 	}
 
 	// IV
-	cryptodiff::iv_t iv;
+	cryptodiff::IV iv;
 	CryptoPP::AutoSeededRandomPool rng;
 	rng.GenerateBlock(iv.data(), iv.size());
 	file_meta.set_iv(iv.data(), iv.size());
@@ -190,7 +188,7 @@ int64_t OpenFSBlockStorage::put_FileMeta(const FileMeta& meta, const std::vector
 
 	auto fileid = EncFSBlockStorage::put_FileMeta(meta, signature, true);
 	//
-	cryptodiff::iv_t iv; std::copy(meta.iv().begin(), meta.iv().end(), &*iv.begin());
+	cryptodiff::IV iv; std::copy(meta.iv().begin(), meta.iv().end(), &*iv.begin());
 	auto decrypted_path = decrypt(reinterpret_cast<const uint8_t*>(meta.encpath().data()), meta.encpath().size(), encryption_key, iv);
 
 	directory_db.exec("UPDATE files SET path=:path WHERE id=:id;", {
@@ -201,7 +199,7 @@ int64_t OpenFSBlockStorage::put_FileMeta(const FileMeta& meta, const std::vector
 	return fileid;
 }
 
-std::vector<uint8_t> OpenFSBlockStorage::get_block_data(const cryptodiff::shash_t& block_hash) {
+std::vector<uint8_t> OpenFSBlockStorage::get_block_data(const cryptodiff::StrongHash& block_hash) {
 	auto block_data = EncFSBlockStorage::get_block_data(block_hash);
 	if(block_data.size() != 0){
 		return block_data;
@@ -218,7 +216,7 @@ std::vector<uint8_t> OpenFSBlockStorage::get_block_data(const cryptodiff::shash_
 			auto blocksize = row.at(0).as_int();
 
 			// IV
-			cryptodiff::iv_t iv = row.at(1).as_blob<AES_BLOCKSIZE>();
+			cryptodiff::IV iv = row.at(1).as_blob<AES_BLOCKSIZE>();
 
 			// Path
 			auto filepath = boost::filesystem::absolute(boost::filesystem::path(row.at(2).as_text()), directory_path);
@@ -244,7 +242,7 @@ std::vector<uint8_t> OpenFSBlockStorage::get_block_data(const cryptodiff::shash_
 	}
 }
 
-void OpenFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, const std::vector<uint8_t>& data) {
+void OpenFSBlockStorage::put_block_data(const cryptodiff::StrongHash& block_hash, const std::vector<uint8_t>& data) {
 	EncFSBlockStorage::put_block_data(block_hash, data);
 
 	auto blocks_to_write = directory_db.exec("SELECT files.path, blocks.encrypted_hash, block_locations.[offset], blocks.iv "
@@ -260,7 +258,7 @@ void OpenFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, c
 					{":encrypted_hash", SQLValue(block_hash.data(), block_hash.size())}
 			});
 
-	std::map<std::string, boost::optional<std::map<uint64_t, std::pair<cryptodiff::shash_t, cryptodiff::iv_t>>>> files_to_renew;
+	std::map<std::string, boost::optional<std::map<uint64_t, std::pair<cryptodiff::StrongHash, cryptodiff::IV>>>> files_to_renew;
 
 	for(auto block : blocks_to_write){
 		auto path = block[0].as_text();
@@ -270,7 +268,7 @@ void OpenFSBlockStorage::put_block_data(const cryptodiff::shash_t& block_hash, c
 
 		auto renew_it = files_to_renew.find(path);
 		if(renew_it == files_to_renew.end()){
-			files_to_renew.insert(std::make_pair(path, std::map<uint64_t, std::pair<cryptodiff::shash_t, cryptodiff::iv_t>>()));
+			files_to_renew.insert(std::make_pair(path, std::map<uint64_t, std::pair<cryptodiff::StrongHash, cryptodiff::IV>>()));
 		}else if(renew_it->second == boost::none){
 			continue;
 		}

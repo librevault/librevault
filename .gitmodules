@@ -7,3 +7,6 @@
 [submodule "contrib/lvsqlite3"]
 	path = contrib/lvsqlite3
 	url = https://github.com/GamePad64/lvsqlite3.git
+[submodule "contrib/cryptowrappers"]
+	path = contrib/cryptowrappers
+	url = https://github.com/GamePad64/cryptowrappers.git

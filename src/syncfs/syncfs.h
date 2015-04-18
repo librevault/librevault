@@ -13,16 +13,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "Directory.h"
+#ifndef SRC_SYNCFS_SYNCFS_H_
+#define SRC_SYNCFS_SYNCFS_H_
+
+#include <boost/filesystem.hpp>
+#include <vector>
 
 namespace librevault {
+namespace syncfs {
 
-Directory::Directory(const boost::filesystem::path& path) : directory_path(path) {
+namespace fs = boost::filesystem;
+using blob = std::vector<uint8_t>;
 
-}
-
-Directory::~Directory() {
-	// TODO Auto-generated destructor stub
-}
-
+} /* namespace syncfs */
 } /* namespace librevault */
+
+#endif /* SRC_SYNCFS_SYNCFS_H_ */

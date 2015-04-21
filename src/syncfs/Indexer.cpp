@@ -111,7 +111,11 @@ void Indexer::create_index(){
 	parent->directory_db->exec("DELETE FROM blocks;");
 
 	for(auto dir_entry_it = fs::recursive_directory_iterator(parent->open_path); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		create_index_file(dir_entry_it->path());
+		auto relpath = make_relpath(dir_entry_it->path()).get();
+
+		if(*relpath.begin() == parent->system_dirname) continue;	// Skips .librevault directory from scan
+
+		create_index_file(relpath);
 	}
 	parent->directory_db->exec("RELEASE create_index;");
 }
@@ -123,8 +127,11 @@ void Indexer::update_index() {
 	parent->directory_db->exec("INSERT INTO unupdated_files (id) SELECT id FROM files;");
 
 	for(auto dir_entry_it = fs::recursive_directory_iterator(parent->open_path); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
+		auto relpath = make_relpath(dir_entry_it->path()).get();
+		if(*relpath.begin() == parent->system_dirname) continue;	// Skips .librevault directory from scan
+
 		auto sql_query = parent->directory_db->exec("SELECT id FROM files WHERE path=:path;", {
-				{":path", make_relpath(dir_entry_it->path())->generic_string()}
+				{":path", relpath.generic_string()}
 		});
 		SQLValue id((int64_t)0);
 		if(sql_query.have_rows())
@@ -137,7 +144,7 @@ void Indexer::update_index() {
 					{":id", id}
 			});
 		}else{
-			create_index_file(dir_entry_it->path());
+			create_index_file(relpath);
 		}
 	}
 

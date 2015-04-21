@@ -39,6 +39,7 @@ class FSBlockStorage {
 
 	// Paths
 	fs::path system_path;
+	fs::path system_dirname;
 	fs::path open_path;
 
 	// Encryption

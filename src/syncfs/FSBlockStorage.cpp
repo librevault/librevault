@@ -20,7 +20,11 @@ namespace syncfs {
 
 FSBlockStorage::FSBlockStorage(const fs::path& dirpath) {
 	open_path = dirpath;
-	system_path = open_path / ".librevault";
+	system_dirname = ".librevault";
+	system_path = open_path / system_dirname;
+
+	fs::create_directories(open_path);
+	fs::create_directories(system_path);
 
 	init_db();
 

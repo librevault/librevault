@@ -17,13 +17,13 @@
 #define SRC_SYNCFS_OPENFSBLOCKSTORAGE_H_
 
 #include "syncfs.h"
-#include <sqlite3.h>
-#include <boost/optional.hpp>
+#include "../../contrib/cryptowrappers/cryptowrappers.h"
 #include <boost/filesystem.hpp>
 
 namespace librevault {
 namespace syncfs {
 
+class FSBlockStorage;
 class OpenFSBlockStorage {
 	FSBlockStorage* parent;
 

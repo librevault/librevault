@@ -14,12 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MetaStorage.h"
+#include "FSBlockStorage.h"
 #include <boost/log/trivial.hpp>
 
 namespace librevault {
 namespace syncfs {
 
-MetaStorage::MetaStorage(FSBlockStorage* parent) : parent(parent) {}
+MetaStorage::MetaStorage(FSBlockStorage* parent) : parent(parent) {
+	set_key(parent->aes_key);
+}
 
 MetaStorage::~MetaStorage() {}
 
@@ -116,15 +119,15 @@ void MetaStorage::put_Meta(const SignedMeta& meta) {
 	std::vector<uint8_t> meta_blob(meta.meta.ByteSize());
 	meta.meta.SerializeToArray(meta_blob.data(), meta_blob.size());
 
-	SQLValue path;
+	std::string path;
 	if(have_path){
 		crypto::IV encpath_iv; std::copy(meta.meta.encpath_iv().begin(), meta.meta.encpath_iv().end(), encpath_iv.data());
-		auto path = crypto::decrypt((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size(), parent->get_aes_key(), encpath_iv);
-		path = SQLValue(std::string(path.begin(), path.end()));
+		auto path_v = crypto::decrypt((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size(), parent->get_aes_key(), encpath_iv);
+		path.assign(path_v.begin(), path_v.end());
 	}
 
 	parent->directory_db->exec("INSERT OR REPLACE INTO files (path, encpath, encpath_iv, mtime, meta, signature) VALUES (:path, :encpath, :encpath_iv, :mtime, :meta, :signature);", {
-			{":path", path},
+			{":path", have_path ? SQLValue(path) : SQLValue()},
 			{":encpath", SQLValue((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size())},
 			{":encpath_iv", SQLValue((const uint8_t*)meta.meta.encpath_iv().data(), meta.meta.encpath_iv().size())},
 			{":mtime", meta.meta.mtime()},
@@ -132,7 +135,30 @@ void MetaStorage::put_Meta(const SignedMeta& meta) {
 			{":signature", meta.signature}
 	});
 
-	BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << have_path ? path.as_text() : crypto::to_base32((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size());
+	int64_t fileid = parent->directory_db->last_insert_rowid();
+	uint64_t offset = 0;
+
+	for(auto block : meta.meta.filemap().blocks()){
+		auto encrypted_hash_value = SQLValue((const uint8_t*)block.encrypted_hash().data(), block.encrypted_hash().size());
+		parent->directory_db->exec("INSERT OR IGNORE INTO blocks (encrypted_hash, blocksize, iv) VALUES (:encrypted_hash, :blocksize, :iv);", {
+				{":encrypted_hash", encrypted_hash_value},
+				{":blocksize", (int64_t)block.blocksize()},
+				{":iv", SQLValue((const uint8_t*)block.iv().data(), block.iv().size())}
+		});
+
+		int64_t blockid = parent->directory_db->exec("SELECT id FROM blocks WHERE encrypted_hash=:encrypted_hash", {
+				{":encrypted_hash", encrypted_hash_value}
+		}).begin()[0];
+		parent->directory_db->exec("INSERT INTO openfs (blockid, fileid, [offset]) VALUES (:blockid, :fileid, :offset);", {
+				{":blockid", blockid},
+				{":fileid", fileid},
+				{":offset", (int64_t)offset}
+		});
+
+		offset += block.blocksize();
+	}
+
+	BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << (have_path ? std::string("\"") + path + "\"" : crypto::to_base32((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size()));
 }
 
 std::list<MetaStorage::SignedMeta> MetaStorage::get_custom(const std::string& sql, std::map<std::string, SQLValue> values){

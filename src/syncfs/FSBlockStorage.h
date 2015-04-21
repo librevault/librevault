@@ -22,6 +22,7 @@
 #include "OpenFSBlockStorage.h"
 
 #include "syncfs.h"
+#include "../../contrib/cryptowrappers/cryptowrappers.h"
 
 namespace librevault {
 namespace syncfs {
@@ -43,20 +44,35 @@ class FSBlockStorage {
 	// Encryption
 	crypto::Key aes_key;
 public:
-	enum PresentLocations {
-		ENCFS = 1,
-		OPENFS = 2,
-		MISSING = 0
-	};
 	enum Errors {
 		NoSuchMeta,
 		NoSuchBlock,
 		NotEnoughBlocks
 	};
+
+	void init_db();
 public:
 	FSBlockStorage(const fs::path& dirpath);
+	FSBlockStorage(const fs::path& dirpath, const crypto::Key& aes_key);
 	virtual ~FSBlockStorage();
 
+	// Index manipulators
+	void create_index();
+	void update_index();
+
+	void create_index_file(const fs::path& relpath);
+	void update_index_file(const fs::path& relpath);
+	void delete_index_file(const fs::path& relpath);
+
+	// Block manipulators
+	blob get_block(const crypto::StrongHash& block_hash);
+	blob get_encblock(const crypto::StrongHash& block_hash);
+
+	void put_block(const crypto::StrongHash& block_hash, const blob& data);
+	void put_encblock(const crypto::StrongHash& block_hash, const blob& data);
+
+	// Getters
+	void set_aes_key(const crypto::Key& aes_key) {this->aes_key = aes_key;}
 	const crypto::Key& get_aes_key() const {return aes_key;}
 };
 

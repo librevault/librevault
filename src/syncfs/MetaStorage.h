@@ -17,11 +17,14 @@
 #define SRC_SYNCFS_METASTORAGE_H_
 
 #include "syncfs.h"
+#include "Meta.pb.h"
+#include "../../contrib/cryptowrappers/cryptowrappers.h"
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 
 namespace librevault {
 namespace syncfs {
 
+class FSBlockStorage;
 class MetaStorage {
 	FSBlockStorage* parent;
 

@@ -17,14 +17,13 @@
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
 #include "nodedb/NodeDB.h"
 
-#include "sync/OpenFSBlockStorage.h"
-
 #include <cryptodiff.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
 #include <iostream>
 #include <fstream>
 #include <array>
+#include "syncfs/FSBlockStorage.h"
 
 void print_endpoint(boost::asio::ip::udp::endpoint endpoint){
 	std::cout << endpoint << std::endl;
@@ -40,7 +39,7 @@ int main(int argc, char** argv){
 	// Directory monitor part
 	boost::asio::dir_monitor dir_monitor(ios);
 	dir_monitor.add_directory(argv[1]);
-	dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
+	/*dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
 		if(ev.type == boost::asio::dir_monitor_event::added){
 			cryptodiff::FileMap map(key);
 			std::ifstream istream(ev.path.c_str(), std::ios_base::in | std::ios_base::binary);
@@ -48,12 +47,12 @@ int main(int argc, char** argv){
 		}
 
 		std::cout << ev << std::endl;
-	});
+	});*/
 
 	// OpenBlockStorage part
-	auto open_fs_block_storage = new librevault::OpenFSBlockStorage(argv[1], "/home/gamepad/.librevault/dir.db", key);
-	open_fs_block_storage->create_index();
-	delete open_fs_block_storage;
+	auto fs_block_storage = new librevault::syncfs::FSBlockStorage(argv[1], key);
+	fs_block_storage->create_index();
+	delete fs_block_storage;
 
 	// NodeDB part
 	boost::property_tree::ptree pt;

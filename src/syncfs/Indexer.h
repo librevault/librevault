@@ -17,7 +17,8 @@
 #define SRC_SYNCFS_INDEXER_H_
 
 #include "MetaStorage.h"
-#include "FileMeta.pb.h"
+#include "Meta.pb.h"
+#include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 
 namespace librevault {

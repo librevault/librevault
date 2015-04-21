@@ -24,6 +24,7 @@
 namespace librevault {
 namespace syncfs {
 
+class FSBlockStorage;
 class EncFSBlockStorage {
 	FSBlockStorage* parent;
 

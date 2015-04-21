@@ -16,6 +16,7 @@
 #include "Indexer.h"
 #include "FSBlockStorage.h"
 #include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include <cryptodiff.h>
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -76,14 +77,14 @@ Meta Indexer::make_created_Meta(const fs::path& relpath, bool without_filemap){
 }
 
 Meta Indexer::make_updated_Meta(const fs::path& relpath){
-	Meta meta = parent->meta_storage->get_Meta(relpath);
+	Meta meta = parent->meta_storage->get_Meta(relpath).meta;
 
 	auto new_meta = make_created_Meta(relpath, true);	// Generating new Meta without FileMap.
 
 	// Updating FileMap
 	cryptodiff::FileMap new_filemap(parent->get_aes_key());
 	new_filemap.from_string(meta.filemap().SerializeAsString());
-	auto updated_file = fs::ifstream(fs::absolute(relpath, parent->open_path), std::ios_base::binary);
+	fs::ifstream updated_file(fs::absolute(relpath, parent->open_path), std::ios_base::binary);
 	new_filemap.update(updated_file);
 
 	meta.MergeFrom(new_meta);
@@ -95,7 +96,7 @@ Meta Indexer::make_deleted_Meta(const fs::path& relpath){
 	Meta meta;
 	meta.set_type(Meta_FileType_DELETED);
 
-	Meta meta_old = parent->meta_storage->get_Meta(relpath);
+	Meta meta_old = parent->meta_storage->get_Meta(relpath).meta;
 
 	meta.set_encpath(meta_old.encpath());
 	meta.set_encpath_iv(meta_old.encpath_iv());
@@ -131,7 +132,7 @@ void Indexer::update_index() {
 		sql_query.finalize();
 
 		if(id){
-			update_index_file(path);
+			update_index_file(dir_entry_it->path());
 			parent->directory_db->exec("DELETE FROM unupdated_files WHERE id=:id;", {
 					{":id", id}
 			});
@@ -151,6 +152,9 @@ void Indexer::update_index() {
 void Indexer::create_index_file(const fs::path& relpath){
 	auto meta = make_created_Meta(relpath);
 	parent->meta_storage->put_Meta(make_signature(meta));
+	parent->directory_db->exec("UPDATE openfs SET assembled=1 WHERE fileid IN (SELECT id FROM files WHERE path=:path)", {
+			{":path", relpath.generic_string()}
+	});
 
 	BOOST_LOG_TRIVIAL(debug) << "Created index entry. Path=" << relpath << " Type=" << make_filetype_string(meta.type());
 }
@@ -170,20 +174,20 @@ void Indexer::delete_index_file(const fs::path& relpath){
 }
 
 MetaStorage::SignedMeta Indexer::make_signature(const Meta& meta){
-	return std::vector<uint8_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+	return {meta, std::vector<uint8_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})};
 }
 
 boost::optional<fs::path> Indexer::make_relpath(const fs::path& path) const {
 	fs::path rel_to = parent->open_path;
-	path = fs::absolute(path);
+	auto abspath = fs::absolute(path);
 
 	fs::path relpath;
-	auto path_elem_it = path.begin();
+	auto path_elem_it = abspath.begin();
 	for(auto dir_elem : rel_to){
 		if(dir_elem != *(path_elem_it++))
 			return boost::none;
 	}
-	for(; path_elem_it != path.end(); path_elem_it++){
+	for(; path_elem_it != abspath.end(); path_elem_it++){
 		if(*path_elem_it == "." || *path_elem_it == "..")
 			return boost::none;
 		relpath /= *path_elem_it;

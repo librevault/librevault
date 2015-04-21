@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "EncFSBlockStorage.h"
+#include "FSBlockStorage.h"
 #include <boost/filesystem/fstream.hpp>
 
 namespace librevault {
@@ -24,7 +25,7 @@ EncFSBlockStorage::EncFSBlockStorage(FSBlockStorage* parent) : parent(parent) {}
 EncFSBlockStorage::~EncFSBlockStorage() {}
 
 fs::path EncFSBlockStorage::make_encblock_path(const crypto::StrongHash& block_hash){
-	return fs::canonical(parent->system_path / crypto::to_base32(block_hash.data(), block_hash.size()));
+	return parent->system_path / crypto::to_base32(block_hash.data(), block_hash.size());
 }
 
 bool EncFSBlockStorage::verify_encblock(const crypto::StrongHash& block_hash, const blob& data){
@@ -53,10 +54,14 @@ void EncFSBlockStorage::put_encblock(const crypto::StrongHash& block_hash, const
 	auto block_path = make_encblock_path(block_hash);
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
+
+	parent->directory_db->exec("UPDATE blocks SET in_encfs=1 WHERE encrypted_hash=:encrypted_hash;", {{":encrypted_hash", block_hash}});
 }
 
 void EncFSBlockStorage::remove_encblock(const crypto::StrongHash& block_hash){
 	fs::remove(make_encblock_path(block_hash));
+
+	parent->directory_db->exec("UPDATE blocks SET in_encfs=0 WHERE encrypted_hash=:encrypted_hash;", {{":encrypted_hash", block_hash}});
 }
 
 } /* namespace syncfs */

@@ -116,6 +116,8 @@ void MetaStorage::remove_Meta(const fs::path& relpath){
 }
 
 void MetaStorage::put_Meta(const SignedMeta& meta) {
+	parent->directory_db->exec("SAVEPOINT put_Meta;");
+
 	std::vector<uint8_t> meta_blob(meta.meta.ByteSize());
 	meta.meta.SerializeToArray(meta_blob.data(), meta_blob.size());
 
@@ -157,6 +159,8 @@ void MetaStorage::put_Meta(const SignedMeta& meta) {
 
 		offset += block.blocksize();
 	}
+
+	parent->directory_db->exec("RELEASE put_Meta;");
 
 	BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << (have_path ? std::string("\"") + path + "\"" : crypto::to_base32((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size()));
 }

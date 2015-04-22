@@ -13,16 +13,29 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-syntax = "proto2";
-package librevault;
+#ifndef SRC_SYNCFS_SYNCMANAGER_H_
+#define SRC_SYNCFS_SYNCMANAGER_H_
 
-message AccessLevel {
-	optional string name = 1;
-	optional bytes aes_key = 2;
+#include "Directory.h"
+#include "../../contrib/dir_monitor/include/dir_monitor.hpp"
 
-	repeated AccessLevel nested_levels = 3;
-}
+namespace librevault {
+namespace sync {
 
-message Resource {
-	repeated AccessLevel access_levels = 1;
-}
+class SyncManager {
+	boost::asio::io_service& io_service;
+	boost::asio::dir_monitor dir_monitor;
+
+	std::set<std::shared_ptr<Directory>> directories;
+
+public:
+	SyncManager(boost::asio::io_service& io_service);
+	virtual ~SyncManager();
+
+	void add_directory(std::shared_ptr<Directory> directory);
+};
+
+} /* namespace sync */
+} /* namespace librevault */
+
+#endif /* SRC_SYNCFS_SYNCMANAGER_H_ */

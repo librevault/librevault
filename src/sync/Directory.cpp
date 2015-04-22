@@ -13,16 +13,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-syntax = "proto2";
-package librevault;
+#include "Directory.h"
 
-message AccessLevel {
-	optional string name = 1;
-	optional bytes aes_key = 2;
+namespace librevault {
+namespace sync {
 
-	repeated AccessLevel nested_levels = 3;
+Directory::Directory(const fs::path& directory_path) : directory_path(directory_path), storage(directory_path) {
+	max_secret = '0';
+}
+Directory::~Directory() {}
+
+void Directory::set_Secret(const Secret& secret) {
+	max_secret = secret.type;
+	storage.set_aes_key();
 }
 
-message Resource {
-	repeated AccessLevel access_levels = 1;
-}
+} /* namespace sync */
+} /* namespace librevault */

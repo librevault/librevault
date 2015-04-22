@@ -13,16 +13,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-syntax = "proto2";
-package librevault;
+#include "SyncManager.h"
 
-message AccessLevel {
-	optional string name = 1;
-	optional bytes aes_key = 2;
+namespace librevault {
+namespace sync {
 
-	repeated AccessLevel nested_levels = 3;
+SyncManager::SyncManager(boost::asio::io_service& io_service) : io_service(io_service), dir_monitor(io_service) {}
+SyncManager::~SyncManager() {}
+
+void SyncManager::add_directory(std::shared_ptr<Directory> directory) {
+	/*dir_monitor.add_directory(argv[1]);
+	dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
+				if(ev.type == boost::asio::dir_monitor_event::added){
+					cryptodiff::FileMap map(key);
+					std::ifstream istream(ev.path.c_str(), std::ios_base::in | std::ios_base::binary);
+					map.create(istream);
+				}
+
+				std::cout << ev << std::endl;
+			});*/
 }
 
-message Resource {
-	repeated AccessLevel access_levels = 1;
-}
+} /* namespace sync */
+} /* namespace librevault */

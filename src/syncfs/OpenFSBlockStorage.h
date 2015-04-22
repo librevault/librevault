@@ -16,9 +16,9 @@
 #ifndef SRC_SYNCFS_OPENFSBLOCKSTORAGE_H_
 #define SRC_SYNCFS_OPENFSBLOCKSTORAGE_H_
 
-#include "syncfs.h"
 #include "../../contrib/cryptowrappers/cryptowrappers.h"
 #include <boost/filesystem.hpp>
+#include "../types.h"
 
 namespace librevault {
 namespace syncfs {

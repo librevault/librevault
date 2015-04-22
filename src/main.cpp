@@ -13,8 +13,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include "../contrib/dir_monitor/include/dir_monitor.hpp"
 #include "nodedb/NodeDB.h"
 
 #include <cryptodiff.h>
@@ -35,19 +33,6 @@ int main(int argc, char** argv){
 	std::array<uint8_t, 32> key; std::copy(key_c, key_c+32, &*key.begin());
 
 	boost::asio::io_service ios;
-
-	// Directory monitor part
-	boost::asio::dir_monitor dir_monitor(ios);
-	dir_monitor.add_directory(argv[1]);
-	/*dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
-		if(ev.type == boost::asio::dir_monitor_event::added){
-			cryptodiff::FileMap map(key);
-			std::ifstream istream(ev.path.c_str(), std::ios_base::in | std::ios_base::binary);
-			map.create(istream);
-		}
-
-		std::cout << ev << std::endl;
-	});*/
 
 	// OpenBlockStorage part
 	auto fs_block_storage = new librevault::syncfs::FSBlockStorage(argv[1], key);

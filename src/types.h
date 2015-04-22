@@ -13,19 +13,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SRC_SYNCFS_SYNCFS_H_
-#define SRC_SYNCFS_SYNCFS_H_
+#ifndef SRC_TYPES_H_
+#define SRC_TYPES_H_
 
 #include <boost/filesystem.hpp>
 #include <vector>
 
 namespace librevault {
-namespace syncfs {
 
 namespace fs = boost::filesystem;
 using blob = std::vector<uint8_t>;
 
-} /* namespace syncfs */
 } /* namespace librevault */
 
-#endif /* SRC_SYNCFS_SYNCFS_H_ */
+#endif /* SRC_TYPES_H_ */

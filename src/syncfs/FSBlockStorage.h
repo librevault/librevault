@@ -21,8 +21,8 @@
 #include "EncFSBlockStorage.h"
 #include "OpenFSBlockStorage.h"
 
-#include "syncfs.h"
 #include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../types.h"
 
 namespace librevault {
 namespace syncfs {

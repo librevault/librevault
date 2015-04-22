@@ -16,10 +16,10 @@
 #ifndef SRC_SYNCFS_ENCFSBLOCKSTORAGE_H_
 #define SRC_SYNCFS_ENCFSBLOCKSTORAGE_H_
 
-#include "syncfs.h"
 #include "Meta.pb.h"
 #include "../../contrib/cryptowrappers/cryptowrappers.h"
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
+#include "../types.h"
 
 namespace librevault {
 namespace syncfs {

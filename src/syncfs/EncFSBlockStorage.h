@@ -17,7 +17,7 @@
 #define SRC_SYNCFS_ENCFSBLOCKSTORAGE_H_
 
 #include "Meta.pb.h"
-#include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../../contrib/crypto/BinaryArray.h"
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 #include "../types.h"
 
@@ -28,17 +28,17 @@ class FSBlockStorage;
 class EncFSBlockStorage {
 	FSBlockStorage* parent;
 
-	fs::path make_encblock_path(const crypto::StrongHash& block_hash);
+	fs::path make_encblock_path(const crypto::BinaryArray& block_hash);
 public:
 	EncFSBlockStorage(FSBlockStorage* parent);
 	virtual ~EncFSBlockStorage();
 
-	bool verify_encblock(const crypto::StrongHash& block_hash, const blob& data);
+	bool verify_encblock(const crypto::BinaryArray& block_hash, const blob& data);
 
-	bool have_encblock(const crypto::StrongHash& block_hash);
-	blob get_encblock(const crypto::StrongHash& block_hash);
-	void put_encblock(const crypto::StrongHash& block_hash, const blob& data);
-	void remove_encblock(const crypto::StrongHash& block_hash);
+	bool have_encblock(const crypto::BinaryArray& block_hash);
+	blob get_encblock(const crypto::BinaryArray& block_hash);
+	void put_encblock(const crypto::BinaryArray& block_hash, const blob& data);
+	void remove_encblock(const crypto::BinaryArray& block_hash);
 };
 
 } /* namespace syncfs */

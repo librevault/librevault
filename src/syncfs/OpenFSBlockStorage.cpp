@@ -17,6 +17,7 @@
 #include "FSBlockStorage.h"
 
 #include "Meta.pb.h"
+#include "../../contrib/crypto/AES_CBC.h"
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/log/trivial.hpp>
@@ -29,19 +30,19 @@ namespace syncfs {
 OpenFSBlockStorage::OpenFSBlockStorage(FSBlockStorage* parent) : parent(parent) {}
 OpenFSBlockStorage::~OpenFSBlockStorage() {}
 
-std::pair<blob, blob> OpenFSBlockStorage::get_both_blocks(const crypto::StrongHash& block_hash){
+std::pair<blob, blob> OpenFSBlockStorage::get_both_blocks(const crypto::BinaryArray& block_hash){
 	auto sql_result = parent->directory_db->exec("SELECT blocks.blocksize, blocks.iv, files.path, openfs.offset FROM blocks "
 			"LEFT JOIN openfs ON blocks.id = openfs.blockid "
 			"LEFT JOIN files ON openfs.fileid = files.id "
 			"WHERE blocks.encrypted_hash=:encrypted_hash", {
-					{":encrypted_hash", block_hash}
+					{":encrypted_hash", (blob)block_hash}
 	});
 
 	for(auto row : sql_result){
-		uint64_t blocksize	= (int64_t)row[0];
-		crypto::IV iv		= row[1];
-		auto filepath		= fs::absolute(fs::path(row.at(2).as_text()), parent->open_path);
-		uint64_t offset		= row[3].as_int();
+		uint64_t blocksize		= (int64_t)row[0];
+		crypto::BinaryArray iv	= row[1].as_blob();
+		auto filepath			= fs::absolute(fs::path(row.at(2).as_text()), parent->open_path);
+		uint64_t offset			= row[3].as_int();
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
 		blob block(blocksize);
@@ -51,7 +52,7 @@ std::pair<blob, blob> OpenFSBlockStorage::get_both_blocks(const crypto::StrongHa
 			ifs.seekg(offset);
 			ifs.read(reinterpret_cast<char*>(block.data()), blocksize);
 
-			blob encblock = crypto::encrypt(block.data(), block.size(), parent->get_aes_key(), iv);
+			blob encblock = crypto::AES_CBC(parent->get_aes_key(), iv).encrypt(block);
 			// Check
 			if(parent->encfs_block_storage->verify_encblock(block_hash, block)){
 				return {block, encblock};
@@ -61,11 +62,11 @@ std::pair<blob, blob> OpenFSBlockStorage::get_both_blocks(const crypto::StrongHa
 	throw parent->NoSuchBlock;
 }
 
-blob OpenFSBlockStorage::get_encblock(const crypto::StrongHash& block_hash) {
+blob OpenFSBlockStorage::get_encblock(const crypto::BinaryArray& block_hash) {
 	return get_both_blocks(block_hash).second;
 }
 
-blob OpenFSBlockStorage::get_block(const crypto::StrongHash& block_hash) {
+blob OpenFSBlockStorage::get_block(const crypto::BinaryArray& block_hash) {
 	return get_both_blocks(block_hash).first;
 }
 
@@ -88,9 +89,9 @@ void OpenFSBlockStorage::assemble_file(const fs::path& relpath, bool delete_bloc
 				"ORDER BY blocks.[offset];", {
 						{":path", relpath.generic_string()}
 				});
-		std::list<std::pair<crypto::StrongHash, crypto::IV>> write_blocks;
+		std::list<std::pair<crypto::BinaryArray, crypto::BinaryArray>> write_blocks;	// StrongHash, IV
 		for(auto row : blocks){
-			write_blocks.push_back({row[0], row[1]});
+			write_blocks.push_back({row[0].as_blob(), row[1].as_blob()});
 		}
 
 		fs::ofstream ofs(parent->system_path / "assembled.part", std::ios::out | std::ios::trunc | std::ios::binary);
@@ -134,9 +135,9 @@ void OpenFSBlockStorage::disassemble_file(const fs::path& relpath, bool delete_f
 					{":path", relpath.generic_string()}
 			});
 
-	std::list<crypto::StrongHash> block_hashes_list;
+	std::list<crypto::BinaryArray> block_hashes_list;
 	for(auto row : blocks_data){
-		block_hashes_list.push_back(row[0]);
+		block_hashes_list.push_back(row[0].as_blob());
 	}
 
 	for(auto block_hash : block_hashes_list){

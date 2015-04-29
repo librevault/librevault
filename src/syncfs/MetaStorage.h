@@ -17,7 +17,7 @@
 #define SRC_SYNCFS_METASTORAGE_H_
 
 #include "Meta.pb.h"
-#include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../../contrib/crypto/BinaryArray.h"
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 #include "../types.h"
 
@@ -38,7 +38,7 @@ public:
 	MetaStorage(FSBlockStorage* parent);
 	virtual ~MetaStorage();
 
-	void set_key(const crypto::Key& aes_key);
+	void set_key(const crypto::BinaryArray& aes_key);
 	void reset_key();
 
 	// Encrypted path operations

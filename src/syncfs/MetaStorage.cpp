@@ -15,6 +15,8 @@
  */
 #include "MetaStorage.h"
 #include "FSBlockStorage.h"
+#include "../../contrib/crypto/AES_CBC.h"
+#include "../../contrib/crypto/Base32.h"
 #include <boost/log/trivial.hpp>
 
 namespace librevault {
@@ -26,13 +28,13 @@ MetaStorage::MetaStorage(FSBlockStorage* parent) : parent(parent) {
 
 MetaStorage::~MetaStorage() {}
 
-void MetaStorage::set_key(const crypto::Key& aes_key){
+void MetaStorage::set_key(const crypto::BinaryArray& aes_key){
 	std::map<int64_t, std::string> paths_to_update;
 	auto query_result = parent->directory_db->exec("SELECT id, encpath, encpath_iv FROM files WHERE path=NULL;");
 	for(auto row : query_result){
 		auto encpath = row[1].as_blob();
-		auto path = crypto::decrypt(encpath.data(), encpath.size(), aes_key, row[2].as_blob<crypto::AES_BLOCKSIZE>());
-		paths_to_update.insert(std::make_pair(row[0].as_int(), std::string(path.begin(), path.end())));
+		std::string path = crypto::AES_CBC(aes_key, row[2].as_blob()).encrypt(encpath);
+		paths_to_update.insert({row[0].as_int(), path});
 	}
 
 	for(auto path_to_update : paths_to_update){
@@ -80,7 +82,7 @@ void MetaStorage::remove_Meta(const blob& encpath){
 			{":encpath", encpath},
 	});
 
-	BOOST_LOG_TRIVIAL(debug) << "Removed Meta of " << crypto::to_base32(encpath.data(), encpath.size());
+	BOOST_LOG_TRIVIAL(debug) << "Removed Meta of " << (std::string)crypto::Base32().to(encpath);
 }
 
 // Non-encrypted path operations
@@ -122,11 +124,8 @@ void MetaStorage::put_Meta(const SignedMeta& meta) {
 	meta.meta.SerializeToArray(meta_blob.data(), meta_blob.size());
 
 	std::string path;
-	if(have_path){
-		crypto::IV encpath_iv; std::copy(meta.meta.encpath_iv().begin(), meta.meta.encpath_iv().end(), encpath_iv.data());
-		auto path_v = crypto::decrypt((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size(), parent->get_aes_key(), encpath_iv);
-		path.assign(path_v.begin(), path_v.end());
-	}
+	if(have_path)
+		path = (std::string)crypto::AES_CBC(parent->get_aes_key(), meta.meta.encpath_iv()).decrypt(meta.meta.encpath());
 
 	parent->directory_db->exec("INSERT OR REPLACE INTO files (path, encpath, encpath_iv, mtime, meta, signature) VALUES (:path, :encpath, :encpath_iv, :mtime, :meta, :signature);", {
 			{":path", have_path ? SQLValue(path) : SQLValue()},
@@ -162,7 +161,7 @@ void MetaStorage::put_Meta(const SignedMeta& meta) {
 
 	parent->directory_db->exec("RELEASE put_Meta;");
 
-	BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << (have_path ? std::string("\"") + path + "\"" : crypto::to_base32((const uint8_t*)meta.meta.encpath().data(), meta.meta.encpath().size()));
+	BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << (have_path ? std::string("\"") + path + "\"" : (std::string)crypto::Base32().to(meta.meta.encpath()));
 }
 
 std::list<MetaStorage::SignedMeta> MetaStorage::get_custom(const std::string& sql, std::map<std::string, SQLValue> values){

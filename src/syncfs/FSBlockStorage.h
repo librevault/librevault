@@ -21,7 +21,7 @@
 #include "EncFSBlockStorage.h"
 #include "OpenFSBlockStorage.h"
 
-#include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../../contrib/crypto/BinaryArray.h"
 #include "../types.h"
 
 namespace librevault {
@@ -43,7 +43,7 @@ class FSBlockStorage {
 	fs::path open_path;
 
 	// Encryption
-	crypto::Key aes_key;
+	crypto::BinaryArray aes_key;
 public:
 	enum Errors {
 		NoSuchMeta,
@@ -53,8 +53,8 @@ public:
 
 	void init_db();
 public:
-	FSBlockStorage(const fs::path& dirpath);
-	FSBlockStorage(const fs::path& dirpath, const crypto::Key& aes_key);
+	FSBlockStorage(fs::path dirpath);
+	FSBlockStorage(fs::path dirpath, crypto::BinaryArray aes_key);
 	virtual ~FSBlockStorage();
 
 	// Index manipulators
@@ -66,15 +66,15 @@ public:
 	void delete_index_file(const fs::path& relpath);
 
 	// Block manipulators
-	blob get_block(const crypto::StrongHash& block_hash);
-	blob get_encblock(const crypto::StrongHash& block_hash);
+	blob get_block(const crypto::BinaryArray& block_hash);
+	blob get_encblock(const crypto::BinaryArray& block_hash);
 
-	void put_block(const crypto::StrongHash& block_hash, const blob& data);
-	void put_encblock(const crypto::StrongHash& block_hash, const blob& data);
+	void put_block(const crypto::BinaryArray& block_hash, const blob& data);
+	void put_encblock(const crypto::BinaryArray& block_hash, const blob& data);
 
 	// Getters
-	void set_aes_key(const crypto::Key& aes_key) {this->aes_key = aes_key;}
-	const crypto::Key& get_aes_key() const {return aes_key;}
+	void set_aes_key(crypto::BinaryArray aes_key) {this->aes_key = std::move(aes_key);}
+	const crypto::BinaryArray& get_aes_key() const {return aes_key;}
 };
 
 } /* namespace syncfs */

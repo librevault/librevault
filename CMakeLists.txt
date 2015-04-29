@@ -56,7 +56,10 @@ list(APPEND SRCS ${PROTO_COMMON_HEADERS})
 # SQLite
 #list(APPEND SRCS "contrib/sqlite/sqlite3.c")
 #list(APPEND SRCS "contrib/sqlite/sqlite3.h")
-list(APPEND SRCS "contrib/lvsqlite3/SQLiteWrapper.cpp")
+file(GLOB_RECURSE CRYPTO_SRCS "contrib/crypto/*")
+list(APPEND SRCS ${CRYPTO_SRCS})
+file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/lvsqlite3/*")
+list(APPEND SRCS ${LVSQLITE3_SRCS})
 
 include_directories("src/include")
 

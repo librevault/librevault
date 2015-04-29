@@ -16,7 +16,7 @@
 #ifndef SRC_SYNCFS_OPENFSBLOCKSTORAGE_H_
 #define SRC_SYNCFS_OPENFSBLOCKSTORAGE_H_
 
-#include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../../contrib/crypto/BinaryArray.h"
 #include <boost/filesystem.hpp>
 #include "../types.h"
 
@@ -27,13 +27,13 @@ class FSBlockStorage;
 class OpenFSBlockStorage {
 	FSBlockStorage* parent;
 
-	std::pair<blob, blob> get_both_blocks(const crypto::StrongHash& block_hash);	// Returns std::pair(plaintext, encrypted)
+	std::pair<blob, blob> get_both_blocks(const crypto::BinaryArray& block_hash);	// Returns std::pair(plaintext, encrypted)
 public:
 	OpenFSBlockStorage(FSBlockStorage* parent);
 	virtual ~OpenFSBlockStorage();
 
-	blob get_encblock(const crypto::StrongHash& block_hash);
-	blob get_block(const crypto::StrongHash& block_hash);
+	blob get_encblock(const crypto::BinaryArray& block_hash);
+	blob get_block(const crypto::BinaryArray& block_hash);
 
 	// File assembler
 	bool can_assemble_file(const fs::path& relpath);	// Returns whether it is worth trying to assemble file or not. It does not ensure, that file CAN be assembled.

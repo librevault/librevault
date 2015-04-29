@@ -14,12 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "FSBlockStorage.h"
+#include "../../contrib/crypto/AES_CBC.h"
 
 namespace librevault {
 namespace syncfs {
 
-FSBlockStorage::FSBlockStorage(const fs::path& dirpath) {
-	open_path = dirpath;
+FSBlockStorage::FSBlockStorage(fs::path dirpath) : open_path(std::move(dirpath)) {
 	system_dirname = ".librevault";
 	system_path = open_path / system_dirname;
 
@@ -34,8 +34,8 @@ FSBlockStorage::FSBlockStorage(const fs::path& dirpath) {
 	openfs_block_storage = std::make_shared<OpenFSBlockStorage>(this);
 }
 
-FSBlockStorage::FSBlockStorage(const fs::path& dirpath, const crypto::Key& aes_key) : FSBlockStorage(dirpath) {
-	this->aes_key = aes_key;
+FSBlockStorage::FSBlockStorage(fs::path dirpath, crypto::BinaryArray aes_key) : FSBlockStorage(std::move(dirpath)) {
+	this->aes_key = std::move(aes_key);
 }
 
 FSBlockStorage::~FSBlockStorage() {}
@@ -60,18 +60,18 @@ void FSBlockStorage::update_index(){
 	indexer->update_index();
 }
 
-blob FSBlockStorage::get_block(const crypto::StrongHash& block_hash) {
+blob FSBlockStorage::get_block(const crypto::BinaryArray& block_hash) {
 	try {
 		auto encblock = encfs_block_storage->get_encblock(block_hash);
 		auto sql_result = directory_db->exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash LIMIT 1;");
-		auto block = crypto::decrypt(encblock.data(), encblock.size(), aes_key, sql_result.begin()[0]);
+		auto block = crypto::AES_CBC(aes_key, sql_result.begin()[0].as_blob()).decrypt(encblock);
 		return block;
 	}catch(const Errors& e){
 		return openfs_block_storage->get_block(block_hash);
 	}
 }
 
-blob FSBlockStorage::get_encblock(const crypto::StrongHash& block_hash) {
+blob FSBlockStorage::get_encblock(const crypto::BinaryArray& block_hash) {
 	try {
 		return encfs_block_storage->get_encblock(block_hash);
 	}catch(const Errors& e){
@@ -79,18 +79,18 @@ blob FSBlockStorage::get_encblock(const crypto::StrongHash& block_hash) {
 	}
 }
 
-void FSBlockStorage::put_block(const crypto::StrongHash& block_hash, const blob& data) {
+void FSBlockStorage::put_block(const crypto::BinaryArray& block_hash, const blob& data) {
 	auto sql_result = directory_db->exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash", {
-			{":encrypted_hash", block_hash}
+			{":encrypted_hash", (blob)block_hash}
 	});
-	crypto::IV iv = sql_result.begin()[0];
+	crypto::BinaryArray iv = sql_result.begin()[0].as_blob();
 	sql_result.finalize();
-	auto encblock = crypto::encrypt(data.data(), data.size(), aes_key, iv);
+	auto encblock = crypto::AES_CBC(aes_key, iv).encrypt(data);
 
 	put_encblock(block_hash, encblock);
 }
 
-void FSBlockStorage::put_encblock(const crypto::StrongHash& block_hash, const blob& data) {
+void FSBlockStorage::put_encblock(const crypto::BinaryArray& block_hash, const blob& data) {
 	encfs_block_storage->put_encblock(block_hash, data);
 }
 

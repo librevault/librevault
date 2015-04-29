@@ -15,7 +15,7 @@
  */
 #include "Indexer.h"
 #include "FSBlockStorage.h"
-#include "../../contrib/cryptowrappers/cryptowrappers.h"
+#include "../../contrib/crypto/AES_CBC.h"
 #include <cryptodiff.h>
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
@@ -48,14 +48,14 @@ Meta Indexer::make_created_Meta(const fs::path& relpath, bool without_filemap){
 
 	// EncPath_IV
 	CryptoPP::AutoSeededRandomPool rng;
-	crypto::IV encpath_iv;
+	crypto::BinaryArray encpath_iv(16);
 	rng.GenerateBlock(encpath_iv.data(), encpath_iv.size());
-	meta.set_encpath_iv(encpath_iv.data(), encpath_iv.size());
+	meta.set_encpath_iv((std::string)encpath_iv);
 
 	// EncPath
 	std::string portable_path = relpath.generic_string();
-	auto encpath = crypto::encrypt(reinterpret_cast<const uint8_t*>(portable_path.data()), portable_path.size(), parent->get_aes_key(), encpath_iv);
-	meta.set_encpath(encpath.data(), encpath.size());
+	auto encpath = crypto::AES_CBC(parent->get_aes_key(), encpath_iv).encrypt(portable_path);
+	meta.set_encpath((std::string)encpath);
 
 	// mtime
 	meta.set_mtime(fs::last_write_time(abspath));
@@ -181,7 +181,7 @@ void Indexer::delete_index_file(const fs::path& relpath){
 }
 
 MetaStorage::SignedMeta Indexer::make_signature(const Meta& meta){
-	return {meta, std::vector<uint8_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})};
+	return {meta, std::vector<uint8_t>({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15})};	// TODO: Signature
 }
 
 boost::optional<fs::path> Indexer::make_relpath(const fs::path& path) const {

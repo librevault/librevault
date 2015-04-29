@@ -18,6 +18,7 @@
 
 #include "MetaStorage.h"
 #include "Meta.pb.h"
+#include "../../contrib/crypto/BinaryArray.h"
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 

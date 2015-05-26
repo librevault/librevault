@@ -22,7 +22,6 @@ SyncManager::SyncManager(boost::asio::io_service& io_service) : io_service(io_se
 SyncManager::~SyncManager() {}
 
 void SyncManager::add_directory(std::shared_ptr<Directory> directory) {
-	/*dir_monitor.add_directory(argv[1]);
 	dir_monitor.async_monitor([&](const boost::system::error_code& ec, boost::asio::dir_monitor_event ev){
 				if(ev.type == boost::asio::dir_monitor_event::added){
 					cryptodiff::FileMap map(key);
@@ -31,7 +30,7 @@ void SyncManager::add_directory(std::shared_ptr<Directory> directory) {
 				}
 
 				std::cout << ev << std::endl;
-			});*/
+			});
 }
 
 } /* namespace sync */

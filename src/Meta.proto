@@ -19,8 +19,9 @@ package librevault;
 
 message Meta {
 	// These I'd mark as required
-	optional bytes encpath = 1;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
-	optional bytes encpath_iv = 2;	// IV for AES-256-CBC encrtypted encpath.
+	optional bytes path_hmac = 1;
+	optional bytes encpath = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
+	optional bytes encpath_iv = 3;	// IV for AES-256-CBC encrypted encpath.
 
 	enum FileType {
 		FILE = 0;
@@ -29,12 +30,12 @@ message Meta {
 
 		DELETED = 255;
 	}
-	optional FileType type = 3 [default = FILE];
-	optional int64 mtime = 4;
+	optional FileType type = 4 [default = FILE];
+	optional int64 mtime = 5;
 
 	// These are optional (I mean, conditional)
-	optional cryptodiff.internals.EncFileMap_s filemap = 5;
 	optional bytes symlink_to = 6;
+	optional uint32 windows_attrib = 7;
 
-	optional uint32 windows_attrib = 16;
+	optional cryptodiff.internals.EncFileMap_s filemap = 16;
 }

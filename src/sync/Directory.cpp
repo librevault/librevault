@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,14 +18,10 @@
 namespace librevault {
 namespace sync {
 
-Directory::Directory(const fs::path& directory_path) : directory_path(directory_path), storage(directory_path) {
-	max_secret = '0';
-}
-Directory::~Directory() {}
+Directory::Directory(fs::path directory_path, Secret secret) : path(std::move(path)), secret(std::move(secret)) {}
 
-void Directory::set_Secret(const Secret& secret) {
-	max_secret = secret.type;
-	storage.set_aes_key();
+Directory::~Directory() {
+	// TODO Auto-generated destructor stub
 }
 
 } /* namespace sync */

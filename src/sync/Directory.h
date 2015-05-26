@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,41 +13,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SRC_SYNC_DIRECTORY_H_
-#define SRC_SYNC_DIRECTORY_H_
-
+#pragma once
 #include "../types.h"
-#include <boost/optional.hpp>
 
 namespace librevault {
 namespace sync {
 
 class Directory {
-	fs::path directory_path;
-	syncfs::FSBlockStorage storage;
-
-	struct Secret {
-		const std::array<char, 4> magic = {'S', 'Y', 'N', 'C'};	// 4 bytes
-		enum Type : char {
-			ReadWrite = 'A',
-			ReadOnly = 'B',
-			Untrusted = 'C'
-		} type;	// 1 byte
-		std::array<char, crypto::AES_KEYSIZE*2> key;	// 64 bytes, as AES-32 key will be 64 bytes in Base32.
-		char check_digit;	// 1 byte
-	};	// 70 bytes
-
-	Secret download_secret;
-
-	Secret::Type max_secret;
+	fs::path path;
+	Secret secret;
 public:
-	Directory(const fs::path& directory_path);
+	Directory(fs::path path, Secret secret);
 	virtual ~Directory();
 
-	void set_Secret(const Secret& secret);
+	const fs::path& get_path() const {return path;}
 };
 
 } /* namespace sync */
 } /* namespace librevault */
-
-#endif /* SRC_SYNC_DIRECTORY_H_ */

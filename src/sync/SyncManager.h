@@ -17,6 +17,7 @@
 #define SRC_SYNCFS_SYNCMANAGER_H_
 
 #include "Directory.h"
+#include "Secret.h"
 #include "../../contrib/dir_monitor/include/dir_monitor.hpp"
 
 namespace librevault {
@@ -26,13 +27,14 @@ class SyncManager {
 	boost::asio::io_service& io_service;
 	boost::asio::dir_monitor dir_monitor;
 
-	std::set<std::shared_ptr<Directory>> directories;
+	std::unordered_multimap<Secret, std::shared_ptr<Directory>> directories;
 
 public:
 	SyncManager(boost::asio::io_service& io_service);
 	virtual ~SyncManager();
 
 	void add_directory(std::shared_ptr<Directory> directory);
+	void remove_directory(std::shared_ptr<Directory> directory);
 };
 
 } /* namespace sync */

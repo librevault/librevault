@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,20 +14,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+
 #include "../types.h"
 
 namespace librevault {
-namespace sync {
+namespace syncfs {
 
-class Directory {
-	fs::path path;
-	Secret secret;
+class EncStorage {
+	const fs::path& block_path;
+
+	fs::path make_encblock_name(const blob& block_hash) const;
+	fs::path make_encblock_path(const blob& block_hash) const;
 public:
-	Directory(fs::path path, Secret secret);
-	virtual ~Directory();
+	EncStorage(const fs::path& block_path);
+	virtual ~EncStorage();
 
-	const fs::path& get_path() const {return path;}
+	bool verify_encblock(const blob& block_hash, const blob& data);
+
+	bool have_encblock(const blob& block_hash);
+	blob get_encblock(const blob& block_hash);
+	void put_encblock(const blob& block_hash, const blob& data);
+	void remove_encblock(const blob& block_hash);
 };
 
-} /* namespace sync */
+} /* namespace syncfs */
 } /* namespace librevault */

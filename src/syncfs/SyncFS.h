@@ -14,15 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../types.h"
-#include <Meta.pb.h>
-#include "../../contrib/lvsqlite3/SQLiteWrapper.h"
+#include "EncStorage.h"
+#include "OpenStorage.h"
 
-#include <boost/lockfree/queue.hpp>
+#include "../types.h"
+#include "Key.h"
+
 #include <boost/asio.hpp>
 
 #include <list>
-#include "Key.h"
 
 namespace librevault {
 namespace syncfs {
@@ -38,41 +38,51 @@ struct SignedMeta {
  * Thread safety: thread-safe after construction.
  */
 class SyncFS {
-	const Key key;
+	const Key key;	// We don't need to chec
 
-	fs::path open_path, db_path, block_path;
+	const fs::path open_path, db_path, block_path;
 
-	mutable std::shared_ptr<SQLiteDB> directory_db;
+	std::shared_ptr<SQLiteDB> directory_db;
 
+	// Boost asio io_service
 	std::shared_ptr<boost::asio::io_service> internal_io_service;
 	boost::asio::io_service::strand internal_io_strand;
 
 	boost::asio::io_service& external_io_service;
 	boost::asio::io_service::strand external_io_strand;	// We need this, as executing multiple SQLite statements (CrUD) is dangerous even is serialized mode.
+
+	// Components
+	std::unique_ptr<EncStorage> enc_storage;
+	std::unique_ptr<OpenStorage> open_storage;
 public:
 	class error : public std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
 	};
 	class no_such_meta : public error {
-		no_such_meta() : error("No such Meta"){}
+		no_such_meta() : error("Requested Meta not found"){}
+	};
+	class no_such_block : public error {
+		no_such_block() : error("Requested Block not found"){}
 	};
 
 // Methods
 private:
 	std::string make_Meta(const std::string& file_path);
 	SignedMeta sign(std::string meta) const;
+
+	std::list<SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
 public:
 	SyncFS(boost::asio::io_service& io_service, Key key,
 			fs::path open_path,
-			fs::path db_path = open_path / ".librevault" / "directory.db",
-			fs::path block_path = open_path / ".librevault");
+			fs::path block_path = open_path / ".librevault",
+			fs::path db_path = open_path / ".librevault" / "directory.db");
 	virtual ~SyncFS();
 
 	std::string make_portable_path(const fs::path& path) const;
 
 	// Indexing functions
-	void queue_index(const std::set<std::string> file_path);
-	void queue_index(const std::string& file_path){queue_index({file_path});};
+	void index(const std::set<std::string> file_path);
+	void index(const std::string& file_path){index({file_path});};
 
 	void wipe_index();
 
@@ -89,15 +99,12 @@ public:
 	std::set<std::string> get_index_file_list();
 
 	// Meta functions
-	void put_Meta(SignedMeta signed_meta);
-	void put_Meta(std::list<SignedMeta> signed_meta);
+	void put_Meta(std::list<SignedMeta> signed_meta_list);
+	void put_Meta(SignedMeta signed_meta){put_Meta(std::list<SignedMeta>{signed_meta});}
 
 	SignedMeta get_Meta(blob path_hmac);
 	std::list<SignedMeta> get_Meta(int64_t mtime);
 	std::list<SignedMeta> get_Meta();
-
-	bool have_Meta(blob path_hmac);
-	void remove_Meta(blob path_hmac);
 
 	// Block functions
 	blob get_block(const blob& block_hash);

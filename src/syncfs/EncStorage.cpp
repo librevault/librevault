@@ -40,8 +40,8 @@ fs::path EncStorage::make_encblock_path(const blob& block_hash) const {
 	return block_path / make_encblock_name(block_hash);
 }
 
-bool verify_encblock(const blob& block_hash, const blob& data){
-	return block_hash == crypto::SHA3(28).compute(data);
+bool EncStorage::verify_encblock(const blob& block_hash, const blob& data){
+	return crypto::BinaryArray(block_hash) == crypto::SHA3(28).compute(data);
 }
 
 bool EncStorage::have_encblock(const blob& block_hash){
@@ -59,7 +59,7 @@ blob EncStorage::get_encblock(const blob& block_hash){
 
 		return return_value;
 	}
-	throw SyncFS::no_such_block;
+	throw SyncFS::no_such_block();
 }
 
 void EncStorage::put_encblock(const blob& block_hash, const blob& data){

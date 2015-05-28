@@ -13,11 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SRC_TYPES_H_
-#define SRC_TYPES_H_
+#pragma once
 
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <vector>
+#include <cstdint>
 
 namespace librevault {
 
@@ -25,5 +26,3 @@ namespace fs = boost::filesystem;
 using blob = std::vector<uint8_t>;
 
 } /* namespace librevault */
-
-#endif /* SRC_TYPES_H_ */

@@ -18,6 +18,10 @@
 #include "EncStorage.h"
 #include "../types.h"
 
+#include "Key.h"
+#include "../../contrib/crypto/HMAC-SHA3.h"
+#include "../../contrib/lvsqlite3/SQLiteWrapper.h"
+
 namespace librevault {
 namespace syncfs {
 

@@ -20,6 +20,8 @@
 #include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/sha3.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/integer.h>
 
 using CryptoPP::ASN1::secp256r1;
 
@@ -27,47 +29,36 @@ namespace librevault {
 namespace syncfs {
 
 Key::Key() {
+	CryptoPP::AutoSeededRandomPool rng;
+	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
+	private_key.Initialize(rng, secp256r1());
+
+	cached_private_key.resize(private_key_size);
+	private_key.GetPrivateExponent().Encode(cached_private_key.data(), private_key_size, CryptoPP::Integer::UNSIGNED);
+
+	secret_s.append(1, (char)Owner);
+	secret_s.append(crypto::Base58().to(cached_private_key));
+	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
-Key::Key(Type type, std::vector<uint8_t> binary_part) : payload(std::move(binary_part)) {
+Key::Key(Type type, const std::vector<uint8_t>& binary_part) {
 	secret_s.append(1, type);
 	secret_s.append(crypto::Base58().to(binary_part));
 	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
-Key::Key(std::string secret_s) : secret_s(std::move(secret_s)) {
-	const std::string payload_s = secret_s.substr(1, this->secret_s.size()-2);
+Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
+	auto base58_payload = secret_s.substr(1, this->secret_s.size()-2);
+	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != getCheckChar()) throw format_error();
 
-	if(crypto::LuhnMod58(payload_s.begin(), payload_s.end()) != getCheckChar()) throw format_error();
-	payload = crypto::Base58().from(payload_s);
-
-	private_key.AccessGroupParameters().SetPointCompression(true);
-	public_key.AccessGroupParameters().SetPointCompression(true);
-	encryption_key.resize(CryptoPP::SHA3_256().DigestSize());
-
-	try {
-		switch(getType()){
-		case Owner:
-		case ReadWrite:
-			private_key.SetPrivateExponent(CryptoPP::Integer(payload.data(), payload.size()));
-			private_key.MakePublicKey(public_key);
-			CryptoPP::SHA3_256().CalculateDigest(encryption_key.data(), payload.data(), payload.size());
-			break;
-		case Download:
-			public_key.SetPublicElement(public_key.AccessGroupParameters().DecodeElement(payload.data(), true));
-			// no break
-		case ReadOnly:
-			encryption_key.assign(&payload[33], &*payload.end());
-			break;
-		default:
-			throw format_error();
-		}
-	}catch(CryptoPP::DL_BadElement& e){
-		throw crypto_error();
-	}
+	// It would be good to check private/public key for validity and throw crypto_error() here
 }
 
 Key::~Key() {}
+
+std::vector<uint8_t> Key::get_payload() const {
+	return crypto::Base58().from(secret_s.substr(1, this->secret_s.size()-2));
+}
 
 Key Key::derive(Type key_type){
 	if(key_type == getType()) return *this;
@@ -77,7 +68,7 @@ Key Key::derive(Type key_type){
 	case ReadWrite:
 		return Key(key_type, get_Private_Key());
 	case ReadOnly: {
-		std::vector<uint8_t> new_payload(65);
+		std::vector<uint8_t> new_payload(public_key_size+encryption_key_size);
 
 		auto public_key_s = get_Public_Key();
 		std::copy(public_key_s.begin(), public_key_s.end(), new_payload.begin());
@@ -94,35 +85,65 @@ Key Key::derive(Type key_type){
 	}
 }
 
-std::vector<uint8_t> Key::get_Private_Key() const {
+std::vector<uint8_t>& Key::get_Private_Key() const {
+	if(!cached_private_key.empty()) return cached_private_key;
+
 	switch(getType()){
 	case Owner:
 	case ReadWrite: {
-		std::vector<uint8_t> encoded_private_key(32);
-		private_key.GetPrivateExponent().Encode(encoded_private_key.data(), encoded_private_key.size(), CryptoPP::Integer::UNSIGNED);
-		return encoded_private_key;
+		cached_private_key = get_payload();
+		return cached_private_key;
 	}
 	default:
 		throw level_error();
 	}
 }
 
-std::vector<uint8_t> Key::get_Public_Key() const {
+std::vector<uint8_t>& Key::get_Encryption_Key() const {
+	if(!cached_encryption_key.empty()) return cached_encryption_key;
+
 	switch(getType()){
 	case Owner:
-	case ReadWrite:
+	case ReadWrite: {
+		CryptoPP::SHA3_256().CalculateDigest(cached_encryption_key.data(), get_Private_Key().data(), get_Private_Key().size());
+		return cached_encryption_key;
+	}
 	case ReadOnly: {
-		std::vector<uint8_t> encoded_public_key(public_key.GetGroupParameters().GetEncodedElementSize(true));
-		public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), encoded_public_key.data());
-		return encoded_public_key;
+		auto payload = get_payload();
+		cached_encryption_key.assign(&payload[public_key_size], &payload[public_key_size]+encryption_key_size);
+		return cached_encryption_key;
 	}
 	default:
 		throw level_error();
 	}
 }
 
-std::vector<uint8_t> Key::get_Encryption_Key() const {
-	return encryption_key;
+std::vector<uint8_t>& Key::get_Public_Key() const {
+	if(!cached_public_key.empty()) return cached_public_key;
+
+	switch(getType()){
+	case Owner:
+	case ReadWrite: {
+		CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
+		CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
+		private_key.SetPrivateExponent(CryptoPP::Integer(get_Private_Key().data(), get_Private_Key().size()));
+		private_key.MakePublicKey(public_key);
+
+		public_key.AccessGroupParameters().SetPointCompression(true);
+		cached_public_key.resize(public_key_size);
+		public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), cached_public_key.data());
+
+		return cached_public_key;
+	}
+	case ReadOnly:
+	case Download: {
+		std::vector<uint8_t> payload = get_payload();
+		cached_public_key.assign(&payload[0], &payload[0]+public_key_size);
+		return cached_public_key;
+	}
+	default:
+		throw level_error();
+	}
 }
 
 } /* namespace syncfs */

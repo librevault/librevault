@@ -23,6 +23,7 @@
 #include <boost/asio.hpp>
 
 #include <list>
+#include <set>
 
 namespace librevault {
 namespace syncfs {
@@ -56,12 +57,15 @@ class SyncFS {
 	std::unique_ptr<OpenStorage> open_storage;
 public:
 	class error : public std::runtime_error {
+	public:
 		error(const char* what) : std::runtime_error(what) {}
 	};
 	class no_such_meta : public error {
+	public:
 		no_such_meta() : error("Requested Meta not found"){}
 	};
 	class no_such_block : public error {
+	public:
 		no_such_block() : error("Requested Block not found"){}
 	};
 
@@ -74,8 +78,8 @@ private:
 public:
 	SyncFS(boost::asio::io_service& io_service, Key key,
 			fs::path open_path,
-			fs::path block_path = open_path / ".librevault",
-			fs::path db_path = open_path / ".librevault" / "directory.db");
+			fs::path block_path,
+			fs::path db_path);
 	virtual ~SyncFS();
 
 	std::string make_portable_path(const fs::path& path) const;

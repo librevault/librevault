@@ -70,7 +70,7 @@ blob OpenStorage::get_block(const blob& block_hash) {
 }
 
 void OpenStorage::assemble(bool delete_blocks){
-	auto raii_lock = SQLiteLock(directory_db);
+	auto raii_lock = SQLiteLock(directory_db.get());
 	/*directory_db->exec("SAVEPOINT assemble");
 	try {
 		auto blocks = directory_db->exec("SELECT files.path_hmac, openfs.[offset], blocks.encrypted_hash, blocks.iv "
@@ -111,7 +111,7 @@ void OpenStorage::assemble(bool delete_blocks){
 	}*/
 }
 
-void OpenStorage::disassemble(const std::string& file_path, bool delete_file = false){
+void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 	blob path_hmac = crypto::HMAC_SHA3_224(key.get_Encryption_Key()).to(file_path);
 
 	auto blocks_data = directory_db->exec("SELECT blocks.encrypted_hash "

@@ -17,6 +17,14 @@
 #include <Meta.pb.h>
 
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
+#include "../../contrib/crypto/AES_CBC.h"
+#include "../../contrib/crypto/Base32.h"
+
+// Cryptodiff
+#include <cryptodiff.h>
+
+// CryptoPP
+#include <cryptopp/osrng.h>
 
 // Boost
 #include <boost/log/trivial.hpp>
@@ -31,7 +39,8 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 				open_path(std::move(open_path)),
 				db_path(std::move(db_path)),
 				block_path(std::move(block_path)),
-				internal_io_service(std::shared_ptr(new boost::asio::io_service())),
+				internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())),
+				internal_io_strand(*internal_io_service),
 				external_io_strand(external_io_service){
 	BOOST_LOG_TRIVIAL(debug) << "Initializing SYNCFS";
 	BOOST_LOG_TRIVIAL(debug) << "Key level " << key.getType();
@@ -68,7 +77,7 @@ std::string SyncFS::make_Meta(const std::string& file_path){
 	// EncPath_IV
 	blob encpath_iv(16);
 	CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(encpath_iv.data(), encpath_iv.size());
-	meta.set_encpath_iv((std::string)encpath_iv);
+	meta.set_encpath_iv(encpath_iv.data(), encpath_iv.size());
 
 	// EncPath
 	auto encpath = crypto::AES_CBC(key.get_Encryption_Key(), encpath_iv).encrypt(file_path);
@@ -187,9 +196,9 @@ std::set<std::string> SyncFS::get_index_file_list(){
 }
 
 void SyncFS::put_Meta(std::list<SignedMeta> signed_meta_list) {
-	auto raii_lock = SQLiteLock(directory_db);
+	auto raii_lock = SQLiteLock(directory_db.get());
 	for(auto signed_meta : signed_meta_list){
-		SQLiteSavepoint raii_transaction(directory_db, "put_Meta");
+		SQLiteSavepoint raii_transaction(directory_db.get(), "put_Meta");
 		Meta meta; meta.ParseFromString(signed_meta.meta);
 
 		auto file_path_hmac = SQLValue((const uint8_t*)meta.path_hmac().data(), meta.path_hmac().size());
@@ -246,13 +255,17 @@ std::list<SignedMeta> SyncFS::get_Meta(){
 
 blob SyncFS::get_block(const blob& block_hash){
 	try {
-		return crypto::AES_CBC(key.get_Encryption_Key()).from(enc_storage->get_encblock(block_hash));
+		for(auto row : directory_db->exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
+			return crypto::AES_CBC(key.get_Encryption_Key(), row[0].as_blob(), true).from(enc_storage->get_encblock(block_hash));
+		}
 	}catch(no_such_block& e){
 		return open_storage->get_block(block_hash);
 	}
 }
 void SyncFS::put_block(const blob& block_hash, const blob& data){
-	enc_storage->put_encblock(block_hash, crypto::AES_CBC(key.get_Encryption_Key()).to(data));
+	for(auto row : directory_db->exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
+		enc_storage->put_encblock(block_hash, crypto::AES_CBC(key.get_Encryption_Key(), row[0].as_blob(), true).to(data));
+	}
 }
 
 blob SyncFS::get_encblock(const blob& block_hash){

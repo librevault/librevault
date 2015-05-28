@@ -14,6 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/ecp.h>
+
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -22,56 +26,59 @@ namespace librevault {
 namespace syncfs {
 
 class Key {
-	constexpr size_t private_key_size = 32;
-	constexpr size_t public_key_size = 33;
-	constexpr size_t encryption_key_size = 32;
+	static constexpr size_t private_key_size = 32;
+	static constexpr size_t encryption_key_size = 32;
+	static constexpr size_t public_key_size = 33;
 
 	std::string secret_s;
 
-	std::vector<uint8_t> payload;
+	mutable std::vector<uint8_t> cached_private_key;	// ReadWrite
+	mutable std::vector<uint8_t> cached_encryption_key;	// ReadOnly
+	mutable std::vector<uint8_t> cached_public_key;		// Download
 
-	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-	CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
-	std::vector<uint8_t> encryption_key;
+	std::vector<uint8_t> get_payload() const;
 public:
 	enum Type : char {
 		Owner = 'A',	/// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
 		ReadWrite = 'B',	/// Signature key, used to sign modified files.
 		ReadOnly = 'C',	/// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
-		Download = 'D'	/// Encryption key (AES-256), used to encrypt communications between Librevault nodes
+		Download = 'D'	/// Public key, used to verify signed modified files
 	};
 
-	class secret_error : public std::domain_error {
-		secret_error(const char* what) : std::domain_error(what) {}
+	class error : public std::domain_error {
+	public:
+		error(const char* what) : std::domain_error(what) {}
 	};
-	class format_error : public secret_error {
-		format_error() : secret_error("Secret format mismatch") {}
+	class format_error : public error {
+	public:
+		format_error() : error("Secret format mismatch") {}
 	};
-	class level_error : public secret_error {
-		level_error() : secret_error("Key has insufficient privileges for this action") {}
+	class level_error : public error {
+	public:
+		level_error() : error("Key has insufficient privileges for this action") {}
 	};
-	class crypto_error : public secret_error {
-		crypto_error() : secret_error("Cryptographic error. Probably ECDSA domain mismatch") {}
+	class crypto_error : public error {
+	public:
+		crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
 	};
 
 public:	// Yes, I prefer splitting member variables and method declaration
 	Key();
-	Key(Type type, std::vector<uint8_t> payload);
+	Key(Type type, const std::vector<uint8_t>& payload);
 	Key(std::string string_secret);
 
-	std::vector<uint8_t> get_payload() const {return payload;}
 	operator std::string() const {return secret_s;}
 
-	Type getType() const {return secret_s.front();}
+	Type getType() const {return (Type)secret_s.front();}
 	char getCheckChar() const {return secret_s.back();}
 
 	// Key derivers
 	Key derive(Type key_type);
 
 	// Payload getters
-	std::vector<uint8_t> get_Private_Key() const;
-	std::vector<uint8_t> get_Public_Key() const;
-	std::vector<uint8_t> get_Encryption_Key() const;
+	std::vector<uint8_t>& get_Private_Key() const;
+	std::vector<uint8_t>& get_Public_Key() const;
+	std::vector<uint8_t>& get_Encryption_Key() const;
 
 	virtual ~Key();
 };

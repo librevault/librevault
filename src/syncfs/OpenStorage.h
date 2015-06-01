@@ -25,7 +25,10 @@
 namespace librevault {
 namespace syncfs {
 
+class SyncFS;
 class OpenStorage {
+	SyncFS* syncfs;
+
 	std::shared_ptr<SQLiteDB> directory_db;
 	const Key& key;
 	EncStorage& enc_storage;
@@ -34,8 +37,9 @@ class OpenStorage {
 	const fs::path& block_path;
 
 	std::pair<blob, blob> get_both_blocks(const blob& block_hash);	// Returns std::pair(plaintext, encrypted)
+	std::string get_path(const blob& path_hmac);
 public:
-	OpenStorage(const Key& key, std::shared_ptr<SQLiteDB> directory_db, EncStorage& enc_storage, const fs::path& open_path, const fs::path& block_path);
+	OpenStorage(SyncFS* syncfs, const Key& key, std::shared_ptr<SQLiteDB> directory_db, EncStorage& enc_storage, const fs::path& open_path, const fs::path& block_path);
 	virtual ~OpenStorage();
 
 	blob get_encblock(const blob& block_hash);

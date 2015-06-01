@@ -15,16 +15,27 @@
  */
 #include "syncfs/SyncFS.h"
 #include <boost/asio.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sinks.hpp>
 
 int main(int argc, char** argv){
 	boost::asio::io_service ios;
 
 	// OpenBlockStorage part
 	// SyncFS(boost::asio::io_service& io_service, Key key,	fs::path open_path,	fs::path block_path = open_path / ".librevault", fs::path db_path = open_path / ".librevault" / "directory.db");
-	librevault::syncfs::Key key;
-	librevault::syncfs::SyncFS syncfs_instance(ios, key, "/home/gamepad/syncfs", "/home/gamepad/syncfs/.librevault", "/home/gamepad/syncfs/home/gamepad/syncfs/.librevault/directory.db");
+	//librevault::syncfs::Key key;
+	librevault::syncfs::Key key("ABQGUPXxCrtiSzH4QGo7Wb2szqRsieDJvR7NjYy3qSm8YJ");
+	auto key2 = key.derive(key.Download);
+	BOOST_LOG_TRIVIAL(debug) << (std::string)key << " " << (std::string)key2;
+	librevault::syncfs::SyncFS syncfs_instance(ios, key, "/home/gamepad/syncfs", "/home/gamepad/syncfs/.librevault", "/home/gamepad/syncfs/.librevault/directory.db");
 
-	syncfs_instance.index(syncfs_instance.get_openfs_file_list());
+	//syncfs_instance.index(syncfs_instance.get_openfs_file_list());
+
+//	for(auto path : syncfs_instance.get_openfs_file_list()){
+//		BOOST_LOG_TRIVIAL(debug) << path;
+//		syncfs_instance.disassemble(path, false);
+//	}
+	syncfs_instance.assemble(false);
 	ios.run();
 
 	return 0;

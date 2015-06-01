@@ -22,6 +22,8 @@
 #include <cryptopp/sha3.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/integer.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sinks.hpp>
 
 using CryptoPP::ASN1::secp256r1;
 
@@ -34,7 +36,7 @@ Key::Key() {
 	private_key.Initialize(rng, secp256r1());
 
 	cached_private_key.resize(private_key_size);
-	private_key.GetPrivateExponent().Encode(cached_private_key.data(), private_key_size, CryptoPP::Integer::UNSIGNED);
+	private_key.GetPrivateExponent().Encode(cached_private_key.data(), private_key_size);
 
 	secret_s.append(1, (char)Owner);
 	secret_s.append(crypto::Base58().to(cached_private_key));
@@ -105,6 +107,7 @@ std::vector<uint8_t>& Key::get_Encryption_Key() const {
 	switch(getType()){
 	case Owner:
 	case ReadWrite: {
+		cached_encryption_key.resize(encryption_key_size);
 		CryptoPP::SHA3_256().CalculateDigest(cached_encryption_key.data(), get_Private_Key().data(), get_Private_Key().size());
 		return cached_encryption_key;
 	}

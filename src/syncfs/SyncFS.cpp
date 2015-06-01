@@ -19,6 +19,10 @@
 #include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 #include "../../contrib/crypto/AES_CBC.h"
 #include "../../contrib/crypto/Base32.h"
+#include "../../contrib/crypto/HMAC-SHA3.h"
+#include <cryptopp/oids.h>
+
+#include "../../contrib/crypto/Base64.h"
 
 // Cryptodiff
 #include <cryptodiff.h>
@@ -34,39 +38,41 @@ namespace librevault {
 namespace syncfs {
 
 SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path, fs::path block_path, fs::path db_path) :
-				external_io_service(io_service),
-				key(std::move(key)),
-				open_path(std::move(open_path)),
-				db_path(std::move(db_path)),
-				block_path(std::move(block_path)),
-				internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())),
-				internal_io_strand(*internal_io_service),
-				external_io_strand(external_io_service){
+		external_io_service(io_service),
+		key(std::move(key)),
+		open_path(std::move(open_path)),
+		db_path(std::move(db_path)),
+		block_path(std::move(block_path)),
+		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())),
+		internal_io_strand(*internal_io_service),
+		external_io_strand(external_io_service){
 	BOOST_LOG_TRIVIAL(debug) << "Initializing SYNCFS";
-	BOOST_LOG_TRIVIAL(debug) << "Key level " << key.getType();
+	BOOST_LOG_TRIVIAL(debug) << "Key level " << (char)key.getType();
 
-	BOOST_LOG_TRIVIAL(debug) << "Open directory: \"" << this->open_path << "\"" << (fs::create_directories(this->open_path) ? " created" : "");
-	BOOST_LOG_TRIVIAL(debug) << "Block directory: \"" << this->block_path << "\"" << (fs::create_directories(this->block_path) ? " created" : "");
-	BOOST_LOG_TRIVIAL(debug) << "Database directory: \"" << this->db_path.parent_path() << "\"" << (fs::create_directories(this->db_path.parent_path()) ? " created" : "");
+	BOOST_LOG_TRIVIAL(debug) << "Open directory: " << this->open_path << (fs::create_directories(this->open_path) ? " created" : "");
+	BOOST_LOG_TRIVIAL(debug) << "Block directory: " << this->block_path << (fs::create_directories(this->block_path) ? " created" : "");
+	BOOST_LOG_TRIVIAL(debug) << "Database directory: " << this->db_path.parent_path() << (fs::create_directories(this->db_path.parent_path()) ? " created" : "");
 
-	BOOST_LOG_TRIVIAL(debug) << "Initializing SQLite3 DB: \"" << this->db_path << "\"";
+	if(fs::exists(this->db_path))
+		BOOST_LOG_TRIVIAL(debug) << "Opening SQLite3 DB: " << this->db_path;
+	else
+		BOOST_LOG_TRIVIAL(debug) << "Creating new SQLite3 DB: " << this->db_path;
 	directory_db = std::make_shared<SQLiteDB>(this->db_path);
 	directory_db->exec("PRAGMA foreign_keys = ON;");
 
-	directory_db->exec("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path STRING UNIQUE, path_hmac BLOB NOT NULL UNIQUE, mtime INTEGER NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
-	directory_db->exec("CREATE TABLE IF NOT EXISTS blocks (id INTEGER PRIMARY KEY, encrypted_hash BLOB NOT NULL UNIQUE, blocksize INTEGER NOT NULL, iv BLOB NOT NULL, in_encfs BOOLEAN NOT NULL DEFAULT (0));");
-	directory_db->exec("CREATE TABLE IF NOT EXISTS openfs (blockid INTEGER REFERENCES blocks (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL, fileid INTEGER REFERENCES files (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
-	directory_db->exec("CREATE VIEW IF NOT EXISTS block_presence AS SELECT DISTINCT id, CASE WHEN blocks.in_encfs = 1 OR openfs.assembled = 1 THEN 1 ELSE 0 END AS present, blocks.in_encfs AS in_encfs, openfs.assembled AS in_openfs FROM blocks LEFT JOIN openfs ON blocks.id = openfs.blockid;");
+	directory_db->exec("CREATE TABLE IF NOT EXISTS files (path_hmac BLOB PRIMARY KEY NOT NULL, mtime INTEGER NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
+	directory_db->exec("CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB NOT NULL PRIMARY KEY, blocksize INTEGER NOT NULL, iv BLOB NOT NULL);");
+	directory_db->exec("CREATE TABLE IF NOT EXISTS openfs (block_encrypted_hash BLOB NOT NULL REFERENCES blocks (encrypted_hash) ON DELETE CASCADE ON UPDATE CASCADE, file_path_hmac BLOB NOT NULL REFERENCES files (path_hmac) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 
-	directory_db->exec("CREATE TRIGGER IF NOT EXISTS block_deleter AFTER DELETE ON files BEGIN DELETE FROM blocks WHERE id NOT IN (SELECT blockid FROM openfs); END;");
+	//directory_db->exec("CREATE TRIGGER IF NOT EXISTS block_deleter AFTER DELETE ON files BEGIN DELETE FROM blocks WHERE id NOT IN (SELECT blockid FROM openfs); END;");
 
 	enc_storage = std::unique_ptr<EncStorage>(new EncStorage(this->block_path));
-	open_storage = std::unique_ptr<OpenStorage>(new OpenStorage(this->key, directory_db, *enc_storage.get(), open_path, block_path));
+	open_storage = std::unique_ptr<OpenStorage>(new OpenStorage(this, this->key, directory_db, *enc_storage.get(), this->open_path, this->block_path));
 }
 
 SyncFS::~SyncFS() {}
 
-std::string SyncFS::make_Meta(const std::string& file_path){
+blob SyncFS::make_Meta(const std::string& file_path){
 	Meta meta;
 	auto abspath = fs::absolute(file_path, open_path);
 
@@ -93,7 +99,9 @@ std::string SyncFS::make_Meta(const std::string& file_path){
 		cryptodiff::FileMap filemap(crypto::BinaryArray(key.get_Encryption_Key()));
 		fs::ifstream ifs(abspath, std::ios_base::binary);
 		try {
-			Meta old_meta; old_meta.ParseFromString(get_Meta(path_hmac).meta);	// Trying to retrieve Meta from database. May throw.
+			auto old_smeta = get_Meta(path_hmac);
+			Meta old_meta; old_meta.ParseFromArray(old_smeta.meta.data(), old_smeta.meta.size());	// Trying to retrieve Meta from database. May throw.
+			//auto map = old_meta.filemap();
 			filemap.from_string(old_meta.filemap().SerializeAsString());
 			filemap.update(ifs);
 		}catch(no_such_meta& e){
@@ -122,20 +130,20 @@ std::string SyncFS::make_Meta(const std::string& file_path){
 		meta.set_mtime(std::time(nullptr));	// mtime
 	}
 
-	return meta.SerializeAsString();
+	blob result_meta(meta.ByteSize()); meta.SerializeToArray(result_meta.data(), result_meta.size());
+	return result_meta;
 }
 
-SignedMeta SyncFS::sign(std::string meta) const {
+SignedMeta SyncFS::sign(const blob& meta) const {
 	CryptoPP::AutoSeededRandomPool rng;
 	SignedMeta result;
+	result.meta = meta;
 
-	auto private_key_v = key.get_Private_Key();
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().SetPrivateExponent(CryptoPP::Integer(private_key_v.data(), private_key_v.size()));
+	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(key.get_Private_Key().data(), key.get_Private_Key().size()));
 
 	result.signature.resize(signer.SignatureLength());
-
-	signer.SignMessage(rng, (uint8_t*)meta.data(), meta.size(), result.signature.data());
+	signer.SignMessage(rng, meta.data(), meta.size(), result.signature.data());
 	return result;
 }
 
@@ -162,8 +170,11 @@ void SyncFS::index(const std::set<std::string> file_path){
 	for(auto file_path1 : file_path){
 		internal_io_strand.post(std::bind([this](std::string file_path_bound){	// Can be executed in any thread.
 			put_Meta(sign(make_Meta(file_path_bound)));
+
+			auto path_hmac = crypto::HMAC_SHA3_224(key.get_Encryption_Key()).to(file_path_bound);
+
 			directory_db->exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
-					{":file_path_hmac", file_path_bound}
+					{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
 			});
 
 			BOOST_LOG_TRIVIAL(debug) << "Updated index entry. Path=" << file_path_bound;
@@ -178,8 +189,14 @@ void SyncFS::index(const std::set<std::string> file_path){
 std::set<std::string> SyncFS::get_openfs_file_list(){
 	std::set<std::string> file_list;
 	for(auto dir_entry_it = fs::recursive_directory_iterator(open_path); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		if(dir_entry_it->path() != block_path && dir_entry_it->path() != db_path)	// Prevents system directories from scan. TODO skiplist
-			file_list.insert(make_portable_path(dir_entry_it->path()));
+		if(dir_entry_it->path() == db_path) continue;
+		if(dir_entry_it->path() == block_path) continue;
+
+		std::string block_path_canonical = fs::canonical(block_path).generic_string();
+		if(block_path_canonical == fs::canonical(dir_entry_it->path(), open_path).string().substr(0, block_path_canonical.size())) continue;
+		// Prevents system directories from scan. TODO skiplist
+
+		file_list.insert(make_portable_path(dir_entry_it->path()));
 	}
 	return file_list;
 }
@@ -199,13 +216,13 @@ void SyncFS::put_Meta(std::list<SignedMeta> signed_meta_list) {
 	auto raii_lock = SQLiteLock(directory_db.get());
 	for(auto signed_meta : signed_meta_list){
 		SQLiteSavepoint raii_transaction(directory_db.get(), "put_Meta");
-		Meta meta; meta.ParseFromString(signed_meta.meta);
+		Meta meta; meta.ParseFromArray(signed_meta.meta.data(), signed_meta.meta.size());
 
 		auto file_path_hmac = SQLValue((const uint8_t*)meta.path_hmac().data(), meta.path_hmac().size());
 		directory_db->exec("INSERT OR REPLACE INTO files (path_hmac, mtime, meta, signature) VALUES (:path_hmac, :mtime, :meta, :signature);", {
 				{":path_hmac", file_path_hmac},
 				{":mtime", meta.mtime()},
-				{":meta", signed_meta.meta},
+				{":meta", SQLValue((uint8_t*)signed_meta.meta.data(), signed_meta.meta.size())},
 				{":signature", signed_meta.signature}
 		});
 
@@ -233,9 +250,8 @@ void SyncFS::put_Meta(std::list<SignedMeta> signed_meta_list) {
 
 std::list<SignedMeta> SyncFS::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
 	std::list<SignedMeta> result_list;
-	for(auto row : directory_db->exec(std::move(sql), std::move(values)))
+	for(auto row : directory_db->exec(sql, values))
 		result_list.push_back({row[0], row[1]});
-
 	return result_list;
 }
 SignedMeta SyncFS::get_Meta(blob path_hmac){

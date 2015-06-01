@@ -29,7 +29,7 @@ namespace librevault {
 namespace syncfs {
 
 struct SignedMeta {
-	std::string meta;
+	blob meta;
 	blob signature;
 };
 
@@ -39,7 +39,7 @@ struct SignedMeta {
  * Thread safety: thread-safe after construction.
  */
 class SyncFS {
-	const Key key;	// We don't need to chec
+	const Key key;
 
 	const fs::path open_path, db_path, block_path;
 
@@ -71,8 +71,8 @@ public:
 
 // Methods
 private:
-	std::string make_Meta(const std::string& file_path);
-	SignedMeta sign(std::string meta) const;
+	blob make_Meta(const std::string& file_path);
+	SignedMeta sign(const blob& meta) const;
 
 	std::list<SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
 public:
@@ -116,6 +116,10 @@ public:
 
 	blob get_encblock(const blob& block_hash);
 	void put_encblock(const blob& block_hash, const blob& data);
+
+	// File assembler/disassembler invokation functions
+	void disassemble(const std::string& file_path, bool delete_file = true){open_storage->disassemble(file_path, delete_file);}
+	void assemble(bool delete_blocks = true){open_storage->assemble(delete_blocks);}
 };
 
 } /* namespace syncfs */

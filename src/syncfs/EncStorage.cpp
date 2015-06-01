@@ -41,7 +41,7 @@ fs::path EncStorage::make_encblock_path(const blob& block_hash) const {
 }
 
 bool EncStorage::verify_encblock(const blob& block_hash, const blob& data){
-	return crypto::BinaryArray(block_hash) == crypto::SHA3(28).compute(data);
+	return crypto::SHA3(28).compute(data) == crypto::BinaryArray(block_hash);
 }
 
 bool EncStorage::have_encblock(const blob& block_hash){

@@ -82,45 +82,40 @@ blob OpenStorage::get_block(const blob& block_hash) {
 
 void OpenStorage::assemble(bool delete_blocks){
 	auto raii_lock = SQLiteLock(directory_db.get());
-	directory_db->exec("SAVEPOINT assemble");
-	try {
-		auto blocks = directory_db->exec("SELECT files.path_hmac, openfs.[offset], blocks.encrypted_hash, blocks.iv "
-				"FROM openfs "
-				"JOIN files ON openfs.file_path_hmac=files.path_hmac "
-				"JOIN blocks ON openfs.block_encrypted_hash=blocks.encrypted_hash "
-				"WHERE assembled=0");
-		std::map<blob, std::map<uint64_t, std::pair<blob, blob>>> write_blocks;
-		for(auto row : blocks){
-			write_blocks[row[0].as_blob()][(uint64_t)row[1].as_int()] = {row[2].as_blob(), row[3].as_blob()};
+	auto blocks = directory_db->exec("SELECT files.path_hmac, openfs.\"offset\", blocks.encrypted_hash, blocks.iv "
+			"FROM openfs "
+			"JOIN files ON openfs.file_path_hmac=files.path_hmac "
+			"JOIN blocks ON openfs.block_encrypted_hash=blocks.encrypted_hash "
+			"WHERE assembled=0");
+	std::map<blob, std::map<uint64_t, std::pair<blob, blob>>> write_blocks;
+	for(auto row : blocks){
+		blob path_hmac = row[0].as_blob();
+		uint64_t offset = row[1].as_uint();
+		blob enchash = row[2].as_blob();
+		blob enchash_iv = row[3].as_blob();
+		write_blocks[path_hmac][offset] = {enchash, enchash_iv};
+	}
+
+	fs::path assembled_path = block_path / "assembled.part";
+	for(auto file : write_blocks){
+		fs::ofstream ofs(assembled_path, std::ios::out | std::ios::trunc | std::ios::binary);
+
+		blob path_hmac = file.first;
+		for(auto block : file.second){
+			auto offset = block.first;
+			auto block_hash = block.second.first;
+			auto iv = block.second.second;
+
+			blob block_data = syncfs->get_block(block_hash);
+			ofs.write((const char*)block_data.data(), block_data.size());
 		}
+		ofs.close();
 
-		fs::path assembled_path = block_path / "assembled.part";
-		for(auto file : write_blocks){
-			fs::ofstream ofs(assembled_path, std::ios::out | std::ios::trunc | std::ios::binary);
-
-			blob& path_hmac = file.first;
-			for(auto block : file.second){
-				auto offset = block.first;
-				auto block_hash = block.second.first;
-				auto iv = block.second.second;
-
-				blob block = syncfs->get_block(block_hash);
-				ofs.write((const char*)block.data(), block.size());
-			}
-			ofs.close();
-		}
-
-		auto abspath = fs::absolute(relpath, parent->open_path);
+		auto abspath = fs::absolute(get_path(path_hmac), open_path);
 		fs::remove(abspath);
-		fs::rename(parent->system_path / "assembled.part", abspath);
+		fs::rename(assembled_path, abspath);
 
-		parent->directory_db->exec("UPDATE openfs SET assembled=1 WHERE fileid IN (SELECT id FROM files WHERE path=:path)", {
-				{":path", relpath.generic_string()}
-		});
-
-		parent->directory_db->exec("RELEASE assemble");
-	}catch(...){
-		parent->directory_db->exec("ROLLBACK TO assemble"); throw;
+		directory_db->exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {{":file_path_hmac", path_hmac}});
 	}
 }
 

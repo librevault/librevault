@@ -67,7 +67,8 @@ public:	// Yes, I prefer splitting member variables and method declaration
 	Key(Type type, const std::vector<uint8_t>& payload);
 	Key(std::string string_secret);
 
-	operator std::string() const {return secret_s;}
+	std::string string() const {return secret_s;}
+	operator std::string() const {return string();}
 
 	Type getType() const {return (Type)secret_s.front();}
 	char getCheckChar() const {return secret_s.back();}

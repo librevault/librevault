@@ -127,8 +127,10 @@ std::vector<uint8_t>& Key::get_Public_Key() const {
 	switch(getType()){
 	case Owner:
 	case ReadWrite: {
+		CryptoPP::AutoSeededRandomPool rng;
 		CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
 		CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
+		private_key.Initialize(rng, secp256r1());
 		private_key.SetPrivateExponent(CryptoPP::Integer(get_Private_Key().data(), get_Private_Key().size()));
 		private_key.MakePublicKey(public_key);
 

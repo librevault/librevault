@@ -272,7 +272,8 @@ std::list<SignedMeta> SyncFS::get_Meta(){
 blob SyncFS::get_block(const blob& block_hash){
 	try {
 		for(auto row : directory_db->exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
-			return crypto::AES_CBC(key.get_Encryption_Key(), row[0].as_blob(), true).from(enc_storage->get_encblock(block_hash));
+			blob encblock = enc_storage->get_encblock(block_hash);
+			return crypto::AES_CBC(key.get_Encryption_Key(), row[0].as_blob(), encblock.size() % 16 == 0 ? false : true).from(encblock);
 		}
 	}catch(no_such_block& e){
 		return open_storage->get_block(block_hash);

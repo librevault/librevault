@@ -25,9 +25,10 @@ int main(int argc, char** argv){
 	// SyncFS(boost::asio::io_service& io_service, Key key,	fs::path open_path,	fs::path block_path = open_path / ".librevault", fs::path db_path = open_path / ".librevault" / "directory.db");
 	//librevault::syncfs::Key key;
 	librevault::syncfs::Key key("ABQGUPXxCrtiSzH4QGo7Wb2szqRsieDJvR7NjYy3qSm8YJ");
-	auto key2 = key.derive(key.Download);
-	BOOST_LOG_TRIVIAL(debug) << (std::string)key << " " << (std::string)key2;
-	librevault::syncfs::SyncFS syncfs_instance(ios, key, "/home/gamepad/syncfs", "/home/gamepad/syncfs/.librevault", "/home/gamepad/syncfs/.librevault/directory.db");
+	auto key_ro = key.derive(key.ReadOnly);
+	auto key_down = key.derive(key.Download);
+	BOOST_LOG_TRIVIAL(debug) << key.string() << " " << key_ro.string() << " " << key_down.string();
+	librevault::syncfs::SyncFS syncfs_instance(ios, key_ro, "/home/gamepad/syncfs", "/home/gamepad/syncfs/.librevault", "/home/gamepad/syncfs/.librevault/directory.db");
 
 	//syncfs_instance.index(syncfs_instance.get_openfs_file_list());
 

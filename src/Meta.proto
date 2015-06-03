@@ -13,15 +13,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-syntax = "proto2";
+syntax = "proto3";
 import "EncFileMap.proto";
 package librevault;
 
 message Meta {
 	// These I'd mark as required
-	optional bytes path_hmac = 1;
-	optional bytes encpath = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
-	optional bytes encpath_iv = 3;	// IV for AES-256-CBC encrypted encpath.
+	bytes path_hmac = 1;
+	bytes encpath = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
+	bytes encpath_iv = 3;	// IV for AES-256-CBC encrypted encpath.
 
 	enum FileType {
 		FILE = 0;
@@ -30,12 +30,12 @@ message Meta {
 
 		DELETED = 255;
 	}
-	optional FileType type = 4 [default = FILE];
-	optional int64 mtime = 5;
+	FileType type = 4;
+	int64 mtime = 5;
 
 	// These are optional (I mean, conditional)
-	optional bytes symlink_to = 6;
-	optional uint32 windows_attrib = 7;
+	bytes symlink_to = 6;
+	uint32 windows_attrib = 7;
 
-	optional cryptodiff.internals.EncFileMap_s filemap = 16;
+	cryptodiff.internals.EncFileMap_s filemap = 16;
 }

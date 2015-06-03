@@ -117,7 +117,7 @@ public:
 	blob get_encblock(const blob& block_hash);
 	void put_encblock(const blob& block_hash, const blob& data);
 
-	// File assembler/disassembler invokation functions
+	// File assembler/disassembler invocation functions
 	void disassemble(const std::string& file_path, bool delete_file = true){open_storage->disassemble(file_path, delete_file);}
 	void assemble(bool delete_blocks = true){open_storage->assemble(delete_blocks);}
 };

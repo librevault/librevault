@@ -13,30 +13,52 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "syncfs/SyncFS.h"
+#include "nodedb/NodeDB.h"
+
+#include <cryptodiff.h>
+#include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/sinks.hpp>
+#include <iostream>
+#include <fstream>
+#include <array>
+#include "syncfs/FSBlockStorage.h"
+
+void print_endpoint(boost::asio::ip::udp::endpoint endpoint){
+	std::cout << endpoint << std::endl;
+}
 
 int main(int argc, char** argv){
+	//std::array<uint8_t, 32> key; std::copy(argv[2], argv[2]+32, &*key.begin());
+	const char* key_c = "12345678901234567890123456789012";
+	std::array<uint8_t, 32> key; std::copy(key_c, key_c+32, &*key.begin());
+
 	boost::asio::io_service ios;
 
 	// OpenBlockStorage part
-	// SyncFS(boost::asio::io_service& io_service, Key key,	fs::path open_path,	fs::path block_path = open_path / ".librevault", fs::path db_path = open_path / ".librevault" / "directory.db");
-	//librevault::syncfs::Key key;
-	librevault::syncfs::Key key("ABQGUPXxCrtiSzH4QGo7Wb2szqRsieDJvR7NjYy3qSm8YJ");
-	auto key_ro = key.derive(key.ReadOnly);
-	auto key_down = key.derive(key.Download);
-	BOOST_LOG_TRIVIAL(debug) << key.string() << " " << key_ro.string() << " " << key_down.string();
-	librevault::syncfs::SyncFS syncfs_instance(ios, key_ro, "/home/gamepad/syncfs", "/home/gamepad/syncfs/.librevault", "/home/gamepad/syncfs/.librevault/directory.db");
+	auto fs_block_storage = new librevault::syncfs::FSBlockStorage(argv[1], key);
+	fs_block_storage->create_index();
+	delete fs_block_storage;
 
-	//syncfs_instance.index(syncfs_instance.get_openfs_file_list());
+	// NodeDB part
+	boost::property_tree::ptree pt;
+	pt.put("nodedb.udplpdv4.repeat_interval", 30);
+	pt.put("nodedb.udplpdv4.multicast_port", 28914);
+	pt.put("nodedb.udplpdv4.multicast_ip", "239.192.152.144");
+	pt.put("nodedb.udplpdv4.bind_ip", "0.0.0.0");
+	pt.put("nodedb.udplpdv4.bind_port", 28914);
 
-//	for(auto path : syncfs_instance.get_openfs_file_list()){
-//		BOOST_LOG_TRIVIAL(debug) << path;
-//		syncfs_instance.disassemble(path, false);
-//	}
-	syncfs_instance.assemble(false);
+	pt.put("nodedb.udplpdv6.repeat_interval", 30);
+	pt.put("nodedb.udplpdv6.multicast_port", 28914);
+	pt.put("nodedb.udplpdv6.multicast_ip", "ff08::BD02");
+	pt.put("nodedb.udplpdv6.bind_ip", "0::0");
+	pt.put("nodedb.udplpdv6.bind_port", 28914);
+
+	pt.put("net.port", 30);
+	pt.put("net.tcp", true);
+	pt.put("net.utp", true);
+
+	librevault::NodeDB node_db(pt.get_child("nodedb"), pt, ios);
+	node_db.start_discovery();
 	ios.run();
 
 	return 0;

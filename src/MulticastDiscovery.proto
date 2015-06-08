@@ -13,11 +13,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "SyncManager.h"
+syntax = "proto3";
+package librevault;
 
-int main(int argc, char** argv){
-	librevault::SyncManager sync_manager(argc, argv);
-	sync_manager.run();
-
-	return 0;
+/*
+ * This message type is used in Local Peer Discovery through UDP.
+ */
+message MulticastDiscoveryPacket {
+	uint32 port = 1;
+	string user_agent = 2;
+	string node_name = 3;
 }

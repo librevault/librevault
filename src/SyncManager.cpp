@@ -27,34 +27,27 @@
 namespace librevault {
 
 fs::path SyncManager::get_default_config_path(){
-	fs::path basedir;
+	const char appname[] = "Librevault";
 
 #if BOOST_OS_WINDOWS
-	basedir = getenv("APPDATA");	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
+	return fs::path(getenv("APPDATA")) / appname;	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
 #elif BOOST_OS_MACOS
-	basedir = getenv("HOME");
-	basedir /= "Library/Preferences";
+	return fs::path(getenv("HOME")) / "Library/Preferences" / appname;	// TODO: error-checking
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
-	char* xdg_ptr = getenv("XDG_CONFIG_HOME");
-	if(xdg_ptr != nullptr){
-		basedir = xdg_ptr;
-	}else{
-		char* home_ptr = getenv("HOME");
-		if(home_ptr == nullptr) home_ptr = getpwuid(getuid())->pw_dir;
-		if(home_ptr == nullptr) home_ptr = (char*)"/etc/xdg";	// This is really unlikely
-
-		basedir = home_ptr;
-		basedir /= ".config";
-	}
+	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
+		return fs::path(xdg_ptr) / appname;
+	if(char* home_ptr = getenv("HOME"))
+		return fs::path(home_ptr) / ".config" / appname;
+	if(char* home_ptr = getpwuid(getuid())->pw_dir)
+		return fs::path(home_ptr) / ".config" / appname;
+	return fs::path("/etc/xdg") / appname;
 #else
 	// Well, we will add some Android values here. And, maybe, others.
-	basedir = getenv("HOME");
+	return fs::path(getenv("HOME")) / appname;
 #endif
-
-	return fs::path(basedir) / "Librevault";
 }
 
-SyncManager::SyncManager() : program_options_desc("Program options"), core_options_desc("Core options") {
+SyncManager::SyncManager() : program_options_desc("Program options"), core_options_desc("Core options"), monitor(ios) {
 	// Program options
 	program_options_desc.add_options()
 		("help,h", "Display help message")
@@ -62,9 +55,15 @@ SyncManager::SyncManager() : program_options_desc("Program options"), core_optio
 
 	core_options_desc.add_options()
 		("threads,t", po::value<decltype(thread_count)>(&thread_count)->default_value(std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1), "Number of CPU worker threads. Default value is number of hardware CPU threads")
-		("hostname", po::value<std::string>()->default_value(boost::asio::ip::host_name()), "Hostname you chosen for this instance of Librevault. Default value is the actual hostname of your computer")
+		("device-name", po::value<std::string>()->default_value(boost::asio::ip::host_name()), "Device name you chosen for this instance of Librevault. Default value is the actual hostname of your computer")
 		("config-dir,c", po::value<fs::path>(&global_config_path)->default_value(get_default_config_path()), "Librevault configuration directory. Default value depends on OS ")
 	;
+
+	// dir_monitor
+	monitor.add_directory("/home/gamepad/syncfs");
+	monitor.async_monitor([](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
+		BOOST_LOG_TRIVIAL(trace) << ev;
+	});
 }
 
 SyncManager::SyncManager(int argc, char** argv) : SyncManager() {
@@ -74,10 +73,12 @@ SyncManager::SyncManager(int argc, char** argv) : SyncManager() {
 	all_options_desc.add(core_options_desc);
 
 	std::cout << all_options_desc;
-	po::store(po::parse_command_line(argc, argv, all_options_desc), options);
-	po::notify(options);
+	po::store(po::parse_command_line(argc, argv, all_options_desc), glob_options);
+	po::notify(glob_options);
 
 	// Initialization
+	fs::create_directories(glob_options["config-dir"].as<fs::path>());
+	BOOST_LOG_TRIVIAL(debug) << "Configuration directory: " << glob_options["config-dir"].as<fs::path>();
 }
 
 SyncManager::~SyncManager() {}
@@ -130,6 +131,17 @@ void SyncManager::run(){
 void SyncManager::shutdown(){
 	work_lock.reset();
 	ios.stop();
+}
+
+void SyncManager::init_directories(){
+	for(fs::path path : fs::directory_iterator(global_config_path)){
+		if(fs::status(path).type() == fs::regular_file){
+			if()
+		}
+	}
+}
+void SyncManager::add_directory(ptree dir_options){
+
 }
 
 } /* namespace librevault */

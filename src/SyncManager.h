@@ -16,9 +16,11 @@
 #pragma once
 
 #include "syncfs/Key.h"
+#include "../contrib/dir_monitor/include/dir_monitor.hpp"
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -26,25 +28,21 @@
 namespace librevault {
 
 using boost::asio::io_service;
+using boost::property_tree::ptree;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 class SyncManager {
-	class Directory {
-	public:
-		Directory();
-		~Directory();
-	};
-
 	io_service ios;
 	std::unique_ptr<io_service::work> work_lock;
 	std::vector<std::thread> worker_threads;
 	int thread_count;
 
 	fs::path global_config_path;	// Config directory
+	boost::asio::dir_monitor monitor;
 
 	// Program options
-	po::variables_map options;
+	po::variables_map glob_options;
 	po::options_description program_options_desc, core_options_desc;
 
 	fs::path get_default_config_path();
@@ -55,6 +53,9 @@ public:
 
 	void run();
 	void shutdown();
+
+	void init_directories();
+	void add_directory(ptree dir_options);
 };
 
 } /* namespace librevault */

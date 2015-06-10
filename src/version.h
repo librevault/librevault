@@ -13,8 +13,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef SRC_VERSION_H_
-#define SRC_VERSION_H_
+#pragma once
 
 #include <cstdint>
 
@@ -23,7 +22,7 @@ const uint8_t version_minor = 1;
 const uint16_t version_patch = 0;
 
 constexpr const char* get_name() {
-	return "LibreVault";
+	return "Librevault";
 }
 
 constexpr uint32_t get_version() {
@@ -35,5 +34,3 @@ inline std::string get_version_string() {
 	os << get_name() << " " << version_major << "." << version_minor << "." << version_patch;
 	return os.str();
 }
-
-#endif /* SRC_VERSION_H_ */

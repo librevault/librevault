@@ -49,9 +49,12 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 	BOOST_LOG_TRIVIAL(debug) << "Initializing SYNCFS";
 	BOOST_LOG_TRIVIAL(debug) << "Key level " << (char)key.getType();
 
-	BOOST_LOG_TRIVIAL(debug) << "Open directory: " << this->open_path << (fs::create_directories(this->open_path) ? " created" : "");
-	BOOST_LOG_TRIVIAL(debug) << "Block directory: " << this->block_path << (fs::create_directories(this->block_path) ? " created" : "");
-	BOOST_LOG_TRIVIAL(debug) << "Database directory: " << this->db_path.parent_path() << (fs::create_directories(this->db_path.parent_path()) ? " created" : "");
+	bool open_path_created = fs::create_directories(this->open_path);
+	BOOST_LOG_TRIVIAL(debug) << "Open directory: " << this->open_path << (open_path_created ? " created" : "");
+	bool block_path_created = fs::create_directories(this->block_path);
+	BOOST_LOG_TRIVIAL(debug) << "Block directory: " << this->block_path << (block_path_created ? " created" : "");
+	bool db_path_created = fs::create_directories(this->db_path.parent_path());
+	BOOST_LOG_TRIVIAL(debug) << "Database directory: " << this->db_path.parent_path() << (db_path_created ? " created" : "");
 
 	if(fs::exists(this->db_path))
 		BOOST_LOG_TRIVIAL(debug) << "Opening SQLite3 DB: " << this->db_path;

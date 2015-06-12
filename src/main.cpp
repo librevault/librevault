@@ -14,9 +14,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SyncManager.h"
+#include "syncfs/Key.h"
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char** argv){
-	librevault::SyncManager sync_manager(argc, argv);
+	po::options_description allowed_options("Allowed Options");
+	allowed_options.add_options()
+		("help,h", "Display help message")
+		("config,c", po::value<fs::path>()->default_value(librevault::SyncManager::get_default_config_path()))
+		("gen-key", "Generate Owner key")
+		("write-config", "Write default config to STDOUT")
+	;
+
+	po::variables_map variables;
+	po::store(po::parse_command_line(argc, argv, allowed_options), variables);
+	po::notify(variables);
+
+	if(variables.count("help") > 0){
+		std::cout << allowed_options;
+		return 0;
+	}
+	if(variables.count("gen-key") > 0){
+		librevault::syncfs::Key k;
+		std::cout << k;
+		return 0;
+	}
+	if(variables.count("write-config") > 0){
+		std::cout << librevault::Options::defaults_text;
+		return 0;
+	}
+
+	librevault::SyncManager sync_manager(variables["config"].as<fs::path>());
 	sync_manager.run();
 
 	return 0;

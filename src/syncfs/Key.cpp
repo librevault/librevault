@@ -151,5 +151,9 @@ std::vector<uint8_t>& Key::get_Public_Key() const {
 	}
 }
 
+std::ostream& operator<<(std::ostream& os, const Key& k){
+	return os << k.string();
+}
+
 } /* namespace syncfs */
 } /* namespace librevault */

@@ -82,7 +82,12 @@ public:	// Yes, I prefer splitting member variables and method declaration
 	std::vector<uint8_t>& get_Encryption_Key() const;
 
 	virtual ~Key();
+
+	bool operator== (const Key& key) const {return secret_s == key.secret_s;}
+	bool operator< (const Key& key) const {return secret_s < key.secret_s;}
 };
+
+std::ostream& operator<<(std::ostream& os, const Key& k);
 
 } /* namespace syncfs */
 } /* namespace librevault */

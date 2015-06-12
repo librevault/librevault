@@ -14,11 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SyncManager.h"
+#include "Directory.h"
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks.hpp>
 #include <boost/predef.h>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/property_tree/info_parser.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -47,74 +51,31 @@ fs::path SyncManager::get_default_config_path(){
 #endif
 }
 
-SyncManager::SyncManager() : program_options_desc("Program options"), core_options_desc("Core options"), monitor(ios) {
-	// Program options
-	program_options_desc.add_options()
-		("help,h", "Display help message")
-	;
+SyncManager::SyncManager(fs::path glob_config_path) : options_path(std::move(glob_config_path)), monitor(ios) {
+	bool glob_config_path_created = fs::create_directories(this->options_path);
+	BOOST_LOG_TRIVIAL(debug) << "Configuration directory: " << this->options_path;
 
-	core_options_desc.add_options()
-		("threads,t", po::value<decltype(thread_count)>(&thread_count)->default_value(std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1), "Number of CPU worker threads. Default value is number of hardware CPU threads")
-		("device-name", po::value<std::string>()->default_value(boost::asio::ip::host_name()), "Device name you chosen for this instance of Librevault. Default value is the actual hostname of your computer")
-		("config-dir,c", po::value<fs::path>(&global_config_path)->default_value(get_default_config_path()), "Librevault configuration directory. Default value depends on OS ")
-	;
+	fs::ifstream options_fs(this->options_path / "librevault.conf", std::ios::binary);
+	boost::property_tree::info_parser::read_info(options_fs, options.global);
+	BOOST_LOG_TRIVIAL(debug) << "User configuration loaded: " << this->options_path / "librevault.conf";
 
-	// dir_monitor
-	monitor.add_directory("/home/gamepad/syncfs");
-	monitor.async_monitor([](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
-		BOOST_LOG_TRIVIAL(trace) << ev;
-	});
+	init_directories();
 }
 
-SyncManager::SyncManager(int argc, char** argv) : SyncManager() {
-	// Configuration
-	po::options_description all_options_desc;
-	all_options_desc.add(program_options_desc);
-	all_options_desc.add(core_options_desc);
-
-	std::cout << all_options_desc;
-	po::store(po::parse_command_line(argc, argv, all_options_desc), glob_options);
-	po::notify(glob_options);
-
-	// Initialization
-	fs::create_directories(glob_options["config-dir"].as<fs::path>());
-	BOOST_LOG_TRIVIAL(debug) << "Configuration directory: " << glob_options["config-dir"].as<fs::path>();
+SyncManager::~SyncManager() {
+	fs::ofstream options_fs(this->options_path / "librevault.conf", std::ios::trunc | std::ios::binary);
+	boost::property_tree::info_parser::write_info(options_fs, options.global);
 }
-
-SyncManager::~SyncManager() {}
-
-/*
-ptree SyncManager::get_defaults(){
-	ptree defaults;
-	defaults.put("core.threads", std::thread::hardware_concurrency());
-	defaults.put("core.name", boost::asio::ip::host_name());
-
-	defaults.put("nodedb.udplpdv4.repeat_interval", 30);
-	defaults.put("nodedb.udplpdv4.multicast_port", 28914);
-	defaults.put("nodedb.udplpdv4.multicast_ip", "239.192.152.144");
-	defaults.put("nodedb.udplpdv4.bind_ip", "0.0.0.0");
-	defaults.put("nodedb.udplpdv4.bind_port", 28914);
-
-	defaults.put("nodedb.udplpdv6.repeat_interval", 30);
-	defaults.put("nodedb.udplpdv6.multicast_port", 28914);
-	defaults.put("nodedb.udplpdv6.multicast_ip", "ff08::BD02");
-	defaults.put("nodedb.udplpdv6.bind_ip", "0::0");
-	defaults.put("nodedb.udplpdv6.bind_port", 28914);
-
-	defaults.put("net.port", 30);
-	defaults.put("net.tcp", true);
-	defaults.put("net.utp", true);
-
-	return defaults;
-}*/
 
 void SyncManager::run(){
 	work_lock = std::make_unique<io_service::work>(ios);
 	boost::asio::signal_set signals(ios, SIGINT, SIGTERM);
 	signals.async_wait(std::bind(&SyncManager::shutdown, this));
 
+	auto thread_count = options.global.get("threads", std::thread::hardware_concurrency());
 	if(thread_count <= 0) thread_count = 1;
 	BOOST_LOG_TRIVIAL(debug) << "Max threads: " << thread_count;
+
 	for(auto i = 0; i < thread_count-1; i++){
 		BOOST_LOG_TRIVIAL(debug) << "Starting thread #" << i+1;
 		worker_threads.emplace_back(std::bind((std::size_t(io_service::*)())&io_service::run, &ios));
@@ -124,6 +85,7 @@ void SyncManager::run(){
 		if(worker_threads[i].joinable()) worker_threads[i].join();
 		BOOST_LOG_TRIVIAL(debug) << "Stopped thread #" << i+1;
 	}
+
 	worker_threads.clear();
 	ios.reset();
 }
@@ -134,14 +96,27 @@ void SyncManager::shutdown(){
 }
 
 void SyncManager::init_directories(){
-	for(fs::path path : fs::directory_iterator(global_config_path)){
-		if(fs::status(path).type() == fs::regular_file){
-			if()
-		}
+	auto folder_trees = options.global.equal_range("folder");
+	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
+		add_directory(folder_tree_it->second);
 	}
-}
-void SyncManager::add_directory(ptree dir_options){
 
+	BOOST_LOG_TRIVIAL(debug) << "Initializing dir_monitor";
+	start_monitor();
+}
+
+void SyncManager::add_directory(ptree dir_options){
+	auto dir_ptr = std::make_shared<Directory>(ios, monitor, dir_options, options);
+	key_dir.insert(std::make_pair(syncfs::Key(dir_options.get<std::string>("key")), dir_ptr));
+	path_dir.insert(std::make_pair(dir_options.get<fs::path>("open_path"), dir_ptr));
+}
+
+void SyncManager::start_monitor(){
+	monitor.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
+		BOOST_LOG_TRIVIAL(trace) << ev;
+
+		start_monitor();
+	});
 }
 
 } /* namespace librevault */

@@ -14,52 +14,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
 #include "Options.h"
-#include "syncfs/Key.h"
+#include "syncfs/SyncFS.h"
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
+#include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
-#include <boost/filesystem.hpp>
-#include <memory>
-#include <thread>
-#include <vector>
-#include <unordered_map>
-#include <map>
 
 namespace librevault {
 
+using boost::property_tree::ptree;
 using boost::asio::io_service;
 namespace fs = boost::filesystem;
 
-class Directory;
+class Directory {
+	syncfs::Key key;
+	ptree dir_options;
+	std::unique_ptr<syncfs::SyncFS> syncfs_ptr;
 
-class SyncManager {
-	io_service ios;
-	std::unique_ptr<io_service::work> work_lock;
-	std::vector<std::thread> worker_threads;
+	boost::asio::dir_monitor& monitor;
+	io_service& ios;
 
-	fs::path options_path;	// Config directory
-
-	boost::asio::dir_monitor monitor;
-
-	// Program options
-	Options options;
-
-	std::map<syncfs::Key, std::shared_ptr<Directory>> key_dir;
-	std::map<fs::path, std::shared_ptr<Directory>> path_dir;
+	Options& options;
 public:
-	SyncManager(fs::path glob_config_path);
-	virtual ~SyncManager();
+	Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, Options& options);
+	~Directory();
 
-	static fs::path get_default_config_path();
-
-	void run();
-	void shutdown();
-
-	void init_directories();
-	void add_directory(ptree dir_options);
-
-	void start_monitor();
+	std::string make_relative_path(const fs::path& path) const {return syncfs_ptr->make_portable_path(path);}
+	void handle_modification(const boost::asio::dir_monitor_event& ev);
 };
 
 } /* namespace librevault */

@@ -27,7 +27,6 @@ int main(int argc, char** argv){
 		("help,h", "Display help message")
 		("config,c", po::value<fs::path>()->default_value(librevault::SyncManager::get_default_config_path()))
 		("gen-key", "Generate Owner key")
-		("write-config", "Write default config to STDOUT")
 	;
 
 	po::variables_map variables;
@@ -41,10 +40,6 @@ int main(int argc, char** argv){
 	if(variables.count("gen-key") > 0){
 		librevault::syncfs::Key k;
 		std::cout << k;
-		return 0;
-	}
-	if(variables.count("write-config") > 0){
-		std::cout << librevault::Options::defaults_text;
 		return 0;
 	}
 

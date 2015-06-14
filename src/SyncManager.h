@@ -15,9 +15,10 @@
  */
 #pragma once
 
-#include "Options.h"
+#include "discovery/NodeDB.h"
 #include "syncfs/Key.h"
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
+#include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <memory>
@@ -28,8 +29,9 @@
 
 namespace librevault {
 
-using boost::asio::io_service;
 namespace fs = boost::filesystem;
+using boost::asio::io_service;
+using boost::property_tree::ptree;
 
 class Directory;
 
@@ -43,10 +45,12 @@ class SyncManager {
 	boost::asio::dir_monitor monitor;
 
 	// Program options
-	Options options;
+	ptree options;
 
 	std::map<syncfs::Key, std::shared_ptr<Directory>> key_dir;
 	std::map<fs::path, std::shared_ptr<Directory>> path_dir;
+
+	std::unique_ptr<discovery::NodeDB> nodedb;
 public:
 	SyncManager(fs::path glob_config_path);
 	virtual ~SyncManager();

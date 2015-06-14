@@ -47,10 +47,8 @@ class SyncFS {
 
 	// Boost asio io_service
 	std::shared_ptr<boost::asio::io_service> internal_io_service;
-	boost::asio::io_service::strand internal_io_strand;
 
 	boost::asio::io_service& external_io_service;
-	boost::asio::io_service::strand external_io_strand;	// We need this, as executing multiple SQLite statements (CrUD) is dangerous even is serialized mode.
 
 	// Components
 	std::unique_ptr<EncStorage> enc_storage;
@@ -86,7 +84,7 @@ public:
 
 	// Indexing functions
 	void index(const std::set<std::string> file_path);
-	void index(const std::string& file_path){index({file_path});};
+	void index(const std::string& file_path){std::set<std::string> s; s.insert(file_path); index(s);};
 
 	void wipe_index();
 

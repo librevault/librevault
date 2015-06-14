@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Options.h"
 #include "syncfs/SyncFS.h"
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
 #include <boost/property_tree/ptree.hpp>
@@ -34,9 +33,9 @@ class Directory {
 	boost::asio::dir_monitor& monitor;
 	io_service& ios;
 
-	Options& options;
+	ptree& options;
 public:
-	Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, Options& options);
+	Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, ptree& options);
 	~Directory();
 
 	std::string make_relative_path(const fs::path& path) const {return syncfs_ptr->make_portable_path(path);}

@@ -43,9 +43,7 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 		open_path(std::move(open_path)),
 		db_path(std::move(db_path)),
 		block_path(std::move(block_path)),
-		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())),
-		internal_io_strand(*internal_io_service),
-		external_io_strand(external_io_service){
+		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())){
 	BOOST_LOG_TRIVIAL(debug) << "Initializing SYNCFS";
 	BOOST_LOG_TRIVIAL(debug) << "Key level " << (char)key.getType();
 
@@ -67,7 +65,7 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 	directory_db->exec("CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB NOT NULL PRIMARY KEY, blocksize INTEGER NOT NULL, iv BLOB NOT NULL);");
 	directory_db->exec("CREATE TABLE IF NOT EXISTS openfs (block_encrypted_hash BLOB NOT NULL REFERENCES blocks (encrypted_hash) ON DELETE CASCADE ON UPDATE CASCADE, file_path_hmac BLOB NOT NULL REFERENCES files (path_hmac) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 
-	//directory_db->exec("CREATE TRIGGER IF NOT EXISTS block_deleter AFTER DELETE ON files BEGIN DELETE FROM blocks WHERE id NOT IN (SELECT blockid FROM openfs); END;");
+	directory_db->exec("CREATE TRIGGER block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_hash NOT IN (SELECT block_encrypted_hash FROM openfs); END;");
 
 	enc_storage = std::unique_ptr<EncStorage>(new EncStorage(this->block_path));
 	open_storage = std::unique_ptr<OpenStorage>(new OpenStorage(this, this->key, directory_db, *enc_storage.get(), this->open_path, this->block_path));
@@ -150,7 +148,7 @@ SignedMeta SyncFS::sign(const blob& meta) const {
 	return result;
 }
 
-std::string SyncFS::make_portable_path(const fs::path& path) const{
+std::string SyncFS::make_portable_path(const fs::path& path) const {
 	fs::path rel_to = open_path;
 	auto abspath = fs::absolute(path);
 
@@ -171,21 +169,15 @@ std::string SyncFS::make_portable_path(const fs::path& path) const{
 void SyncFS::index(const std::set<std::string> file_path){
 	BOOST_LOG_TRIVIAL(debug) << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path){
-		internal_io_strand.post(std::bind([this](std::string file_path_bound){	// Can be executed in any thread.
-			put_Meta(sign(make_Meta(file_path_bound)));
+		put_Meta(sign(make_Meta(file_path1)));
 
-			auto path_hmac = crypto::HMAC_SHA3_224(key.get_Encryption_Key()).to(file_path_bound);
+		auto path_hmac = crypto::HMAC_SHA3_224(key.get_Encryption_Key()).to(file_path1);
 
-			directory_db->exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
-					{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
-			});
+		directory_db->exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
+				{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
+		});
 
-			BOOST_LOG_TRIVIAL(debug) << "Updated index entry. Path=" << file_path_bound;
-		}, file_path1));
-
-		external_io_strand.post(
-				std::bind((size_t(boost::asio::io_service::*)()) &boost::asio::io_service::poll_one, internal_io_service)	// I hate getting pointers to overloaded methods!
-		);
+		BOOST_LOG_TRIVIAL(debug) << "Updated index entry. Path=" << file_path1;
 	}
 }
 

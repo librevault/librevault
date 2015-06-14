@@ -17,7 +17,7 @@
 
 namespace librevault {
 
-Directory::Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, Options& options) :
+Directory::Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, ptree& options) :
 		ios(ios), monitor(monitor), dir_options(std::move(dir_options)), options(options) {
 	key = this->dir_options.get<std::string>("key");
 
@@ -34,9 +34,12 @@ Directory::~Directory() {
 
 void Directory::handle_modification(const boost::asio::dir_monitor_event& ev){
 	switch(ev.type){
-	case ev.added: {
+	case ev.renamed_old_name:
+	case ev.added:
+		break;
+
+	default:
 		syncfs_ptr->index(make_relative_path(ev.path));
-	}
 	}
 }
 

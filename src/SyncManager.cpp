@@ -56,15 +56,18 @@ SyncManager::SyncManager(fs::path glob_config_path) : options_path(std::move(glo
 	BOOST_LOG_TRIVIAL(debug) << "Configuration directory: " << this->options_path;
 
 	fs::ifstream options_fs(this->options_path / "librevault.conf", std::ios::binary);
-	boost::property_tree::info_parser::read_info(options_fs, options.global);
+	boost::property_tree::info_parser::read_info(options_fs, options);
 	BOOST_LOG_TRIVIAL(debug) << "User configuration loaded: " << this->options_path / "librevault.conf";
 
 	init_directories();
+
+	nodedb = std::make_unique<discovery::NodeDB>(ios, options);
+	nodedb->start();
 }
 
 SyncManager::~SyncManager() {
 	fs::ofstream options_fs(this->options_path / "librevault.conf", std::ios::trunc | std::ios::binary);
-	boost::property_tree::info_parser::write_info(options_fs, options.global);
+	boost::property_tree::info_parser::write_info(options_fs, options);
 }
 
 void SyncManager::run(){
@@ -72,9 +75,9 @@ void SyncManager::run(){
 	boost::asio::signal_set signals(ios, SIGINT, SIGTERM);
 	signals.async_wait(std::bind(&SyncManager::shutdown, this));
 
-	auto thread_count = options.global.get("threads", std::thread::hardware_concurrency());
+	auto thread_count = options.get("threads", std::thread::hardware_concurrency());
 	if(thread_count <= 0) thread_count = 1;
-	BOOST_LOG_TRIVIAL(debug) << "Max threads: " << thread_count;
+	BOOST_LOG_TRIVIAL(debug) << "Worker threads: " << thread_count;
 
 	for(auto i = 0; i < thread_count-1; i++){
 		BOOST_LOG_TRIVIAL(debug) << "Starting thread #" << i+1;
@@ -96,7 +99,7 @@ void SyncManager::shutdown(){
 }
 
 void SyncManager::init_directories(){
-	auto folder_trees = options.global.equal_range("folder");
+	auto folder_trees = options.equal_range("folder");
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
 	}
@@ -114,6 +117,18 @@ void SyncManager::add_directory(ptree dir_options){
 void SyncManager::start_monitor(){
 	monitor.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
 		BOOST_LOG_TRIVIAL(trace) << ev;
+		fs::path ev_path = fs::absolute(ev.path);
+		for(auto it : path_dir){
+			auto path_dir_it = it.first.begin();
+			auto ev_dir_it = ev_path.begin();
+			bool equal = true;
+			while(path_dir_it != it.first.end()){
+				if(*path_dir_it != *ev_dir_it)	equal = false;
+				path_dir_it++; ev_dir_it++;
+			}
+			if(equal)
+				it.second->handle_modification(ev);
+		}
 
 		start_monitor();
 	});

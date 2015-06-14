@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,24 +15,33 @@
  */
 #pragma once
 
+#include "Multicast.h"
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/info_parser.hpp>
+#include <boost/asio.hpp>
+#include <map>
 
 namespace librevault {
+namespace discovery {
 
 using boost::property_tree::ptree;
+using boost::asio::io_service;
 
-struct Options {
-	Options(){
-		if(defaults.empty()){
-			std::string default_options_str = defaults_text;
-			std::istringstream ss(default_options_str);
-			boost::property_tree::read_info(ss, defaults);
-		}
-	}
-	ptree global;
-	static ptree defaults;
-	static const char* defaults_text;
+class NodeDB {
+	io_service& ios;
+
+	using node_addr_t = std::pair<boost::asio::ip::address, uint16_t>;
+
+	std::unique_ptr<Multicast> multicast4, multicast6;
+	ptree& options;
+public:
+	NodeDB(io_service& ios, ptree& options);
+	virtual ~NodeDB(){};
+
+	void start();
+	void stop();
+
+	void handle_discovery(ptree node_description);
 };
 
+} /* namespace discovery */
 } /* namespace librevault */

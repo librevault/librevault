@@ -29,13 +29,17 @@ NodeDB::NodeDB(io_service& ios, ptree& options) : ios(ios), options(options) {
 void NodeDB::start(){
 	std::function<void(ptree)> handler = [this](ptree node_description){handle_discovery(node_description);};
 	if(options.get<bool>("discovery.multicast4.enabled"))
-		//try{
+		try {
 			multicast4 = std::make_unique<Multicast4>(ios, options, handler); multicast4->start();
-		//}catch(std::runtime_error& e){
-		//	BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv4 discovery";
-		//}
+		}catch(std::runtime_error& e){
+			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv4 multicast discovery";
+		}
 	if(options.get<bool>("discovery.multicast6.enabled"))
-		multicast6 = std::make_unique<Multicast6>(ios, options, handler); multicast6->start();
+		try {
+			multicast6 = std::make_unique<Multicast6>(ios, options, handler); multicast6->start();
+		}catch(std::runtime_error& e){
+			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv6 multicast discovery";
+		}
 }
 
 void NodeDB::stop(){

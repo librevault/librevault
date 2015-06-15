@@ -70,7 +70,7 @@ class Multicast4 : public Multicast {
 public:
 	Multicast4(io_service& ios, ptree& options, decltype(handler) handler) : Multicast(ios, options, handler) {
 		socket.open(udp::v4());
-		bind_address = address::from_string(options.get<std::string>("net.ip"));
+		bind_address = address::from_string(options.get<std::string>("discovery.multicast4.local_ip"));
 
 		repeat_interval = std::chrono::seconds(options.get<int64_t>("discovery.multicast4.repeat_interval"));
 		multicast_addr.port(options.get<uint16_t>("discovery.multicast4.port"));
@@ -83,11 +83,13 @@ class Multicast6 : public Multicast {
 public:
 	Multicast6(io_service& ios, ptree& options, decltype(handler) handler) : Multicast(ios, options, handler) {
 		socket.open(udp::v6());
-		bind_address = address::from_string(options.get<std::string>("net.ip"));
+		bind_address = address::from_string(options.get<std::string>("discovery.multicast6.local_ip"));
 
 		repeat_interval = std::chrono::seconds(options.get<int64_t>("discovery.multicast6.repeat_interval"));
 		multicast_addr.port(options.get<uint16_t>("discovery.multicast6.port"));
 		multicast_addr.address(address::from_string(options.get<std::string>("discovery.multicast6.ip")));
+
+		socket.set_option(v6_only(true));
 	}
 	virtual ~Multicast6(){}
 };

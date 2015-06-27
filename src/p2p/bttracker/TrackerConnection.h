@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,18 +15,33 @@
  */
 #pragma once
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/asio/io_service.hpp>
+#include "../../syncfs/Key.h"
+#include "../../Signals.h"
+#include "../../net/parse_url.h"
 #include <boost/property_tree/ptree.hpp>
-#include <vector>
-#include <cstdint>
+#include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <queue>
 
 namespace librevault {
+namespace p2p {
 
-namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
 using boost::asio::io_service;
 using boost::property_tree::ptree;
 
+class TrackerConnection : public Announcer{
+protected:
+	using infohash = std::array<uint8_t, 20>;
+	std::map<infohash, FSDirectory*> infohashes;
+
+	virtual void announce(const infohash& ih) = 0;
+	infohash get_infohash(const syncfs::Key& key) const;
+public:
+	TrackerConnection(io_service& ios, Signals& signals, ptree& options);
+	virtual ~TrackerConnection();
+
+	virtual void start() = 0;
+};
+
+} /* namespace p2p */
 } /* namespace librevault */

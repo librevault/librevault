@@ -14,12 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Multicast.h"
+
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 namespace librevault {
-namespace discovery {
+namespace p2p {
 
 Multicast::Multicast(io_service& ios, ptree& options, decltype(handler) handler) : ios(ios), repeat_timer(ios), socket(ios), options(options), handler(handler) {}
 Multicast::~Multicast() {
@@ -64,7 +65,7 @@ void Multicast::process(std::shared_ptr<udp_buffer> buffer, size_t size, std::sh
 		boost::property_tree::json_parser::read_json(is, message_tree);
 		udp::endpoint dest_endpoint(endpoint_ptr->address(), message_tree.get<uint16_t>("port"));
 
-		BOOST_LOG_TRIVIAL(debug) << "Local <- " << dest_endpoint;
+		BOOST_LOG_TRIVIAL(debug) << "<== Multicast: " << dest_endpoint;
 		handler(message_tree);
 	}catch(boost::property_tree::ptree_error& e){
 		BOOST_LOG_TRIVIAL(debug) << "Message from " << endpoint_ptr->address() << ": Malformed JSON data";
@@ -74,7 +75,7 @@ void Multicast::process(std::shared_ptr<udp_buffer> buffer, size_t size, std::sh
 
 void Multicast::send(){
 	socket.async_send_to(boost::asio::buffer(get_message()), multicast_addr, std::bind(&Multicast::wait, this));
-	BOOST_LOG_TRIVIAL(debug) << "Local -> " << multicast_addr;
+	BOOST_LOG_TRIVIAL(debug) << "==> Multicast: " << multicast_addr;
 }
 
 void Multicast::receive(){

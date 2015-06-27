@@ -19,12 +19,15 @@
 #include <boost/asio.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <boost/log/sources/severity_channel_logger.hpp>
+#include <boost/log/trivial.hpp>
+
 #include <string>
 #include <array>
 #include <functional>
 
 namespace librevault {
-namespace discovery {
+namespace p2p {
 
 using namespace boost::asio::ip;
 using boost::asio::io_service;

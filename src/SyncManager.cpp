@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SyncManager.h"
-#include "Directory.h"
+
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks.hpp>
 #include <boost/predef.h>
@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include "FSDirectory.h"
 
 namespace librevault {
 
@@ -61,8 +62,9 @@ SyncManager::SyncManager(fs::path glob_config_path) : options_path(std::move(glo
 
 	init_directories();
 
-	nodedb = std::make_unique<discovery::NodeDB>(ios, options);
-	nodedb->start();
+	nodedb = std::make_unique<p2p::NodeDB>(ios, signals, options);
+	nodedb->start_lsd_announcer();
+	nodedb->start_tracker_announcer();
 }
 
 SyncManager::~SyncManager() {
@@ -109,9 +111,18 @@ void SyncManager::init_directories(){
 }
 
 void SyncManager::add_directory(ptree dir_options){
-	auto dir_ptr = std::make_shared<Directory>(ios, monitor, dir_options, options);
-	key_dir.insert(std::make_pair(syncfs::Key(dir_options.get<std::string>("key")), dir_ptr));
-	path_dir.insert(std::make_pair(dir_options.get<fs::path>("open_path"), dir_ptr));
+	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, monitor, ios, signals, options);
+	key_dir.insert({dir_ptr->get_key(), dir_ptr});
+	path_dir.insert({dir_ptr->get_open_path(), dir_ptr});
+	BOOST_LOG_TRIVIAL(info) << "Added directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
+	signals.directory(dir_ptr, Signals::DIRECTORY_ADDED);
+}
+
+void SyncManager::remove_directory(std::shared_ptr<FSDirectory> dir_ptr){
+	signals.directory(dir_ptr, Signals::DIRECTORY_REMOVED);
+	path_dir.erase(dir_ptr->get_open_path());
+	key_dir.erase(dir_ptr->get_key());
+	BOOST_LOG_TRIVIAL(info) << "Removed directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
 }
 
 void SyncManager::start_monitor(){

@@ -116,7 +116,7 @@ public:
 	void put_encblock(const blob& block_hash, const blob& data);
 
 	struct Blocklist {
-		std::list<blob> have, need;
+		std::set<blob> have, need;
 	};
 	Blocklist get_blocklist();
 

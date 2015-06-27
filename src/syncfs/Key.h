@@ -36,13 +36,15 @@ class Key {
 	mutable std::vector<uint8_t> cached_encryption_key;	// ReadOnly
 	mutable std::vector<uint8_t> cached_public_key;		// Download
 
+	mutable std::vector<uint8_t> cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
+
 	std::vector<uint8_t> get_payload() const;
 public:
 	enum Type : char {
 		Owner = 'A',	/// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
 		ReadWrite = 'B',	/// Signature key, used to sign modified files.
 		ReadOnly = 'C',	/// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
-		Download = 'D'	/// Public key, used to verify signed modified files
+		Download = 'D',	/// Public key, used to verify signed modified files
 	};
 
 	class error : public std::domain_error {
@@ -77,9 +79,11 @@ public:	// Yes, I prefer splitting member variables and method declaration
 	Key derive(Type key_type);
 
 	// Payload getters
-	std::vector<uint8_t>& get_Private_Key() const;
-	std::vector<uint8_t>& get_Public_Key() const;
-	std::vector<uint8_t>& get_Encryption_Key() const;
+	const std::vector<uint8_t>& get_Private_Key() const;
+	const std::vector<uint8_t>& get_Public_Key() const;
+	const std::vector<uint8_t>& get_Encryption_Key() const;
+
+	const std::vector<uint8_t>& get_Hash() const;
 
 	virtual ~Key();
 

@@ -15,12 +15,16 @@
  */
 #pragma once
 
-#include "discovery/NodeDB.h"
+#include "p2p/NodeDB.h"
 #include "syncfs/Key.h"
+#include "Signals.h"
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
+
 #include <memory>
 #include <thread>
 #include <vector>
@@ -33,7 +37,7 @@ namespace fs = boost::filesystem;
 using boost::asio::io_service;
 using boost::property_tree::ptree;
 
-class Directory;
+class FSDirectory;
 
 class SyncManager {
 	io_service ios;
@@ -47,10 +51,12 @@ class SyncManager {
 	// Program options
 	ptree options;
 
-	std::map<syncfs::Key, std::shared_ptr<Directory>> key_dir;
-	std::map<fs::path, std::shared_ptr<Directory>> path_dir;
+	std::map<syncfs::Key, std::shared_ptr<NetworkDirectory>> key_dir;
+	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir;
 
-	std::unique_ptr<discovery::NodeDB> nodedb;
+	std::unique_ptr<p2p::NodeDB> nodedb;
+
+	Signals signals;
 public:
 	SyncManager(fs::path glob_config_path);
 	virtual ~SyncManager();
@@ -62,6 +68,7 @@ public:
 
 	void init_directories();
 	void add_directory(ptree dir_options);
+	void remove_directory(std::shared_ptr<FSDirectory> dir_ptr);
 
 	void start_monitor();
 };

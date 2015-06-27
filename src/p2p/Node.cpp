@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,20 +13,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <vector>
-#include <cstdint>
+#include "Node.h"
 
 namespace librevault {
+namespace p2p {
 
-namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
-using boost::asio::io_service;
-using boost::property_tree::ptree;
+Node::Node() {}
+Node::~Node() {}
 
+} /* namespace overlay */
 } /* namespace librevault */

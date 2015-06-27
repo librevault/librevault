@@ -13,18 +13,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "BlockFinder.h"
+#pragma once
+
+#include <memory>
+#include <boost/signals2.hpp>
 
 namespace librevault {
-namespace blockexchange {
 
-BlockFinder::BlockFinder(io_service& ios, ptree& options) : ios(ios), options(options) {
+class FSDirectory;
+struct Signals {
+	enum SignalType {
+		UNKNOWN = 0,
+		DIRECTORY_ADDED,
+		DIRECTORY_REMOVED,
+		DIRECTORY_CHANGED
+	};
 
-}
+	boost::signals2::signal<void(std::shared_ptr<FSDirectory>, SignalType)> directory;
+};
 
-BlockFinder::~BlockFinder() {
-	// TODO Auto-generated destructor stub
-}
-
-} /* namespace blockexchange */
 } /* namespace librevault */

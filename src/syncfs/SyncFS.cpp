@@ -297,11 +297,11 @@ SyncFS::Blocklist SyncFS::get_blocklist(){
 		blob encrypted_hash = row[0].as_blob();
 		bool assembled = row[1].as_int();
 		if(assembled)
-			bl.have.push_back(encrypted_hash);
+			bl.have.insert(encrypted_hash);
 		else if(enc_storage->have_encblock(encrypted_hash))
-			bl.have.push_back(encrypted_hash);
+			bl.have.insert(encrypted_hash);
 		else
-			bl.need.push_back(encrypted_hash);
+			bl.need.insert(encrypted_hash);
 	}
 	return bl;
 }

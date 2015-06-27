@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,18 +15,31 @@
  */
 #pragma once
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/asio/io_service.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <vector>
-#include <cstdint>
+#include <chrono>
 
 namespace librevault {
+namespace p2p {
 
-namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
-using boost::asio::io_service;
 using boost::property_tree::ptree;
+using std::chrono::seconds;
+using blob = std::vector<uint8_t>;
 
+class Node {
+public:
+	enum Quality {SUPERIOR, GOOD, QUESTIONABLE, BAD};
+private:
+	ptree node;
+	blob id;
+
+	Quality quality = GOOD;
+public:
+	Node();
+	virtual ~Node();
+
+	blob get_id() const {return id;};
+	Quality get_quality() const {return quality;}
+};
+
+} /* namespace overlay */
 } /* namespace librevault */

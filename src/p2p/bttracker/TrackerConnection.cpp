@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,20 +13,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "../bttracker/TrackerConnection.h"
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <vector>
-#include <cstdint>
+#include "../../FSDirectory.h"
 
 namespace librevault {
+namespace p2p {
 
-namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
-using boost::asio::io_service;
-using boost::property_tree::ptree;
+TrackerConnection::TrackerConnection(io_service& ios, Signals& signals, ptree& options) :
+		ios(ios), signals(signals), options(options) {}
 
+TrackerConnection::~TrackerConnection() {}
+
+TrackerConnection::infohash TrackerConnection::get_infohash(const syncfs::Key& key) const {
+	infohash ih; std::copy(key.get_Hash().begin(), key.get_Hash().begin()+ih.size(), ih.data());
+	return ih;
+}
+
+} /* namespace p2p */
 } /* namespace librevault */

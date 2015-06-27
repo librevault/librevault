@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,20 +15,41 @@
  */
 #pragma once
 
+#include "Multicast.h"
+#include "bttracker/TrackerConnection.h"
+#include "Node.h"
 #include <boost/property_tree/ptree.hpp>
+#include <boost/asio.hpp>
+#include <map>
 
 namespace librevault {
-namespace blockexchange {
+namespace p2p {
 
 using boost::property_tree::ptree;
+using boost::asio::io_service;
+using blob = std::vector<uint8_t>;
 
-class BlockFinder {
-	ptree& options;
+class NodeDB {
 	io_service& ios;
+
+	using node_addr_t = std::pair<boost::asio::ip::address, uint16_t>;
+
+	std::unique_ptr<Multicast> multicast4, multicast6;
+	std::list<std::unique_ptr<TrackerConnection>> torrent_trackers;
+	std::map<blob, std::shared_ptr<Node>> nodes;
+
+	Signals& signals;
+	ptree& options;
 public:
-	BlockFinder(io_service& ios, ptree& options);
-	virtual ~BlockFinder();
+	NodeDB(io_service& ios, Signals& signals, ptree& options);
+	virtual ~NodeDB(){};
+
+	void start_lsd_announcer();
+	void start_tracker_announcer();
+	void stop();
+
+	void handle_discovery(ptree node_description);
 };
 
-} /* namespace blockexchange */
+} /* namespace discovery */
 } /* namespace librevault */

@@ -14,37 +14,64 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeDB.h"
+
+#include "bttracker/UDPTrackerConnection.h"
+
 #include "../version.h"
+#include "../net/parse_url.h"
 #include <boost/log/trivial.hpp>
 #include <boost/log/sinks.hpp>
 #include <functional>
 
 namespace librevault {
-namespace discovery {
+namespace p2p {
 
-NodeDB::NodeDB(io_service& ios, ptree& options) : ios(ios), options(options) {
+NodeDB::NodeDB(io_service& ios, Signals& signals, ptree& options) : ios(ios), signals(signals), options(options) {}
 
-}
-
-void NodeDB::start(){
+void NodeDB::start_lsd_announcer(){
 	std::function<void(ptree)> handler = [this](ptree node_description){handle_discovery(node_description);};
 	if(options.get<bool>("discovery.multicast4.enabled"))
 		try {
 			multicast4 = std::make_unique<Multicast4>(ios, options, handler); multicast4->start();
 		}catch(std::runtime_error& e){
-			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv4 multicast discovery";
+			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv4 multicast discovery" << e.what();
 		}
 	if(options.get<bool>("discovery.multicast6.enabled"))
 		try {
 			multicast6 = std::make_unique<Multicast6>(ios, options, handler); multicast6->start();
 		}catch(std::runtime_error& e){
-			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv6 multicast discovery";
+			BOOST_LOG_TRIVIAL(info) << "Cannot initialize UDPv6 multicast discovery" << e.what();
 		}
+}
+
+void NodeDB::start_tracker_announcer(){
+	if(options.get<bool>("discovery.bttracker.enabled")){
+		auto all_trackers = options.get_child("discovery.bttracker").equal_range("tracker");
+		for(auto& it = all_trackers.first; it != all_trackers.second; it++){
+			try {
+				url tracker_address = parse_url(it->second.get_value<std::string>());
+				TrackerConnection* tracker_ptr;
+
+				if(tracker_address.scheme == "udp")
+					tracker_ptr = new UDPTrackerConnection(tracker_address, ios, signals, options);
+				else if(tracker_address.scheme == "http")
+					throw std::runtime_error("HTTP trackers not implemented yet. UDP trackers only supported");
+				else
+					throw std::runtime_error("Unknown tracker scheme");
+				torrent_trackers.emplace_back(tracker_ptr);
+				tracker_ptr->start();
+			}catch(std::runtime_error& e){
+				BOOST_LOG_TRIVIAL(info) << "Cannot initialize BitTorrent tracker discovery";
+			}
+		}
+	}else
+		BOOST_LOG_TRIVIAL(info) << "BitTorrent tracker discovery is disabled";
 }
 
 void NodeDB::stop(){
 	multicast4.reset();
 	multicast6.reset();
+	torrent_trackers.clear();
 }
 
 void NodeDB::handle_discovery(ptree node_description){

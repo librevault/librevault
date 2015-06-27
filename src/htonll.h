@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,19 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <boost/predef/other.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <vector>
-#include <cstdint>
+inline uint64_t htonll(uint64_t value){
+#if BOOST_ENDIAN_LITTLE_BYTE
+	const uint32_t high_part = htonl(static_cast<uint32_t>(value >> 32));
+	const uint32_t low_part = htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
 
-namespace librevault {
+	return (static_cast<uint64_t>(low_part) << 32) | high_part;
+#else
+	return value;
+#endif
+}
 
-namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
-using boost::asio::io_service;
-using boost::property_tree::ptree;
-
-} /* namespace librevault */
+inline uint64_t ntohll(uint64_t value){return htonll(value);}

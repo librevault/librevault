@@ -13,10 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "SyncManager.h"
 #include "syncfs/Key.h"
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+#include <iostream>
+
+#include "SyncManager.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;

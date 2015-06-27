@@ -87,7 +87,7 @@ Key Key::derive(Type key_type){
 	}
 }
 
-std::vector<uint8_t>& Key::get_Private_Key() const {
+const std::vector<uint8_t>& Key::get_Private_Key() const {
 	if(!cached_private_key.empty()) return cached_private_key;
 
 	switch(getType()){
@@ -101,7 +101,7 @@ std::vector<uint8_t>& Key::get_Private_Key() const {
 	}
 }
 
-std::vector<uint8_t>& Key::get_Encryption_Key() const {
+const std::vector<uint8_t>& Key::get_Encryption_Key() const {
 	if(!cached_encryption_key.empty()) return cached_encryption_key;
 
 	switch(getType()){
@@ -121,7 +121,7 @@ std::vector<uint8_t>& Key::get_Encryption_Key() const {
 	}
 }
 
-std::vector<uint8_t>& Key::get_Public_Key() const {
+const std::vector<uint8_t>& Key::get_Public_Key() const {
 	if(!cached_public_key.empty()) return cached_public_key;
 
 	switch(getType()){
@@ -149,6 +149,13 @@ std::vector<uint8_t>& Key::get_Public_Key() const {
 	default:
 		throw level_error();
 	}
+}
+
+const std::vector<uint8_t>& Key::get_Hash() const {
+	if(!cached_hash.empty()) return cached_hash;
+
+	CryptoPP::SHA3_256().CalculateDigest(cached_hash.data(), get_Public_Key().data(), get_Public_Key().size());
+	return cached_hash;
 }
 
 std::ostream& operator<<(std::ostream& os, const Key& k){

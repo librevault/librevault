@@ -14,39 +14,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Announcer.h"
+#include "../../Session.h"
 
 namespace librevault {
 namespace p2p {
 
-Announcer::Announcer(io_service& ios, Signals& signals, ptree& options) : ios(ios), signals(signals), options(options) {}
+Announcer::Announcer(Session& session) : session(session) {}
 Announcer::~Announcer() {}
 
-void Announcer::start_announce_timer(){
-	if(announce_queue.empty()) return;
-
-	announce_timer.expires_at(announce_queue.top()->last_announce+std::min(announce_queue.top()->interval, std::chrono::seconds(options.get<int>("discovery.bttracker.min_interval"))));
-	announce_timer.async_wait([this](const boost::system::error_code& ec){
-		if(ec == boost::asio::error::operation_aborted) return;
-		announce(announce_queue.top()->dir_ptr);
-		announce_queue.pop();
-	});
+Announcer::time_point Announcer::get_queued_time() const {
+	return announce_queue.top()->last_announce+std::max(announce_queue.top()->interval, get_min_interval());
 }
 
-void Announcer::stop_announce_timer(){
-	announce_timer.cancel();
-}
+void Announcer::add_directory(std::shared_ptr<Directory> directory){
+	log->debug() << "Adding directory: k=" << directory->get_key();
 
-void Announcer::add_directory(FSDirectory* directory){
 	auto new_announced_directory = std::make_shared<AnnouncedDirectory>();
 	new_announced_directory->dir_ptr = directory;
-	new_announced_directory->interval = std::chrono::seconds(options.get<int>("discovery.bttracker.min_interval"));
+	new_announced_directory->interval = get_min_interval();
 
 	tracked_directories.insert(std::make_pair(directory, new_announced_directory));
-	start_announce_timer();
+
+	log->info() << "Added directory: k=" << directory->get_key();
 }
 
-void Announcer::remove_directory(FSDirectory* directory){
-	start_announce_timer();
+void Announcer::remove_directory(std::shared_ptr<Directory> directory){
+	log->debug() << "Removing directory: k=" << directory->get_key();
+
+	auto it = tracked_directories.find(directory);
+	if(it != tracked_directories.end()){
+		it->second->dir_ptr.reset();
+		tracked_directories.erase(it);
+	}
+
+	log->info() << "Removed directory: k=" << directory->get_key();
 }
 
 } /* namespace p2p */

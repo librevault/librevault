@@ -19,16 +19,14 @@
 #include "../../contrib/crypto/SHA3.h"
 
 #include <boost/filesystem/fstream.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/sinks.hpp>
 
 #include "SyncFS.h"
 
 namespace librevault {
 namespace syncfs {
 
-EncStorage::EncStorage(const fs::path& block_path) : block_path(block_path) {
-	BOOST_LOG_TRIVIAL(debug) << "Initializing EncStorage";
+EncStorage::EncStorage(const fs::path& block_path) : block_path(block_path), log(spdlog::stderr_logger_mt("SyncFS.EncStorage")) {
+	log->debug() << "Initializing EncStorage";
 }
 EncStorage::~EncStorage() {}
 
@@ -67,13 +65,13 @@ void EncStorage::put_encblock(const blob& block_hash, const blob& data){
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	BOOST_LOG_TRIVIAL(debug) << "Encrypted block " << (std::string)crypto::Base32().to(block_hash) << " pushed into EncStorage";
+	log->debug() << "Encrypted block " << (std::string)crypto::Base32().to(block_hash) << " pushed into EncStorage";
 }
 
 void EncStorage::remove_encblock(const blob& block_hash){
 	fs::remove(make_encblock_path(block_hash));
 
-	BOOST_LOG_TRIVIAL(debug) << "Block " << (std::string)crypto::Base32().to(block_hash) << " removed from EncStorage";
+	log->debug() << "Block " << (std::string)crypto::Base32().to(block_hash) << " removed from EncStorage";
 }
 
 } /* namespace syncfs */

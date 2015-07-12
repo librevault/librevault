@@ -37,7 +37,7 @@ public:
 	Node();
 	virtual ~Node();
 
-	blob get_id() const {return id;};
+	blob get_id() const {return id;}
 	Quality get_quality() const {return quality;}
 };
 

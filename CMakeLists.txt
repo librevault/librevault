@@ -7,12 +7,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 # Compilation options
 #============================================================================
 
-#-- Add an Option to toggle the generation of the API documentation
-option(SINGLE_THREADED "Build single-threaded version of the library" OFF)
-if(SINGLE_THREADED)
-	add_definitions(-DSINGLE_THREADED)
-endif()
-
 #============================================================================
 # Compiler properties
 #============================================================================
@@ -31,33 +25,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
 ENDIF()
 
-# Protobuf Generator
-find_package(Protobuf REQUIRED)
-if(PROTOBUF_FOUND)
-  file(GLOB_RECURSE PROTO_COMMON_LIST "src/*.proto")
-  PROTOBUF_GENERATE_CPP(PROTO_COMMON_SOURCES PROTO_COMMON_HEADERS ${PROTO_COMMON_LIST})
-endif()
-
-#============================================================================
-# Binary generation
-#============================================================================
-
-file(GLOB_RECURSE SRCS "src/*")
-# Protobuf
-list(APPEND SRCS ${PROTO_COMMON_SOURCES})
-list(APPEND SRCS ${PROTO_COMMON_HEADERS})
-# SQLite
-#list(APPEND SRCS "contrib/sqlite/sqlite3.c")
-#list(APPEND SRCS "contrib/sqlite/sqlite3.h")
-file(GLOB_RECURSE CRYPTO_SRCS "contrib/crypto/*")
-list(APPEND SRCS ${CRYPTO_SRCS})
-file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/lvsqlite3/*")
-list(APPEND SRCS ${LVSQLITE3_SRCS})
-
-include_directories("src/include")
-
-add_executable(${PROJECT_NAME} ${SRCS})
-
 #============================================================================
 # Third-party Libraries
 #============================================================================
@@ -66,21 +33,16 @@ add_executable(${PROJECT_NAME} ${SRCS})
 set (Boost_COMPONENTS
 	system
 	filesystem
-	date_time
 	log
-	program_options
-	iostreams)
-
+	program_options)
 # set (Boost_USE_STATIC_LIBS ON)
 set (Boost_USE_MULTITHREADED ON)
 
 add_definitions(-DBOOST_LOG_DYN_LINK)
-find_package(Boost COMPONENTS ${Boost_COMPONENTS} REQUIRED)
 
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-endif()
+find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
+include_directories(${Boost_INCLUDE_DIRS})
+link_libraries(${Boost_LIBRARIES})
 # /Boost
 
 # SQLite
@@ -88,36 +50,63 @@ find_package(Sqlite3 REQUIRED)
 
 if(SQLITE3_FOUND)
   include_directories(${SQLITE3_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
+  link_libraries(${SQLITE3_LIBRARIES})
+else()
+  include_directories("contrib/sqlite")
 endif()
 # /SQLite
 
 # Protobuf
-# Found lately
+find_package(Protobuf REQUIRED)
 
-if(PROTOBUF_FOUND)
-  include_directories(${PROTOBUF_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} ${PROTOBUF_LIBRARIES})
-endif()
-# /Protobuf
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+link_libraries(${PROTOBUF_LIBRARIES})
 
-# SQLite
+file(GLOB_RECURSE PROTO_LIST "src/*.proto")
+PROTOBUF_GENERATE_CPP(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
+
+# Cryptodiff
 find_package(Cryptodiff REQUIRED)
-
-if(CRYPTODIFF_FOUND)
-  include_directories(${CRYPTODIFF_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} ${CRYPTODIFF_LIBRARIES})
-endif()
-# /SQLite
+include_directories(${CRYPTODIFF_INCLUDE_DIR})
+link_libraries(${CRYPTODIFF_LIBRARIES})
 
 # CryptoPP
 find_package(CryptoPP REQUIRED)
+include_directories(${CRYPTOPP_INCLUDE_DIRS})
+link_libraries(${CRYPTOPP_LIBRARIES})
 
-if(CRYPTOPP_FOUND)
-  include_directories(${CRYPTOPP_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} ${CRYPTOPP_LIBRARIES})
+# Botan
+find_package(Botan REQUIRED)
+include_directories(${BOTAN_INCLUDE_DIRS})
+link_libraries(${BOTAN_LIBRARIES})
+
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+link_libraries(${OPENSSL_LIBRARIES})
+
+include_directories("contrib/include")
+
+#============================================================================
+# Binary generation
+#============================================================================
+
+file(GLOB_RECURSE SRCS "src/*")
+# Protobuf
+list(APPEND SRCS ${PROTO_SOURCES})
+list(APPEND SRCS ${PROTO_HEADERS})
+# SQLite
+if(NOT SQLITE3_FOUND)
+  list(APPEND SRCS "contrib/sqlite/sqlite3.c")
 endif()
-# /CryptoPP
+file(GLOB_RECURSE CRYPTO_SRCS "contrib/crypto/*")
+list(APPEND SRCS ${CRYPTO_SRCS})
+file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/lvsqlite3/*")
+list(APPEND SRCS ${LVSQLITE3_SRCS})
+
+add_executable(${PROJECT_NAME} ${SRCS})
+
+
 
 #============================================================================
 # Documentation generation

@@ -15,32 +15,35 @@
  */
 #pragma once
 
+#include "../../Directory.h"
 #include "../../types.h"
 #include "../../syncfs/Key.h"
-#include "../../Signals.h"
+#include <spdlog/logger.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <queue>
 
 namespace librevault {
-namespace p2p {
+class Session;
 
-using boost::property_tree::ptree;
+namespace p2p {
 
 class Announcer {
 protected:
-	io_service& ios;
-	Signals& signals;
-	ptree& options;
+	using seconds = std::chrono::seconds;
+	using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+
+	Session& session;
+	std::shared_ptr<spdlog::logger> log;
 
 	struct AnnouncedDirectory {
-		FSDirectory* dir_ptr;
+		std::shared_ptr<Directory> dir_ptr;
 		unsigned int announced_times = 0;
 		std::chrono::seconds interval;
-		std::chrono::time_point<std::chrono::steady_clock> last_announce;
+		time_point last_announce;
 	};
-	std::map<FSDirectory*, std::shared_ptr<AnnouncedDirectory>> tracked_directories;
+	std::map<std::shared_ptr<Directory>, std::shared_ptr<AnnouncedDirectory>> tracked_directories;
 
 	struct time_comp {
 		bool operator()(std::shared_ptr<AnnouncedDirectory> lhs, std::shared_ptr<AnnouncedDirectory> rhs){
@@ -48,20 +51,15 @@ protected:
 		}
 	};
 	std::priority_queue<std::shared_ptr<AnnouncedDirectory>, std::deque<std::shared_ptr<AnnouncedDirectory>>, time_comp> announce_queue;
-
-	boost::asio::steady_timer announce_timer;
-	void start_announce_timer();
-	void stop_announce_timer();
-
-	virtual void announce(FSDirectory* directory) = 0;
 public:
-	Announcer(io_service& ios, Signals& signals, ptree& options);
+	Announcer(Session& session);
 	virtual ~Announcer();
 
-	virtual void start() = 0;
+	time_point get_queued_time() const;
+	virtual seconds get_min_interval() const = 0;
 
-	void add_directory(FSDirectory* directory);
-	void remove_directory(FSDirectory* directory);
+	void add_directory(std::shared_ptr<Directory> directory);
+	void remove_directory(std::shared_ptr<Directory> directory);
 };
 
 } /* namespace p2p */

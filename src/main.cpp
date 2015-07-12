@@ -18,7 +18,7 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 
-#include "SyncManager.h"
+#include "Session.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 	po::options_description allowed_options("Allowed Options");
 	allowed_options.add_options()
 		("help,h", "Display help message")
-		("config,c", po::value<fs::path>()->default_value(librevault::SyncManager::get_default_config_path()))
+		("config,c", po::value<fs::path>()->default_value(librevault::Session::get_default_config_path()))
 		("gen-key", "Generate Owner key")
 	;
 
@@ -45,8 +45,8 @@ int main(int argc, char** argv){
 		return 0;
 	}
 
-	librevault::SyncManager sync_manager(variables["config"].as<fs::path>());
-	sync_manager.run();
+	librevault::Session session(variables["config"].as<fs::path>());
+	session.run();
 
 	return 0;
 }

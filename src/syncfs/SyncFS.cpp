@@ -22,17 +22,11 @@
 #include "../../contrib/crypto/HMAC-SHA3.h"
 #include <cryptopp/oids.h>
 
-#include "../../contrib/crypto/Base64.h"
-
 // Cryptodiff
 #include <cryptodiff.h>
 
 // CryptoPP
 #include <cryptopp/osrng.h>
-
-// Boost
-#include <boost/log/trivial.hpp>
-#include <boost/log/sinks.hpp>	// It is not necessary. But my Eclipse craps me out if I don't include it.
 
 namespace librevault {
 namespace syncfs {
@@ -43,21 +37,21 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 		open_path(std::move(open_path)),
 		db_path(std::move(db_path)),
 		block_path(std::move(block_path)),
-		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())){
-	BOOST_LOG_TRIVIAL(debug) << "Initializing SYNCFS";
-	BOOST_LOG_TRIVIAL(debug) << "Key level " << (char)key.getType();
+		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())), log(spdlog::stderr_logger_mt("SyncFS")) {
+	log->debug() << "Initializing SYNCFS";
+	log->debug() << "Key level " << (char)key.getType();
 
 	bool open_path_created = fs::create_directories(this->open_path);
-	BOOST_LOG_TRIVIAL(debug) << "Open directory: " << this->open_path << (open_path_created ? " created" : "");
+	log->debug() << "Open directory: " << this->open_path << (open_path_created ? " created" : "");
 	bool block_path_created = fs::create_directories(this->block_path);
-	BOOST_LOG_TRIVIAL(debug) << "Block directory: " << this->block_path << (block_path_created ? " created" : "");
+	log->debug() << "Block directory: " << this->block_path << (block_path_created ? " created" : "");
 	bool db_path_created = fs::create_directories(this->db_path.parent_path());
-	BOOST_LOG_TRIVIAL(debug) << "Database directory: " << this->db_path.parent_path() << (db_path_created ? " created" : "");
+	log->debug() << "Database directory: " << this->db_path.parent_path() << (db_path_created ? " created" : "");
 
 	if(fs::exists(this->db_path))
-		BOOST_LOG_TRIVIAL(debug) << "Opening SQLite3 DB: " << this->db_path;
+		log->debug() << "Opening SQLite3 DB: " << this->db_path;
 	else
-		BOOST_LOG_TRIVIAL(debug) << "Creating new SQLite3 DB: " << this->db_path;
+		log->debug() << "Creating new SQLite3 DB: " << this->db_path;
 	directory_db = std::make_shared<SQLiteDB>(this->db_path);
 	directory_db->exec("PRAGMA foreign_keys = ON;");
 
@@ -167,7 +161,7 @@ std::string SyncFS::make_portable_path(const fs::path& path) const {
 }
 
 void SyncFS::index(const std::set<std::string> file_path){
-	BOOST_LOG_TRIVIAL(debug) << "Preparing to index " << file_path.size() << " entries.";
+	log->debug() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path){
 		put_Meta(sign(make_Meta(file_path1)));
 
@@ -177,7 +171,7 @@ void SyncFS::index(const std::set<std::string> file_path){
 				{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
 		});
 
-		BOOST_LOG_TRIVIAL(debug) << "Updated index entry. Path=" << file_path1;
+		log->debug() << "Updated index entry. Path=" << file_path1;
 	}
 }
 
@@ -239,7 +233,7 @@ void SyncFS::put_Meta(std::list<SignedMeta> signed_meta_list) {
 			offset += block.blocksize();
 		}
 
-		BOOST_LOG_TRIVIAL(debug) << "Added Meta of " << (std::string)crypto::Base32().to(meta.path_hmac());
+		log->debug() << "Added Meta of " << (std::string)crypto::Base32().to(meta.path_hmac());
 	}
 }
 

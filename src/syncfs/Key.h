@@ -30,6 +30,8 @@ class Key {
 	static constexpr size_t encryption_key_size = 32;
 	static constexpr size_t public_key_size = 33;
 
+	static constexpr size_t hash_size = 32;
+
 	std::string secret_s;
 
 	mutable std::vector<uint8_t> cached_private_key;	// ReadWrite

@@ -15,8 +15,8 @@
  */
 #pragma once
 
+#include "Announcer.h"
 #include "../../syncfs/Key.h"
-#include "../../Signals.h"
 #include "../../net/parse_url.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
@@ -29,18 +29,21 @@ namespace p2p {
 using boost::asio::io_service;
 using boost::property_tree::ptree;
 
-class TrackerConnection : public Announcer{
-protected:
-	using infohash = std::array<uint8_t, 20>;
-	std::map<infohash, FSDirectory*> infohashes;
 
-	virtual void announce(const infohash& ih) = 0;
+class TrackerConnection : public Announcer {
+protected:
+	url tracker_address;
+
+	using infohash = std::array<uint8_t, 20>;
+	std::map<infohash, std::shared_ptr<Directory>> infohashes;
+
+	virtual void announce(const infohash& ih){}
 	infohash get_infohash(const syncfs::Key& key) const;
 public:
-	TrackerConnection(io_service& ios, Signals& signals, ptree& options);
+	TrackerConnection(url tracker_address, Session& session);
 	virtual ~TrackerConnection();
 
-	virtual void start() = 0;
+	seconds get_min_interval() const override;
 };
 
 } /* namespace p2p */

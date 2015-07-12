@@ -16,6 +16,7 @@
 #pragma once
 
 #include "../types.h"
+#include <spdlog/spdlog.h>
 
 namespace librevault {
 namespace syncfs {
@@ -25,6 +26,9 @@ class EncStorage {
 
 	fs::path make_encblock_name(const blob& block_hash) const;
 	fs::path make_encblock_path(const blob& block_hash) const;
+
+	// Logger
+	std::shared_ptr<spdlog::logger> log;
 public:
 	EncStorage(const fs::path& block_path);
 	virtual ~EncStorage();

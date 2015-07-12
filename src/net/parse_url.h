@@ -23,6 +23,9 @@ struct url {
 	std::string userinfo;
 	std::string host;
 	uint16_t port = 0;
+	std::string query;
+
+	operator std::string() const;
 };
 
 url parse_url(std::string url_str);

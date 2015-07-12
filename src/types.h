@@ -18,6 +18,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/address.hpp>
+#include <boost/asio/ip/udp.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/asio.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <vector>
 #include <cstdint>
@@ -28,5 +33,19 @@ namespace fs = boost::filesystem;
 using blob = std::vector<uint8_t>;
 using boost::asio::io_service;
 using boost::property_tree::ptree;
+
+using boost::asio::ip::address;
+using boost::asio::ip::address_v4;
+using boost::asio::ip::address_v6;
+
+using udp_endpoint = boost::asio::ip::udp::endpoint;
+using tcp_endpoint = boost::asio::ip::tcp::endpoint;
+
+using udp_socket = boost::asio::ip::udp::socket;
+using tcp_socket = boost::asio::ip::tcp::socket;
+
+using ssl_socket = boost::asio::ssl::stream<tcp_socket>;
+
+using byte = uint8_t;
 
 } /* namespace librevault */

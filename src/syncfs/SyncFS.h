@@ -20,6 +20,8 @@
 #include "../types.h"
 #include "Key.h"
 
+#include <spdlog/spdlog.h>
+
 #include <boost/asio.hpp>
 
 #include <list>
@@ -53,6 +55,9 @@ class SyncFS {
 	// Components
 	std::unique_ptr<EncStorage> enc_storage;
 	std::unique_ptr<OpenStorage> open_storage;
+
+	// Logger
+	std::shared_ptr<spdlog::logger> log;
 public:
 	class error : public std::runtime_error {
 	public:
@@ -99,6 +104,8 @@ public:
 	 * @return
 	 */
 	std::set<std::string> get_index_file_list();
+
+	const Key& get_key() const {return key;}
 
 	// Meta functions
 	void put_Meta(std::list<SignedMeta> signed_meta_list);

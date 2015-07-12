@@ -15,6 +15,8 @@
  */
 #pragma once
 #include "../bttracker/TrackerConnection.h"
+#include "../../Session.h"
+#include <boost/endian/arithmetic.hpp>
 #include <chrono>
 
 namespace librevault {
@@ -24,87 +26,90 @@ using namespace boost::asio::ip;
 
 class UDPTrackerConnection: public TrackerConnection {
 	/* Types */
-	const size_t udb_buffer_max_size = 65535;
+	const size_t udp_buffer_max_size = 65535;
 	using udp_buffer = std::vector<uint8_t>;
 
-	enum Action : int32_t {
-		CONNECT=0, ANNOUNCE=1, SCRAPE=2, ERROR=3, ANNOUNCE6=4
+	enum class Action : int32_t {
+		CONNECT=0, ANNOUNCE=1, SCRAPE=2, ERROR=3, ANNOUNCE6=4, NONE=255
 	};
-	enum Event : int32_t {
+	enum class Event : int32_t {
 		NONE=0, COMPLETED=1, STARTED=2, STOPPED=3
 	};
 #pragma pack(push, 1)
-	struct conn_req {
+	struct req_header {
 		int64_t connection_id;
-		int32_t action;
+		boost::endian::big_int32_t action;
 		int32_t transaction_id;
 	};
-	struct conn_rep {
-		int32_t action;
+	struct rep_header {
+		boost::endian::big_int32_t action;
 		int32_t transaction_id;
+	};
+
+	struct conn_req {
+		req_header header;
+	};
+	struct conn_rep {
+		rep_header header;
 		int64_t connection_id;
 	};
 
 	struct announce_req {
-		int64_t connection_id;
-		int32_t action;
-		int32_t transaction_id;
+		req_header header;
 		std::array<uint8_t, 20> info_hash;
 		std::array<uint8_t, 20> peer_id;
-		int64_t downloaded;
-		int64_t left;
-		int64_t uploaded;
-		int32_t event = NONE;
-		uint32_t ip = 0;
+		boost::endian::big_int64_t downloaded;
+		boost::endian::big_int64_t left;
+		boost::endian::big_int64_t uploaded;
+		boost::endian::big_int32_t event = (int32_t)Event::NONE;
+		boost::endian::big_uint32_t ip = 0;
 		uint32_t key;
-		int32_t num_want;
-		uint16_t port;
-		uint16_t extensions = 0;
+		boost::endian::big_int32_t num_want;
+		boost::endian::big_uint16_t port;
+		boost::endian::big_uint16_t extensions = 0;
 	};
 	struct announce_rep {
-		int32_t action;
-		int32_t transaction_id;
-		int32_t interval;
-		int32_t leechers;
-		int32_t seeders;
+		rep_header header;
+		boost::endian::big_int32_t interval;
+		boost::endian::big_int32_t leechers;
+		boost::endian::big_int32_t seeders;
 	};
 	struct announce_rep_ext4 {
-		int32_t ip4;
-		uint16_t port;
+		std::array<uint8_t, 4> ip4;
+		boost::endian::big_uint16_t port;
 	};
 	struct announce_rep_ext6 {
 		std::array<uint8_t, 16> ip6;
-		uint16_t port;
+		boost::endian::big_uint16_t port;
 	};
 #pragma pack(pop)
 
 	/* Variables */
 	address bind_address;
 
-	url tracker_address;
-
 	udp::socket socket;
 	udp::resolver resolver;
 	udp::endpoint target;
 
+	boost::asio::steady_timer timer;
+	time_point connected_time;
+	void start_timer();
+
 	int64_t connection_id = 0;
 	int32_t transaction_id = 0;
-	Action action = CONNECT;
+	Action action = Action::NONE;
 
 	unsigned int fail_count = 0;
 
-	boost::asio::steady_timer reconnect_timer;
-	boost::asio::steady_timer response_timer;
-
-	void connect();
-	void announce(const infohash& info_hash);
+	void handle_resolve(const boost::system::error_code& error, udp::resolver::iterator iterator);
 	void receive_loop();
+
+	void connect(const boost::system::error_code& error = boost::system::error_code());
+	void announce(const boost::system::error_code& error = boost::system::error_code());
 public:
-	UDPTrackerConnection(url tracker_address, io_service& ios, Signals& signals, ptree& options);
+	UDPTrackerConnection(url tracker_address, Session& session);
 	virtual ~UDPTrackerConnection();
 
-	virtual void start();
-	void handle_resolve(const boost::system::error_code& error, udp::resolver::iterator iterator);
 	void handle_connect(std::shared_ptr<udp_buffer> buffer);
 	void handle_announce(std::shared_ptr<udp_buffer> buffer);
 	void handle_error(std::shared_ptr<udp_buffer> buffer);

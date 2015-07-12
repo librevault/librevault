@@ -19,6 +19,18 @@
 
 namespace librevault {
 
+url::operator std::string() const {
+	std::string result;
+	result += !scheme.empty() ? scheme + "://" : "";
+	result += userinfo;
+	result += host;
+	if(port != 0){
+		result += ":";
+		result += boost::lexical_cast<std::string>(port);
+	}
+	result += query;
+}
+
 url parse_url(std::string url_str){
 	boost::algorithm::trim(url_str);
 	url parsed_url;
@@ -36,7 +48,7 @@ url parse_url(std::string url_str){
 	parsed_url.scheme.assign(it_scheme_begin, it_scheme_end);
 
 	// Authority section
-	it_authority_begin = it_scheme_end+3;
+	it_authority_begin = parsed_url.scheme.empty() ? it_scheme_end : it_scheme_end+3;
 	it_authority_end = std::find(it_authority_begin, url_str.cend(), '/');
 
 	// Authority->Userinfo section
@@ -62,6 +74,8 @@ url parse_url(std::string url_str){
 	it_port_begin = std::find(it_host_end, it_authority_end, ':')+1;
 	it_port_end = it_authority_end;
 	parsed_url.port = boost::lexical_cast<uint16_t>(&*it_port_begin, std::distance(it_port_begin, it_port_end));
+
+	parsed_url.query.assign(it_authority_end, url_str.cend());
 
 	return parsed_url;
 }

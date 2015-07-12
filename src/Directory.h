@@ -16,30 +16,37 @@
 #pragma once
 #include "syncfs/SyncFS.h"
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
+#include "types.h"
+#include <spdlog/spdlog.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
+#include <memory>
 
 namespace librevault {
 
-using boost::property_tree::ptree;
-using boost::asio::io_service;
-namespace fs = boost::filesystem;
+class Session;
+class Directory : public std::enable_shared_from_this<Directory> {
+	std::shared_ptr<spdlog::logger> log;
 
-class Directory {
-	syncfs::Key key;
-	ptree dir_options;
 	std::unique_ptr<syncfs::SyncFS> syncfs_ptr;
+	ptree dir_options;
+	uint64_t received_bytes = 0;
+	uint64_t sent_bytes = 0;
 
-	boost::asio::dir_monitor& monitor;
-	io_service& ios;
-
-	ptree& options;
+	Session& session;
 public:
-	Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, ptree& options);
+	Directory(ptree dir_options, Session& session);
 	~Directory();
 
 	std::string make_relative_path(const fs::path& path) const {return syncfs_ptr->make_portable_path(path);}
+
+	void add_node(const std::set<tcp_endpoint>& nodes);
+
 	void handle_modification(const boost::asio::dir_monitor_event& ev);
+
+	const syncfs::Key& get_key() const {return syncfs_ptr->get_key();}
+	fs::path get_open_path() const {return this->dir_options.get<fs::path>("open_path");}
+	syncfs::SyncFS::Blocklist get_blocklist() {return syncfs_ptr->get_blocklist();}
 };
 
 } /* namespace librevault */

@@ -17,7 +17,6 @@
 #include "../../contrib/crypto/AES_CBC.h"
 #include <cryptopp/osrng.h>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/log/trivial.hpp>
 #include <fstream>
 #include <set>
 

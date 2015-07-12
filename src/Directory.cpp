@@ -14,28 +14,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Directory.h"
+#include "Session.h"
 
 namespace librevault {
 
-Directory::Directory(io_service& ios, boost::asio::dir_monitor& monitor, ptree dir_options, ptree& options) :
-		ios(ios), monitor(monitor), dir_options(std::move(dir_options)), options(options) {
-	key = this->dir_options.get<std::string>("key");
+Directory::Directory(ptree dir_options, Session& session) :
+		dir_options(std::move(dir_options)), session(session) {
+	syncfs::Key key = this->dir_options.get<std::string>("key");
+	auto smallkey = key.string(); smallkey.resize(7);
 
-	fs::path open_path = this->dir_options.get<fs::path>("open_path");
+	log = spdlog::stderr_logger_mt(std::string("dir(")+smallkey+")");
+
+	fs::path open_path = get_open_path();
 	fs::path block_path = this->dir_options.get<fs::path>("block_path", open_path / ".librevault");
 	fs::path db_path = this->dir_options.get<fs::path>("db_path", open_path / ".librevault" / "directory.db");
-	syncfs_ptr = std::make_unique<syncfs::SyncFS>(ios, key, open_path, block_path, db_path);
+	syncfs_ptr = std::make_unique<syncfs::SyncFS>(session.get_ios(), key, open_path, block_path, db_path);
 
-	monitor.add_directory(open_path.string());
+	session.get_monitor().add_directory(open_path.string());
+
+	auto node_iterators = this->dir_options.equal_range("node");
+	std::set<tcp_endpoint> nodes_set;
+	for(auto it = node_iterators.first; it != node_iterators.second; it++){
+		url node_url = parse_url(it->second.get_value<std::string>());
+		nodes_set.insert(tcp_endpoint(address::from_string(node_url.host), node_url.port));
+	}
+	add_node(nodes_set);
 }
+
 Directory::~Directory() {
-	monitor.remove_directory(dir_options.get<fs::path>("open_path").string());
+	session.get_monitor().remove_directory(get_open_path().string());
+}
+
+void Directory::add_node(const std::set<tcp_endpoint>& nodes){
+	for(auto endpoint : nodes){
+		log->info() << "Added node: " << endpoint;
+	}
 }
 
 void Directory::handle_modification(const boost::asio::dir_monitor_event& ev){
 	switch(ev.type){
-	case ev.renamed_old_name:
-	case ev.added:
+	case boost::asio::dir_monitor_event::renamed_old_name:
+	case boost::asio::dir_monitor_event::added:
 		break;
 
 	default:

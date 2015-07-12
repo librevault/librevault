@@ -14,20 +14,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../bttracker/TrackerConnection.h"
+#include "../../Session.h"
 
-#include "../../FSDirectory.h"
+#include "../../Directory.h"
 
 namespace librevault {
 namespace p2p {
 
-TrackerConnection::TrackerConnection(io_service& ios, Signals& signals, ptree& options) :
-		ios(ios), signals(signals), options(options) {}
+TrackerConnection::TrackerConnection(url tracker_address, Session& session) : Announcer(session), tracker_address(std::move(tracker_address)) {}
 
 TrackerConnection::~TrackerConnection() {}
 
 TrackerConnection::infohash TrackerConnection::get_infohash(const syncfs::Key& key) const {
 	infohash ih; std::copy(key.get_Hash().begin(), key.get_Hash().begin()+ih.size(), ih.data());
 	return ih;
+}
+
+TrackerConnection::seconds TrackerConnection::get_min_interval() const {
+	return seconds(session.get_options().get<int>("discovery.bttracker.min_interval"));
 }
 
 } /* namespace p2p */

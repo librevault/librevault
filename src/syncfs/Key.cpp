@@ -22,8 +22,6 @@
 #include <cryptopp/sha3.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/integer.h>
-#include <boost/log/trivial.hpp>
-#include <boost/log/sinks.hpp>
 
 using CryptoPP::ASN1::secp256r1;
 
@@ -58,7 +56,7 @@ Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
 
 Key::~Key() {}
 
-std::vector<uint8_t> Key::get_payload() const {
+std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
 	return crypto::Base58().from(secret_s.substr(1, this->secret_s.size()-2));
 }
 
@@ -154,6 +152,7 @@ const std::vector<uint8_t>& Key::get_Public_Key() const {
 const std::vector<uint8_t>& Key::get_Hash() const {
 	if(!cached_hash.empty()) return cached_hash;
 
+	cached_hash.resize(hash_size);
 	CryptoPP::SHA3_256().CalculateDigest(cached_hash.data(), get_Public_Key().data(), get_Public_Key().size());
 	return cached_hash;
 }

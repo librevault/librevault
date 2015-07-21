@@ -37,9 +37,9 @@ SyncFS::SyncFS(boost::asio::io_service& io_service, Key key, fs::path open_path,
 		open_path(std::move(open_path)),
 		db_path(std::move(db_path)),
 		block_path(std::move(block_path)),
-		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())), log(spdlog::stderr_logger_mt("SyncFS")) {
+		internal_io_service(std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service())), log(spdlog::get("Librevault")) {
 	log->debug() << "Initializing SYNCFS";
-	log->debug() << "Key level " << (char)key.getType();
+	log->debug() << "Key level " << (char)key.get_type();
 
 	bool open_path_created = fs::create_directories(this->open_path);
 	log->debug() << "Open directory: " << this->open_path << (open_path_created ? " created" : "");

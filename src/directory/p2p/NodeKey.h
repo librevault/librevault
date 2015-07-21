@@ -13,53 +13,32 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "../../pch.h"
 #pragma once
-#include "types.h"
-
-//#include <botan/ecdsa.h>
-
-#include <cryptopp/eccrypto.h>
-#include <cryptopp/ecp.h>
-#include <cryptopp/oids.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/files.h>
-#include <cryptopp/hex.h>
-#include <cryptopp/aes.h>
-#include <cryptopp/ccm.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/cryptlib.h>
-
-//#include <openssl/pem.h>
-#include <openssl/x509.h>
-
-#include <cstdio>
-#include <iostream>
 
 namespace librevault {
 
 class NodeKey {
 	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
+	private_key_t private_key_;
+	EVP_PKEY* openssl_pkey_;	// Yes, we have both Crypto++ and OpenSSL-format private keys, because we have to use both libraries.
 
-	private_key_t private_key;
+	X509* x509_;	// X509 structure pointer from OpenSSL
 
-	EVP_PKEY* openssl_pkey;
-
-	fs::path key, cert;
-public:
-	NodeKey(fs::path key, fs::path cert);
-	virtual ~NodeKey();
+	fs::path key_path_, cert_path_;
 
 	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& gen_private_key();
 	void write_key();
 
 	void gen_certificate();
+public:
+	NodeKey(fs::path key, fs::path cert);
+	virtual ~NodeKey();
 
-	void write_cert();
+	const fs::path& key_path() const {return key_path_;}
+	const fs::path& cert_path() const {return cert_path_;}
 
-	const fs::path& get_key_path() const {return key;}
-	const fs::path& get_cert_path() const {return cert;}
-
-	const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& get_private_key() const {return private_key;}
+	const private_key_t& private_key() const {return private_key_;}
 };
 
 } /* namespace librevault */

@@ -91,6 +91,7 @@ include_directories("contrib/include")
 # Binary generation
 #============================================================================
 
+list(APPEND SRCS "src/pch.h")
 file(GLOB_RECURSE SRCS "src/*")
 # Protobuf
 list(APPEND SRCS ${PROTO_SOURCES})

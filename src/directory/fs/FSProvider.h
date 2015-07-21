@@ -14,45 +14,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <spdlog/spdlog.h>
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include "../types.h"
+#include "../../pch.h"
+#include "../Abstract.h"
 
 namespace librevault {
-class Session;
-namespace p2p {
 
-class ConnectionManager {
-	boost::asio::ssl::context ssl_ctx;
+class FSDirectory;
+class FSProvider : public AbstractProvider {
+	boost::asio::dir_monitor monitor_;	// Starts 2 additional threads in Linux
 
-	std::shared_ptr<spdlog::logger> log;
+	std::map<blob, std::shared_ptr<FSDirectory>> hash_dir_;
+	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
 
-	Session& session;
-	boost::asio::ip::tcp::acceptor acceptor;
+private:
+	void monitor_operation();
+
+	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
+	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
 public:
-	ConnectionManager(Session& session);
-	virtual ~ConnectionManager();
+	FSProvider(Session& session, DirectoryExchanger& exchanger);
+	virtual ~FSProvider();
 
-	void start_accept();
+	void add_directory(ptree dir_options);
+
+	std::shared_ptr<FSDirectory> get_directory(const blob& hash){return hash_dir_[hash];}
+	std::shared_ptr<FSDirectory> get_directory(const fs::path& path){return path_dir_[path];}
 };
 
-class Connection {
-	std::shared_ptr<spdlog::logger> log;
-
-	tcp_endpoint remote_endpoint;
-	std::unique_ptr<ssl_socket> socket_ptr;
-
-public:
-	Connection();
-	Connection(ssl_socket* socket_ptr);
-	~Connection();
-
-	void connect();
-	void handshake();
-	void handle_handshake();
-};
-
-} /* namespace p2p */
 } /* namespace librevault */

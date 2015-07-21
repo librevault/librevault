@@ -13,13 +13,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "Node.h"
+#include "DirectoryExchanger.h"
+#include "../Session.h"
+#include "Abstract.h"
 
 namespace librevault {
-namespace p2p {
 
-Node::Node() {}
-Node::~Node() {}
+AbstractProvider::AbstractProvider(Session& session, DirectoryExchanger& exchanger) : session_(session), exchanger_(exchanger), log_(spdlog::get("Librevault")) {}
+AbstractProvider::~AbstractProvider() {}
 
-} /* namespace overlay */
+AbstractDirectory::AbstractDirectory(Session& session, AbstractProvider& provider) : session_(session), provider_(provider) {}
+AbstractDirectory::~AbstractDirectory() {}
+
 } /* namespace librevault */

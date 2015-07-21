@@ -64,7 +64,8 @@ url parse_url(std::string url_str){
 
 	// Authority->Host section
 	if(*it_host_begin == '['){	// We have IPv6 address.
-		it_host_end = std::find(it_host_begin, it_authority_end, ']')+1;
+		it_host_begin++;
+		it_host_end = std::find(it_host_begin, it_authority_end, ']');
 	}else{
 		it_host_end = std::find(it_host_begin, it_authority_end, ':');
 	}

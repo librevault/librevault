@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,24 +13,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "DirectoryExchanger.h"
+#include "fs/FSProvider.h"
+#include "p2p/P2PProvider.h"
 
-#include <cstdint>
+namespace librevault {
 
-const uint8_t version_major = 0;
-const uint8_t version_minor = 1;
-const uint16_t version_patch = 0;
+DirectoryExchanger::DirectoryExchanger(Session& session) : session_(session), log_(spdlog::get("Librevault")) {
+	fs_provider_ = std::make_unique<FSProvider>(session, *this);
+	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+}
+DirectoryExchanger::~DirectoryExchanger() {}
 
-constexpr const char* get_name() {
-	return "Librevault";
+void DirectoryExchanger::register_directory(std::shared_ptr<AbstractDirectory> directory){
+	log_->debug() << "[DirectoryExchanger] " << "Directory registered";
 }
 
-constexpr uint32_t get_version() {
-	return (version_major << 24) & (version_minor << 16) & version_patch;
-}
-
-inline std::string get_version_string() {
-	std::ostringstream os;
-	os << get_name() << " " << version_major << "." << version_minor << "." << version_patch;
-	return os.str();
-}
+} /* namespace librevault */

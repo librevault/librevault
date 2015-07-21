@@ -70,12 +70,13 @@ public:	// Yes, I prefer splitting member variables and method declaration
 	Key();
 	Key(Type type, const std::vector<uint8_t>& payload);
 	Key(std::string string_secret);
+	virtual ~Key();
 
 	std::string string() const {return secret_s;}
 	operator std::string() const {return string();}
 
-	Type getType() const {return (Type)secret_s.front();}
-	char getCheckChar() const {return secret_s.back();}
+	Type get_type() const {return (Type)secret_s.front();}
+	char get_check_char() const {return secret_s.back();}
 
 	// Key derivers
 	Key derive(Type key_type);
@@ -86,8 +87,6 @@ public:	// Yes, I prefer splitting member variables and method declaration
 	const std::vector<uint8_t>& get_Encryption_Key() const;
 
 	const std::vector<uint8_t>& get_Hash() const;
-
-	virtual ~Key();
 
 	bool operator== (const Key& key) const {return secret_s == key.secret_s;}
 	bool operator< (const Key& key) const {return secret_s < key.secret_s;}

@@ -14,39 +14,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeKey.h"
-#include "../contrib/crypto/Base64.h"
+#include "../../contrib/crypto/Base64.h"
 
 namespace librevault {
 
 NodeKey::NodeKey(fs::path key, fs::path cert) :
-		key(key), cert(cert), openssl_pkey(EVP_PKEY_new()) {
+		key_path_(key), cert_path_(cert), openssl_pkey_(EVP_PKEY_new()), x509_(X509_new()) {
 	gen_private_key();
 	write_key();
 	gen_certificate();
 }
 
 NodeKey::~NodeKey() {
-	EVP_PKEY_free(openssl_pkey);
+	EVP_PKEY_free(openssl_pkey_);
+	X509_free(x509_);
 }
 
 CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	CryptoPP::AutoSeededRandomPool rng;
-	private_key.Initialize(rng, CryptoPP::ASN1::secp256r1());
+	private_key_.Initialize(rng, CryptoPP::ASN1::secp256r1());
 
-	return private_key;
+	return private_key_;
 }
 
 void NodeKey::write_key(){
-	fs::ofstream ofs(key, std::ios_base::binary);
+	fs::ofstream ofs(key_path_, std::ios_base::binary);
 
-	ofs.write("-----BEGIN EC PRIVATE KEY-----\n", 31);
-	auto& group_params = private_key.GetGroupParameters();
+	ofs << "-----BEGIN EC PRIVATE KEY-----" << std::endl;
+	auto& group_params = private_key_.GetGroupParameters();
 
 	bool old = group_params.GetEncodeAsOID();
 	const_cast<CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>&>(group_params).SetEncodeAsOID(true);
 
     CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> pkey;
-    private_key.MakePublicKey(pkey);
+    private_key_.MakePublicKey(pkey);
 
     std::string s;
     CryptoPP::StringSink ss(s);
@@ -54,12 +55,12 @@ void NodeKey::write_key(){
     CryptoPP::DEREncodeUnsigned<CryptoPP::word32>(seq, 1);
 
     // Private key
-    const CryptoPP::Integer& x = private_key.GetPrivateExponent();
+    const CryptoPP::Integer& x = private_key_.GetPrivateExponent();
     x.DEREncodeAsOctetString(seq, group_params.GetSubgroupOrder().ByteCount());
 
     // Named curve
     CryptoPP::OID oid;
-    if(!private_key.GetVoidValue(CryptoPP::Name::GroupOID(), typeid(oid), &oid))
+    if(!private_key_.GetVoidValue(CryptoPP::Name::GroupOID(), typeid(oid), &oid))
         throw CryptoPP::Exception(CryptoPP::Exception::OTHER_ERROR, "PEM_DEREncode: failed to retrieve curve OID");
 
     // Encoder for OID
@@ -84,40 +85,32 @@ void NodeKey::write_key(){
 
     s = (std::string)crypto::Base64().to(s);
 
-    std::string result;
-
     for (unsigned i = 0; i < s.length(); i += 64) {
-    	result += s.substr(i, 64);
-    	result += '\n';
+    	ofs << s.substr(i, 64) << std::endl;
     }
 
-    ofs.write(result.data(), result.size());
-
 	const_cast<CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>&>(group_params).SetEncodeAsOID(old);
-	ofs.write("-----END EC PRIVATE KEY-----\n", 29);
+	ofs << "-----END EC PRIVATE KEY-----" << std::endl;
 }
 
 void NodeKey::gen_certificate() {
-	FILE* f = fopen(key.c_str(), "r");
-	PEM_read_PrivateKey(f, &openssl_pkey, 0, 0);
+	FILE* f = fopen(key_path_.c_str(), "r");
+
+	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
 
-	/* Allocate memory for the X509 structure. */
-	X509* x509 = X509_new();
-	if (!x509) {throw std::runtime_error("Unable to create X509 structure.");}
-
 	/* Set the serial number. */
-	ASN1_INTEGER_set(X509_get_serialNumber(x509), 1);
+	ASN1_INTEGER_set(X509_get_serialNumber(x509_), 1);
 
 	/* This certificate is valid from now until exactly one year from now. */
-	X509_gmtime_adj(X509_get_notBefore(x509), 0);
-	X509_gmtime_adj(X509_get_notAfter(x509), 31536000L);
+	X509_gmtime_adj(X509_get_notBefore(x509_), 0);
+	X509_gmtime_adj(X509_get_notAfter(x509_), 31536000L);
 
 	/* Set the public key for our certificate. */
-	X509_set_pubkey(x509, openssl_pkey);
+	X509_set_pubkey(x509_, openssl_pkey_);
 
 	/* We want to copy the subject name to the issuer name. */
-	X509_NAME * name = X509_get_subject_name(x509);
+	X509_NAME * name = X509_get_subject_name(x509_);
 
 	/* Set the country code and common name. */
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *) "CA", -1, -1, 0);
@@ -125,23 +118,22 @@ void NodeKey::gen_certificate() {
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *) "localhost", -1, -1, 0);
 
 	/* Now set the issuer name. */
-	X509_set_issuer_name(x509, name);
+	X509_set_issuer_name(x509_, name);
 
 	/* Actually sign the certificate with our key. */
-	if (!X509_sign(x509, openssl_pkey, EVP_sha256())) {
-		X509_free(x509);
+	if (!X509_sign(x509_, openssl_pkey_, EVP_sha256())) {
+		X509_free(x509_);
 		throw std::runtime_error("Error signing certificate.");
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = fopen(cert.c_str(), "wb");
+	FILE * x509_file = fopen(cert_path_.c_str(), "wb");
 	if (!x509_file) {
-		X509_free(x509);
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}
 
 	/* Write the certificate to disk. */
-	PEM_write_X509(x509_file, x509);
+	PEM_write_X509(x509_file, x509_);
 	fclose(x509_file);
 }
 

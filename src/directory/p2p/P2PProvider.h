@@ -14,37 +14,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include "Announcer.h"
-#include "../../syncfs/Key.h"
-#include "../../net/parse_url.h"
-#include <boost/property_tree/ptree.hpp>
-#include <boost/asio.hpp>
-#include <boost/asio/steady_timer.hpp>
-#include <queue>
+#include "../../pch.h"
+#include "../Abstract.h"
+#include "NodeKey.h"
 
 namespace librevault {
-namespace p2p {
 
-using boost::asio::io_service;
-using boost::property_tree::ptree;
+class P2PProvider : public AbstractProvider {
+	NodeKey node_key_;
 
-
-class TrackerConnection : public Announcer {
-protected:
-	url tracker_address;
-
-	using infohash = std::array<uint8_t, 20>;
-	std::map<infohash, std::shared_ptr<Directory>> infohashes;
-
-	virtual void announce(const infohash& ih){}
-	infohash get_infohash(const syncfs::Key& key) const;
+	boost::asio::ssl::context ssl_ctx_;
+	boost::asio::ip::tcp::acceptor acceptor_;
 public:
-	TrackerConnection(url tracker_address, Session& session);
-	virtual ~TrackerConnection();
+	P2PProvider(Session& session, DirectoryExchanger& exchanger);
+	virtual ~P2PProvider();
 
-	seconds get_min_interval() const override;
+	void accept_operation();
+
+	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}
+	const NodeKey& node_key() const {return node_key_;}
 };
 
-} /* namespace p2p */
+class Connection {
+	std::shared_ptr<spdlog::logger> log;
+
+	tcp_endpoint remote_endpoint;
+	std::unique_ptr<ssl_socket> socket_ptr;
+
+public:
+	Connection(tcp_endpoint endpoint);
+	Connection(ssl_socket* socket_ptr);
+	~Connection();
+
+	void connect();
+	void handshake(boost::asio::ssl::stream_base::handshake_type handshake_type);
+	void handle_handshake();
+};
+
 } /* namespace librevault */

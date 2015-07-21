@@ -13,88 +13,44 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "pch.h"
 #pragma once
-
-#include "p2p/Discovery.h"
-#include "p2p/ConnectionManager.h"
-#include "syncfs/Key.h"
-#include "../contrib/dir_monitor/include/dir_monitor.hpp"
-
-#include <spdlog/spdlog.h>
-
-#include "NodeKey.h"
-
-#include <boost/property_tree/ptree.hpp>
-#include <boost/asio.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/signals2.hpp>
-
-#include <memory>
-#include <thread>
-#include <vector>
-#include <unordered_map>
-#include <map>
 
 namespace librevault {
 
-namespace fs = boost::filesystem;
-using boost::asio::io_service;
-using boost::property_tree::ptree;
-
-class Directory;
-
+class DirectoryExchanger;
 class Session {
-	std::shared_ptr<spdlog::logger> log;
+	// Asynchronous/multithreaded operation
+	io_service io_service_;
 
-	io_service ios;
-	std::unique_ptr<io_service::work> work_lock;
-	std::vector<std::thread> worker_threads;
+	// Logging
+	std::shared_ptr<spdlog::logger> log_;
 
-	std::unique_ptr<p2p::ConnectionManager> cm;
-
-	std::unique_ptr<NodeKey> node_key;
-
-	fs::path options_path;	// Config directory
-
-	boost::asio::dir_monitor monitor;
+	// Components
+	std::unique_ptr<DirectoryExchanger> exchanger_;
 
 	// Program options
-	ptree options;
-
-	std::map<blob, std::shared_ptr<Directory>> hash_dir;
-	std::map<fs::path, std::shared_ptr<Directory>> path_dir;
-
-	struct Signals {
-		enum SignalType {
-			UNKNOWN = 0,
-			DIRECTORY_ADDED,
-			DIRECTORY_REMOVED,
-			DIRECTORY_CHANGED
-		};
-
-		boost::signals2::signal<void(std::shared_ptr<Directory>, SignalType)> directory;
-	} signals;
+	fs::path config_path_;	// Config directory
+	ptree config_;	// Config itself
 public:
 	Session(fs::path glob_config_path);
 	virtual ~Session();
 
-	static fs::path get_default_config_path();
+	void init_log();
+	void init_config();
+
+	static fs::path default_config_path();
 
 	void run();
+	void run_worker(unsigned worker_number);
 	void shutdown();
+	void restart();
 
-	void add_directory(ptree dir_options);
-	void remove_directory(std::shared_ptr<Directory> dir_ptr);
+	DirectoryExchanger& exchanger(){return *exchanger_;}
 
-	void start_directories();
-	void start_monitor();
-
-	//NodeKey& get_nodekey(){return *node_key;};
-	p2p::ConnectionManager& get_cm(){return *cm;}
-	boost::asio::dir_monitor& get_monitor(){return monitor;}
-	Signals& get_signals(){return signals;}
-	io_service& get_ios(){return ios;}
-	ptree& get_options(){return options;}
+	io_service& ios(){return io_service_;}
+	ptree& config(){return config_;}
+	const fs::path& config_path() const {return config_path_;}
 };
 
 } /* namespace librevault */

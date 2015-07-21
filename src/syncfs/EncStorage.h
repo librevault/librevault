@@ -15,8 +15,7 @@
  */
 #pragma once
 
-#include "../types.h"
-#include <spdlog/spdlog.h>
+#include "../pch.h"
 
 namespace librevault {
 namespace syncfs {

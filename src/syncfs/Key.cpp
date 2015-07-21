@@ -49,7 +49,7 @@ Key::Key(Type type, const std::vector<uint8_t>& binary_part) {
 
 Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
 	auto base58_payload = secret_s.substr(1, this->secret_s.size()-2);
-	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != getCheckChar()) throw format_error();
+	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
 
 	// It would be good to check private/public key for validity and throw crypto_error() here
 }
@@ -61,7 +61,7 @@ std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
 }
 
 Key Key::derive(Type key_type){
-	if(key_type == getType()) return *this;
+	if(key_type == get_type()) return *this;
 
 	switch(key_type){
 	case Owner:
@@ -88,7 +88,7 @@ Key Key::derive(Type key_type){
 const std::vector<uint8_t>& Key::get_Private_Key() const {
 	if(!cached_private_key.empty()) return cached_private_key;
 
-	switch(getType()){
+	switch(get_type()){
 	case Owner:
 	case ReadWrite: {
 		cached_private_key = get_payload();
@@ -102,7 +102,7 @@ const std::vector<uint8_t>& Key::get_Private_Key() const {
 const std::vector<uint8_t>& Key::get_Encryption_Key() const {
 	if(!cached_encryption_key.empty()) return cached_encryption_key;
 
-	switch(getType()){
+	switch(get_type()){
 	case Owner:
 	case ReadWrite: {
 		cached_encryption_key.resize(encryption_key_size);
@@ -122,7 +122,7 @@ const std::vector<uint8_t>& Key::get_Encryption_Key() const {
 const std::vector<uint8_t>& Key::get_Public_Key() const {
 	if(!cached_public_key.empty()) return cached_public_key;
 
-	switch(getType()){
+	switch(get_type()){
 	case Owner:
 	case ReadWrite: {
 		CryptoPP::AutoSeededRandomPool rng;

@@ -16,7 +16,7 @@
 #pragma once
 
 #include "EncStorage.h"
-#include "../types.h"
+#include "../pch.h"
 
 #include "Key.h"
 #include "../../contrib/crypto/HMAC-SHA3.h"

@@ -13,26 +13,34 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../bttracker/TrackerConnection.h"
-#include "../../Session.h"
-
-#include "../../Directory.h"
+#include "../pch.h"
+#pragma once
 
 namespace librevault {
-namespace p2p {
 
-TrackerConnection::TrackerConnection(url tracker_address, Session& session) : Announcer(session), tracker_address(std::move(tracker_address)) {}
+class AbstractDirectory;
+class AbstractProvider;
+class FSDirectory;
+class FSProvider;
+class P2PDirectory;
+class P2PProvider;
 
-TrackerConnection::~TrackerConnection() {}
+class Session;
 
-TrackerConnection::infohash TrackerConnection::get_infohash(const syncfs::Key& key) const {
-	infohash ih; std::copy(key.get_Hash().begin(), key.get_Hash().begin()+ih.size(), ih.data());
-	return ih;
-}
+class DirectoryExchanger {
+	std::shared_ptr<spdlog::logger> log_;
 
-TrackerConnection::seconds TrackerConnection::get_min_interval() const {
-	return seconds(session.get_options().get<int>("discovery.bttracker.min_interval"));
-}
+	std::unique_ptr<FSProvider> fs_provider_;
+	std::unique_ptr<P2PProvider> p2p_provider_;
 
-} /* namespace p2p */
+	std::set<blob> allowed_hashes_;
+
+	Session& session_;
+public:
+	DirectoryExchanger(Session& session);
+	virtual ~DirectoryExchanger();
+
+	void register_directory(std::shared_ptr<AbstractDirectory> directory);
+};
+
 } /* namespace librevault */

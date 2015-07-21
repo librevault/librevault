@@ -18,8 +18,6 @@
 #include "../../contrib/crypto/Base32.h"
 #include "../../contrib/crypto/SHA3.h"
 
-#include <boost/filesystem/fstream.hpp>
-
 #include "SyncFS.h"
 
 namespace librevault {

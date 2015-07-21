@@ -13,11 +13,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "pch.h"
 #include "syncfs/Key.h"
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-#include <iostream>
-
 #include "Session.h"
 
 namespace po = boost::program_options;
@@ -27,7 +24,7 @@ int main(int argc, char** argv){
 	po::options_description allowed_options("Allowed Options");
 	allowed_options.add_options()
 		("help,h", "Display help message")
-		("config,c", po::value<fs::path>()->default_value(librevault::Session::get_default_config_path()))
+		("config,c", po::value<fs::path>()->default_value(librevault::Session::default_config_path()))
 		("gen-key", "Generate Owner key")
 	;
 

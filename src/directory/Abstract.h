@@ -13,33 +13,37 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "../pch.h"
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
-#include <chrono>
-
 namespace librevault {
-namespace p2p {
 
-using boost::property_tree::ptree;
-using std::chrono::seconds;
-using blob = std::vector<uint8_t>;
+class Session;
+class DirectoryExchanger;
 
-class Node {
+class AbstractProvider {
+protected:
+	std::shared_ptr<spdlog::logger> log_;
+	Session& session_;
+	DirectoryExchanger& exchanger_;
 public:
-	enum Quality {SUPERIOR, GOOD, QUESTIONABLE, BAD};
-private:
-	ptree node;
-	blob id;
+	AbstractProvider(Session& session, DirectoryExchanger& exchanger);
+	virtual ~AbstractProvider();
 
-	Quality quality = GOOD;
-public:
-	Node();
-	virtual ~Node();
-
-	blob get_id() const {return id;}
-	Quality get_quality() const {return quality;}
+	DirectoryExchanger& get_exchanger(){return exchanger_;}
 };
 
-} /* namespace overlay */
+class AbstractDirectory {
+protected:
+	Session& session_;
+	std::shared_ptr<spdlog::logger> log_;
+
+	AbstractProvider& provider_;
+public:
+	AbstractDirectory(Session& session, AbstractProvider& provider);
+	virtual ~AbstractDirectory();
+
+	virtual blob get_hash() const = 0;
+};
+
 } /* namespace librevault */

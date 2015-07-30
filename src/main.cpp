@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "pch.h"
-#include "syncfs/Key.h"
+#include "directory/Key.h"
 #include "Session.h"
 
 namespace po = boost::program_options;
@@ -37,7 +37,7 @@ int main(int argc, char** argv){
 		return 0;
 	}
 	if(variables.count("gen-key") > 0){
-		librevault::syncfs::Key k;
+		librevault::Key k;
 		std::cout << k;
 		return 0;
 	}

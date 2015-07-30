@@ -14,33 +14,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
+#include "../../pch.h"
+#include "AbstractStorage.h"
+#include "../Key.h"
+#include "Index.h"
 #include "EncStorage.h"
-#include "../pch.h"
-
-#include "Key.h"
-#include "../../contrib/crypto/HMAC-SHA3.h"
-#include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 
 namespace librevault {
-namespace syncfs {
 
-class SyncFS;
-class OpenStorage {
-	SyncFS* syncfs;
-
-	std::shared_ptr<SQLiteDB> directory_db;
-	const Key& key;
-	EncStorage& enc_storage;
-
-	const fs::path& open_path;
-	const fs::path& block_path;
-
-	std::pair<blob, blob> get_both_blocks(const blob& block_hash);	// Returns std::pair(plaintext, encrypted)
-	std::string get_path(const blob& path_hmac);
+class OpenStorage : public AbstractStorage {
 public:
-	OpenStorage(SyncFS* syncfs, const Key& key, std::shared_ptr<SQLiteDB> directory_db, EncStorage& enc_storage, const fs::path& open_path, const fs::path& block_path);
+	OpenStorage(const Key& key, Index& index, EncStorage& enc_storage, fs::path open_path, fs::path asm_path);
 	virtual ~OpenStorage();
+
+	// Path constructor
+	std::string make_relpath(const fs::path& path) const;
 
 	blob get_encblock(const blob& block_hash);
 	blob get_block(const blob& block_hash);
@@ -57,7 +45,25 @@ public:
 	 * @param delete_file
 	 */
 	void disassemble(const std::string& file_path, bool delete_file = true);
+
+	std::set<std::string> open_files();	// Returns file names that are actually present in OpenFS.
+	std::set<std::string> indexed_files();	// Returns file names that are mentioned in index. They may be present, maybe not.
+	std::set<std::string> all_files();	// Sum of above
+
+	fs::path open_path() const {return open_path_;}
+	fs::path asm_path() const {return asm_path_;}
+
+private:
+	std::shared_ptr<spdlog::logger> log_;
+
+	const Key& key_;
+	Index& index_;
+	EncStorage& enc_storage_;
+
+	fs::path open_path_, asm_path_;
+
+	std::pair<blob, blob> get_both_blocks(const blob& block_hash);	// Returns std::pair(plaintext, encrypted)
+	std::string get_path(const blob& path_hmac);
 };
 
-} /* namespace syncfs */
 } /* namespace librevault */

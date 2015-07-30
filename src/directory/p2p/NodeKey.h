@@ -19,19 +19,9 @@
 namespace librevault {
 
 class NodeKey {
-	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
-	private_key_t private_key_;
-	EVP_PKEY* openssl_pkey_;	// Yes, we have both Crypto++ and OpenSSL-format private keys, because we have to use both libraries.
-
-	X509* x509_;	// X509 structure pointer from OpenSSL
-
-	fs::path key_path_, cert_path_;
-
-	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& gen_private_key();
-	void write_key();
-
-	void gen_certificate();
 public:
+	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
+
 	NodeKey(fs::path key, fs::path cert);
 	virtual ~NodeKey();
 
@@ -39,6 +29,19 @@ public:
 	const fs::path& cert_path() const {return cert_path_;}
 
 	const private_key_t& private_key() const {return private_key_;}
+
+private:
+	fs::path key_path_, cert_path_;
+
+	private_key_t private_key_;
+	EVP_PKEY* openssl_pkey_;	// Yes, we have both Crypto++ and OpenSSL-format private keys, because we have to use both libraries.
+
+	X509* x509_;	// X509 structure pointer from OpenSSL
+
+	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& gen_private_key();
+	void write_key();
+
+	void gen_certificate();
 };
 
 } /* namespace librevault */

@@ -14,31 +14,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include "../pch.h"
+#include "../../pch.h"
+#include "AbstractStorage.h"
 
 namespace librevault {
-namespace syncfs {
 
-class EncStorage {
-	const fs::path& block_path;
-
-	fs::path make_encblock_name(const blob& block_hash) const;
-	fs::path make_encblock_path(const blob& block_hash) const;
-
-	// Logger
-	std::shared_ptr<spdlog::logger> log;
+class EncStorage : public AbstractStorage {
 public:
-	EncStorage(const fs::path& block_path);
+	EncStorage(fs::path block_path);
 	virtual ~EncStorage();
-
-	bool verify_encblock(const blob& block_hash, const blob& data);
 
 	bool have_encblock(const blob& block_hash);
 	blob get_encblock(const blob& block_hash);
 	void put_encblock(const blob& block_hash, const blob& data);
 	void remove_encblock(const blob& block_hash);
+
+	fs::path block_path() const {return block_path_;}
+
+private:
+	std::shared_ptr<spdlog::logger> log_;
+	fs::path block_path_;
+
+	fs::path make_encblock_name(const blob& block_hash) const;
+	fs::path make_encblock_path(const blob& block_hash) const;
 };
 
-} /* namespace syncfs */
 } /* namespace librevault */

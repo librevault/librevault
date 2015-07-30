@@ -20,64 +20,35 @@
 
 namespace librevault {
 
-FSProvider::FSProvider(Session& session, DirectoryExchanger& exchanger) : AbstractProvider(session, exchanger), monitor_(session.ios()) {
+FSProvider::FSProvider(Session& session, DirectoryExchanger& exchanger) : AbstractProvider(session, exchanger) {
 	auto folder_trees = session.config().equal_range("folder");
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
 	}
-	monitor_operation();
 }
 FSProvider::~FSProvider() {}
 
-void FSProvider::monitor_operation() {
-	monitor_.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
-		if(ec == boost::asio::error::operation_aborted) return;
-		log_->debug() << "[dir_monitor] " << ev;
-		fs::path ev_path = fs::absolute(ev.path);
-		for(auto it : path_dir_){
-			auto path_dir_it = it.first.begin();
-			auto ev_dir_it = ev_path.begin();
-			bool equal = true;
-			while(path_dir_it != it.first.end()){
-				if(*path_dir_it != *ev_dir_it)	equal = false;
-				path_dir_it++; ev_dir_it++;
-			}
-			if(equal)
-				it.second->handle_modification(ev);
-		}
-
-		monitor_operation();
-	});
-}
-
 void FSProvider::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	log_->info() << "Registering directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
+	log_->info() << "Registering directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 
-	hash_dir_.insert({dir_ptr->get_key().get_Hash(), dir_ptr});
-	path_dir_.insert({dir_ptr->get_open_path(), dir_ptr});
+	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
+	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
 
-	if(dir_ptr->get_key().get_type() != syncfs::Key::Download)
-		monitor_.add_directory(dir_ptr->get_open_path().string());
-
-	log_->info() << "Registered directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
+	log_->info() << "Registered directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 }
 
 void FSProvider::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	log_->info() << "Unregistering directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
+	log_->info() << "Unregistering directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 
-	if(dir_ptr->get_key().get_type() != syncfs::Key::Download)
-		monitor_.remove_directory(dir_ptr->get_open_path().string());
+	path_dir_.erase(dir_ptr->open_path());
+	hash_dir_.erase(dir_ptr->key().get_Hash());
 
-	path_dir_.erase(dir_ptr->get_open_path());
-	hash_dir_.erase(dir_ptr->get_key().get_Hash());
-
-	log_->info() << "Unregistered directory: k=" << dir_ptr->get_key() << " path=" << dir_ptr->get_open_path();
+	log_->info() << "Unregistered directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 }
 
 void FSProvider::add_directory(ptree dir_options) {
 	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, *this);
 	register_directory(dir_ptr);
-	unregister_directory(dir_ptr);
 }
 
 } /* namespace librevault */

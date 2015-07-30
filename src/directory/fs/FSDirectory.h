@@ -13,33 +13,58 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../../pch.h"
 #pragma once
-
+#include "../../pch.h"
 #include "../Abstract.h"
-#include "../../syncfs/SyncFS.h"
+
+#include "../Key.h"
+#include "Index.h"
+#include "EncStorage.h"
+#include "OpenStorage.h"
+#include "Indexer.h"
 
 namespace librevault {
 
 class FSProvider;
 class FSDirectory : public AbstractDirectory {
-	std::unique_ptr<syncfs::SyncFS> syncfs_ptr;
-	ptree dir_options_;
-	uint64_t received_bytes_ = 0;
-	uint64_t sent_bytes_ = 0;
 public:
 	FSDirectory(ptree dir_options, Session& session, FSProvider& provider);
 	~FSDirectory();
 
-	std::string make_relative_path(const fs::path& path) const {return syncfs_ptr->make_portable_path(path);}
+	const Key& key() const {return key_;}
+	virtual blob hash() const {return key().get_Hash();}
 
-	void handle_modification(const boost::asio::dir_monitor_event& ev);
+	const fs::path& open_path() const {return open_path_;}
+	const fs::path& block_path() const {return block_path_;}
+	const fs::path& db_path() const {return db_path_;}
+	const fs::path& asm_path() const {return asm_path_;}
 
-	const syncfs::Key& get_key() const {return syncfs_ptr->get_key();}
-	fs::path get_open_path() const {return this->dir_options_.get<fs::path>("open_path");}
-	//syncfs::SyncFS::Blocklist get_blocklist() {return syncfs_ptr->get_blocklist();}
+private:
+	// Key
+	const Key key_;
 
-	virtual blob get_hash() const {return get_key().get_Hash();}
+	// Paths
+	const fs::path open_path_, block_path_, db_path_, asm_path_;
+
+	// Storages
+	std::unique_ptr<Index> index_;
+	std::unique_ptr<EncStorage> enc_storage_;
+	std::unique_ptr<OpenStorage> open_storage_;
+	std::unique_ptr<Indexer> indexer_;
+
+	// Monitor
+	boost::asio::dir_monitor monitor_;
+
+	// Statistics
+	uint64_t received_bytes_ = 0;
+	uint64_t sent_bytes_ = 0;
+
+	// Initialization
+	void init_monitor(const fs::path& open_path);
+
+	// Monitor operations
+	void monitor_operation();
+	void monitor_handle(const boost::asio::dir_monitor_event& ev);
 };
 
 } /* namespace librevault */

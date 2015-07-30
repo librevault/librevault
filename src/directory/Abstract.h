@@ -22,28 +22,37 @@ class Session;
 class DirectoryExchanger;
 
 class AbstractProvider {
-protected:
-	std::shared_ptr<spdlog::logger> log_;
-	Session& session_;
-	DirectoryExchanger& exchanger_;
 public:
 	AbstractProvider(Session& session, DirectoryExchanger& exchanger);
 	virtual ~AbstractProvider();
 
-	DirectoryExchanger& get_exchanger(){return exchanger_;}
+	DirectoryExchanger& exchanger() {return exchanger_;}
+
+protected:
+	std::shared_ptr<spdlog::logger> log_;
+	Session& session_;
+	DirectoryExchanger& exchanger_;
 };
 
 class AbstractDirectory {
-protected:
-	Session& session_;
-	std::shared_ptr<spdlog::logger> log_;
-
-	AbstractProvider& provider_;
 public:
+	struct SignedMeta {
+		blob meta;
+		blob signature;
+	};
+
 	AbstractDirectory(Session& session, AbstractProvider& provider);
 	virtual ~AbstractDirectory();
 
-	virtual blob get_hash() const = 0;
+	virtual blob hash() const = 0;
+	//virtual void post_revision();
+
+protected:
+	std::shared_ptr<spdlog::logger> log_;
+	Session& session_;
+
+	AbstractProvider& provider_;
+	DirectoryExchanger& exchanger_;
 };
 
 } /* namespace librevault */

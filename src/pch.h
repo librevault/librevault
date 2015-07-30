@@ -15,6 +15,9 @@
  */
 #pragma once
 
+// Cryptodiff
+#include <cryptodiff.h>
+
 // dir_monitor
 #include "../contrib/dir_monitor/include/dir_monitor.hpp"
 
@@ -77,6 +80,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -104,7 +108,6 @@
 namespace librevault {
 
 namespace fs = boost::filesystem;
-using blob = std::vector<uint8_t>;
 using boost::asio::io_service;
 using boost::property_tree::ptree;
 
@@ -120,6 +123,7 @@ using tcp_socket = boost::asio::ip::tcp::socket;
 
 using ssl_socket = boost::asio::ssl::stream<tcp_socket>;
 
+using blob = std::vector<uint8_t>;
 using byte = uint8_t;
 
 } /* namespace librevault */

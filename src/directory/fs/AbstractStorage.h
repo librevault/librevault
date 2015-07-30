@@ -13,16 +13,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "DirectoryExchanger.h"
-#include "../Session.h"
-#include "Abstract.h"
+#pragma once
+#include "../../pch.h"
+#include "../../contrib/crypto/SHA3.h"
 
 namespace librevault {
 
-AbstractProvider::AbstractProvider(Session& session, DirectoryExchanger& exchanger) : log_(spdlog::get("Librevault")), session_(session), exchanger_(exchanger) {}
-AbstractProvider::~AbstractProvider() {}
+class AbstractStorage {
+public:
+	class no_such_block : public std::runtime_error {
+	public:
+		no_such_block() : std::runtime_error("Requested Block not found"){}
+	};
 
-AbstractDirectory::AbstractDirectory(Session& session, AbstractProvider& provider) : log_(spdlog::get("Librevault")), session_(session), provider_(provider), exchanger_(provider.exchanger()) {}
-AbstractDirectory::~AbstractDirectory() {}
+	AbstractStorage(){};
+	virtual ~AbstractStorage(){};
+
+	bool verify_encblock(const blob& block_hash, const blob& data){
+		return crypto::SHA3(28).compute(data) == crypto::BinaryArray(block_hash);
+	}
+	virtual blob get_encblock(const blob& block_hash) = 0;
+};
 
 } /* namespace librevault */

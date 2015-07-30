@@ -13,16 +13,36 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "DirectoryExchanger.h"
-#include "../Session.h"
-#include "Abstract.h"
+#pragma once
+#include "../../pch.h"
+#include "../Key.h"
+#include "Index.h"
+#include "EncStorage.h"
+#include "OpenStorage.h"
 
 namespace librevault {
 
-AbstractProvider::AbstractProvider(Session& session, DirectoryExchanger& exchanger) : log_(spdlog::get("Librevault")), session_(session), exchanger_(exchanger) {}
-AbstractProvider::~AbstractProvider() {}
+class Indexer {
+public:
+	Indexer(const Key& key, Index& index, EncStorage& enc_storage, OpenStorage& open_storage);
+	virtual ~Indexer();
 
-AbstractDirectory::AbstractDirectory(Session& session, AbstractProvider& provider) : log_(spdlog::get("Librevault")), session_(session), provider_(provider), exchanger_(provider.exchanger()) {}
-AbstractDirectory::~AbstractDirectory() {}
+	// Index manipulation
+	void index(const std::set<std::string> file_path);
+	void index(const std::string& file_path){std::set<std::string> s; s.insert(file_path); index(s);};
+
+	// Meta functions
+	blob make_Meta(const std::string& relpath);
+
+	AbstractDirectory::SignedMeta sign(const blob& meta) const;
+
+private:
+	std::shared_ptr<spdlog::logger> log_;
+
+	const Key& key_;
+	Index& index_;
+	EncStorage& enc_storage_;
+	OpenStorage& open_storage_;
+};
 
 } /* namespace librevault */

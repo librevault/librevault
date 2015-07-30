@@ -23,7 +23,6 @@
 #include <stdexcept>
 
 namespace librevault {
-namespace syncfs {
 
 class Key {
 	static constexpr size_t private_key_size = 32;
@@ -49,9 +48,9 @@ public:
 		Download = 'D',	/// Public key, used to verify signed modified files
 	};
 
-	class error : public std::domain_error {
+	class error : public std::runtime_error {
 	public:
-		error(const char* what) : std::domain_error(what) {}
+		error(const char* what) : std::runtime_error(what) {}
 	};
 	class format_error : public error {
 	public:
@@ -94,5 +93,4 @@ public:	// Yes, I prefer splitting member variables and method declaration
 
 std::ostream& operator<<(std::ostream& os, const Key& k);
 
-} /* namespace syncfs */
 } /* namespace librevault */

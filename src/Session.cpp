@@ -65,8 +65,8 @@ void Session::init_log() {
 }
 
 void Session::init_config() {
-	bool glob_config_path_created = fs::create_directories(config_path_);
-	log_->info() << "Configuration directory: " << this->config_path_;
+	bool config_path_created = fs::create_directories(config_path_);
+	log_->info() << "Configuration directory: " << this->config_path_ << (config_path_created ? " created" : "");
 
 	fs::path conf_file = config_path_ / "librevault.conf";
 
@@ -91,7 +91,7 @@ void Session::run(){
 
 	io_service::work work_lock(io_service_);
 	std::vector<std::thread> worker_threads;
-	for(auto i = 2; i <= thread_count; i++){
+	for(unsigned i = 2; i <= thread_count; i++){
 		worker_threads.emplace_back(std::bind(&Session::run_worker, this, i));	// Running io_service in threads
 	}
 	run_worker(1);	// Running in main thread. Can be stopped on shutdown() or restart();

@@ -21,13 +21,8 @@ namespace librevault {
 
 class FSDirectory;
 class FSProvider : public AbstractProvider {
-	boost::asio::dir_monitor monitor_;	// Starts 2 additional threads in Linux
-
 	std::map<blob, std::shared_ptr<FSDirectory>> hash_dir_;
 	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
-
-private:
-	void monitor_operation();
 
 	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
 	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);

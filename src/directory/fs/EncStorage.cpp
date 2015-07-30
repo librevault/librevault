@@ -18,13 +18,11 @@
 #include "../../contrib/crypto/Base32.h"
 #include "../../contrib/crypto/SHA3.h"
 
-#include "SyncFS.h"
-
 namespace librevault {
-namespace syncfs {
 
-EncStorage::EncStorage(const fs::path& block_path) : block_path(block_path), log(spdlog::stderr_logger_mt("SyncFS.EncStorage")) {
-	log->debug() << "Initializing EncStorage";
+EncStorage::EncStorage(fs::path block_path) : log_(spdlog::get("Librevault")), block_path_(std::move(block_path)) {
+	bool block_path_created = fs::create_directories(block_path_);
+	log_->debug() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
 }
 EncStorage::~EncStorage() {}
 
@@ -33,11 +31,7 @@ fs::path EncStorage::make_encblock_name(const blob& block_hash) const {
 }
 
 fs::path EncStorage::make_encblock_path(const blob& block_hash) const {
-	return block_path / make_encblock_name(block_hash);
-}
-
-bool EncStorage::verify_encblock(const blob& block_hash, const blob& data){
-	return crypto::SHA3(28).compute(data) == crypto::BinaryArray(block_hash);
+	return block_path_ / make_encblock_name(block_hash);
 }
 
 bool EncStorage::have_encblock(const blob& block_hash){
@@ -55,7 +49,7 @@ blob EncStorage::get_encblock(const blob& block_hash){
 
 		return return_value;
 	}
-	throw SyncFS::no_such_block();
+	throw no_such_block();
 }
 
 void EncStorage::put_encblock(const blob& block_hash, const blob& data){
@@ -63,14 +57,13 @@ void EncStorage::put_encblock(const blob& block_hash, const blob& data){
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	log->debug() << "Encrypted block " << (std::string)crypto::Base32().to(block_hash) << " pushed into EncStorage";
+	log_->debug() << "Encrypted block " << (std::string)crypto::Base32().to(block_hash) << " pushed into EncStorage";
 }
 
 void EncStorage::remove_encblock(const blob& block_hash){
 	fs::remove(make_encblock_path(block_hash));
 
-	log->debug() << "Block " << (std::string)crypto::Base32().to(block_hash) << " removed from EncStorage";
+	log_->debug() << "Block " << (std::string)crypto::Base32().to(block_hash) << " removed from EncStorage";
 }
 
-} /* namespace syncfs */
 } /* namespace librevault */

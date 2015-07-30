@@ -26,7 +26,6 @@
 using CryptoPP::ASN1::secp256r1;
 
 namespace librevault {
-namespace syncfs {
 
 Key::Key() {
 	CryptoPP::AutoSeededRandomPool rng;
@@ -161,5 +160,4 @@ std::ostream& operator<<(std::ostream& os, const Key& k){
 	return os << k.string();
 }
 
-} /* namespace syncfs */
 } /* namespace librevault */

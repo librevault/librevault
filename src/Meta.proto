@@ -39,3 +39,8 @@ message Meta {
 
 	cryptodiff.internals.EncFileMap_s filemap = 16;
 }
+
+message MetaRevision {
+	bytes path_hmac = 1;
+	int64 mtime = 2;
+}

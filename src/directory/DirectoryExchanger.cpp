@@ -25,8 +25,4 @@ DirectoryExchanger::DirectoryExchanger(Session& session) : session_(session), lo
 }
 DirectoryExchanger::~DirectoryExchanger() {}
 
-void DirectoryExchanger::register_directory(std::shared_ptr<AbstractDirectory> directory){
-	log_->debug() << "[DirectoryExchanger] " << "Directory registered";
-}
-
 } /* namespace librevault */

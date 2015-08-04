@@ -22,13 +22,15 @@
 
 namespace librevault {
 
+class FSDirectory;
 class OpenStorage : public AbstractStorage {
 public:
-	OpenStorage(const Key& key, Index& index, EncStorage& enc_storage, fs::path open_path, fs::path asm_path);
+	OpenStorage(FSDirectory& dir, Session& session);
 	virtual ~OpenStorage();
 
 	// Path constructor
 	std::string make_relpath(const fs::path& path) const;
+	blob make_path_hmac(const std::string& relpath) const;
 
 	blob get_encblock(const blob& block_hash);
 	blob get_block(const blob& block_hash);
@@ -46,21 +48,24 @@ public:
 	 */
 	void disassemble(const std::string& file_path, bool delete_file = true);
 
+	bool is_skipped(const std::string relpath) const;
+
+	const std::set<std::string>& skip_files() const;
+
 	std::set<std::string> open_files();	// Returns file names that are actually present in OpenFS.
 	std::set<std::string> indexed_files();	// Returns file names that are mentioned in index. They may be present, maybe not.
-	std::set<std::string> all_files();	// Sum of above
-
-	fs::path open_path() const {return open_path_;}
-	fs::path asm_path() const {return asm_path_;}
+	std::set<std::string> pending_files();	// Files, ready to be reindexed (sum of above, except deleted)
+	std::set<std::string> all_files();	// Sum of all
 
 private:
 	std::shared_ptr<spdlog::logger> log_;
+	FSDirectory& dir_;
 
 	const Key& key_;
 	Index& index_;
 	EncStorage& enc_storage_;
 
-	fs::path open_path_, asm_path_;
+	mutable std::set<std::string> skip_files_;
 
 	std::pair<blob, blob> get_both_blocks(const blob& block_hash);	// Returns std::pair(plaintext, encrypted)
 	std::string get_path(const blob& path_hmac);

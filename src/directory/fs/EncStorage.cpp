@@ -14,13 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "EncStorage.h"
-
+#include "FSDirectory.h"
 #include "../../contrib/crypto/Base32.h"
 #include "../../contrib/crypto/SHA3.h"
 
 namespace librevault {
 
-EncStorage::EncStorage(fs::path block_path) : log_(spdlog::get("Librevault")), block_path_(std::move(block_path)) {
+EncStorage::EncStorage(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault")), dir_(dir), block_path_(dir.block_path()) {
 	bool block_path_created = fs::create_directories(block_path_);
 	log_->debug() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
 }

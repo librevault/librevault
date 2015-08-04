@@ -14,41 +14,80 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Indexer.h"
+#include "FSDirectory.h"
+#include "../../Session.h"
 #include "../../../contrib/crypto/HMAC-SHA3.h"
 #include "../../../contrib/crypto/AES_CBC.h"
 #include "Meta.pb.h"
 
 namespace librevault {
 
-Indexer::Indexer(const Key& key, Index& index, EncStorage& enc_storage, OpenStorage& open_storage) :
-		log_(spdlog::get("Librevault")),
-		key_(key), index_(index), enc_storage_(enc_storage), open_storage_(open_storage) {}
+Indexer::Indexer(FSDirectory& dir, Session& session) :
+		log_(spdlog::get("Librevault")), dir_(dir),
+		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), session_(session) {}
 Indexer::~Indexer() {}
 
-void Indexer::index(const std::set<std::string> file_path){
-	log_->debug() << "Preparing to index " << file_path.size() << " entries.";
-	for(auto file_path1 : file_path){
-		auto meta = make_Meta(file_path1);
+void Indexer::index(const std::string& file_path){
+	if(open_storage_.is_skipped(file_path)){
+		log_->info() << "Skipping " << file_path;
+	}else{
+		auto meta = make_Meta(file_path);
 		index_.put_Meta(sign(meta));
 
-		auto path_hmac = crypto::HMAC_SHA3_224(key_.get_Encryption_Key()).to(file_path1);
+		Meta m; m.ParseFromArray(meta.data(), meta.size());
+
+		auto path_hmac = m.path_hmac();
 
 		index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
 				{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
 		});
 
-		Meta m; m.ParseFromArray(meta.data(), meta.size());
-
-		log_->debug() << "Updated index entry. Path=" << file_path1 << " Rev=" << m.mtime();
+		log_->debug() << "Updated index entry. Path=" << file_path << " Rev=" << m.mtime();
 	}
+}
+
+void Indexer::index(const std::set<std::string>& file_path){
+	log_->debug() << "Preparing to index " << file_path.size() << " entries.";
+	for(auto file_path1 : file_path)
+		index(file_path1);
+}
+
+void Indexer::async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
+	if(open_storage_.is_skipped(file_path)){
+		log_->info() << "Skipping " << file_path;
+	}else{
+		session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback){
+			auto meta = make_Meta(file_path);
+			AbstractDirectory::SignedMeta smeta = sign(meta);
+			index_.put_Meta(smeta);
+
+			Meta m; m.ParseFromArray(meta.data(), meta.size());
+
+			auto path_hmac = m.path_hmac();
+
+			index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
+					{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
+			});
+
+			log_->debug() << "Updated index entry. Path=" << file_path << " Rev=" << m.mtime();
+
+			session_.ios().dispatch(std::bind(callback, smeta));
+		}, file_path, callback));
+	}
+}
+
+void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
+	log_->debug() << "Preparing to index " << file_path.size() << " entries.";
+	for(auto file_path1 : file_path)
+		async_index(file_path1, callback);
 }
 
 blob Indexer::make_Meta(const std::string& relpath){
 	Meta meta;
-	auto abspath = fs::absolute(relpath, open_storage_.open_path());
+	auto abspath = fs::absolute(relpath, dir_.open_path());
 
 	// Path_HMAC
-	blob path_hmac = crypto::HMAC_SHA3_224(key_.get_Encryption_Key()).to(relpath);
+	blob path_hmac = open_storage_.make_path_hmac(relpath);
 	meta.set_path_hmac(path_hmac.data(), path_hmac.size());
 
 	// EncPath_IV

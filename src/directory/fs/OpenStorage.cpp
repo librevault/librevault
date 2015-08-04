@@ -14,19 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OpenStorage.h"
+#include "FSDirectory.h"
 #include "../../contrib/crypto/HMAC-SHA3.h"
 #include "../../contrib/crypto/AES_CBC.h"
 #include "Meta.pb.h"
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const Key& key, Index& index, EncStorage& enc_storage, fs::path open_path, fs::path asm_path) :
-		log_(spdlog::get("Librevault")),
-		key_(key), index_(index), enc_storage_(enc_storage), open_path_(open_path), asm_path_(asm_path) {
-	bool open_path_created = fs::create_directories(open_path_);
-	log_->debug() << "Open directory: " << open_path_ << (open_path_created ? " created" : "");
-	bool asm_path_created = fs::create_directories(asm_path_.parent_path());
-	log_->debug() << "Assemble directory: " << asm_path_.parent_path() << (asm_path_created ? " created" : "");
+OpenStorage::OpenStorage(FSDirectory& dir, Session& session) :
+		log_(spdlog::get("Librevault")), dir_(dir),
+		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {
+	bool open_path_created = fs::create_directories(dir_.open_path());
+	log_->debug() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
+	bool asm_path_created = fs::create_directories(dir_.asm_path().parent_path());
+	log_->debug() << "Assemble directory: " << dir_.asm_path().parent_path() << (asm_path_created ? " created" : "");
 }
 OpenStorage::~OpenStorage() {}
 
@@ -52,7 +53,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 
 		uint64_t blocksize	= row[0];
 		blob iv				= row[1];
-		auto filepath		= fs::absolute((std::string)crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()), open_path_);
+		auto filepath		= fs::absolute((std::string)crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()), dir_.open_path());
 		uint64_t offset		= row[3];
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
@@ -108,7 +109,7 @@ void OpenStorage::assemble(bool delete_blocks){
 	}
 
 	for(auto file : write_blocks){
-		fs::ofstream ofs(asm_path_, std::ios::out | std::ios::trunc | std::ios::binary);
+		fs::ofstream ofs(dir_.asm_path(), std::ios::out | std::ios::trunc | std::ios::binary);
 
 		blob path_hmac = file.first;
 		for(auto block : file.second){
@@ -121,16 +122,16 @@ void OpenStorage::assemble(bool delete_blocks){
 		}
 		ofs.close();
 
-		auto abspath = fs::absolute(get_path(path_hmac), open_path_);
+		auto abspath = fs::absolute(get_path(path_hmac), dir_.open_path());
 		fs::remove(abspath);
-		fs::rename(asm_path_, abspath);
+		fs::rename(dir_.asm_path(), abspath);
 
 		index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {{":file_path_hmac", path_hmac}});
 	}
 }
 
 void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
-	blob path_hmac = crypto::HMAC_SHA3_224(key_.get_Encryption_Key()).to(file_path);
+	blob path_hmac = make_path_hmac(file_path);
 
 	std::list<blob> encrypted_hashes;
 	auto blocks_data = index_.db().exec("SELECT block_encrypted_hash "
@@ -146,39 +147,68 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 		index_.db().exec("UPDATE openfs SET assembled=0 WHERE file_path_hmac=:path_hmac", {
 				{":path_hmac", path_hmac}
 		});
-		fs::remove(fs::absolute(file_path, open_path_));
+		fs::remove(fs::absolute(file_path, dir_.open_path()));
 	}
 }
 
 std::string OpenStorage::make_relpath(const fs::path& path) const {
-	fs::path rel_to = open_path_;
+	fs::path rel_to = dir_.open_path();
 	auto abspath = fs::absolute(path);
 
 	fs::path relpath;
 	auto path_elem_it = abspath.begin();
 	for(auto dir_elem : rel_to){
 		if(dir_elem != *(path_elem_it++))
-			return "";
+			return std::string();
 	}
 	for(; path_elem_it != abspath.end(); path_elem_it++){
 		if(*path_elem_it == "." || *path_elem_it == "..")
-			return "";
+			return std::string();
 		relpath /= *path_elem_it;
 	}
 	return relpath.generic_string();
 }
 
+blob OpenStorage::make_path_hmac(const std::string& relpath) const {
+	return crypto::HMAC_SHA3_224(key_.get_Encryption_Key()).to(relpath);
+}
+
+bool OpenStorage::is_skipped(const std::string relpath) const {
+	for(auto& skip_file : skip_files())
+		if(relpath.size() >= skip_file.size() && std::equal(skip_file.begin(), skip_file.end(), relpath.begin()))
+			return true;
+	return false;
+}
+
+const std::set<std::string>& OpenStorage::skip_files() const {
+	if(!skip_files_.empty()) return skip_files_;
+
+	// Config paths
+	auto ignore_list_its = dir_.dir_options().equal_range("ignore");
+	for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++){
+		skip_files_.insert(ignore_list_it->second.get_value<fs::path>().generic_string());
+	}
+
+	// Predefined paths
+	skip_files_.insert(make_relpath(dir_.block_path()));
+	skip_files_.insert(make_relpath(dir_.db_path()));
+	skip_files_.insert(make_relpath(dir_.db_path())+"-journal");
+	skip_files_.insert(make_relpath(dir_.db_path())+"-wal");
+	skip_files_.insert(make_relpath(dir_.db_path())+"-shm");
+	skip_files_.insert(make_relpath(dir_.asm_path()));
+
+	skip_files_.erase(std::string());	// If one (or more) of the above returned empty string (aka if one (or more) of the above paths are outside open_path)
+
+	return skip_files_;
+}
+
 std::set<std::string> OpenStorage::open_files(){
 	std::set<std::string> file_list;
-	for(auto dir_entry_it = fs::recursive_directory_iterator(open_path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		if(dir_entry_it->path() == index_.db_path()) continue;
-		if(dir_entry_it->path() == enc_storage_.block_path()) continue;
 
-		std::string block_path_canonical = fs::canonical(enc_storage_.block_path()).generic_string();
-		if(block_path_canonical == fs::canonical(dir_entry_it->path(), open_path()).string().substr(0, block_path_canonical.size())) continue;
-		// Prevents system directories from scan. TODO skiplist
+	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.open_path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
+		auto relpath = make_relpath(dir_entry_it->path());
 
-		file_list.insert(make_relpath(dir_entry_it->path()));
+		if(!is_skipped(relpath)) file_list.insert(relpath);
 	}
 	return file_list;
 }
@@ -188,10 +218,27 @@ std::set<std::string> OpenStorage::indexed_files(){
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
 		Meta meta; meta.ParseFromString(row[0].as_text());
-		file_list.insert(crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()));
+		std::string relpath = crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath());
+
+		if(!is_skipped(relpath)) file_list.insert(relpath);
 	}
 
 	return file_list;
+}
+
+std::set<std::string> OpenStorage::pending_files(){
+	std::set<std::string> file_list1, file_list2;
+	file_list1 = open_files();
+
+	for(auto row : index_.db().exec("SELECT meta FROM files")){
+		Meta meta; meta.ParseFromString(row[0].as_text());
+		if(meta.type() != meta.DELETED){
+			file_list1.insert(crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()));
+		}
+	}
+
+	file_list1.insert(file_list2.begin(), file_list2.end());
+	return file_list1;
 }
 
 std::set<std::string> OpenStorage::all_files(){

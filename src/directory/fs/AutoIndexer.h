@@ -13,46 +13,42 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "Meta.pb.h"
+#include "../../pch.h"
+#include "../Key.h"
+#include "Index.h"
+#include "EncStorage.h"
+#include "OpenStorage.h"
 
 namespace librevault {
 
-class Session;
-class DirectoryExchanger;
-
-class AbstractProvider {
+class AutoIndexer {
 public:
-	AbstractProvider(Session& session, DirectoryExchanger& exchanger);
-	virtual ~AbstractProvider();
+	AutoIndexer(FSDirectory& dir, Session& session, std::function<void(AbstractDirectory::SignedMeta)> callback);
+	virtual ~AutoIndexer();
 
-	DirectoryExchanger& exchanger() {return exchanger_;}
+	void queue_files(const std::string& relpath);
+	void queue_files(const std::set<std::string>& relpath);
 
-protected:
+private:
 	std::shared_ptr<spdlog::logger> log_;
-	Session& session_;
-	DirectoryExchanger& exchanger_;
-};
-
-class AbstractDirectory {
-public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
-
-	AbstractDirectory(Session& session, AbstractProvider& provider);
-	virtual ~AbstractDirectory();
-
-	virtual blob hash() const = 0;
-
-protected:
-	std::shared_ptr<spdlog::logger> log_;
+	FSDirectory& dir_;
 	Session& session_;
 
-	AbstractProvider& provider_;
-	DirectoryExchanger& exchanger_;
+	std::function<void(AbstractDirectory::SignedMeta)> callback_;
+
+	// Monitor
+	boost::asio::dir_monitor monitor_;
+
+	void bump_timer();
+
+	// Monitor operations
+	void monitor_operation();
+	void monitor_handle(const boost::asio::dir_monitor_event& ev);
+	std::set<std::string> index_queue_;
+	std::mutex index_queue_m_;
+	boost::asio::steady_timer index_timer_;
+	void monitor_index(const boost::system::error_code& ec);
 };
 
 } /* namespace librevault */

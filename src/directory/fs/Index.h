@@ -20,6 +20,7 @@
 
 namespace librevault {
 
+class FSDirectory;
 class Index {
 public:
 	using SignedMeta = AbstractDirectory::SignedMeta;
@@ -29,7 +30,7 @@ public:
 		no_such_meta() : std::runtime_error("Requested Meta not found"){}
 	};
 
-	Index(fs::path db_path);
+	Index(FSDirectory& dir, Session& session);
 	virtual ~Index();
 
 	void wipe();
@@ -43,13 +44,11 @@ public:
 
 	SQLiteDB& db() {return *db_;}
 
-	fs::path db_path() const {return db_path_;}
-
 private:
 	std::shared_ptr<spdlog::logger> log_;
-	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+	FSDirectory& dir_;
 
-	const fs::path db_path_;
+	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
 	std::list<SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
 };

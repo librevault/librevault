@@ -22,49 +22,54 @@
 #include "EncStorage.h"
 #include "OpenStorage.h"
 #include "Indexer.h"
+#include "AutoIndexer.h"
 
 namespace librevault {
 
 class FSProvider;
-class FSDirectory : public AbstractDirectory {
+class FSDirectory {
 public:
 	FSDirectory(ptree dir_options, Session& session, FSProvider& provider);
-	~FSDirectory();
+	virtual ~FSDirectory();
+
+	const ptree& dir_options() const {return dir_options_;}
 
 	const Key& key() const {return key_;}
-	virtual blob hash() const {return key().get_Hash();}
+	const blob& hash() const {return key().get_Hash();}
 
 	const fs::path& open_path() const {return open_path_;}
 	const fs::path& block_path() const {return block_path_;}
 	const fs::path& db_path() const {return db_path_;}
 	const fs::path& asm_path() const {return asm_path_;}
 
+	// Components
+	std::unique_ptr<Index> index;
+	std::unique_ptr<EncStorage> enc_storage;
+	std::unique_ptr<OpenStorage> open_storage;
+	std::unique_ptr<Indexer> indexer;
+	std::unique_ptr<AutoIndexer> auto_indexer;
+
 private:
+	std::shared_ptr<spdlog::logger> log_;
+
+	// Directory options
+	ptree dir_options_;
+
 	// Key
 	const Key key_;
 
 	// Paths
 	const fs::path open_path_, block_path_, db_path_, asm_path_;
 
-	// Storages
-	std::unique_ptr<Index> index_;
-	std::unique_ptr<EncStorage> enc_storage_;
-	std::unique_ptr<OpenStorage> open_storage_;
-	std::unique_ptr<Indexer> indexer_;
-
-	// Monitor
-	boost::asio::dir_monitor monitor_;
-
 	// Statistics
 	uint64_t received_bytes_ = 0;
 	uint64_t sent_bytes_ = 0;
 
-	// Initialization
-	void init_monitor(const fs::path& open_path);
+	// Revision operations
+	void handle_smeta(AbstractDirectory::SignedMeta smeta);
 
-	// Monitor operations
-	void monitor_operation();
-	void monitor_handle(const boost::asio::dir_monitor_event& ev);
+	void announce_revision(const blob& path_hmac, int64_t revision);	// When FSDirectory posts to others.
+	void apply_revision();	// Apply revision information to this FSDirectory.
 };
 
 } /* namespace librevault */

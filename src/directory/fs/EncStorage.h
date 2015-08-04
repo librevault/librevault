@@ -16,12 +16,14 @@
 #pragma once
 #include "../../pch.h"
 #include "AbstractStorage.h"
+#include "../../Session.h"
 
 namespace librevault {
 
+class FSDirectory;
 class EncStorage : public AbstractStorage {
 public:
-	EncStorage(fs::path block_path);
+	EncStorage(FSDirectory& dir, Session& session);
 	virtual ~EncStorage();
 
 	bool have_encblock(const blob& block_hash);
@@ -29,11 +31,10 @@ public:
 	void put_encblock(const blob& block_hash, const blob& data);
 	void remove_encblock(const blob& block_hash);
 
-	fs::path block_path() const {return block_path_;}
-
 private:
 	std::shared_ptr<spdlog::logger> log_;
-	fs::path block_path_;
+	FSDirectory& dir_;
+	const fs::path& block_path_;
 
 	fs::path make_encblock_name(const blob& block_hash) const;
 	fs::path make_encblock_path(const blob& block_hash) const;

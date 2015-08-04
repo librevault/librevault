@@ -14,20 +14,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Index.h"
+#include "FSDirectory.h"
 #include "Meta.pb.h"
 #include "../../../contrib/crypto/Base32.h"
 
 namespace librevault {
 
-Index::Index(fs::path db_path) : log_(spdlog::get("Librevault")), db_path_(std::move(db_path)) {
-	bool db_path_created = fs::create_directories(db_path_.parent_path());
-	log_->debug() << "Database directory: " << db_path_.parent_path() << (db_path_created ? " created" : "");
+Index::Index(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault")), dir_(dir) {
+	bool db_path_created = fs::create_directories(dir_.db_path().parent_path());
+	log_->debug() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
 
-	if(fs::exists(db_path_))
-		log_->debug() << "Opening SQLite3 DB: " << db_path_;
+	if(fs::exists(dir_.db_path()))
+		log_->debug() << "Opening SQLite3 DB: " << dir_.db_path();
 	else
-		log_->debug() << "Creating new SQLite3 DB: " << db_path_;
-	db_ = std::make_unique<SQLiteDB>(db_path_);
+		log_->debug() << "Creating new SQLite3 DB: " << dir_.db_path();
+	db_ = std::make_unique<SQLiteDB>(dir_.db_path());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
 	db_->exec("CREATE TABLE IF NOT EXISTS files (path_hmac BLOB PRIMARY KEY NOT NULL, mtime INTEGER NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");

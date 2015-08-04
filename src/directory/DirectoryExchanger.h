@@ -32,17 +32,12 @@ public:
 	DirectoryExchanger(Session& session);
 	virtual ~DirectoryExchanger();
 
-	void register_directory(std::shared_ptr<AbstractDirectory> directory);
-	void new_revision(std::shared_ptr<AbstractDirectory> directory, int64_t revision);
-
 private:
 	Session& session_;
 	std::shared_ptr<spdlog::logger> log_;
 
 	std::unique_ptr<FSProvider> fs_provider_;
 	std::unique_ptr<P2PProvider> p2p_provider_;
-
-	std::set<blob> allowed_hashes_;
 };
 
 } /* namespace librevault */

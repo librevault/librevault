@@ -29,21 +29,13 @@ FSProvider::FSProvider(Session& session, DirectoryExchanger& exchanger) : Abstra
 FSProvider::~FSProvider() {}
 
 void FSProvider::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	log_->info() << "Registering directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
-
 	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
 	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
-
-	log_->info() << "Registered directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 }
 
 void FSProvider::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	log_->info() << "Unregistering directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
-
 	path_dir_.erase(dir_ptr->open_path());
 	hash_dir_.erase(dir_ptr->key().get_Hash());
-
-	log_->info() << "Unregistered directory: k=" << dir_ptr->key() << " path=" << dir_ptr->open_path();
 }
 
 void FSProvider::add_directory(ptree dir_options) {

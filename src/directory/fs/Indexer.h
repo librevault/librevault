@@ -22,14 +22,18 @@
 
 namespace librevault {
 
+class FSDirectory;
 class Indexer {
 public:
-	Indexer(const Key& key, Index& index, EncStorage& enc_storage, OpenStorage& open_storage);
+	Indexer(FSDirectory& dir, Session& session);
 	virtual ~Indexer();
 
 	// Index manipulation
-	void index(const std::set<std::string> file_path);
-	void index(const std::string& file_path){std::set<std::string> s; s.insert(file_path); index(s);};
+	void index(const std::string& file_path);
+	void index(const std::set<std::string>& file_path);
+
+	void async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
+	void async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
 
 	// Meta functions
 	blob make_Meta(const std::string& relpath);
@@ -38,11 +42,14 @@ public:
 
 private:
 	std::shared_ptr<spdlog::logger> log_;
+	FSDirectory& dir_;
 
 	const Key& key_;
 	Index& index_;
 	EncStorage& enc_storage_;
 	OpenStorage& open_storage_;
+
+	Session& session_;
 };
 
 } /* namespace librevault */

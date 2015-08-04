@@ -39,7 +39,7 @@ fs::path Session::default_config_path(){
 #endif
 }
 
-Session::Session(fs::path glob_config_path) : config_path_(std::move(glob_config_path))/*, log(spdlog::stderr_logger_mt("Session"))*/ {
+Session::Session(fs::path glob_config_path) : config_path_(std::move(glob_config_path)) {
 	init_log();
 	init_config();
 
@@ -58,7 +58,14 @@ void Session::init_log() {
 	std::lock_guard<std::mutex> lk(log_mtx);
 	log_ = spdlog::get("Librevault");
 	if(!log_){
-		log_ = spdlog::stderr_logger_mt("Librevault");
+		spdlog::set_async_mode(1024*1024);
+
+		std::vector<spdlog::sink_ptr> sinks;
+		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>((config_path_ / "librevault").native(), ".log", 5*1024*1024, 6));
+
+		log_ = std::make_shared<spdlog::logger>("Librevault", sinks.begin(), sinks.end());
+		spdlog::register_logger(log_);
 		//log_->set_level(spdlog::level::trace);
 		spdlog::set_level(spdlog::level::trace);
 	}

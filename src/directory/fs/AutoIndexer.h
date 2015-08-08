@@ -27,8 +27,8 @@ public:
 	AutoIndexer(FSDirectory& dir, Session& session, std::function<void(AbstractDirectory::SignedMeta)> callback);
 	virtual ~AutoIndexer();
 
-	void queue_files(const std::string& relpath);
-	void queue_files(const std::set<std::string>& relpath);
+	void enqueue_files(const std::string& relpath);
+	void enqueue_files(const std::set<std::string>& relpath);
 
 private:
 	std::shared_ptr<spdlog::logger> log_;

@@ -27,20 +27,20 @@ AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(
 		monitor_(session_.ios()), index_timer_(session_.ios()) {
 	callback_ = callback;
 
-	queue_files(index_queue_ = dir.open_storage->pending_files());
+	enqueue_files(index_queue_ = dir.open_storage->pending_files());
 
 	monitor_.add_directory(dir_.open_path().string());
 	monitor_operation();
 }
 AutoIndexer::~AutoIndexer() {}
 
-void AutoIndexer::queue_files(const std::string& relpath){
+void AutoIndexer::enqueue_files(const std::string& relpath){
 	std::unique_lock<std::mutex> lk(index_queue_m_);
 	index_queue_.insert(relpath);
 	bump_timer();
 }
 
-void AutoIndexer::queue_files(const std::set<std::string>& relpath){
+void AutoIndexer::enqueue_files(const std::set<std::string>& relpath){
 	std::unique_lock<std::mutex> lk(index_queue_m_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 	bump_timer();
@@ -76,7 +76,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 		std::string relpath = dir_.open_storage->make_relpath(ev.path);
 		if(!dir_.open_storage->is_skipped(relpath)){
 			log_->debug() << "[dir_monitor] " << ev;
-			queue_files(relpath);
+			enqueue_files(relpath);
 		}
 	}
 	default: break;

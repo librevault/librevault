@@ -35,10 +35,16 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, FSProvider& provid
 	log_->debug() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
 	index = std::make_unique<Index>(*this, session);
-	enc_storage = std::make_unique<EncStorage>(*this, session);
-	open_storage = std::make_unique<OpenStorage>(*this, session);
-	indexer = std::make_unique<Indexer>(*this, session);
-	auto_indexer = std::make_unique<AutoIndexer>(*this, session, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
+	if(key_.get_type() <= Key::Type::Download){
+		enc_storage = std::make_unique<EncStorage>(*this, session);
+	}
+	if(key_.get_type() <= Key::Type::ReadOnly){
+		open_storage = std::make_unique<OpenStorage>(*this, session);
+	}
+	if(key_.get_type() <= Key::Type::ReadWrite){
+		indexer = std::make_unique<Indexer>(*this, session);
+		auto_indexer = std::make_unique<AutoIndexer>(*this, session, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
+	}
 }
 
 FSDirectory::~FSDirectory() {}

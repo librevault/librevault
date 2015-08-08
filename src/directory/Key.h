@@ -25,21 +25,6 @@
 namespace librevault {
 
 class Key {
-	static constexpr size_t private_key_size = 32;
-	static constexpr size_t encryption_key_size = 32;
-	static constexpr size_t public_key_size = 33;
-
-	static constexpr size_t hash_size = 32;
-
-	std::string secret_s;
-
-	mutable std::vector<uint8_t> cached_private_key;	// ReadWrite
-	mutable std::vector<uint8_t> cached_encryption_key;	// ReadOnly
-	mutable std::vector<uint8_t> cached_public_key;		// Download
-
-	mutable std::vector<uint8_t> cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
-
-	std::vector<uint8_t> get_payload() const;
 public:
 	enum Type : char {
 		Owner = 'A',	/// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
@@ -65,7 +50,6 @@ public:
 		crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
 	};
 
-public:	// Yes, I prefer splitting member variables and method declaration
 	Key();
 	Key(Type type, const std::vector<uint8_t>& payload);
 	Key(std::string string_secret);
@@ -89,6 +73,23 @@ public:	// Yes, I prefer splitting member variables and method declaration
 
 	bool operator== (const Key& key) const {return secret_s == key.secret_s;}
 	bool operator< (const Key& key) const {return secret_s < key.secret_s;}
+
+private:
+	static constexpr size_t private_key_size = 32;
+	static constexpr size_t encryption_key_size = 32;
+	static constexpr size_t public_key_size = 33;
+
+	static constexpr size_t hash_size = 32;
+
+	std::string secret_s;
+
+	mutable std::vector<uint8_t> cached_private_key;	// ReadWrite
+	mutable std::vector<uint8_t> cached_encryption_key;	// ReadOnly
+	mutable std::vector<uint8_t> cached_public_key;		// Download
+
+	mutable std::vector<uint8_t> cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
+
+	std::vector<uint8_t> get_payload() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Key& k);

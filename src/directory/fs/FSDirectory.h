@@ -26,16 +26,18 @@
 
 namespace librevault {
 
+class ExchangeGroup;
 class FSProvider;
-class FSDirectory {
+class FSDirectory : public AbstractDirectory {
 public:
-	FSDirectory(ptree dir_options, Session& session, FSProvider& provider);
+	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger, FSProvider& provider);
 	virtual ~FSDirectory();
 
 	const ptree& dir_options() const {return dir_options_;}
 
 	const Key& key() const {return key_;}
-	const blob& hash() const {return key().get_Hash();}
+	blob hash() const {return key().get_Hash();}
+	std::string name() const;
 
 	const fs::path& open_path() const {return open_path_;}
 	const fs::path& block_path() const {return block_path_;}
@@ -50,26 +52,14 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
-
-	// Directory options
 	ptree dir_options_;
-
-	// Key
 	const Key key_;
+	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
-	// Paths
-	const fs::path open_path_, block_path_, db_path_, asm_path_;
-
-	// Statistics
-	uint64_t received_bytes_ = 0;
-	uint64_t sent_bytes_ = 0;
+	std::shared_ptr<ExchangeGroup> group_;
 
 	// Revision operations
 	void handle_smeta(AbstractDirectory::SignedMeta smeta);
-
-	void announce_revision(const blob& path_hmac, int64_t revision);	// When FSDirectory posts to others.
-	void apply_revision();	// Apply revision information to this FSDirectory.
 };
 
 } /* namespace librevault */

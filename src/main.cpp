@@ -24,8 +24,10 @@ int main(int argc, char** argv){
 	po::options_description allowed_options("Allowed Options");
 	allowed_options.add_options()
 		("help,h", "Display help message")
-		("config,c", po::value<fs::path>()->default_value(librevault::Session::default_config_path()))
-		("gen-key", "Generate Owner key")
+		("config,c", po::value<fs::path>()->default_value(librevault::Session::default_config_path()), "Configuration path")
+		("gen-key", "Generate Key type A")
+		("derive,d", po::value<char>(), "Derive lower-type Key from higher-type (e.g. C from A)")
+		("key, k", po::value<std::string>(), "Sets Key for -d")
 	;
 
 	po::variables_map variables;
@@ -39,6 +41,12 @@ int main(int argc, char** argv){
 	if(variables.count("gen-key") > 0){
 		librevault::Key k;
 		std::cout << k;
+		return 0;
+	}
+	if(variables.count("derive") > 0 && variables.count("key") > 0){
+		librevault::Key::Type type = (librevault::Key::Type)variables["derive"].as<char>();
+		librevault::Key k(variables["key"].as<std::string>());
+		std::cout << k.derive(type);
 		return 0;
 	}
 

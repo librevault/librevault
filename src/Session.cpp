@@ -14,7 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Session.h"
-#include "directory/DirectoryExchanger.h"
+
+#include "directory/Exchanger.h"
 
 namespace librevault {
 
@@ -43,7 +44,7 @@ Session::Session(fs::path glob_config_path) : config_path_(std::move(glob_config
 	init_log();
 	init_config();
 
-	exchanger_ = std::make_unique<DirectoryExchanger>(*this);
+	exchanger_ = std::make_unique<Exchanger>(*this);
 }
 
 Session::~Session() {

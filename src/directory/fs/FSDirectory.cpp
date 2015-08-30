@@ -20,11 +20,13 @@
 
 #include "../../Session.h"
 #include "../../net/parse_url.h"
+#include "../ExchangeGroup.h"
+#include "../Exchanger.h"
 
 namespace librevault {
 
-FSDirectory::FSDirectory(ptree dir_options, Session& session, FSProvider& provider) :
-		log_(spdlog::get("Librevault")),
+FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger, FSProvider& provider) :
+		AbstractDirectory(session, exchanger),
 		dir_options_(std::move(dir_options)),
 		key_(dir_options_.get<std::string>("key")),
 
@@ -36,27 +38,34 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, FSProvider& provid
 
 	index = std::make_unique<Index>(*this, session);
 	if(key_.get_type() <= Key::Type::Download){
-		enc_storage = std::make_unique<EncStorage>(*this, session);
+		enc_storage = std::make_unique<EncStorage>(*this, session_);
 	}
 	if(key_.get_type() <= Key::Type::ReadOnly){
-		open_storage = std::make_unique<OpenStorage>(*this, session);
+		open_storage = std::make_unique<OpenStorage>(*this, session_);
 	}
 	if(key_.get_type() <= Key::Type::ReadWrite){
-		indexer = std::make_unique<Indexer>(*this, session);
-		auto_indexer = std::make_unique<AutoIndexer>(*this, session, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
+		indexer = std::make_unique<Indexer>(*this, session_);
+		auto_indexer = std::make_unique<AutoIndexer>(*this, session_, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
 	}
+
+	group_ = exchanger_.get(key_.get_Hash(), true);
+	group_->add(this);
 }
 
-FSDirectory::~FSDirectory() {}
+FSDirectory::~FSDirectory() {
+	group_->remove(this);
+}
 
 void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
 	Meta m; m.ParseFromArray(smeta.meta.data(), smeta.meta.size());
 	blob path_hmac(m.path_hmac().begin(), m.path_hmac().end());
-	announce_revision(path_hmac, m.mtime());
+
+	log_->debug() << "Created revision " << m.mtime() << " of " << (std::string)crypto::Base32().to(path_hmac);
+	group_->announce_revision(path_hmac, m.mtime(), this);
 }
 
-void FSDirectory::announce_revision(const blob& path_hmac, int64_t revision){
-	log_->debug() << "Created revision " << revision << " of " << (std::string)crypto::Base32().to(path_hmac);
+std::string FSDirectory::name() const {
+	return open_path_.empty() ? block_path_.string() : open_path_.string();
 }
 
 } /* namespace librevault */

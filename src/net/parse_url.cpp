@@ -29,6 +29,7 @@ url::operator std::string() const {
 		result += boost::lexical_cast<std::string>(port);
 	}
 	result += query;
+	return result;
 }
 
 url parse_url(std::string url_str){

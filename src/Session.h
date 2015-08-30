@@ -18,7 +18,7 @@
 
 namespace librevault {
 
-class DirectoryExchanger;
+class Exchanger;
 class Session {
 	// Asynchronous/multithreaded operation
 	io_service io_service_;
@@ -27,7 +27,7 @@ class Session {
 	std::shared_ptr<spdlog::logger> log_;
 
 	// Components
-	std::unique_ptr<DirectoryExchanger> exchanger_;
+	std::unique_ptr<Exchanger> exchanger_;
 
 	// Program options
 	fs::path config_path_;	// Config directory
@@ -46,7 +46,7 @@ public:
 	void shutdown();
 	void restart();
 
-	DirectoryExchanger& exchanger(){return *exchanger_;}
+	Exchanger& exchanger(){return *exchanger_;}
 
 	io_service& ios(){return io_service_;}
 	ptree& config(){return config_;}

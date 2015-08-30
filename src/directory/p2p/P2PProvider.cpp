@@ -16,62 +16,68 @@
 #include "P2PProvider.h"
 #include "../../Session.h"
 #include "../../net/parse_url.h"
+#include "P2PDirectory.h"
+#include "../Key.h"
 
 namespace librevault {
 
-P2PProvider::P2PProvider(Session& session, DirectoryExchanger& exchanger) :
+P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 		AbstractProvider(session, exchanger),
-		acceptor_(session.ios()),
+		node_key_(session_, session.config_path()/"key.pem", session.config_path()/"cert.pem"),
 		ssl_ctx_(boost::asio::ssl::context::tlsv12),
-		node_key_(session.config_path()/"key.pem", session.config_path()/"cert.pem"){
+		acceptor_(session_.ios()) {
 	// SSL settings
-	ssl_ctx_.use_certificate_file(node_key_.cert_path().native(), boost::asio::ssl::context::pem);
-	ssl_ctx_.use_private_key_file(node_key_.key_path().native(), boost::asio::ssl::context::pem);
+	ssl_ctx_.set_options(boost::asio::ssl::context::default_workarounds);
+
+	ssl_ctx_.use_certificate_file(node_key_.cert_path().string(), boost::asio::ssl::context::pem);
+	ssl_ctx_.use_private_key_file(node_key_.key_path().string(), boost::asio::ssl::context::pem);
 
 	// Acceptor initialization
-	url bind_url = parse_url(session.config().get<std::string>("net.listen"));
+	url bind_url = parse_url(session_.config().get<std::string>("net.listen"));
 	tcp_endpoint bound_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	acceptor_.open(bound_endpoint.address().is_v6() ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4());
+	acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
 	acceptor_.bind(bound_endpoint);
 	acceptor_.listen();
 	log_->info() << "Listening on " << local_endpoint();
 
 	accept_operation();
+
+	init_persistent();
 }
 
 P2PProvider::~P2PProvider() {}
 
+void P2PProvider::init_persistent() {
+	auto folder_trees = session_.config().equal_range("folder");
+	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
+		Key k(folder_tree_it->second.get<std::string>("key"));
+
+		auto node_tree = folder_tree_it->second.equal_range("node");
+		for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
+			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
+
+			auto connection = std::make_unique<Connection>(connection_url, session_, *this);
+			auto socket = std::make_shared<P2PDirectory>(std::move(connection), session_, *this);
+			hash_dir_.insert({k.get_Hash(), socket});
+		}
+	}
+}
+
 void P2PProvider::accept_operation() {
 	auto socket_ptr = new ssl_socket(session_.ios(), ssl_ctx_);
+
 	acceptor_.async_accept(socket_ptr->lowest_layer(), std::bind([this](ssl_socket* socket_ptr, const boost::system::error_code& ec) {
-		log_->debug() << "TCP connection accepted from: " << socket_ptr->lowest_layer().remote_endpoint();
+		if(ec == boost::asio::error::operation_aborted) return;
 		accept_operation();
+
+		log_->debug() << "TCP connection accepted from: " << socket_ptr->lowest_layer().remote_endpoint();
+
+		auto connection = std::make_unique<Connection>(socket_ptr, session_, *this);
+		auto accepted_dir = std::make_shared<P2PDirectory>(std::move(connection), session_, *this);
+		accepted_connections_.insert(accepted_dir);
 	}, socket_ptr, std::placeholders::_1));
-}
-
-Connection::Connection(tcp_endpoint endpoint){
-
-}
-
-Connection::Connection(ssl_socket* socket_ptr) : socket_ptr(socket_ptr), log(spdlog::stderr_logger_mt("conn")) {
-	remote_endpoint = socket_ptr->lowest_layer().remote_endpoint();
-	handshake(boost::asio::ssl::stream_base::server);
-}
-
-Connection::~Connection(){}
-
-void Connection::connect(){
-
-}
-
-void Connection::handshake(boost::asio::ssl::stream_base::handshake_type handshake_type){
-	socket_ptr->set_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
-	socket_ptr->async_handshake(handshake_type, std::bind(&Connection::handle_handshake, this));
-}
-
-void Connection::handle_handshake(){
-	log->debug() << "TLS connection established with: " << socket_ptr->lowest_layer().remote_endpoint();
 }
 
 } /* namespace librevault */

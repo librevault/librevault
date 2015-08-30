@@ -14,12 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeKey.h"
+#include "../../Session.h"
+#include "../../contrib/crypto/Hex.h"
 #include "../../contrib/crypto/Base64.h"
 
 namespace librevault {
 
-NodeKey::NodeKey(fs::path key, fs::path cert) :
-		key_path_(key), cert_path_(cert), openssl_pkey_(EVP_PKEY_new()), x509_(X509_new()) {
+NodeKey::NodeKey(Session& session, fs::path key_path, fs::path cert_path) :
+		session_(session), log_(spdlog::get("Librevault")),
+		key_path_(std::move(key_path)), cert_path_(std::move(cert_path)),
+		openssl_pkey_(EVP_PKEY_new()), x509_(X509_new()) {
 	gen_private_key();
 	write_key();
 	gen_certificate();
@@ -33,6 +37,15 @@ NodeKey::~NodeKey() {
 CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	CryptoPP::AutoSeededRandomPool rng;
 	private_key_.Initialize(rng, CryptoPP::ASN1::secp256r1());
+	CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
+
+	private_key_.MakePublicKey(public_key);
+	public_key.AccessGroupParameters().SetPointCompression(true);
+
+	std::vector<uint8_t> public_key_raw(33);
+	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_raw.data());
+
+	log_->debug() << "Public key: " << (std::string)crypto::Hex().to(public_key_raw);
 
 	return private_key_;
 }
@@ -113,9 +126,9 @@ void NodeKey::gen_certificate() {
 	X509_NAME * name = X509_get_subject_name(x509_);
 
 	/* Set the country code and common name. */
-	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *) "CA", -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (unsigned char *) "MyCompany", -1, -1, 0);
-	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *) "localhost", -1, -1, 0);
+	//X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *) "CA", -1, -1, 0);
+	//X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (unsigned char *) "MyCompany", -1, -1, 0);
+	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *) "Librevault", -1, -1, 0);	// Use some sort of user-agent
 
 	/* Now set the issuer name. */
 	X509_set_issuer_name(x509_, name);

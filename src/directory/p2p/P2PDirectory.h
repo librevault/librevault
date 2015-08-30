@@ -13,31 +13,45 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
+#include "../../pch.h"
 #pragma once
+#include "../Abstract.h"
+#include "Connection.h"
 
 namespace librevault {
 
-class AbstractDirectory;
-class AbstractProvider;
-class FSDirectory;
-class FSProvider;
-class P2PDirectory;
-class P2PProvider;
-
 class Session;
-
-class DirectoryExchanger {
+class P2PProvider;
+class P2PDirectory : public AbstractDirectory {
 public:
-	DirectoryExchanger(Session& session);
-	virtual ~DirectoryExchanger();
+	P2PDirectory(std::unique_ptr<Connection>&& connection, Session& session, Exchanger& exchanger, P2PProvider& provider);
+	~P2PDirectory();
+
+	void handle_establish(Connection::state state, const boost::system::error_code& error);
 
 private:
-	Session& session_;
-	std::shared_ptr<spdlog::logger> log_;
+	static std::array<char, 19> pstr;
+	static std::string user_agent;
+	const uint8_t version = 1;
 
-	std::unique_ptr<FSProvider> fs_provider_;
-	std::unique_ptr<P2PProvider> p2p_provider_;
+#pragma pack(push, 1)
+	struct Handhsake_1 {
+		uint8_t pstrlen;
+		std::array<char, 19> pstr;
+		uint8_t version;
+		std::array<uint8_t, 11> reserved;
+		std::array<uint8_t, 32> hash;
+		std::array<uint8_t, 32> auth_hmac;
+	};
+#pragma pack(pop)
+
+	P2PProvider& provider_;
+
+	std::unique_ptr<Connection> connection_;
+	blob remote_hash;
+
+	blob gen_handshake();
+	void send_handshake();
 };
 
 } /* namespace librevault */

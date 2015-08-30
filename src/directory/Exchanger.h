@@ -13,16 +13,36 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "DirectoryExchanger.h"
-#include "fs/FSProvider.h"
-#include "p2p/P2PProvider.h"
+#include "../pch.h"
+#pragma once
 
 namespace librevault {
 
-DirectoryExchanger::DirectoryExchanger(Session& session) : session_(session), log_(spdlog::get("Librevault")) {
-	fs_provider_ = std::make_unique<FSProvider>(session, *this);
-	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
-}
-DirectoryExchanger::~DirectoryExchanger() {}
+class Session;
+
+class AbstractProvider;
+class FSProvider;
+class P2PProvider;
+class ExchangeGroup;
+
+class Exchanger {
+public:
+	Exchanger(Session& session);
+	virtual ~Exchanger();
+
+	void add(ExchangeGroup* group);
+	void remove(ExchangeGroup* group);
+
+	std::shared_ptr<ExchangeGroup> get(blob hash, bool create = false);
+
+private:
+	Session& session_;
+	std::shared_ptr<spdlog::logger> log_;
+
+	std::unique_ptr<FSProvider> fs_provider_;
+	std::unique_ptr<P2PProvider> p2p_provider_;
+
+	std::map<blob, ExchangeGroup*> groups_;
+};
 
 } /* namespace librevault */

@@ -20,19 +20,19 @@
 namespace librevault {
 
 class Session;
-class DirectoryExchanger;
+class Exchanger;
 
 class AbstractProvider {
 public:
-	AbstractProvider(Session& session, DirectoryExchanger& exchanger);
+	AbstractProvider(Session& session, Exchanger& exchanger);
 	virtual ~AbstractProvider();
 
-	DirectoryExchanger& exchanger() {return exchanger_;}
+	Exchanger& exchanger() {return exchanger_;}
 
 protected:
 	std::shared_ptr<spdlog::logger> log_;
 	Session& session_;
-	DirectoryExchanger& exchanger_;
+	Exchanger& exchanger_;
 };
 
 class AbstractDirectory {
@@ -42,17 +42,16 @@ public:
 		blob signature;
 	};
 
-	AbstractDirectory(Session& session, AbstractProvider& provider);
+	AbstractDirectory(Session& session, Exchanger& exchanger);
 	virtual ~AbstractDirectory();
 
 	virtual blob hash() const = 0;
+	virtual std::string name() const = 0;
 
 protected:
 	std::shared_ptr<spdlog::logger> log_;
 	Session& session_;
-
-	AbstractProvider& provider_;
-	DirectoryExchanger& exchanger_;
+	Exchanger& exchanger_;
 };
 
 } /* namespace librevault */

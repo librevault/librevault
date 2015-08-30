@@ -18,11 +18,12 @@
 
 namespace librevault {
 
+class Session;
 class NodeKey {
 public:
 	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
 
-	NodeKey(fs::path key, fs::path cert);
+	NodeKey(Session& session, fs::path key_path, fs::path cert_path);
 	virtual ~NodeKey();
 
 	const fs::path& key_path() const {return key_path_;}
@@ -31,6 +32,9 @@ public:
 	const private_key_t& private_key() const {return private_key_;}
 
 private:
+	Session& session_;
+	std::shared_ptr<spdlog::logger> log_;
+
 	fs::path key_path_, cert_path_;
 
 	private_key_t private_key_;

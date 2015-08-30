@@ -20,7 +20,7 @@
 
 namespace librevault {
 
-FSProvider::FSProvider(Session& session, DirectoryExchanger& exchanger) : AbstractProvider(session, exchanger) {
+FSProvider::FSProvider(Session& session, Exchanger& exchanger) : AbstractProvider(session, exchanger) {
 	auto folder_trees = session.config().equal_range("folder");
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
@@ -29,17 +29,15 @@ FSProvider::FSProvider(Session& session, DirectoryExchanger& exchanger) : Abstra
 FSProvider::~FSProvider() {}
 
 void FSProvider::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
-	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
+	path_dir_.insert({dir_ptr->open_path(), std::move(dir_ptr)});
 }
 
 void FSProvider::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
 	path_dir_.erase(dir_ptr->open_path());
-	hash_dir_.erase(dir_ptr->key().get_Hash());
 }
 
 void FSProvider::add_directory(ptree dir_options) {
-	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, *this);
+	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, exchanger_, *this);
 	register_directory(dir_ptr);
 }
 

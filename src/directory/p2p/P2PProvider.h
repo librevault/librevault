@@ -13,42 +13,34 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 #include "../../pch.h"
+#pragma once
 #include "../Abstract.h"
 #include "NodeKey.h"
 
 namespace librevault {
 
+class P2PDirectory;
 class P2PProvider : public AbstractProvider {
-	NodeKey node_key_;
-
-	boost::asio::ssl::context ssl_ctx_;
-	boost::asio::ip::tcp::acceptor acceptor_;
 public:
-	P2PProvider(Session& session, DirectoryExchanger& exchanger);
+	P2PProvider(Session& session, Exchanger& exchanger);
 	virtual ~P2PProvider();
-
-	void accept_operation();
 
 	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}
 	const NodeKey& node_key() const {return node_key_;}
-};
+	boost::asio::ssl::context& ssl_ctx() {return ssl_ctx_;}
 
-class Connection {
-	std::shared_ptr<spdlog::logger> log;
+private:
+	NodeKey node_key_;
 
-	tcp_endpoint remote_endpoint;
-	std::unique_ptr<ssl_socket> socket_ptr;
+	std::multimap<blob, std::shared_ptr<P2PDirectory>> hash_dir_;
+	std::set<std::shared_ptr<P2PDirectory>> accepted_connections_;
 
-public:
-	Connection(tcp_endpoint endpoint);
-	Connection(ssl_socket* socket_ptr);
-	~Connection();
+	boost::asio::ssl::context ssl_ctx_;
+	boost::asio::ip::tcp::acceptor acceptor_;
 
-	void connect();
-	void handshake(boost::asio::ssl::stream_base::handshake_type handshake_type);
-	void handle_handshake();
+	void init_persistent();
+	void accept_operation();
 };
 
 } /* namespace librevault */

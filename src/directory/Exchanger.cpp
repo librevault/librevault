@@ -13,24 +13,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "../../pch.h"
-#include "../Abstract.h"
+#include "Exchanger.h"
+
+#include "ExchangeGroup.h"
+#include "fs/FSProvider.h"
+#include "p2p/P2PProvider.h"
 
 namespace librevault {
 
-class FSDirectory;
-class FSProvider : public AbstractProvider {
-	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
+Exchanger::Exchanger(Session& session) : session_(session), log_(spdlog::get("Librevault")) {
+	fs_provider_ = std::make_unique<FSProvider>(session, *this);
+	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+}
+Exchanger::~Exchanger() {}
 
-	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
-	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
-public:
-	FSProvider(Session& session, Exchanger& exchanger);
-	virtual ~FSProvider();
+void Exchanger::add(ExchangeGroup* group) {}
 
-	void add_directory(ptree dir_options);
-	std::shared_ptr<FSDirectory> get_directory(const fs::path& path){return path_dir_[path];}
-};
+void Exchanger::remove(ExchangeGroup* group) {}
+
+std::shared_ptr<ExchangeGroup> Exchanger::get(blob hash, bool create) {
+	std::shared_ptr<ExchangeGroup> group_ptr;
+
+	auto it = groups_.find(hash);
+	if(it == groups_.end()) {
+		if(create) group_ptr = std::make_shared<ExchangeGroup>(hash, *this);
+	}else
+		group_ptr = it->second->shared_from_this();
+	return group_ptr;
+}
 
 } /* namespace librevault */

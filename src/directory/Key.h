@@ -62,7 +62,7 @@ public:
 	char get_check_char() const {return secret_s.back();}
 
 	// Key derivers
-	Key derive(Type key_type);
+	Key derive(Type key_type) const;
 
 	// Payload getters
 	const std::vector<uint8_t>& get_Private_Key() const;

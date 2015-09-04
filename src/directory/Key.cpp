@@ -59,7 +59,7 @@ std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
 	return crypto::Base58().from(secret_s.substr(1, this->secret_s.size()-2));
 }
 
-Key Key::derive(Type key_type){
+Key Key::derive(Type key_type) const {
 	if(key_type == get_type()) return *this;
 
 	switch(key_type){

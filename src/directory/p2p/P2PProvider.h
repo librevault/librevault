@@ -20,8 +20,9 @@
 
 namespace librevault {
 
+class Exchanger;
 class P2PDirectory;
-class P2PProvider : public AbstractProvider {
+class P2PProvider {
 public:
 	P2PProvider(Session& session, Exchanger& exchanger);
 	virtual ~P2PProvider();
@@ -31,10 +32,14 @@ public:
 	boost::asio::ssl::context& ssl_ctx() {return ssl_ctx_;}
 
 private:
+	Session& session_;
+	Exchanger& exchanger_;
+	logger_ptr log_;
+
 	NodeKey node_key_;
 
 	std::multimap<blob, std::shared_ptr<P2PDirectory>> hash_dir_;
-	std::set<std::shared_ptr<P2PDirectory>> accepted_connections_;
+	std::set<std::shared_ptr<P2PDirectory>> unassigned_connections_;
 
 	boost::asio::ssl::context ssl_ctx_;
 	boost::asio::ip::tcp::acceptor acceptor_;

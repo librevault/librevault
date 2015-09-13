@@ -49,7 +49,7 @@ void Index::put_Meta(std::list<SignedMeta> signed_meta_list) {
 		auto file_path_hmac = SQLValue((const uint8_t*)meta.path_hmac().data(), meta.path_hmac().size());
 		db_->exec("INSERT OR REPLACE INTO files (path_hmac, mtime, meta, signature) VALUES (:path_hmac, :mtime, :meta, :signature);", {
 				{":path_hmac", file_path_hmac},
-				{":mtime", meta.mtime()},
+				{":mtime", (int64_t)meta.mtime()},
 				{":meta", SQLValue((uint8_t*)signed_meta.meta.data(), signed_meta.meta.size())},
 				{":signature", signed_meta.signature}
 		});

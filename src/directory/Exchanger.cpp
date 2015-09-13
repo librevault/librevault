@@ -15,31 +15,48 @@
  */
 #include "Exchanger.h"
 
-#include "ExchangeGroup.h"
-#include "fs/FSProvider.h"
+#include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
 
 namespace librevault {
 
 Exchanger::Exchanger(Session& session) : session_(session), log_(spdlog::get("Librevault")) {
-	fs_provider_ = std::make_unique<FSProvider>(session, *this);
+	auto folder_trees = session.config().equal_range("folder");
+	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
+		add_directory(folder_tree_it->second);
+	}
+
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
 }
 Exchanger::~Exchanger() {}
 
-void Exchanger::add(ExchangeGroup* group) {}
+std::shared_ptr<FSDirectory> Exchanger::get_directory(const fs::path& path){
+	auto it = path_dir_.find(path);
+	if(it != path_dir_.end())
+		return it->second;
+	return nullptr;
+}
 
-void Exchanger::remove(ExchangeGroup* group) {}
+std::shared_ptr<FSDirectory> Exchanger::get_directory(const blob& hash){
+	auto it = hash_dir_.find(hash);
+	if(it != hash_dir_.end())
+		return it->second;
+	return nullptr;
+}
 
-std::shared_ptr<ExchangeGroup> Exchanger::get(blob hash, bool create) {
-	std::shared_ptr<ExchangeGroup> group_ptr;
+void Exchanger::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
+	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
+	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
+}
 
-	auto it = groups_.find(hash);
-	if(it == groups_.end()) {
-		if(create) group_ptr = std::make_shared<ExchangeGroup>(hash, *this);
-	}else
-		group_ptr = it->second->shared_from_this();
-	return group_ptr;
+void Exchanger::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
+	hash_dir_.erase(dir_ptr->key().get_Hash());
+	path_dir_.erase(dir_ptr->open_path());
+}
+
+void Exchanger::add_directory(const ptree& dir_options) {
+	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, *this);
+	register_directory(dir_ptr);
 }
 
 } /* namespace librevault */

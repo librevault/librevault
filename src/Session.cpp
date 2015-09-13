@@ -19,80 +19,53 @@
 
 namespace librevault {
 
-fs::path Session::default_config_path(){
-	const char appname[] = "Librevault";
+Session::Session(const po::variables_map& vm) {
+	if(vm.count("config") > 0)
+		appdata_path_ = vm["config"].as<fs::path>();
+	else
+		appdata_path_ = default_appdata_path();
+	config_path_ = appdata_path_ / (version().lowercase_name()+".conf");
+	log_path_ = appdata_path_ / (version().lowercase_name()+".log");
+	key_path_ = appdata_path_ / "key.pem";
+	cert_path_ = appdata_path_ / "cert.pem";
 
-#if BOOST_OS_WINDOWS
-	return fs::path(getenv("APPDATA")) / appname;	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
-#elif BOOST_OS_MACOS
-	return fs::path(getenv("HOME")) / "Library/Preferences" / appname;	// TODO: error-checking
-#elif BOOST_OS_LINUX || BOOST_OS_UNIX
-	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return fs::path(xdg_ptr) / appname;
-	if(char* home_ptr = getenv("HOME"))
-		return fs::path(home_ptr) / ".config" / appname;
-	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return fs::path(home_ptr) / ".config" / appname;
-	return fs::path("/etc/xdg") / appname;
-#else
-	// Well, we will add some Android values here. And, maybe, others.
-	return fs::path(getenv("HOME")) / appname;
-#endif
-}
-
-Session::Session(fs::path glob_config_path) : config_path_(std::move(glob_config_path)) {
 	init_log();
-	init_config();
-
+	config_ = std::make_unique<Config>(*this);
 	exchanger_ = std::make_unique<Exchanger>(*this);
 }
 
 Session::~Session() {
 	exchanger_.reset();	// Deleted explicitly, because it must be deleted before writing config and destroying io_service;
-
-	fs::ofstream options_fs(this->config_path_ / "librevault.conf", std::ios::trunc | std::ios::binary);
-	boost::property_tree::info_parser::write_info(options_fs, config_);
+	config_.reset();
 }
 
 void Session::init_log() {
 	static std::mutex log_mtx;
 	std::lock_guard<std::mutex> lk(log_mtx);
-	log_ = spdlog::get("Librevault");
+	log_ = spdlog::get(version().name());
 	if(!log_){
 		spdlog::set_async_mode(1024*1024);
 
 		std::vector<spdlog::sink_ptr> sinks;
 		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
-		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>((config_path_ / "librevault").native(), ".log", 5*1024*1024, 6));
+		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+				(log_path_.parent_path() / log_path_.stem()).native(),
+				log_path_.extension().native().substr(1), 5*1024*1024, 6));
 
-		log_ = std::make_shared<spdlog::logger>("Librevault", sinks.begin(), sinks.end());
+		log_ = std::make_shared<spdlog::logger>(version().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
 		//log_->set_level(spdlog::level::trace);
 		spdlog::set_level(spdlog::level::trace);
 	}
-}
 
-void Session::init_config() {
-	bool config_path_created = fs::create_directories(config_path_);
-	log_->info() << "Configuration directory: " << this->config_path_ << (config_path_created ? " created" : "");
-
-	fs::path conf_file = config_path_ / "librevault.conf";
-
-	fs::ifstream options_fs(conf_file, std::ios::binary);
-	if(!options_fs){
-		log_->info() << "Writing default configuration to: " << conf_file;
-		// TODO: Create default configuration file
-	}
-
-	boost::property_tree::info_parser::read_info(options_fs, config_);
-	log_->info() << "Configuration file loaded: " << conf_file;
+	log_->info() << version().name() << " " << version().version_string();
 }
 
 void Session::run(){
 	boost::asio::signal_set signals(io_service_, SIGINT, SIGTERM);
 	signals.async_wait(std::bind(&Session::shutdown, this));
 
-	auto thread_count = config_.get("threads", std::thread::hardware_concurrency());
+	auto thread_count = config().get("threads", std::thread::hardware_concurrency());
 	if(thread_count <= 0) thread_count = 1;
 
 	log_->info() << "Worker threads: " << thread_count;
@@ -120,6 +93,25 @@ void Session::run_worker(unsigned worker_number){
 void Session::shutdown(){
 	log_->info() << "Exiting...";
 	io_service_.stop();
+}
+
+fs::path Session::default_appdata_path(){
+#if BOOST_OS_WINDOWS
+	return fs::path(getenv("APPDATA")) / version().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
+#elif BOOST_OS_MACOS
+	return fs::path(getenv("HOME")) / "Library/Preferences" / version().name();	// TODO: error-checking
+#elif BOOST_OS_LINUX || BOOST_OS_UNIX
+	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
+		return fs::path(xdg_ptr) / version().name();
+	if(char* home_ptr = getenv("HOME"))
+		return fs::path(home_ptr) / ".config" / version().name();
+	if(char* home_ptr = getpwuid(getuid())->pw_dir)
+		return fs::path(home_ptr) / ".config" / version().name();
+	return fs::path("/etc/xdg") / version().name();
+#else
+	// Well, we will add some Android values here. And, maybe, others.
+	return fs::path(getenv("HOME")) / version().name();
+#endif
 }
 
 } /* namespace librevault */

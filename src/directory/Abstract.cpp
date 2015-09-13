@@ -19,12 +19,8 @@
 
 namespace librevault {
 
-AbstractProvider::AbstractProvider(Session& session, Exchanger& exchanger) :
-		log_(spdlog::get("Librevault")), session_(session), exchanger_(exchanger) {}
-AbstractProvider::~AbstractProvider() {}
-
 AbstractDirectory::AbstractDirectory(Session& session, Exchanger& exchanger) :
-		log_(spdlog::get("Librevault")), session_(session), exchanger_(exchanger) {}
+		session_(session), exchanger_(exchanger), log_(session_.log()) {}
 AbstractDirectory::~AbstractDirectory() {}
 
 } /* namespace librevault */

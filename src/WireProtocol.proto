@@ -14,28 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 syntax = "proto3";
-import "EncFileMap.proto";
-package librevault;
+package librevault.protocol;
 
-message WireMessage {
-	enum Type {
-		HANDSHAKE = 0;
-	}
-	
-	message Handshake {
-		string user_agent = 1;
-	}
-	
-//	oneof payload {
-//	
-//	}
-	
-	Type type = 1;
-	int64 mtime = 5;
-
-	// These are optional (I mean, conditional)
-	bytes symlink_to = 6;
-	uint32 windows_attrib = 7;
-
-	cryptodiff.internals.EncFileMap_s filemap = 16;
+message Handshake {
+	string user_agent = 1;
+	bytes dir_hash = 2;
+	bytes auth_token = 3;
 }

@@ -18,19 +18,23 @@
 #include "../../net/parse_url.h"
 #include "P2PDirectory.h"
 #include "../Key.h"
+#include "../Abstract.h"
+#include "../Exchanger.h"
 
 namespace librevault {
 
 P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
-		AbstractProvider(session, exchanger),
-		node_key_(session_, session.config_path()/"key.pem", session.config_path()/"cert.pem"),
+		session_(session),
+		exchanger_(exchanger),
+		log_(session_.log()),
+		node_key_(session_),
 		ssl_ctx_(boost::asio::ssl::context::tlsv12),
 		acceptor_(session_.ios()) {
 	// SSL settings
 	ssl_ctx_.set_options(boost::asio::ssl::context::default_workarounds);
 
-	ssl_ctx_.use_certificate_file(node_key_.cert_path().string(), boost::asio::ssl::context::pem);
-	ssl_ctx_.use_private_key_file(node_key_.key_path().string(), boost::asio::ssl::context::pem);
+	ssl_ctx_.use_certificate_file(session_.cert_path().string(), boost::asio::ssl::context::pem);
+	ssl_ctx_.use_private_key_file(session_.key_path().string(), boost::asio::ssl::context::pem);
 
 	// Acceptor initialization
 	url bind_url = parse_url(session_.config().get<std::string>("net.listen"));
@@ -59,8 +63,8 @@ void P2PProvider::init_persistent() {
 			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
 
 			auto connection = std::make_unique<Connection>(connection_url, session_, *this);
-			auto socket = std::make_shared<P2PDirectory>(std::move(connection), session_, *this);
-			hash_dir_.insert({k.get_Hash(), socket});
+			auto socket = std::make_shared<P2PDirectory>(std::move(connection), exchanger_.get_directory(k.get_Hash()), session_, exchanger_, *this);
+			hash_dir_.insert(std::make_pair(k.get_Hash(), socket));
 		}
 	}
 }
@@ -70,13 +74,13 @@ void P2PProvider::accept_operation() {
 
 	acceptor_.async_accept(socket_ptr->lowest_layer(), std::bind([this](ssl_socket* socket_ptr, const boost::system::error_code& ec) {
 		if(ec == boost::asio::error::operation_aborted) return;
-		accept_operation();
-
 		log_->debug() << "TCP connection accepted from: " << socket_ptr->lowest_layer().remote_endpoint();
 
-		auto connection = std::make_unique<Connection>(socket_ptr, session_, *this);
-		auto accepted_dir = std::make_shared<P2PDirectory>(std::move(connection), session_, *this);
-		accepted_connections_.insert(accepted_dir);
+		auto connection = std::make_unique<Connection>(std::unique_ptr<ssl_socket>(socket_ptr), session_, *this);
+		auto accepted_dir = std::make_shared<P2PDirectory>(std::move(connection), session_, exchanger_, *this);
+		unassigned_connections_.insert(accepted_dir);
+
+		accept_operation();
 	}, socket_ptr, std::placeholders::_1));
 }
 

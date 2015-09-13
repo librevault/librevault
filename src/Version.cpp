@@ -13,24 +13,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "../../pch.h"
-#include "../Abstract.h"
+#include "Version.h"
 
 namespace librevault {
 
-class FSDirectory;
-class FSProvider : public AbstractProvider {
-	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
-
-	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
-	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
-public:
-	FSProvider(Session& session, Exchanger& exchanger);
-	virtual ~FSProvider();
-
-	void add_directory(ptree dir_options);
-	std::shared_ptr<FSDirectory> get_directory(const fs::path& path){return path_dir_[path];}
-};
+Version::Version() : name_(LV_APPNAME), version_string_(LV_APPVER) {}
 
 } /* namespace librevault */

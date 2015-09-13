@@ -20,9 +20,8 @@
 
 namespace librevault {
 
-NodeKey::NodeKey(Session& session, fs::path key_path, fs::path cert_path) :
-		session_(session), log_(spdlog::get("Librevault")),
-		key_path_(std::move(key_path)), cert_path_(std::move(cert_path)),
+NodeKey::NodeKey(Session& session) :
+		session_(session), log_(session_.log()),
 		openssl_pkey_(EVP_PKEY_new()), x509_(X509_new()) {
 	gen_private_key();
 	write_key();
@@ -42,16 +41,16 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	private_key_.MakePublicKey(public_key);
 	public_key.AccessGroupParameters().SetPointCompression(true);
 
-	std::vector<uint8_t> public_key_raw(33);
-	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_raw.data());
+	public_key_.resize(33);
+	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_.data());
 
-	log_->debug() << "Public key: " << (std::string)crypto::Hex().to(public_key_raw);
+	log_->debug() << "Public key: " << (std::string)crypto::Hex().to(public_key_);
 
 	return private_key_;
 }
 
 void NodeKey::write_key(){
-	fs::ofstream ofs(key_path_, std::ios_base::binary);
+	fs::ofstream ofs(session_.key_path(), std::ios_base::binary);
 
 	ofs << "-----BEGIN EC PRIVATE KEY-----" << std::endl;
 	auto& group_params = private_key_.GetGroupParameters();
@@ -107,7 +106,7 @@ void NodeKey::write_key(){
 }
 
 void NodeKey::gen_certificate() {
-	FILE* f = fopen(key_path_.c_str(), "r");
+	FILE* f = fopen(session_.key_path().string().c_str(), "r");
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
@@ -140,7 +139,7 @@ void NodeKey::gen_certificate() {
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = fopen(cert_path_.c_str(), "wb");
+	FILE * x509_file = fopen(session_.cert_path().string().c_str(), "wb");
 	if (!x509_file) {
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}

@@ -21,8 +21,7 @@ namespace librevault {
 
 class AbstractStorage {
 public:
-	class no_such_block : public std::runtime_error {
-	public:
+	struct no_such_block : public std::runtime_error {
 		no_such_block() : std::runtime_error("Requested Block not found"){}
 	};
 

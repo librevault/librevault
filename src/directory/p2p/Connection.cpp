@@ -48,12 +48,14 @@ Connection::Connection(tcp_endpoint endpoint, Session& session, P2PProvider& pro
 	log_->debug() << "Initializing outgoing connection to:" << remote_string();
 }
 
-Connection::Connection(ssl_socket* socket, Session& session, P2PProvider& provider) :
+Connection::Connection(std::unique_ptr<ssl_socket>&& socket, Session& session, P2PProvider& provider) :
 		log_(spdlog::get("Librevault")),
 		session_(session), provider_(provider),
 
-		socket_(socket),
-		resolver_(session_.ios()) {
+		socket_(std::move(socket)),
+		resolver_(session_.ios()),
+
+		remote_endpoint_(socket_->lowest_layer().remote_endpoint()) {
 	state_ = HANDSHAKE;
 	role_ = SERVER;
 
@@ -86,8 +88,10 @@ void Connection::send(blob bytes, send_handler handler) {
 	auto buffer_ptr = std::make_shared<blob>(std::move(bytes));
 	boost::asio::async_write(*socket_, boost::asio::buffer(*buffer_ptr), std::bind(
 			[this](const boost::system::error_code& error, std::size_t bytes_transferred, decltype(buffer_ptr) buffer_ptr, send_handler handler){
-				handler(error, bytes_transferred);
-				if(error) disconnect(error);
+				if(error)
+					disconnect(error);
+				else
+					handler();
 			},
 			std::placeholders::_1,
 			std::placeholders::_2,
@@ -98,8 +102,10 @@ void Connection::send(blob bytes, send_handler handler) {
 void Connection::receive(std::shared_ptr<blob> buffer, receive_handler handler) {
 	boost::asio::async_read(*socket_, boost::asio::buffer(*buffer), std::bind(
 			[this](const boost::system::error_code& error, std::size_t bytes_transferred, std::shared_ptr<std::vector<uint8_t>> buffer, receive_handler handler){
-				handler(buffer, error);
-				if(error) disconnect(error);
+				if(error)
+					disconnect(error);
+				else
+					handler();
 			},
 			std::placeholders::_1, std::placeholders::_2, buffer, handler)
 	);
@@ -110,10 +116,7 @@ std::string Connection::remote_string() const {
 		return remote_url_;
 	}else{
 		std::ostringstream os;
-		if(remote_endpoint_ != tcp_endpoint())
-			os << remote_endpoint_;
-		else
-			os << socket_->lowest_layer().remote_endpoint();
+		os << remote_endpoint_;
 		return os.str();
 	}
 }

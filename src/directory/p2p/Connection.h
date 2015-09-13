@@ -40,14 +40,14 @@ public:
 	};
 
 	using establish_handler = std::function<void(state, const boost::system::error_code&)>;
-	using send_handler = std::function<void(const boost::system::error_code&, std::size_t)>;
-	using receive_handler = std::function<void(std::shared_ptr<blob>, const boost::system::error_code&)>;
+	using send_handler = std::function<void()>;
+	using receive_handler = std::function<void()>;
 
 	// Outgoing
 	Connection(const url& url, Session& session, P2PProvider& provider);
 	Connection(tcp_endpoint endpoint, Session& session, P2PProvider& provider);
 	// Incoming
-	Connection(ssl_socket* socket, Session& session, P2PProvider& provider);
+	Connection(std::unique_ptr<ssl_socket>&& socket, Session& session, P2PProvider& provider);
 
 	virtual ~Connection();
 
@@ -58,6 +58,7 @@ public:
 	void receive(std::shared_ptr<blob> buffer, receive_handler handler);
 
 	std::string remote_string() const;
+	const blob& remote_pubkey() const {return remote_pubkey_;}
 	role get_role() const {return role_;}
 
 private:

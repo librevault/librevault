@@ -20,29 +20,30 @@ namespace librevault {
 
 class Session;
 
-class AbstractProvider;
-class FSProvider;
+class FSDirectory;
 class P2PProvider;
-class ExchangeGroup;
 
 class Exchanger {
 public:
 	Exchanger(Session& session);
 	virtual ~Exchanger();
 
-	void add(ExchangeGroup* group);
-	void remove(ExchangeGroup* group);
+	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
+	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
 
-	std::shared_ptr<ExchangeGroup> get(blob hash, bool create = false);
-
+	std::shared_ptr<FSDirectory> get_directory(const fs::path& path);
+	std::shared_ptr<FSDirectory> get_directory(const blob& hash);
 private:
 	Session& session_;
 	std::shared_ptr<spdlog::logger> log_;
 
-	std::unique_ptr<FSProvider> fs_provider_;
+	// Remote
 	std::unique_ptr<P2PProvider> p2p_provider_;
 
-	std::map<blob, ExchangeGroup*> groups_;
+	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
+	std::map<blob, std::shared_ptr<FSDirectory>> hash_dir_;
+
+	void add_directory(const ptree& dir_options);
 };
 
 } /* namespace librevault */

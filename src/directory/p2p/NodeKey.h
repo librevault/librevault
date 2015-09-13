@@ -23,21 +23,18 @@ class NodeKey {
 public:
 	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
 
-	NodeKey(Session& session, fs::path key_path, fs::path cert_path);
+	NodeKey(Session& session);
 	virtual ~NodeKey();
 
-	const fs::path& key_path() const {return key_path_;}
-	const fs::path& cert_path() const {return cert_path_;}
-
 	const private_key_t& private_key() const {return private_key_;}
+	const blob& public_key() const {return public_key_;}
 
 private:
 	Session& session_;
 	std::shared_ptr<spdlog::logger> log_;
 
-	fs::path key_path_, cert_path_;
-
 	private_key_t private_key_;
+	blob public_key_;
 	EVP_PKEY* openssl_pkey_;	// Yes, we have both Crypto++ and OpenSSL-format private keys, because we have to use both libraries.
 
 	X509* x509_;	// X509 structure pointer from OpenSSL

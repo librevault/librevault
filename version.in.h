@@ -13,30 +13,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "Meta.pb.h"
 
-namespace librevault {
-
-class Session;
-class Exchanger;
-
-class AbstractDirectory {
-public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
-
-	AbstractDirectory(Session& session, Exchanger& exchanger);
-	virtual ~AbstractDirectory();
-
-protected:
-	Session& session_;
-	Exchanger& exchanger_;
-
-	logger_ptr log_;
-};
-
-} /* namespace librevault */
+// Build system template begin
+#define LV_APPNAME "Librevault"
+#define LV_APPVER "${LV_APPVER}"	// git-describe syntax. Configured by build system i.e. CMake
+#cmakedefine DUMMYVAR	// Must fail if file is unconfigured
+// Build system template end

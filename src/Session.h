@@ -15,31 +15,18 @@
  */
 #include "pch.h"
 #pragma once
+#include "Version.h"
+#include "Config.h"
 
 namespace librevault {
 
 class Exchanger;
 class Session {
-	// Asynchronous/multithreaded operation
-	io_service io_service_;
-
-	// Logging
-	std::shared_ptr<spdlog::logger> log_;
-
-	// Components
-	std::unique_ptr<Exchanger> exchanger_;
-
-	// Program options
-	fs::path config_path_;	// Config directory
-	ptree config_;	// Config itself
 public:
-	Session(fs::path glob_config_path);
+	Session(const po::variables_map& vm);
 	virtual ~Session();
 
 	void init_log();
-	void init_config();
-
-	static fs::path default_config_path();
 
 	void run();
 	void run_worker(unsigned worker_number);
@@ -48,9 +35,28 @@ public:
 
 	Exchanger& exchanger(){return *exchanger_;}
 
+	const Version& version() const {return version_;}
+	logger_ptr log() {return log_;}
 	io_service& ios(){return io_service_;}
-	ptree& config(){return config_;}
-	const fs::path& config_path() const {return config_path_;}
+	ptree& config(){return config_->config();}
+
+	fs::path appdata_path() const {return appdata_path_;}
+	fs::path config_path() const {return config_path_;}
+	fs::path log_path() const {return log_path_;}
+	fs::path key_path() const {return key_path_;}
+	fs::path cert_path() const {return cert_path_;}
+private:
+	Version version_;	// Application name and version information (probably, it will contain application path and signature later)
+	io_service io_service_;	// Asynchronous/multithreaded operation
+	logger_ptr log_;	// Logging
+	std::unique_ptr<Config> config_;	// Configuration
+
+	// Components
+	std::unique_ptr<Exchanger> exchanger_;
+
+	// Paths
+	fs::path default_appdata_path();
+	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_;
 };
 
 } /* namespace librevault */

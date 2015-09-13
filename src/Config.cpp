@@ -13,30 +13,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
-#pragma once
-#include "Meta.pb.h"
+#include "Config.h"
+#include "Session.h"
 
 namespace librevault {
 
-class Session;
-class Exchanger;
+Config::Config(Session& session) : session_(session), log_(session_.log()) {
+	fs::ifstream options_fs(session_.config_path(), std::ios::binary);
+	if(!options_fs){
+		log_->info() << "Writing default configuration to: " << session_.config_path();
+		// TODO: Create default configuration file
+	}
 
-class AbstractDirectory {
-public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
+	boost::property_tree::info_parser::read_info(options_fs, config_ptree_);
+	log_->info() << "Configuration file loaded: " << session_.config_path();
+}
 
-	AbstractDirectory(Session& session, Exchanger& exchanger);
-	virtual ~AbstractDirectory();
-
-protected:
-	Session& session_;
-	Exchanger& exchanger_;
-
-	logger_ptr log_;
-};
+Config::~Config() {
+	fs::ofstream options_fs(session_.config_path(), std::ios::trunc | std::ios::binary);
+	boost::property_tree::info_parser::write_info(options_fs, config_ptree_);
+}
 
 } /* namespace librevault */

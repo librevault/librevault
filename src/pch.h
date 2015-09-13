@@ -47,6 +47,7 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include <boost/asio.hpp>
+#include <boost/asio/signal_set.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/system_timer.hpp>
@@ -77,6 +78,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -108,6 +110,8 @@
 namespace librevault {
 
 namespace fs = boost::filesystem;
+namespace po = boost::program_options;
+
 using boost::asio::io_service;
 using boost::property_tree::ptree;
 
@@ -123,7 +127,9 @@ using tcp_socket = boost::asio::ip::tcp::socket;
 
 using ssl_socket = boost::asio::ssl::stream<tcp_socket>;
 
-using blob = std::vector<uint8_t>;
 using byte = uint8_t;
+using blob = std::vector<byte>;
+
+using logger_ptr = std::shared_ptr<spdlog::logger>;
 
 } /* namespace librevault */

@@ -14,18 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "FSDirectory.h"
-#include "FSProvider.h"
 
 #include "../../../contrib/crypto/Base32.h"
 
 #include "../../Session.h"
 #include "../../net/parse_url.h"
-#include "../ExchangeGroup.h"
 #include "../Exchanger.h"
+#include "../p2p/P2PDirectory.h"
 
 namespace librevault {
 
-FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger, FSProvider& provider) :
+FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger) :
 		AbstractDirectory(session, exchanger),
 		dir_options_(std::move(dir_options)),
 		key_(dir_options_.get<std::string>("key")),
@@ -47,13 +46,18 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchang
 		indexer = std::make_unique<Indexer>(*this, session_);
 		auto_indexer = std::make_unique<AutoIndexer>(*this, session_, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
 	}
-
-	group_ = exchanger_.get(key_.get_Hash(), true);
-	group_->add(this);
 }
 
-FSDirectory::~FSDirectory() {
-	group_->remove(this);
+FSDirectory::~FSDirectory() {}
+
+void FSDirectory::attach_remote(std::shared_ptr<P2PDirectory> remote_ptr) {
+	remotes.insert(remote_ptr);
+	log_->debug() << "Attached remote " << remote_ptr->remote_string() << " to " << name();
+}
+
+void FSDirectory::detach_remote(std::shared_ptr<P2PDirectory> remote_ptr) {
+	remotes.erase(remote_ptr);
+	log_->debug() << "Detached remote " << remote_ptr->remote_string() << " from " << name();
 }
 
 void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
@@ -61,7 +65,6 @@ void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
 	blob path_hmac(m.path_hmac().begin(), m.path_hmac().end());
 
 	log_->debug() << "Created revision " << m.mtime() << " of " << (std::string)crypto::Base32().to(path_hmac);
-	group_->announce_revision(path_hmac, m.mtime(), this);
 }
 
 std::string FSDirectory::name() const {

@@ -13,30 +13,24 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "Meta.pb.h"
+#include "pch.h"
+#include "version.h"
 
 namespace librevault {
 
-class Session;
-class Exchanger;
-
-class AbstractDirectory {
+class Version {
 public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
+	Version();
+	Version(std::string name, std::string version_string);
 
-	AbstractDirectory(Session& session, Exchanger& exchanger);
-	virtual ~AbstractDirectory();
-
+	std::string name() const {return name_;}
+	std::string lowercase_name() const {/*return boost::locale::to_lower(name_);*/return boost::algorithm::to_lower_copy(name_);}
+	std::string version_string() const {return version_string_;}
+	std::string user_agent() const {return lowercase_name() + "/" + version_string_;}
 protected:
-	Session& session_;
-	Exchanger& exchanger_;
-
-	logger_ptr log_;
+	const std::string name_;
+	const std::string version_string_;
 };
 
 } /* namespace librevault */

@@ -17,14 +17,13 @@
 #include "directory/Key.h"
 #include "Session.h"
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
 int main(int argc, char** argv){
 	po::options_description allowed_options("Allowed Options");
 	allowed_options.add_options()
 		("help,h", "Display help message")
-		("config,c", po::value<fs::path>()->default_value(librevault::Session::default_config_path()), "Configuration path")
+		("config,c", po::value<fs::path>(), "Application data path")
 		("gen-key", "Generate Key type A")
 		("derive,d", po::value<char>(), "Derive lower-type Key from higher-type (e.g. C from A)")
 		("key, k", po::value<std::string>(), "Sets Key for -d")
@@ -39,18 +38,18 @@ int main(int argc, char** argv){
 		return 0;
 	}
 	if(variables.count("gen-key") > 0){
-		librevault::Key k;
+		Key k;
 		std::cout << k;
 		return 0;
 	}
 	if(variables.count("derive") > 0 && variables.count("key") > 0){
-		librevault::Key::Type type = (librevault::Key::Type)variables["derive"].as<char>();
-		librevault::Key k(variables["key"].as<std::string>());
+		Key::Type type = (Key::Type)variables["derive"].as<char>();
+		Key k(variables["key"].as<std::string>());
 		std::cout << k.derive(type);
 		return 0;
 	}
 
-	librevault::Session session(variables["config"].as<fs::path>());
+	Session session(variables);
 	session.run();
 
 	return 0;

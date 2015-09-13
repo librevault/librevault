@@ -13,30 +13,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "Meta.pb.h"
+#include "pch.h"
 
 namespace librevault {
 
 class Session;
-class Exchanger;
-
-class AbstractDirectory {
+class Config {
 public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
+	Config(Session& session);
+	virtual ~Config();
 
-	AbstractDirectory(Session& session, Exchanger& exchanger);
-	virtual ~AbstractDirectory();
-
-protected:
+	ptree& config() {return config_ptree_;}
+private:
 	Session& session_;
-	Exchanger& exchanger_;
-
 	logger_ptr log_;
+
+	ptree config_ptree_;
 };
 
 } /* namespace librevault */

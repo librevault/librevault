@@ -26,17 +26,20 @@
 
 namespace librevault {
 
-class ExchangeGroup;
-class FSProvider;
+class P2PDirectory;
 class FSDirectory : public AbstractDirectory {
 public:
-	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger, FSProvider& provider);
+	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger);
 	virtual ~FSDirectory();
 
+	void attach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
+	void detach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
+
+	// Getters
 	const ptree& dir_options() const {return dir_options_;}
 
 	const Key& key() const {return key_;}
-	blob hash() const {return key().get_Hash();}
+	const blob& hash() const {return key().get_Hash();}
 	std::string name() const;
 
 	const fs::path& open_path() const {return open_path_;}
@@ -56,7 +59,7 @@ private:
 	const Key key_;
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
-	std::shared_ptr<ExchangeGroup> group_;
+	std::set<std::shared_ptr<P2PDirectory>> remotes;
 
 	// Revision operations
 	void handle_smeta(AbstractDirectory::SignedMeta smeta);

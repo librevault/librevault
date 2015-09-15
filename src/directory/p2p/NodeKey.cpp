@@ -15,8 +15,6 @@
  */
 #include "NodeKey.h"
 #include "../../Session.h"
-#include "../../contrib/crypto/Hex.h"
-#include "../../contrib/crypto/Base64.h"
 
 namespace librevault {
 

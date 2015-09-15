@@ -15,8 +15,6 @@
  */
 #include "EncStorage.h"
 #include "FSDirectory.h"
-#include "../../contrib/crypto/Base32.h"
-#include "../../contrib/crypto/SHA3.h"
 
 namespace librevault {
 

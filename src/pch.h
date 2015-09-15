@@ -18,8 +18,16 @@
 // Cryptodiff
 #include <cryptodiff.h>
 
+// LVCrypto
+#include <lvcrypto/HMAC-SHA3.h>
+#include <lvcrypto/Base64.h>
+#include <lvcrypto/Base32.h>
+#include <lvcrypto/LuhnModN.h>
+#include <lvcrypto/Hex.h>
+#include <lvcrypto/AES_CBC.h>
+
 // dir_monitor
-#include "../contrib/dir_monitor/include/dir_monitor.hpp"
+#include <dir_monitor/dir_monitor.hpp>
 
 // spdlog
 #include <spdlog/spdlog.h>

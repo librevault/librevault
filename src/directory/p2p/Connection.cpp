@@ -16,7 +16,6 @@
 #include "Connection.h"
 #include "P2PProvider.h"
 #include "../../Session.h"
-#include "../../contrib/crypto/Hex.h"
 
 namespace librevault {
 

@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "../../pch.h"
-#include "../../contrib/crypto/SHA3.h"
+#include <lvcrypto/SHA3.h>
 
 namespace librevault {
 

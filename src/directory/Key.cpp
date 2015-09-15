@@ -15,7 +15,7 @@
  */
 #include "Key.h"
 
-#include "../../contrib/crypto/LuhnModN.h"
+#include <lvcrypto/LuhnModN.h>
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>

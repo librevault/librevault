@@ -15,8 +15,6 @@
  */
 #include "FSDirectory.h"
 
-#include "../../../contrib/crypto/Base32.h"
-
 #include "../../Session.h"
 #include "../../net/parse_url.h"
 #include "../Exchanger.h"

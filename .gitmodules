@@ -1,12 +1,15 @@
 [submodule "contrib/dir_monitor"]
 	path = contrib/dir_monitor
 	url = https://github.com/Librevault/dir_monitor.git
-[submodule "contrib/cryptodiff"]
-	path = contrib/cryptodiff
-	url = https://github.com/GamePad64/cryptodiff.git
 [submodule "contrib/lvsqlite3"]
 	path = contrib/lvsqlite3
 	url = https://github.com/GamePad64/lvsqlite3.git
-[submodule "contrib/crypto"]
-	path = contrib/crypto
-	url = https://github.com/GamePad64/crypto.git
+[submodule "contrib/msgpack-c"]
+	path = contrib/msgpack-c
+	url = https://github.com/GamePad64/msgpack-c.git
+[submodule "contrib/spdlog"]
+	path = contrib/spdlog
+	url = https://github.com/GamePad64/spdlog.git
+[submodule "contrib/lvcrypto"]
+	path = contrib/lvcrypto
+	url = https://github.com/GamePad64/lvcrypto.git

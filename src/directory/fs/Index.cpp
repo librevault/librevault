@@ -16,7 +16,6 @@
 #include "Index.h"
 #include "FSDirectory.h"
 #include "Meta.pb.h"
-#include "../../../contrib/crypto/Base32.h"
 
 namespace librevault {
 

@@ -19,9 +19,7 @@
 #include "../../Session.h"
 #include "../Exchanger.h"
 
-#include "../../../contrib/crypto/HMAC-SHA3.h"
-
-#include "WireProtocol.pb.h"
+#include "parsers/ProtobufParser.h"
 
 namespace librevault {
 
@@ -34,6 +32,7 @@ std::array<char, 19> P2PDirectory::pstr = {'L', 'i', 'b', 'r', 'e', 'v', 'a', 'u
 P2PDirectory::P2PDirectory(std::unique_ptr<Connection>&& connection, Session& session, Exchanger& exchanger, P2PProvider& provider) :
 		AbstractDirectory(session, exchanger), provider_(provider), connection_(std::move(connection)) {
 	receive_buffer_ = std::make_shared<blob>();
+	parser_ = std::make_unique<ProtobufParser>();
 	connection_->establish(std::bind(&P2PDirectory::handle_establish, this, std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -67,9 +66,9 @@ void P2PDirectory::detach() {
 
 void P2PDirectory::handle_establish(Connection::state state, const boost::system::error_code& error) {
 	if(state == Connection::state::ESTABLISHED){
-		receive_buffer_->resize(sizeof(protocol_id));
+		receive_buffer_->resize(sizeof(Protocol_id));
 		receive_data();
-		connection_->send(generate(PROTOCOL_ID), []{});
+		connection_->send(gen_protocol_id(), []{});
 	}else if(state == Connection::state::CLOSED){
 		disconnect(error);
 	}
@@ -77,9 +76,9 @@ void P2PDirectory::handle_establish(Connection::state state, const boost::system
 
 void P2PDirectory::receive_size() {
 	awaiting_receive_next_ = SIZE;
-	receive_buffer_->resize(sizeof(prefix_t));
+	receive_buffer_->resize(sizeof(length_prefix_t));
 	connection_->receive(receive_buffer_, [this]{
-		prefix_t size;
+		length_prefix_t size;
 		std::copy(receive_buffer_->begin(), receive_buffer_->end(), (uint8_t*)&size);	// receive_buffer_ must contain unsigned big-endian 32bit integer, containing length of data.
 		receive_buffer_->resize(size);
 		receive_data();
@@ -93,7 +92,7 @@ void P2PDirectory::receive_data() {
 
 void P2PDirectory::handle_message() {
 	if(awaiting_next_ == AWAITING_PROTOCOL_ID){
-		protocol_id packet;
+		Protocol_id packet;
 		std::copy(receive_buffer_->begin(), receive_buffer_->end(), (byte*)&packet);
 
 		if(packet.pstrlen != pstr.size() || packet.pstr != pstr || packet.version != version) throw protocol_error();
@@ -101,74 +100,42 @@ void P2PDirectory::handle_message() {
 		awaiting_next_ = AWAITING_HANDSHAKE;
 		if(connection_->get_role() == Connection::role::CLIENT){
 			log_->debug() << "Now we will send handshake message";
-			connection_->send(generate(HANDSHAKE), []{});
+			connection_->send(gen_handshake(), []{});
 		}else{
 			log_->debug() << "Now we will wait for handshake message";
 		}
 	}else if(awaiting_next_ == AWAITING_HANDSHAKE){
-		if(receive_buffer_->empty() || receive_buffer_->at(0) != HANDSHAKE) throw protocol_error();
+		AbstractParser::Handshake handshake = parser_->parse_handshake(*receive_buffer_);
 
-		protocol::Handshake handshake;
-		if(handshake.ParseFromArray(receive_buffer_->data()+1, receive_buffer_->size()-1)){
-			if(connection_->get_role() == Connection::SERVER) {
-				blob dir_hash(handshake.dir_hash().begin(), handshake.dir_hash().end());
-				attach(dir_hash);
-				// TODO: Check remote_token
-				connection_->send(generate(HANDSHAKE), []{});
-			}
+		if(connection_->get_role() == Connection::SERVER) {
+			attach(handshake.dir_hash);
+			// TODO: Check remote_token
+			connection_->send(gen_handshake(), []{});
+		}
 
-			log_->debug() << "LV Handshake successful";
-			awaiting_next_ = AWAITING_ANY;
-		}else throw protocol_error();
-	}else{
-
+		log_->debug() << log_tag() << "LV Handshake successful";
+		awaiting_next_ = AWAITING_ANY;
 	}
 }
 
-blob P2PDirectory::generate(message_type type) {
-	// PROTOCOL_ID is one of two non-protobuf messages, so it must be processed differently
-	if(type == PROTOCOL_ID){
-		protocol_id protocol_id_packet;
-		protocol_id_packet.pstrlen = pstr.size();
-		protocol_id_packet.pstr = pstr;
-		protocol_id_packet.version = version;
-		protocol_id_packet.reserved.fill(0);
-		return blob((byte*)&protocol_id_packet, (byte*)&protocol_id_packet+sizeof(protocol_id_packet));
-	}
+blob P2PDirectory::gen_protocol_id() {
+	Protocol_id protocol_id_packet;
+	protocol_id_packet.pstrlen = pstr.size();
+	protocol_id_packet.pstr = pstr;
+	protocol_id_packet.version = version;
+	protocol_id_packet.reserved.fill(0);
+	return blob(protocol_id_packet.raw_bytes.begin(), protocol_id_packet.raw_bytes.end());
+}
 
-	// Other messages are protobuf in this version
-	std::shared_ptr<::google::protobuf::Message> proto_message;
+blob P2PDirectory::gen_handshake() {
+	if(!directory_ptr_.lock()) throw protocol_error();
 
-	switch(type){
-	case HANDSHAKE: {
-		std::shared_ptr<protocol::Handshake> handshake = std::make_shared<protocol::Handshake>();
-		handshake->set_user_agent(session_.version().user_agent());
+	AbstractParser::Handshake handshake;
+	handshake.user_agent = session_.version().user_agent();
+	handshake.dir_hash = directory_ptr_.lock()->hash();
+	handshake.auth_token = local_token();
 
-		auto dir_hash = directory_ptr_.lock()->hash();
-		handshake->set_dir_hash(dir_hash.data(), dir_hash.size());
-
-		auto token = local_token();
-		handshake->set_auth_token(token.data(), token.size());
-
-		proto_message = handshake;
-	} break;
-	default: throw protocol_error();
-	}
-
-	blob serialized_message(proto_message->ByteSize());
-	proto_message->SerializeToArray(serialized_message.data(), serialized_message.size());
-
-	// Add length and type prefix
-	blob packet(sizeof(prefix_t)+sizeof(message_type)+serialized_message.size());
-	prefix_t size_be = sizeof(message_type)+serialized_message.size();
-
-	std::copy((uint8_t*)&size_be, ((uint8_t*)&size_be)+sizeof(prefix_t), packet.data());
-	packet[sizeof(prefix_t)] = type;
-	std::move(serialized_message.begin(), serialized_message.end(), &packet[sizeof(prefix_t)+sizeof(message_type)]);
-
-	log_->debug() << "Generated proto_message type " << type << " content: " << proto_message->DebugString();
-
-	return packet;
+	return parser_->gen_handshake(handshake);
 }
 
 void P2PDirectory::disconnect(const boost::system::error_code& error) {

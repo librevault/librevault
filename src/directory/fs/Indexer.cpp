@@ -16,8 +16,6 @@
 #include "Indexer.h"
 #include "FSDirectory.h"
 #include "../../Session.h"
-#include "../../../contrib/crypto/HMAC-SHA3.h"
-#include "../../../contrib/crypto/AES_CBC.h"
 #include "Meta.pb.h"
 
 namespace librevault {

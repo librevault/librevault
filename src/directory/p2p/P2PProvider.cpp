@@ -31,10 +31,12 @@ P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 		ssl_ctx_(boost::asio::ssl::context::tlsv12),
 		acceptor_(session_.ios()) {
 	// SSL settings
-	ssl_ctx_.set_options(boost::asio::ssl::context::default_workarounds);
+	ssl_ctx_.set_options(boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::single_dh_use | boost::asio::ssl::context::no_sslv3);
 
 	ssl_ctx_.use_certificate_file(session_.cert_path().string(), boost::asio::ssl::context::pem);
 	ssl_ctx_.use_private_key_file(session_.key_path().string(), boost::asio::ssl::context::pem);
+	ssl_ctx_.use_tmp_dh_file(session_.dhparam_path().string());
+	// FIXME: Add proper encryption, finally!
 
 	// Acceptor initialization
 	url bind_url = parse_url(session_.config().get<std::string>("net.listen"));

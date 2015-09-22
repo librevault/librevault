@@ -27,13 +27,24 @@
 namespace librevault {
 
 class P2PDirectory;
-class FSDirectory : public AbstractDirectory {
+class FSDirectory : public AbstractDirectory, public std::enable_shared_from_this<FSDirectory> {
 public:
 	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger);
 	virtual ~FSDirectory();
 
 	void attach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
 	void detach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
+
+	std::list<blob> get_missing_blocks(const blob& path_id);
+
+	// AbstractDirectory actions
+	std::vector<MetaRevision> get_meta_list();
+
+	void post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision);
+	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
+	void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta);
+	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
+	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block);
 
 	// Getters
 	const ptree& dir_options() const {return dir_options_;}
@@ -59,7 +70,7 @@ private:
 	const Key key_;
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
-	std::set<std::shared_ptr<P2PDirectory>> remotes;
+	std::set<std::shared_ptr<P2PDirectory>> remotes_;
 
 	// Revision operations
 	void handle_smeta(AbstractDirectory::SignedMeta smeta);

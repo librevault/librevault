@@ -54,7 +54,7 @@ public:
 	void establish(establish_handler handler);
 	void disconnect(const boost::system::error_code& error);
 
-	void send(blob bytes, send_handler handler);
+	void send(const blob& bytes, send_handler handler);
 	void receive(std::shared_ptr<blob> buffer, receive_handler handler);
 
 	std::string remote_string() const;
@@ -77,6 +77,10 @@ private:
 	tcp_endpoint remote_endpoint_;
 	url remote_url_;
 
+	// Send queue
+	boost::asio::io_service::strand send_strand_;
+	std::queue<std::pair<blob, send_handler>> send_queue_;
+
 	// Mutexes
 	std::mutex disconnect_mutex_;
 
@@ -94,6 +98,9 @@ private:
 	bool verify_callback(bool preverified, boost::asio::ssl::verify_context& ctx);
 	void handshake();
 	void handle_handshake(const boost::system::error_code& error);
+
+	// Send queue writer
+	void write_one();
 
 	// Rest functions
 	blob pubkey_from_cert(X509* x509);

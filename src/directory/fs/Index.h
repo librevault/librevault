@@ -35,10 +35,11 @@ public:
 
 	void wipe();
 
-	void put_Meta(std::list<SignedMeta> signed_meta_list);
-	void put_Meta(SignedMeta signed_meta){put_Meta(std::list<SignedMeta>{signed_meta});}
+	// FIXME: Check signature!!!
+	void put_Meta(const std::list<SignedMeta>& signed_meta_list);
+	void put_Meta(const SignedMeta& signed_meta){put_Meta(std::list<SignedMeta>{signed_meta});}
 
-	SignedMeta get_Meta(blob path_hmac);
+	SignedMeta get_Meta(const blob& path_hmac);
 	std::list<SignedMeta> get_Meta(int64_t mtime);
 	std::list<SignedMeta> get_Meta();
 

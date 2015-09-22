@@ -28,7 +28,7 @@ public:
 
 	bool have_encblock(const blob& block_hash);
 	blob get_encblock(const blob& block_hash);
-	void put_encblock(const blob& block_hash, const blob& data);
+	void put_encblock(const blob& block_hash, const blob& data);	// FIXME: Check hash
 	void remove_encblock(const blob& block_hash);
 
 private:

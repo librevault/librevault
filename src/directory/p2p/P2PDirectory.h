@@ -27,7 +27,7 @@ class P2PProvider;
 class AbstractParser;
 class P2PDirectory : public AbstractDirectory, public std::enable_shared_from_this<P2PDirectory> {
 public:
-	using length_prefix_t = boost::endian::big_int32_t;
+	using length_prefix_t = boost::endian::big_uint32_t;
 
 	struct error : public std::runtime_error {
 		error(const char* what) : std::runtime_error(what){}
@@ -44,10 +44,19 @@ public:
 	~P2PDirectory();
 
 	std::string remote_string() const {return connection_->remote_string();}
-	std::string log_tag() const {return std::string("[") + remote_string() + "] ";}
+	std::string name() const {return remote_string();}
 
 	blob local_token();
 	blob remote_token();
+
+	// AbstractDirectory actions
+	std::vector<MetaRevision> get_meta_list();
+
+	void post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision);
+	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
+	void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta);
+	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
+	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block);
 
 private:
 	static std::array<char, 19> pstr;
@@ -55,7 +64,7 @@ private:
 
 	std::unique_ptr<AbstractParser> parser_;
 
-	union Protocol_id {	// 32 bytes, all fields are octets and unaligned.
+	union protocol_tag {	// 32 bytes, all fields are octets and unaligned.
 		struct {
 			uint8_t pstrlen;
 			std::array<char, 19> pstr;
@@ -65,15 +74,18 @@ private:
 		std::array<uint8_t, 32> raw_bytes;
 	};
 
+	// Message flow
 	enum {SIZE, DATA} awaiting_receive_next_ = DATA;
-	enum {AWAITING_PROTOCOL_ID, AWAITING_HANDSHAKE, AWAITING_ANY} awaiting_next_ = AWAITING_PROTOCOL_ID;
+	enum {AWAITING_PROTOCOL_TAG, AWAITING_HANDSHAKE, AWAITING_ANY} awaiting_next_ = AWAITING_PROTOCOL_TAG;
 
 	P2PProvider& provider_;
+	std::shared_ptr<blob> receive_buffer_;
 
 	std::unique_ptr<Connection> connection_;
-	std::weak_ptr<FSDirectory> directory_ptr_;
 
-	std::shared_ptr<blob> receive_buffer_;
+	// High-level facilities
+	std::weak_ptr<FSDirectory> directory_ptr_;
+	std::map<blob, int64_t> revisions_;
 
 	void attach(const blob& dir_hash);
 	void detach();
@@ -84,8 +96,9 @@ private:
 	void receive_data();
 	void handle_message();	// Handles message in buffer
 
-	blob gen_protocol_id();
-	blob gen_handshake();
+	void send_protocol_tag();
+	void send_handshake();
+	void send_meta_list();
 
 	void disconnect(const boost::system::error_code& error = boost::asio::error::no_protocol_option);
 };

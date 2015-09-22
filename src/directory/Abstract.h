@@ -28,9 +28,26 @@ public:
 		blob meta;
 		blob signature;
 	};
+	using MetaRevision = std::pair<blob, int64_t>;	// blob = path_id, int64_t = revision
 
 	AbstractDirectory(Session& session, Exchanger& exchanger);
 	virtual ~AbstractDirectory();
+
+	// AbstractDirectory properties
+	virtual std::string name() const = 0;
+	virtual std::vector<MetaRevision> get_meta_list() = 0;
+
+	// AbstractDirectory actions
+	virtual void post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision) = 0;
+	virtual void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id) = 0;
+	virtual void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) = 0;
+	virtual void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id) = 0;	// TODO: Tie this to BitTorrent behavior. Request every block in small 16kb (or more) chunks
+	virtual void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block) = 0;	// TODO: Tie this to BitTorrent behavior. Send every block in small 16kb (or more) chunks
+
+	// Other functions
+	std::string path_id_readable(const blob& path_id) const;
+	std::string block_id_readable(const blob& block_id) const;
+	std::string log_tag() const {return std::string("[") + name() + "] ";}
 
 protected:
 	Session& session_;

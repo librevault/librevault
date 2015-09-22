@@ -25,6 +25,30 @@ public:
 
 	blob gen_handshake(const Handshake& message_struct);
 	Handshake parse_handshake(const blob& message_raw);
+
+	blob gen_meta_list(const MetaList& message_struct);
+	MetaList parse_meta_list(const blob& message_raw);
+
+	blob gen_meta_request(const MetaRequest& message_struct);
+	MetaRequest parse_meta_request(const blob& message_raw);
+
+	blob gen_meta(const Meta& message_struct);
+	Meta parse_meta(const blob& message_raw);
+
+	blob gen_block_request(const BlockRequest& message_struct);
+	BlockRequest parse_block_request(const blob& message_raw);
+
+	blob gen_block(const Block& message_struct);
+	Block parse_block(const blob& message_raw);
+
+private:
+	template <class ProtoMessageClass>
+	blob prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
+		blob message_raw(message_protobuf.ByteSize());
+		message_protobuf.SerializeToArray(message_raw.data(), message_raw.size());
+
+		return prefix(std::move(message_raw), type);
+	}
 };
 
 } /* namespace librevault */

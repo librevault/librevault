@@ -39,7 +39,7 @@ Index::Index(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault"
 
 Index::~Index() {}
 
-void Index::put_Meta(std::list<SignedMeta> signed_meta_list) {
+void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 	auto raii_lock = SQLiteLock(*db_);
 	for(auto signed_meta : signed_meta_list){
 		SQLiteSavepoint raii_transaction(*db_, "put_Meta");
@@ -81,7 +81,7 @@ std::list<Index::SignedMeta> Index::get_Meta(std::string sql, std::map<std::stri
 		result_list.push_back({row[0], row[1]});
 	return result_list;
 }
-Index::SignedMeta Index::get_Meta(blob path_hmac){
+Index::SignedMeta Index::get_Meta(const blob& path_hmac){
 	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_hmac=:path_hmac LIMIT 1", {
 			{":path_hmac", path_hmac}
 	});

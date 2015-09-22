@@ -26,7 +26,8 @@ Connection::Connection(const url& url, Session& session, P2PProvider& provider) 
 		socket_(std::make_unique<ssl_socket>(session_.ios(), provider_.ssl_ctx())),
 		resolver_(session_.ios()),
 
-		remote_url_(url) {
+		remote_url_(url),
+		send_strand_(session_.ios()) {
 	state_ = RESOLVE;
 	role_ = CLIENT;
 
@@ -40,7 +41,8 @@ Connection::Connection(tcp_endpoint endpoint, Session& session, P2PProvider& pro
 		socket_(std::make_unique<ssl_socket>(session_.ios(), provider_.ssl_ctx())),
 		resolver_(session_.ios()),
 
-		remote_endpoint_(std::move(endpoint)) {
+		remote_endpoint_(std::move(endpoint)),
+		send_strand_(session_.ios()) {
 	state_ = CONNECT;
 	role_ = CLIENT;
 
@@ -54,7 +56,8 @@ Connection::Connection(std::unique_ptr<ssl_socket>&& socket, Session& session, P
 		socket_(std::move(socket)),
 		resolver_(session_.ios()),
 
-		remote_endpoint_(socket_->lowest_layer().remote_endpoint()) {
+		remote_endpoint_(socket_->lowest_layer().remote_endpoint()),
+		send_strand_(session_.ios()) {
 	state_ = HANDSHAKE;
 	role_ = SERVER;
 
@@ -83,23 +86,40 @@ void Connection::disconnect(const boost::system::error_code& error) {
 	}
 }
 
-void Connection::send(blob bytes, send_handler handler) {
-	auto buffer_ptr = std::make_shared<blob>(std::move(bytes));
-	boost::asio::async_write(*socket_, boost::asio::buffer(*buffer_ptr), std::bind(
-			[this](const boost::system::error_code& error, std::size_t bytes_transferred, decltype(buffer_ptr) buffer_ptr, send_handler handler){
-				if(error)
-					disconnect(error);
-				else
-					handler();
-			},
-			std::placeholders::_1,
-			std::placeholders::_2,
-			buffer_ptr, handler)
+void Connection::write_one() {
+	const blob& message = send_queue_.front().first;
+	boost::asio::async_write(
+			*socket_,
+			boost::asio::buffer(message.data(), message.size()),
+			send_strand_.wrap(std::bind(
+				[this](const boost::system::error_code& error, std::size_t bytes_transferred){
+					send_handler handler = send_queue_.front().second;
+
+					send_queue_.pop();
+					if(error)
+						disconnect(error);
+					else
+						handler();
+
+					if(send_queue_.size() > 0)
+						write_one();
+				},
+				std::placeholders::_1,
+				std::placeholders::_2))
 	);
 }
 
+void Connection::send(const blob& bytes, send_handler handler) {
+	send_strand_.dispatch(std::bind([this](const blob& bytes, send_handler handler){
+		send_queue_.push(std::make_pair(bytes, handler));
+
+		if(send_queue_.size() == 1)
+			write_one();
+	}, bytes, handler));
+}
+
 void Connection::receive(std::shared_ptr<blob> buffer, receive_handler handler) {
-	boost::asio::async_read(*socket_, boost::asio::buffer(*buffer), std::bind(
+	boost::asio::async_read(*socket_, boost::asio::buffer(buffer->data(), buffer->size()), std::bind(
 			[this](const boost::system::error_code& error, std::size_t bytes_transferred, std::shared_ptr<std::vector<uint8_t>> buffer, receive_handler handler){
 				if(error)
 					disconnect(error);

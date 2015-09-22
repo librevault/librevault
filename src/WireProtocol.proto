@@ -21,3 +21,29 @@ message Handshake {
 	bytes dir_hash = 2;
 	bytes auth_token = 3;
 }
+
+message MetaList {
+	message MetaRevision {
+		bytes path_id = 1;
+		int64 revision = 2;
+	}
+	repeated MetaRevision list = 1;
+}
+
+message MetaRequest {
+	bytes path_id = 1;
+}
+
+message Meta {
+	bytes meta = 1;
+	bytes signature = 2;
+}
+
+message BlockRequest {
+	bytes block_id = 1;
+}
+
+message Block {
+	bytes block_id = 1;
+	bytes block_content = 2;
+}

@@ -15,7 +15,7 @@
  */
 #include "OpenStorage.h"
 #include "FSDirectory.h"
-#include "Meta.pb.h"
+#include "Meta.h"
 
 namespace librevault {
 
@@ -31,9 +31,8 @@ OpenStorage::~OpenStorage() {}
 
 std::string OpenStorage::get_path(const blob& path_hmac){
 	for(auto row : index_.db().exec("SELECT meta FROM files WHERE path_hmac=:path_hmac", {{":path_hmac", path_hmac}})){
-		std::vector<uint8_t> meta_bytes = row[0];
-		Meta meta; meta.ParseFromArray(meta_bytes.data(), meta_bytes.size());
-		return (std::string)crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath());
+		Meta meta; meta.parse(row[0].as_blob());
+		return meta.gen_relpath(key_);
 	}
 	throw;
 }
@@ -47,11 +46,11 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 			});
 
 	for(auto row : sql_result){
-		Meta meta; meta.ParseFromString(row[2].as_text());
+		Meta meta; meta.parse(row[2].as_blob());
 
 		uint64_t blocksize	= row[0];
 		blob iv				= row[1];
-		auto filepath		= fs::absolute((std::string)crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()), dir_.open_path());
+		auto filepath		= fs::absolute(meta.gen_relpath(key_), dir_.open_path());
 		uint64_t offset		= row[3];
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
@@ -62,7 +61,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 			ifs.seekg(offset);
 			ifs.read(reinterpret_cast<char*>(block.data()), blocksize);
 
-			blob encblock = crypto::AES_CBC(key_.get_Encryption_Key(), iv, blocksize % 16 == 0 ? false : true).encrypt(block);
+			blob encblock = block | crypto::AES_CBC(key_.get_Encryption_Key(), iv, blocksize % 16 == 0 ? false : true);
 			// Check
 			if(verify_encblock(block_hash, encblock)) return {block, encblock};
 		}catch(const std::ios::failure& e){}
@@ -80,9 +79,9 @@ blob OpenStorage::get_encblock(const blob& block_hash){
 
 blob OpenStorage::get_block(const blob& block_hash) {
 	try {
-		for(auto row : index_.db().exec("SELECT iv FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
+		for(auto row : index_.db().exec("SELECT iv, blocksize FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
 			blob encblock = enc_storage_.get_encblock(block_hash);
-			return crypto::AES_CBC(key_.get_Encryption_Key(), row[0].as_blob(), encblock.size() % 16 == 0 ? false : true).from(encblock);
+			return crypto::AES_CBC(key_.get_Encryption_Key(), row[0].as_blob(), row[1].as_uint() % 16 == 0 ? false : true).from(encblock);
 		}
 	}catch(no_such_block& e){
 		return get_both_blocks(block_hash).first;
@@ -168,10 +167,10 @@ std::string OpenStorage::make_relpath(const fs::path& path) const {
 }
 
 blob OpenStorage::make_path_hmac(const std::string& relpath) const {
-	return crypto::HMAC_SHA3_224(key_.get_Encryption_Key()).to(relpath);
+	return relpath | crypto::HMAC_SHA3_224(key_.get_Encryption_Key());
 }
 
-bool OpenStorage::is_skipped(const std::string relpath) const {
+bool OpenStorage::is_skipped(const std::string& relpath) const {
 	for(auto& skip_file : skip_files())
 		if(relpath.size() >= skip_file.size() && std::equal(skip_file.begin(), skip_file.end(), relpath.begin()))
 			return true;
@@ -215,8 +214,8 @@ std::set<std::string> OpenStorage::indexed_files(){
 	std::set<std::string> file_list;
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
-		Meta meta; meta.ParseFromString(row[0].as_text());
-		std::string relpath = crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath());
+		Meta meta; meta.parse(row[0].as_blob());
+		std::string relpath = meta.gen_relpath(key_);
 
 		if(!is_skipped(relpath)) file_list.insert(relpath);
 	}
@@ -225,13 +224,13 @@ std::set<std::string> OpenStorage::indexed_files(){
 }
 
 std::set<std::string> OpenStorage::pending_files(){
-	std::set<std::string> file_list1, file_list2;
+	std::set<std::string> file_list1, file_list2;// TODO: WTF?
 	file_list1 = open_files();
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
-		Meta meta; meta.ParseFromString(row[0].as_text());
-		if(meta.type() != meta.DELETED){
-			file_list1.insert(crypto::AES_CBC(key_.get_Encryption_Key(), meta.encpath_iv()).from(meta.encpath()));
+		Meta meta; meta.parse(row[0].as_blob());
+		if(meta.meta_type() != meta.DELETED){
+			file_list1.insert(meta.gen_relpath(key_));
 		}
 	}
 

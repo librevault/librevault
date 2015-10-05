@@ -60,6 +60,10 @@ public:
 		blob block_content;
 	};
 
+	struct parse_error : std::runtime_error {
+		parse_error() : std::runtime_error("Parse error"){}
+	};
+
 	AbstractParser(){}
 	virtual ~AbstractParser(){}
 

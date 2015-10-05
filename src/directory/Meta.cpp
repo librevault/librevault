@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,18 +13,24 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-syntax = "proto3";
-package cryptodiff.internals;
+#include "Meta.h"
 
-message EncFileMap_s {
-	uint32 maxblocksize = 2;
-	uint32 minblocksize = 3;
-	message Block_s {
-		bytes encrypted_hash = 1;
-		uint32 blocksize = 2;
-		bytes iv = 3;
+namespace librevault {
 
-		bytes encrypted_hashes = 4;
-	}
-	repeated Block_s blocks = 1;
+Meta::Meta() {}
+Meta::~Meta() {}
+
+std::string Meta::gen_relpath(const Key& key) {
+	blob result = encrypted_path_ | crypto::De<crypto::AES_CBC>(key.get_Encryption_Key(), encrypted_path_iv_);
+	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
+
+blob Meta::serialize() const {
+
+}
+
+void Meta::parse(const blob &serialized_data) {
+
+}
+
+} /* namespace librevault */

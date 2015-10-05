@@ -67,11 +67,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-//---------FOR REMOVAL----------
-#include <boost/log/sinks.hpp>
-#include <boost/log/trivial.hpp>
-//------------------------------
-
 #include <boost/predef.h>
 
 #include <boost/program_options.hpp>

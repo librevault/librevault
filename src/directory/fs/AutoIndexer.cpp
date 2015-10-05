@@ -17,7 +17,6 @@
 #include "Indexer.h"
 #include "FSDirectory.h"
 #include "../../Session.h"
-#include "Meta.pb.h"
 
 namespace librevault {
 

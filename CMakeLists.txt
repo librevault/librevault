@@ -40,6 +40,16 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
 ENDIF()
 
+option(BUILD_STATIC "Build static version of executable" OFF)
+if(BUILD_STATIC)
+	SET(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ -static -s ${CMAKE_CXX_FLAGS}")
+	SET(CMAKE_C_FLAGS "-static-libgcc -static-libstdc++ -static -s ${CMAKE_C_FLAGS}")
+	SET(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -s -ldl ${CMAKE_EXE_LINKER_FLAGS}")
+	SET(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -s -ldl ${CMAKE_MODULE_LINKER_FLAGS}")
+	SET(Boost_USE_STATIC_LIBS ON)
+	SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+endif()
+
 #============================================================================
 # Third-party Libraries
 #============================================================================

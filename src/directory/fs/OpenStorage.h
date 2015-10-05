@@ -48,7 +48,7 @@ public:
 	 */
 	void disassemble(const std::string& file_path, bool delete_file = true);
 
-	bool is_skipped(const std::string relpath) const;
+	bool is_skipped(const std::string& relpath) const;
 
 	const std::set<std::string>& skip_files() const;
 

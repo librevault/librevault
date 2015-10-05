@@ -16,7 +16,7 @@
 #include "Indexer.h"
 #include "FSDirectory.h"
 #include "../../Session.h"
-#include "Meta.pb.h"
+#include "../Meta.h"
 
 namespace librevault {
 
@@ -32,9 +32,9 @@ void Indexer::index(const std::string& file_path){
 		auto meta = make_Meta(file_path);
 		index_.put_Meta(sign(meta));
 
-		Meta m; m.ParseFromArray(meta.data(), meta.size());
+		Meta m; m.parse(meta);
 
-		auto path_hmac = m.path_hmac();
+		auto path_hmac = m.path_id();
 
 		index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
 				{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
@@ -59,9 +59,9 @@ void Indexer::async_index(const std::string& file_path, std::function<void(Abstr
 			AbstractDirectory::SignedMeta smeta = sign(meta);
 			index_.put_Meta(smeta);
 
-			Meta m; m.ParseFromArray(meta.data(), meta.size());
+			Meta m; m.parse(meta);
 
-			auto path_hmac = m.path_hmac();
+			auto path_hmac = m.path_id();
 
 			index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
 					{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
@@ -86,25 +86,28 @@ blob Indexer::make_Meta(const std::string& relpath){
 
 	// Path_HMAC
 	blob path_hmac = open_storage_.make_path_hmac(relpath);
-	meta.set_path_hmac(path_hmac.data(), path_hmac.size());
+	//meta.set_path_hmac(path_hmac.data(), path_hmac.size());
+	meta.set_path_id(path_hmac);
 
 	// EncPath_IV
 	blob encpath_iv(16);
 	CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(encpath_iv.data(), encpath_iv.size());
-	meta.set_encpath_iv(encpath_iv.data(), encpath_iv.size());
+	//meta.set_encpath_iv(encpath_iv.data(), encpath_iv.size());
+	meta.set_encrypted_path_iv(encpath_iv);
 
 	// EncPath
-	auto encpath = crypto::AES_CBC(key_.get_Encryption_Key(), encpath_iv).encrypt(relpath);
-	meta.set_encpath(encpath.data(), encpath.size());
+	auto encpath = relpath | crypto::AES_CBC(key_.get_Encryption_Key(), encpath_iv);
+	//meta.set_encpath(encpath.data(), encpath.size());
+	meta.set_encrypted_path(encpath);
 
 	// Type
 	auto file_status = fs::symlink_status(abspath);
 	switch(file_status.type()){
 	case fs::regular_file: {
 		// Add FileMeta for files
-		meta.set_type(Meta::FileType::Meta_FileType_FILE);
+		meta.set_meta_type(Meta::FILE);
 
-		cryptodiff::FileMap filemap(crypto::BinaryArray(key_.get_Encryption_Key()));
+		cryptodiff::FileMap filemap(key_.get_Encryption_Key());
 		try {
 			auto old_smeta = index_.get_Meta(path_hmac);
 			Meta old_meta; old_meta.ParseFromArray(old_smeta.meta.data(), old_smeta.meta.size());	// Trying to retrieve Meta from database. May throw.

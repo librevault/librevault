@@ -15,7 +15,7 @@
  */
 #include "../pch.h"
 #pragma once
-#include "Meta.pb.h"
+#include "Meta.h"
 
 namespace librevault {
 

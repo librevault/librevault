@@ -63,7 +63,7 @@ std::vector<FSDirectory::MetaRevision> FSDirectory::get_meta_list() {
 
 	auto all_smeta = index->get_Meta();
 	for(auto smeta : all_smeta) {
-		Meta one_meta; one_meta.ParseFromArray(smeta.meta.data(), smeta.meta.size());
+		Meta one_meta; one_meta.parse(smeta.meta);
 		blob path_hmac(one_meta.path_hmac().begin(), one_meta.path_hmac().end());
 		meta_list.push_back({path_hmac, one_meta.mtime()});
 	}
@@ -156,7 +156,7 @@ void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
 	Meta m; m.ParseFromArray(smeta.meta.data(), smeta.meta.size());
 	blob path_hmac(m.path_hmac().begin(), m.path_hmac().end());
 
-	log_->debug() << log_tag() << "Created revision " << m.mtime() << " of " << (std::string)crypto::Base32().to(path_hmac);
+	log_->debug() << log_tag() << "Created revision " << m.mtime() << " of " << crypto::Base32().to_string(path_hmac);
 
 	for(auto remote : remotes_){
 		remote->post_revision(shared_from_this(), {path_hmac, m.mtime()});

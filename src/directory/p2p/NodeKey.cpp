@@ -42,7 +42,7 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	public_key_.resize(33);
 	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_.data());
 
-	log_->debug() << "Public key: " << (std::string)crypto::Hex().to(public_key_);
+	log_->debug() << "Public key: " << crypto::Hex().to_string(public_key_);
 
 	return private_key_;
 }
@@ -93,7 +93,7 @@ void NodeKey::write_key(){
     // Sequence end
     seq.MessageEnd();
 
-    s = (std::string)crypto::Base64().to(s);
+    s = crypto::Base64().to_string(s);
 
     for (unsigned i = 0; i < s.length(); i += 64) {
     	ofs << s.substr(i, 64) << std::endl;

@@ -36,13 +36,13 @@ Key::Key() {
 	private_key.GetPrivateExponent().Encode(cached_private_key.data(), private_key_size);
 
 	secret_s.append(1, (char)Owner);
-	secret_s.append(crypto::Base58().to(cached_private_key));
+	secret_s.append(crypto::Base58().to_string(cached_private_key));
 	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
 Key::Key(Type type, const std::vector<uint8_t>& binary_part) {
 	secret_s.append(1, type);
-	secret_s.append(crypto::Base58().to(binary_part));
+	secret_s.append(crypto::Base58().to_string(binary_part));
 	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
@@ -56,7 +56,7 @@ Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
 Key::~Key() {}
 
 std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
-	return crypto::Base58().from(secret_s.substr(1, this->secret_s.size()-2));
+	return secret_s.substr(1, this->secret_s.size()-2) | crypto::De<crypto::Base58>();
 }
 
 Key Key::derive(Type key_type) const {

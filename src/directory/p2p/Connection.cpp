@@ -187,7 +187,7 @@ bool Connection::verify_callback(bool preverified, boost::asio::ssl::verify_cont
 
 	remote_pubkey_ = pubkey_from_cert(x509);
 
-	log_->debug() << "TLS " << preverified << " " << subject_name << " " << (std::string)crypto::Hex().to(remote_pubkey_);
+	log_->debug() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(remote_pubkey_);
 
 	return true;
 }

@@ -25,7 +25,7 @@ EncStorage::EncStorage(FSDirectory& dir, Session& session) : log_(spdlog::get("L
 EncStorage::~EncStorage() {}
 
 fs::path EncStorage::make_encblock_name(const blob& block_hash) const {
-	return (std::string)crypto::Base32().to(block_hash);
+	return crypto::Base32().to_string(block_hash);
 }
 
 fs::path EncStorage::make_encblock_path(const blob& block_hash) const {
@@ -55,13 +55,13 @@ void EncStorage::put_encblock(const blob& block_hash, const blob& data){
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	log_->debug() << "Encrypted block " << (std::string)crypto::Base32().to(block_hash) << " pushed into EncStorage";
+	log_->debug() << "Encrypted block " << make_encblock_name(block_hash) << " pushed into EncStorage";
 }
 
 void EncStorage::remove_encblock(const blob& block_hash){
 	fs::remove(make_encblock_path(block_hash));
 
-	log_->debug() << "Block " << (std::string)crypto::Base32().to(block_hash) << " removed from EncStorage";
+	log_->debug() << "Block " << make_encblock_name(block_hash) << " removed from EncStorage";
 }
 
 } /* namespace librevault */

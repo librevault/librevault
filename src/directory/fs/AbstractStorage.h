@@ -29,7 +29,7 @@ public:
 	virtual ~AbstractStorage(){};
 
 	bool verify_encblock(const blob& block_hash, const blob& data){
-		return crypto::SHA3(28).compute(data) == crypto::BinaryArray(block_hash);
+		return block_hash == (data | crypto::SHA3(224));
 	}
 	virtual blob get_encblock(const blob& block_hash) = 0;
 };

@@ -15,7 +15,7 @@
  */
 #include "Index.h"
 #include "FSDirectory.h"
-#include "Meta.pb.h"
+#include "Meta.h"
 
 namespace librevault {
 
@@ -43,23 +43,23 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 	auto raii_lock = SQLiteLock(*db_);
 	for(auto signed_meta : signed_meta_list){
 		SQLiteSavepoint raii_transaction(*db_, "put_Meta");
-		Meta meta; meta.ParseFromArray(signed_meta.meta.data(), signed_meta.meta.size());
+		Meta meta; meta.parse(signed_meta.meta);
 
-		auto file_path_hmac = SQLValue((const uint8_t*)meta.path_hmac().data(), meta.path_hmac().size());
+		auto file_path_hmac = SQLValue(meta.path_id());
 		db_->exec("INSERT OR REPLACE INTO files (path_hmac, mtime, meta, signature) VALUES (:path_hmac, :mtime, :meta, :signature);", {
 				{":path_hmac", file_path_hmac},
-				{":mtime", (int64_t)meta.mtime()},
-				{":meta", SQLValue((uint8_t*)signed_meta.meta.data(), signed_meta.meta.size())},
+				{":mtime", meta.revision()},
+				{":meta", signed_meta.meta},
 				{":signature", signed_meta.signature}
 		});
 
 		uint64_t offset = 0;
-		for(auto block : meta.filemap().blocks()){
-			auto block_encrypted_hash = SQLValue((const uint8_t*)block.encrypted_hash().data(), block.encrypted_hash().size());
+		for(auto block : meta.blocks()){
+			auto block_encrypted_hash = SQLValue(block.encrypted_data_hash_());
 			db_->exec("INSERT OR IGNORE INTO blocks (encrypted_hash, blocksize, iv) VALUES (:encrypted_hash, :blocksize, :iv);", {
 					{":encrypted_hash", block_encrypted_hash},
-					{":blocksize", (int64_t)block.blocksize()},
-					{":iv", SQLValue((const uint8_t*)block.iv().data(), block.iv().size())}
+					{":blocksize", block.blocksize_},
+					{":iv", block.iv_}
 			});
 
 			db_->exec("INSERT INTO openfs (block_encrypted_hash, file_path_hmac, [offset]) VALUES (:block_encrypted_hash, :file_path_hmac, :offset);", {
@@ -68,10 +68,10 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 					{":offset", (int64_t)offset}
 			});
 
-			offset += block.blocksize();
+			offset += block.blocksize_;
 		}
 
-		log_->debug() << "Added Meta of " << (std::string)crypto::Base32().to(meta.path_hmac());
+		log_->debug() << "Added Meta of " << crypto::Base32().to_string(meta.path_id());
 	}
 }
 

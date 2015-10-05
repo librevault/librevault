@@ -24,11 +24,11 @@ AbstractDirectory::AbstractDirectory(Session& session, Exchanger& exchanger) :
 AbstractDirectory::~AbstractDirectory() {}
 
 std::string AbstractDirectory::path_id_readable(const blob& path_id) const {
-	return crypto::Base32().to(path_id);
+	return crypto::Base32().to_string(path_id);
 }
 
 std::string AbstractDirectory::block_id_readable(const blob& block_id) const {
-	return crypto::Base32().to(block_id);
+	return crypto::Base32().to_string(block_id);
 }
 
 } /* namespace librevault */

@@ -43,8 +43,8 @@ blob ProtobufParser::gen_meta_list(const MetaList& message_struct) {
 	protocol::MetaList message_protobuf;
 	for(auto one_revision : message_struct.revision) {
 		auto list_ptr = message_protobuf.add_list();
-		list_ptr->set_path_id(one_revision.first.data(), one_revision.first.size());
-		list_ptr->set_revision(one_revision.second);
+		list_ptr->set_path_id(one_revision.path_id_.data(), one_revision.path_id_.size());
+		list_ptr->set_revision(one_revision.revision_);
 	}
 
 	return prepare_proto_message(message_protobuf, META_LIST);

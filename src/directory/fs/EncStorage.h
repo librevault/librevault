@@ -26,18 +26,18 @@ public:
 	EncStorage(FSDirectory& dir, Session& session);
 	virtual ~EncStorage();
 
-	bool have_encblock(const blob& block_hash);
-	blob get_encblock(const blob& block_hash);
-	void put_encblock(const blob& block_hash, const blob& data);	// FIXME: Check hash
-	void remove_encblock(const blob& block_hash);
+	bool have_encblock(const blob& encrypted_data_hash);
+	blob get_encblock(const blob& encrypted_data_hash);
+	void put_encblock(const blob& encrypted_data_hash, const blob& data);	// FIXME: Check hash
+	void remove_encblock(const blob& encrypted_data_hash);
 
 private:
 	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 	const fs::path& block_path_;
 
-	fs::path make_encblock_name(const blob& block_hash) const;
-	fs::path make_encblock_path(const blob& block_hash) const;
+	fs::path make_encblock_name(const blob& encrypted_data_hash) const;
+	fs::path make_encblock_path(const blob& encrypted_data_hash) const;
 };
 
 } /* namespace librevault */

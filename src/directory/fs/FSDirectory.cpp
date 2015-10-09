@@ -58,27 +58,26 @@ void FSDirectory::detach_remote(std::shared_ptr<P2PDirectory> remote_ptr) {
 	log_->debug() << log_tag() << "Detached remote " << remote_ptr->remote_string() << " from " << name();
 }
 
-std::vector<FSDirectory::MetaRevision> FSDirectory::get_meta_list() {
-	std::vector<MetaRevision> meta_list;
+std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {
+	std::vector<Meta::PathRevision> meta_list;
 
 	auto all_smeta = index->get_Meta();
 	for(auto smeta : all_smeta) {
-		Meta one_meta; one_meta.parse(smeta.meta);
-		blob path_hmac(one_meta.path_hmac().begin(), one_meta.path_hmac().end());
-		meta_list.push_back({path_hmac, one_meta.mtime()});
+		Meta one_meta(smeta.meta);
+		meta_list.push_back(one_meta.path_revision());
 	}
 
 	return meta_list;
-};
+}
 
-void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision) {
+void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
 	try {
-		SignedMeta smeta = index->get_Meta(revision.first);
-		Meta meta; meta.ParseFromArray(smeta.meta.data(), smeta.meta.size());
-		if(meta.mtime() == revision.second){
-			auto missing_blocks = get_missing_blocks(revision.first);
+		SignedMeta smeta = index->get_Meta(revision.path_id_);
+		Meta meta; meta.parse(smeta.meta);
+		if(meta.revision() == revision.revision_){
+			auto missing_blocks = get_missing_blocks(revision.path_id_);
 			if(!missing_blocks.empty()){
-				log_->debug() << log_tag() << "Missing " << missing_blocks.size() << " blocks in " << path_id_readable(revision.first);
+				log_->debug() << log_tag() << "Missing " << missing_blocks.size() << " blocks in " << path_id_readable(revision.path_id_);
 				for(auto missing_block : missing_blocks){
 					origin->request_block(shared_from_this(), missing_block);
 				}
@@ -87,8 +86,8 @@ void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const
 
 		}
 	}catch(Index::no_such_meta& e){
-		log_->debug() << log_tag() << "Meta " << path_id_readable(revision.first) << " not found";
-		origin->request_meta(shared_from_this(), revision.first);
+		log_->debug() << log_tag() << "Meta " << path_id_readable(revision.path_id_) << " not found";
+		origin->request_meta(shared_from_this(), revision.path_id_);
 	}
 }
 
@@ -104,12 +103,16 @@ void FSDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const 
 
 void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) {
 	log_->debug() << log_tag() << "Received Meta from " << origin->name();
+
+	Meta m; m.parse(smeta.meta);
+
+	// Check for zero-length file. If zero-length and key <= ReadOnly, then assemble.
+
+
+
 	index->put_Meta(smeta);	// FIXME: Check revision number, actually
 
-	Meta m; m.ParseFromArray(smeta.meta.data(), smeta.meta.size());
-	blob path_id(m.path_hmac().begin(), m.path_hmac().end());
-
-	for(auto missing_block : get_missing_blocks(path_id)){
+	for(auto missing_block : get_missing_blocks(m.path_id())){
 		origin->request_block(shared_from_this(), missing_block);
 	}
 }
@@ -153,13 +156,13 @@ std::list<blob> FSDirectory::get_missing_blocks(const blob& path_id) {
 }
 
 void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
-	Meta m; m.ParseFromArray(smeta.meta.data(), smeta.meta.size());
-	blob path_hmac(m.path_hmac().begin(), m.path_hmac().end());
+	Meta m; m.parse(smeta.meta);
+	blob path_id(m.path_id());
 
-	log_->debug() << log_tag() << "Created revision " << m.mtime() << " of " << crypto::Base32().to_string(path_hmac);
+	log_->debug() << log_tag() << "Created revision " << m.revision() << " of " << crypto::Base32().to_string(path_id);
 
 	for(auto remote : remotes_){
-		remote->post_revision(shared_from_this(), {path_hmac, m.mtime()});
+		remote->post_revision(shared_from_this(), {path_id, m.revision()});
 	}
 }
 

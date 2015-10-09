@@ -38,9 +38,9 @@ public:
 	std::list<blob> get_missing_blocks(const blob& path_id);
 
 	// AbstractDirectory actions
-	std::vector<MetaRevision> get_meta_list();
+	std::vector<Meta::PathRevision> get_meta_list();
 
-	void post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision);
+	void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision);
 	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
 	void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta);
 	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);

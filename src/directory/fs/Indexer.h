@@ -19,26 +19,36 @@
 #include "Index.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
+#include "../Meta.h"
 
 namespace librevault {
 
 class FSDirectory;
 class Indexer {
 public:
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("Indexer error") {}
+	};
+
+	struct unsupported_filetype : error {
+		unsupported_filetype() : error("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
+	};
+
 	Indexer(FSDirectory& dir, Session& session);
 	virtual ~Indexer();
 
 	// Index manipulation
-	void index(const std::string& file_path);
+	AbstractDirectory::SignedMeta index(const std::string& file_path);
 	void index(const std::set<std::string>& file_path);
 
 	void async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
 	void async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
 
 	// Meta functions
-	blob make_Meta(const std::string& relpath);
+	Meta make_Meta(const std::string& relpath);
 
-	AbstractDirectory::SignedMeta sign(const blob& meta) const;
+	AbstractDirectory::SignedMeta sign(const Meta& meta) const;
 
 private:
 	std::shared_ptr<spdlog::logger> log_;
@@ -50,6 +60,8 @@ private:
 	OpenStorage& open_storage_;
 
 	Session& session_;
+
+	cryptodiff::StrongHashType get_strong_hash_type();
 };
 
 } /* namespace librevault */

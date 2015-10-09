@@ -14,23 +14,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
+#include <string>
+#include <cstdint>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 
 namespace librevault {
 
-class AbstractStorage {
-public:
-	struct no_such_block : public std::runtime_error {
-		no_such_block() : std::runtime_error("Requested Block not found"){}
-	};
+std::string size_to_string(double bytes) {
+	const double kib = 1024;
+	const double mib = 1024 * kib;
+	const double gib = 1024 * mib;
+	const double tib = 1024 * gib;
 
-	AbstractStorage(){};
-	virtual ~AbstractStorage(){};
+	const double kb = 1000;
+	const double mb = 1000 * kib;
+	const double gb = 1000 * mib;
+	const double tb = 1000 * gib;
 
-	bool verify_encblock(const blob& block_hash, const blob& data, cryptodiff::StrongHashType strong_hash_type){
-		return block_hash == cryptodiff::compute_strong_hash(data, strong_hash_type);
-	}
-	virtual blob get_encblock(const blob& block_hash) = 0;
-};
+	std::ostringstream os; os << std::fixed << std::setprecision(2);
+
+	if(bytes < kb)
+		os << bytes << " B";
+	else if(bytes < mb)
+		os << (double)bytes/kib << " kB";
+	else if(bytes < gb)
+		os << (double)bytes/mib << " MB";
+	else if(bytes < tb)
+		os << (double)bytes/gib << " GB";
+	else
+		os << (double)bytes/tib << " TB";
+	return os.str();
+}
 
 } /* namespace librevault */

@@ -39,8 +39,7 @@ public:
 	void put_Meta(const std::list<SignedMeta>& signed_meta_list);
 	void put_Meta(const SignedMeta& signed_meta){put_Meta(std::list<SignedMeta>{signed_meta});}
 
-	SignedMeta get_Meta(const blob& path_hmac);
-	std::list<SignedMeta> get_Meta(int64_t mtime);
+	SignedMeta get_Meta(const blob& path_id);
 	std::list<SignedMeta> get_Meta();
 
 	SQLiteDB& db() {return *db_;}

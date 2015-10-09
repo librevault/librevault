@@ -20,31 +20,6 @@
 
 namespace librevault {
 
-/*
-message Meta_s {
-	// These I'd mark as required
-	bytes path_hmac = 1;
-	bytes encpath = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
-	bytes encpath_iv = 3;	// IV for AES-256-CBC encrypted encpath.
-
-	enum FileType {
-		FILE = 0;
-		DIRECTORY = 1;
-		SYMLINK = 2;
-
-		DELETED = 255;
-	}
-	FileType type = 4;
-	int64 mtime = 5;
-
-	// These are optional (I mean, conditional)
-	bytes symlink_to = 6;
-	uint32 windows_attrib = 7;
-
-	cryptodiff.internals.EncFileMap_s filemap = 16;
-}
-*/
-
 class Meta {
 public:
 	enum Type : uint8_t {FILE = 0, DIRECTORY = 1, SYMLINK = 2, DELETED = 255};
@@ -53,11 +28,13 @@ public:
 	using Block = cryptodiff::Block;
 private:
 	/* Meta fields, must be serialized together and then signed */
-	blob path_id_;	// aka path_id;
+	blob path_id_;	// aka path_hmac;
 	blob encrypted_path_;	// aka encpath;
 	blob encrypted_path_iv_;	// aka encpath_iv;
-	Type meta_type_;
-	int64_t revision_;	// aka mtime
+	Type meta_type_ = FILE;
+	int64_t revision_ = 0;	// timestamp of Meta modification
+
+	int64_t mtime_ = 0;	// file/directory mtime
 
 	// Symlinks only
 	blob symlink_encrypted_path_;
@@ -71,32 +48,60 @@ private:
 	uint32_t gid_ = 0;
 
 	// Filemap-derived data
-	uint32_t max_blocksize_;
-	uint32_t min_blocksize_;
+	uint32_t max_blocksize_ = 0;
+	uint32_t min_blocksize_ = 0;
 	StrongHashType strong_hash_type_ = StrongHashType::SHA3_224;
 	WeakHashType weak_hash_type_ = WeakHashType::RSYNC;
 
 	std::vector<Block> blocks_;
 
 public:
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("Meta error") {}
+	};
+
+	struct parse_error : error {
+		parse_error() : error("Parse error") {}
+	};
+
 	struct PathRevision {
 		blob path_id_;
 		int64_t revision_;
 	};
 
 	Meta();
+	Meta(const blob& meta_s);
 	virtual ~Meta();
 
+	/* Serialization */
 	blob serialize() const;
 	void parse(const blob& serialized_data);
 
-	PathRevision gen_path_revision() const {
+	/* Debug */
+	std::string debug_string() const;
+
+	/* Smart getters+setters */
+	PathRevision path_revision() const {
 		return PathRevision{path_id(), revision()};
 	}
+	uint64_t size() const;
 
-	std::string gen_relpath(const Key& key);
+	cryptodiff::FileMap filemap(const Key& key);
+	void set_filemap(const cryptodiff::FileMap& new_filemap);
 
-	// Getters & setters
+	// Path encryptors+setters
+	std::string path(const Key& key) const;
+	void set_path(const std::string& path, const Key& key);
+
+	std::string symlink_path(const Key& key) const;
+	void set_symlink_path(const std::string& path, const Key& key);
+
+	// IV randomizers
+	void randomize_encrypted_path_iv() {set_encrypted_path_iv(gen_random_iv());}
+	void randomize_symlink_encrypted_path_iv() {set_symlink_encrypted_path_iv(gen_random_iv());}
+
+	// Dumb getters & setters
 	const blob& path_id() const {return path_id_;}
 	void set_path_id(const blob& path_id) {path_id_ = path_id;}
 
@@ -112,6 +117,9 @@ public:
 	int64_t revision() const {return revision_;}
 	void set_revision(int64_t revision) {revision_ = revision;}
 
+	int64_t mtime() const {return mtime_;}
+	void set_mtime(int64_t mtime) {mtime_ = mtime;}
+
 	const blob& symlink_encrypted_path() const {return symlink_encrypted_path_;}
 	void set_symlink_encrypted_path(const blob& symlink_encrypted_path) {symlink_encrypted_path_ = symlink_encrypted_path;}
 
@@ -121,17 +129,31 @@ public:
 	uint32_t windows_attrib() const {return windows_attrib_;}
 	void set_windows_attrib(uint32_t windows_attrib) {windows_attrib_ = windows_attrib;}
 
+	uint32_t mode() const {return mode_;}
+	void set_mode(uint32_t mode) {mode_ = mode;}
+
+	uint32_t uid() const {return uid_;}
+	void set_uid(uint32_t uid) {uid_ = uid;}
+
+	uint32_t gid() const {return gid_;}
+	void set_gid(uint32_t gid) {gid_ = gid;}
+
 	uint32_t min_blocksize() const {return min_blocksize_;}
 	void set_min_blocksize(uint32_t min_blocksize) {min_blocksize_ = min_blocksize;}
 
 	uint32_t max_blocksize() const {return max_blocksize_;}
 	void set_max_blocksize(uint32_t max_blocksize) {max_blocksize_ = max_blocksize;}
 
-	HashType hash_type() const {return hash_type_;}
-	void set_hash_type(HashType hash_type) {hash_type_ = hash_type;}
+	StrongHashType strong_hash_type() const {return strong_hash_type_;}
+	void set_strong_hash_type(StrongHashType strong_hash_type) {strong_hash_type_ = strong_hash_type;}
+
+	WeakHashType weak_hash_type() const {return weak_hash_type_;}
+	void set_weak_hash_type(WeakHashType weak_hash_type) {weak_hash_type_ = weak_hash_type;}
 
 	const std::vector<Block>& blocks() const {return blocks_;}
 	void set_blocks(const std::vector<Block>& blocks) {blocks_ = blocks;}
+private:
+	blob gen_random_iv() const;
 };
 
 } /* namespace librevault */

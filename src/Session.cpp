@@ -59,6 +59,8 @@ void Session::init_log() {
 		spdlog::set_level(spdlog::level::trace);
 	}
 
+	cryptodiff::set_logger(log_);
+
 	log_->info() << version().name() << " " << version().version_string();
 }
 

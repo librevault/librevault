@@ -42,10 +42,10 @@ ENDIF()
 
 option(BUILD_STATIC "Build static version of executable" OFF)
 if(BUILD_STATIC)
-	SET(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ -static -s ${CMAKE_CXX_FLAGS}")
-	SET(CMAKE_C_FLAGS "-static-libgcc -static-libstdc++ -static -s ${CMAKE_C_FLAGS}")
-	SET(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -s -ldl ${CMAKE_EXE_LINKER_FLAGS}")
-	SET(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static -s -ldl ${CMAKE_MODULE_LINKER_FLAGS}")
+	SET(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+	SET(CMAKE_C_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
+	SET(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
+	SET(CMAKE_MODULE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
 	SET(Boost_USE_STATIC_LIBS ON)
 	SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
@@ -54,10 +54,20 @@ endif()
 # Third-party Libraries
 #============================================================================
 
+# Cryptodiff
+find_package(Cryptodiff REQUIRED)
+include_directories(${CRYPTODIFF_INCLUDE_DIR})
+link_libraries(${CRYPTODIFF_LIBRARIES})
+
+# Pthreads
+find_package(Threads)
+link_libraries (${CMAKE_THREAD_LIBS_INIT})
+
 # Boost
 set(Boost_COMPONENTS
 		system
 		filesystem
+		iostreams
 		program_options)
 # set (Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
@@ -87,11 +97,6 @@ link_libraries(${PROTOBUF_LIBRARIES})
 file(GLOB_RECURSE PROTO_LIST "src/*.proto")
 PROTOBUF_GENERATE_CPP(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 
-# Cryptodiff
-find_package(Cryptodiff REQUIRED)
-include_directories(${CRYPTODIFF_INCLUDE_DIR})
-link_libraries(${CRYPTODIFF_LIBRARIES})
-
 # CryptoPP
 find_package(CryptoPP REQUIRED)
 include_directories(${CRYPTOPP_INCLUDE_DIRS})
@@ -106,6 +111,14 @@ link_libraries(${CRYPTOPP_LIBRARIES})
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 link_libraries(${OPENSSL_LIBRARIES})
+
+if(BUILD_STATIC)
+	link_libraries(dl)
+	link_libraries(stdc++.a)
+	link_libraries(m.a)
+	link_libraries(pthread.a)
+	link_libraries(c.a)
+endif()
 
 include_directories("contrib/include")
 

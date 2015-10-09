@@ -15,6 +15,7 @@
  */
 #pragma once
 #include "../P2PDirectory.h"
+#include "../../Meta.h"
 
 namespace librevault {
 
@@ -40,7 +41,7 @@ public:
 	};
 
 	struct MetaList {
-		std::vector<std::pair<blob, int64_t>> revision;	// blob = path_id, int64_t = revision
+		std::vector<::librevault::Meta::PathRevision> revision;
 	};
 
 	struct MetaRequest {

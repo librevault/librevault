@@ -10,6 +10,3 @@
 [submodule "contrib/lvcrypto"]
 	path = contrib/lvcrypto
 	url = https://github.com/GamePad64/lvcrypto.git
-[submodule "contrib/unicbor"]
-	path = contrib/unicbor
-	url = https://github.com/GamePad64/unicbor.git

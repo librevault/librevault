@@ -15,7 +15,7 @@
  */
 #include "OpenStorage.h"
 #include "FSDirectory.h"
-#include "Meta.h"
+#include "../Meta.h"
 
 namespace librevault {
 
@@ -32,7 +32,7 @@ OpenStorage::~OpenStorage() {}
 std::string OpenStorage::get_path(const blob& path_hmac){
 	for(auto row : index_.db().exec("SELECT meta FROM files WHERE path_hmac=:path_hmac", {{":path_hmac", path_hmac}})){
 		Meta meta; meta.parse(row[0].as_blob());
-		return meta.gen_relpath(key_);
+		return meta.path(key_);
 	}
 	throw;
 }
@@ -50,7 +50,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 
 		uint64_t blocksize	= row[0];
 		blob iv				= row[1];
-		auto filepath		= fs::absolute(meta.gen_relpath(key_), dir_.open_path());
+		auto filepath		= fs::absolute(meta.path(key_), dir_.open_path());
 		uint64_t offset		= row[3];
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
@@ -63,7 +63,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 
 			blob encblock = block | crypto::AES_CBC(key_.get_Encryption_Key(), iv, blocksize % 16 == 0 ? false : true);
 			// Check
-			if(verify_encblock(block_hash, encblock)) return {block, encblock};
+			if(verify_encblock(block_hash, encblock, meta.strong_hash_type())) return {block, encblock};
 		}catch(const std::ios::failure& e){}
 	}
 	throw no_such_block();
@@ -90,7 +90,7 @@ blob OpenStorage::get_block(const blob& block_hash) {
 }
 
 void OpenStorage::assemble(bool delete_blocks){
-	auto raii_lock = SQLiteLock(index_.db());
+	SQLiteLock raii_lock(index_.db());
 	auto blocks = index_.db().exec("SELECT files.path_hmac, openfs.\"offset\", blocks.encrypted_hash, blocks.iv "
 			"FROM openfs "
 			"JOIN files ON openfs.file_path_hmac=files.path_hmac "
@@ -128,7 +128,7 @@ void OpenStorage::assemble(bool delete_blocks){
 }
 
 void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
-	blob path_hmac = make_path_hmac(file_path);
+	blob path_hmac = make_path_id(file_path);
 
 	std::list<blob> encrypted_hashes;
 	auto blocks_data = index_.db().exec("SELECT block_encrypted_hash "
@@ -166,7 +166,7 @@ std::string OpenStorage::make_relpath(const fs::path& path) const {
 	return relpath.generic_string();
 }
 
-blob OpenStorage::make_path_hmac(const std::string& relpath) const {
+blob OpenStorage::make_path_id(const std::string& relpath) const {
 	return relpath | crypto::HMAC_SHA3_224(key_.get_Encryption_Key());
 }
 
@@ -215,7 +215,7 @@ std::set<std::string> OpenStorage::indexed_files(){
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
 		Meta meta; meta.parse(row[0].as_blob());
-		std::string relpath = meta.gen_relpath(key_);
+		std::string relpath = meta.path(key_);
 
 		if(!is_skipped(relpath)) file_list.insert(relpath);
 	}
@@ -230,7 +230,7 @@ std::set<std::string> OpenStorage::pending_files(){
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
 		Meta meta; meta.parse(row[0].as_blob());
 		if(meta.meta_type() != meta.DELETED){
-			file_list1.insert(meta.gen_relpath(key_));
+			file_list1.insert(meta.path(key_));
 		}
 	}
 

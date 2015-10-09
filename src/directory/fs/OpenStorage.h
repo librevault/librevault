@@ -30,7 +30,7 @@ public:
 
 	// Path constructor
 	std::string make_relpath(const fs::path& path) const;
-	blob make_path_hmac(const std::string& relpath) const;
+	blob make_path_id(const std::string& relpath) const;
 
 	blob get_encblock(const blob& block_hash);
 	blob get_block(const blob& block_hash);

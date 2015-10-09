@@ -152,7 +152,7 @@ void P2PDirectory::handle_message() {
 			AbstractParser::MetaList meta_list = parser_->parse_meta_list(*receive_buffer_);	// Must check message_type and so on.
 
 			for(auto revision : meta_list.revision){
-				revisions_.insert(revision);
+				revisions_.insert({revision.path_id_, revision.revision_});
 				directory_ptr_.lock()->post_revision(shared_from_this(), revision);
 			}
 		} break;
@@ -181,15 +181,22 @@ void P2PDirectory::handle_message() {
 	}
 }
 
-std::vector<P2PDirectory::MetaRevision> P2PDirectory::get_meta_list() {
-	return std::vector<MetaRevision>(revisions_.begin(), revisions_.end());
+std::vector<Meta::PathRevision> P2PDirectory::get_meta_list() {
+	std::vector<Meta::PathRevision> result;
+	for(auto& map_revision : revisions_){
+		Meta::PathRevision path_revision;
+		path_revision.path_id_ = map_revision.first;
+		path_revision.revision_ = map_revision.second;
+		result.push_back(path_revision);
+	}
+	return result;
 }
 
-void P2PDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const MetaRevision& revision) {
+void P2PDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
 	AbstractParser::MetaList meta_list;
 	meta_list.revision.push_back(revision);
 
-	log_->debug() << log_tag() << "Posting revision " << revision.second << " of Meta " << path_id_readable(revision.first);
+	log_->debug() << log_tag() << "Posting revision " << revision.revision_ << " of Meta " << path_id_readable(revision.path_id_);
 	connection_->send(parser_->gen_meta_list(meta_list), []{});
 }
 

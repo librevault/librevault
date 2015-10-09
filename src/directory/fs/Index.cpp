@@ -15,26 +15,25 @@
  */
 #include "Index.h"
 #include "FSDirectory.h"
-#include "Meta.h"
 
 namespace librevault {
 
 Index::Index(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault")), dir_(dir) {
 	bool db_path_created = fs::create_directories(dir_.db_path().parent_path());
-	log_->debug() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
+	log_->debug() << dir_.log_tag() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
 
 	if(fs::exists(dir_.db_path()))
-		log_->debug() << "Opening SQLite3 DB: " << dir_.db_path();
+		log_->debug() << dir_.log_tag() << "Opening SQLite3 DB: " << dir_.db_path();
 	else
-		log_->debug() << "Creating new SQLite3 DB: " << dir_.db_path();
+		log_->debug() << dir_.log_tag() << "Creating new SQLite3 DB: " << dir_.db_path();
 	db_ = std::make_unique<SQLiteDB>(dir_.db_path());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
-	db_->exec("CREATE TABLE IF NOT EXISTS files (path_hmac BLOB PRIMARY KEY NOT NULL, mtime INTEGER NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS blocks (encrypted_hash BLOB NOT NULL PRIMARY KEY, blocksize INTEGER NOT NULL, iv BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS openfs (block_encrypted_hash BLOB NOT NULL REFERENCES blocks (encrypted_hash) ON DELETE CASCADE ON UPDATE CASCADE, file_path_hmac BLOB NOT NULL REFERENCES files (path_hmac) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS files (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS blocks (encrypted_data_hash BLOB NOT NULL PRIMARY KEY, blocksize INTEGER NOT NULL, iv BLOB NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS openfs (encrypted_data_hash BLOB NOT NULL REFERENCES blocks (encrypted_data_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES files (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 
-	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_hash NOT IN (SELECT block_encrypted_hash FROM openfs); END;");
+	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_data_hash NOT IN (SELECT encrypted_data_hash FROM openfs); END;");
 }
 
 Index::~Index() {}
@@ -45,27 +44,24 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 		SQLiteSavepoint raii_transaction(*db_, "put_Meta");
 		Meta meta; meta.parse(signed_meta.meta);
 
-		auto file_path_hmac = SQLValue(meta.path_id());
-		db_->exec("INSERT OR REPLACE INTO files (path_hmac, mtime, meta, signature) VALUES (:path_hmac, :mtime, :meta, :signature);", {
-				{":path_hmac", file_path_hmac},
-				{":mtime", meta.revision()},
+		db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
+				{":path_id", meta.path_id()},
 				{":meta", signed_meta.meta},
 				{":signature", signed_meta.signature}
 		});
 
 		uint64_t offset = 0;
 		for(auto block : meta.blocks()){
-			auto block_encrypted_hash = SQLValue(block.encrypted_data_hash_());
 			db_->exec("INSERT OR IGNORE INTO blocks (encrypted_hash, blocksize, iv) VALUES (:encrypted_hash, :blocksize, :iv);", {
-					{":encrypted_hash", block_encrypted_hash},
-					{":blocksize", block.blocksize_},
+					{":encrypted_hash", block.encrypted_data_hash_},
+					{":blocksize", (uint64_t)block.blocksize_},
 					{":iv", block.iv_}
 			});
 
 			db_->exec("INSERT INTO openfs (block_encrypted_hash, file_path_hmac, [offset]) VALUES (:block_encrypted_hash, :file_path_hmac, :offset);", {
-					{":block_encrypted_hash", block_encrypted_hash},
-					{":file_path_hmac", file_path_hmac},
-					{":offset", (int64_t)offset}
+					{":block_encrypted_hash", block.encrypted_data_hash_},
+					{":file_path_hmac", meta.path_id()},
+					{":offset", (uint64_t)offset}
 			});
 
 			offset += block.blocksize_;
@@ -81,16 +77,13 @@ std::list<Index::SignedMeta> Index::get_Meta(std::string sql, std::map<std::stri
 		result_list.push_back({row[0], row[1]});
 	return result_list;
 }
-Index::SignedMeta Index::get_Meta(const blob& path_hmac){
+Index::SignedMeta Index::get_Meta(const blob& path_id){
 	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_hmac=:path_hmac LIMIT 1", {
-			{":path_hmac", path_hmac}
+			{":path_hmac", path_id}
 	});
 
 	if(meta_list.empty()) throw no_such_meta();
 	return *meta_list.begin();
-}
-std::list<Index::SignedMeta> Index::get_Meta(int64_t mtime){
-	return get_Meta("SELECT meta, signature FROM files WHERE mtime >= :mtime", {{":mtime", mtime}});
 }
 std::list<Index::SignedMeta> Index::get_Meta(){
 	return get_Meta("SELECT meta, signature FROM files");

@@ -16,7 +16,7 @@
 #include "Indexer.h"
 #include "FSDirectory.h"
 #include "../../Session.h"
-#include "../Meta.h"
+#include "../../util/byte_convert.h"
 
 namespace librevault {
 
@@ -25,23 +25,33 @@ Indexer::Indexer(FSDirectory& dir, Session& session) :
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), session_(session) {}
 Indexer::~Indexer() {}
 
-void Indexer::index(const std::string& file_path){
+AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
 	if(open_storage_.is_skipped(file_path)){
-		log_->info() << "Skipping " << file_path;
-	}else{
-		auto meta = make_Meta(file_path);
-		index_.put_Meta(sign(meta));
+		log_->notice() << "Skipping " << file_path;
+		return AbstractDirectory::SignedMeta();
+	}else
+		try{
+			std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
 
-		Meta m; m.parse(meta);
+			auto meta = make_Meta(file_path);
+			AbstractDirectory::SignedMeta smeta = sign(meta);
+			index_.put_Meta(sign(meta));
 
-		auto path_hmac = m.path_id();
+			std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
+			float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
-				{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
-		});
+			index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
+					{":file_path_hmac", meta.path_id()}
+			});
 
-		log_->debug() << "Updated index entry. Path=" << file_path << " Rev=" << m.mtime();
-	}
+			log_->trace() << meta.debug_string();
+			log_->debug() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
+
+			return smeta;
+		}catch(error& e){
+			log_->notice() << "Skipping " << file_path << ". Reason: " << e.what();
+			return AbstractDirectory::SignedMeta();
+		}
 }
 
 void Indexer::index(const std::set<std::string>& file_path){
@@ -51,27 +61,10 @@ void Indexer::index(const std::set<std::string>& file_path){
 }
 
 void Indexer::async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
-	if(open_storage_.is_skipped(file_path)){
-		log_->info() << "Skipping " << file_path;
-	}else{
-		session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback){
-			auto meta = make_Meta(file_path);
-			AbstractDirectory::SignedMeta smeta = sign(meta);
-			index_.put_Meta(smeta);
-
-			Meta m; m.parse(meta);
-
-			auto path_hmac = m.path_id();
-
-			index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
-					{":file_path_hmac", blob(path_hmac.data(), path_hmac.data()+path_hmac.size())}
-			});
-
-			log_->debug() << "Updated index entry. Path=" << file_path << " Rev=" << m.mtime();
-
-			session_.ios().dispatch(std::bind(callback, smeta));
-		}, file_path, callback));
-	}
+	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback){
+		auto smeta = index(file_path);
+		session_.ios().dispatch(std::bind(callback, smeta));
+	}, file_path, callback));
 }
 
 void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
@@ -80,81 +73,102 @@ void Indexer::async_index(const std::set<std::string>& file_path, std::function<
 		async_index(file_path1, callback);
 }
 
-blob Indexer::make_Meta(const std::string& relpath){
+Meta Indexer::make_Meta(const std::string& relpath){
 	Meta meta;
 	auto abspath = fs::absolute(relpath, dir_.open_path());
 
-	// Path_HMAC
-	blob path_hmac = open_storage_.make_path_hmac(relpath);
-	//meta.set_path_hmac(path_hmac.data(), path_hmac.size());
-	meta.set_path_id(path_hmac);
-
-	// EncPath_IV
-	blob encpath_iv(16);
-	CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(encpath_iv.data(), encpath_iv.size());
-	//meta.set_encpath_iv(encpath_iv.data(), encpath_iv.size());
-	meta.set_encrypted_path_iv(encpath_iv);
-
-	// EncPath
-	auto encpath = relpath | crypto::AES_CBC(key_.get_Encryption_Key(), encpath_iv);
-	//meta.set_encpath(encpath.data(), encpath.size());
-	meta.set_encrypted_path(encpath);
+	// Path ID aka HMAC of relpath aka SHA3(key | relpath);
+	meta.set_path_id(open_storage_.make_path_id(relpath));
+	// Encrypted path with IV
+	meta.set_path(relpath, key_);
 
 	// Type
-	auto file_status = fs::symlink_status(abspath);
+	fs::file_status file_status = dir_.dir_options().get("preserve_symlinks", true) ? fs::symlink_status(abspath) : fs::status(abspath);	// Preserves symlinks if such option is set.
+
 	switch(file_status.type()){
-	case fs::regular_file: {
-		// Add FileMeta for files
-		meta.set_meta_type(Meta::FILE);
+		case fs::regular_file: meta.set_meta_type(Meta::FILE); break;
+		case fs::directory_file: meta.set_meta_type(Meta::DIRECTORY); break;
+		case fs::symlink_file: meta.set_meta_type(Meta::SYMLINK); break;
+		case fs::file_not_found: meta.set_meta_type(Meta::DELETED); break;
+		default: throw unsupported_filetype();
+	}
 
-		cryptodiff::FileMap filemap(key_.get_Encryption_Key());
-		try {
-			auto old_smeta = index_.get_Meta(path_hmac);
-			Meta old_meta; old_meta.ParseFromArray(old_smeta.meta.data(), old_smeta.meta.size());	// Trying to retrieve Meta from database. May throw.
-			//auto map = old_meta.filemap();
-			filemap.from_string(old_meta.filemap().SerializeAsString());
-			filemap.update(abspath.native());
-		}catch(Index::no_such_meta& e){
-			filemap.create(abspath.native());
+	if(meta.meta_type() != Meta::DELETED){
+		try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
+			Meta old_meta(index_.get_Meta(meta.path_id()).meta);
+
+			// Preserve old values of attributes
+			meta.set_windows_attrib(old_meta.windows_attrib());
+			meta.set_mode(old_meta.mode());
+			meta.set_uid(old_meta.uid());
+			meta.set_gid(old_meta.gid());
+
+			if(meta.meta_type() == Meta::FILE){
+				// Update FileMap
+				cryptodiff::FileMap filemap = old_meta.filemap(key_);
+				filemap.update(abspath.native());
+				meta.set_filemap(filemap);
+			}
+		}catch(...){
+			if(meta.meta_type() == Meta::FILE){
+				// Create FileMap, if something got wrong
+				cryptodiff::FileMap filemap(key_.get_Encryption_Key());
+				filemap.set_strong_hash_type(get_strong_hash_type());
+				filemap.create(abspath.native());
+				meta.set_filemap(filemap);
+			}
 		}
-		meta.mutable_filemap()->ParseFromString(filemap.to_string());	// TODO: Amazingly dirty.
-	} break;
-	case fs::directory_file: {
-		meta.set_type(Meta::FileType::Meta_FileType_DIRECTORY);
-	} break;
-	case fs::symlink_file: {
-		meta.set_type(Meta::FileType::Meta_FileType_SYMLINK);
-		meta.set_symlink_to(fs::read_symlink(abspath).generic_string());	// TODO: Make it optional #symlink
-	} break;
-	case fs::file_not_found: {
-		meta.set_type(Meta::FileType::Meta_FileType_DELETED);
-	} break;
-	}
 
-	if(meta.type() != Meta::FileType::Meta_FileType_DELETED){
-		meta.set_mtime(fs::last_write_time(abspath));	// mtime
+		if(meta.meta_type() == Meta::SYMLINK){
+			// Symlink path = encrypted symlink destination.
+			meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), key_);
+		}else{
+			// File modification time
+			meta.set_mtime(fs::last_write_time(abspath));	// TODO: make analogue function for symlinks. Use boost::filesystem::last_write_time as a template. lstat for Unix and GetFileAttributesEx for Windows.
+		}
+
+		// Write new values of attributes (if enabled in config)
 #if BOOST_OS_WINDOWS
-		meta.set_windows_attrib(GetFileAttributes(relpath.native().c_str()));	// Windows attributes (I don't have Windows now to test it)
+		if(dir_.dir_options().get("preserve_windows_attrib", false)){
+			meta.set_windows_attrib(GetFileAttributes(relpath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
+		}
+#elif BOOST_OS_UNIX
+		if(dir_.dir_options().get("preserve_unix_attrib", false)){
+			struct stat stat_buf; int stat_err = 0;
+			if(dir_.dir_options().get("preserve_symlinks", true))
+				stat_err = lstat(abspath.c_str(), &stat_buf);
+			else
+				stat_err = stat(abspath.c_str(), &stat_buf);
+			if(stat_err == 0){
+				meta.set_mode(stat_buf.st_mode);
+				meta.set_uid(stat_buf.st_uid);
+				meta.set_gid(stat_buf.st_gid);
+			}
+		}
 #endif
-	}else{
-		meta.set_mtime(std::time(nullptr));	// mtime
 	}
 
-	blob result_meta(meta.ByteSize()); meta.SerializeToArray(result_meta.data(), result_meta.size());
-	return result_meta;
+	// Revision
+	meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
+
+	return meta;
 }
 
-AbstractDirectory::SignedMeta Indexer::sign(const blob& meta) const {
+AbstractDirectory::SignedMeta Indexer::sign(const Meta& meta) const {
 	CryptoPP::AutoSeededRandomPool rng;
 	AbstractDirectory::SignedMeta result;
-	result.meta = meta;
+	result.meta = meta.serialize();
 
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(key_.get_Private_Key().data(), key_.get_Private_Key().size()));
 
 	result.signature.resize(signer.SignatureLength());
-	signer.SignMessage(rng, meta.data(), meta.size(), result.signature.data());
+	signer.SignMessage(rng, result.meta.data(), result.meta.size(), result.signature.data());
 	return result;
+}
+
+cryptodiff::StrongHashType Indexer::get_strong_hash_type() {
+	return cryptodiff::StrongHashType(dir_.dir_options().get<uint8_t>("block_strong_hash_type", 0));
 }
 
 } /* namespace librevault */

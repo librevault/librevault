@@ -32,8 +32,8 @@ public:
 	std::string make_relpath(const fs::path& path) const;
 	blob make_path_id(const std::string& relpath) const;
 
-	blob get_encblock(const blob& block_hash);
-	blob get_block(const blob& block_hash);
+	blob get_encblock(const blob& encrypted_data_hash);
+	blob get_block(const blob& encrypted_data_hash);
 
 	// File assembler
 	/**
@@ -67,8 +67,8 @@ private:
 
 	mutable std::set<std::string> skip_files_;
 
-	std::pair<blob, blob> get_both_blocks(const blob& block_hash);	// Returns std::pair(plaintext, encrypted)
-	std::string get_path(const blob& path_hmac);
+	std::pair<blob, blob> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
+	std::string get_path(const blob& path_id);
 };
 
 } /* namespace librevault */

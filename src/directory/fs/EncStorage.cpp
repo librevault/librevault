@@ -55,13 +55,13 @@ void EncStorage::put_encblock(const blob& encrypted_data_hash, const blob& data)
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	log_->debug() << "Encrypted block " << make_encblock_name(encrypted_data_hash) << " pushed into EncStorage";
+	log_->debug() << dir_.log_tag() << "Encrypted block " << make_encblock_name(encrypted_data_hash) << " pushed into EncStorage";
 }
 
 void EncStorage::remove_encblock(const blob& encrypted_data_hash){
 	fs::remove(make_encblock_path(encrypted_data_hash));
 
-	log_->debug() << "Block " << make_encblock_name(encrypted_data_hash) << " removed from EncStorage";
+	log_->debug() << dir_.log_tag() << "Block " << make_encblock_name(encrypted_data_hash) << " removed from EncStorage";
 }
 
 } /* namespace librevault */

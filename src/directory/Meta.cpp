@@ -36,6 +36,8 @@ std::string Meta::debug_string() const {
 		<< "meta_type: " << meta_type_ << "; "
 		<< "revision: " << revision_ << "; "
 
+		<< "mtime: " << mtime_ << "; "
+
 		<< "symlink_encrypted_path: " << crypto::Hex().to_string(symlink_encrypted_path_) << "; "
 		<< "symlink_encrypted_path_iv: " << crypto::Hex().to_string(symlink_encrypted_path_iv_) << "; "
 

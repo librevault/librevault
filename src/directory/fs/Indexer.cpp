@@ -27,7 +27,7 @@ Indexer::~Indexer() {}
 
 AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
 	if(open_storage_.is_skipped(file_path)){
-		log_->notice() << "Skipping " << file_path;
+		log_->notice() << dir_.log_tag() << "Skipping " << file_path;
 		return AbstractDirectory::SignedMeta();
 	}else
 		try{
@@ -44,18 +44,18 @@ AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
 					{":file_path_hmac", meta.path_id()}
 			});
 
-			log_->trace() << meta.debug_string();
-			log_->debug() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
+			log_->trace() << dir_.log_tag() << meta.debug_string();
+			log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
 
 			return smeta;
 		}catch(error& e){
-			log_->notice() << "Skipping " << file_path << ". Reason: " << e.what();
+			log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
 			return AbstractDirectory::SignedMeta();
 		}
 }
 
 void Indexer::index(const std::set<std::string>& file_path){
-	log_->debug() << "Preparing to index " << file_path.size() << " entries.";
+	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path)
 		index(file_path1);
 }
@@ -68,7 +68,7 @@ void Indexer::async_index(const std::string& file_path, std::function<void(Abstr
 }
 
 void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
-	log_->debug() << "Preparing to index " << file_path.size() << " entries.";
+	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path)
 		async_index(file_path1, callback);
 }

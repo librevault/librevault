@@ -23,30 +23,30 @@ OpenStorage::OpenStorage(FSDirectory& dir, Session& session) :
 		log_(spdlog::get("Librevault")), dir_(dir),
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {
 	bool open_path_created = fs::create_directories(dir_.open_path());
-	log_->debug() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
+	log_->debug() << dir_.log_tag() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
 	bool asm_path_created = fs::create_directories(dir_.asm_path().parent_path());
-	log_->debug() << "Assemble directory: " << dir_.asm_path().parent_path() << (asm_path_created ? " created" : "");
+	log_->debug() << dir_.log_tag() << "Assemble directory: " << dir_.asm_path().parent_path() << (asm_path_created ? " created" : "");
 }
 OpenStorage::~OpenStorage() {}
 
-std::string OpenStorage::get_path(const blob& path_hmac){
-	for(auto row : index_.db().exec("SELECT meta FROM files WHERE path_hmac=:path_hmac", {{":path_hmac", path_hmac}})){
-		Meta meta; meta.parse(row[0].as_blob());
+std::string OpenStorage::get_path(const blob& path_id){
+	for(auto row : index_.db().exec("SELECT meta FROM files WHERE path_id=:path_id", {{":path_id", path_id}})){
+		Meta meta(row[0].as_blob());
 		return meta.path(key_);
 	}
 	throw;
 }
 
-std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
+std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_hash){
 	auto sql_result = index_.db().exec("SELECT blocks.blocksize, blocks.iv, files.meta, openfs.[offset] FROM blocks "
-			"JOIN openfs ON blocks.encrypted_hash = openfs.block_encrypted_hash "
-			"JOIN files ON openfs.file_path_hmac = files.path_hmac "
-			"WHERE blocks.encrypted_hash=:encrypted_hash", {
-					{":encrypted_hash", block_hash}
+			"JOIN openfs ON blocks.encrypted_data_hash = openfs.encrypted_data_hash "
+			"JOIN files ON openfs.path_id = files.path_id "
+			"WHERE blocks.encrypted_data_hash=:encrypted_data_hash", {
+					{":encrypted_data_hash", encrypted_data_hash}
 			});
 
 	for(auto row : sql_result){
-		Meta meta; meta.parse(row[2].as_blob());
+		Meta meta(row[2].as_blob());
 
 		uint64_t blocksize	= row[0];
 		blob iv				= row[1];
@@ -61,54 +61,54 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& block_hash){
 			ifs.seekg(offset);
 			ifs.read(reinterpret_cast<char*>(block.data()), blocksize);
 
-			blob encblock = block | crypto::AES_CBC(key_.get_Encryption_Key(), iv, blocksize % 16 == 0 ? false : true);
+			blob encblock = cryptodiff::encrypt_block(block, key_.get_Encryption_Key(), iv);
 			// Check
-			if(verify_encblock(block_hash, encblock, meta.strong_hash_type())) return {block, encblock};
+			if(verify_encblock(encrypted_data_hash, encblock, meta.strong_hash_type())) return {block, encblock};
 		}catch(const std::ios::failure& e){}
 	}
 	throw no_such_block();
 }
 
-blob OpenStorage::get_encblock(const blob& block_hash){
+blob OpenStorage::get_encblock(const blob& encrypted_data_hash){
 	try {
-		return enc_storage_.get_encblock(block_hash);
+		return enc_storage_.get_encblock(encrypted_data_hash);
 	}catch(no_such_block& e){
-		return get_both_blocks(block_hash).second;
+		return get_both_blocks(encrypted_data_hash).second;
 	}
 }
 
-blob OpenStorage::get_block(const blob& block_hash) {
+blob OpenStorage::get_block(const blob& encrypted_data_hash) {
 	try {
-		for(auto row : index_.db().exec("SELECT iv, blocksize FROM blocks WHERE encrypted_hash=:encrypted_hash", {{":encrypted_hash", block_hash}})){
-			blob encblock = enc_storage_.get_encblock(block_hash);
-			return crypto::AES_CBC(key_.get_Encryption_Key(), row[0].as_blob(), row[1].as_uint() % 16 == 0 ? false : true).from(encblock);
+		for(auto row : index_.db().exec("SELECT iv, blocksize FROM blocks WHERE encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}})){
+			blob encblock = enc_storage_.get_encblock(encrypted_data_hash);
+			return cryptodiff::decrypt_block(encblock, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
 		}
 	}catch(no_such_block& e){
-		return get_both_blocks(block_hash).first;
+		return get_both_blocks(encrypted_data_hash).first;
 	}
 	return blob();
 }
 
 void OpenStorage::assemble(bool delete_blocks){
 	SQLiteLock raii_lock(index_.db());
-	auto blocks = index_.db().exec("SELECT files.path_hmac, openfs.\"offset\", blocks.encrypted_hash, blocks.iv "
+	auto blocks = index_.db().exec("SELECT files.path_id, openfs.\"offset\", blocks.encrypted_data_hash, blocks.iv "
 			"FROM openfs "
-			"JOIN files ON openfs.file_path_hmac=files.path_hmac "
-			"JOIN blocks ON openfs.block_encrypted_hash=blocks.encrypted_hash "
+			"JOIN files ON openfs.path_if=files.path_if "
+			"JOIN blocks ON openfs.encrypted_data_hash=blocks.encrypted_data_hash "
 			"WHERE assembled=0");
 	std::map<blob, std::map<uint64_t, std::pair<blob, blob>>> write_blocks;
 	for(auto row : blocks){
-		blob path_hmac = row[0].as_blob();
+		blob path_id = row[0].as_blob();
 		uint64_t offset = row[1].as_uint();
-		blob enchash = row[2].as_blob();
-		blob enchash_iv = row[3].as_blob();
-		write_blocks[path_hmac][offset] = {enchash, enchash_iv};
+		blob encrypted_data_hash = row[2].as_blob();
+		blob encrypted_data_hash_iv = row[3].as_blob();
+		write_blocks[path_id][offset] = {encrypted_data_hash, encrypted_data_hash_iv};
 	}
 
 	for(auto file : write_blocks){
 		fs::ofstream ofs(dir_.asm_path(), std::ios::out | std::ios::trunc | std::ios::binary);
 
-		blob path_hmac = file.first;
+		blob path_id = file.first;
 		for(auto block : file.second){
 			//auto offset = block.first;	// Unused
 			auto block_hash = block.second.first;
@@ -119,30 +119,30 @@ void OpenStorage::assemble(bool delete_blocks){
 		}
 		ofs.close();
 
-		auto abspath = fs::absolute(get_path(path_hmac), dir_.open_path());
+		auto abspath = fs::absolute(get_path(path_id), dir_.open_path());
 		fs::remove(abspath);
 		fs::rename(dir_.asm_path(), abspath);
 
-		index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {{":file_path_hmac", path_hmac}});
+		index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
 	}
 }
 
 void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
-	blob path_hmac = make_path_id(file_path);
+	blob path_id = make_path_id(file_path);
 
-	std::list<blob> encrypted_hashes;
+	std::list<blob> block_encrypted_hashes;
 	auto blocks_data = index_.db().exec("SELECT block_encrypted_hash "
-			"FROM openfs WHERE file_path_hmac=:file_path_hmac", {
-					{":file_path_hmac", path_hmac}
+			"FROM openfs WHERE path_id=:path_id", {
+					{":path_id", path_id}
 			});
 	for(auto row : blocks_data)
-		encrypted_hashes.push_back(row[0]);
-	for(auto encrypted_hash : encrypted_hashes)
-		enc_storage_.put_encblock(encrypted_hash, get_encblock(encrypted_hash));
+		block_encrypted_hashes.push_back(row[0]);
+	for(auto block_encrypted_hash : block_encrypted_hashes)
+		enc_storage_.put_encblock(block_encrypted_hash, get_encblock(block_encrypted_hash));
 
 	if(delete_file){
 		index_.db().exec("UPDATE openfs SET assembled=0 WHERE file_path_hmac=:path_hmac", {
-				{":path_hmac", path_hmac}
+				{":path_hmac", path_id}
 		});
 		fs::remove(fs::absolute(file_path, dir_.open_path()));
 	}

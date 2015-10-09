@@ -50,16 +50,17 @@ void Session::init_log() {
 		std::vector<spdlog::sink_ptr> sinks;
 		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-				(log_path_.parent_path() / log_path_.stem()).native(),
+				(log_path_.parent_path() / log_path_.stem()).native(), // TODO: support filenames with multiple dots
 				log_path_.extension().native().substr(1), 5*1024*1024, 6));
 
 		log_ = std::make_shared<spdlog::logger>(version().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
-		//log_->set_level(spdlog::level::trace);
-		spdlog::set_level(spdlog::level::trace);
+		log_->set_level(spdlog::level::trace);
 	}
 
 	cryptodiff::set_logger(log_);
+
+	log_->set_pattern("[%Y-%m-%d %T.%e] [T:%t] [%n] [%l] %v");
 
 	log_->info() << version().name() << " " << version().version_string();
 }

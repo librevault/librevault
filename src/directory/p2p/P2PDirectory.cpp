@@ -168,12 +168,13 @@ void P2PDirectory::handle_message() {
 		} break;
 		case AbstractParser::BLOCK_REQUEST: {
 			AbstractParser::BlockRequest block_request = parser_->parse_block_request(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received block_request " << block_id_readable(block_request.block_id);
+			log_->debug() << log_tag() << "Received block_request " << encrypted_data_hash_readable(block_request
+																										.block_id);
 			directory_ptr_.lock()->request_block(shared_from_this(), block_request.block_id);
 		} break;
 		case AbstractParser::BLOCK: {
 			AbstractParser::Block block = parser_->parse_block(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received block " << block_id_readable(block.block_id);
+			log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(block.block_id);
 			directory_ptr_.lock()->post_block(shared_from_this(), block.block_id, block.block_content);
 		} break;
 		default: throw protocol_error();
@@ -220,7 +221,7 @@ void P2PDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, cons
 	AbstractParser::BlockRequest block_request;
 	block_request.block_id = block_id;
 
-	log_->debug() << log_tag() << "Requesting block " << block_id_readable(block_id);
+	log_->debug() << log_tag() << "Requesting block " << encrypted_data_hash_readable(block_id);
 	connection_->send(parser_->gen_block_request(block_request), []{});
 }
 
@@ -229,7 +230,7 @@ void P2PDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const b
 	block_message.block_id = block_id;
 	block_message.block_content = block;
 
-	log_->debug() << log_tag() << "Posting block " << block_id_readable(block_id);
+	log_->debug() << log_tag() << "Posting block " << encrypted_data_hash_readable(block_id);
 	connection_->send(parser_->gen_block(block_message), []{});
 }
 

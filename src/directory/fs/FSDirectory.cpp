@@ -104,15 +104,13 @@ void FSDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const 
 void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) {
 	log_->debug() << log_tag() << "Received Meta from " << origin->name();
 
-	Meta m; m.parse(smeta.meta);
+	Meta meta(smeta.meta);
 
 	// Check for zero-length file. If zero-length and key <= ReadOnly, then assemble.
-
-
-
 	index->put_Meta(smeta);	// FIXME: Check revision number, actually
+	open_storage->assemble(meta, true);
 
-	for(auto missing_block : get_missing_blocks(m.path_id())){
+	for(auto missing_block : get_missing_blocks(meta.path_id())){
 		origin->request_block(shared_from_this(), missing_block);
 	}
 }
@@ -122,19 +120,22 @@ void FSDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, const
 	if(open_storage){
 		try {
 			auto block = open_storage->get_encblock(block_id);
-			log_->debug() << log_tag() << "Block " << block_id_readable(block_id) << " found and will be sent to " << origin->name();
+			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " found and will be sent to " << origin->name();
 			origin->post_block(shared_from_this(), block_id, block);
 		}catch(AbstractStorage::no_such_block& e){
-			log_->debug() << log_tag() << "Block " << block_id_readable(block_id) << " not found";
+			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " not found";
 		}
 	}
 }
 
-void FSDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block) {
-	log_->debug() << log_tag() << "Received block " << block_id_readable(block_id) << " from " << origin->name();
-	enc_storage->put_encblock(block_id, block);	// FIXME: Check hash!!
+void FSDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const blob& encrypted_data_hash, const blob& block) {
+	log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(encrypted_data_hash) << " from " << origin->name();
+	enc_storage->put_encblock(encrypted_data_hash, block);	// FIXME: Check hash!!
 	if(open_storage){
-		open_storage->assemble(true);
+		for(auto& smeta : index->containing_block(encrypted_data_hash)) {
+			Meta meta(smeta.meta);
+			open_storage->assemble(meta, true);
+		}
 	}
 }
 

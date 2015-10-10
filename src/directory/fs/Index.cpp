@@ -52,15 +52,15 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 
 		uint64_t offset = 0;
 		for(auto block : meta.blocks()){
-			db_->exec("INSERT OR IGNORE INTO blocks (encrypted_hash, blocksize, iv) VALUES (:encrypted_hash, :blocksize, :iv);", {
-					{":encrypted_hash", block.encrypted_data_hash_},
+			db_->exec("INSERT OR IGNORE INTO blocks (block_encrypted_hash, blocksize, iv) VALUES (:block_encrypted_hash, :blocksize, :iv);", {
+					{":block_encrypted_hash", block.encrypted_data_hash_},
 					{":blocksize", (uint64_t)block.blocksize_},
 					{":iv", block.iv_}
 			});
 
-			db_->exec("INSERT INTO openfs (block_encrypted_hash, file_path_hmac, [offset]) VALUES (:block_encrypted_hash, :file_path_hmac, :offset);", {
+			db_->exec("INSERT INTO openfs (block_encrypted_hash, path_id, [offset]) VALUES (:block_encrypted_hash, :path_id, :offset);", {
 					{":block_encrypted_hash", block.encrypted_data_hash_},
-					{":file_path_hmac", meta.path_id()},
+					{":path_id", meta.path_id()},
 					{":offset", (uint64_t)offset}
 			});
 
@@ -78,8 +78,8 @@ std::list<Index::SignedMeta> Index::get_Meta(std::string sql, std::map<std::stri
 	return result_list;
 }
 Index::SignedMeta Index::get_Meta(const blob& path_id){
-	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_hmac=:path_hmac LIMIT 1", {
-			{":path_hmac", path_id}
+	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_id=:path_id LIMIT 1", {
+			{":path_id", path_id}
 	});
 
 	if(meta_list.empty()) throw no_such_meta();
@@ -87,6 +87,10 @@ Index::SignedMeta Index::get_Meta(const blob& path_id){
 }
 std::list<Index::SignedMeta> Index::get_Meta(){
 	return get_Meta("SELECT meta, signature FROM files");
+}
+
+std::list<Index::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {
+	return get_Meta("SELECT meta, signature FROM files WHERE path_id=:path_id", {{":path_id", encrypted_data_hash}});
 }
 
 } /* namespace librevault */

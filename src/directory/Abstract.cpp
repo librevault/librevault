@@ -27,7 +27,7 @@ std::string AbstractDirectory::path_id_readable(const blob& path_id) const {
 	return crypto::Base32().to_string(path_id);
 }
 
-std::string AbstractDirectory::block_id_readable(const blob& block_id) const {
+std::string AbstractDirectory::encrypted_data_hash_readable(const blob& block_id) const {
 	return crypto::Base32().to_string(block_id);
 }
 

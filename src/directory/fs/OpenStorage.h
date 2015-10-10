@@ -25,6 +25,15 @@ namespace librevault {
 class FSDirectory;
 class OpenStorage : public AbstractStorage {
 public:
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("OpenStorage error") {}
+	};
+
+	struct assemble_error : error {
+		assemble_error() : error("Error during assembling file") {}
+	};
+
 	OpenStorage(FSDirectory& dir, Session& session);
 	virtual ~OpenStorage();
 
@@ -40,13 +49,13 @@ public:
 	 * Searches for unassembled files ready to be assembled and assembles them
 	 * @param delete_blocks
 	 */
-	void assemble(bool delete_blocks = true);
+	void assemble(const Meta& meta, bool delete_blocks = true);
 	/**
 	 * Tries to split unencrypted file into separate encrypted blocks, pushing them into EncStorage.
 	 * @param file_path
 	 * @param delete_file
 	 */
-	void disassemble(const std::string& file_path, bool delete_file = true);
+	//void disassemble(const std::string& file_path, bool delete_file = true);
 
 	bool is_skipped(const std::string& relpath) const;
 

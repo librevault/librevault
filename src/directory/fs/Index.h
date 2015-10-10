@@ -42,6 +42,8 @@ public:
 	SignedMeta get_Meta(const blob& path_id);
 	std::list<SignedMeta> get_Meta();
 
+	std::list<SignedMeta> containing_block(const blob& encrypted_data_hash);
+
 	SQLiteDB& db() {return *db_;}
 
 private:

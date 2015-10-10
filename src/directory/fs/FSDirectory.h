@@ -35,7 +35,7 @@ public:
 	void attach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
 	void detach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
 
-	std::list<blob> get_missing_blocks(const blob& path_id);
+	std::list<blob> get_missing_blocks(const blob& encrypted_data_hash);
 
 	// AbstractDirectory actions
 	std::vector<Meta::PathRevision> get_meta_list();
@@ -44,7 +44,7 @@ public:
 	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
 	void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta);
 	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
-	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block);
+	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& encrypted_data_hash, const blob& block);
 
 	// Getters
 	const ptree& dir_options() const {return dir_options_;}

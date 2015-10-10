@@ -89,44 +89,74 @@ blob OpenStorage::get_block(const blob& encrypted_data_hash) {
 	return blob();
 }
 
-void OpenStorage::assemble(bool delete_blocks){
-	SQLiteLock raii_lock(index_.db());
-	auto blocks = index_.db().exec("SELECT files.path_id, openfs.\"offset\", blocks.encrypted_data_hash, blocks.iv "
-			"FROM openfs "
-			"JOIN files ON openfs.path_if=files.path_if "
-			"JOIN blocks ON openfs.encrypted_data_hash=blocks.encrypted_data_hash "
-			"WHERE assembled=0");
-	std::map<blob, std::map<uint64_t, std::pair<blob, blob>>> write_blocks;
-	for(auto row : blocks){
-		blob path_id = row[0].as_blob();
-		uint64_t offset = row[1].as_uint();
-		blob encrypted_data_hash = row[2].as_blob();
-		blob encrypted_data_hash_iv = row[3].as_blob();
-		write_blocks[path_id][offset] = {encrypted_data_hash, encrypted_data_hash_iv};
-	}
+void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
+	fs::path file_path = fs::absolute(meta.path(key_), dir_.open_path());
 
-	for(auto file : write_blocks){
-		fs::ofstream ofs(dir_.asm_path(), std::ios::out | std::ios::trunc | std::ios::binary);
+	if(meta.meta_type() == Meta::DELETED) {
+		if(fs::is_empty(file_path))
+			fs::remove_all(file_path);
+		else if(fs::status(file_path).type() != fs::directory_file)
+			fs::remove(file_path);
+	}else{
+		switch(meta.meta_type()) {
+			case Meta::SYMLINK: {
+				fs::remove_all(file_path);
+				fs::create_symlink(meta.symlink_path(key_), file_path);
+			} break;
+			case Meta::DIRECTORY: {
+				fs::remove(file_path);
+				fs::create_directories(file_path);
+			} break;
+			case Meta::FILE: {
+				SQLiteLock raii_lock(index_.db());
 
-		blob path_id = file.first;
-		for(auto block : file.second){
-			//auto offset = block.first;	// Unused
-			auto block_hash = block.second.first;
-			auto iv = block.second.second;
+				auto blocks = index_.db().exec("SELECT openfs.\"offset\", blocks.encrypted_data_hash, blocks.iv "
+												"FROM openfs "
+												"JOIN blocks ON openfs.encrypted_data_hash=blocks.encrypted_data_hash "
+												"WHERE assembled=0 AND openfs.path_id=:path_id ORDER BY openfs.\"offset\" ASC", {{":path_id", meta.path_id()}});
 
-			blob block_data = get_block(block_hash);
-			ofs.write((const char*)block_data.data(), block_data.size());
+				fs::ofstream ofs(dir_.asm_path(), std::ios::out | std::ios::trunc | std::ios::binary);
+
+				std::vector<blob> pending_remove;
+				for(auto row : blocks){
+					//uint64_t offset = row[0].as_uint();
+					blob encrypted_data_hash = row[1].as_blob();
+					blob iv = row[2].as_blob();
+
+					blob block_data = get_block(encrypted_data_hash);
+
+					ofs.write((const char*)block_data.data(), block_data.size());
+					pending_remove.push_back(encrypted_data_hash);
+				}
+
+				fs::remove(file_path);
+				fs::rename(dir_.asm_path(), file_path);
+
+				index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+
+				if(delete_blocks){
+					for(auto& encrypted_data_hash : pending_remove) {
+						enc_storage_.remove_encblock(encrypted_data_hash);
+					}
+				}
+			} break;
+			default: throw assemble_error();
 		}
-		ofs.close();
 
-		auto abspath = fs::absolute(get_path(path_id), dir_.open_path());
-		fs::remove(abspath);
-		fs::rename(dir_.asm_path(), abspath);
+#if BOOST_OS_UNIX
+		if(dir_.dir_options().get("preserve_unix_attrib", false)){
+			if(meta.meta_type() != Meta::SYMLINK) {
+				(void)chmod(file_path.c_str(), meta.mode());
+				(void)chown(file_path.c_str(), meta.uid(), meta.gid());
+				fs::last_write_time(file_path, meta.mtime());
+			}
+		}
+#elif BOOST_OS_WINDOWS
 
-		index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
+#endif
 	}
 }
-
+/*
 void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 	blob path_id = make_path_id(file_path);
 
@@ -147,7 +177,7 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 		fs::remove(fs::absolute(file_path, dir_.open_path()));
 	}
 }
-
+*/
 std::string OpenStorage::make_relpath(const fs::path& path) const {
 	fs::path rel_to = dir_.open_path();
 	auto abspath = fs::absolute(path);

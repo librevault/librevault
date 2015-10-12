@@ -37,6 +37,19 @@ std::string OpenStorage::get_path(const blob& path_id){
 	throw;
 }
 
+bool OpenStorage::have_block(const blob& encrypted_data_hash) {
+	if(enc_storage_.have_encblock(encrypted_data_hash)) return true;
+
+	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
+										   "WHERE encrypted_data_hash=:encrypted_data_hash", {
+										   {":encrypted_data_hash", encrypted_data_hash}
+									   });
+	for(auto row : sql_result) {
+		if(row[0].as_int() > 0) return true;
+	}
+	return false;
+}
+
 std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_hash){
 	auto sql_result = index_.db().exec("SELECT blocks.blocksize, blocks.iv, files.meta, openfs.[offset] FROM blocks "
 			"JOIN openfs ON blocks.encrypted_data_hash = openfs.encrypted_data_hash "
@@ -83,19 +96,23 @@ blob OpenStorage::get_block(const blob& encrypted_data_hash) {
 			blob encblock = enc_storage_.get_encblock(encrypted_data_hash);
 			return cryptodiff::decrypt_block(encblock, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
 		}
+		throw no_such_block();
 	}catch(no_such_block& e){
 		return get_both_blocks(encrypted_data_hash).first;
 	}
-	return blob();
 }
 
 void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 	fs::path file_path = fs::absolute(meta.path(key_), dir_.open_path());
 
 	if(meta.meta_type() == Meta::DELETED) {
-		if(fs::is_empty(file_path))
+		auto file_type = fs::symlink_status(file_path).type();
+
+		if(file_type == fs::symlink_file || file_type == fs::directory_file || file_type == fs::file_not_found)
+			fs::remove(file_path);
+		else if(fs::is_empty(file_path))
 			fs::remove_all(file_path);
-		else if(fs::status(file_path).type() != fs::directory_file)
+		else
 			fs::remove(file_path);
 	}else{
 		switch(meta.meta_type()) {
@@ -108,8 +125,12 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 				fs::create_directories(file_path);
 			} break;
 			case Meta::FILE: {
-				SQLiteLock raii_lock(index_.db());
+				for(auto block : meta.blocks()){
+					if(! have_block(block.encrypted_data_hash_)) throw no_such_block();
+				}
 
+				SQLiteLock raii_lock(index_.db());
+				// Check for assembled blocks and try to extract them and push into encstorage.
 				auto blocks = index_.db().exec("SELECT openfs.\"offset\", blocks.encrypted_data_hash, blocks.iv "
 												"FROM openfs "
 												"JOIN blocks ON openfs.encrypted_data_hash=blocks.encrypted_data_hash "

@@ -41,6 +41,7 @@ public:
 	std::string make_relpath(const fs::path& path) const;
 	blob make_path_id(const std::string& relpath) const;
 
+	bool have_block(const blob& encrypted_data_hash);
 	blob get_encblock(const blob& encrypted_data_hash);
 	blob get_block(const blob& encrypted_data_hash);
 

@@ -48,7 +48,7 @@ AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
 			log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
 
 			return smeta;
-		}catch(error& e){
+		}catch(std::runtime_error& e){
 			log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
 			return AbstractDirectory::SignedMeta();
 		}
@@ -62,6 +62,7 @@ void Indexer::index(const std::set<std::string>& file_path){
 
 void Indexer::async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
 	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback){
+
 		auto smeta = index(file_path);
 		session_.ios().dispatch(std::bind(callback, smeta));
 	}, file_path, callback));

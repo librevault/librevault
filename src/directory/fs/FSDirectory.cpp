@@ -73,8 +73,8 @@ std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {
 void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
 	try {
 		SignedMeta smeta = index->get_Meta(revision.path_id_);
-		Meta meta; meta.parse(smeta.meta);
-		if(meta.revision() == revision.revision_){
+		Meta meta(smeta.meta);
+		if(meta.revision() == revision.revision_) {
 			auto missing_blocks = get_missing_blocks(revision.path_id_);
 			if(!missing_blocks.empty()){
 				log_->debug() << log_tag() << "Missing " << missing_blocks.size() << " blocks in " << path_id_readable(revision.path_id_);
@@ -82,8 +82,9 @@ void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const
 					origin->request_block(shared_from_this(), missing_block);
 				}
 			}
-		}else{
-
+		}else if(meta.revision() < revision.revision_) {
+			log_->debug() << log_tag() << "Requesting new revision of " << path_id_readable(revision.path_id_);
+			origin->request_meta(shared_from_this(), revision.path_id_);
 		}
 	}catch(Index::no_such_meta& e){
 		log_->debug() << log_tag() << "Meta " << path_id_readable(revision.path_id_) << " not found";
@@ -108,15 +109,17 @@ void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Sig
 
 	// Check for zero-length file. If zero-length and key <= ReadOnly, then assemble.
 	index->put_Meta(smeta);	// FIXME: Check revision number, actually
-	open_storage->assemble(meta, true);
-
-	for(auto missing_block : get_missing_blocks(meta.path_id())){
-		origin->request_block(shared_from_this(), missing_block);
+	try {
+		open_storage->assemble(meta, true);
+	}catch(AbstractStorage::no_such_block& e) {
+		for(auto missing_block : get_missing_blocks(meta.path_id())) {
+			origin->request_block(shared_from_this(), missing_block);
+		}
 	}
 }
 
 void FSDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id) {
-	log_->debug() << log_tag() << "Received meta_request from " << origin->name();
+	log_->debug() << log_tag() << "Received block_request from " << origin->name();
 	if(open_storage){
 		try {
 			auto block = open_storage->get_encblock(block_id);
@@ -134,14 +137,18 @@ void FSDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const bl
 	if(open_storage){
 		for(auto& smeta : index->containing_block(encrypted_data_hash)) {
 			Meta meta(smeta.meta);
-			open_storage->assemble(meta, true);
+			try {
+				open_storage->assemble(meta, true);
+			}catch(AbstractStorage::no_such_block& e){
+				log_->debug() << log_tag() << "Not enough blocks for assembling " << encrypted_data_hash_readable(encrypted_data_hash);
+			}
 		}
 	}
 }
 
 std::list<blob> FSDirectory::get_missing_blocks(const blob& path_id) {
-	auto sql_result = index->db().exec("SELECT block_encrypted_hash FROM openfs WHERE file_path_hmac=:file_path_hmac AND assembled=0", {
-					{":file_path_hmac", path_id}
+	auto sql_result = index->db().exec("SELECT encrypted_data_hash FROM openfs WHERE path_id=:path_id AND assembled=0", {
+					{":path_id", path_id}
 			});
 
 	std::list<blob> missing_blocks;

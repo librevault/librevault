@@ -52,14 +52,14 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 
 		uint64_t offset = 0;
 		for(auto block : meta.blocks()){
-			db_->exec("INSERT OR IGNORE INTO blocks (block_encrypted_hash, blocksize, iv) VALUES (:block_encrypted_hash, :blocksize, :iv);", {
-					{":block_encrypted_hash", block.encrypted_data_hash_},
+			db_->exec("INSERT OR IGNORE INTO blocks (encrypted_data_hash, blocksize, iv) VALUES (:encrypted_data_hash, :blocksize, :iv);", {
+					{":encrypted_data_hash", block.encrypted_data_hash_},
 					{":blocksize", (uint64_t)block.blocksize_},
 					{":iv", block.iv_}
 			});
 
-			db_->exec("INSERT INTO openfs (block_encrypted_hash, path_id, [offset]) VALUES (:block_encrypted_hash, :path_id, :offset);", {
-					{":block_encrypted_hash", block.encrypted_data_hash_},
+			db_->exec("INSERT INTO openfs (encrypted_data_hash, path_id, [offset]) VALUES (:encrypted_data_hash, :path_id, :offset);", {
+					{":encrypted_data_hash", block.encrypted_data_hash_},
 					{":path_id", meta.path_id()},
 					{":offset", (uint64_t)offset}
 			});
@@ -67,7 +67,7 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 			offset += block.blocksize_;
 		}
 
-		log_->debug() << "Added Meta of " << crypto::Base32().to_string(meta.path_id());
+		log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(meta.path_id());
 	}
 }
 
@@ -90,7 +90,7 @@ std::list<Index::SignedMeta> Index::get_Meta(){
 }
 
 std::list<Index::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {
-	return get_Meta("SELECT meta, signature FROM files WHERE path_id=:path_id", {{":path_id", encrypted_data_hash}});
+	return get_Meta("SELECT files.meta, files.signature FROM files JOIN openfs ON files.path_id=openfs.path_id WHERE openfs.encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}});
 }
 
 } /* namespace librevault */

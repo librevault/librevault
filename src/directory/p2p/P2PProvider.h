@@ -17,15 +17,21 @@
 #pragma once
 #include "../Abstract.h"
 #include "NodeKey.h"
+#include "../../net/parse_url.h"
 
 namespace librevault {
 
 class Exchanger;
 class P2PDirectory;
+class FSDirectory;
+
 class P2PProvider {
 public:
 	P2PProvider(Session& session, Exchanger& exchanger);
 	virtual ~P2PProvider();
+
+	void add_node(const url& node_url, std::shared_ptr<FSDirectory> directory);
+	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory);
 
 	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}
 	const NodeKey& node_key() const {return node_key_;}

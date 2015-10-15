@@ -15,8 +15,8 @@
  */
 #include "P2PProvider.h"
 #include "../../Session.h"
-#include "../../net/parse_url.h"
 #include "P2PDirectory.h"
+#include "../fs/FSDirectory.h"
 #include "../Key.h"
 #include "../Abstract.h"
 #include "../Exchanger.h"
@@ -55,6 +55,18 @@ P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 
 P2PProvider::~P2PProvider() {}
 
+void P2PProvider::add_node(const url& node_url, std::shared_ptr<FSDirectory> directory) {
+	auto connection = std::make_unique<Connection>(node_url, session_, *this);
+	auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
+	hash_dir_.insert(std::make_pair(directory->key().get_Hash(), socket));
+}
+
+void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory) {
+	auto connection = std::make_unique<Connection>(node_endpoint, session_, *this);
+	auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
+	hash_dir_.insert(std::make_pair(directory->key().get_Hash(), socket));
+}
+
 void P2PProvider::init_persistent() {
 	auto folder_trees = session_.config().equal_range("folder");
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
@@ -64,9 +76,7 @@ void P2PProvider::init_persistent() {
 		for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
 			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
 
-			auto connection = std::make_unique<Connection>(connection_url, session_, *this);
-			auto socket = std::make_shared<P2PDirectory>(std::move(connection), exchanger_.get_directory(k.get_Hash()), session_, exchanger_, *this);
-			hash_dir_.insert(std::make_pair(k.get_Hash(), socket));
+			add_node(connection_url, exchanger_.get_directory(k.get_Hash()));
 		}
 	}
 }

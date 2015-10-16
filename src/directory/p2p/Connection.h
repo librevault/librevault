@@ -57,6 +57,7 @@ public:
 	void send(const blob& bytes, send_handler handler);
 	void receive(std::shared_ptr<blob> buffer, receive_handler handler);
 
+	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
 	std::string remote_string() const;
 	const blob& remote_pubkey() const {return remote_pubkey_;}
 	role get_role() const {return role_;}

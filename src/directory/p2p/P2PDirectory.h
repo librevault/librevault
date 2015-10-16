@@ -47,6 +47,9 @@ public:
 	~P2PDirectory();
 
 	std::string remote_string() const {return connection_->remote_string();}
+	const blob& remote_pubkey() const {return connection_->remote_pubkey();}
+	const tcp_endpoint& remote_endpoint() const {return connection_->remote_endpoint();}
+
 	std::string name() const {return remote_string();}
 
 	blob local_token();

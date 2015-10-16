@@ -48,14 +48,32 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchang
 
 FSDirectory::~FSDirectory() {}
 
-void FSDirectory::attach_remote(std::shared_ptr<P2PDirectory> remote_ptr) {
+void FSDirectory::attach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr) {
+	std::lock_guard<std::mutex> lk(remotes_mtx_);
 	remotes_.insert(remote_ptr);
 	log_->debug() << log_tag() << "Attached remote " << remote_ptr->remote_string() << " to " << name();
 }
 
-void FSDirectory::detach_remote(std::shared_ptr<P2PDirectory> remote_ptr) {
+void FSDirectory::detach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr) {
+	std::lock_guard<std::mutex> lk(remotes_mtx_);
 	remotes_.erase(remote_ptr);
 	log_->debug() << log_tag() << "Detached remote " << remote_ptr->remote_string() << " from " << name();
+}
+
+bool FSDirectory::have_p2p_dir(const tcp_endpoint& endpoint) {
+	std::lock_guard<std::mutex> lk(remotes_mtx_);
+	for(auto& it : remotes_){
+		if(it->remote_endpoint() == endpoint) return true;
+	}
+	return false;
+}
+
+bool FSDirectory::have_p2p_dir(const blob& pubkey) {
+	std::lock_guard<std::mutex> lk(remotes_mtx_);
+	for(auto& it : remotes_){
+		if(it->remote_pubkey() == pubkey) return true;
+	}
+	return false;
 }
 
 std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {

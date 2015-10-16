@@ -32,8 +32,11 @@ public:
 	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger);
 	virtual ~FSDirectory();
 
-	void attach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
-	void detach_remote(std::shared_ptr<P2PDirectory> remote_ptr);
+	// Remote management
+	void attach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr);
+	void detach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr);
+	bool have_p2p_dir(const tcp_endpoint& endpoint);
+	bool have_p2p_dir(const blob& pubkey);
 
 	std::list<blob> get_missing_blocks(const blob& encrypted_data_hash);
 
@@ -71,6 +74,7 @@ private:
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
 	std::set<std::shared_ptr<P2PDirectory>> remotes_;
+	std::mutex remotes_mtx_;
 
 	// Revision operations
 	void handle_smeta(AbstractDirectory::SignedMeta smeta);

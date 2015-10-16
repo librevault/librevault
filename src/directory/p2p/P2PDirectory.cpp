@@ -55,14 +55,14 @@ void P2PDirectory::attach(const blob& dir_hash) {
 	auto directory_sptr = exchanger_.get_directory(dir_hash);
 	if(directory_sptr){
 		directory_ptr_ = directory_sptr;
-		directory_sptr->attach_remote(shared_from_this());
+		directory_sptr->attach_p2p_dir(shared_from_this());
 		provider_.remove_from_unattached(shared_from_this());
 	}else throw directory_not_found();
 }
 
 void P2PDirectory::detach() {
 	auto directory_sptr = directory_ptr_.lock();
-	if(directory_sptr) directory_sptr->detach_remote(shared_from_this());
+	if(directory_sptr) directory_sptr->detach_p2p_dir(shared_from_this());
 }
 
 void P2PDirectory::handle_establish(Connection::state state, const boost::system::error_code& error) {

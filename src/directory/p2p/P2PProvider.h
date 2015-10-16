@@ -33,6 +33,8 @@ public:
 	void add_node(const url& node_url, std::shared_ptr<FSDirectory> directory);
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory);
 
+	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> directory);
+
 	void remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached);
 
 	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}

@@ -13,40 +13,33 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
+#include "../pch.h"
+#include "../net/parse_url.h"
 
 namespace librevault {
 
-class Session;
-
 class FSDirectory;
 class P2PProvider;
-class MulticastDiscovery;
+class Session;
+class Exchanger;
 
-class Exchanger {
+class DiscoveryService {
 public:
-	Exchanger(Session& session);
-	virtual ~Exchanger();
+	DiscoveryService(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger);
+	virtual ~DiscoveryService(){}
 
-	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
-	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
+	virtual void register_directory(std::shared_ptr<FSDirectory> dir) = 0;
+	virtual void unregister_directory(std::shared_ptr<FSDirectory> dir) = 0;
 
-	std::shared_ptr<FSDirectory> get_directory(const fs::path& path);
-	std::shared_ptr<FSDirectory> get_directory(const blob& hash);
-private:
+	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> dir);
+	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> dir);
+protected:
+	logger_ptr log_;
+
+	P2PProvider* p2p_provider_;
 	Session& session_;
-	std::shared_ptr<spdlog::logger> log_;
-
-	// Remote
-	std::unique_ptr<P2PProvider> p2p_provider_;
-
-	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
-	std::map<blob, std::shared_ptr<FSDirectory>> hash_dir_;
-
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
-
-	void add_directory(const ptree& dir_options);
+	Exchanger& exchanger_;
 };
 
 } /* namespace librevault */

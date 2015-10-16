@@ -17,6 +17,7 @@
 
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
+#include "../discovery/MulticastDiscovery.h"
 
 namespace librevault {
 
@@ -27,6 +28,9 @@ Exchanger::Exchanger(Session& session) : session_(session), log_(spdlog::get("Li
 	}
 
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+
+	multicast4_ = std::make_unique<MulticastDiscovery4>(p2p_provider_.get(), session_, *this);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(p2p_provider_.get(), session_, *this);
 }
 Exchanger::~Exchanger() {}
 
@@ -47,9 +51,16 @@ std::shared_ptr<FSDirectory> Exchanger::get_directory(const blob& hash){
 void Exchanger::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
 	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
 	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
+
+	// Did this to defer execution to moment, when multicast4_,multicast6_ is initialized
+	session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast4_->register_directory(dir_ptr);}, dir_ptr));
+	session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast6_->register_directory(dir_ptr);}, dir_ptr));
 }
 
 void Exchanger::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
+	multicast4_->unregister_directory(dir_ptr);
+	multicast6_->unregister_directory(dir_ptr);
+
 	hash_dir_.erase(dir_ptr->key().get_Hash());
 	path_dir_.erase(dir_ptr->open_path());
 }

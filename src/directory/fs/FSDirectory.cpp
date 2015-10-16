@@ -50,6 +50,12 @@ FSDirectory::~FSDirectory() {}
 
 void FSDirectory::attach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr) {
 	std::lock_guard<std::mutex> lk(remotes_mtx_);
+
+	for(auto& it : remotes_){
+		if(it->remote_endpoint() == remote_ptr->remote_endpoint()) throw attach_error();
+		if(it->remote_pubkey() == remote_ptr->remote_pubkey()) throw attach_error();
+	}
+
 	remotes_.insert(remote_ptr);
 	log_->debug() << log_tag() << "Attached remote " << remote_ptr->remote_string() << " to " << name();
 }

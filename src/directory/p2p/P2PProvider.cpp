@@ -69,6 +69,12 @@ void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FS
 	}
 }
 
+void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> directory) {
+	if(!directory->have_p2p_dir(pubkey)){
+		add_node(node_endpoint, directory);
+	}
+}
+
 void P2PProvider::remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached) {
 	unattached_connections_.erase(already_attached);
 }

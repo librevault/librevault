@@ -29,6 +29,15 @@ namespace librevault {
 class P2PDirectory;
 class FSDirectory : public AbstractDirectory, public std::enable_shared_from_this<FSDirectory> {
 public:
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("FSDirectory error") {}
+	};
+
+	struct attach_error : error {
+		attach_error() : error("Could not attach remote to FSDirectory") {}
+	};
+
 	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger);
 	virtual ~FSDirectory();
 

@@ -285,8 +285,10 @@ void P2PDirectory::send_meta_list() {
 }
 
 void P2PDirectory::disconnect(const boost::system::error_code& error) {
-	provider_.remove_from_unattached(shared_from_this());
+	auto this_shared = shared_from_this();	// To prevent deletion during execution of this function. After exiting from the scope it will do "delete this;" internally
+	connection_.reset();
 	detach();
+	provider_.remove_from_unattached(this_shared);
 	log_->debug() << "Connection to " << connection_->remote_string() << " closed: " << error.message();
 }
 

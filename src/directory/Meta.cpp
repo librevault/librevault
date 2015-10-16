@@ -14,9 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Meta.h"
-#include <unicbor/object.h>
-#include <unicbor/packer.h>
-#include <unicbor/unpacker.h>
 #include <Meta_s.pb.h>
 
 namespace librevault {
@@ -42,7 +39,7 @@ std::string Meta::debug_string() const {
 		<< "symlink_encrypted_path_iv: " << crypto::Hex().to_string(symlink_encrypted_path_iv_) << "; "
 
 		<< "windows_attrib: " << windows_attrib_ << "; "
-		<< "mode: " << mode_ << "; "
+		<< "mode: " << std::oct << mode_ << std::dec << "; "
 		<< "uid: " << uid_ << "; "
 		<< "gid: " << gid_ << "; "
 

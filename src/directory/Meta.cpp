@@ -113,6 +113,8 @@ blob Meta::serialize() const {
 	meta_s.set_meta_type((uint32_t)meta_type());
 	meta_s.set_revision(revision());
 
+	meta_s.set_mtime(mtime());
+
 	meta_s.set_symlink_encrypted_path(symlink_encrypted_path().data(), symlink_encrypted_path().size());
 	meta_s.set_symlink_encrypted_path_iv(symlink_encrypted_path_iv().data(), symlink_encrypted_path_iv().size());
 
@@ -151,6 +153,8 @@ void Meta::parse(const blob &serialized_data) {
 	encrypted_path_iv_.assign(meta_s.encrypted_path_iv().begin(), meta_s.encrypted_path_iv().end());
 	meta_type_ = (Type)meta_s.meta_type();
 	revision_ = (int64_t)meta_s.revision();
+
+	mtime_ = (int64_t)meta_s.mtime();
 
 	symlink_encrypted_path_.assign(meta_s.symlink_encrypted_path().begin(), meta_s.symlink_encrypted_path().end());
 	symlink_encrypted_path_iv_.assign(meta_s.symlink_encrypted_path_iv().begin(), meta_s.symlink_encrypted_path_iv().end());

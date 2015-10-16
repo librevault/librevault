@@ -35,6 +35,9 @@ public:
 	struct protocol_error : public error {
 		protocol_error() : error("Protocol error") {}
 	};
+	struct auth_error : public error {
+		auth_error() : error("Remote node couldn't verify its authenticity") {}
+	};
 	struct directory_not_found : public error {
 		directory_not_found() : error("Local directory not found") {}
 	};

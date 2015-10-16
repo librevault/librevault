@@ -58,13 +58,17 @@ P2PProvider::~P2PProvider() {}
 void P2PProvider::add_node(const url& node_url, std::shared_ptr<FSDirectory> directory) {
 	auto connection = std::make_unique<Connection>(node_url, session_, *this);
 	auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
-	hash_dir_.insert(std::make_pair(directory->key().get_Hash(), socket));
+	unattached_connections_.insert(socket);
 }
 
 void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory) {
 	auto connection = std::make_unique<Connection>(node_endpoint, session_, *this);
 	auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
-	hash_dir_.insert(std::make_pair(directory->key().get_Hash(), socket));
+	unattached_connections_.insert(socket);
+}
+
+void P2PProvider::remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached) {
+	unattached_connections_.erase(already_attached);
 }
 
 void P2PProvider::init_persistent() {
@@ -90,7 +94,7 @@ void P2PProvider::accept_operation() {
 
 		auto connection = std::make_unique<Connection>(std::unique_ptr<ssl_socket>(socket_ptr), session_, *this);
 		auto accepted_dir = std::make_shared<P2PDirectory>(std::move(connection), session_, exchanger_, *this);
-		unassigned_connections_.insert(accepted_dir);
+		unattached_connections_.insert(accepted_dir);
 
 		accept_operation();
 	}, socket_ptr, std::placeholders::_1));

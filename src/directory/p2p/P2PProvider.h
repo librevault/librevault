@@ -33,6 +33,8 @@ public:
 	void add_node(const url& node_url, std::shared_ptr<FSDirectory> directory);
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory);
 
+	void remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached);
+
 	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}
 	const NodeKey& node_key() const {return node_key_;}
 	boost::asio::ssl::context& ssl_ctx() {return ssl_ctx_;}
@@ -44,8 +46,7 @@ private:
 
 	NodeKey node_key_;
 
-	std::multimap<blob, std::shared_ptr<P2PDirectory>> hash_dir_;
-	std::set<std::shared_ptr<P2PDirectory>> unassigned_connections_;
+	std::set<std::shared_ptr<P2PDirectory>> unattached_connections_;
 
 	boost::asio::ssl::context ssl_ctx_;
 	boost::asio::ip::tcp::acceptor acceptor_;

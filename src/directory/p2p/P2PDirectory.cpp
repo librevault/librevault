@@ -56,6 +56,7 @@ void P2PDirectory::attach(const blob& dir_hash) {
 	if(directory_sptr){
 		directory_ptr_ = directory_sptr;
 		directory_sptr->attach_remote(shared_from_this());
+		provider_.remove_from_unattached(shared_from_this());
 	}else throw directory_not_found();
 }
 
@@ -101,84 +102,102 @@ void P2PDirectory::receive_data() {
 }
 
 void P2PDirectory::handle_message() {
-	if(awaiting_next_ != AWAITING_ANY){
-		// Handshake sequence
+	try {
+		if(awaiting_next_ != AWAITING_ANY){
+			// Handshake sequence
 
-		switch(awaiting_next_){
-		case AWAITING_PROTOCOL_TAG: {
-			protocol_tag packet;
-			std::copy(receive_buffer_->begin(), receive_buffer_->end(), (byte*)&packet);
+			switch(awaiting_next_) {
+				case AWAITING_PROTOCOL_TAG: {
+					protocol_tag packet;
+					std::copy(receive_buffer_->begin(), receive_buffer_->end(), (byte*)&packet);
 
-			if(packet.pstrlen != pstr.size() || packet.pstr != pstr || packet.version != version)
-				throw protocol_error();
+					if(packet.pstrlen != pstr.size() || packet.pstr != pstr || packet.version != version)
+						throw protocol_error();
 
-			log_->debug() << log_tag() << "Received correct protocol_tag";
+					log_->debug() << log_tag() << "Received correct protocol_tag";
 
-			awaiting_next_ = AWAITING_HANDSHAKE;
-			if(connection_->get_role() == Connection::role::CLIENT){
-				log_->debug() << "Now we will send handshake message";
-				send_handshake();
-			}else{
-				log_->debug() << "Now we will wait for handshake message";
+					awaiting_next_ = AWAITING_HANDSHAKE;
+					if(connection_->get_role() == Connection::role::CLIENT){
+						log_->debug() << "Now we will send handshake message";
+						send_handshake();
+					}else {
+						log_->debug() << "Now we will wait for handshake message";
+					}
+				}
+					break;
+				case AWAITING_HANDSHAKE: {
+					AbstractParser::Handshake handshake = parser_->parse_handshake(*receive_buffer_);    // Must check message_type and so on.
+
+					attach(handshake.dir_hash);
+					if(handshake.auth_token != remote_token()) throw auth_error();
+
+					if(connection_->get_role() == Connection::SERVER) send_handshake();
+
+					log_->debug() << log_tag() << "LV Handshake successful";
+					awaiting_next_ = AWAITING_ANY;
+
+					send_meta_list();
+				}
+					break;
+				default: throw protocol_error();
 			}
-		} break;
-		case AWAITING_HANDSHAKE: {
-			AbstractParser::Handshake handshake = parser_->parse_handshake(*receive_buffer_);	// Must check message_type and so on.
+		}else {
+			// Regular message flow
 
-			attach(handshake.dir_hash);
-			// TODO: Check remote_token
+			AbstractParser::message_type message_type;
+			if(receive_buffer_->empty())
+				message_type = AbstractParser::KEEP_ALIVE;
+			else
+				message_type = (AbstractParser::message_type)receive_buffer_->at(0);
 
-			if(connection_->get_role() == Connection::SERVER) send_handshake();
+			switch(message_type) {
+				case AbstractParser::META_LIST: {
+					log_->debug() << log_tag() << "Received meta_list";
+					AbstractParser::MetaList
+						meta_list = parser_->parse_meta_list(*receive_buffer_);    // Must check message_type and so on.
 
-			log_->debug() << log_tag() << "LV Handshake successful";
-			awaiting_next_ = AWAITING_ANY;
-
-			send_meta_list();
-		} break;
-		default: throw protocol_error();
-		}
-	}else{
-		// Regular message flow
-
-		AbstractParser::message_type message_type;
-		if(receive_buffer_->empty())
-			message_type = AbstractParser::KEEP_ALIVE;
-		else
-			message_type = (AbstractParser::message_type)receive_buffer_->at(0);
-
-		switch(message_type) {
-		case AbstractParser::META_LIST: {
-			log_->debug() << log_tag() << "Received meta_list";
-			AbstractParser::MetaList meta_list = parser_->parse_meta_list(*receive_buffer_);	// Must check message_type and so on.
-
-			for(auto revision : meta_list.revision){
-				revisions_.insert({revision.path_id_, revision.revision_});
-				directory_ptr_.lock()->post_revision(shared_from_this(), revision);
+					for(auto revision : meta_list.revision) {
+						revisions_.insert({revision.path_id_, revision.revision_});
+						directory_ptr_.lock()->post_revision(shared_from_this(), revision);
+					}
+				}
+					break;
+				case AbstractParser::META_REQUEST: {
+					AbstractParser::MetaRequest meta_request =
+						parser_->parse_meta_request(*receive_buffer_);    // Must check message_type and so on.
+					log_->debug() << log_tag() << "Received meta_request " << path_id_readable(meta_request.path_id);
+					directory_ptr_.lock()->request_meta(shared_from_this(), meta_request.path_id);
+				}
+					break;
+				case AbstractParser::META: {
+					AbstractParser::Meta
+						meta = parser_->parse_meta(*receive_buffer_);    // Must check message_type and so on.
+					log_->debug() << log_tag() << "Received meta";
+					directory_ptr_.lock()->post_meta(shared_from_this(), meta.smeta);
+				}
+					break;
+				case AbstractParser::BLOCK_REQUEST: {
+					AbstractParser::BlockRequest block_request =
+						parser_->parse_block_request(*receive_buffer_);    // Must check message_type and so on.
+					log_->debug() << log_tag() << "Received block_request "
+						<< encrypted_data_hash_readable(block_request
+															.block_id);
+					directory_ptr_.lock()->request_block(shared_from_this(), block_request.block_id);
+				}
+					break;
+				case AbstractParser::BLOCK: {
+					AbstractParser::Block
+						block = parser_->parse_block(*receive_buffer_);    // Must check message_type and so on.
+					log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(block.block_id);
+					directory_ptr_.lock()->post_block(shared_from_this(), block.block_id, block.block_content);
+				}
+					break;
+				default: throw protocol_error();
 			}
-		} break;
-		case AbstractParser::META_REQUEST: {
-			AbstractParser::MetaRequest meta_request = parser_->parse_meta_request(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received meta_request " << path_id_readable(meta_request.path_id);
-			directory_ptr_.lock()->request_meta(shared_from_this(), meta_request.path_id);
-		} break;
-		case AbstractParser::META: {
-			AbstractParser::Meta meta = parser_->parse_meta(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received meta";
-			directory_ptr_.lock()->post_meta(shared_from_this(), meta.smeta);
-		} break;
-		case AbstractParser::BLOCK_REQUEST: {
-			AbstractParser::BlockRequest block_request = parser_->parse_block_request(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received block_request " << encrypted_data_hash_readable(block_request
-																										.block_id);
-			directory_ptr_.lock()->request_block(shared_from_this(), block_request.block_id);
-		} break;
-		case AbstractParser::BLOCK: {
-			AbstractParser::Block block = parser_->parse_block(*receive_buffer_);	// Must check message_type and so on.
-			log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(block.block_id);
-			directory_ptr_.lock()->post_block(shared_from_this(), block.block_id, block.block_content);
-		} break;
-		default: throw protocol_error();
 		}
+	}catch(std::runtime_error& e){
+		log_->warn() << log_tag() << "Closing connection because of exception: " << e.what();
+		disconnect();
 	}
 }
 
@@ -266,7 +285,7 @@ void P2PDirectory::send_meta_list() {
 }
 
 void P2PDirectory::disconnect(const boost::system::error_code& error) {
-	// FIXME delete this;
+	provider_.remove_from_unattached(shared_from_this());
 	detach();
 	log_->debug() << "Connection to " << connection_->remote_string() << " closed: " << error.message();
 }

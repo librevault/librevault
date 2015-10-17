@@ -19,9 +19,11 @@
 #include "p2p/P2PProvider.h"
 #include "../discovery/MulticastDiscovery.h"
 
+#include "ExchangeGroup.h"
+
 namespace librevault {
 
-Exchanger::Exchanger(Session& session) : session_(session), log_(spdlog::get("Librevault")) {
+Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	auto folder_trees = session.config().equal_range("folder");
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
@@ -29,45 +31,48 @@ Exchanger::Exchanger(Session& session) : session_(session), log_(spdlog::get("Li
 
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
 
-	multicast4_ = std::make_unique<MulticastDiscovery4>(p2p_provider_.get(), session_, *this);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(p2p_provider_.get(), session_, *this);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
 }
 Exchanger::~Exchanger() {}
 
-std::shared_ptr<FSDirectory> Exchanger::get_directory(const fs::path& path){
-	auto it = path_dir_.find(path);
-	if(it != path_dir_.end())
-		return it->second;
-	return nullptr;
-}
-
-std::shared_ptr<FSDirectory> Exchanger::get_directory(const blob& hash){
-	auto it = hash_dir_.find(hash);
-	if(it != hash_dir_.end())
-		return it->second;
-	return nullptr;
-}
-
-void Exchanger::register_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	path_dir_.insert({dir_ptr->open_path(), dir_ptr});
-	hash_dir_.insert({dir_ptr->key().get_Hash(), dir_ptr});
+void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	hash_group_.insert({group_ptr->hash(), group_ptr});
 
 	// Did this to defer execution to moment, when multicast4_,multicast6_ is initialized
-	session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast4_->register_directory(dir_ptr);}, dir_ptr));
-	session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast6_->register_directory(dir_ptr);}, dir_ptr));
+	//session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast4_->register_directory(dir_ptr);}, dir_ptr));
+	//session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast6_->register_directory(dir_ptr);}, dir_ptr));
 }
 
-void Exchanger::unregister_directory(std::shared_ptr<FSDirectory> dir_ptr) {
-	multicast4_->unregister_directory(dir_ptr);
-	multicast6_->unregister_directory(dir_ptr);
+void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	//multicast4_->unregister_directory(dir_ptr);
+	//multicast6_->unregister_directory(dir_ptr);
 
-	hash_dir_.erase(dir_ptr->key().get_Hash());
-	path_dir_.erase(dir_ptr->open_path());
+	hash_group_.erase(group_ptr->hash());
+}
+
+std::shared_ptr<ExchangeGroup> Exchanger::get_group(const blob& hash){
+	auto it = hash_group_.find(hash);
+	if(it != hash_group_.end())
+		return it->second;
+	return nullptr;
+}
+
+P2PProvider* Exchanger::get_p2p_provider() {
+	return p2p_provider_.get();
 }
 
 void Exchanger::add_directory(const ptree& dir_options) {
 	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, *this);
-	register_directory(dir_ptr);
+	auto group_ptr = get_group(dir_ptr->hash());
+	if(!group_ptr){
+		group_ptr = std::make_shared<ExchangeGroup>(session_, *this);
+		group_ptr->attach_fs_dir(dir_ptr);
+		register_group(group_ptr);
+	}else{
+		// Something like "attach_fs_dir" will be here later.
+		throw std::runtime_error("Multiple directories with same key (or related to same key) are not supported now");
+	}
 }
 
 } /* namespace librevault */

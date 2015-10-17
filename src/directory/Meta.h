@@ -70,6 +70,11 @@ public:
 		int64_t revision_;
 	};
 
+	struct SignedMeta {
+		blob meta_;
+		blob signature_;
+	};
+
 	Meta();
 	Meta(const blob& meta_s);
 	virtual ~Meta();

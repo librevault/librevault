@@ -15,18 +15,19 @@
  */
 #include "DiscoveryService.h"
 #include "../directory/p2p/P2PProvider.h"
+#include "../directory/Exchanger.h"
 #include "../Session.h"
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger) : log_(session.log()), p2p_provider_(p2p_provider), session_(session), exchanger_(exchanger) {}
+DiscoveryService::DiscoveryService(Session& session, Exchanger& exchanger) : Loggable(session), session_(session), exchanger_(exchanger) {}
 
-void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> dir) {
-	p2p_provider_->add_node(node_endpoint, dir);
+void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr) {
+	exchanger_.get_p2p_provider()->add_node(node_endpoint, group_ptr);
 }
 
-void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> dir) {
-	p2p_provider_->add_node(node_endpoint, pubkey, dir);
+void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr) {
+	exchanger_.get_p2p_provider()->add_node(node_endpoint, pubkey, group_ptr);
 }
 
 } /* namespace librevault */

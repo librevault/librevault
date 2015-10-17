@@ -42,12 +42,12 @@ void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
 	auto raii_lock = SQLiteLock(*db_);
 	for(auto signed_meta : signed_meta_list){
 		SQLiteSavepoint raii_transaction(*db_, "put_Meta");
-		Meta meta; meta.parse(signed_meta.meta);
+		Meta meta; meta.parse(signed_meta.meta_);
 
 		db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
 				{":path_id", meta.path_id()},
-				{":meta", signed_meta.meta},
-				{":signature", signed_meta.signature}
+				{":meta", signed_meta.meta_},
+				{":signature", signed_meta.signature_}
 		});
 
 		uint64_t offset = 0;

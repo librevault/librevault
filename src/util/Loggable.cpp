@@ -13,31 +13,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "../pch.h"
-#include "../net/parse_url.h"
-#include "../util/Loggable.h"
+#include "Loggable.h"
+#include "../Session.h"
 
 namespace librevault {
 
-class ExchangeGroup;
-class P2PProvider;
-class Session;
-class Exchanger;
-
-class DiscoveryService : protected Loggable {
-public:
-	DiscoveryService(Session& session, Exchanger& exchanger);
-	virtual ~DiscoveryService(){}
-
-	virtual void register_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
-	virtual void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
-
-	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr);
-	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
-protected:
-	Session& session_;
-	Exchanger& exchanger_;
-};
+Loggable::Loggable(Session& session) : log_(session.log()){}
 
 } /* namespace librevault */

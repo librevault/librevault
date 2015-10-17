@@ -39,16 +39,16 @@ public:
 	virtual ~Indexer();
 
 	// Index manipulation
-	AbstractDirectory::SignedMeta index(const std::string& file_path);
+	Meta::SignedMeta index(const std::string& file_path);
 	void index(const std::set<std::string>& file_path);
 
-	void async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
-	void async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback);
+	void async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback);
+	void async_index(const std::set<std::string>& file_path, std::function<void(Meta::SignedMeta)> callback);
 
 	// Meta functions
 	Meta make_Meta(const std::string& relpath);
 
-	AbstractDirectory::SignedMeta sign(const Meta& meta) const;
+	Meta::SignedMeta sign(const Meta& meta) const;
 
 private:
 	std::shared_ptr<spdlog::logger> log_;

@@ -22,18 +22,18 @@
 namespace librevault {
 
 class Exchanger;
+class ExchangeGroup;
 class P2PDirectory;
-class FSDirectory;
 
 class P2PProvider {
 public:
 	P2PProvider(Session& session, Exchanger& exchanger);
 	virtual ~P2PProvider();
 
-	void add_node(const url& node_url, std::shared_ptr<FSDirectory> directory);
-	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory);
+	void add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr);
+	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr);
 
-	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> directory);
+	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
 
 	void remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached);
 

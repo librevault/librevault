@@ -18,7 +18,7 @@
 #include "../../Session.h"
 #include "../../net/parse_url.h"
 #include "../Exchanger.h"
-#include "../p2p/P2PDirectory.h"
+#include "../ExchangeGroup.h"
 
 namespace librevault {
 
@@ -48,47 +48,11 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchang
 
 FSDirectory::~FSDirectory() {}
 
-void FSDirectory::attach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr) {
-	std::lock_guard<std::mutex> lk(remotes_mtx_);
-
-	for(auto& it : remotes_){
-		if(it->remote_endpoint() == remote_ptr->remote_endpoint()) throw attach_error();
-		if(it->remote_pubkey() == remote_ptr->remote_pubkey()) throw attach_error();
-	}
-
-	remotes_.insert(remote_ptr);
-	log_->debug() << log_tag() << "Attached remote " << remote_ptr->remote_string() << " to " << name();
-}
-
-void FSDirectory::detach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr) {
-	std::lock_guard<std::mutex> lk(remotes_mtx_);
-	remotes_.erase(remote_ptr);
-	log_->debug() << log_tag() << "Detached remote " << remote_ptr->remote_string() << " from " << name();
-}
-
-bool FSDirectory::have_p2p_dir(const tcp_endpoint& endpoint) {
-	std::lock_guard<std::mutex> lk(remotes_mtx_);
-	for(auto& it : remotes_){
-		if(it->remote_endpoint() == endpoint) return true;
-	}
-	return false;
-}
-
-bool FSDirectory::have_p2p_dir(const blob& pubkey) {
-	std::lock_guard<std::mutex> lk(remotes_mtx_);
-	for(auto& it : remotes_){
-		if(it->remote_pubkey() == pubkey) return true;
-	}
-	return false;
-}
-
 std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {
 	std::vector<Meta::PathRevision> meta_list;
 
-	auto all_smeta = index->get_Meta();
-	for(auto smeta : all_smeta) {
-		Meta one_meta(smeta.meta);
-		meta_list.push_back(one_meta.path_revision());
+	for(auto smeta : index->get_Meta()) {
+		meta_list.push_back(Meta(smeta.meta_).path_revision());
 	}
 
 	return meta_list;
@@ -96,40 +60,40 @@ std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {
 
 void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
 	try {
-		SignedMeta smeta = index->get_Meta(revision.path_id_);
-		Meta meta(smeta.meta);
+		Meta::SignedMeta smeta = index->get_Meta(revision.path_id_);
+		Meta meta(smeta.meta_);
 		if(meta.revision() == revision.revision_) {
 			auto missing_blocks = get_missing_blocks(revision.path_id_);
 			if(!missing_blocks.empty()){
 				log_->debug() << log_tag() << "Missing " << missing_blocks.size() << " blocks in " << path_id_readable(revision.path_id_);
 				for(auto missing_block : missing_blocks){
-					origin->request_block(shared_from_this(), missing_block);
+					origin->request_block(exchange_group_.lock(), missing_block);
 				}
 			}
 		}else if(meta.revision() < revision.revision_) {
 			log_->debug() << log_tag() << "Requesting new revision of " << path_id_readable(revision.path_id_);
-			origin->request_meta(shared_from_this(), revision.path_id_);
+			origin->request_meta(exchange_group_.lock(), revision.path_id_);
 		}
 	}catch(Index::no_such_meta& e){
 		log_->debug() << log_tag() << "Meta " << path_id_readable(revision.path_id_) << " not found";
-		origin->request_meta(shared_from_this(), revision.path_id_);
+		origin->request_meta(exchange_group_.lock(), revision.path_id_);
 	}
 }
 
 void FSDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& meta_id) {
 	try {
-		SignedMeta smeta = index->get_Meta(meta_id);
+		Meta::SignedMeta smeta = index->get_Meta(meta_id);
 		log_->debug() << log_tag() << "Meta " << path_id_readable(meta_id) << " found and will be sent to " << origin->name();
-		origin->post_meta(shared_from_this(), smeta);
+		origin->post_meta(exchange_group_.lock(), smeta);
 	}catch(Index::no_such_meta& e){
 		log_->debug() << log_tag() << "Meta " << path_id_readable(meta_id) << " not found";
 	}
 }
 
-void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) {
+void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta) {
 	log_->debug() << log_tag() << "Received Meta from " << origin->name();
 
-	Meta meta(smeta.meta);
+	Meta meta(smeta.meta_);
 
 	// Check for zero-length file. If zero-length and key <= ReadOnly, then assemble.
 	index->put_Meta(smeta);	// FIXME: Check revision number, actually
@@ -137,7 +101,7 @@ void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Sig
 		open_storage->assemble(meta, true);
 	}catch(AbstractStorage::no_such_block& e) {
 		for(auto missing_block : get_missing_blocks(meta.path_id())) {
-			origin->request_block(shared_from_this(), missing_block);
+			origin->request_block(exchange_group_.lock(), missing_block);
 		}
 	}
 }
@@ -148,7 +112,7 @@ void FSDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, const
 		try {
 			auto block = open_storage->get_encblock(block_id);
 			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " found and will be sent to " << origin->name();
-			origin->post_block(shared_from_this(), block_id, block);
+			origin->post_block(exchange_group_.lock(), block_id, block);
 		}catch(AbstractStorage::no_such_block& e){
 			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " not found";
 		}
@@ -160,7 +124,7 @@ void FSDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const bl
 	enc_storage->put_encblock(encrypted_data_hash, block);	// FIXME: Check hash!!
 	if(open_storage){
 		for(auto& smeta : index->containing_block(encrypted_data_hash)) {
-			Meta meta(smeta.meta);
+			Meta meta(smeta.meta_);
 			try {
 				open_storage->assemble(meta, true);
 			}catch(AbstractStorage::no_such_block& e){
@@ -187,15 +151,17 @@ std::list<blob> FSDirectory::get_missing_blocks(const blob& path_id) {
 	return missing_blocks;
 }
 
-void FSDirectory::handle_smeta(AbstractDirectory::SignedMeta smeta) {
-	Meta m; m.parse(smeta.meta);
-	blob path_id(m.path_id());
+void FSDirectory::set_exchange_group(std::shared_ptr<ExchangeGroup> exchange_group) {
+	exchange_group_ = exchange_group;
+}
 
-	log_->debug() << log_tag() << "Created revision " << m.revision() << " of " << crypto::Base32().to_string(path_id);
+void FSDirectory::handle_smeta(Meta::SignedMeta smeta) {
+	Meta::PathRevision path_revision = Meta(smeta.meta_).path_revision();
 
-	for(auto remote : remotes_){
-		remote->post_revision(shared_from_this(), {path_id, m.revision()});
-	}
+	log_->debug() << log_tag() << "Created revision " << path_revision.revision_ << " of " << path_id_readable(path_revision.path_id_);
+
+	auto exchange_group_ptr = exchange_group_.lock();
+	if(exchange_group_ptr) exchange_group_ptr->broadcast_revision(shared_from_this(), path_revision);
 }
 
 std::string FSDirectory::name() const {

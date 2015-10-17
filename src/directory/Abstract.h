@@ -16,19 +16,15 @@
 #include "../pch.h"
 #pragma once
 #include "Meta.h"
+#include "../util/Loggable.h"
 
 namespace librevault {
 
 class Session;
 class Exchanger;
 
-class AbstractDirectory {
+class AbstractDirectory : protected Loggable {
 public:
-	struct SignedMeta {
-		blob meta;
-		blob signature;
-	};
-
 	AbstractDirectory(Session& session, Exchanger& exchanger);
 	virtual ~AbstractDirectory();
 
@@ -39,20 +35,19 @@ public:
 	// AbstractDirectory actions
 	virtual void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) = 0;
 	virtual void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id) = 0;
-	virtual void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) = 0;
+	virtual void post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta) = 0;
 	virtual void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id) = 0;	// TODO: Tie this to BitTorrent behavior. Request every block in small 16kb (or more) chunks
 	virtual void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block) = 0;	// TODO: Tie this to BitTorrent behavior. Send every block in small 16kb (or more) chunks
 
 	// Other functions
 	std::string path_id_readable(const blob& path_id) const;
 	std::string encrypted_data_hash_readable(const blob& block_id) const;
+	// Loggable
 	std::string log_tag() const {return std::string("[") + name() + "] ";}
 
 protected:
 	Session& session_;
 	Exchanger& exchanger_;
-
-	logger_ptr log_;
 };
 
 } /* namespace librevault */

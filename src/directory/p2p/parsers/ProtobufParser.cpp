@@ -29,7 +29,7 @@ blob ProtobufParser::gen_handshake(const Handshake& message_struct) {
 
 AbstractParser::Handshake ProtobufParser::parse_handshake(const blob& message_raw) {
 	protocol::Handshake message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	Handshake message_struct;
 	message_struct.user_agent = message_protobuf.user_agent();
@@ -52,7 +52,7 @@ blob ProtobufParser::gen_meta_list(const MetaList& message_struct) {
 
 AbstractParser::MetaList ProtobufParser::parse_meta_list(const blob& message_raw) {
 	protocol::MetaList message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	MetaList message_struct;
 	for(auto one_revision : message_protobuf.list()) {
@@ -74,7 +74,7 @@ blob ProtobufParser::gen_meta_request(const MetaRequest& message_struct) {
 
 AbstractParser::MetaRequest ProtobufParser::parse_meta_request(const blob& message_raw) {
 	protocol::MetaRequest message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	MetaRequest message_struct;
 	message_struct.path_id.assign(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
@@ -84,19 +84,19 @@ AbstractParser::MetaRequest ProtobufParser::parse_meta_request(const blob& messa
 
 blob ProtobufParser::gen_meta(const Meta& message_struct) {
 	protocol::Meta message_protobuf;
-	message_protobuf.set_meta(message_struct.smeta.meta.data(), message_struct.smeta.meta.size());
-	message_protobuf.set_signature(message_struct.smeta.signature.data(), message_struct.smeta.signature.size());
+	message_protobuf.set_meta(message_struct.smeta.meta_.data(), message_struct.smeta.meta_.size());
+	message_protobuf.set_signature(message_struct.smeta.signature_.data(), message_struct.smeta.signature_.size());
 
 	return prepare_proto_message(message_protobuf, META);
 }
 
 AbstractParser::Meta ProtobufParser::parse_meta(const blob& message_raw) {
 	protocol::Meta message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	Meta message_struct;
-	message_struct.smeta.meta.assign(message_protobuf.meta().begin(), message_protobuf.meta().end());
-	message_struct.smeta.signature.assign(message_protobuf.signature().begin(), message_protobuf.signature().end());
+	message_struct.smeta.meta_.assign(message_protobuf.meta().begin(), message_protobuf.meta().end());
+	message_struct.smeta.signature_.assign(message_protobuf.signature().begin(), message_protobuf.signature().end());
 
 	return message_struct;
 }
@@ -110,7 +110,7 @@ blob ProtobufParser::gen_block_request(const BlockRequest& message_struct) {
 
 ProtobufParser::BlockRequest ProtobufParser::parse_block_request(const blob& message_raw) {
 	protocol::BlockRequest message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	BlockRequest message_struct;
 	message_struct.block_id.assign(message_protobuf.block_id().begin(), message_protobuf.block_id().end());
@@ -128,7 +128,7 @@ blob ProtobufParser::gen_block(const Block& message_struct) {
 
 ProtobufParser::Block ProtobufParser::parse_block(const blob& message_raw) {
 	protocol::Block message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw P2PDirectory::protocol_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	Block message_struct;
 	message_struct.block_id.assign(message_protobuf.block_id().begin(), message_protobuf.block_id().end());

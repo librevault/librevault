@@ -23,7 +23,7 @@ class MulticastDiscovery;
 
 class MulticastSender {
 public:
-	MulticastSender(MulticastDiscovery& parent, std::shared_ptr<FSDirectory> dir);
+	MulticastSender(MulticastDiscovery& parent, std::shared_ptr<ExchangeGroup> exchange_group);
 	std::string get_message() const;
 
 	void wait();
@@ -31,7 +31,7 @@ public:
 
 private:
 	MulticastDiscovery& parent_;
-	std::shared_ptr<FSDirectory> dir_;
+	std::shared_ptr<ExchangeGroup> exchange_group_;
 
 	boost::asio::system_timer repeat_timer_;
 	std::chrono::seconds& repeat_interval_;
@@ -44,12 +44,12 @@ class MulticastDiscovery : public DiscoveryService {
 public:
 	virtual ~MulticastDiscovery();
 
-	void register_directory(std::shared_ptr<FSDirectory> dir);
-	void unregister_directory(std::shared_ptr<FSDirectory> dir);
+	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
+	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
 protected:
 	using udp_buffer = std::array<char, 65536>;
 
-	std::map<std::shared_ptr<FSDirectory>, std::shared_ptr<MulticastSender>> senders_;
+	std::map<std::shared_ptr<ExchangeGroup>, std::shared_ptr<MulticastSender>> senders_;
 
 	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 
@@ -66,19 +66,23 @@ protected:
 	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr);
 	void receive();
 
-	MulticastDiscovery(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger, ptree& options);
+	MulticastDiscovery(Session& session, Exchanger& exchanger, ptree& options);
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {
 public:
-	MulticastDiscovery4(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger);
+	MulticastDiscovery4(Session& session, Exchanger& exchanger);
 	virtual ~MulticastDiscovery4(){}
+
+	std::string log_tag() const {return "MulticastDiscovery4";}
 };
 
 class MulticastDiscovery6 : public MulticastDiscovery {
 public:
-	MulticastDiscovery6(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger);
+	MulticastDiscovery6(Session& session, Exchanger& exchanger);
 	virtual ~MulticastDiscovery6(){}
+
+	std::string log_tag() const {return "MulticastDiscovery6";}
 };
 
 } /* namespace librevault */

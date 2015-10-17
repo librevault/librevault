@@ -20,7 +20,7 @@
 
 namespace librevault {
 
-AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(AbstractDirectory::SignedMeta)> callback) :
+AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(Meta::SignedMeta)> callback) :
 		log_(spdlog::get("Librevault")),
 		dir_(dir), session_(session),
 		monitor_(session_.ios()), index_timer_(session_.ios()) {
@@ -34,13 +34,13 @@ AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(
 AutoIndexer::~AutoIndexer() {}
 
 void AutoIndexer::enqueue_files(const std::string& relpath){
-	std::unique_lock<std::mutex> lk(index_queue_m_);
+	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath);
 	bump_timer();
 }
 
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath){
-	std::unique_lock<std::mutex> lk(index_queue_m_);
+	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 	bump_timer();
 }
@@ -85,9 +85,9 @@ void AutoIndexer::monitor_index(const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	std::set<std::string> index_queue;
-	index_queue_m_.lock();
+	index_queue_mtx_.lock();
 	index_queue.swap(index_queue_);
-	index_queue_m_.unlock();
+	index_queue_mtx_.unlock();
 
 	dir_.indexer->async_index(index_queue, callback_);
 }

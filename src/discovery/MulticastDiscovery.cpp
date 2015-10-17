@@ -16,7 +16,7 @@
 #include "MulticastDiscovery.h"
 #include "MulticastDiscovery.pb.h"
 #include "../Session.h"
-#include "../directory/fs/FSDirectory.h"
+#include "../directory/ExchangeGroup.h"
 #include "../directory/p2p/P2PProvider.h"
 #include "../directory/Exchanger.h"
 
@@ -25,7 +25,8 @@ namespace librevault {
 using namespace boost::asio::ip;
 
 /* MulticastSender */
-MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<FSDirectory> dir) : parent_(parent), dir_(dir), repeat_timer_(parent_.session_.ios()), repeat_interval_(parent.repeat_interval_) {
+MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<ExchangeGroup> exchange_group) :
+		parent_(parent), exchange_group_(exchange_group), repeat_timer_(parent_.session_.ios()), repeat_interval_(parent.repeat_interval_) {
 	send();
 }
 
@@ -33,8 +34,8 @@ std::string MulticastSender::get_message() const {
 	if(message_.empty()){
 		protocol::MulticastDiscovery message;
 		message.set_port(parse_url(parent_.session_.config().get<std::string>("net.listen")).port);
-		message.set_dir_hash(dir_->key().get_Hash().data(), dir_->key().get_Hash().size());
-		message.set_pubkey(parent_.p2p_provider_->node_key().public_key().data(), parent_.p2p_provider_->node_key().public_key().size());
+		message.set_dir_hash(exchange_group_->key().get_Hash().data(), exchange_group_->key().get_Hash().size());
+		message.set_pubkey(parent_.exchanger_.get_p2p_provider()->node_key().public_key().data(), parent_.exchanger_.get_p2p_provider()->node_key().public_key().size());
 
 		message_ = message.SerializeAsString();
 	}
@@ -52,8 +53,8 @@ void MulticastSender::send(){
 }
 
 /* MulticastDiscovery */
-MulticastDiscovery::MulticastDiscovery(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger, ptree& options) :
-		DiscoveryService(p2p_provider, session, exchanger), local_options_(options), socket_(session.ios()) {
+MulticastDiscovery::MulticastDiscovery(Session& session, Exchanger& exchanger, ptree& options) :
+		DiscoveryService(session, exchanger), local_options_(options), socket_(session.ios()) {
 
 	bind_address_ = address::from_string(local_options_.get<std::string>("local_ip"));
 
@@ -66,13 +67,12 @@ MulticastDiscovery::~MulticastDiscovery() {
 	socket_.set_option(multicast::leave_group(multicast_addr_.address()));
 }
 
-void MulticastDiscovery::register_directory(std::shared_ptr<FSDirectory> dir) {
-	if(dir != nullptr)
-		senders_.insert({dir, std::make_shared<MulticastSender>(*this, dir)});
+void MulticastDiscovery::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	senders_.insert({group_ptr, std::make_shared<MulticastSender>(*this, group_ptr)});
 }
 
-void MulticastDiscovery::unregister_directory(std::shared_ptr<FSDirectory> dir) {
-	senders_.erase(dir);
+void MulticastDiscovery::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	senders_.erase(group_ptr);
 }
 
 void MulticastDiscovery::start(){
@@ -94,11 +94,11 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 		blob dir_hash = blob(message.dir_hash().begin(), message.dir_hash().end());
 		blob pubkey = blob(message.pubkey().begin(), message.pubkey().end());
 
-		auto dir_ptr = exchanger_.get_directory(dir_hash);
-		if(dir_ptr){
+		auto group_ptr = exchanger_.get_group(dir_hash);
+		if(group_ptr){
 			tcp_endpoint node_endpoint(endpoint_ptr->address(), port);
 			log_->debug() << "<== MulticastDiscovery: " << node_endpoint;
-			add_node(node_endpoint, pubkey, dir_ptr);
+			add_node(node_endpoint, pubkey, group_ptr);
 		}
 	}else{
 		log_->debug() << "Message from " << endpoint_ptr->address() << ": Malformed Protobuf data";
@@ -114,14 +114,14 @@ void MulticastDiscovery::receive(){
 							  std::bind(&MulticastDiscovery::process, this, buffer, std::placeholders::_2, endpoint));
 }
 
-MulticastDiscovery4::MulticastDiscovery4(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger) :
-		MulticastDiscovery(p2p_provider, session, exchanger, session.config().get_child("discovery.multicast4")) {
+MulticastDiscovery4::MulticastDiscovery4(Session& session, Exchanger& exchanger) :
+		MulticastDiscovery(session, exchanger, session.config().get_child("discovery.multicast4")) {
 	socket_.open(boost::asio::ip::udp::v4());
 	start();
 }
 
-MulticastDiscovery6::MulticastDiscovery6(P2PProvider* p2p_provider, Session& session, Exchanger& exchanger) :
-		MulticastDiscovery(p2p_provider, session, exchanger, session.config().get_child("discovery.multicast6")) {
+MulticastDiscovery6::MulticastDiscovery6(Session& session, Exchanger& exchanger) :
+		MulticastDiscovery(session, exchanger, session.config().get_child("discovery.multicast6")) {
 	socket_.open(boost::asio::ip::udp::v6());
 	socket_.set_option(boost::asio::ip::v6_only(true));
 	start();

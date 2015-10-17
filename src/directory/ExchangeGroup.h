@@ -13,39 +13,35 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "../pch.h"
 #pragma once
-#include "../../pch.h"
-#include "../Abstract.h"
-
-#include "../Key.h"
-#include "Index.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
-#include "Indexer.h"
-#include "AutoIndexer.h"
+#include "../util/Loggable.h"
+#include "Key.h"
+#include "Abstract.h"
 
 namespace librevault {
 
-class ExchangeGroup;
+class Session;
+class Exchanger;
+class FSDirectory;
+class P2PDirectory;
 
-class FSDirectory : public AbstractDirectory, public std::enable_shared_from_this<FSDirectory> {
+class ExchangeGroup : public std::enable_shared_from_this<ExchangeGroup>, public AbstractDirectory {
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
-		error() : error("FSDirectory error") {}
+		error() : error("ExchangeGroup error") {}
 	};
 
 	struct attach_error : error {
 		attach_error() : error("Could not attach remote to FSDirectory") {}
 	};
 
-	FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger);
-	virtual ~FSDirectory();
+	ExchangeGroup(Session& session, Exchanger& exchanger);
 
-	std::list<blob> get_missing_blocks(const blob& encrypted_data_hash);
-
-	// AbstractDirectory actions
 	std::vector<Meta::PathRevision> get_meta_list();
+
+	void broadcast_revision(std::shared_ptr<FSDirectory> origin, const Meta::PathRevision& revision);
 
 	void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision);
 	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
@@ -53,37 +49,25 @@ public:
 	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
 	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& encrypted_data_hash, const blob& block);
 
+	// FSDirectory attachment
+	void attach_fs_dir(std::shared_ptr<FSDirectory> fs_dir_ptr);
+
+	// P2PDirectory attachment
+	void attach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr);
+	void detach_p2p_dir(std::shared_ptr<P2PDirectory> remote_ptr);
+	bool have_p2p_dir(const tcp_endpoint& endpoint);
+	bool have_p2p_dir(const blob& pubkey);
+
 	// Getters
-	const ptree& dir_options() const {return dir_options_;}
-
-	const Key& key() const {return key_;}
-	const blob& hash() const {return key().get_Hash();}
-	std::string name() const;
-
-	const fs::path& open_path() const {return open_path_;}
-	const fs::path& block_path() const {return block_path_;}
-	const fs::path& db_path() const {return db_path_;}
-	const fs::path& asm_path() const {return asm_path_;}
-
-	// Setters
-	void set_exchange_group(std::shared_ptr<ExchangeGroup> exchange_group);
-
-	// Components
-	std::unique_ptr<Index> index;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
-	std::unique_ptr<Indexer> indexer;
-	std::unique_ptr<AutoIndexer> auto_indexer;
-
+	const Key& key() const;
+	const blob& hash() const;
 private:
-	ptree dir_options_;
-	const Key key_;
-	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
+	std::shared_ptr<FSDirectory> fs_dir_;
+	std::set<std::shared_ptr<P2PDirectory>> p2p_dirs_;
+	std::mutex dirs_mtx_;
 
-	std::weak_ptr<ExchangeGroup> exchange_group_;
-
-	// Revision operations
-	void handle_smeta(Meta::SignedMeta smeta);
+	mutable std::string name_;
+	std::string name() const;
 };
 
 } /* namespace librevault */

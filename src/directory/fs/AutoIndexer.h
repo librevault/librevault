@@ -24,7 +24,7 @@ namespace librevault {
 
 class AutoIndexer {
 public:
-	AutoIndexer(FSDirectory& dir, Session& session, std::function<void(AbstractDirectory::SignedMeta)> callback);
+	AutoIndexer(FSDirectory& dir, Session& session, std::function<void(Meta::SignedMeta)> callback);
 	virtual ~AutoIndexer();
 
 	void enqueue_files(const std::string& relpath);
@@ -35,7 +35,7 @@ private:
 	FSDirectory& dir_;
 	Session& session_;
 
-	std::function<void(AbstractDirectory::SignedMeta)> callback_;
+	std::function<void(Meta::SignedMeta)> callback_;
 
 	// Monitor
 	boost::asio::dir_monitor monitor_;
@@ -46,7 +46,7 @@ private:
 	void monitor_operation();
 	void monitor_handle(const boost::asio::dir_monitor_event& ev);
 	std::set<std::string> index_queue_;
-	std::mutex index_queue_m_;
+	std::mutex index_queue_mtx_;
 	boost::asio::steady_timer index_timer_;
 	void monitor_index(const boost::system::error_code& ec);
 };

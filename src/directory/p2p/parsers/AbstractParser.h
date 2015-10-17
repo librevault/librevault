@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../P2PDirectory.h"
 #include "../../Meta.h"
 
 namespace librevault {
@@ -49,7 +48,7 @@ public:
 	};
 
 	struct Meta {
-		AbstractDirectory::SignedMeta smeta;
+		::librevault::Meta::SignedMeta smeta;
 	};
 
 	struct BlockRequest {

@@ -22,9 +22,10 @@
 namespace librevault {
 
 class Session;
-class FSDirectory;
+class ExchangeGroup;
 class P2PProvider;
 class AbstractParser;
+
 class P2PDirectory : public AbstractDirectory, public std::enable_shared_from_this<P2PDirectory> {
 public:
 	using length_prefix_t = boost::endian::big_uint32_t;
@@ -43,7 +44,7 @@ public:
 	};
 
 	P2PDirectory(std::unique_ptr<Connection>&& connection, Session& session, Exchanger& exchanger, P2PProvider& provider);
-	P2PDirectory(std::unique_ptr<Connection>&& connection, std::shared_ptr<FSDirectory> directory_ptr, Session& session, Exchanger& exchanger, P2PProvider& provider);
+	P2PDirectory(std::unique_ptr<Connection>&& connection, std::shared_ptr<ExchangeGroup> exchange_group, Session& session, Exchanger& exchanger, P2PProvider& provider);
 	~P2PDirectory();
 
 	std::string remote_string() const {return connection_->remote_string();}
@@ -60,7 +61,7 @@ public:
 
 	void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision);
 	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
-	void post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta);
+	void post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta);
 	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
 	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block);
 
@@ -90,7 +91,7 @@ private:
 	std::unique_ptr<Connection> connection_;
 
 	// High-level facilities
-	std::weak_ptr<FSDirectory> directory_ptr_;
+	std::weak_ptr<ExchangeGroup> exchange_group_;
 	std::map<blob, int64_t> revisions_;
 
 	void attach(const blob& dir_hash);

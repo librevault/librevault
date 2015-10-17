@@ -25,16 +25,16 @@ Indexer::Indexer(FSDirectory& dir, Session& session) :
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), session_(session) {}
 Indexer::~Indexer() {}
 
-AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
+Meta::SignedMeta Indexer::index(const std::string& file_path){
 	if(open_storage_.is_skipped(file_path)){
 		log_->notice() << dir_.log_tag() << "Skipping " << file_path;
-		return AbstractDirectory::SignedMeta();
+		return Meta::SignedMeta();
 	}else
 		try{
 			std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
 
 			auto meta = make_Meta(file_path);
-			AbstractDirectory::SignedMeta smeta = sign(meta);
+			Meta::SignedMeta smeta = sign(meta);
 			index_.put_Meta(sign(meta));
 
 			std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
@@ -50,7 +50,7 @@ AbstractDirectory::SignedMeta Indexer::index(const std::string& file_path){
 			return smeta;
 		}catch(std::runtime_error& e){
 			log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
-			return AbstractDirectory::SignedMeta();
+			return Meta::SignedMeta();
 		}
 }
 
@@ -60,15 +60,15 @@ void Indexer::index(const std::set<std::string>& file_path){
 		index(file_path1);
 }
 
-void Indexer::async_index(const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
-	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback){
+void Indexer::async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback) {
+	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(Meta::SignedMeta)> callback){
 
 		auto smeta = index(file_path);
 		session_.ios().dispatch(std::bind(callback, smeta));
 	}, file_path, callback));
 }
 
-void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(AbstractDirectory::SignedMeta)> callback) {
+void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(Meta::SignedMeta)> callback) {
 	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path)
 		async_index(file_path1, callback);
@@ -96,7 +96,7 @@ Meta Indexer::make_Meta(const std::string& relpath){
 
 	if(meta.meta_type() != Meta::DELETED){
 		try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
-			Meta old_meta(index_.get_Meta(meta.path_id()).meta);
+			Meta old_meta(index_.get_Meta(meta.path_id()).meta_);
 
 			// Preserve old values of attributes
 			meta.set_windows_attrib(old_meta.windows_attrib());
@@ -155,16 +155,16 @@ Meta Indexer::make_Meta(const std::string& relpath){
 	return meta;
 }
 
-AbstractDirectory::SignedMeta Indexer::sign(const Meta& meta) const {
+Meta::SignedMeta Indexer::sign(const Meta& meta) const {
 	CryptoPP::AutoSeededRandomPool rng;
-	AbstractDirectory::SignedMeta result;
-	result.meta = meta.serialize();
+	Meta::SignedMeta result;
+	result.meta_ = meta.serialize();
 
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(key_.get_Private_Key().data(), key_.get_Private_Key().size()));
 
-	result.signature.resize(signer.SignatureLength());
-	signer.SignMessage(rng, result.meta.data(), result.meta.size(), result.signature.data());
+	result.signature_.resize(signer.SignatureLength());
+	signer.SignMessage(rng, result.meta_.data(), result.meta_.size(), result.signature_.data());
 	return result;
 }
 

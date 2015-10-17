@@ -23,7 +23,7 @@ namespace librevault {
 class FSDirectory;
 class Index {
 public:
-	using SignedMeta = AbstractDirectory::SignedMeta;
+	using SignedMeta = Meta::SignedMeta;
 
 	class no_such_meta : public std::runtime_error {
 	public:

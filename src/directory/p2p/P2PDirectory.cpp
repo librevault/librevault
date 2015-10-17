@@ -15,9 +15,9 @@
  */
 #include "P2PDirectory.h"
 #include "P2PProvider.h"
-#include "../fs/FSDirectory.h"
 #include "../../Session.h"
 #include "../Exchanger.h"
+#include "../ExchangeGroup.h"
 
 #include "parsers/ProtobufParser.h"
 
@@ -36,33 +36,33 @@ P2PDirectory::P2PDirectory(std::unique_ptr<Connection>&& connection, Session& se
 	connection_->establish(std::bind(&P2PDirectory::handle_establish, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-P2PDirectory::P2PDirectory(std::unique_ptr<Connection> &&connection, std::shared_ptr<FSDirectory> directory_ptr, Session &session, Exchanger &exchanger, P2PProvider &provider) :
+P2PDirectory::P2PDirectory(std::unique_ptr<Connection> &&connection, std::shared_ptr<ExchangeGroup> exchange_group, Session &session, Exchanger &exchanger, P2PProvider &provider) :
 		P2PDirectory(std::move(connection), session, exchanger, provider) {
-	directory_ptr_ = directory_ptr;
+	exchange_group_ = exchange_group;
 }
 
 P2PDirectory::~P2PDirectory() {}
 
 blob P2PDirectory::local_token() {
-	return crypto::HMAC_SHA3_224(directory_ptr_.lock()->key().get_Public_Key()).to(provider_.node_key().public_key());
+	return crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key()).to(provider_.node_key().public_key());
 }
 
 blob P2PDirectory::remote_token() {
-	return crypto::HMAC_SHA3_224(directory_ptr_.lock()->key().get_Public_Key()).to(connection_->remote_pubkey());
+	return crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key()).to(connection_->remote_pubkey());
 }
 
 void P2PDirectory::attach(const blob& dir_hash) {
-	auto directory_sptr = exchanger_.get_directory(dir_hash);
-	if(directory_sptr){
-		directory_ptr_ = directory_sptr;
-		directory_sptr->attach_p2p_dir(shared_from_this());
+	auto group_ptr = exchanger_.get_group(dir_hash);
+	if(group_ptr){
+		exchange_group_ = group_ptr;
+		group_ptr->attach_p2p_dir(shared_from_this());
 		provider_.remove_from_unattached(shared_from_this());
 	}else throw directory_not_found();
 }
 
 void P2PDirectory::detach() {
-	auto directory_sptr = directory_ptr_.lock();
-	if(directory_sptr) directory_sptr->detach_p2p_dir(shared_from_this());
+	auto group_ptr = exchange_group_.lock();
+	if(group_ptr) group_ptr->detach_p2p_dir(shared_from_this());
 }
 
 void P2PDirectory::handle_establish(Connection::state state, const boost::system::error_code& error) {
@@ -141,7 +141,7 @@ void P2PDirectory::handle_message() {
 					break;
 				default: throw protocol_error();
 			}
-		}else {
+		}else{
 			// Regular message flow
 
 			AbstractParser::message_type message_type;
@@ -158,7 +158,7 @@ void P2PDirectory::handle_message() {
 
 					for(auto revision : meta_list.revision) {
 						revisions_.insert({revision.path_id_, revision.revision_});
-						directory_ptr_.lock()->post_revision(shared_from_this(), revision);
+						exchange_group_.lock()->post_revision(shared_from_this(), revision);
 					}
 				}
 					break;
@@ -166,14 +166,14 @@ void P2PDirectory::handle_message() {
 					AbstractParser::MetaRequest meta_request =
 						parser_->parse_meta_request(*receive_buffer_);    // Must check message_type and so on.
 					log_->debug() << log_tag() << "Received meta_request " << path_id_readable(meta_request.path_id);
-					directory_ptr_.lock()->request_meta(shared_from_this(), meta_request.path_id);
+					exchange_group_.lock()->request_meta(shared_from_this(), meta_request.path_id);
 				}
 					break;
 				case AbstractParser::META: {
 					AbstractParser::Meta
 						meta = parser_->parse_meta(*receive_buffer_);    // Must check message_type and so on.
 					log_->debug() << log_tag() << "Received meta";
-					directory_ptr_.lock()->post_meta(shared_from_this(), meta.smeta);
+					exchange_group_.lock()->post_meta(shared_from_this(), meta.smeta);
 				}
 					break;
 				case AbstractParser::BLOCK_REQUEST: {
@@ -182,14 +182,14 @@ void P2PDirectory::handle_message() {
 					log_->debug() << log_tag() << "Received block_request "
 						<< encrypted_data_hash_readable(block_request
 															.block_id);
-					directory_ptr_.lock()->request_block(shared_from_this(), block_request.block_id);
+					exchange_group_.lock()->request_block(shared_from_this(), block_request.block_id);
 				}
 					break;
 				case AbstractParser::BLOCK: {
 					AbstractParser::Block
 						block = parser_->parse_block(*receive_buffer_);    // Must check message_type and so on.
 					log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(block.block_id);
-					directory_ptr_.lock()->post_block(shared_from_this(), block.block_id, block.block_content);
+					exchange_group_.lock()->post_block(shared_from_this(), block.block_id, block.block_content);
 				}
 					break;
 				default: throw protocol_error();
@@ -228,7 +228,7 @@ void P2PDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const
 	connection_->send(parser_->gen_meta_request(meta_request), []{});
 }
 
-void P2PDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const SignedMeta& smeta) {
+void P2PDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta) {
 	AbstractParser::Meta meta;
 	meta.smeta = smeta;
 
@@ -265,11 +265,11 @@ void P2PDirectory::send_protocol_tag() {
 }
 
 void P2PDirectory::send_handshake() {
-	if(!directory_ptr_.lock()) throw protocol_error();
+	if(!exchange_group_.lock()) throw protocol_error();
 
 	AbstractParser::Handshake handshake;
 	handshake.user_agent = session_.version().user_agent();
-	handshake.dir_hash = directory_ptr_.lock()->hash();
+	handshake.dir_hash = exchange_group_.lock()->hash();
 	handshake.auth_token = local_token();
 
 	log_->debug() << log_tag() << "Sending handshake";
@@ -278,7 +278,7 @@ void P2PDirectory::send_handshake() {
 
 void P2PDirectory::send_meta_list() {
 	AbstractParser::MetaList meta_list;
-	meta_list.revision = directory_ptr_.lock()->get_meta_list();
+	meta_list.revision = exchange_group_.lock()->get_meta_list();
 
 	log_->debug() << log_tag() << "Sending meta_list";
 	connection_->send(parser_->gen_meta_list(meta_list), []{});

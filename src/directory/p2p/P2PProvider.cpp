@@ -16,9 +16,7 @@
 #include "P2PProvider.h"
 #include "../../Session.h"
 #include "P2PDirectory.h"
-#include "../fs/FSDirectory.h"
-#include "../Key.h"
-#include "../Abstract.h"
+#include "../ExchangeGroup.h"
 #include "../Exchanger.h"
 
 namespace librevault {
@@ -55,23 +53,23 @@ P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 
 P2PProvider::~P2PProvider() {}
 
-void P2PProvider::add_node(const url& node_url, std::shared_ptr<FSDirectory> directory) {
+void P2PProvider::add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr) {
 	auto connection = std::make_unique<Connection>(node_url, session_, *this);
-	auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
+	auto socket = std::make_shared<P2PDirectory>(std::move(connection), group_ptr, session_, exchanger_, *this);
 	unattached_connections_.insert(socket);
 }
 
-void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FSDirectory> directory) {
-	if(!directory->have_p2p_dir(node_endpoint)){
+void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr) {
+	if(!group_ptr->have_p2p_dir(node_endpoint)){
 		auto connection = std::make_unique<Connection>(node_endpoint, session_, *this);
-		auto socket = std::make_shared<P2PDirectory>(std::move(connection), directory, session_, exchanger_, *this);
+		auto socket = std::make_shared<P2PDirectory>(std::move(connection), group_ptr, session_, exchanger_, *this);
 		unattached_connections_.insert(socket);
 	}
 }
 
-void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FSDirectory> directory) {
-	if(!directory->have_p2p_dir(pubkey)){
-		add_node(node_endpoint, directory);
+void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr) {
+	if(!group_ptr->have_p2p_dir(pubkey)){
+		add_node(node_endpoint, group_ptr);
 	}
 }
 
@@ -88,7 +86,7 @@ void P2PProvider::init_persistent() {
 		for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
 			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
 
-			add_node(connection_url, exchanger_.get_directory(k.get_Hash()));
+			add_node(connection_url, exchanger_.get_group(k.get_Hash()));
 		}
 	}
 }

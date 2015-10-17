@@ -16,6 +16,8 @@
 #include "../pch.h"
 #pragma once
 
+#include "../util/Loggable.h"
+
 namespace librevault {
 
 class Session;
@@ -24,27 +26,30 @@ class FSDirectory;
 class P2PProvider;
 class MulticastDiscovery;
 
-class Exchanger {
+class ExchangeGroup;
+
+class Exchanger : protected Loggable {
 public:
 	Exchanger(Session& session);
 	virtual ~Exchanger();
 
-	void register_directory(std::shared_ptr<FSDirectory> dir_ptr);
-	void unregister_directory(std::shared_ptr<FSDirectory> dir_ptr);
+	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
+	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
 
-	std::shared_ptr<FSDirectory> get_directory(const fs::path& path);
-	std::shared_ptr<FSDirectory> get_directory(const blob& hash);
+	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
+
+	P2PProvider* get_p2p_provider();
 private:
 	Session& session_;
-	std::shared_ptr<spdlog::logger> log_;
 
 	// Remote
 	std::unique_ptr<P2PProvider> p2p_provider_;
 
-	std::map<fs::path, std::shared_ptr<FSDirectory>> path_dir_;
-	std::map<blob, std::shared_ptr<FSDirectory>> hash_dir_;
+	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
 
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+
+	std::string log_tag() const {return "Exchanger";}
 
 	void add_directory(const ptree& dir_options);
 };

@@ -20,7 +20,7 @@
 namespace librevault {
 
 AbstractDirectory::AbstractDirectory(Session& session, Exchanger& exchanger) :
-		session_(session), exchanger_(exchanger), log_(session_.log()) {}
+		Loggable(session), session_(session), exchanger_(exchanger) {}
 AbstractDirectory::~AbstractDirectory() {}
 
 std::string AbstractDirectory::path_id_readable(const blob& path_id) const {

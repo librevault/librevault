@@ -25,14 +25,15 @@ namespace librevault {
 
 Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	auto folder_trees = session.config().equal_range("folder");
-	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
-		add_directory(folder_tree_it->second);
-	}
 
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
 
 	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
+
+	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
+		add_directory(folder_tree_it->second);
+	}
 }
 Exchanger::~Exchanger() {}
 
@@ -40,13 +41,13 @@ void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 	hash_group_.insert({group_ptr->hash(), group_ptr});
 
 	// Did this to defer execution to moment, when multicast4_,multicast6_ is initialized
-	//session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast4_->register_directory(dir_ptr);}, dir_ptr));
-	//session_.ios().post(std::bind([this](std::shared_ptr<FSDirectory> dir_ptr){multicast6_->register_directory(dir_ptr);}, dir_ptr));
+	multicast4_->register_group(group_ptr);
+	multicast6_->register_group(group_ptr);
 }
 
 void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
-	//multicast4_->unregister_directory(dir_ptr);
-	//multicast6_->unregister_directory(dir_ptr);
+	multicast4_->unregister_group(group_ptr);
+	multicast6_->unregister_group(group_ptr);
 
 	hash_group_.erase(group_ptr->hash());
 }

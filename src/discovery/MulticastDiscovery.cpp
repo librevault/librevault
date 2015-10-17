@@ -94,7 +94,12 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 		blob dir_hash = blob(message.dir_hash().begin(), message.dir_hash().end());
 		blob pubkey = blob(message.pubkey().begin(), message.pubkey().end());
 
-		auto group_ptr = exchanger_.get_group(dir_hash);
+		std::shared_ptr<ExchangeGroup> group_ptr;
+		for(auto& sender_it : senders_){
+			if(sender_it.first->hash() == dir_hash)
+				group_ptr = sender_it.first; break;
+		}
+
 		if(group_ptr){
 			tcp_endpoint node_endpoint(endpoint_ptr->address(), port);
 			log_->debug() << "<== MulticastDiscovery: " << node_endpoint;

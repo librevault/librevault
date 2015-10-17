@@ -275,18 +275,16 @@ std::set<std::string> OpenStorage::indexed_files(){
 }
 
 std::set<std::string> OpenStorage::pending_files(){
-	std::set<std::string> file_list1, file_list2;// TODO: WTF?
-	file_list1 = open_files();
+	std::set<std::string> file_list = open_files();
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
 		Meta meta; meta.parse(row[0].as_blob());
 		if(meta.meta_type() != meta.DELETED){
-			file_list1.insert(meta.path(key_));
+			file_list.insert(meta.path(key_));
 		}
 	}
 
-	file_list1.insert(file_list2.begin(), file_list2.end());
-	return file_list1;
+	return file_list;
 }
 
 std::set<std::string> OpenStorage::all_files(){

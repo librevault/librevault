@@ -79,8 +79,8 @@ void Connection::establish(establish_handler handler) {
 }
 
 void Connection::disconnect(const boost::system::error_code& error) {
-	if(disconnect_mutex_.try_lock()){
-		socket_ = std::make_unique<ssl_socket>(session_.ios(), provider_.ssl_ctx());
+	if(disconnect_mtx_.try_lock()){
+		socket_.reset();
 		state_ = CLOSED;
 		establish_handler_(CLOSED, error);
 	}

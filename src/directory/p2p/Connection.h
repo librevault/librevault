@@ -83,7 +83,7 @@ private:
 	std::queue<std::pair<blob, send_handler>> send_queue_;
 
 	// Mutexes
-	std::mutex disconnect_mutex_;
+	std::mutex disconnect_mtx_;
 
 	// Handlers
 	establish_handler establish_handler_;

@@ -96,8 +96,12 @@ void P2PDirectory::receive_size() {
 void P2PDirectory::receive_data() {
 	awaiting_receive_next_ = DATA;
 	connection_->receive(receive_buffer_, [this]{
-		handle_message();
-		receive_size();
+		try {
+			handle_message();
+			receive_size();
+		}catch(std::runtime_error& e){
+			disconnect();
+		}
 	});
 }
 
@@ -197,7 +201,7 @@ void P2PDirectory::handle_message() {
 		}
 	}catch(std::runtime_error& e){
 		log_->warn() << log_tag() << "Closing connection because of exception: " << e.what();
-		disconnect();
+		throw;
 	}
 }
 
@@ -286,10 +290,12 @@ void P2PDirectory::send_meta_list() {
 
 void P2PDirectory::disconnect(const boost::system::error_code& error) {
 	auto this_shared = shared_from_this();	// To prevent deletion during execution of this function. After exiting from the scope it will do "delete this;" internally
-	connection_.reset();
-	detach();
-	provider_.remove_from_unattached(this_shared);
-	log_->debug() << "Connection to " << connection_->remote_string() << " closed: " << error.message();
+	if(disconnect_mtx_.try_lock()){
+		connection_->disconnect(error);
+		detach();
+		provider_.remove_from_unattached(this_shared);
+		log_->debug() << "Connection to " << connection_->remote_string() << " closed: " << error.message();
+	}
 }
 
 } /* namespace librevault */

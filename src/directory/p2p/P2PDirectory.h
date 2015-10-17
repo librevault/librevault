@@ -90,6 +90,9 @@ private:
 
 	std::unique_ptr<Connection> connection_;
 
+	// Mutexes
+	std::mutex disconnect_mtx_;
+
 	// High-level facilities
 	std::weak_ptr<ExchangeGroup> exchange_group_;
 	std::map<blob, int64_t> revisions_;

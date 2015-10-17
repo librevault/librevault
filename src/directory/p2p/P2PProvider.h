@@ -53,7 +53,6 @@ private:
 	boost::asio::ssl::context ssl_ctx_;
 	boost::asio::ip::tcp::acceptor acceptor_;
 
-	void init_persistent();
 	void accept_operation();
 };
 

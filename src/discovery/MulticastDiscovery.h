@@ -74,7 +74,7 @@ public:
 	MulticastDiscovery4(Session& session, Exchanger& exchanger);
 	virtual ~MulticastDiscovery4(){}
 
-	std::string log_tag() const {return "MulticastDiscovery4";}
+	std::string log_tag() const {return "[MulticastDiscovery4] ";}
 };
 
 class MulticastDiscovery6 : public MulticastDiscovery {
@@ -82,7 +82,7 @@ public:
 	MulticastDiscovery6(Session& session, Exchanger& exchanger);
 	virtual ~MulticastDiscovery6(){}
 
-	std::string log_tag() const {return "MulticastDiscovery6";}
+	std::string log_tag() const {return "[MulticastDiscovery6] ";}
 };
 
 } /* namespace librevault */

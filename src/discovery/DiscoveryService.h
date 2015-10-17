@@ -33,6 +33,7 @@ public:
 	virtual void register_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
 	virtual void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
 
+	void add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
 protected:

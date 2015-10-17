@@ -13,47 +13,24 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-
-#include "../util/Loggable.h"
+#include "../pch.h"
+#include "DiscoveryService.h"
 
 namespace librevault {
 
-class Session;
-
-class FSDirectory;
-class P2PProvider;
-class MulticastDiscovery;
-class StaticDiscovery;
-
-class ExchangeGroup;
-
-class Exchanger : protected Loggable {
+class StaticDiscovery : public DiscoveryService {
 public:
-	Exchanger(Session& session);
-	virtual ~Exchanger();
+	StaticDiscovery(Session& session, Exchanger& exchanger);
+	virtual ~StaticDiscovery();
 
 	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
 	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
+protected:
+	std::set<std::shared_ptr<ExchangeGroup>> groups_;
+	//std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 
-	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
-
-	P2PProvider* get_p2p_provider();
-private:
-	Session& session_;
-
-	// Remote
-	std::unique_ptr<P2PProvider> p2p_provider_;
-
-	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
-
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
-	std::unique_ptr<StaticDiscovery> static_discovery_;
-
-	std::string log_tag() const {return "Exchanger";}
-
-	void add_directory(const ptree& dir_options);
+	std::string log_tag() const {return "[StaticDiscovery] ";}
 };
 
 } /* namespace librevault */

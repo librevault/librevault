@@ -49,7 +49,7 @@ void MulticastSender::wait(){
 
 void MulticastSender::send(){
 	parent_.socket_.async_send_to(boost::asio::buffer(get_message()), parent_.multicast_addr_, std::bind(&MulticastSender::wait, this));
-	parent_.log_->debug() << "==> MulticastDiscovery: " << parent_.multicast_addr_;
+	parent_.log_->debug() << parent_.log_tag() << "==> " << parent_.multicast_addr_;
 }
 
 /* MulticastDiscovery */
@@ -84,7 +84,7 @@ void MulticastDiscovery::start(){
 
 	receive();
 
-	log_->debug() << "Started UDP Local Node Discovery on: " << multicast_addr_;
+	log_->info() << log_tag() << "Started UDP Local Node Discovery on: " << multicast_addr_;
 }
 
 void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp::endpoint> endpoint_ptr){
@@ -102,11 +102,11 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 
 		if(group_ptr){
 			tcp_endpoint node_endpoint(endpoint_ptr->address(), port);
-			log_->debug() << "<== MulticastDiscovery: " << node_endpoint;
+			log_->debug() << log_tag() << "<== " << node_endpoint;
 			add_node(node_endpoint, pubkey, group_ptr);
 		}
 	}else{
-		log_->debug() << "Message from " << endpoint_ptr->address() << ": Malformed Protobuf data";
+		log_->debug() << log_tag() << "Message from " << endpoint_ptr->address() << ": Malformed Protobuf data";
 	}
 
 	receive();	// We received message, continue receiving others

@@ -59,6 +59,9 @@ public:
 	bool have_p2p_dir(const blob& pubkey);
 
 	// Getters
+	std::set<std::shared_ptr<FSDirectory>> fs_dirs() const;
+	const std::set<std::shared_ptr<P2PDirectory>>& p2p_dirs() const;
+
 	const Key& key() const;
 	const blob& hash() const;
 private:

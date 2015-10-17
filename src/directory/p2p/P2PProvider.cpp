@@ -47,8 +47,6 @@ P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 	log_->info() << "Listening on " << local_endpoint();
 
 	accept_operation();
-
-	init_persistent();
 }
 
 P2PProvider::~P2PProvider() {}
@@ -75,20 +73,6 @@ void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey
 
 void P2PProvider::remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached) {
 	unattached_connections_.erase(already_attached);
-}
-
-void P2PProvider::init_persistent() {
-	auto folder_trees = session_.config().equal_range("folder");
-	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
-		Key k(folder_tree_it->second.get<std::string>("key"));
-
-		auto node_tree = folder_tree_it->second.equal_range("node");
-		for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
-			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
-
-			add_node(connection_url, exchanger_.get_group(k.get_Hash()));
-		}
-	}
 }
 
 void P2PProvider::accept_operation() {

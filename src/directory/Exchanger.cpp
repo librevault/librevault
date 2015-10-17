@@ -18,6 +18,7 @@
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
 #include "../discovery/MulticastDiscovery.h"
+#include "../discovery/StaticDiscovery.h"
 
 #include "ExchangeGroup.h"
 
@@ -27,6 +28,8 @@ Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	auto folder_trees = session.config().equal_range("folder");
 
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+
+	static_discovery_ = std::make_unique<StaticDiscovery>(session_, *this);
 
 	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
@@ -40,7 +43,8 @@ Exchanger::~Exchanger() {}
 void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 	hash_group_.insert({group_ptr->hash(), group_ptr});
 
-	// Did this to defer execution to moment, when multicast4_,multicast6_ is initialized
+	static_discovery_->register_group(group_ptr);
+
 	multicast4_->register_group(group_ptr);
 	multicast6_->register_group(group_ptr);
 }
@@ -48,6 +52,8 @@ void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 	multicast4_->unregister_group(group_ptr);
 	multicast6_->unregister_group(group_ptr);
+
+	static_discovery_->unregister_group(group_ptr);
 
 	hash_group_.erase(group_ptr->hash());
 }

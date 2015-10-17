@@ -22,6 +22,10 @@ namespace librevault {
 
 DiscoveryService::DiscoveryService(Session& session, Exchanger& exchanger) : Loggable(session), session_(session), exchanger_(exchanger) {}
 
+void DiscoveryService::add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr) {
+	exchanger_.get_p2p_provider()->add_node(node_url, group_ptr);
+}
+
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr) {
 	exchanger_.get_p2p_provider()->add_node(node_endpoint, group_ptr);
 }

@@ -89,6 +89,14 @@ bool ExchangeGroup::have_p2p_dir(const blob& pubkey) {
 	return false;
 }
 
+std::set<std::shared_ptr<FSDirectory>> ExchangeGroup::fs_dirs() const {
+	return std::set<std::shared_ptr<FSDirectory>>{fs_dir_};
+}
+
+const std::set<std::shared_ptr<P2PDirectory>>& ExchangeGroup::p2p_dirs() const {
+	return p2p_dirs_;
+}
+
 const Key& ExchangeGroup::key() const {
 	return fs_dir_->key();
 }

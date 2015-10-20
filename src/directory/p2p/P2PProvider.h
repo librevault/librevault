@@ -37,6 +37,7 @@ public:
 
 	void remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached);
 
+	// Getters
 	tcp_endpoint local_endpoint() {return acceptor_.local_endpoint();}
 	const NodeKey& node_key() const {return node_key_;}
 	boost::asio::ssl::context& ssl_ctx() {return ssl_ctx_;}

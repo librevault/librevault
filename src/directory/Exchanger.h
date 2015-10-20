@@ -27,6 +27,8 @@ class P2PProvider;
 class MulticastDiscovery;
 class StaticDiscovery;
 
+class NATPMPService;
+
 class ExchangeGroup;
 
 class Exchanger : protected Loggable {
@@ -47,6 +49,8 @@ private:
 	std::unique_ptr<P2PProvider> p2p_provider_;
 
 	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
+
+	std::unique_ptr<NATPMPService> natpmp_;
 
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
 	std::unique_ptr<StaticDiscovery> static_discovery_;

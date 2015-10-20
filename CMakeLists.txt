@@ -102,6 +102,10 @@ find_package(CryptoPP REQUIRED)
 include_directories(${CRYPTOPP_INCLUDE_DIRS})
 link_libraries(${CRYPTOPP_LIBRARIES})
 
+# libnatpmp
+find_library(libnatpmp_LIBRARIES natpmp)
+link_libraries(${libnatpmp_LIBRARIES})
+
 # Botan
 #find_package(Botan REQUIRED)
 #include_directories(${BOTAN_INCLUDE_DIRS})

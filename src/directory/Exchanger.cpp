@@ -17,6 +17,7 @@
 
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
+#include "p2p/nat/NATPMPService.h"
 #include "../discovery/MulticastDiscovery.h"
 #include "../discovery/StaticDiscovery.h"
 
@@ -28,6 +29,8 @@ Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	auto folder_trees = session.config().equal_range("folder");
 
 	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+
+	natpmp_ = std::make_unique<NATPMPService>(session, *this);
 
 	static_discovery_ = std::make_unique<StaticDiscovery>(session_, *this);
 

@@ -26,6 +26,9 @@
 #include <lvcrypto/Hex.h>
 #include <lvcrypto/AES_CBC.h>
 
+// natpmp
+#include <natpmp.h>
+
 // dir_monitor
 #include <dir_monitor/dir_monitor.hpp>
 

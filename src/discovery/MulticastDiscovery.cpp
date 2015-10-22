@@ -68,7 +68,8 @@ MulticastDiscovery::~MulticastDiscovery() {
 }
 
 void MulticastDiscovery::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
-	senders_.insert({group_ptr, std::make_shared<MulticastSender>(*this, group_ptr)});
+	if(local_options_.get<bool>("enabled", true))
+		senders_.insert({group_ptr, std::make_shared<MulticastSender>(*this, group_ptr)});
 }
 
 void MulticastDiscovery::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {

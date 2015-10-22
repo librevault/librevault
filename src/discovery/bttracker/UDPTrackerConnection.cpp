@@ -95,7 +95,7 @@ void UDPTrackerConnection::bump_announce_timer() {
 	announce_interval_ = std::min(announce_interval_, std::chrono::seconds(session_.config().get<uint_least32_t>("discovery.bttracker.min_interval")));
 
 	announce_timer_.expires_from_now(announce_interval_);
-	reconnect_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));
+	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));
 }
 
 void UDPTrackerConnection::connect(const boost::system::error_code& ec) {

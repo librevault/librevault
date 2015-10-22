@@ -15,9 +15,9 @@
  */
 #include <natpmp.h>
 #include "NATPMPService.h"
-#include "../../../Session.h"
-#include "../../Exchanger.h"
-#include "../../p2p/P2PProvider.h"
+#include "../Session.h"
+#include "../directory/Exchanger.h"
+#include "../directory/p2p/P2PProvider.h"
 
 namespace librevault {
 

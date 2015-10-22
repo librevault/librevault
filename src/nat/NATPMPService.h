@@ -13,8 +13,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../../../pch.h"
-#include "../../../util/Loggable.h"
+#include "../pch.h"
+#include "../util/Loggable.h"
 
 namespace librevault {
 
@@ -33,7 +33,7 @@ public:
 	void reset_public_port();
 
 	// Getters
-	uint16_t get_public_port() const {return public_port_;}
+	uint16_t public_port() const {return public_port_;}
 
 private:
 	Session& session_;

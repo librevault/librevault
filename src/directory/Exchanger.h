@@ -22,11 +22,15 @@ namespace librevault {
 
 class Session;
 
-class FSDirectory;
+// Providers
 class P2PProvider;
-class MulticastDiscovery;
-class StaticDiscovery;
 
+// Discovery services
+class StaticDiscovery;
+class MulticastDiscovery;
+class BTTrackerDiscovery;
+
+// NAT Traversal services
 class NATPMPService;
 
 class ExchangeGroup;
@@ -40,6 +44,7 @@ public:
 	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
 
 	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
+	uint16_t mapped_port() const;
 
 	P2PProvider* get_p2p_provider();
 private:
@@ -52,8 +57,9 @@ private:
 
 	std::unique_ptr<NATPMPService> natpmp_;
 
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
 	std::unique_ptr<StaticDiscovery> static_discovery_;
+	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 
 	std::string log_tag() const {return "Exchanger";}
 

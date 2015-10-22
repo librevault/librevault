@@ -58,7 +58,7 @@ void P2PProvider::add_node(const url& node_url, std::shared_ptr<ExchangeGroup> g
 }
 
 void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr) {
-	if(!group_ptr->have_p2p_dir(node_endpoint)){
+	if(!group_ptr->have_p2p_dir(node_endpoint) && loopback_blacklist.find(node_endpoint) == loopback_blacklist.end()){
 		auto connection = std::make_unique<Connection>(node_endpoint, session_, *this);
 		auto socket = std::make_shared<P2PDirectory>(std::move(connection), group_ptr, session_, exchanger_, *this);
 		unattached_connections_.insert(socket);
@@ -73,6 +73,10 @@ void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey
 
 void P2PProvider::remove_from_unattached(std::shared_ptr<P2PDirectory> already_attached) {
 	unattached_connections_.erase(already_attached);
+}
+
+void P2PProvider::mark_loopback(tcp_endpoint endpoint) {
+	loopback_blacklist.emplace(std::move(endpoint));
 }
 
 void P2PProvider::accept_operation() {

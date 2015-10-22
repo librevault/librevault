@@ -67,6 +67,11 @@ void P2PDirectory::detach() {
 
 void P2PDirectory::handle_establish(Connection::state state, const boost::system::error_code& error) {
 	if(state == Connection::state::ESTABLISHED){
+		if(provider_.node_key().public_key() == remote_pubkey()){
+			provider_.mark_loopback(remote_endpoint());
+			return disconnect();
+		}
+
 		receive_buffer_->resize(sizeof(protocol_tag));
 		receive_data();
 		send_protocol_tag();

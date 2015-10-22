@@ -126,6 +126,9 @@ using boost::asio::ip::address;
 using boost::asio::ip::address_v4;
 using boost::asio::ip::address_v6;
 
+using udp_resolver = boost::asio::ip::udp::resolver;
+using tcp_resolver = boost::asio::ip::tcp::resolver;
+
 using udp_endpoint = boost::asio::ip::udp::endpoint;
 using tcp_endpoint = boost::asio::ip::tcp::endpoint;
 

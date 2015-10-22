@@ -17,9 +17,10 @@
 
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
-#include "p2p/nat/NATPMPService.h"
-#include "../discovery/MulticastDiscovery.h"
+#include "../nat/NATPMPService.h"
 #include "../discovery/StaticDiscovery.h"
+#include "../discovery/MulticastDiscovery.h"
+#include "../discovery/BTTrackerDiscovery.h"
 
 #include "ExchangeGroup.h"
 
@@ -37,6 +38,8 @@ Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
 
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(session_, *this);
+
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
 	}
@@ -50,9 +53,13 @@ void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 
 	multicast4_->register_group(group_ptr);
 	multicast6_->register_group(group_ptr);
+
+	bttracker_->register_group(group_ptr);
 }
 
 void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	bttracker_->unregister_group(group_ptr);
+
 	multicast4_->unregister_group(group_ptr);
 	multicast6_->unregister_group(group_ptr);
 
@@ -66,6 +73,10 @@ std::shared_ptr<ExchangeGroup> Exchanger::get_group(const blob& hash){
 	if(it != hash_group_.end())
 		return it->second;
 	return nullptr;
+}
+
+uint16_t Exchanger::mapped_port() const {
+	return natpmp_->public_port();
 }
 
 P2PProvider* Exchanger::get_p2p_provider() {

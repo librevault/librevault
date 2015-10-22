@@ -278,9 +278,14 @@ std::set<std::string> OpenStorage::pending_files(){
 	std::set<std::string> file_list = open_files();
 
 	for(auto row : index_.db().exec("SELECT meta FROM files")){
-		Meta meta; meta.parse(row[0].as_blob());
+		Meta meta(row[0].as_blob());
 		if(meta.meta_type() != meta.DELETED){
 			file_list.insert(meta.path(key_));
+
+			if(dir_.dir_options().get<bool>("mtime_aware_indexer", true)){
+				if(fs::last_write_time(fs::absolute(meta.path(key_), dir_.open_path())) == meta.mtime())
+					file_list.erase(meta.path(key_));
+			}
 		}
 	}
 

@@ -122,7 +122,7 @@ void Connection::receive(std::shared_ptr<blob> buffer, receive_handler handler) 
 	boost::asio::async_read(*socket_, boost::asio::buffer(buffer->data(), buffer->size()), std::bind(
 			[this](const boost::system::error_code& error, std::size_t bytes_transferred, std::shared_ptr<std::vector<uint8_t>> buffer, receive_handler handler){
 				if(error)
-					disconnect(error);
+					return disconnect(error);
 				else
 					handler();
 			},
@@ -149,6 +149,8 @@ void Connection::resolve() {
 void Connection::handle_resolve(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator iterator) {
 	state_ = CONNECT;
 
+	if(error) return disconnect(error);
+
 	boost::asio::async_connect(socket_->lowest_layer(), iterator, std::bind(
 			(void(Connection::*)(const boost::system::error_code&, boost::asio::ip::tcp::resolver::iterator))&Connection::handle_connect,
 			this,
@@ -165,15 +167,15 @@ void Connection::connect() {
 }
 
 void Connection::handle_connect(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator iterator) {
-	if(error)
-		disconnect(error);
-	else{
-		remote_endpoint_ = iterator->endpoint();
-		handle_connect(error);
-	}
+	if(error) return disconnect(error);
+
+	remote_endpoint_ = iterator->endpoint();
+	handle_connect(error);
 }
 
 void Connection::handle_connect(const boost::system::error_code& error) {
+	if(error) return disconnect(error);
+
 	state_ = HANDSHAKE;
 
 	log_->debug() << "Socket connected to: " << remote_string() << " E: " << error;
@@ -212,6 +214,8 @@ void Connection::handshake() {
 }
 
 void Connection::handle_handshake(const boost::system::error_code& error) {
+	if(error) return disconnect(error);
+
 	state_ = ESTABLISHED;
 
 	log_->debug() << "TLS connection established with: " << remote_string() << " " << error;

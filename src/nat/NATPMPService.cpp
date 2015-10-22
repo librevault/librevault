@@ -25,7 +25,7 @@ NATPMPService::NATPMPService(Session& session, Exchanger& exchanger) :
 		Loggable(session), session_(session), exchanger_(exchanger), repost_timer_(session.ios()) {
 	reset_public_port();
 
-	perform_mapping();
+	if(session_.config().get<bool>("net.natpmp.enabled", true)) perform_mapping();
 }
 
 void NATPMPService::schedule_after(std::chrono::seconds interval) {

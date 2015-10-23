@@ -97,6 +97,7 @@
 #include <map>
 #include <memory>
 #include <queue>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>

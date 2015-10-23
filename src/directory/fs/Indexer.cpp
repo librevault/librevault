@@ -26,7 +26,7 @@ Indexer::Indexer(FSDirectory& dir, Session& session) :
 Indexer::~Indexer() {}
 
 Meta::SignedMeta Indexer::index(const std::string& file_path){
-	if(open_storage_.is_skipped(file_path)){
+	if(dir_.ignore_list->is_ignored(file_path)){
 		log_->notice() << dir_.log_tag() << "Skipping " << file_path;
 		return Meta::SignedMeta();
 	}else

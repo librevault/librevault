@@ -38,7 +38,6 @@ public:
 	virtual ~OpenStorage();
 
 	// Path constructor
-	std::string make_relpath(const fs::path& path) const;
 	blob make_path_id(const std::string& relpath) const;
 
 	bool have_block(const blob& encrypted_data_hash);
@@ -58,10 +57,6 @@ public:
 	 */
 	//void disassemble(const std::string& file_path, bool delete_file = true);
 
-	bool is_skipped(const std::string& relpath) const;
-
-	const std::set<std::string>& skip_files() const;
-
 	std::set<std::string> open_files();	// Returns file names that are actually present in OpenFS.
 	std::set<std::string> indexed_files();	// Returns file names that are mentioned in index. They may be present, maybe not.
 	std::set<std::string> pending_files();	// Files, ready to be reindexed (sum of above, except deleted)
@@ -74,8 +69,6 @@ private:
 	const Key& key_;
 	Index& index_;
 	EncStorage& enc_storage_;
-
-	mutable std::set<std::string> skip_files_;
 
 	std::pair<blob, blob> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
 	std::string get_path(const blob& path_id);

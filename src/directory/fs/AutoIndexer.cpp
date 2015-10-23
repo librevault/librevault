@@ -71,8 +71,8 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	case boost::asio::dir_monitor_event::renamed_new_name:
 	case boost::asio::dir_monitor_event::removed:
 	{
-		std::string relpath = dir_.open_storage->make_relpath(ev.path);
-		if(!dir_.open_storage->is_skipped(relpath)){
+		std::string relpath = dir_.make_relpath(ev.path);
+		if(!dir_.ignore_list->is_ignored(relpath)){
 			log_->debug() << "[dir_monitor] " << ev;
 			enqueue_files(relpath);
 		}

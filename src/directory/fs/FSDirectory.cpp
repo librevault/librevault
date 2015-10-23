@@ -33,6 +33,7 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchang
 		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_ / "assembled.part")) {
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
+	ignore_list = std::make_unique<IgnoreList>(*this, session);
 	index = std::make_unique<Index>(*this, session);
 	if(key_.get_type() <= Key::Type::Download){
 		enc_storage = std::make_unique<EncStorage>(*this, session_);
@@ -166,6 +167,24 @@ void FSDirectory::handle_smeta(Meta::SignedMeta smeta) {
 
 std::string FSDirectory::name() const {
 	return open_path_.empty() ? block_path_.string() : open_path_.string();
+}
+
+std::string FSDirectory::make_relpath(const fs::path& path) const {
+	fs::path rel_to = open_path();
+	auto abspath = fs::absolute(path);
+
+	fs::path relpath;
+	auto path_elem_it = abspath.begin();
+	for(auto dir_elem : rel_to){
+		if(dir_elem != *(path_elem_it++))
+			return std::string();
+	}
+	for(; path_elem_it != abspath.end(); path_elem_it++){
+		if(*path_elem_it == "." || *path_elem_it == "..")
+			return std::string();
+		relpath /= *path_elem_it;
+	}
+	return relpath.generic_string();
 }
 
 } /* namespace librevault */

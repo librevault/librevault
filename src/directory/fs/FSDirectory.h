@@ -18,6 +18,7 @@
 #include "../Abstract.h"
 
 #include "../Key.h"
+#include "IgnoreList.h"
 #include "Index.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
@@ -53,6 +54,9 @@ public:
 	void request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id);
 	void post_block(std::shared_ptr<AbstractDirectory> origin, const blob& encrypted_data_hash, const blob& block);
 
+	// Makers
+	std::string make_relpath(const fs::path& path) const;
+
 	// Getters
 	const ptree& dir_options() const {return dir_options_;}
 
@@ -69,6 +73,7 @@ public:
 	void set_exchange_group(std::shared_ptr<ExchangeGroup> exchange_group);
 
 	// Components
+	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
 	std::unique_ptr<EncStorage> enc_storage;
 	std::unique_ptr<OpenStorage> open_storage;

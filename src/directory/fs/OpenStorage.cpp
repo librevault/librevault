@@ -150,8 +150,11 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 					pending_remove.push_back(encrypted_data_hash);
 				}
 
+				auto relpath = dir_.make_relpath(file_path);
+				dir_.ignore_list->add_ignored(relpath);
 				fs::remove(file_path);
 				fs::rename(dir_.asm_path(), file_path);
+				dir_.ignore_list->remove_ignored(relpath);
 
 				index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 
@@ -199,64 +202,17 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 	}
 }
 */
-std::string OpenStorage::make_relpath(const fs::path& path) const {
-	fs::path rel_to = dir_.open_path();
-	auto abspath = fs::absolute(path);
-
-	fs::path relpath;
-	auto path_elem_it = abspath.begin();
-	for(auto dir_elem : rel_to){
-		if(dir_elem != *(path_elem_it++))
-			return std::string();
-	}
-	for(; path_elem_it != abspath.end(); path_elem_it++){
-		if(*path_elem_it == "." || *path_elem_it == "..")
-			return std::string();
-		relpath /= *path_elem_it;
-	}
-	return relpath.generic_string();
-}
-
 blob OpenStorage::make_path_id(const std::string& relpath) const {
 	return relpath | crypto::HMAC_SHA3_224(key_.get_Encryption_Key());
-}
-
-bool OpenStorage::is_skipped(const std::string& relpath) const {
-	for(auto& skip_file : skip_files())
-		if(relpath.size() >= skip_file.size() && std::equal(skip_file.begin(), skip_file.end(), relpath.begin()))
-			return true;
-	return false;
-}
-
-const std::set<std::string>& OpenStorage::skip_files() const {
-	if(!skip_files_.empty()) return skip_files_;
-
-	// Config paths
-	auto ignore_list_its = dir_.dir_options().equal_range("ignore");
-	for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++){
-		skip_files_.insert(ignore_list_it->second.get_value<fs::path>().generic_string());
-	}
-
-	// Predefined paths
-	skip_files_.insert(make_relpath(dir_.block_path()));
-	skip_files_.insert(make_relpath(dir_.db_path()));
-	skip_files_.insert(make_relpath(dir_.db_path())+"-journal");
-	skip_files_.insert(make_relpath(dir_.db_path())+"-wal");
-	skip_files_.insert(make_relpath(dir_.db_path())+"-shm");
-	skip_files_.insert(make_relpath(dir_.asm_path()));
-
-	skip_files_.erase(std::string());	// If one (or more) of the above returned empty string (aka if one (or more) of the above paths are outside open_path)
-
-	return skip_files_;
 }
 
 std::set<std::string> OpenStorage::open_files(){
 	std::set<std::string> file_list;
 
 	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.open_path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		auto relpath = make_relpath(dir_entry_it->path());
+		auto relpath = dir_.make_relpath(dir_entry_it->path());
 
-		if(!is_skipped(relpath)) file_list.insert(relpath);
+		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
 	}
 	return file_list;
 }
@@ -268,7 +224,7 @@ std::set<std::string> OpenStorage::indexed_files(){
 		Meta meta; meta.parse(row[0].as_blob());
 		std::string relpath = meta.path(key_);
 
-		if(!is_skipped(relpath)) file_list.insert(relpath);
+		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
 	}
 
 	return file_list;

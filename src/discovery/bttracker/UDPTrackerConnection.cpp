@@ -92,7 +92,7 @@ void UDPTrackerConnection::bump_reconnect_timer() {
 }
 
 void UDPTrackerConnection::bump_announce_timer() {
-	announce_interval_ = std::min(announce_interval_, std::chrono::seconds(session_.config().get<uint_least32_t>("discovery.bttracker.min_interval")));
+	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(session_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15)));
 
 	announce_timer_.expires_from_now(announce_interval_);
 	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));

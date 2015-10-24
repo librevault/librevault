@@ -239,8 +239,10 @@ std::set<std::string> OpenStorage::pending_files(){
 			file_list.insert(meta.path(key_));
 
 			if(dir_.dir_options().get<bool>("mtime_aware_indexer", true)){
-				if(fs::last_write_time(fs::absolute(meta.path(key_), dir_.open_path())) == meta.mtime())
-					file_list.erase(meta.path(key_));
+				try {
+					if(fs::last_write_time(fs::absolute(meta.path(key_), dir_.open_path())) == meta.mtime())
+						file_list.erase(meta.path(key_));
+				}catch(fs::filesystem_error& ec){}
 			}
 		}
 	}

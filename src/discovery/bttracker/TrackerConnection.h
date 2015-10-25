@@ -33,7 +33,7 @@ public:
 	virtual ~TrackerConnection();
 protected:
 	enum class Event : int32_t {
-		NONE=0, COMPLETED=1, STARTED=2, STOPPED=3
+		EVENT_NONE=0, EVENT_COMPLETED=1, EVENT_STARTED=2, EVENT_STOPPED=3
 	};
 
 	using info_hash = std::array<uint8_t, 20>;

@@ -107,7 +107,7 @@ Meta Indexer::make_Meta(const std::string& relpath){
 			if(meta.meta_type() == Meta::FILE){
 				// Update FileMap
 				cryptodiff::FileMap filemap = old_meta.filemap(key_);
-				filemap.update(abspath.native());
+				filemap.update(abspath.generic_string());
 				meta.set_filemap(filemap);
 			}
 		}catch(...){
@@ -115,7 +115,7 @@ Meta Indexer::make_Meta(const std::string& relpath){
 				// Create FileMap, if something got wrong
 				cryptodiff::FileMap filemap(key_.get_Encryption_Key());
 				filemap.set_strong_hash_type(get_strong_hash_type());
-				filemap.create(abspath.native());
+				filemap.create(abspath.generic_string());
 				meta.set_filemap(filemap);
 			}
 		}
@@ -131,7 +131,7 @@ Meta Indexer::make_Meta(const std::string& relpath){
 		// Write new values of attributes (if enabled in config)
 #if BOOST_OS_WINDOWS
 		if(dir_.dir_options().get("preserve_windows_attrib", false)){
-			meta.set_windows_attrib(GetFileAttributes(relpath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
+			meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
 		}
 #elif BOOST_OS_UNIX
 		if(dir_.dir_options().get("preserve_unix_attrib", false)){

@@ -67,15 +67,15 @@ void UDPTrackerConnection::receive_loop(){
 			if(reply_header->transaction_id_ != transaction_id_ || reply_action != action_) throw invalid_msg_error();
 
 			switch(reply_action) {
-				case Action::CONNECT:
+				case Action::ACTION_CONNECT:
 					handle_connect();
 					break;
-				case Action::ANNOUNCE:
-				case Action::ANNOUNCE6:
+				case Action::ACTION_ANNOUNCE:
+				case Action::ACTION_ANNOUNCE6:
 					handle_announce();
 					break;
-				case Action::SCRAPE: /* TODO: Scrape requests */ throw invalid_msg_error();
-				case Action::ERROR: throw invalid_msg_error();
+				case Action::ACTION_SCRAPE: /* TODO: Scrape requests */ throw invalid_msg_error();
+				case Action::ACTION_ERROR: throw invalid_msg_error();
 				default: throw invalid_msg_error();
 			}
 		}catch(invalid_msg_error& e){
@@ -101,7 +101,7 @@ void UDPTrackerConnection::bump_announce_timer() {
 void UDPTrackerConnection::connect(const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	action_ = Action::CONNECT;
+	action_ = Action::ACTION_CONNECT;
 	transaction_id_ = gen_transaction_id();
 	connection_id_ = boost::endian::native_to_big<int64_t>(0x41727101980);
 
@@ -118,7 +118,7 @@ void UDPTrackerConnection::connect(const boost::system::error_code& ec) {
 void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	action_ = Action::ANNOUNCE;
+	action_ = Action::ACTION_ANNOUNCE;
 	transaction_id_ = gen_transaction_id();
 
 	announce_req request;
@@ -130,7 +130,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	//request.left_;
 	//request.uploaded_;
 
-	request.event_ = int32_t(announced_times_++ == 0 ? Event::STARTED : Event::NONE);
+	request.event_ = int32_t(announced_times_++ == 0 ? Event::EVENT_STARTED : Event::EVENT_NONE);
 	request.key_ = gen_transaction_id();
 	request.num_want_ = session_.config().get<int32_t>("discovery.bttracker.num_want");
 
@@ -163,7 +163,7 @@ void UDPTrackerConnection::handle_connect() {
 	if(buffer_.size() == sizeof(conn_rep)) {
 		conn_rep* reply = reinterpret_cast<conn_rep*>(buffer_.data());
 		connection_id_ = reply->connection_id_;
-		action_ = Action::NONE;
+		action_ = Action::ACTION_NONE;
 		fail_count_ = 0;
 
 		log_->debug() << log_tag() << "Connection established. cID=" << connection_id_;
@@ -176,7 +176,7 @@ void UDPTrackerConnection::handle_connect() {
 void UDPTrackerConnection::handle_announce() {
 	announce_rep* reply = reinterpret_cast<announce_rep*>(buffer_.data());
 
-	if(reply->header_.action_ == (int32_t)Action::ANNOUNCE){
+	if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE){
 		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(announce_rep_ext4) <= buffer_.data()+buffer_.size(); i+=sizeof(announce_rep_ext4)){
 			announce_rep_ext4* rep_ext = reinterpret_cast<announce_rep_ext4*>(i);
 
@@ -187,7 +187,7 @@ void UDPTrackerConnection::handle_announce() {
 
 			tracker_discovery_.add_node(endpoint, group_ptr_);
 		}
-	}else if(reply->header_.action_ == (int32_t)Action::ANNOUNCE6){
+	}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6){
 
 	}
 

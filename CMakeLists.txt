@@ -50,9 +50,19 @@ if(BUILD_STATIC)
 	SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
+if (WIN32)
+	add_definitions(-D_WIN32_WINNT=0x600)
+	add_definitions(-DUNICODE)
+endif()
+
 #============================================================================
 # Third-party Libraries
 #============================================================================
+
+# WinSock
+if (WIN32)
+	link_libraries(ws2_32)
+endif()
 
 # Cryptodiff
 find_package(Cryptodiff REQUIRED)
@@ -68,6 +78,7 @@ set(Boost_COMPONENTS
 		system
 		filesystem
 		iostreams
+		thread
 		program_options)
 # set (Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
@@ -78,13 +89,13 @@ link_libraries(${Boost_LIBRARIES})
 # /Boost
 
 # SQLite
-find_package(Sqlite3 REQUIRED)
+find_package(Sqlite3)
 
 if(SQLITE3_FOUND)
 	include_directories(${SQLITE3_INCLUDE_DIR})
 	link_libraries(${SQLITE3_LIBRARIES})
 else()
-	include_directories("contrib/sqlite")
+	include_directories("contrib/sqlite3")
 endif()
 # /SQLite
 
@@ -145,7 +156,7 @@ list(APPEND SRCS ${PROTO_SOURCES})
 list(APPEND SRCS ${PROTO_HEADERS})
 # SQLite
 if(NOT SQLITE3_FOUND)
-	list(APPEND SRCS "contrib/sqlite/sqlite3.c")
+	list(APPEND SRCS "contrib/sqlite3/sqlite3.c")
 endif()
 file(GLOB_RECURSE LVCRYPTO_SRCS "contrib/lvcrypto/*")
 list(APPEND SRCS ${LVCRYPTO_SRCS})

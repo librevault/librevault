@@ -31,7 +31,7 @@ public:
 	virtual ~UDPTrackerConnection();
 private:
 	enum class Action : int32_t {
-		CONNECT=0, ANNOUNCE=1, SCRAPE=2, ERROR=3, ANNOUNCE6=4, NONE=255
+		ACTION_CONNECT=0, ACTION_ANNOUNCE=1, ACTION_SCRAPE=2, ACTION_ERROR=3, ACTION_ANNOUNCE6=4, ACTION_NONE=255
 	};
 
 	struct error : std::runtime_error {
@@ -69,7 +69,7 @@ private:
 		boost::endian::big_int64_t downloaded_;
 		boost::endian::big_int64_t left_;
 		boost::endian::big_int64_t uploaded_;
-		boost::endian::big_int32_t event_ = (int32_t)Event::NONE;
+		boost::endian::big_int32_t event_ = (int32_t)Event::EVENT_NONE;
 		boost::endian::big_uint32_t ip_ = 0;
 		uint32_t key_;
 		boost::endian::big_int32_t num_want_;
@@ -110,7 +110,7 @@ private:
 
 	int64_t connection_id_ = 0;
 	int32_t transaction_id_ = 0;
-	Action action_ = Action::NONE;
+	Action action_ = Action::ACTION_NONE;
 
 	unsigned int fail_count_ = 0;
 

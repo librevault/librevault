@@ -10,3 +10,9 @@
 [submodule "contrib/lvcrypto"]
 	path = contrib/lvcrypto
 	url = https://github.com/GamePad64/lvcrypto.git
+[submodule "contrib/include/lvcrypto"]
+	path = contrib/include/lvcrypto
+	url = https://github.com/GamePad64/lvcrypto.git
+[submodule "contrib/include/lvsqlite3"]
+	path = contrib/include/lvsqlite3
+	url = https://github.com/GamePad64/lvsqlite3.git

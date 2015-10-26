@@ -135,7 +135,10 @@ if(BUILD_STATIC)
 	link_libraries(c.a)
 endif()
 
+# Header-only libs
 include_directories("contrib/include")
+include_directories("contrib/dir_monitor/include")
+include_directories("contrib/spdlog/include")
 
 #============================================================================
 # Source file configurarion

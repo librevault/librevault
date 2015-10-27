@@ -32,13 +32,17 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 	#SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 endif()
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
 	# Use -flto flag to enable GCC's link-time optimization.
 	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto")
 	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
-ENDIF()
+	if(MINGW)
+		SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
+		SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
+	ENDIF()
+endif()
 
 option(BUILD_STATIC "Build static version of executable" OFF)
 if(BUILD_STATIC)
@@ -58,11 +62,6 @@ endif()
 #============================================================================
 # Third-party Libraries
 #============================================================================
-
-# WinSock
-if (WIN32)
-	link_libraries(ws2_32)
-endif()
 
 # Cryptodiff
 find_package(Cryptodiff REQUIRED)
@@ -127,12 +126,21 @@ find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 link_libraries(${OPENSSL_LIBRARIES})
 
+# WinSock
+if (WIN32)
+	link_libraries(wsock32)
+	link_libraries(ws2_32)
+	link_libraries(Iphlpapi)
+endif()
+
 if(BUILD_STATIC)
-	link_libraries(dl)
+	if(UNIX)
+		link_libraries(dl)
+		link_libraries(c.a)
+	endif()
 	link_libraries(stdc++.a)
 	link_libraries(m.a)
 	link_libraries(pthread.a)
-	link_libraries(c.a)
 endif()
 
 # Header-only libs
@@ -146,14 +154,13 @@ include_directories("contrib/spdlog/include")
 
 include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
-configure_file("version.in.h" "version.h")
+configure_file("appver.in.h" "appver.h")
 
 #============================================================================
 # Binary generation
 #============================================================================
 
 list(APPEND SRCS "src/pch.h")
-file(GLOB_RECURSE SRCS "src/*")
 # Protobuf
 list(APPEND SRCS ${PROTO_SOURCES})
 list(APPEND SRCS ${PROTO_HEADERS})
@@ -161,10 +168,14 @@ list(APPEND SRCS ${PROTO_HEADERS})
 if(NOT SQLITE3_FOUND)
 	list(APPEND SRCS "contrib/sqlite3/sqlite3.c")
 endif()
-file(GLOB_RECURSE LVCRYPTO_SRCS "contrib/lvcrypto/*")
+file(GLOB_RECURSE LVCRYPTO_SRCS "contrib/include/lvcrypto/*")
 list(APPEND SRCS ${LVCRYPTO_SRCS})
-file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/lvsqlite3/*")
+file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
 list(APPEND SRCS ${LVSQLITE3_SRCS})
+
+# Main sources
+file(GLOB_RECURSE MAIN_SRCS "src/*")
+list(APPEND SRCS ${MAIN_SRCS})
 
 add_executable(${PROJECT_NAME} ${SRCS})
 

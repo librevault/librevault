@@ -116,6 +116,10 @@ link_libraries(${CRYPTOPP_LIBRARIES})
 find_library(libnatpmp_LIBRARIES natpmp)
 link_libraries(${libnatpmp_LIBRARIES})
 
+if (WIN32)
+	add_definitions(-DNATPMP_STATICLIB)
+endif()
+
 # Botan
 #find_package(Botan REQUIRED)
 #include_directories(${BOTAN_INCLUDE_DIRS})

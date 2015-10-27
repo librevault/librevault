@@ -15,7 +15,6 @@
  */
 #pragma once
 #include "../../pch.h"
-#include "../../contrib/lvsqlite3/SQLiteWrapper.h"
 #include "../Abstract.h"
 
 namespace librevault {

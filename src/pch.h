@@ -18,6 +18,9 @@
 // Cryptodiff
 #include <cryptodiff.h>
 
+// SQLiteWrapper
+#include <lvsqlite3/SQLiteWrapper.h>
+
 // LVCrypto
 #include <lvcrypto/HMAC-SHA3.h>
 #include <lvcrypto/Base64.h>

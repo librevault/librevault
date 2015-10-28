@@ -49,6 +49,14 @@ int main(int argc, char** argv){
 		return 0;
 	}
 
+	// Okay, that's a bit of fun, actually.
+	std::cout
+		<< R"(   __    __ _                                _ __ )" << std::endl
+		<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
+		<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
+		<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
+		<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
+
 	Session session(variables);
 	session.run();
 

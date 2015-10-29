@@ -30,6 +30,8 @@ public:
 	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);
 
+	void prepare_assemble(bool with_removal, const std::string& relpath);	// VERY DIRTY HACK, actually
+
 private:
 	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
@@ -39,6 +41,8 @@ private:
 
 	// Monitor
 	boost::asio::dir_monitor monitor_;
+
+	std::multiset<std::string> prepared_assemble_;
 
 	void bump_timer();
 

@@ -33,19 +33,27 @@ AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(
 }
 AutoIndexer::~AutoIndexer() {}
 
-void AutoIndexer::enqueue_files(const std::string& relpath){
+void AutoIndexer::enqueue_files(const std::string& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath);
 	bump_timer();
 }
 
-void AutoIndexer::enqueue_files(const std::set<std::string>& relpath){
+void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 	bump_timer();
 }
 
-void AutoIndexer::bump_timer(){
+void AutoIndexer::prepare_assemble(bool with_removal, const std::string& relpath) {
+	unsigned skip_events = 3;	// REMOVED, RENAMED (NEW NAME), MODIFIED
+	//unsigned skip_events = 0;
+
+	for(unsigned i = 0; i < skip_events; i++)
+		prepared_assemble_.insert(relpath);
+}
+
+void AutoIndexer::bump_timer() {
 	if(index_timer_.expires_from_now() <= std::chrono::seconds(0)){
 		auto exp_timeout = std::chrono::milliseconds(dir_.dir_options().get<uint32_t>("index_event_timeout"));
 
@@ -72,6 +80,13 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	case boost::asio::dir_monitor_event::removed:
 	{
 		std::string relpath = dir_.make_relpath(ev.path);
+
+		auto prepared_assemble_it = prepared_assemble_.find(relpath);
+		if(prepared_assemble_it != prepared_assemble_.end()) {
+			prepared_assemble_.erase(prepared_assemble_it);
+			return;
+		}
+
 		if(!dir_.ignore_list->is_ignored(relpath)){
 			log_->debug() << "[dir_monitor] " << ev;
 			enqueue_files(relpath);

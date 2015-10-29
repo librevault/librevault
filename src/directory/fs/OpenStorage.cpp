@@ -150,13 +150,15 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 					pending_remove.push_back(encrypted_data_hash);
 				}
 
-				fs::last_write_time(file_path, meta.mtime());
+				fs::last_write_time(dir_.asm_path(), meta.mtime());
 
 				auto relpath = dir_.make_relpath(file_path);
-				dir_.ignore_list->add_ignored(relpath);
+				//dir_.ignore_list->add_ignored(relpath);
+				if(dir_.auto_indexer) dir_.auto_indexer->prepare_assemble(fs::exists(file_path), relpath);
+
 				fs::remove(file_path);
 				fs::rename(dir_.asm_path(), file_path);
-				dir_.ignore_list->remove_ignored(relpath);
+				//dir_.ignore_list->remove_ignored(relpath);
 
 				index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 

@@ -59,7 +59,7 @@ Meta::SignedMeta Indexer::index(const std::string& file_path){
 			return smeta;
 		}catch(std::runtime_error& e){
 			log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
-			return Meta::SignedMeta();
+			throw;
 		}
 }
 
@@ -71,9 +71,10 @@ void Indexer::index(const std::set<std::string>& file_path){
 
 void Indexer::async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback) {
 	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(Meta::SignedMeta)> callback){
-
-		auto smeta = index(file_path);
-		session_.ios().dispatch(std::bind(callback, smeta));
+		try {
+			auto smeta = index(file_path);
+			session_.ios().dispatch(std::bind(callback, smeta));
+		}catch(std::runtime_error& e){}
 	}, file_path, callback));
 }
 

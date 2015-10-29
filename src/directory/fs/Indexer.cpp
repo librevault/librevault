@@ -40,8 +40,8 @@ Meta::SignedMeta Indexer::index(const std::string& file_path){
 			std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
 			float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-			index_.db().exec("UPDATE openfs SET assembled=1 WHERE file_path_hmac=:file_path_hmac", {
-					{":file_path_hmac", meta.path_id()}
+			index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {
+					{":path_id", meta.path_id()}
 			});
 
 			log_->trace() << dir_.log_tag() << meta.debug_string();

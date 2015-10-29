@@ -23,7 +23,7 @@ namespace librevault {
 AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(Meta::SignedMeta)> callback) :
 		log_(spdlog::get("Librevault")),
 		dir_(dir), session_(session),
-		monitor_(session_.ios()), index_timer_(session_.dir_monitor_ios()) {
+		monitor_(session_.dir_monitor_ios()), index_timer_(session_.dir_monitor_ios()) {
 	callback_ = callback;
 
 	enqueue_files(index_queue_ = dir.open_storage->pending_files());

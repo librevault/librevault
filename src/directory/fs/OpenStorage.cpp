@@ -150,6 +150,8 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 					pending_remove.push_back(encrypted_data_hash);
 				}
 
+				fs::last_write_time(file_path, meta.mtime());
+
 				auto relpath = dir_.make_relpath(file_path);
 				dir_.ignore_list->add_ignored(relpath);
 				fs::remove(file_path);
@@ -172,7 +174,6 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 			if(meta.meta_type() != Meta::SYMLINK) {
 				(void)chmod(file_path.c_str(), meta.mode());
 				(void)chown(file_path.c_str(), meta.uid(), meta.gid());
-				fs::last_write_time(file_path, meta.mtime());
 			}
 		}
 #elif BOOST_OS_WINDOWS

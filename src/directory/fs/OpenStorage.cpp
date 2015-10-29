@@ -238,13 +238,6 @@ std::set<std::string> OpenStorage::pending_files(){
 		Meta meta(row[0].as_blob());
 		if(meta.meta_type() != meta.DELETED){
 			file_list.insert(meta.path(key_));
-
-			if(dir_.dir_options().get<bool>("mtime_aware_indexer", true)){
-				try {
-					if(fs::last_write_time(fs::absolute(meta.path(key_), dir_.open_path())) == meta.mtime())
-						file_list.erase(meta.path(key_));
-				}catch(fs::filesystem_error& ec){}
-			}
 		}
 	}
 

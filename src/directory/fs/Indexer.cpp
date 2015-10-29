@@ -33,6 +33,15 @@ Meta::SignedMeta Indexer::index(const std::string& file_path){
 		try{
 			std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
 
+			if(dir_.dir_options().get<bool>("mtime_aware_indexer", true)){
+				try {
+					if(fs::last_write_time(fs::absolute(file_path, dir_.open_path())) == Meta(index_.get_Meta(open_storage_.make_path_id(file_path)).meta_).mtime())
+						throw error("Modification time is not changed");
+				}catch(fs::filesystem_error& ec){
+				}catch(Index::no_such_meta& ec){
+				}
+			}
+
 			auto meta = make_Meta(file_path);
 			Meta::SignedMeta smeta = sign(meta);
 			index_.put_Meta(sign(meta));

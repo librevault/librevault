@@ -19,7 +19,9 @@
 
 namespace librevault {
 
-Session::Session(const po::variables_map& vm) {
+Session::Session(const po::variables_map& vm) :
+		dir_monitor_ios_(*this, "dir_monitor_ios"),
+		etc_ios_(*this, "etc_ios") {
 	if(vm.count("config") > 0)
 		appdata_path_ = vm["config"].as<fs::path>();
 	else
@@ -65,38 +67,23 @@ void Session::init_log() {
 	log_->info() << version().name() << " " << version().version_string();
 }
 
-void Session::run(){
-	boost::asio::signal_set signals(io_service_, SIGINT, SIGTERM);
+void Session::run() {
+	dir_monitor_ios_.start(1);
+	etc_ios_.start(std::thread::hardware_concurrency());
+
+	// Main loop/signal processing loop
+	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);
 	signals.async_wait(std::bind(&Session::shutdown, this));
 
-	auto thread_count = config().get("threads", std::thread::hardware_concurrency());
-	if(thread_count <= 0) thread_count = 1;
-
-	log_->info() << "Worker threads: " << thread_count;
-
-	io_service::work work_lock(io_service_);
-	std::vector<std::thread> worker_threads;
-	for(unsigned i = 2; i <= thread_count; i++){
-		worker_threads.emplace_back(std::bind(&Session::run_worker, this, i));	// Running io_service in threads
-	}
-	run_worker(1);	// Running in main thread. Can be stopped on shutdown() or restart();
-	for(auto& thread : worker_threads){
-		if(thread.joinable()) thread.join();
-	}
-
-	worker_threads.clear();
-	io_service_.reset();
-}
-
-void Session::run_worker(unsigned worker_number){
-	log_->debug() << "Worker #" << worker_number << " started";
-	io_service_.run();
-	log_->debug() << "Worker #" << worker_number << " stopped";
+	main_loop_ios_.run();
+	main_loop_ios_.reset();
 }
 
 void Session::shutdown(){
 	log_->info() << "Exiting...";
-	io_service_.stop();
+	dir_monitor_ios_.stop();
+	etc_ios_.stop();
+	main_loop_ios_.stop();
 }
 
 fs::path Session::default_appdata_path(){

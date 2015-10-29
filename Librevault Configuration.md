@@ -12,13 +12,6 @@ Configuration entries:
 
 Defines name of device to be sent to other nodes, so other nodes could identify this node easily.
 
-###threads
-- type: integer
-- multiple: N
-- default: CPU cores of client device
-
-Defines number of worker threads, created by Librevault client. Internally may create additional threads, exceeding this number.
-
 ###net
 - type: group
 - multiple: N

@@ -15,17 +15,33 @@
  */
 #include "../pch.h"
 #pragma once
+#include "Loggable.h"
+
+using namespace std::string_literals;
 
 namespace librevault {
 
 class Session;
 
-class Loggable {
-protected:
-	logger_ptr& log_;
+class multi_io_service : protected Loggable {
+public:
+	multi_io_service(Session& session, std::string name);
 
-	Loggable(Session& session);
-	virtual std::string log_tag() const = 0;
+	void start(unsigned thread_count);
+	void stop();
+
+	io_service& ios() {return ios_;}
+
+protected:
+	std::string name_;
+	io_service ios_;
+	std::unique_ptr<io_service::work> ios_work_;
+
+	std::vector<std::thread> worker_threads_;
+
+	void run_thread(unsigned worker_number);
+
+	std::string log_tag() const {return std::string("[pool:") + name_ + "] ";}
 };
 
 } /* namespace librevault */

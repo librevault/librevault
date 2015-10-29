@@ -18,6 +18,8 @@
 #include "Version.h"
 #include "Config.h"
 
+#include "util/multi_io_service.h"
+
 namespace librevault {
 
 class Exchanger;
@@ -29,16 +31,17 @@ public:
 	void init_log();
 
 	void run();
-	void run_worker(unsigned worker_number);
 	void shutdown();
 	void restart();
 
 	Exchanger& exchanger(){return *exchanger_;}
 
 	const Version& version() const {return version_;}
-	logger_ptr log() {return log_;}
-	io_service& ios(){return io_service_;}
-	ptree& config(){return config_->config();}
+	logger_ptr& log() {return log_;}
+	ptree& config() {return config_->config();}
+
+	io_service& ios() {return etc_ios_.ios();}
+	io_service& dir_monitor_ios() {return etc_ios_.ios();}
 
 	fs::path appdata_path() const {return appdata_path_;}
 	fs::path config_path() const {return config_path_;}
@@ -48,9 +51,13 @@ public:
 	fs::path dhparam_path() const {return dhparam_path_;}
 private:
 	Version version_;	// Application name and version information (probably, it will contain application path and signature later)
-	io_service io_service_;	// Asynchronous/multithreaded operation
 	logger_ptr log_;	// Logging
 	std::unique_ptr<Config> config_;	// Configuration
+
+	// Asynchronous/multithreaded operation
+	io_service main_loop_ios_;
+	multi_io_service dir_monitor_ios_;
+	multi_io_service etc_ios_;
 
 	// Components
 	std::unique_ptr<Exchanger> exchanger_;

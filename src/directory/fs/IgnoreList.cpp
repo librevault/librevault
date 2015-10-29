@@ -56,11 +56,13 @@ bool IgnoreList::is_ignored(const std::string& relpath) const {
 void IgnoreList::add_ignored(const std::string& relpath){
 	std::lock_guard<std::mutex> lk(ignore_mtx_);
 	ignored_paths_.insert(relpath);
+	log_->debug() << log_tag() << "Added to IgnoreList: " << relpath;
 }
 
 void IgnoreList::remove_ignored(const std::string& relpath){
 	std::lock_guard<std::mutex> lk(ignore_mtx_);
 	ignored_paths_.erase(relpath);
+	log_->debug() << log_tag() << "Removed from IgnoreList: " << relpath;
 }
 
 std::string IgnoreList::log_tag() const {return dir_.log_tag();}

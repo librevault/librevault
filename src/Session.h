@@ -48,7 +48,6 @@ public:
 	fs::path log_path() const {return log_path_;}
 	fs::path key_path() const {return key_path_;}
 	fs::path cert_path() const {return cert_path_;}
-	fs::path dhparam_path() const {return dhparam_path_;}
 private:
 	Version version_;	// Application name and version information (probably, it will contain application path and signature later)
 	logger_ptr log_;	// Logging
@@ -64,7 +63,7 @@ private:
 
 	// Paths
 	fs::path default_appdata_path();
-	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_, dhparam_path_;
+	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_;
 };
 
 } /* namespace librevault */

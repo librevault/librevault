@@ -30,7 +30,6 @@ Session::Session(const po::variables_map& vm) :
 	log_path_ = appdata_path_ / (version().lowercase_name()+".log");
 	key_path_ = appdata_path_ / "key.pem";
 	cert_path_ = appdata_path_ / "cert.pem";
-	dhparam_path_ = appdata_path_ / "dhparam.pem";
 
 	init_log();
 	config_ = std::make_unique<Config>(*this);

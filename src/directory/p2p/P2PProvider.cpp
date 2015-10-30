@@ -33,7 +33,7 @@ P2PProvider::P2PProvider(Session& session, Exchanger& exchanger) :
 
 	ssl_ctx_.use_certificate_file(session_.cert_path().string(), boost::asio::ssl::context::pem);
 	ssl_ctx_.use_private_key_file(session_.key_path().string(), boost::asio::ssl::context::pem);
-	ssl_ctx_.use_tmp_dh_file(session_.dhparam_path().string());
+	SSL_CTX_set_cipher_list(ssl_ctx_.native_handle(), "ECDH-ECDSA-AES256-GCM-SHA384:ECDH-ECDSA-AES256-SHA384:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-ECDSA-AES128-SHA256");
 	// FIXME: Add proper encryption, finally!
 
 	// Acceptor initialization

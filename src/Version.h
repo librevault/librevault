@@ -15,7 +15,6 @@
  */
 #pragma once
 #include "pch.h"
-#include "appver.h"
 
 namespace librevault {
 

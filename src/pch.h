@@ -83,6 +83,10 @@
 
 #include <boost/signals2.hpp>
 
+// cpp-netlib
+#include <boost/network.hpp>
+#include <boost/network/uri.hpp>
+
 // Standard C++ Libraries
 #include <array>
 #include <chrono>

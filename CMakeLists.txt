@@ -87,6 +87,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_libraries(${Boost_LIBRARIES})
 # /Boost
 
+# cpp-netlib
+find_package(cppnetlib 0.11.1 REQUIRED)
+include_directories(${CPPNETLIB_INCLUDE_DIRS})
+link_libraries(${CPPNETLIB_LIBRARIES})
+
 # SQLite
 find_package(Sqlite3)
 

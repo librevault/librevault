@@ -30,7 +30,10 @@ public:
 	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);
 
-	void prepare_assemble(bool with_removal, const std::string& relpath);	// VERY DIRTY HACK, actually
+	// A set of VERY DIRTY HACKS
+	void prepare_file_assemble(bool with_removal, const std::string& relpath);
+	void prepare_dir_assemble(bool with_removal, const std::string& relpath);
+	void prepare_deleted_assemble(const std::string& relpath);
 
 private:
 	std::shared_ptr<spdlog::logger> log_;

@@ -45,9 +45,24 @@ void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	bump_timer();
 }
 
-void AutoIndexer::prepare_assemble(bool with_removal, const std::string& relpath) {
+void AutoIndexer::prepare_file_assemble(bool with_removal, const std::string& relpath) {
 	unsigned skip_events = 3;	// REMOVED, RENAMED (NEW NAME), MODIFIED
 	//unsigned skip_events = 0;
+
+	for(unsigned i = 0; i < skip_events; i++)
+		prepared_assemble_.insert(relpath);
+}
+
+void AutoIndexer::prepare_dir_assemble(bool with_removal, const std::string& relpath) {
+	unsigned skip_events = 1;	// ADDED
+	skip_events += with_removal ? 1 : 0;
+
+	for(unsigned i = 0; i < skip_events; i++)
+		prepared_assemble_.insert(relpath);
+}
+
+void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
+	unsigned skip_events = 1;	// REMOVED or UNKNOWN
 
 	for(unsigned i = 0; i < skip_events; i++)
 		prepared_assemble_.insert(relpath);
@@ -78,6 +93,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	case boost::asio::dir_monitor_event::renamed_old_name:
 	case boost::asio::dir_monitor_event::renamed_new_name:
 	case boost::asio::dir_monitor_event::removed:
+	case boost::asio::dir_monitor_event::null:
 	{
 		std::string relpath = dir_.make_relpath(ev.path);
 

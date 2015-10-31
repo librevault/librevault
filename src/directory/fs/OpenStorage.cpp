@@ -104,9 +104,12 @@ blob OpenStorage::get_block(const blob& encrypted_data_hash) {
 
 void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 	fs::path file_path = fs::absolute(meta.path(key_), dir_.open_path());
+	auto relpath = dir_.make_relpath(file_path);
 
 	if(meta.meta_type() == Meta::DELETED) {
 		auto file_type = fs::symlink_status(file_path).type();
+
+		if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(relpath);
 
 		if(file_type == fs::symlink_file || file_type == fs::directory_file || file_type == fs::file_not_found)
 			fs::remove(file_path);
@@ -121,7 +124,12 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 				fs::create_symlink(meta.symlink_path(key_), file_path);
 			} break;
 			case Meta::DIRECTORY: {
-				fs::remove(file_path);
+				bool removed = false;
+				if(fs::status(file_path).type() != fs::file_type::directory_file){
+					removed = fs::remove(file_path);
+				}
+				if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
+
 				fs::create_directories(file_path);
 			} break;
 			case Meta::FILE: {
@@ -152,9 +160,8 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 
 				fs::last_write_time(dir_.asm_path(), meta.mtime());
 
-				auto relpath = dir_.make_relpath(file_path);
 				//dir_.ignore_list->add_ignored(relpath);
-				if(dir_.auto_indexer) dir_.auto_indexer->prepare_assemble(fs::exists(file_path), relpath);
+				if(dir_.auto_indexer) dir_.auto_indexer->prepare_file_assemble(fs::exists(file_path), relpath);
 
 				fs::remove(file_path);
 				fs::rename(dir_.asm_path(), file_path);

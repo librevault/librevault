@@ -120,11 +120,6 @@ if (WIN32)
 	add_definitions(-DNATPMP_STATICLIB)
 endif()
 
-# Botan
-#find_package(Botan REQUIRED)
-#include_directories(${BOTAN_INCLUDE_DIRS})
-#link_libraries(${BOTAN_LIBRARIES})
-
 # OpenSSL
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})

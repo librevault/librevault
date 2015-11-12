@@ -72,13 +72,18 @@ link_libraries(${CRYPTODIFF_LIBRARIES})
 find_package(Threads)
 link_libraries (${CMAKE_THREAD_LIBS_INIT})
 
+# Docopt
+set(WITH_CPP14 ON)
+add_subdirectory("contrib/docopt")
+include_directories("contrib/docopt")
+link_libraries(docopt_s)
+
 # Boost
 set(Boost_COMPONENTS
 		system
 		filesystem
 		iostreams
-		thread
-		program_options)
+		thread)
 # set (Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 

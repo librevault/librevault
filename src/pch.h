@@ -75,8 +75,6 @@
 
 #include <boost/predef.h>
 
-#include <boost/program_options.hpp>
-
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -88,6 +86,9 @@
 #include <boost/network/protocol/http/server.hpp>
 #include <boost/network/protocol/http/request.hpp>
 #include <boost/network/uri.hpp>
+
+// docopt
+#include <docopt.h>
 
 // Standard C++ Libraries
 #include <array>
@@ -127,7 +128,6 @@
 namespace librevault {
 
 namespace fs = boost::filesystem;
-namespace po = boost::program_options;
 
 using boost::asio::io_service;
 using boost::property_tree::ptree;

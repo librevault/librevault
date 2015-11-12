@@ -16,35 +16,52 @@
 #include "pch.h"
 #include "directory/Key.h"
 #include "Session.h"
+#include "Version.h"
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
-int main(int argc, char** argv){
-	po::options_description allowed_options("Allowed Options");
-	allowed_options.add_options()
-		("help,h", "Display help message")
-		("config,c", po::value<fs::path>(), "Application data path")
-		("gen-key", "Generate Key type A")
-		("derive,d", po::value<char>(), "Derive lower-type Key from higher-type (e.g. C from A)")
-		("key, k", po::value<std::string>(), "Sets Key for -d")
-	;
+///////////////////////////////////////////////////////////////////////80 chars/
+static const char* USAGE =
+R"(Librevault command-line interface.
 
-	po::variables_map variables;
-	po::store(po::parse_command_line(argc, argv, allowed_options), variables);
-	po::notify(variables);
+Librevault is an open source peer-to-peer file synchronization solution with
+an optional centralized cloud storage, that can be used as a traditional cloud
+storage.
 
-	if(variables.count("help") > 0){
-		std::cout << allowed_options;
-		return 0;
-	}
-	if(variables.count("gen-key") > 0){
+See on: https://librevault.com
+
+Usage:
+  librevault [--data=<dir>]
+  librevault gen-secret
+  librevault derive <secret> <type>
+  librevault (-h | --help)
+  librevault --version
+
+Commands:
+  gen-secret              generate new Owner Secret (type A)
+  derive <secret> <type>  derive Secret with less permissions from existing
+                          (i.e. type C from A)
+
+Options:
+  --data=<dir>            set application data path
+
+  -h --help               show this screen
+  --version               show version
+)";
+
+int main(int argc, char** argv) {
+	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
+
+	if(args["gen-secret"].asBool()) {
 		Key k;
 		std::cout << k;
 		return 0;
 	}
-	if(variables.count("derive") > 0 && variables.count("key") > 0){
-		Key::Type type = (Key::Type)variables["derive"].as<char>();
-		Key k(variables["key"].as<std::string>());
+
+	if(args["derive"].asBool()) {
+		Key::Type type = (Key::Type)args["<type>"].asString().at(0);
+		std::cout << type << std::endl;
+		Key k(args["<secret>"].asString());
 		std::cout << k.derive(type);
 		return 0;
 	}
@@ -57,7 +74,7 @@ int main(int argc, char** argv){
 		<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
 		<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
 
-	Session session(variables);
+	Session session(args);
 	session.run();
 
 	return 0;

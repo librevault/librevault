@@ -25,7 +25,7 @@ namespace librevault {
 class Exchanger;
 class Session : public LogRoot {
 public:
-	Session(const po::variables_map& vm);
+	Session(std::map<std::string, docopt::value> args);
 	virtual ~Session();
 
 	void init_log();

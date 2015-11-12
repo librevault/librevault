@@ -19,11 +19,11 @@
 
 namespace librevault {
 
-Session::Session(const po::variables_map& vm) :
+Session::Session(std::map<std::string, docopt::value> args) :
 		dir_monitor_ios_(*this, "dir_monitor_ios"),
 		etc_ios_(*this, "etc_ios") {
-	if(vm.count("config") > 0)
-		appdata_path_ = vm["config"].as<fs::path>();
+	if(args["--data"].isString())
+		appdata_path_ = args["--data"].asString();
 	else
 		appdata_path_ = default_appdata_path();
 	config_path_ = appdata_path_ / (version().lowercase_name()+".conf");

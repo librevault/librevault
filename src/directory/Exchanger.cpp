@@ -34,10 +34,8 @@ Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
 	natpmp_ = std::make_unique<NATPMPService>(session, *this);
 
 	static_discovery_ = std::make_unique<StaticDiscovery>(session_, *this);
-
 	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
-
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(session_, *this);
 
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
@@ -91,7 +89,6 @@ void Exchanger::add_directory(const ptree& dir_options) {
 		group_ptr->attach_fs_dir(dir_ptr);
 		register_group(group_ptr);
 	}else{
-		// Something like "attach_fs_dir" will be here later.
 		throw std::runtime_error("Multiple directories with same key (or related to same key) are not supported now");
 	}
 }

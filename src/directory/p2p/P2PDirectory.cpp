@@ -44,11 +44,11 @@ P2PDirectory::P2PDirectory(std::unique_ptr<Connection> &&connection, std::shared
 P2PDirectory::~P2PDirectory() {}
 
 blob P2PDirectory::local_token() {
-	return crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key()).to(provider_.node_key().public_key());
+	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key());
 }
 
 blob P2PDirectory::remote_token() {
-	return crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key()).to(connection_->remote_pubkey());
+	return connection_->remote_pubkey() | crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key());
 }
 
 void P2PDirectory::attach(const blob& dir_hash) {
@@ -208,17 +208,6 @@ void P2PDirectory::handle_message() {
 		log_->warn() << log_tag() << "Closing connection because of exception: " << e.what();
 		throw;
 	}
-}
-
-std::vector<Meta::PathRevision> P2PDirectory::get_meta_list() {
-	std::vector<Meta::PathRevision> result;
-	for(auto& map_revision : revisions_){
-		Meta::PathRevision path_revision;
-		path_revision.path_id_ = map_revision.first;
-		path_revision.revision_ = map_revision.second;
-		result.push_back(path_revision);
-	}
-	return result;
 }
 
 void P2PDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {

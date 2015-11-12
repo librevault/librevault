@@ -57,8 +57,6 @@ public:
 	blob remote_token();
 
 	// AbstractDirectory actions
-	std::vector<Meta::PathRevision> get_meta_list();
-
 	void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision);
 	void request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id);
 	void post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta);

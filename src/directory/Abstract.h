@@ -30,7 +30,6 @@ public:
 
 	// AbstractDirectory properties
 	virtual std::string name() const = 0;
-	virtual std::vector<Meta::PathRevision> get_meta_list() = 0;
 
 	// AbstractDirectory actions
 	virtual void post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) = 0;

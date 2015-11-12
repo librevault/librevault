@@ -50,10 +50,8 @@ Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
 	auto base58_payload = secret_s.substr(1, this->secret_s.size()-2);
 	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
 
-	// It would be good to check private/public key for validity and throw crypto_error() here
+	// TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
-
-Key::~Key() {}
 
 std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
 	return secret_s.substr(1, this->secret_s.size()-2) | crypto::De<crypto::Base58>();

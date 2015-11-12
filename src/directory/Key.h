@@ -33,27 +33,22 @@ public:
 		Download = 'D',	/// Public key, used to verify signed modified files
 	};
 
-	class error : public std::runtime_error {
-	public:
+	struct error : public std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
 	};
-	class format_error : public error {
-	public:
+	struct format_error : public error {
 		format_error() : error("Secret format mismatch") {}
 	};
-	class level_error : public error {
-	public:
+	struct level_error : public error {
 		level_error() : error("Key has insufficient privileges for this action") {}
 	};
-	class crypto_error : public error {
-	public:
+	struct crypto_error : public error {
 		crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
 	};
 
 	Key();
 	Key(Type type, const std::vector<uint8_t>& payload);
 	Key(std::string string_secret);
-	virtual ~Key();
 
 	std::string string() const {return secret_s;}
 	operator std::string() const {return string();}

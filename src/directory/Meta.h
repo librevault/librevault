@@ -26,6 +26,7 @@ public:
 	using StrongHashType = cryptodiff::StrongHashType;
 	using WeakHashType = cryptodiff::WeakHashType;
 	using Block = cryptodiff::Block;
+
 private:
 	/* Meta fields, must be serialized together and then signed */
 	blob path_id_;	// aka path_hmac;

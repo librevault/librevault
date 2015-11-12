@@ -32,7 +32,7 @@ Session::Session(const po::variables_map& vm) :
 	cert_path_ = appdata_path_ / "cert.pem";
 
 	init_log();
-	config_ = std::make_unique<Config>(*this);
+	config_ = std::make_unique<Config>(*this, config_path_);
 	exchanger_ = std::make_unique<Exchanger>(*this);
 }
 

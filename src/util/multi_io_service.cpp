@@ -14,12 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "multi_io_service.h"
-#include "../Session.h"
 
 namespace librevault {
 
-multi_io_service::multi_io_service(Session& session, std::string name) :
-		Loggable(session), name_(name) {}
+multi_io_service::multi_io_service(LogRoot& log_root, std::string name) :
+		Loggable(log_root), name_(name) {}
 
 void multi_io_service::start(unsigned thread_count) {
 	ios_work_ = std::make_unique<io_service::work>(ios_);

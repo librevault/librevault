@@ -13,23 +13,24 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "pch.h"
+#include "Config.h"
 
 namespace librevault {
 
-class Session;
-class Config {
-public:
-	Config(Session& session);
-	virtual ~Config();
+Config::Config(LogRoot& log_root, fs::path config_path) : Loggable(log_root), config_path_(std::move(config_path)) {
+	fs::ifstream options_fs(config_path_, std::ios::binary);
+	if(!options_fs){
+		log_->info() << "Writing default configuration to: " << config_path_;
+		// TODO: Create default configuration file
+	}
 
-	ptree& config() {return config_ptree_;}
-private:
-	Session& session_;
-	logger_ptr log_;
+	boost::property_tree::info_parser::read_info(options_fs, config_ptree_);
+	log_->info() << "Configuration file loaded: " << config_path_;
+}
 
-	ptree config_ptree_;
-};
+Config::~Config() {
+	fs::ofstream options_fs(config_path_, std::ios::trunc | std::ios::binary);
+	boost::property_tree::info_parser::write_info(options_fs, config_ptree_);
+}
 
 } /* namespace librevault */

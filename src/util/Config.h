@@ -13,11 +13,23 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
+#include "../pch.h"
 #include "Loggable.h"
-#include "../Session.h"
 
 namespace librevault {
 
-Loggable::Loggable(Session& session) : log_(session.log()){}
+class Config : protected Loggable {
+public:
+	Config(LogRoot& log_root, fs::path config_path);
+	~Config();
+
+	ptree& config() {return config_ptree_;}
+private:
+	fs::path config_path_;
+	ptree config_ptree_;
+
+	std::string log_tag() const {return "[Config] ";}
+};
 
 } /* namespace librevault */

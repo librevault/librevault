@@ -17,15 +17,11 @@
 #pragma once
 #include "Loggable.h"
 
-using namespace std::string_literals;
-
 namespace librevault {
-
-class Session;
 
 class multi_io_service : protected Loggable {
 public:
-	multi_io_service(Session& session, std::string name);
+	multi_io_service(LogRoot& log_root, std::string name);
 
 	void start(unsigned thread_count);
 	void stop();

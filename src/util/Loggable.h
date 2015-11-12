@@ -18,13 +18,18 @@
 
 namespace librevault {
 
-class Session;
+class LogRoot {
+public:
+	logger_ptr& log() {return log_;}
+protected:
+	logger_ptr log_;
+};
 
 class Loggable {
 protected:
 	logger_ptr& log_;
 
-	Loggable(Session& session);
+	Loggable(LogRoot& log_root) : log_(log_root.log()){};
 	virtual std::string log_tag() const = 0;
 };
 

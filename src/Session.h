@@ -16,14 +16,14 @@
 #include "pch.h"
 #pragma once
 #include "Version.h"
-#include "Config.h"
-
+#include "util/Config.h"
+#include "util/Loggable.h"
 #include "util/multi_io_service.h"
 
 namespace librevault {
 
 class Exchanger;
-class Session {
+class Session : public LogRoot {
 public:
 	Session(const po::variables_map& vm);
 	virtual ~Session();
@@ -37,7 +37,6 @@ public:
 	Exchanger& exchanger(){return *exchanger_;}
 
 	const Version& version() const {return version_;}
-	logger_ptr& log() {return log_;}
 	ptree& config() {return config_->config();}
 
 	io_service& ios() {return etc_ios_.ios();}
@@ -50,7 +49,6 @@ public:
 	fs::path cert_path() const {return cert_path_;}
 private:
 	Version version_;	// Application name and version information (probably, it will contain application path and signature later)
-	logger_ptr log_;	// Logging
 	std::unique_ptr<Config> config_;	// Configuration
 
 	// Asynchronous/multithreaded operation

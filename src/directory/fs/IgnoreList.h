@@ -19,6 +19,7 @@
 
 namespace librevault {
 
+class Session;
 class FSDirectory;
 class IgnoreList : protected Loggable {
 public:

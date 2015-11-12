@@ -85,6 +85,8 @@
 
 // cpp-netlib
 #include <boost/network.hpp>
+#include <boost/network/protocol/http/server.hpp>
+#include <boost/network/protocol/http/request.hpp>
 #include <boost/network/uri.hpp>
 
 // Standard C++ Libraries

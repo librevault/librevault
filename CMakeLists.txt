@@ -13,9 +13,9 @@ include(cotire)
 #============================================================================
 
 ### Setting compiler properties
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_STANDARD 14)
-SET(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -33,27 +33,27 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
 	# Use -flto flag to enable GCC's link-time optimization.
-	SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto")
-	SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto")
+	set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -flto")
 	if(MINGW)
-		SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
-		SET(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
-	ENDIF()
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
+		set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} -fno-use-linker-plugin")
+	endif()
 endif()
 
 option(BUILD_STATIC "Build static version of executable" OFF)
 if(BUILD_STATIC)
-	SET(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
-	SET(CMAKE_C_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
-	SET(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
-	SET(CMAKE_MODULE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
-	SET(Boost_USE_STATIC_LIBS ON)
-	SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+	set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_C_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
+	set(CMAKE_MODULE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
+	set(Boost_USE_STATIC_LIBS ON)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
-if (WIN32)
+if(WIN32)
 	add_definitions(-D_WIN32_WINNT=0x600)
 	add_definitions(-DUNICODE)
 endif()
@@ -69,7 +69,7 @@ link_libraries(${CRYPTODIFF_LIBRARIES})
 
 # Pthreads
 find_package(Threads)
-link_libraries (${CMAKE_THREAD_LIBS_INIT})
+link_libraries(${CMAKE_THREAD_LIBS_INIT})
 
 # Docopt
 set(WITH_CPP14 ON)
@@ -114,7 +114,7 @@ include_directories(${PROTOBUF_INCLUDE_DIRS})
 link_libraries(${PROTOBUF_LIBRARIES})
 
 file(GLOB_RECURSE PROTO_LIST "src/*.proto")
-PROTOBUF_GENERATE_CPP(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
+protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 
 # CryptoPP
 find_package(CryptoPP REQUIRED)
@@ -125,7 +125,7 @@ link_libraries(${CRYPTOPP_LIBRARIES})
 find_library(libnatpmp_LIBRARIES natpmp)
 link_libraries(${libnatpmp_LIBRARIES})
 
-if (WIN32)
+if(WIN32)
 	add_definitions(-DNATPMP_STATICLIB)
 endif()
 
@@ -135,7 +135,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 link_libraries(${OPENSSL_LIBRARIES})
 
 # WinSock
-if (WIN32)
+if(WIN32)
 	link_libraries(wsock32)
 	link_libraries(ws2_32)
 	link_libraries(Iphlpapi)
@@ -197,7 +197,7 @@ cotire(${PROJECT_NAME})
 #-- Add an Option to toggle the generation of the API documentation
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 if(BUILD_DOCUMENTATION)
-	FIND_PACKAGE(Doxygen)
+	find_package(Doxygen)
 	if(NOT DOXYGEN_FOUND)
 		message(FATAL_ERROR
 				"Doxygen is needed to build the documentation. Please install it correctly")

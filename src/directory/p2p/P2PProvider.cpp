@@ -33,7 +33,9 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 		boost::asio::ssl::context::default_workarounds |
 		boost::asio::ssl::context::single_dh_use |
 		boost::asio::ssl::context::no_sslv2 |
-		boost::asio::ssl::context::no_sslv3
+		boost::asio::ssl::context::no_sslv3 |
+		boost::asio::ssl::context::no_tlsv1 |
+		boost::asio::ssl::context::no_tlsv1_1
 	);
 
 	ssl_ctx_.use_certificate_file(client_.cert_path().string(), boost::asio::ssl::context::pem);

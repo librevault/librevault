@@ -1,71 +1,59 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Connection.h"
+#include "../../Client.h"
 #include "P2PProvider.h"
-#include "../../Session.h"
 
 namespace librevault {
 
-Connection::Connection(const url& url, Session& session, P2PProvider& provider) :
-		log_(spdlog::get("Librevault")),
-		session_(session), provider_(provider),
+Connection::Connection(Client& client, P2PProvider& provider, state state_arg, role role_arg) :
+		Loggable(client),
+		client_(client), provider_(provider),
 
-		socket_(std::make_unique<ssl_socket>(session_.ios(), provider_.ssl_ctx())),
-		resolver_(session_.ios()),
+		state_(state_arg), role_(role_arg),
 
-		remote_url_(url),
-		send_strand_(session_.ios()) {
-	state_ = RESOLVE;
-	role_ = CLIENT;
+		resolver_(client_.ios()),
+		send_strand_(client_.ios()) {}
 
-	log_->debug() << "Initializing outgoing connection to:" << remote_string();
+Connection::Connection(const url& url, Client& client, P2PProvider& provider) :
+		Connection(client, provider, RESOLVE, CLIENT) {
+	socket_ = std::make_unique<ssl_socket>(client_.ios(), provider_.ssl_ctx());
+	remote_url_ = url;
+
+	log_->debug() << log_tag() << "Initializing outgoing Connection";
 }
 
-Connection::Connection(tcp_endpoint endpoint, Session& session, P2PProvider& provider) :
-		log_(spdlog::get("Librevault")),
-		session_(session), provider_(provider),
+Connection::Connection(tcp_endpoint endpoint, Client& client, P2PProvider& provider) :
+		Connection(client, provider, CONNECT, CLIENT) {
+	socket_ = std::make_unique<ssl_socket>(client_.ios(), provider_.ssl_ctx());
+	remote_endpoint_ = std::move(endpoint);
 
-		socket_(std::make_unique<ssl_socket>(session_.ios(), provider_.ssl_ctx())),
-		resolver_(session_.ios()),
-
-		remote_endpoint_(std::move(endpoint)),
-		send_strand_(session_.ios()) {
-	state_ = CONNECT;
-	role_ = CLIENT;
-
-	log_->debug() << "Initializing outgoing connection to:" << remote_string();
+	log_->debug() << log_tag() << "Initializing outgoing Connection";
 }
 
-Connection::Connection(std::unique_ptr<ssl_socket>&& socket, Session& session, P2PProvider& provider) :
-		log_(spdlog::get("Librevault")),
-		session_(session), provider_(provider),
+Connection::Connection(std::unique_ptr<ssl_socket>&& socket, Client& client, P2PProvider& provider) :
+		Connection(client, provider, HANDSHAKE, SERVER) {
+	socket_ = std::move(socket);
+	remote_endpoint_ = socket_->lowest_layer().remote_endpoint();
 
-		socket_(std::move(socket)),
-		resolver_(session_.ios()),
-
-		remote_endpoint_(socket_->lowest_layer().remote_endpoint()),
-		send_strand_(session_.ios()) {
-	state_ = HANDSHAKE;
-	role_ = SERVER;
-
-	log_->debug() << "Initializing incoming connection to:" << remote_string();
+	log_->debug() << log_tag() << "Initializing incoming Connection";
 }
 
 Connection::~Connection() {
-	log_->debug() << "Connection to " << remote_string() << " removed.";
+	log_->debug() << log_tag() << "Connection removed";
 }
 
 void Connection::establish(establish_handler handler) {
@@ -141,12 +129,14 @@ std::string Connection::remote_string() const {
 }
 
 void Connection::resolve() {
+	log_->trace() << log_tag() << "resolve()";
 	boost::asio::ip::tcp::resolver::query query(remote_url_.host, boost::lexical_cast<std::string>(remote_url_.port));
 
 	resolver_.async_resolve(query, std::bind(&Connection::handle_resolve, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void Connection::handle_resolve(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator iterator) {
+	log_->trace() << log_tag() << "handle_resolve()";
 	state_ = CONNECT;
 
 	if(error) return disconnect(error);
@@ -159,6 +149,7 @@ void Connection::handle_resolve(const boost::system::error_code& error, boost::a
 }
 
 void Connection::connect() {
+	log_->trace() << log_tag() << "connect()";
 	state_ = CONNECT;
 
 	socket_->lowest_layer().open(remote_endpoint_.address().is_v6() ? boost::asio::ip::tcp::v6() : boost::asio::ip::tcp::v4());
@@ -167,6 +158,7 @@ void Connection::connect() {
 }
 
 void Connection::handle_connect(const boost::system::error_code& error, boost::asio::ip::tcp::resolver::iterator iterator) {
+	log_->trace() << log_tag() << "handle_connect()";
 	if(error) return disconnect(error);
 
 	remote_endpoint_ = iterator->endpoint();
@@ -174,6 +166,7 @@ void Connection::handle_connect(const boost::system::error_code& error, boost::a
 }
 
 void Connection::handle_connect(const boost::system::error_code& error) {
+	log_->trace() << log_tag() << "handle_connect()";
 	if(error) return disconnect(error);
 
 	state_ = HANDSHAKE;
@@ -189,13 +182,13 @@ bool Connection::verify_callback(bool preverified, boost::asio::ssl::verify_cont
 
 	remote_pubkey_ = pubkey_from_cert(x509);
 
-	log_->debug() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(remote_pubkey_);
+	log_->trace() << log_tag() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(remote_pubkey_);
 
 	return true;
 }
 
 void Connection::handshake() {
-	log_->debug() << "TLS handshake with: " << remote_string();
+	log_->debug() << log_tag() << "TLS handshake with: " << remote_string();
 
 	boost::asio::ssl::stream_base::handshake_type handshake_type;
 
@@ -218,7 +211,7 @@ void Connection::handle_handshake(const boost::system::error_code& error) {
 
 	state_ = ESTABLISHED;
 
-	log_->debug() << "TLS connection established with: " << remote_string() << " " << error;
+	log_->debug() << log_tag() << "TLS connection established. Result:" << error;
 
 	establish_handler_(ESTABLISHED, error);
 }

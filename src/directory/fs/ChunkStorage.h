@@ -16,28 +16,49 @@
 #pragma once
 #include "../../pch.h"
 #include "AbstractStorage.h"
+#include "../../util/Loggable.h"
+#include "../../util/AvailabilityMap.h"
 
 namespace librevault {
 
 class Client;
 class FSDirectory;
-class EncStorage : public AbstractStorage {
+class ChunkStorage : public AbstractStorage, protected Loggable {
 public:
-	EncStorage(FSDirectory& dir, Client& client);
-	virtual ~EncStorage();
+	ChunkStorage(FSDirectory& dir, Client& client);
+	virtual ~ChunkStorage();
 
-	bool have_block(const blob& encrypted_data_hash);
 	blob get_block(const blob& encrypted_data_hash);
-	void put_block(const blob& encrypted_data_hash, const blob& data);	// FIXME: Check hash
-	void remove_block(const blob& encrypted_data_hash);
+	void put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& content);
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 	const fs::path& block_path_;
 
-	fs::path make_encblock_name(const blob& encrypted_data_hash) const;
-	fs::path make_encblock_path(const blob& encrypted_data_hash) const;
+	class Block {
+	public:
+		Block(uint32_t size);
+		~Block();
+
+		uint64_t size() const {return file_map_.size_original();}
+
+		blob get_block();
+		void put_chunk(uint32_t offset, const blob& content);
+
+		AvailabilityMap::const_iterator begin() {return file_map_.begin();}
+		AvailabilityMap::const_iterator end() {return file_map_.end();}
+
+		AvailabilityMap& map() {return file_map_;}
+
+	private:
+		AvailabilityMap file_map_;
+		fs::path this_block_path_;
+		boost::iostreams::mapped_file mapped_file_;
+	};
+
+	std::map<blob, Block> blocks_;
+
+	std::string log_tag() const;
 };
 
 } /* namespace librevault */

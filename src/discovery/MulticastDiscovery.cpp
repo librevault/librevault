@@ -1,21 +1,21 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MulticastDiscovery.h"
 #include "MulticastDiscovery.pb.h"
-#include "../Session.h"
+#include "../Client.h"
 #include "../directory/ExchangeGroup.h"
 #include "../directory/p2p/P2PProvider.h"
 #include "../directory/Exchanger.h"
@@ -26,16 +26,17 @@ using namespace boost::asio::ip;
 
 /* MulticastSender */
 MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<ExchangeGroup> exchange_group) :
-		parent_(parent), exchange_group_(exchange_group), repeat_timer_(parent_.session_.ios()), repeat_interval_(parent.repeat_interval_) {
+		parent_(parent), exchange_group_(exchange_group), repeat_timer_(parent_.client_.ios()), repeat_interval_(parent.repeat_interval_) {
 	send();
 }
 
 std::string MulticastSender::get_message() const {
 	if(message_.empty()){
 		protocol::MulticastDiscovery message;
-		message.set_port(parse_url(parent_.session_.config().get<std::string>("net.listen")).port);
+		message.set_port(parse_url(parent_.client_.config().get<std::string>("net.listen")).port);
 		message.set_dir_hash(exchange_group_->key().get_Hash().data(), exchange_group_->key().get_Hash().size());
-		message.set_pubkey(parent_.exchanger_.get_p2p_provider()->node_key().public_key().data(), parent_.exchanger_.get_p2p_provider()->node_key().public_key().size());
+		message.set_pubkey(parent_.exchanger_.p2p_provider()->node_key().public_key().data(),
+		                   parent_.exchanger_.p2p_provider()->node_key().public_key().size());
 
 		message_ = message.SerializeAsString();
 	}
@@ -53,8 +54,8 @@ void MulticastSender::send(){
 }
 
 /* MulticastDiscovery */
-MulticastDiscovery::MulticastDiscovery(Session& session, Exchanger& exchanger, ptree& options) :
-		DiscoveryService(session, exchanger), local_options_(options), socket_(session.ios()) {
+MulticastDiscovery::MulticastDiscovery(Client& client, Exchanger& exchanger, ptree& options) :
+		DiscoveryService(client, exchanger), local_options_(options), socket_(client.ios()) {
 
 	bind_address_ = address::from_string(local_options_.get<std::string>("local_ip"));
 
@@ -120,14 +121,14 @@ void MulticastDiscovery::receive(){
 							  std::bind(&MulticastDiscovery::process, this, buffer, std::placeholders::_2, endpoint));
 }
 
-MulticastDiscovery4::MulticastDiscovery4(Session& session, Exchanger& exchanger) :
-		MulticastDiscovery(session, exchanger, session.config().get_child("discovery.multicast4")) {
+MulticastDiscovery4::MulticastDiscovery4(Client& client, Exchanger& exchanger) :
+		MulticastDiscovery(client, exchanger, client.config().get_child("discovery.multicast4")) {
 	socket_.open(boost::asio::ip::udp::v4());
 	start();
 }
 
-MulticastDiscovery6::MulticastDiscovery6(Session& session, Exchanger& exchanger) :
-		MulticastDiscovery(session, exchanger, session.config().get_child("discovery.multicast6")) {
+MulticastDiscovery6::MulticastDiscovery6(Client& client, Exchanger& exchanger) :
+		MulticastDiscovery(client, exchanger, client.config().get_child("discovery.multicast6")) {
 	socket_.open(boost::asio::ip::udp::v6());
 	socket_.set_option(boost::asio::ip::v6_only(true));
 	start();

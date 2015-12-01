@@ -1,20 +1,21 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Exchanger.h"
 
+#include "../Client.h"
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
 #include "../nat/NATPMPService.h"
@@ -26,17 +27,18 @@
 
 namespace librevault {
 
-Exchanger::Exchanger(Session& session) : Loggable(session), session_(session) {
-	auto folder_trees = session.config().equal_range("folder");
+Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
+	auto folder_trees = client_.config().equal_range("folder");
 
-	p2p_provider_ = std::make_unique<P2PProvider>(session, *this);
+	p2p_provider_ = std::make_unique<P2PProvider>(client_, *this);
+	//cloud_provider_ = std::make_unique<CloudProvider>(client_, *this);
 
-	natpmp_ = std::make_unique<NATPMPService>(session, *this);
+	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
 
-	static_discovery_ = std::make_unique<StaticDiscovery>(session_, *this);
-	multicast4_ = std::make_unique<MulticastDiscovery4>(session_, *this);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(session_, *this);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(session_, *this);
+	static_discovery_ = std::make_unique<StaticDiscovery>(client_, *this);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, *this);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(client_, *this);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_, *this);
 
 	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
 		add_directory(folder_tree_it->second);
@@ -77,16 +79,16 @@ uint16_t Exchanger::mapped_port() const {
 	return natpmp_->public_port();
 }
 
-P2PProvider* Exchanger::get_p2p_provider() {
+P2PProvider* Exchanger::p2p_provider() {
 	return p2p_provider_.get();
 }
 
 void Exchanger::add_directory(const ptree& dir_options) {
-	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, session_, *this);
-	auto group_ptr = get_group(dir_ptr->hash());
+	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, client_, *this);
+	auto group_ptr = get_group(dir_ptr->key().get_Hash());
 	if(!group_ptr){
-		group_ptr = std::make_shared<ExchangeGroup>(session_, *this);
-		group_ptr->attach_fs_dir(dir_ptr);
+		group_ptr = std::make_shared<ExchangeGroup>(client_, *this);
+		group_ptr->attach(dir_ptr);
 		register_group(group_ptr);
 	}else{
 		throw std::runtime_error("Multiple directories with same key (or related to same key) are not supported now");

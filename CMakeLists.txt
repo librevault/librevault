@@ -1,12 +1,20 @@
 project(librevault)
 cmake_minimum_required(VERSION 3.1)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-include(cotire)
-
 #============================================================================
 # Compilation options
 #============================================================================
+
+option(WITH_COTIRE "Use cotire for builds." ON)
+
+#============================================================================
+# CMake modules
+#============================================================================
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+if(WITH_COTIRE)
+	include(cotire)
+endif()
 
 #============================================================================
 # Compiler properties
@@ -72,7 +80,6 @@ find_package(Threads)
 link_libraries(${CMAKE_THREAD_LIBS_INIT})
 
 # Docopt
-set(WITH_CPP14 ON)
 add_subdirectory("contrib/docopt")
 include_directories("contrib/docopt")
 link_libraries(docopt_s)
@@ -92,9 +99,14 @@ link_libraries(${Boost_LIBRARIES})
 # /Boost
 
 # cpp-netlib
-find_package(cppnetlib 0.11.1 REQUIRED)
-include_directories(${CPPNETLIB_INCLUDE_DIRS})
-link_libraries(${CPPNETLIB_LIBRARIES})
+#find_package(cppnetlib 0.11.1 REQUIRED)
+#include_directories(${CPPNETLIB_INCLUDE_DIRS})
+#link_libraries(${CPPNETLIB_LIBRARIES})
+
+# cURL
+find_package(CURL)
+include_directories(${CURL_INCLUDE_DIRS})
+link_libraries(${CURL_LIBRARIES})
 
 # SQLite
 find_package(Sqlite3)
@@ -176,8 +188,6 @@ list(APPEND SRCS ${PROTO_HEADERS})
 if(NOT SQLITE3_FOUND)
 	list(APPEND SRCS "contrib/sqlite3/sqlite3.c")
 endif()
-file(GLOB_RECURSE LVCRYPTO_SRCS "contrib/include/lvcrypto/*")
-list(APPEND SRCS ${LVCRYPTO_SRCS})
 file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
 list(APPEND SRCS ${LVSQLITE3_SRCS})
 
@@ -187,8 +197,10 @@ list(APPEND SRCS ${MAIN_SRCS})
 
 add_executable(${PROJECT_NAME} ${SRCS})
 
-set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
-cotire(${PROJECT_NAME})
+if(WITH_COTIRE)
+	set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
+	cotire(${PROJECT_NAME})
+endif()
 
 #============================================================================
 # Documentation generation

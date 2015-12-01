@@ -1,37 +1,37 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../../pch.h"
+#include "../../util/Loggable.h"
 #pragma once
 
 namespace librevault {
 
-class Session;
-class NodeKey {
+class Client;
+class NodeKey : protected Loggable {
 public:
 	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
 
-	NodeKey(Session& session);
+	NodeKey(Client& client);
 	virtual ~NodeKey();
 
 	const private_key_t& private_key() const {return private_key_;}
 	const blob& public_key() const {return public_key_;}
 
 private:
-	Session& session_;
-	std::shared_ptr<spdlog::logger> log_;
+	Client& client_;
 
 	private_key_t private_key_;
 	blob public_key_;

@@ -1,29 +1,28 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
 #include "../../pch.h"
-#include "../Abstract.h"
 #include "../../net/parse_url.h"
-#include "P2PProvider.h"
+#include "../../util/Loggable.h"
 
 namespace librevault {
 
-class Session;
+class Client;
 class P2PProvider;
-class Connection {
+class Connection : protected Loggable {
 public:
 	enum state {	// Next action TODO: Add some states for SOCKS
 		RESOLVE,
@@ -44,10 +43,10 @@ public:
 	using receive_handler = std::function<void()>;
 
 	// Outgoing
-	Connection(const url& url, Session& session, P2PProvider& provider);
-	Connection(tcp_endpoint endpoint, Session& session, P2PProvider& provider);
+	Connection(const url& url, Client& client, P2PProvider& provider);
+	Connection(tcp_endpoint endpoint, Client& client, P2PProvider& provider);
 	// Incoming
-	Connection(std::unique_ptr<ssl_socket>&& socket, Session& session, P2PProvider& provider);
+	Connection(std::unique_ptr<ssl_socket>&& socket, Client& client, P2PProvider& provider);
 
 	virtual ~Connection();
 
@@ -63,12 +62,12 @@ public:
 	role get_role() const {return role_;}
 
 private:
+	Connection(Client& client, P2PProvider& provider, state state_arg, role role_arg);
+	Client& client_;
+	P2PProvider& provider_;
+
 	state state_;
 	role role_;
-
-	std::shared_ptr<spdlog::logger> log_;
-	Session& session_;
-	P2PProvider& provider_;
 
 	std::unique_ptr<ssl_socket> socket_;
 	boost::asio::ip::tcp::resolver resolver_;
@@ -87,6 +86,9 @@ private:
 
 	// Handlers
 	establish_handler establish_handler_;
+
+	// Log functions
+	std::string log_tag() const {return std::string("[conn:") + remote_string() + "] ";}
 
 	// Handshake steps
 	void resolve();

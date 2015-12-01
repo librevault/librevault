@@ -1,28 +1,28 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Indexer.h"
 #include "FSDirectory.h"
-#include "../../Session.h"
+#include "../../Client.h"
 #include "../../util/byte_convert.h"
 
 namespace librevault {
 
-Indexer::Indexer(FSDirectory& dir, Session& session) :
+Indexer::Indexer(FSDirectory& dir, Client& client) :
 		log_(spdlog::get("Librevault")), dir_(dir),
-		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), session_(session) {}
+		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
 Indexer::~Indexer() {}
 
 Meta::SignedMeta Indexer::index(const std::string& file_path){
@@ -44,14 +44,11 @@ Meta::SignedMeta Indexer::index(const std::string& file_path){
 
 			auto meta = make_Meta(file_path);
 			Meta::SignedMeta smeta = sign(meta);
-			index_.put_Meta(sign(meta));
+
+			index_.put_Meta(smeta, true);
 
 			std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
 			float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
-
-			index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {
-					{":path_id", meta.path_id()}
-			});
 
 			log_->trace() << dir_.log_tag() << meta.debug_string();
 			log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
@@ -70,10 +67,10 @@ void Indexer::index(const std::set<std::string>& file_path){
 }
 
 void Indexer::async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback) {
-	session_.ios().post(std::bind([this](const std::string& file_path, std::function<void(Meta::SignedMeta)> callback){
+	client_.ios().post(std::bind([this](const std::string& file_path, std::function<void(Meta::SignedMeta)> callback){
 		try {
 			auto smeta = index(file_path);
-			session_.ios().dispatch(std::bind(callback, smeta));
+			client_.ios().dispatch(std::bind(callback, smeta));
 		}catch(std::runtime_error& e){}
 	}, file_path, callback));
 }

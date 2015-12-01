@@ -1,16 +1,16 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Index.h"
@@ -18,7 +18,7 @@
 
 namespace librevault {
 
-Index::Index(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault")), dir_(dir) {
+Index::Index(FSDirectory& dir, Client& client) : log_(spdlog::get("Librevault")), dir_(dir) {
 	bool db_path_created = fs::create_directories(dir_.db_path().parent_path());
 	log_->debug() << dir_.log_tag() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
 
@@ -36,48 +36,44 @@ Index::Index(FSDirectory& dir, Session& session) : log_(spdlog::get("Librevault"
 	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_data_hash NOT IN (SELECT encrypted_data_hash FROM openfs); END;");
 }
 
-Index::~Index() {}
+void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) {
+	SQLiteSavepoint raii_transaction(*db_, "put_Meta");
+	Meta meta; meta.parse(signed_meta.meta_);
 
-void Index::put_Meta(const std::list<SignedMeta>& signed_meta_list) {
-	auto raii_lock = SQLiteLock(*db_);
-	for(auto signed_meta : signed_meta_list){
-		SQLiteSavepoint raii_transaction(*db_, "put_Meta");
-		Meta meta; meta.parse(signed_meta.meta_);
+	db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
+			{":path_id", meta.path_id()},
+			{":meta", signed_meta.meta_},
+			{":signature", signed_meta.signature_}
+	});
 
-		db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
-				{":path_id", meta.path_id()},
-				{":meta", signed_meta.meta_},
-				{":signature", signed_meta.signature_}
+	uint64_t offset = 0;
+	for(auto block : meta.blocks()){
+		db_->exec("INSERT OR IGNORE INTO blocks (encrypted_data_hash, blocksize, iv) VALUES (:encrypted_data_hash, :blocksize, :iv);", {
+				{":encrypted_data_hash", block.encrypted_data_hash_},
+				{":blocksize", (uint64_t)block.blocksize_},
+				{":iv", block.iv_}
 		});
 
-		uint64_t offset = 0;
-		for(auto block : meta.blocks()){
-			db_->exec("INSERT OR IGNORE INTO blocks (encrypted_data_hash, blocksize, iv) VALUES (:encrypted_data_hash, :blocksize, :iv);", {
-					{":encrypted_data_hash", block.encrypted_data_hash_},
-					{":blocksize", (uint64_t)block.blocksize_},
-					{":iv", block.iv_}
-			});
+		db_->exec("INSERT INTO openfs (encrypted_data_hash, path_id, [offset], assembled) VALUES (:encrypted_data_hash, :path_id, :offset, :assembled);", {
+				{":encrypted_data_hash", block.encrypted_data_hash_},
+				{":path_id", meta.path_id()},
+				{":offset", (uint64_t)offset},
+				{":assembled", (uint64_t)fully_assembled}
+		});
 
-			db_->exec("INSERT INTO openfs (encrypted_data_hash, path_id, [offset]) VALUES (:encrypted_data_hash, :path_id, :offset);", {
-					{":encrypted_data_hash", block.encrypted_data_hash_},
-					{":path_id", meta.path_id()},
-					{":offset", (uint64_t)offset}
-			});
-
-			offset += block.blocksize_;
-		}
-
-		log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(meta.path_id());
+		offset += block.blocksize_;
 	}
+
+	log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(meta.path_id());
 }
 
-std::list<Index::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
-	std::list<SignedMeta> result_list;
+std::list<Meta::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
+	std::list<Meta::SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list.push_back({row[0], row[1]});
 	return result_list;
 }
-Index::SignedMeta Index::get_Meta(const blob& path_id){
+Meta::SignedMeta Index::get_Meta(const blob& path_id){
 	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_id=:path_id LIMIT 1", {
 			{":path_id", path_id}
 	});
@@ -85,11 +81,11 @@ Index::SignedMeta Index::get_Meta(const blob& path_id){
 	if(meta_list.empty()) throw no_such_meta();
 	return *meta_list.begin();
 }
-std::list<Index::SignedMeta> Index::get_Meta(){
+std::list<Meta::SignedMeta> Index::get_Meta(){
 	return get_Meta("SELECT meta, signature FROM files");
 }
 
-std::list<Index::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {
+std::list<Meta::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {
 	return get_Meta("SELECT files.meta, files.signature FROM files JOIN openfs ON files.path_id=openfs.path_id WHERE openfs.encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}});
 }
 

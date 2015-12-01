@@ -1,29 +1,29 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "FSDirectory.h"
 
-#include "../../Session.h"
+#include "../../Client.h"
 #include "../../net/parse_url.h"
 #include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 
 namespace librevault {
 
-FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchanger) :
-		AbstractDirectory(session, exchanger),
+FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger) :
+		AbstractDirectory(client, exchanger),
 		dir_options_(std::move(dir_options)),
 		key_(dir_options_.get<std::string>("key")),
 
@@ -33,142 +33,68 @@ FSDirectory::FSDirectory(ptree dir_options, Session& session, Exchanger& exchang
 		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_ / "assembled.part")) {
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
-	ignore_list = std::make_unique<IgnoreList>(*this, session);
-	index = std::make_unique<Index>(*this, session);
-	if(key_.get_type() <= Key::Type::Download){
-		enc_storage = std::make_unique<EncStorage>(*this, session_);
-	}
+	ignore_list = std::make_unique<IgnoreList>(*this, client);
+	index = std::make_unique<Index>(*this, client);
+	enc_storage = std::make_unique<EncStorage>(*this, client_);
 	if(key_.get_type() <= Key::Type::ReadOnly){
-		open_storage = std::make_unique<OpenStorage>(*this, session_);
+		open_storage = std::make_unique<OpenStorage>(*this, client_);
 	}
 	if(key_.get_type() <= Key::Type::ReadWrite){
-		indexer = std::make_unique<Indexer>(*this, session_);
-		auto_indexer = std::make_unique<AutoIndexer>(*this, session_, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
+		indexer = std::make_unique<Indexer>(*this, client_);
+		auto_indexer = std::make_unique<AutoIndexer>(*this, client_, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
 	}
 }
 
-FSDirectory::~FSDirectory() {}
-
-std::vector<Meta::PathRevision> FSDirectory::get_meta_list() {
-	std::vector<Meta::PathRevision> meta_list;
-
-	for(auto smeta : index->get_Meta()) {
-		meta_list.push_back(Meta(smeta.meta_).path_revision());
-	}
-
-	return meta_list;
+Meta FSDirectory::get_meta(const Meta::PathRevision& path_revision) {
+	auto meta = Meta(index->get_Meta(path_revision.path_id_).meta_);
+	if(meta.revision() == path_revision.revision_)
+		return meta;
+	else throw Index::no_such_meta();
 }
 
-void FSDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
-	try {
-		Meta::SignedMeta smeta = index->get_Meta(revision.path_id_);
-		Meta meta(smeta.meta_);
-		if(meta.revision() == revision.revision_) {
-			auto missing_blocks = get_missing_blocks(revision.path_id_);
-			if(!missing_blocks.empty()){
-				log_->debug() << log_tag() << "Missing " << missing_blocks.size() << " blocks in " << path_id_readable(revision.path_id_);
-				for(auto missing_block : missing_blocks){
-					origin->request_block(exchange_group_.lock(), missing_block);
-				}
-			}
-		}else if(meta.revision() < revision.revision_) {
-			log_->debug() << log_tag() << "Requesting new revision of " << path_id_readable(revision.path_id_);
-			origin->request_meta(exchange_group_.lock(), revision.path_id_);
-		}
-	}catch(Index::no_such_meta& e){
-		log_->debug() << log_tag() << "Meta " << path_id_readable(revision.path_id_) << " not found";
-		origin->request_meta(exchange_group_.lock(), revision.path_id_);
-	}
-}
-
-void FSDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& meta_id) {
-	try {
-		Meta::SignedMeta smeta = index->get_Meta(meta_id);
-		log_->debug() << log_tag() << "Meta " << path_id_readable(meta_id) << " found and will be sent to " << origin->name();
-		origin->post_meta(exchange_group_.lock(), smeta);
-	}catch(Index::no_such_meta& e){
-		log_->debug() << log_tag() << "Meta " << path_id_readable(meta_id) << " not found";
-	}
-}
-
-void FSDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta) {
-	log_->debug() << log_tag() << "Received Meta from " << origin->name();
-
+void FSDirectory::put_meta(const Meta::SignedMeta& smeta, bool fully_assembled) {
+	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
 	Meta meta(smeta.meta_);
+	auto path_revision = meta.path_revision();
+	if(will_accept_meta(path_revision)) {
+		index->put_Meta(smeta, fully_assembled);
 
-	// Check for zero-length file. If zero-length and key <= ReadOnly, then assemble.
-	index->put_Meta(smeta);	// FIXME: Check revision number, actually
+		auto bitfield = make_bitfield(meta);
+
+		path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
+		exchange_group_.lock()->post_have_meta(shared_from_this(), path_revision, bitfield);
+	}
+}
+
+blob FSDirectory::get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
+	auto block = get_block(encrypted_data_hash);
+	if(offset < block.size() && size <= block.size()-offset)
+		return blob(block.begin()+offset, block.begin()+offset+size);
+	else
+		throw AbstractStorage::no_such_block();
+}
+
+void FSDirectory::put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk) {
+	chunk_storage->put_chunk(encrypted_data_hash, offset, chunk);
+}
+
+bool FSDirectory::have_block(const blob& encrypted_data_hash) {
+	return enc_storage->have_block(encrypted_data_hash) || open_storage->have_block(encrypted_data_hash);
+}
+
+blob FSDirectory::get_block(const blob& encrypted_data_hash) {
 	try {
-		open_storage->assemble(meta, true);
-	}catch(AbstractStorage::no_such_block& e) {
-		for(auto missing_block : get_missing_blocks(meta.path_id())) {
-			origin->request_block(exchange_group_.lock(), missing_block);
-		}
+		return enc_storage->get_block(encrypted_data_hash);
+	}catch(AbstractStorage::no_such_block& e){
+		return open_storage->get_block(encrypted_data_hash);
 	}
 }
 
-void FSDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id) {
-	log_->debug() << log_tag() << "Received block_request from " << origin->name();
-	if(open_storage){
-		try {
-			auto block = open_storage->get_encblock(block_id);
-			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " found and will be sent to " << origin->name();
-			origin->post_block(exchange_group_.lock(), block_id, block);
-		}catch(AbstractStorage::no_such_block& e){
-			log_->debug() << log_tag() << "Block " << encrypted_data_hash_readable(block_id) << " not found";
-		}
-	}
+void FSDirectory::put_block(const blob& encrypted_data_hash, const blob& block) {
+	enc_storage->put_block(encrypted_data_hash, block);
 }
 
-void FSDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const blob& encrypted_data_hash, const blob& block) {
-	log_->debug() << log_tag() << "Received block " << encrypted_data_hash_readable(encrypted_data_hash) << " from " << origin->name();
-	enc_storage->put_encblock(encrypted_data_hash, block);	// FIXME: Check hash!!
-	if(open_storage){
-		for(auto& smeta : index->containing_block(encrypted_data_hash)) {
-			Meta meta(smeta.meta_);
-			try {
-				open_storage->assemble(meta, true);
-			}catch(AbstractStorage::no_such_block& e){
-				log_->debug() << log_tag() << "Not enough blocks for assembling " << encrypted_data_hash_readable(encrypted_data_hash);
-			}
-		}
-	}
-}
-
-std::list<blob> FSDirectory::get_missing_blocks(const blob& path_id) {
-	auto sql_result = index->db().exec("SELECT encrypted_data_hash FROM openfs WHERE path_id=:path_id AND assembled=0", {
-					{":path_id", path_id}
-			});
-
-	std::list<blob> missing_blocks;
-
-	for(auto row : sql_result){
-		blob block_id = row[0];
-		if(!enc_storage->have_encblock(block_id)){
-			missing_blocks.push_back(block_id);
-		}
-	}
-
-	return missing_blocks;
-}
-
-void FSDirectory::set_exchange_group(std::shared_ptr<ExchangeGroup> exchange_group) {
-	exchange_group_ = exchange_group;
-}
-
-void FSDirectory::handle_smeta(Meta::SignedMeta smeta) {
-	Meta::PathRevision path_revision = Meta(smeta.meta_).path_revision();
-
-	log_->debug() << log_tag() << "Created revision " << path_revision.revision_ << " of " << path_id_readable(path_revision.path_id_);
-
-	auto exchange_group_ptr = exchange_group_.lock();
-	if(exchange_group_ptr) exchange_group_ptr->broadcast_revision(shared_from_this(), path_revision);
-}
-
-std::string FSDirectory::name() const {
-	return open_path_.empty() ? block_path_.string() : open_path_.string();
-}
-
+/* Makers */
 std::string FSDirectory::make_relpath(const fs::path& path) const {
 	fs::path rel_to = open_path();
 	auto abspath = fs::absolute(path);
@@ -185,6 +111,34 @@ std::string FSDirectory::make_relpath(const fs::path& path) const {
 		relpath /= *path_elem_it;
 	}
 	return relpath.generic_string();
+}
+
+AbstractDirectory::bitfield_type FSDirectory::make_bitfield(const Meta& meta) {
+	bitfield_type bitfield(meta.blocks().size());
+
+	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.blocks().size(); bitfield_idx++)
+		if(have_block(meta.blocks().at(bitfield_idx).encrypted_data_hash_))
+			bitfield[bitfield_idx] = true;
+
+	return bitfield;
+}
+
+/* Getters */
+std::string FSDirectory::name() const {
+	return open_path_.empty() ? block_path_.string() : open_path_.string();
+}
+
+void FSDirectory::handle_smeta(Meta::SignedMeta smeta) {
+	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
+	Meta meta(smeta.meta_);
+	auto path_revision = meta.path_revision();
+	bitfield_type bitfield; bitfield.resize(meta.blocks().size(), true);
+
+	path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
+
+	auto group_ptr = exchange_group_.lock();
+	if(group_ptr)
+		group_ptr->post_have_meta(shared_from_this(), path_revision, bitfield);
 }
 
 } /* namespace librevault */

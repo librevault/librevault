@@ -1,16 +1,16 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "pch.h"
@@ -23,10 +23,10 @@
 namespace librevault {
 
 class Exchanger;
-class Session : public LogRoot {
+class Client : public Loggable {
 public:
-	Session(std::map<std::string, docopt::value> args);
-	virtual ~Session();
+	Client(std::map<std::string, docopt::value> args);
+	virtual ~Client();
 
 	void init_log();
 
@@ -39,8 +39,8 @@ public:
 	const Version& version() const {return version_;}
 	ptree& config() {return config_->config();}
 
-	io_service& ios() {return etc_ios_.ios();}
-	io_service& dir_monitor_ios() {return etc_ios_.ios();}
+	io_service& ios() {return etc_ios_->ios();}
+	io_service& dir_monitor_ios() {return etc_ios_->ios();}
 
 	fs::path appdata_path() const {return appdata_path_;}
 	fs::path config_path() const {return config_path_;}
@@ -53,8 +53,8 @@ private:
 
 	// Asynchronous/multithreaded operation
 	io_service main_loop_ios_;
-	multi_io_service dir_monitor_ios_;
-	multi_io_service etc_ios_;
+	std::unique_ptr<multi_io_service> dir_monitor_ios_;
+	std::unique_ptr<multi_io_service> etc_ios_;
 
 	// Components
 	std::unique_ptr<Exchanger> exchanger_;

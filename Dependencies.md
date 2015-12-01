@@ -12,6 +12,8 @@ Third-party libraries
 - libnatpmp - New BSD License
 
 - spdlog - MIT
+- cURL - MIT
+- cURLpp - MIT
 
 - OpenSSL - OpenSSL License
 

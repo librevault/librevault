@@ -1,20 +1,20 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../bttracker/UDPTrackerConnection.h"
-#include "../../Session.h"
+#include "../../Client.h"
 #include "../../directory/Exchanger.h"
 #include "../../directory/p2p/P2PProvider.h"
 #include "../../directory/fs/FSDirectory.h"
@@ -23,17 +23,17 @@
 
 namespace librevault {
 
-UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Session& session, Exchanger& exchanger) :
-		TrackerConnection(tracker_address, group_ptr, tracker_discovery, session, exchanger),
+UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger) :
+		TrackerConnection(tracker_address, group_ptr, tracker_discovery, client, exchanger),
 
-		socket_(session.ios()),
-		resolver_(session.ios()),
-		reconnect_timer_(session.ios()),
-		announce_timer_(session.ios()) {
+		socket_(client.ios()),
+		resolver_(client.ios()),
+		reconnect_timer_(client.ios()),
+		announce_timer_(client.ios()) {
 	assert(tracker_address_.scheme == "udp");
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = exchanger_.get_p2p_provider()->local_endpoint().address();
+	bind_address_ = exchanger_.p2p_provider()->local_endpoint().address();
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 
@@ -87,12 +87,12 @@ void UDPTrackerConnection::receive_loop(){
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
-	reconnect_timer_.expires_from_now(std::chrono::seconds(session_.config().get<uint_least32_t>("discovery.bttracker.udp.reconnect_interval", 60)));
+	reconnect_timer_.expires_from_now(std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.udp.reconnect_interval", 60)));
 	reconnect_timer_.async_wait(std::bind(&UDPTrackerConnection::connect, this, std::placeholders::_1));
 }
 
 void UDPTrackerConnection::bump_announce_timer() {
-	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(session_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15)));
+	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15)));
 
 	announce_timer_.expires_from_now(announce_interval_);
 	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));
@@ -132,7 +132,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 
 	request.event_ = int32_t(announced_times_++ == 0 ? Event::EVENT_STARTED : Event::EVENT_NONE);
 	request.key_ = gen_transaction_id();
-	request.num_want_ = session_.config().get<int32_t>("discovery.bttracker.num_want");
+	request.num_want_ = client_.config().get<int32_t>("discovery.bttracker.num_want");
 
 	request.port_ = exchanger_.mapped_port();
 

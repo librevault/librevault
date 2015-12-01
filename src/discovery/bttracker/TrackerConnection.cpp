@@ -1,21 +1,21 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdint-gcc.h>
 #include "../bttracker/UDPTrackerConnection.h"
-#include "../../Session.h"
+#include "../../Client.h"
 #include "../../directory/Exchanger.h"
 #include "../../directory/ExchangeGroup.h"
 #include "../../directory/p2p/P2PProvider.h"
@@ -23,9 +23,9 @@
 
 namespace librevault {
 
-TrackerConnection::TrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Session& session, Exchanger& exchanger) :
-		Loggable(session),
-		session_(session),
+TrackerConnection::TrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger) :
+		Loggable(client),
+		client_(client),
 		exchanger_(exchanger),
 		tracker_discovery_(tracker_discovery),
 		tracker_address_(tracker_address),
@@ -47,13 +47,14 @@ TrackerConnection::peer_id TrackerConnection::get_peer_id() const {
 
 	std::string default_az_id = "-LV0001-";
 
-	std::string az_id = session_.config().get<std::string>("discovery.bttracker.azureus_id", default_az_id);
+	std::string az_id = client_.config().get<std::string>("discovery.bttracker.azureus_id", default_az_id);
 	if(az_id.size() != 8) az_id = default_az_id;
 
 	auto pubkey_bytes_left = pid.size() - az_id.size();
 
 	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(exchanger_.get_p2p_provider()->node_key().public_key().begin(), exchanger_.get_p2p_provider()->node_key().public_key().begin()+pubkey_bytes_left, pid.begin()+az_id.size());
+	std::copy(exchanger_.p2p_provider()->node_key().public_key().begin(),
+	          exchanger_.p2p_provider()->node_key().public_key().begin()+pubkey_bytes_left, pid.begin()+az_id.size());
 
 	return pid;
 }

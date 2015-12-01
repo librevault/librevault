@@ -1,29 +1,29 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AutoIndexer.h"
 #include "Indexer.h"
 #include "FSDirectory.h"
-#include "../../Session.h"
+#include "../../Client.h"
 
 namespace librevault {
 
-AutoIndexer::AutoIndexer(FSDirectory& dir, Session& session, std::function<void(Meta::SignedMeta)> callback) :
+AutoIndexer::AutoIndexer(FSDirectory& dir, Client& client, std::function<void(Meta::SignedMeta)> callback) :
 		log_(spdlog::get("Librevault")),
-		dir_(dir), session_(session),
-		monitor_(session_.dir_monitor_ios()), index_timer_(session_.dir_monitor_ios()) {
+		dir_(dir), client_(client),
+		monitor_(client_.dir_monitor_ios()), index_timer_(client_.dir_monitor_ios()) {
 	callback_ = callback;
 
 	enqueue_files(index_queue_ = dir.open_storage->pending_files());

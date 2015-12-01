@@ -13,30 +13,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
-#pragma once
-#include "Loggable.h"
+#include "../Client.h"
+#include "Exchanger.h"
+#include "RemoteDirectory.h"
 
 namespace librevault {
 
-class multi_io_service : protected Loggable {
-public:
-	multi_io_service(Loggable& parent_loggable, const std::string& name);
-
-	void start(unsigned thread_count);
-	void stop();
-
-	io_service& ios() {return ios_;}
-
-protected:
-	io_service ios_;
-	std::unique_ptr<io_service::work> ios_work_;
-
-	std::vector<std::thread> worker_threads_;
-
-	void run_thread(unsigned worker_number);
-
-	std::string log_tag() const {return std::string("[pool:") + name_ + "] ";}
-};
+RemoteDirectory::RemoteDirectory(Client& client, Exchanger& exchanger) :
+		AbstractDirectory(client, exchanger), client_(client), exchanger_(exchanger) {}
+RemoteDirectory::~RemoteDirectory() {}
 
 } /* namespace librevault */

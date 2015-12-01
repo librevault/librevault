@@ -1,27 +1,25 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "Session.h"
+#include "Client.h"
 
 #include "directory/Exchanger.h"
 
 namespace librevault {
 
-Session::Session(std::map<std::string, docopt::value> args) :
-		dir_monitor_ios_(*this, "dir_monitor_ios"),
-		etc_ios_(*this, "etc_ios") {
+Client::Client(std::map<std::string, docopt::value> args) {
 	if(args["--data"].isString())
 		appdata_path_ = args["--data"].asString();
 	else
@@ -32,16 +30,20 @@ Session::Session(std::map<std::string, docopt::value> args) :
 	cert_path_ = appdata_path_ / "cert.pem";
 
 	init_log();
+
+	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
+	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
+
 	config_ = std::make_unique<Config>(*this, config_path_);
 	exchanger_ = std::make_unique<Exchanger>(*this);
 }
 
-Session::~Session() {
+Client::~Client() {
 	exchanger_.reset();	// Deleted explicitly, because it must be deleted before writing config and destroying io_service;
 	config_.reset();
 }
 
-void Session::init_log() {
+void Client::init_log() {
 	static std::mutex log_mtx;
 	std::lock_guard<std::mutex> lk(log_mtx);
 	log_ = spdlog::get(version().name());
@@ -66,26 +68,26 @@ void Session::init_log() {
 	log_->info() << version().name() << " " << version().version_string();
 }
 
-void Session::run() {
-	dir_monitor_ios_.start(1);
-	etc_ios_.start(std::thread::hardware_concurrency());
+void Client::run() {
+	dir_monitor_ios_->start(1);
+	etc_ios_->start(std::thread::hardware_concurrency());
 
 	// Main loop/signal processing loop
 	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);
-	signals.async_wait(std::bind(&Session::shutdown, this));
+	signals.async_wait(std::bind(&Client::shutdown, this));
 
 	main_loop_ios_.run();
 	main_loop_ios_.reset();
 }
 
-void Session::shutdown(){
+void Client::shutdown(){
 	log_->info() << "Exiting...";
-	dir_monitor_ios_.stop();
-	etc_ios_.stop();
+	dir_monitor_ios_->stop();
+	etc_ios_->stop();
 	main_loop_ios_.stop();
 }
 
-fs::path Session::default_appdata_path(){
+fs::path Client::default_appdata_path(){
 #if BOOST_OS_WINDOWS
 	return fs::path(getenv("APPDATA")) / version().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
 #elif BOOST_OS_MACOS

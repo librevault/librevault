@@ -1,16 +1,16 @@
 /* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OpenStorage.h"
@@ -19,7 +19,7 @@
 
 namespace librevault {
 
-OpenStorage::OpenStorage(FSDirectory& dir, Session& session) :
+OpenStorage::OpenStorage(FSDirectory& dir, Client& client) :
 		log_(spdlog::get("Librevault")), dir_(dir),
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {
 	bool open_path_created = fs::create_directories(dir_.open_path());
@@ -29,17 +29,7 @@ OpenStorage::OpenStorage(FSDirectory& dir, Session& session) :
 }
 OpenStorage::~OpenStorage() {}
 
-std::string OpenStorage::get_path(const blob& path_id){
-	for(auto row : index_.db().exec("SELECT meta FROM files WHERE path_id=:path_id", {{":path_id", path_id}})){
-		Meta meta(row[0].as_blob());
-		return meta.path(key_);
-	}
-	throw;
-}
-
 bool OpenStorage::have_block(const blob& encrypted_data_hash) {
-	if(enc_storage_.have_encblock(encrypted_data_hash)) return true;
-
 	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
 										   "WHERE encrypted_data_hash=:encrypted_data_hash", {
 										   {":encrypted_data_hash", encrypted_data_hash}
@@ -62,7 +52,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_ha
 		Meta meta(row[2].as_blob());
 
 		uint64_t blocksize	= row[0];
-		blob iv				= row[1];
+		blob iv 			= row[1];
 		auto filepath		= fs::absolute(meta.path(key_), dir_.open_path());
 		uint64_t offset		= row[3];
 
@@ -76,24 +66,20 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_ha
 
 			blob encblock = cryptodiff::encrypt_block(block, key_.get_Encryption_Key(), iv);
 			// Check
-			if(verify_encblock(encrypted_data_hash, encblock, meta.strong_hash_type())) return {block, encblock};
+			if(verify_block(encrypted_data_hash, encblock, meta.strong_hash_type())) return {block, encblock};
 		}catch(const std::ios::failure& e){}
 	}
 	throw no_such_block();
 }
 
-blob OpenStorage::get_encblock(const blob& encrypted_data_hash){
-	try {
-		return enc_storage_.get_encblock(encrypted_data_hash);
-	}catch(no_such_block& e){
-		return get_both_blocks(encrypted_data_hash).second;
-	}
+blob OpenStorage::get_block(const blob& encrypted_data_hash){
+	return get_both_blocks(encrypted_data_hash).second;
 }
 
-blob OpenStorage::get_block(const blob& encrypted_data_hash) {
+blob OpenStorage::get_openblock(const blob& encrypted_data_hash) {
 	try {
 		for(auto row : index_.db().exec("SELECT iv, blocksize FROM blocks WHERE encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}})){
-			blob encblock = enc_storage_.get_encblock(encrypted_data_hash);
+			blob encblock = enc_storage_.get_block(encrypted_data_hash);
 			return cryptodiff::decrypt_block(encblock, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
 		}
 		throw no_such_block();
@@ -152,7 +138,7 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 					blob encrypted_data_hash = row[1].as_blob();
 					blob iv = row[2].as_blob();
 
-					blob block_data = get_block(encrypted_data_hash);
+					blob block_data = get_openblock(encrypted_data_hash);
 
 					ofs.write((const char*)block_data.data(), block_data.size());
 					pending_remove.push_back(encrypted_data_hash);
@@ -171,7 +157,7 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 
 				if(delete_blocks){
 					for(auto& encrypted_data_hash : pending_remove) {
-						enc_storage_.remove_encblock(encrypted_data_hash);
+						enc_storage_.remove_block(encrypted_data_hash);
 					}
 				}
 			} break;

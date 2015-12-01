@@ -1,16 +1,16 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
@@ -23,23 +23,32 @@ public:
 	ProtobufParser(){}
 	virtual ~ProtobufParser(){}
 
-	blob gen_handshake(const Handshake& message_struct);
-	Handshake parse_handshake(const blob& message_raw);
+	virtual blob gen_Handshake(const Handshake& message_struct);
+	virtual Handshake parse_Handshake(const blob& message_raw);
 
-	blob gen_meta_list(const MetaList& message_struct);
-	MetaList parse_meta_list(const blob& message_raw);
+	virtual blob gen_HaveMeta(const HaveMeta& message_struct);
+	virtual HaveMeta parse_HaveMeta(const blob& message_raw);
 
-	blob gen_meta_request(const MetaRequest& message_struct);
-	MetaRequest parse_meta_request(const blob& message_raw);
+	virtual blob gen_HaveBlock(const HaveBlock& message_struct);
+	virtual HaveBlock parse_HaveBlock(const blob& message_raw);
 
-	blob gen_meta(const Meta& message_struct);
-	Meta parse_meta(const blob& message_raw);
+	virtual blob gen_MetaRequest(const MetaRequest& message_struct);
+	virtual MetaRequest parse_MetaRequest(const blob& message_raw);
 
-	blob gen_block_request(const BlockRequest& message_struct);
-	BlockRequest parse_block_request(const blob& message_raw);
+	virtual blob gen_MetaReply(const MetaReply& message_struct);
+	virtual MetaReply parse_MetaReply(const blob& message_raw);
 
-	blob gen_block(const Block& message_struct);
-	Block parse_block(const blob& message_raw);
+	virtual blob gen_MetaCancel(const MetaCancel& message_struct);
+	virtual MetaCancel parse_MetaCancel(const blob& message_raw);
+
+	virtual blob gen_ChunkRequest(const ChunkRequest& message_struct);
+	virtual ChunkRequest parse_ChunkRequest(const blob& message_raw);
+
+	virtual blob gen_ChunkReply(const ChunkReply& message_struct);
+	virtual ChunkReply parse_ChunkReply(const blob& message_raw);
+
+	virtual blob gen_ChunkCancel(const ChunkCancel& message_struct);
+	virtual ChunkCancel parse_ChunkCancel(const blob& message_raw);
 
 private:
 	template <class ProtoMessageClass>

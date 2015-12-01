@@ -1,16 +1,16 @@
 /* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
@@ -34,15 +34,15 @@ public:
 		assemble_error() : error("Error during assembling file") {}
 	};
 
-	OpenStorage(FSDirectory& dir, Session& session);
+	OpenStorage(FSDirectory& dir, Client& client);
 	virtual ~OpenStorage();
 
 	// Path constructor
 	blob make_path_id(const std::string& relpath) const;
 
 	bool have_block(const blob& encrypted_data_hash);
-	blob get_encblock(const blob& encrypted_data_hash);
 	blob get_block(const blob& encrypted_data_hash);
+	blob get_openblock(const blob& encrypted_data_hash);
 
 	// File assembler
 	/**
@@ -71,7 +71,6 @@ private:
 	EncStorage& enc_storage_;
 
 	std::pair<blob, blob> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
-	std::string get_path(const blob& path_id);
 };
 
 } /* namespace librevault */

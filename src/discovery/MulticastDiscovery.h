@@ -1,16 +1,16 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
@@ -66,12 +66,12 @@ protected:
 	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr);
 	void receive();
 
-	MulticastDiscovery(Session& session, Exchanger& exchanger, ptree& options);
+	MulticastDiscovery(Client& client, Exchanger& exchanger, ptree& options);
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {
 public:
-	MulticastDiscovery4(Session& session, Exchanger& exchanger);
+	MulticastDiscovery4(Client& client, Exchanger& exchanger);
 	virtual ~MulticastDiscovery4(){}
 
 	std::string log_tag() const {return "[MulticastDiscovery4] ";}
@@ -79,7 +79,7 @@ public:
 
 class MulticastDiscovery6 : public MulticastDiscovery {
 public:
-	MulticastDiscovery6(Session& session, Exchanger& exchanger);
+	MulticastDiscovery6(Client& client, Exchanger& exchanger);
 	virtual ~MulticastDiscovery6(){}
 
 	std::string log_tag() const {return "[MulticastDiscovery6] ";}

@@ -1,26 +1,28 @@
 /* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeKey.h"
-#include "../../Session.h"
+#include "../../Client.h"
 
 namespace librevault {
 
-NodeKey::NodeKey(Session& session) :
-		session_(session), log_(session_.log()),
-		openssl_pkey_(EVP_PKEY_new()), x509_(X509_new()) {
+NodeKey::NodeKey(Client& client) :
+		Loggable(client),
+		client_(client),
+		openssl_pkey_(EVP_PKEY_new()),
+		x509_(X509_new()) {
 	gen_private_key();
 	write_key();
 	gen_certificate();
@@ -48,7 +50,7 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 }
 
 void NodeKey::write_key(){
-	fs::ofstream ofs(session_.key_path(), std::ios_base::binary);
+	fs::ofstream ofs(client_.key_path(), std::ios_base::binary);
 
 	ofs << "-----BEGIN EC PRIVATE KEY-----" << std::endl;
 	auto& group_params = private_key_.GetGroupParameters();
@@ -104,7 +106,7 @@ void NodeKey::write_key(){
 }
 
 void NodeKey::gen_certificate() {
-	FILE* f = fopen(session_.key_path().string().c_str(), "r");
+	FILE* f = fopen(client_.key_path().string().c_str(), "r");
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
@@ -137,7 +139,7 @@ void NodeKey::gen_certificate() {
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = fopen(session_.cert_path().string().c_str(), "wb");
+	FILE * x509_file = fopen(client_.cert_path().string().c_str(), "wb");
 	if (!x509_file) {
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}

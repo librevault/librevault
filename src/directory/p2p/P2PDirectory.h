@@ -16,8 +16,7 @@
 #include "../../pch.h"
 #pragma once
 #include "../RemoteDirectory.h"
-#include "Connection.h"
-#include "WireProtocol.pb.h"
+#include "P2PProvider.h"
 
 namespace librevault {
 
@@ -27,9 +26,8 @@ class P2PProvider;
 class AbstractParser;
 
 class P2PDirectory : public RemoteDirectory, public std::enable_shared_from_this<P2PDirectory> {
+	friend class P2PProvider;
 public:
-	using length_prefix_t = boost::endian::big_uint32_at;
-
 	/* Errors */
 	struct error : public std::runtime_error {
 		error(const char* what) : std::runtime_error(what){}
@@ -41,21 +39,29 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PDirectory(std::unique_ptr<Connection>&& connection, Client& client, Exchanger& exchanger, P2PProvider& provider);
-	P2PDirectory(std::unique_ptr<Connection>&& connection, std::shared_ptr<ExchangeGroup> exchange_group, Client& client, Exchanger& exchanger, P2PProvider& provider);
+	P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle);
+	P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<ExchangeGroup> exchange_group);
 	~P2PDirectory();
 
-	const blob& remote_pubkey() const {return connection_->remote_pubkey();}
-	const tcp_endpoint& remote_endpoint() const {return connection_->remote_endpoint();}
+	/* Getters */
+	const blob& remote_pubkey() const {return remote_pubkey_;}
+	void remote_pubkey(blob new_remote_pubkey) {remote_pubkey_ = std::move(new_remote_pubkey);}
 
-	std::string name() const {return connection_->remote_string();}
+	tcp_endpoint remote_endpoint() const;
 
-	bool is_handshaken() const {return awaiting_next_ == AWAITING_ANY;}
+	void name(std::string new_name) const {name_ = std::move(new_name);}
+	std::string name() const {return name_;}
 
 	blob local_token();
 	blob remote_token();
 
 	/* RPC Actions */
+	void send_message(const blob& message);
+
+	// Handshake
+	void perform_handshake();
+	bool is_handshaken() const {return handshake_performed_;}
+
 	// Choking
 	void choke();
 	void unchoke();
@@ -73,68 +79,39 @@ public:
 	void post_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk);
 	void cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
 
+protected:
+	blob remote_pubkey_;
+	void handle_message(const blob& message);
+
 private:
 	P2PProvider& provider_;
-	static std::array<char, 19> pstr;
-	const uint8_t version = 1;
+	P2PProvider::role_type role_;
 
 	std::unique_ptr<AbstractParser> parser_;
+	bool handshake_performed_ = false;
 
-	union protocol_tag {	// 32 bytes, all fields are octets and unaligned.
-		struct {
-			uint8_t pstrlen;
-			std::array<char, 19> pstr;
-			uint8_t version;
-			std::array<uint8_t, 11> reserved;
-		};
-		std::array<uint8_t, 32> raw_bytes;
-	};
-
-	// Message flow
-	enum {AWAITING_PROTOCOL_TAG, AWAITING_HANDSHAKE, AWAITING_ANY} awaiting_next_ = AWAITING_PROTOCOL_TAG;
-
-	std::shared_ptr<blob> receive_buffer_;
-	std::unique_ptr<Connection> connection_;
-
-	// Mutexes
-	std::mutex disconnect_mtx_;
-
-	void handle_establish(Connection::state state, const boost::system::error_code& error);
-	void disconnect(const boost::system::error_code& error = boost::asio::error::no_protocol_option);
-
-	void receive_size();
-	void receive_data();
-
-	/* Timeouts */
-	boost::asio::steady_timer timeout;
-	void bump_timeout();
+	websocketpp::connection_hdl connection_handle_;
 
 	/* Message handlers */
-	void handle_message();	// Handles message in buffer
+	void handle_Handshake(const blob& message_raw);
 
-	void handle_protocol_tag();
-	void handle_Handshake();
+	void handle_Choke(const blob& message_raw);
+	void handle_Unchoke(const blob& message_raw);
+	void handle_Interested(const blob& message_raw);
+	void handle_NotInterested(const blob& message_raw);
 
-	void handle_Choke();
-	void handle_Unchoke();
-	void handle_Interested();
-	void handle_NotInterested();
+	void handle_HaveMeta(const blob& message_raw);
+	void handle_HaveBlock(const blob& message_raw);
 
-	void handle_HaveMeta();
-	void handle_HaveBlock();
+	void handle_MetaRequest(const blob& message_raw);
+	void handle_MetaReply(const blob& message_raw);
+	void handle_MetaCancel(const blob& message_raw);
 
-	void handle_MetaRequest();
-	void handle_MetaReply();
-	void handle_MetaCancel();
-
-	void handle_ChunkRequest();
-	void handle_ChunkReply();
-	void handle_ChunkCancel();
+	void handle_ChunkRequest(const blob& message_raw);
+	void handle_ChunkReply(const blob& message_raw);
+	void handle_ChunkCancel(const blob& message_raw);
 
 	/* Message senders */
-	void send_protocol_tag();
-	void send_Handshake();
-
 	void send_meta_list();
 };
 

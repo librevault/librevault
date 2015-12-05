@@ -22,7 +22,6 @@ blob ProtobufParser::gen_Handshake(const Handshake& message_struct) {
 	protocol::Handshake message_protobuf;
 	message_protobuf.set_dir_hash(message_struct.dir_hash.data(), message_struct.dir_hash.size());
 	message_protobuf.set_auth_token(message_struct.auth_token.data(), message_struct.auth_token.size());
-	message_protobuf.set_user_agent(message_struct.user_agent);
 
 	return prepare_proto_message(message_protobuf, HANDSHAKE);
 }
@@ -33,7 +32,6 @@ AbstractParser::Handshake ProtobufParser::parse_Handshake(const blob& message_ra
 	Handshake message_struct;
 	message_struct.dir_hash.assign(message_protobuf.dir_hash().begin(), message_protobuf.dir_hash().end());
 	message_struct.auth_token.assign(message_protobuf.auth_token().begin(), message_protobuf.auth_token().end());
-	message_struct.user_agent = message_protobuf.user_agent();
 
 	return message_struct;
 }

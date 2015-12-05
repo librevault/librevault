@@ -10,6 +10,7 @@ Third-party libraries
 
 - Protocol Buffers - New BSD License
 - libnatpmp - New BSD License
+- WebSocket++ - New BSD License
 
 - spdlog - MIT
 - cURL - MIT

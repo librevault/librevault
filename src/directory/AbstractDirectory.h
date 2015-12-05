@@ -34,6 +34,7 @@ public:
 
 	// AbstractDirectory properties
 	virtual std::string name() const = 0;
+	std::shared_ptr<ExchangeGroup> exchange_group() {return exchange_group_.lock();}
 
 	// Other functions
 	std::string path_id_readable(const blob& path_id) const;

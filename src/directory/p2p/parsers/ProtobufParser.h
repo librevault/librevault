@@ -53,10 +53,11 @@ public:
 private:
 	template <class ProtoMessageClass>
 	blob prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
-		blob message_raw(message_protobuf.ByteSize());
-		message_protobuf.SerializeToArray(message_raw.data(), message_raw.size());
+		blob message_raw(message_protobuf.ByteSize()+1);
+		message_raw[0] = type;
+		message_protobuf.SerializeToArray(message_raw.data()+1, message_protobuf.ByteSize());
 
-		return prefix(std::move(message_raw), type);
+		return message_raw;
 	}
 };
 

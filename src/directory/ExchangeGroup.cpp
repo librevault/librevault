@@ -57,7 +57,6 @@ void ExchangeGroup::attach(std::shared_ptr<P2PDirectory> remote_ptr) {
 
 	std::unique_lock<std::shared_timed_mutex> lk(dirs_mtx_);
 	remote_ptr->exchange_group_ = shared_from_this();
-	exchanger_.p2p_provider()->remove_from_unattached(remote_ptr);
 
 	p2p_dirs_.insert(remote_ptr);
 	p2p_dirs_endpoints_.insert(remote_ptr->remote_endpoint());

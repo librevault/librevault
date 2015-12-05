@@ -32,6 +32,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	init_log();
 
 	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
+	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
 
 	config_ = std::make_unique<Config>(*this, config_path_);
@@ -70,6 +71,7 @@ void Client::init_log() {
 
 void Client::run() {
 	dir_monitor_ios_->start(1);
+	network_ios_->start(1);
 	etc_ios_->start(std::thread::hardware_concurrency());
 
 	// Main loop/signal processing loop
@@ -83,6 +85,7 @@ void Client::run() {
 void Client::shutdown(){
 	log_->info() << "Exiting...";
 	dir_monitor_ios_->stop();
+	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();
 }

@@ -56,6 +56,12 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/sha3.h>
 
+// Websocket++
+#include <websocketpp/config/asio.hpp>
+#include <websocketpp/config/asio_client.hpp>
+#include <websocketpp/server.hpp>
+#include <websocketpp/client.hpp>
+
 // Boost
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -145,6 +151,7 @@ using udp_socket = boost::asio::ip::udp::socket;
 using tcp_socket = boost::asio::ip::tcp::socket;
 
 using ssl_socket = boost::asio::ssl::stream<tcp_socket>;
+using ssl_context = boost::asio::ssl::context;
 
 using byte = uint8_t;
 using blob = std::vector<byte>;

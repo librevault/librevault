@@ -40,6 +40,7 @@ public:
 	ptree& config() {return config_->config();}
 
 	io_service& ios() {return etc_ios_->ios();}
+	io_service& network_ios() {return network_ios_->ios();}
 	io_service& dir_monitor_ios() {return etc_ios_->ios();}
 
 	fs::path appdata_path() const {return appdata_path_;}
@@ -53,6 +54,7 @@ private:
 
 	// Asynchronous/multithreaded operation
 	io_service main_loop_ios_;
+	std::unique_ptr<multi_io_service> network_ios_;
 	std::unique_ptr<multi_io_service> dir_monitor_ios_;
 	std::unique_ptr<multi_io_service> etc_ios_;
 

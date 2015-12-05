@@ -33,9 +33,10 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_ / "assembled.part")) {
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
-	ignore_list = std::make_unique<IgnoreList>(*this, client);
-	index = std::make_unique<Index>(*this, client);
+	ignore_list = std::make_unique<IgnoreList>(*this, client_);
+	index = std::make_unique<Index>(*this, client_);
 	enc_storage = std::make_unique<EncStorage>(*this, client_);
+	chunk_storage = std::make_unique<ChunkStorage>(*this, client_);
 	if(key_.get_type() <= Key::Type::ReadOnly){
 		open_storage = std::make_unique<OpenStorage>(*this, client_);
 	}
@@ -92,6 +93,7 @@ blob FSDirectory::get_block(const blob& encrypted_data_hash) {
 
 void FSDirectory::put_block(const blob& encrypted_data_hash, const blob& block) {
 	enc_storage->put_block(encrypted_data_hash, block);
+	exchange_group_.lock()->post_have_block(shared_from_this(), encrypted_data_hash);
 }
 
 /* Makers */

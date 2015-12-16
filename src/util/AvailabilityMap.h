@@ -88,6 +88,9 @@ public:
 
 	offset_type size_left() const {return size_left_;}
 	offset_type size_original() const {return size_original_;}
+
+	bool full() const {return size_left() == 0;}
+	bool empty() const {return size_left() == size_original();}
 private:
 	offset_type size_original_, size_left_;
 	underlying_container available_map_;

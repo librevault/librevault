@@ -30,6 +30,8 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<
 		resolver_(client.ios()),
 		reconnect_timer_(client.ios()),
 		announce_timer_(client.ios()) {
+	announce_interval_ = std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15));
+
 	assert(tracker_address_.scheme == "udp");
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 

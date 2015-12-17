@@ -1,8 +1,8 @@
 project(librevault)
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.2)
 
 #============================================================================
-# Compilation options
+# Settable options
 #============================================================================
 
 option(WITH_COTIRE "Use cotire for builds." ON)
@@ -15,9 +15,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 if(WITH_COTIRE)
 	include(cotire)
 endif()
+include(GNUInstallDirs)
 
 #============================================================================
-# Compiler properties
+# Internal compiler options
 #============================================================================
 
 ### Setting compiler properties
@@ -67,22 +68,44 @@ if(WIN32)
 endif()
 
 #============================================================================
-# Third-party Libraries
+# Sources & headers
+#============================================================================
+
+list(APPEND SRCS "src/pch.h")
+# Main sources
+file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
+list(APPEND SRCS ${MAIN_SRCS})
+
+include(GetGitRevisionDescription)
+git_describe(LV_APPVER)
+configure_file("appver.in.h" "appver.h")
+
+#============================================================================
+# Compile targets
+#============================================================================
+
+add_executable(${PROJECT_NAME} ${SRCS})
+
+if(WITH_COTIRE)
+	cotire(${PROJECT_NAME})
+endif()
+
+#============================================================================
+# Third-party libraries
 #============================================================================
 
 # Cryptodiff
 find_package(Cryptodiff REQUIRED)
-include_directories(${CRYPTODIFF_INCLUDE_DIR})
-link_libraries(${CRYPTODIFF_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} cryptodiff-shared)
 
 # Pthreads
 find_package(Threads)
-link_libraries(${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 # Docopt
 add_subdirectory("contrib/docopt")
-include_directories("contrib/docopt")
-link_libraries(docopt_s)
+#include_directories("contrib/docopt")
+target_link_libraries(${PROJECT_NAME} docopt_s)
 
 # Boost
 set(Boost_COMPONENTS
@@ -90,12 +113,11 @@ set(Boost_COMPONENTS
 		filesystem
 		iostreams
 		thread)
-# set (Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 
 find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
-include_directories(${Boost_INCLUDE_DIRS})
-link_libraries(${Boost_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 # /Boost
 
 # cpp-netlib
@@ -105,37 +127,50 @@ link_libraries(${Boost_LIBRARIES})
 
 # cURL
 find_package(CURL)
-include_directories(${CURL_INCLUDE_DIRS})
-link_libraries(${CURL_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
 
 # SQLite
 find_package(Sqlite3)
 
+file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
+add_library(lvsqlite3-bundled STATIC ${LVSQLITE3_SRCS})
+
 if(SQLITE3_FOUND)
-	include_directories(${SQLITE3_INCLUDE_DIR})
-	link_libraries(${SQLITE3_LIBRARIES})
+	target_include_directories(lvsqlite3-bundled PUBLIC ${SQLITE3_INCLUDE_DIR})
+	target_link_libraries(lvsqlite3-bundled ${SQLITE3_LIBRARIES})
 else()
-	include_directories("contrib/sqlite3")
+	add_library(sqlite3-bundled STATIC contrib/sqlite3/sqlite3.c)
+	target_include_directories(lvsqlite3-bundled PUBLIC "contrib/sqlite3")
+	target_link_libraries(lvsqlite3-bundled sqlite3-bundled)
 endif()
+
+target_link_libraries(${PROJECT_NAME} lvsqlite3-bundled)
 # /SQLite
 
 # Protobuf
 find_package(Protobuf REQUIRED)
 
-include_directories(${PROTOBUF_INCLUDE_DIRS})
-link_libraries(${PROTOBUF_LIBRARIES})
-
 file(GLOB_RECURSE PROTO_LIST "src/*.proto")
 protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 
+add_library(librevault-protobuf STATIC ${PROTO_SOURCES} ${PROTO_HEADERS})
+target_include_directories(librevault-protobuf PUBLIC ${PROTOBUF_INCLUDE_DIRS})
+target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME} librevault-protobuf)
+
+if(WITH_COTIRE)
+	set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
+endif()
+
 # CryptoPP
-find_package(CryptoPP REQUIRED)
-include_directories(${CRYPTOPP_INCLUDE_DIRS})
-link_libraries(${CRYPTOPP_LIBRARIES})
+find_package(CryptoPP 5.6.2 REQUIRED)
+target_link_libraries(${PROJECT_NAME} cryptopp-shared)
 
 # libnatpmp
 find_library(libnatpmp_LIBRARIES natpmp)
-link_libraries(${libnatpmp_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${libnatpmp_LIBRARIES})
 
 if(WIN32)
 	add_definitions(-DNATPMP_STATICLIB)
@@ -143,64 +178,29 @@ endif()
 
 # OpenSSL
 find_package(OpenSSL REQUIRED)
-include_directories(${OPENSSL_INCLUDE_DIR})
-link_libraries(${OPENSSL_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 
 # WinSock
 if(WIN32)
-	link_libraries(wsock32)
-	link_libraries(ws2_32)
-	link_libraries(Iphlpapi)
+	target_link_libraries(${PROJECT_NAME} wsock32)
+	target_link_libraries(${PROJECT_NAME} ws2_32)
+	target_link_libraries(${PROJECT_NAME} Iphlpapi)
 endif()
 
 if(BUILD_STATIC)
 	if(UNIX)
-		link_libraries(dl)
-		link_libraries(c.a)
+		target_link_libraries(${PROJECT_NAME} dl)
+		target_link_libraries(${PROJECT_NAME} c.a)
 	endif()
-	link_libraries(stdc++.a)
-	link_libraries(m.a)
-	link_libraries(pthread.a)
+	target_link_libraries(${PROJECT_NAME} stdc++.a)
+	target_link_libraries(${PROJECT_NAME} m.a)
+	target_link_libraries(${PROJECT_NAME} pthread.a)
 endif()
 
 # Header-only libs
-include_directories("contrib/include")
-include_directories("contrib/dir_monitor/include")
-include_directories("contrib/spdlog/include")
-
-#============================================================================
-# Source file configurarion
-#============================================================================
-
-include(GetGitRevisionDescription)
-git_describe(LV_APPVER)
-configure_file("appver.in.h" "appver.h")
-
-#============================================================================
-# Binary generation
-#============================================================================
-
-list(APPEND SRCS "src/pch.h")
-# Protobuf
-list(APPEND SRCS ${PROTO_SOURCES})
-list(APPEND SRCS ${PROTO_HEADERS})
-# SQLite
-if(NOT SQLITE3_FOUND)
-	list(APPEND SRCS "contrib/sqlite3/sqlite3.c")
-endif()
-file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
-list(APPEND SRCS ${LVSQLITE3_SRCS})
-
-# Main sources
-file(GLOB_RECURSE MAIN_SRCS "src/*")
-list(APPEND SRCS ${MAIN_SRCS})
-
-add_executable(${PROJECT_NAME} ${SRCS})
-
-if(WITH_COTIRE)
-	set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
-	cotire(${PROJECT_NAME})
-endif()
+target_include_directories(${PROJECT_NAME} PRIVATE "contrib/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include")
 
 #============================================================================
 # Documentation generation

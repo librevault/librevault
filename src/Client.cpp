@@ -29,7 +29,11 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	key_path_ = appdata_path_ / "key.pem";
 	cert_path_ = appdata_path_ / "cert.pem";
 
-	init_log();
+	switch(args["-v"].asLong()) {
+		case 2:     init_log(spdlog::level::trace); break;
+		case 1:     init_log(spdlog::level::debug); break;
+		default:    init_log(spdlog::level::info);
+	}
 
 	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
 	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
@@ -44,27 +48,30 @@ Client::~Client() {
 	config_.reset();
 }
 
-void Client::init_log() {
+void Client::init_log(spdlog::level::level_enum level) {
 	static std::mutex log_mtx;
-	std::lock_guard<std::mutex> lk(log_mtx);
+	std::unique_lock<decltype(log_mtx)> log_lk(log_mtx);
 	log_ = spdlog::get(version().name());
 	if(!log_){
 		spdlog::set_async_mode(1024*1024);
 
 		std::vector<spdlog::sink_ptr> sinks;
 		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+#if(BOOST_OS_LINUX)
+		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(version().name()));
+#endif
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
 				(log_path_.parent_path() / log_path_.stem()).generic_string(), // TODO: support filenames with multiple dots
 				log_path_.extension().generic_string().substr(1), 5*1024*1024, 6));
 
 		log_ = std::make_shared<spdlog::logger>(version().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
-		log_->set_level(spdlog::level::trace);
+
+		log_->set_level(level);
+		log_->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
 	}
 
 	cryptodiff::set_logger(log_);
-
-	log_->set_pattern("[%Y-%m-%d %T.%e] [T:%t] [%n] [%l] %v");
 
 	log_->info() << version().name() << " " << version().version_string();
 }

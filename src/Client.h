@@ -28,8 +28,6 @@ public:
 	Client(std::map<std::string, docopt::value> args);
 	virtual ~Client();
 
-	void init_log();
-
 	void run();
 	void shutdown();
 	void restart();
@@ -64,6 +62,9 @@ private:
 	// Paths
 	fs::path default_appdata_path();
 	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_;
+
+	/* Initialization steps */
+	void init_log(spdlog::level::level_enum level);
 };
 
 } /* namespace librevault */

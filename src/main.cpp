@@ -31,7 +31,7 @@ storage.
 See on: https://librevault.com
 
 Usage:
-  librevault [--data=<dir>]
+  librevault [-v | -vv] [--data=<dir>]
   librevault gen-secret
   librevault derive <secret> <type>
   librevault (-h | --help)

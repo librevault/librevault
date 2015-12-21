@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.2)
 #============================================================================
 
 option(WITH_COTIRE "Use cotire for builds." ON)
+option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 
 #============================================================================
 # CMake modules
@@ -74,7 +75,9 @@ endif()
 list(APPEND SRCS "src/pch.h")
 # Main sources
 file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
+file(GLOB_RECURSE MAIN_HEADERS "src/*.h")
 list(APPEND SRCS ${MAIN_SRCS})
+list(APPEND SRCS ${MAIN_HEADERS})
 
 include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
@@ -135,6 +138,7 @@ find_package(Sqlite3)
 
 file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
 add_library(lvsqlite3-bundled STATIC ${LVSQLITE3_SRCS})
+target_include_directories(lvsqlite3-bundled PUBLIC "contrib/include")
 
 if(SQLITE3_FOUND)
 	target_include_directories(lvsqlite3-bundled PUBLIC ${SQLITE3_INCLUDE_DIR})
@@ -161,6 +165,7 @@ target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} librevault-protobuf)
 
 if(WITH_COTIRE)
+	set_source_files_properties("src/Version.cpp" PROPERTIES COTIRE_EXCLUDED ON)	# As it changes every commit
 	set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
 endif()
 
@@ -206,18 +211,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include"
 # Documentation generation
 #============================================================================
 
-#-- Add an Option to toggle the generation of the API documentation
-option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 if(BUILD_DOCUMENTATION)
 	find_package(Doxygen)
 	if(NOT DOXYGEN_FOUND)
 		message(FATAL_ERROR
 				"Doxygen is needed to build the documentation. Please install it correctly")
 	endif()
-	#-- Configure the Template Doxyfile for our specific project
 	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
-	#-- Add a custom target to run Doxygen when ever the project is built
 	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
-	# IF you do NOT want the documentation to be generated EVERY time you build the project
-	# then leave out the 'ALL' keyword from the above command.
 endif()

@@ -39,16 +39,13 @@ public:
 	virtual ~Indexer();
 
 	// Index manipulation
-	Meta::SignedMeta index(const std::string& file_path);
-	void index(const std::set<std::string>& file_path);
+	void index(const std::string& file_path);
 
-	void async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback);
-	void async_index(const std::set<std::string>& file_path, std::function<void(Meta::SignedMeta)> callback);
+	void async_index(const std::string& file_path);
+	void async_index(const std::set<std::string>& file_path);
 
 	// Meta functions
-	Meta make_Meta(const std::string& relpath);
-
-	Meta::SignedMeta sign(const Meta& meta) const;
+	Meta::SignedMeta make_Meta(const std::string& relpath);
 
 private:
 	std::shared_ptr<spdlog::logger> log_;
@@ -60,6 +57,8 @@ private:
 	OpenStorage& open_storage_;
 
 	Client& client_;
+
+	Meta::SignedMeta sign(const Meta& meta) const;
 
 	cryptodiff::StrongHashType get_strong_hash_type();
 };

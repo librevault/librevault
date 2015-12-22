@@ -27,7 +27,18 @@ class ExchangeGroup;
 class AbstractDirectory : protected Loggable {
 	friend class ExchangeGroup;
 public:
-	using bitfield_type = boost::dynamic_bitset<uint8_t>;
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("Directory error") {}
+	};
+
+	struct no_such_meta : public error {
+		no_such_meta() : error("Requested Meta not found"){}
+	};
+
+	struct no_such_block : public error {
+		no_such_block() : error("Requested Block not found"){}
+	};
 
 	AbstractDirectory(Client& client, Exchanger& exchanger);
 	virtual ~AbstractDirectory();
@@ -36,12 +47,12 @@ public:
 	virtual std::string name() const = 0;
 	std::shared_ptr<ExchangeGroup> exchange_group() {return exchange_group_.lock();}
 
-	// Other functions
-	std::string path_id_readable(const blob& path_id) const;
-	std::string encrypted_data_hash_readable(const blob& block_id) const;
+	const std::map<blob, std::pair<int64_t, bitfield_type>>& path_id_info() {return path_id_info_;}
 
-	blob convert_bitfield(const bitfield_type& bitfield);
-	bitfield_type convert_bitfield(blob bitfield);
+	// Other functions
+	static std::string path_id_readable(const blob& path_id);
+	static std::string encrypted_data_hash_readable(const blob& block_id);
+
 	// Loggable
 	std::string log_tag() const {return std::string("[") + name() + "] ";}
 
@@ -51,7 +62,7 @@ protected:
 
 	std::weak_ptr<ExchangeGroup> exchange_group_;
 
-	std::map<blob, std::pair<int64_t, AbstractDirectory::bitfield_type>> path_id_info_;
+	std::map<blob, std::pair<int64_t, bitfield_type>> path_id_info_;
 	std::shared_timed_mutex path_id_info_mtx_;
 
 	bool will_accept_meta(const Meta::PathRevision& path_revision);

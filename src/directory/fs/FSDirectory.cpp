@@ -20,6 +20,8 @@
 #include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 
+#include "../../util/make_relpath.h"
+
 namespace librevault {
 
 FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger) :
@@ -36,35 +38,54 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 	ignore_list = std::make_unique<IgnoreList>(*this, client_);
 	index = std::make_unique<Index>(*this, client_);
 	enc_storage = std::make_unique<EncStorage>(*this, client_);
-	chunk_storage = std::make_unique<ChunkStorage>(*this, client_);
 	if(key_.get_type() <= Key::Type::ReadOnly){
 		open_storage = std::make_unique<OpenStorage>(*this, client_);
 	}
 	if(key_.get_type() <= Key::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);
-		auto_indexer = std::make_unique<AutoIndexer>(*this, client_, std::bind(&FSDirectory::handle_smeta, this, std::placeholders::_1));
+		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
 	}
 }
 
-Meta FSDirectory::get_meta(const Meta::PathRevision& path_revision) {
-	auto meta = Meta(index->get_Meta(path_revision.path_id_).meta_);
-	if(meta.revision() == path_revision.revision_)
-		return meta;
-	else throw Index::no_such_meta();
+bool FSDirectory::have_meta(const blob& path_id) {
+	return path_id_info_.find(path_id) != path_id_info_.end();
 }
 
-void FSDirectory::put_meta(const Meta::SignedMeta& smeta, bool fully_assembled) {
+bool FSDirectory::have_meta(const Meta::PathRevision& path_revision) {
+	auto it = path_id_info_.find(path_revision.path_id_);
+	return it != path_id_info_.end() && it->second.first == path_revision.revision_;
+}
+
+Meta::SignedMeta FSDirectory::get_meta(const blob& path_id) {
+	return index->get_Meta(path_id);
+}
+
+Meta::SignedMeta FSDirectory::get_meta(const Meta::PathRevision& path_revision) {
+	auto smeta = index->get_Meta(path_revision.path_id_);
+	if(smeta.meta().revision() == path_revision.revision_)
+		return smeta;
+	else throw AbstractDirectory::no_such_meta();
+}
+
+std::list<Meta::SignedMeta> FSDirectory::get_meta_containing(const blob& encrypted_data_hash) {
+	return index->containing_block(encrypted_data_hash);
+}
+
+void FSDirectory::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
 	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
-	Meta meta(smeta.meta_);
-	auto path_revision = meta.path_revision();
-	if(will_accept_meta(path_revision)) {
-		index->put_Meta(smeta, fully_assembled);
+	auto path_revision = smeta.meta().path_revision();
 
-		auto bitfield = make_bitfield(meta);
+	index->put_Meta(smeta, fully_assembled);
 
-		path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
-		exchange_group_.lock()->post_have_meta(shared_from_this(), path_revision, bitfield);
+	bitfield_type bitfield;
+	if(!fully_assembled) {
+		bitfield = make_bitfield(smeta.meta());
+	}else{
+		bitfield.resize(smeta.meta().blocks().size(), true);
 	}
+
+	path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
+	exchange_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
 blob FSDirectory::get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
@@ -72,11 +93,7 @@ blob FSDirectory::get_chunk(const blob& encrypted_data_hash, uint32_t offset, ui
 	if(offset < block.size() && size <= block.size()-offset)
 		return blob(block.begin()+offset, block.begin()+offset+size);
 	else
-		throw AbstractStorage::no_such_block();
-}
-
-void FSDirectory::put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk) {
-	chunk_storage->put_chunk(encrypted_data_hash, offset, chunk);
+		throw AbstractDirectory::no_such_block();
 }
 
 bool FSDirectory::have_block(const blob& encrypted_data_hash) {
@@ -86,36 +103,30 @@ bool FSDirectory::have_block(const blob& encrypted_data_hash) {
 blob FSDirectory::get_block(const blob& encrypted_data_hash) {
 	try {
 		return enc_storage->get_block(encrypted_data_hash);
-	}catch(AbstractStorage::no_such_block& e){
+	}catch(AbstractDirectory::no_such_block& e){
 		return open_storage->get_block(encrypted_data_hash);
 	}
 }
 
 void FSDirectory::put_block(const blob& encrypted_data_hash, const blob& block) {
 	enc_storage->put_block(encrypted_data_hash, block);
-	exchange_group_.lock()->post_have_block(shared_from_this(), encrypted_data_hash);
+	exchange_group_.lock()->notify_block(shared_from_this(), encrypted_data_hash);
 }
 
 /* Makers */
 std::string FSDirectory::make_relpath(const fs::path& path) const {
-	fs::path rel_to = open_path();
-	auto abspath = fs::absolute(path);
-
-	fs::path relpath;
-	auto path_elem_it = abspath.begin();
-	for(auto dir_elem : rel_to){
-		if(dir_elem != *(path_elem_it++))
-			return std::string();
-	}
-	for(; path_elem_it != abspath.end(); path_elem_it++){
-		if(*path_elem_it == "." || *path_elem_it == "..")
-			return std::string();
-		relpath /= *path_elem_it;
-	}
-	return relpath.generic_string();
+	return ::librevault::make_relpath(path, open_path());
 }
 
-AbstractDirectory::bitfield_type FSDirectory::make_bitfield(const Meta& meta) {
+void FSDirectory::actualize_bitfield() {
+	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
+	for(auto smeta : index->get_Meta()){
+		auto bitfield = make_bitfield(smeta.meta());
+		path_id_info_[smeta.meta().path_id()] = {smeta.meta().revision(), bitfield};
+	}
+}
+
+bitfield_type FSDirectory::make_bitfield(const Meta& meta) {
 	bitfield_type bitfield(meta.blocks().size());
 
 	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.blocks().size(); bitfield_idx++)
@@ -128,19 +139,6 @@ AbstractDirectory::bitfield_type FSDirectory::make_bitfield(const Meta& meta) {
 /* Getters */
 std::string FSDirectory::name() const {
 	return open_path_.empty() ? block_path_.string() : open_path_.string();
-}
-
-void FSDirectory::handle_smeta(Meta::SignedMeta smeta) {
-	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
-	Meta meta(smeta.meta_);
-	auto path_revision = meta.path_revision();
-	bitfield_type bitfield; bitfield.resize(meta.blocks().size(), true);
-
-	path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
-
-	auto group_ptr = exchange_group_.lock();
-	if(group_ptr)
-		group_ptr->post_have_meta(shared_from_this(), path_revision, bitfield);
 }
 
 } /* namespace librevault */

@@ -35,21 +35,26 @@ public:
 	virtual void post_have_block(const blob& encrypted_data_hash) = 0;
 
 	virtual void request_meta(const Meta::PathRevision& revision) = 0;
-	virtual void post_meta(const Meta::SignedMeta& smeta) = 0;
+	virtual void post_meta(const Meta::SignedMeta& smeta, const bitfield_type& bitfield) = 0;
 	virtual void cancel_meta(const Meta::PathRevision& revision) = 0;
 
 	virtual void request_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) = 0;
 	virtual void post_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk) = 0;
 	virtual void cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) = 0;
 
+	bool am_choking() const {return am_choking_;}
+	bool am_interested() const {return am_interested_;}
+	bool peer_choking() const {return peer_choking_;}
+	bool peer_interested() const {return peer_interested_;}
+
 protected:
 	Client& client_;
 	Exchanger& exchanger_;
 
-	bool am_choking = true;
-	bool am_interested = false;
-	bool peer_choking = true;
-	bool peer_interested = false;
+	bool am_choking_ = true;
+	bool am_interested_ = false;
+	bool peer_choking_ = true;
+	bool peer_interested_ = false;
 };
 
 } /* namespace librevault */

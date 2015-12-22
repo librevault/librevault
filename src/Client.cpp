@@ -20,6 +20,7 @@
 namespace librevault {
 
 Client::Client(std::map<std::string, docopt::value> args) {
+	// Initializing paths
 	if(args["--data"].isString())
 		appdata_path_ = args["--data"].asString();
 	else
@@ -29,12 +30,14 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	key_path_ = appdata_path_ / "key.pem";
 	cert_path_ = appdata_path_ / "cert.pem";
 
+	// Initializing log
 	switch(args["-v"].asLong()) {
 		case 2:     init_log(spdlog::level::trace); break;
 		case 1:     init_log(spdlog::level::debug); break;
 		default:    init_log(spdlog::level::info);
 	}
 
+	// Initializing components
 	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
 	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");

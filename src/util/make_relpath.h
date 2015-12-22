@@ -14,19 +14,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
+#include <boost/filesystem.hpp>
 
 namespace librevault {
 
-class AbstractStorage {
-public:
-	AbstractStorage(){};
-	virtual ~AbstractStorage(){};
+std::string make_relpath(const fs::path& path, const fs::path& rel_to) {
+	auto abspath = fs::absolute(path);
 
-	bool verify_block(const blob& encrypted_data_hash, const blob& data, cryptodiff::StrongHashType strong_hash_type){
-		return encrypted_data_hash == cryptodiff::compute_strong_hash(data, strong_hash_type);
+	fs::path relpath;
+	auto path_elem_it = abspath.begin();
+	for(auto dir_elem : rel_to){
+		if(dir_elem != *(path_elem_it++))
+			return std::string();
 	}
-	virtual blob get_block(const blob& block_hash) = 0;
-};
+	for(; path_elem_it != abspath.end(); path_elem_it++){
+		if(*path_elem_it == "." || *path_elem_it == "..")
+			return std::string();
+		relpath /= *path_elem_it;
+	}
+	return relpath.generic_string();
+}
 
 } /* namespace librevault */

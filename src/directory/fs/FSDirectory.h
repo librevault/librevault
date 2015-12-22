@@ -21,7 +21,6 @@
 #include "IgnoreList.h"
 #include "Index.h"
 #include "EncStorage.h"
-#include "ChunkStorage.h"
 #include "OpenStorage.h"
 #include "Indexer.h"
 #include "AutoIndexer.h"
@@ -41,7 +40,6 @@ public:
 	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
 	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<ChunkStorage> chunk_storage;
 	std::unique_ptr<OpenStorage> open_storage;
 	std::unique_ptr<Indexer> indexer;
 	std::unique_ptr<AutoIndexer> auto_indexer;
@@ -51,11 +49,14 @@ public:
 	virtual ~FSDirectory() {}
 
 	/* Actions */
-	Meta get_meta(const Meta::PathRevision& path_revision);
-	void put_meta(const Meta::SignedMeta& smeta, bool fully_assembled = false);
+	bool have_meta(const blob& path_id);
+	bool have_meta(const Meta::PathRevision& path_revision);
+	Meta::SignedMeta get_meta(const blob& path_id);
+	Meta::SignedMeta get_meta(const Meta::PathRevision& path_revision);
+	std::list<Meta::SignedMeta> get_meta_containing(const blob& encrypted_data_hash);
+	void put_meta(Meta::SignedMeta smeta, bool fully_assembled = false);
 
 	blob get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
-	void put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk);
 
 	bool have_block(const blob& encrypted_data_hash);
 	blob get_block(const blob& encrypted_data_hash);
@@ -81,10 +82,8 @@ private:
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
 	// Bitfield actualizer
+	void actualize_bitfield();
 	bitfield_type make_bitfield(const Meta& meta);
-
-	// Revision operations
-	void handle_smeta(Meta::SignedMeta smeta);
 };
 
 } /* namespace librevault */

@@ -20,13 +20,11 @@
 
 namespace librevault {
 
-AutoIndexer::AutoIndexer(FSDirectory& dir, Client& client, std::function<void(Meta::SignedMeta)> callback) :
+AutoIndexer::AutoIndexer(FSDirectory& dir, Client& client) :
 		log_(spdlog::get("Librevault")),
 		dir_(dir), client_(client),
 		monitor_(client_.dir_monitor_ios()), index_timer_(client_.dir_monitor_ios()) {
-	callback_ = callback;
-
-	enqueue_files(index_queue_ = dir.open_storage->pending_files());
+	enqueue_files(dir.open_storage->pending_files());
 
 	monitor_.add_directory(dir_.open_path().string());
 	monitor_operation();
@@ -120,7 +118,7 @@ void AutoIndexer::monitor_index(const boost::system::error_code& ec) {
 	index_queue.swap(index_queue_);
 	index_queue_mtx_.unlock();
 
-	dir_.indexer->async_index(index_queue, callback_);
+	dir_.indexer->async_index(index_queue);
 }
 
 } /* namespace librevault */

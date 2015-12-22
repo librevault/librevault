@@ -28,6 +28,8 @@ class RemoteDirectory;
 class FSDirectory;
 class P2PDirectory;
 
+class Downloader;
+
 class ExchangeGroup : public std::enable_shared_from_this<ExchangeGroup>, protected Loggable {
 public:
 	struct error : std::runtime_error {
@@ -42,8 +44,23 @@ public:
 	ExchangeGroup(Client& client, Exchanger& exchanger);
 
 	/* Actions */
-	void post_have_meta(std::shared_ptr<FSDirectory> origin, const Meta::PathRevision& revision, const AbstractDirectory::bitfield_type& bitfield);
-	void post_have_block(std::shared_ptr<FSDirectory> origin, const blob& encrypted_data_hash);
+	void handle_choke(std::shared_ptr<RemoteDirectory> origin);
+	void handle_unchoke(std::shared_ptr<RemoteDirectory> origin);
+	void handle_interested(std::shared_ptr<RemoteDirectory> origin);
+	void handle_not_interested(std::shared_ptr<RemoteDirectory> origin);
+
+	void request_introduce(std::shared_ptr<P2PDirectory> origin);
+
+	void notify_meta(std::shared_ptr<FSDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void notify_block(std::shared_ptr<FSDirectory> origin, const blob& encrypted_data_hash);
+
+	void notify_meta(std::shared_ptr<P2PDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+
+	void request_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision);
+	void post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta);
+
+	void request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
+	void post_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset);
 
 	/* Membership management */
 	void attach(std::shared_ptr<FSDirectory> fs_dir_ptr);
@@ -64,15 +81,19 @@ private:
 	Client& client_;
 	Exchanger& exchanger_;
 
+	std::shared_ptr<Downloader> downloader_;
+
 	/* Members */
-	std::shared_ptr<FSDirectory> fs_dir_;
-	std::set<std::shared_ptr<P2PDirectory>> p2p_dirs_;
 	mutable std::shared_timed_mutex dirs_mtx_;
 
-	/* Lookup optimization */
+	std::shared_ptr<FSDirectory> fs_dir_;
+	std::set<std::shared_ptr<P2PDirectory>> p2p_dirs_;
+
+	// Member lookup optimization
 	std::set<blob> p2p_dirs_pubkeys_;
 	std::set<tcp_endpoint> p2p_dirs_endpoints_;
 
+	/* Loggable override */
 	std::string name() const {return name_;}
 };
 

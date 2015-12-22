@@ -61,6 +61,7 @@
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/server.hpp>
 #include <websocketpp/client.hpp>
+#include <websocketpp/logger/stub.hpp>
 
 // Boost
 #include <boost/algorithm/string.hpp>
@@ -95,6 +96,7 @@
 #include <docopt.h>
 
 // Standard C++ Libraries
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -155,6 +157,8 @@ using ssl_context = boost::asio::ssl::context;
 
 using byte = uint8_t;
 using blob = std::vector<byte>;
+
+using bitfield_type = boost::dynamic_bitset<uint8_t>;
 
 using logger_ptr = std::shared_ptr<spdlog::logger>;
 

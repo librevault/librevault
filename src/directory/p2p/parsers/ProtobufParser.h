@@ -36,7 +36,7 @@ public:
 	virtual MetaRequest parse_MetaRequest(const blob& message_raw);
 
 	virtual blob gen_MetaReply(const MetaReply& message_struct);
-	virtual MetaReply parse_MetaReply(const blob& message_raw);
+	virtual MetaReply parse_MetaReply(const blob& message_raw, const Key& secret_verifier);
 
 	virtual blob gen_MetaCancel(const MetaCancel& message_struct);
 	virtual MetaCancel parse_MetaCancel(const blob& message_raw);

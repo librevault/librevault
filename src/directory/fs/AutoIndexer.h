@@ -24,7 +24,7 @@ namespace librevault {
 
 class AutoIndexer {
 public:
-	AutoIndexer(FSDirectory& dir, Client& client, std::function<void(Meta::SignedMeta)> callback);
+	AutoIndexer(FSDirectory& dir, Client& client);
 	virtual ~AutoIndexer();
 
 	void enqueue_files(const std::string& relpath);
@@ -39,8 +39,6 @@ private:
 	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 	Client& client_;
-
-	std::function<void(Meta::SignedMeta)> callback_;
 
 	// Monitor
 	boost::asio::dir_monitor monitor_;

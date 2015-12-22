@@ -47,7 +47,7 @@ public:
 	const blob& remote_pubkey() const {return remote_pubkey_;}
 	void remote_pubkey(blob new_remote_pubkey) {remote_pubkey_ = std::move(new_remote_pubkey);}
 
-	tcp_endpoint remote_endpoint() const;
+	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
 
 	void name(std::string new_name) const {name_ = std::move(new_name);}
 	std::string name() const {return name_;}
@@ -72,7 +72,7 @@ public:
 	void post_have_block(const blob& encrypted_data_hash);
 
 	void request_meta(const Meta::PathRevision& revision);
-	void post_meta(const Meta::SignedMeta& smeta);
+	void post_meta(const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
 	void cancel_meta(const Meta::PathRevision& revision);
 
 	void request_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
@@ -86,6 +86,9 @@ protected:
 private:
 	P2PProvider& provider_;
 	P2PProvider::role_type role_;
+
+	tcp_endpoint remote_endpoint_;
+	void update_remote_endpoint();
 
 	std::unique_ptr<AbstractParser> parser_;
 	bool handshake_performed_ = false;
@@ -110,9 +113,6 @@ private:
 	void handle_ChunkRequest(const blob& message_raw);
 	void handle_ChunkReply(const blob& message_raw);
 	void handle_ChunkCancel(const blob& message_raw);
-
-	/* Message senders */
-	void send_meta_list();
 };
 
 } /* namespace librevault */

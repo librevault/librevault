@@ -110,6 +110,10 @@ bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
 	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
 }
 
+bool P2PProvider::is_loopback(const blob& pubkey) {
+	return node_key().public_key() == pubkey;
+}
+
 std::shared_ptr<P2PDirectory> P2PProvider::dir_ptr_from_hdl(websocketpp::connection_hdl hdl) {
 	auto conn_server_ptr = ws_server_.get_con_from_hdl(hdl);
 	auto conn_client_ptr = ws_client_.get_con_from_hdl(hdl);
@@ -209,12 +213,7 @@ bool P2PProvider::on_tls_verify(websocketpp::connection_hdl hdl, bool preverifie
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	dir_ptr->remote_pubkey(pubkey_from_cert(x509));
 
-	log_->debug() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(dir_ptr->remote_pubkey());
-
-	if(node_key().public_key() == dir_ptr->remote_pubkey()) {
-		mark_loopback(dir_ptr->remote_endpoint());
-		return false;
-	}
+	log_->trace() << log_tag() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(dir_ptr->remote_pubkey());
 
 	// FIXME: Hey, just returning `true` isn't good enough, yes?
 	return true;
@@ -225,6 +224,15 @@ bool P2PProvider::on_validate(websocketpp::connection_hdl hdl) {
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	auto subprotocols = connection_ptr->get_requested_subprotocols();
+
+	// Detect loopback
+	auto dir_ptr = dir_ptr_from_hdl(hdl);
+	dir_ptr->update_remote_endpoint();
+	if(is_loopback(dir_ptr->remote_pubkey()) || is_loopback(dir_ptr->remote_endpoint())) {
+		mark_loopback(dir_ptr->remote_endpoint());
+		return false;
+	}
+
 	if(std::find(subprotocols.begin(), subprotocols.end(), "librevault") != subprotocols.end()) {
 		connection_ptr->select_subprotocol("librevault");
 		return true;
@@ -260,6 +268,7 @@ void P2PProvider::on_message(std::shared_ptr<P2PDirectory> dir_ptr, const blob& 
 	try {
 		dir_ptr->handle_message(message_raw);
 	}catch(std::runtime_error& e) {
+		log_->trace() << log_tag() << "on_message e:" << e.what();
 		switch(dir_ptr->role_){
 			case P2PProvider::SERVER: {
 				ws_server_.get_con_from_hdl(dir_ptr->connection_handle_)->close(websocketpp::close::status::protocol_error, e.what());

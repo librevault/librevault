@@ -24,26 +24,22 @@ class FSDirectory;
 
 class Index {
 public:
-	class no_such_meta : public std::runtime_error {
-	public:
-		no_such_meta() : std::runtime_error("Requested Meta not found"){}
-	};
-
 	Index(FSDirectory& dir, Client& client);
 	virtual ~Index() {}
 
-	void wipe();
-
-
-
-	// FIXME: Check signature!!!
-	void put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled);
-
+	/* Meta manipulators */
 	Meta::SignedMeta get_Meta(const blob& path_id);
 	std::list<Meta::SignedMeta> get_Meta();
 
-	std::list<Meta::SignedMeta> containing_block(const blob& encrypted_data_hash);
+	void put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled);
 
+	/* Block getter */
+	uint32_t get_blocksize(const blob& encrypted_data_hash);
+
+	void wipe();
+
+	/* Properties */
+	std::list<Meta::SignedMeta> containing_block(const blob& encrypted_data_hash);
 	SQLiteDB& db() {return *db_;}
 
 private:

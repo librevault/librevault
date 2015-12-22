@@ -36,27 +36,28 @@ Index::Index(FSDirectory& dir, Client& client) : log_(spdlog::get("Librevault"))
 	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_data_hash NOT IN (SELECT encrypted_data_hash FROM openfs); END;");
 }
 
+/* Meta manipulators */
+
 void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, "put_Meta");
-	Meta meta; meta.parse(signed_meta.meta_);
 
 	db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
-			{":path_id", meta.path_id()},
-			{":meta", signed_meta.meta_},
-			{":signature", signed_meta.signature_}
+			{":path_id", signed_meta.meta().path_id()},
+			{":meta", signed_meta.raw_meta()},
+			{":signature", signed_meta.signature()}
 	});
 
 	uint64_t offset = 0;
-	for(auto block : meta.blocks()){
+	for(auto block : signed_meta.meta().blocks()){
 		db_->exec("INSERT OR IGNORE INTO blocks (encrypted_data_hash, blocksize, iv) VALUES (:encrypted_data_hash, :blocksize, :iv);", {
 				{":encrypted_data_hash", block.encrypted_data_hash_},
 				{":blocksize", (uint64_t)block.blocksize_},
 				{":iv", block.iv_}
 		});
 
-		db_->exec("INSERT INTO openfs (encrypted_data_hash, path_id, [offset], assembled) VALUES (:encrypted_data_hash, :path_id, :offset, :assembled);", {
+		db_->exec("INSERT OR REPLACE INTO openfs (encrypted_data_hash, path_id, [offset], assembled) VALUES (:encrypted_data_hash, :path_id, :offset, :assembled);", {
 				{":encrypted_data_hash", block.encrypted_data_hash_},
-				{":path_id", meta.path_id()},
+				{":path_id", signed_meta.meta().path_id()},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
@@ -64,13 +65,16 @@ void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) 
 		offset += block.blocksize_;
 	}
 
-	log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(meta.path_id());
+	if(fully_assembled)
+		log_->debug() << dir_.log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+	else
+		log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
 }
 
 std::list<Meta::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
 	std::list<Meta::SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list.push_back({row[0], row[1]});
+		result_list.push_back(Meta::SignedMeta(row[0], row[1], dir_.key()));
 	return result_list;
 }
 Meta::SignedMeta Index::get_Meta(const blob& path_id){
@@ -78,11 +82,23 @@ Meta::SignedMeta Index::get_Meta(const blob& path_id){
 			{":path_id", path_id}
 	});
 
-	if(meta_list.empty()) throw no_such_meta();
+	if(meta_list.empty()) throw AbstractDirectory::no_such_meta();
 	return *meta_list.begin();
 }
 std::list<Meta::SignedMeta> Index::get_Meta(){
 	return get_Meta("SELECT meta, signature FROM files");
+}
+
+/* Block getter */
+
+uint32_t Index::get_blocksize(const blob& encrypted_data_hash) {
+	auto sql_result = db_->exec("SELECT blocksize FROM blocks WHERE encrypted_data_hash=:encrypted_data_hash", {
+		                                   {":encrypted_data_hash", encrypted_data_hash}
+	                                   });
+
+	if(sql_result.have_rows())
+		return (uint32_t)sql_result.begin()->at(0).as_uint();
+	return 0;
 }
 
 std::list<Meta::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {

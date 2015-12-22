@@ -57,6 +57,7 @@ private:
 	std::vector<Block> blocks_;
 
 public:
+	/* Nested structs & classes */
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
 		error() : error("Meta error") {}
@@ -71,11 +72,29 @@ public:
 		int64_t revision_;
 	};
 
-	struct SignedMeta {
-		blob meta_;
-		blob signature_;
+	class SignedMeta {
+	public:
+		struct signature_error : error {
+			signature_error() : error("Signature mismatch") {}
+		};
+
+		SignedMeta() {}
+		SignedMeta(blob raw_meta, blob signature, const Key& secret, bool check_signature = true);
+
+		operator bool() const {return meta_ && raw_meta_ && signature_;}
+
+		// Getters
+		const Meta& meta() const {return *meta_;}
+		const blob& raw_meta() const {return *raw_meta_;}
+		const blob& signature() const {return *signature_;}
+	private:
+		std::shared_ptr<Meta> meta_;
+
+		std::shared_ptr<blob> raw_meta_;
+		std::shared_ptr<blob> signature_;
 	};
 
+	/* Class methods */
 	Meta();
 	Meta(const blob& meta_s);
 	virtual ~Meta();

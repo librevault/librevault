@@ -18,6 +18,13 @@
 
 namespace librevault {
 
+Meta::SignedMeta::SignedMeta(blob raw_meta, blob signature, const Key& secret, bool check_signature) :
+	raw_meta_(std::make_shared<blob>(std::move(raw_meta))),
+	signature_(std::make_shared<blob>(std::move(signature))) {
+	// TODO: check signature
+	meta_ = std::make_shared<Meta>(*raw_meta_);
+}
+
 Meta::Meta() {}
 Meta::Meta(const blob& meta_s) {
 	parse(meta_s);

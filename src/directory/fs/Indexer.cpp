@@ -25,63 +25,57 @@ Indexer::Indexer(FSDirectory& dir, Client& client) :
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
 Indexer::~Indexer() {}
 
-Meta::SignedMeta Indexer::index(const std::string& file_path){
-	if(dir_.ignore_list->is_ignored(file_path)){
-		log_->notice() << dir_.log_tag() << "Skipping " << file_path;
-		return Meta::SignedMeta();
-	}else
-		try{
-			std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
+void Indexer::index(const std::string& file_path){
+	log_->trace() << dir_.log_tag() << "Indexer::index(" << file_path << ")";
 
-			if(dir_.dir_options().get<bool>("mtime_aware_indexer", true)){
-				try {
-					if(fs::last_write_time(fs::absolute(file_path, dir_.open_path())) == Meta(index_.get_Meta(open_storage_.make_path_id(file_path)).meta_).mtime())
-						throw error("Modification time is not changed");
-				}catch(fs::filesystem_error& ec){
-				}catch(Index::no_such_meta& ec){
-				}
-			}
+	Meta::SignedMeta smeta;
 
-			auto meta = make_Meta(file_path);
-			Meta::SignedMeta smeta = sign(meta);
+	try {
+		if(dir_.ignore_list->is_ignored(file_path)) throw error("File is ignored");
 
-			index_.put_Meta(smeta, true);
-
-			std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
-			float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
-
-			log_->trace() << dir_.log_tag() << meta.debug_string();
-			log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)meta.size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << meta.revision();
-
-			return smeta;
-		}catch(std::runtime_error& e){
-			log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
-			throw;
-		}
-}
-
-void Indexer::index(const std::set<std::string>& file_path){
-	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
-	for(auto file_path1 : file_path)
-		index(file_path1);
-}
-
-void Indexer::async_index(const std::string& file_path, std::function<void(Meta::SignedMeta)> callback) {
-	client_.ios().post(std::bind([this](const std::string& file_path, std::function<void(Meta::SignedMeta)> callback){
 		try {
-			auto smeta = index(file_path);
-			client_.ios().dispatch(std::bind(callback, smeta));
-		}catch(std::runtime_error& e){}
-	}, file_path, callback));
+			smeta = index_.get_Meta(open_storage_.make_path_id(file_path));
+			if(fs::last_write_time(fs::absolute(file_path, dir_.open_path())) == smeta.meta().mtime()) {
+				throw error("Modification time is not changed");
+			}
+		}catch(fs::filesystem_error& e){
+		}catch(AbstractDirectory::no_such_meta& e){
+		}catch(Meta::SignedMeta::signature_error& e){   // Alarm! DB is inconsistent
+			log_->warn() << dir_.log_tag() << "Signature mismatch in local DB";
+		}
+
+		// Starting timer
+		std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
+
+		// Actual indexing
+		smeta = make_Meta(file_path);
+
+		// Stopping timer
+		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
+		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
+
+		log_->trace() << dir_.log_tag() << smeta.meta().debug_string();
+		log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << smeta.meta().revision();
+	}catch(std::runtime_error& e){
+		log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
+	}
+
+	if(smeta) dir_.put_meta(smeta, true);
 }
 
-void Indexer::async_index(const std::set<std::string>& file_path, std::function<void(Meta::SignedMeta)> callback) {
+void Indexer::async_index(const std::string& file_path) {
+	client_.ios().post(std::bind([this](const std::string& file_path){
+		index(file_path);
+	}, file_path));
+}
+
+void Indexer::async_index(const std::set<std::string>& file_path) {
 	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path)
-		async_index(file_path1, callback);
+		async_index(file_path1);
 }
 
-Meta Indexer::make_Meta(const std::string& relpath){
+Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 	Meta meta;
 	auto abspath = fs::absolute(relpath, dir_.open_path());
 
@@ -103,7 +97,7 @@ Meta Indexer::make_Meta(const std::string& relpath){
 
 	if(meta.meta_type() != Meta::DELETED){
 		try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
-			Meta old_meta(index_.get_Meta(meta.path_id()).meta_);
+			Meta old_meta(index_.get_Meta(meta.path_id()).meta());
 
 			// Preserve old values of attributes
 			meta.set_windows_attrib(old_meta.windows_attrib());
@@ -159,20 +153,20 @@ Meta Indexer::make_Meta(const std::string& relpath){
 	// Revision
 	meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
 
-	return meta;
+	return sign(meta);
 }
 
 Meta::SignedMeta Indexer::sign(const Meta& meta) const {
 	CryptoPP::AutoSeededRandomPool rng;
-	Meta::SignedMeta result;
-	result.meta_ = meta.serialize();
+	blob raw_meta = meta.serialize();
+	blob signature;
 
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(key_.get_Private_Key().data(), key_.get_Private_Key().size()));
 
-	result.signature_.resize(signer.SignatureLength());
-	signer.SignMessage(rng, result.meta_.data(), result.meta_.size(), result.signature_.data());
-	return result;
+	signature.resize(signer.SignatureLength());
+	signer.SignMessage(rng, raw_meta.data(), raw_meta.size(), signature.data());
+	return Meta::SignedMeta(std::move(raw_meta), std::move(signature), key_, false);
 }
 
 cryptodiff::StrongHashType Indexer::get_strong_hash_type() {

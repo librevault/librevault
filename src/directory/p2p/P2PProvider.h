@@ -18,6 +18,7 @@
 #include "NodeKey.h"
 #include "../../net/parse_url.h"
 #include "../../util/Loggable.h"
+#include "websocket_config.h"
 
 namespace librevault {
 
@@ -27,8 +28,8 @@ class P2PDirectory;
 
 class P2PProvider : protected Loggable {
 public:
-	using server = websocketpp::server<websocketpp::config::asio_tls>;
-	using client = websocketpp::client<websocketpp::config::asio_tls_client>;
+	using server = websocketpp::server<asio_tls>;
+	using client = websocketpp::client<asio_tls_client>;
 
 	enum role_type {SERVER, CLIENT};
 
@@ -41,6 +42,7 @@ public:
 
 	void mark_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const tcp_endpoint& endpoint);
+	bool is_loopback(const blob& pubkey);
 
 	// Getters
 	const tcp_endpoint& local_endpoint() const {return local_endpoint_;}

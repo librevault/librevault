@@ -34,28 +34,32 @@ P2PDirectory::P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& pr
 }
 
 P2PDirectory::P2PDirectory(Client& client, Exchanger &exchanger, P2PProvider &provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<ExchangeGroup> exchange_group) :
-		P2PDirectory(client, exchanger, provider, name, connection_handle) {
+		RemoteDirectory(client, exchanger),
+		provider_(provider),
+		connection_handle_(connection_handle) {
+	name_ = name;
 	role_ = P2PProvider::CLIENT;
+	log_->trace() << log_tag() << "Created";
+	parser_ = std::make_unique<ProtobufParser>();
+
 	exchange_group_ = exchange_group;
 }
 
 P2PDirectory::~P2PDirectory() {
-	log_->trace() << log_tag() << "Destroyed";
+	log_->debug() << log_tag() << "Destroyed";
 }
 
-tcp_endpoint P2PDirectory::remote_endpoint() const {
-	tcp_endpoint endpoint;
+void P2PDirectory::update_remote_endpoint() {
 	switch(role_){
 		case P2PProvider::SERVER: {
 			auto con_ptr = provider_.ws_server().get_con_from_hdl(connection_handle_);
-			endpoint = con_ptr->get_raw_socket().remote_endpoint();
+			remote_endpoint_ = con_ptr->get_raw_socket().remote_endpoint();
 		} break;
 		case P2PProvider::CLIENT: {
 			auto con_ptr = provider_.ws_client().get_con_from_hdl(connection_handle_);
-			endpoint = con_ptr->get_raw_socket().remote_endpoint();
+			remote_endpoint_ = con_ptr->get_raw_socket().remote_endpoint();
 		} break;
 	}
-	return endpoint;
 }
 
 blob P2PDirectory::local_token() {
@@ -85,56 +89,95 @@ void P2PDirectory::perform_handshake() {
 	message_struct.dir_hash = exchange_group_.lock()->hash();
 
 	send_message(parser_->gen_Handshake(message_struct));
+	log_->debug() << log_tag() << "==> HANDSHAKE";
 }
 
 /* RPC Actions */
 void P2PDirectory::choke() {
-	blob message = {AbstractParser::CHOKE};
-	send_message(message);
-	log_->debug() << log_tag() << "==> CHOKE";
+	if(am_choking_ == false) {
+		blob message = {AbstractParser::CHOKE};
+		send_message(message);
+		am_choking_ = true;
+
+		log_->debug() << log_tag() << "==> CHOKE";
+	}
 }
 void P2PDirectory::unchoke() {
-	blob message = {AbstractParser::UNCHOKE};
-	send_message(message);
-	log_->debug() << log_tag() << "==> UNCHOKE";
+	if(am_choking_ == true) {
+		blob message = {AbstractParser::UNCHOKE};
+		send_message(message);
+		am_choking_ = false;
+
+		log_->debug() << log_tag() << "==> UNCHOKE";
+	}
 }
 void P2PDirectory::interest() {
-	blob message = {AbstractParser::INTERESTED};
-	send_message(message);
-	log_->debug() << log_tag() << "==> INTERESTED";
+	if(am_interested_ == false) {
+		blob message = {AbstractParser::INTERESTED};
+		send_message(message);
+		am_interested_ = true;
+
+		log_->debug() << log_tag() << "==> INTERESTED";
+	}
 }
 void P2PDirectory::uninterest() {
-	blob message = {AbstractParser::NOT_INTERESTED};
-	send_message(message);
-	log_->debug() << log_tag() << "==> NOT_INTERESTED";
+	if(am_interested_ == true) {
+		blob message = {AbstractParser::NOT_INTERESTED};
+		send_message(message);
+		am_interested_ = false;
+
+		log_->debug() << log_tag() << "==> NOT_INTERESTED";
+	}
 }
 
 void P2PDirectory::post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	AbstractParser::HaveMeta message;
 	message.revision = revision;
-	message.bitfield = convert_bitfield(bitfield);
+	message.bitfield = bitfield;
 	send_message(parser_->gen_HaveMeta(message));
+
+	log_->debug() << log_tag() << "==> HAVE_META:"
+		<< " path_id=" << path_id_readable(message.revision.path_id_)
+		<< " revision=" << path_id_readable(message.revision.path_id_)
+		<< " bits=" << message.bitfield;
 }
 void P2PDirectory::post_have_block(const blob& encrypted_data_hash) {
 	AbstractParser::HaveBlock message;
 	message.encrypted_data_hash = encrypted_data_hash;
 	send_message(parser_->gen_HaveBlock(message));
+
+	log_->debug() << log_tag() << "==> HAVE_BLOCK:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(encrypted_data_hash);
 }
 
 void P2PDirectory::request_meta(const Meta::PathRevision& revision) {
 	AbstractParser::MetaRequest message;
 	message.revision = revision;
 	send_message(parser_->gen_MetaRequest(message));
+
+	log_->debug() << log_tag() << "==> META_REQUEST:"
+		<< " path_id=" << path_id_readable(revision.path_id_)
+		<< " revision=" << revision.revision_;
 }
-void P2PDirectory::post_meta(const Meta::SignedMeta& smeta) {
+void P2PDirectory::post_meta(const Meta::SignedMeta& smeta, const bitfield_type& bitfield) {
 	AbstractParser::MetaReply message;
 	message.smeta = smeta;
+	message.bitfield = bitfield;
 	send_message(parser_->gen_MetaReply(message));
+
+	log_->debug() << log_tag() << "==> META_REPLY:"
+		<< " path_id=" << path_id_readable(smeta.meta().path_id())
+		<< " revision=" << smeta.meta().revision()
+		<< " bits=" << bitfield;
 }
 void P2PDirectory::cancel_meta(const Meta::PathRevision& revision) {
 	AbstractParser::MetaCancel message;
 	message.revision = revision;
 	send_message(parser_->gen_MetaCancel(message));
+
+	log_->debug() << log_tag() << "==> META_CANCEL:"
+		<< " path_id=" << path_id_readable(revision.path_id_)
+		<< " revision=" << revision.revision_;
 }
 
 void P2PDirectory::request_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t length) {
@@ -143,6 +186,11 @@ void P2PDirectory::request_chunk(const blob& encrypted_data_hash, uint32_t offse
 	message.offset = offset;
 	message.length = length;
 	send_message(parser_->gen_ChunkRequest(message));
+
+	log_->debug() << log_tag() << "==> CHUNK_REQUEST:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(encrypted_data_hash)
+		<< " offset=" << offset
+		<< " length=" << length;
 }
 void P2PDirectory::post_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk) {
 	AbstractParser::ChunkReply message;
@@ -150,6 +198,10 @@ void P2PDirectory::post_chunk(const blob& encrypted_data_hash, uint32_t offset, 
 	message.offset = offset;
 	message.content = chunk;
 	send_message(parser_->gen_ChunkReply(message));
+
+	log_->debug() << log_tag() << "==> CHUNK_REPLY:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(encrypted_data_hash)
+		<< " offset=" << offset;
 }
 void P2PDirectory::cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t length) {
 	AbstractParser::ChunkCancel message;
@@ -157,22 +209,11 @@ void P2PDirectory::cancel_chunk(const blob& encrypted_data_hash, uint32_t offset
 	message.offset = offset;
 	message.length = length;
 	send_message(parser_->gen_ChunkCancel(message));
+	log_->debug() << log_tag() << "==> CHUNK_CANCEL:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(encrypted_data_hash)
+		<< " offset=" << offset
+		<< " length=" << length;
 }
-/*
-void P2PDirectory::disconnect(const boost::system::error_code& error) {
-	auto this_shared = shared_from_this();	// To prevent deletion during execution of this function. After exiting from the scope it will do "delete this;" internally
-	if(disconnect_mtx_.try_lock()){
-		connection_->disconnect(error);
-
-		log_->debug() << "Connection to " << connection_->remote_string() << " closed: " << error.message();
-		// Detach from ExchangeGroup
-		auto group_ptr = exchange_group_.lock();
-		if(group_ptr) group_ptr->detach(shared_from_this());
-
-		// Remove from temporary provider's pool
-		provider_.remove_from_unattached(this_shared);
-	}
-}*/
 
 void P2PDirectory::handle_message(const blob& message_raw) {
 	AbstractParser::message_type message_type = (AbstractParser::message_type)message_raw[0];
@@ -199,12 +240,16 @@ void P2PDirectory::handle_message(const blob& message_raw) {
 }
 
 void P2PDirectory::handle_Handshake(const blob& message_raw) {
+	log_->trace() << log_tag() << "handle_Handshake()";
 	auto message_struct = parser_->parse_Handshake(message_raw);
+	log_->debug() << log_tag() << "<== HANDSHAKE";
 
 	// Attaching to ExchangeGroup
 	auto group_ptr = exchanger_.get_group(message_struct.dir_hash);
-	if(group_ptr)
+	if(group_ptr) {
+		update_remote_endpoint();
 		group_ptr->attach(shared_from_this());
+	}
 	else throw ExchangeGroup::attach_error();
 
 	// Checking authentication using token
@@ -214,92 +259,116 @@ void P2PDirectory::handle_Handshake(const blob& message_raw) {
 
 	log_->debug() << log_tag() << "LV Handshake successful";
 	handshake_performed_ = true;
+
+	exchange_group_.lock()->request_introduce(shared_from_this());
 }
 
 void P2PDirectory::handle_Choke(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_Choke()";
+	log_->debug() << log_tag() << "<== CHOKE";
+	exchange_group()->handle_choke(shared_from_this());
 }
 void P2PDirectory::handle_Unchoke(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_Unchoke()";
+	log_->debug() << log_tag() << "<== UNCHOKE";
+	exchange_group()->handle_unchoke(shared_from_this());
 }
 void P2PDirectory::handle_Interested(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_Interested()";
+	log_->debug() << log_tag() << "<== INTERESTED";
+	exchange_group()->handle_interested(shared_from_this());
 }
 void P2PDirectory::handle_NotInterested(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_NotInterested()";
+	log_->debug() << log_tag() << "<== NOT_INTERESTED";
+	exchange_group()->handle_not_interested(shared_from_this());
 }
 
 void P2PDirectory::handle_HaveMeta(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_HaveMeta()";
+
+	auto message_struct = parser_->parse_HaveMeta(message_raw);
+	log_->debug() << log_tag() << "<== HAVE_META:"
+		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< " revision=" << message_struct.revision.revision_
+		<< " bits=" << message_struct.bitfield;
+
+	path_id_info_.insert({message_struct.revision.path_id_, {message_struct.revision.revision_, message_struct.bitfield}});
+	exchange_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
 }
 void P2PDirectory::handle_HaveBlock(const blob& message_raw) {
 #   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_HaveBlock()";
+
+	auto message_struct = parser_->parse_HaveBlock(message_raw);
+	log_->debug() << log_tag() << "<== HAVE_BLOCK:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash);
 }
 
 void P2PDirectory::handle_MetaRequest(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_MetaRequest()";
+
+	auto message_struct = parser_->parse_MetaRequest(message_raw);
+	log_->debug() << log_tag() << "<== META_REQUEST:"
+		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< " revision=" << message_struct.revision.revision_;
+
+	exchange_group()->request_meta(shared_from_this(), message_struct.revision);
 }
 void P2PDirectory::handle_MetaReply(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_MetaReply()";
+
+	auto message_struct = parser_->parse_MetaReply(message_raw, exchange_group()->key());
+	log_->debug() << log_tag() << "<== META_REPLY:"
+		<< " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
+		<< " revision=" << message_struct.smeta.meta().revision()
+		<< " bits=" << message_struct.bitfield;
+
+	exchange_group()->post_meta(shared_from_this(), message_struct.smeta);
+
+	path_id_info_.insert({message_struct.smeta.meta().path_id(), {message_struct.smeta.meta().revision(), message_struct.bitfield}});
+	exchange_group()->notify_meta(shared_from_this(), message_struct.smeta.meta().path_revision(), message_struct.bitfield);
 }
 void P2PDirectory::handle_MetaCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_MetaCancel()";
+
+	auto message_struct = parser_->parse_MetaCancel(message_raw);
+	log_->debug() << log_tag() << "<== META_CANCEL:"
+		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< " revision=" << message_struct.revision.revision_;
 }
 
 void P2PDirectory::handle_ChunkRequest(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_ChunkRequest()";
+
+	auto message_struct = parser_->parse_ChunkRequest(message_raw);
+	log_->debug() << log_tag() << "<== CHUNK_REQUEST:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash)
+		<< " length=" << message_struct.length
+		<< " offset=" << message_struct.offset;
+
+	exchange_group()->request_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.offset, message_struct.length);
 }
 void P2PDirectory::handle_ChunkReply(const blob& message_raw) {
-#   warning "Not implemented yet"
+	log_->trace() << log_tag() << "handle_ChunkReply()";
+
+	auto message_struct = parser_->parse_ChunkReply(message_raw);
+	log_->debug() << log_tag() << "<== CHUNK_REPLY:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash)
+		<< " offset=" << message_struct.offset;
+
+	exchange_group()->post_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.content, message_struct.offset);
 }
 void P2PDirectory::handle_ChunkCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
-}
+	log_->trace() << log_tag() << "handle_ChunkCancel()";
 
-/*
-void P2PDirectory::post_revision(std::shared_ptr<AbstractDirectory> origin, const Meta::PathRevision& revision) {
-	AbstractParser::MetaList meta_list;
-	meta_list.revision.push_back(revision);
-
-	log_->debug() << log_tag() << "Posting revision " << revision.revision_ << " of Meta " << path_id_readable(revision.path_id_);
-	connection_->send(parser_->gen_meta_list(meta_list), []{});
-}
-
-void P2PDirectory::request_meta(std::shared_ptr<AbstractDirectory> origin, const blob& path_id) {
-	AbstractParser::MetaRequest meta_request;
-	meta_request.path_id = path_id;
-
-	log_->debug() << log_tag() << "Requesting Meta " << path_id_readable(path_id);
-	connection_->send(parser_->gen_meta_request(meta_request), []{});
-}
-
-void P2PDirectory::post_meta(std::shared_ptr<AbstractDirectory> origin, const Meta::SignedMeta& smeta) {
-	AbstractParser::Meta meta;
-	meta.smeta = smeta;
-
-	log_->debug() << log_tag() << "Posting Meta";
-	connection_->send(parser_->gen_meta(meta), []{});
-}
-
-void P2PDirectory::request_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id) {
-	AbstractParser::BlockRequest block_request;
-	block_request.block_id = block_id;
-
-	log_->debug() << log_tag() << "Requesting block " << encrypted_data_hash_readable(block_id);
-	connection_->send(parser_->gen_block_request(block_request), []{});
-}
-
-void P2PDirectory::post_block(std::shared_ptr<AbstractDirectory> origin, const blob& block_id, const blob& block) {
-	AbstractParser::Block block_message;
-	block_message.block_id = block_id;
-	block_message.block_content = block;
-
-	log_->debug() << log_tag() << "Posting block " << encrypted_data_hash_readable(block_id);
-	connection_->send(parser_->gen_block(block_message), []{});
-}*/
-
-void P2PDirectory::send_meta_list() {
-#   warning "Not implemented yet"
+	auto message_struct = parser_->parse_ChunkCancel(message_raw);
+	log_->debug() << log_tag() << "<== CHUNK_CANCEL:"
+		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash)
+		<< " length=" << message_struct.length
+		<< " offset=" << message_struct.offset;
 }
 
 } /* namespace librevault */

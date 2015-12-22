@@ -69,7 +69,7 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_ha
 			if(verify_block(encrypted_data_hash, encblock, meta.strong_hash_type())) return {block, encblock};
 		}catch(const std::ios::failure& e){}
 	}
-	throw no_such_block();
+	throw AbstractDirectory::no_such_block();
 }
 
 blob OpenStorage::get_block(const blob& encrypted_data_hash){
@@ -82,8 +82,8 @@ blob OpenStorage::get_openblock(const blob& encrypted_data_hash) {
 			blob encblock = enc_storage_.get_block(encrypted_data_hash);
 			return cryptodiff::decrypt_block(encblock, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
 		}
-		throw no_such_block();
-	}catch(no_such_block& e){
+		throw AbstractDirectory::no_such_block();
+	}catch(AbstractDirectory::no_such_block& e){
 		return get_both_blocks(encrypted_data_hash).first;
 	}
 }
@@ -120,7 +120,7 @@ void OpenStorage::assemble(const Meta& meta, bool delete_blocks){
 			} break;
 			case Meta::FILE: {
 				for(auto block : meta.blocks()){
-					if(! have_block(block.encrypted_data_hash_)) throw no_such_block();
+					if(! have_block(block.encrypted_data_hash_)) throw AbstractDirectory::no_such_block();
 				}
 
 				SQLiteLock raii_lock(index_.db());

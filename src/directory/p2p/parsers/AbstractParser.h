@@ -48,7 +48,7 @@ public:
 	};
 	struct HaveMeta {
 		Meta::PathRevision revision;
-		blob bitfield;
+		bitfield_type bitfield;
 	};
 	struct HaveBlock {
 		blob encrypted_data_hash;
@@ -58,6 +58,7 @@ public:
 	};
 	struct MetaReply {
 		Meta::SignedMeta smeta;
+		bitfield_type bitfield;
 	};
 	struct MetaCancel {
 		Meta::PathRevision revision;
@@ -83,8 +84,8 @@ public:
 		parse_error() : std::runtime_error("Parse error"){}
 	};
 
-	// gen_* messages return messages in format <length=uint32_be><type=byte><payload>
-	// parse_* messages take argument in format <type=byte><payload>, without length-prefix
+	// gen_* messages return messages in format <type=byte><payload>
+	// parse_* messages take argument in format <type=byte><payload>
 
 	virtual blob gen_Handshake(const Handshake& message_struct) = 0;
 	virtual Handshake parse_Handshake(const blob& message_raw) = 0;
@@ -99,7 +100,7 @@ public:
 	virtual MetaRequest parse_MetaRequest(const blob& message_raw) = 0;
 
 	virtual blob gen_MetaReply(const MetaReply& message_struct) = 0;
-	virtual MetaReply parse_MetaReply(const blob& message_raw) = 0;
+	virtual MetaReply parse_MetaReply(const blob& message_raw, const Key& secret_verifier) = 0;
 
 	virtual blob gen_MetaCancel(const MetaCancel& message_struct) = 0;
 	virtual MetaCancel parse_MetaCancel(const blob& message_raw) = 0;

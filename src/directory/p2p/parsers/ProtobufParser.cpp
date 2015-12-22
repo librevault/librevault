@@ -15,6 +15,7 @@
  */
 #include "ProtobufParser.h"
 #include "WireProtocol.pb.h"
+#include "../../../util/bitfield_convert.h"
 
 namespace librevault {
 
@@ -41,7 +42,9 @@ blob ProtobufParser::gen_HaveMeta(const HaveMeta& message_struct) {
 
 	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
-	message_protobuf.set_bitfield(message_struct.bitfield.data(), message_struct.bitfield.size());
+
+	blob converted_bitfield = convert_bitfield(message_struct.bitfield);
+	message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
 
 	return prepare_proto_message(message_protobuf, HAVE_META);
 }
@@ -52,7 +55,7 @@ AbstractParser::HaveMeta ProtobufParser::parse_HaveMeta(const blob& message_raw)
 	HaveMeta message_struct;
 	message_struct.revision.revision_ = message_protobuf.revision();
 	message_struct.revision.path_id_ = blob(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
-	message_struct.bitfield = blob(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end());
+	message_struct.bitfield = convert_bitfield(blob(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
 	return message_struct;
 }
@@ -94,20 +97,24 @@ AbstractParser::MetaRequest ProtobufParser::parse_MetaRequest(const blob& messag
 
 blob ProtobufParser::gen_MetaReply(const MetaReply& message_struct) {
 	protocol::MetaReply message_protobuf;
-	message_protobuf.set_meta(message_struct.smeta.meta_.data(), message_struct.smeta.meta_.size());
-	message_protobuf.set_signature(message_struct.smeta.signature_.data(), message_struct.smeta.signature_.size());
+	message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
+	message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
+
+	blob converted_bitfield = convert_bitfield(message_struct.bitfield);
+	message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
 
 	return prepare_proto_message(message_protobuf, META_REPLY);
 }
-AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_raw) {
+AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_raw, const Key& secret_verifier) {
 	protocol::MetaReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	MetaReply message_struct;
-	message_struct.smeta.meta_.assign(message_protobuf.meta().begin(), message_protobuf.meta().end());
-	message_struct.smeta.signature_.assign(message_protobuf.signature().begin(), message_protobuf.signature().end());
+	blob raw_meta(message_protobuf.meta().begin(), message_protobuf.meta().end());
+	blob signature(message_protobuf.signature().begin(), message_protobuf.signature().end());
 
-	return message_struct;
+	bitfield_type converted_bitfield = convert_bitfield(blob(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
+
+	return MetaReply{Meta::SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier), std::move(converted_bitfield)};
 }
 
 blob ProtobufParser::gen_MetaCancel(const MetaCancel& message_struct) {

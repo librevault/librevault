@@ -40,7 +40,7 @@ blob EncStorage::get_block(const blob& encrypted_data_hash) {
 	auto block_path = make_encblock_path(encrypted_data_hash);
 
 	auto blocksize = fs::file_size(block_path);
-	if(blocksize == static_cast<uintmax_t>(-1)) throw no_such_block();
+	if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractDirectory::no_such_block();
 
 	blob block(blocksize);
 
@@ -50,7 +50,7 @@ blob EncStorage::get_block(const blob& encrypted_data_hash) {
 		block_fstream.open(block_path, std::ios_base::in | std::ios_base::binary);
 		block_fstream.read(reinterpret_cast<char*>(block.data()), blocksize);
 	}catch(std::ifstream::failure& e) {
-		throw no_such_block();
+		throw AbstractDirectory::no_such_block();
 	}
 
 	return block;

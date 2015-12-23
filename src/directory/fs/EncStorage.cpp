@@ -37,23 +37,25 @@ bool EncStorage::have_block(const blob& encrypted_data_hash) {
 }
 
 blob EncStorage::get_block(const blob& encrypted_data_hash) {
-	auto block_path = make_encblock_path(encrypted_data_hash);
-
-	auto blocksize = fs::file_size(block_path);
-	if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractDirectory::no_such_block();
-
-	blob block(blocksize);
-
 	try {
+		auto block_path = make_encblock_path(encrypted_data_hash);
+
+		uint64_t blocksize = fs::file_size(block_path);
+		if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractDirectory::no_such_block();
+
+		blob block(blocksize);
+
 		fs::ifstream block_fstream;
 		block_fstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		block_fstream.open(block_path, std::ios_base::in | std::ios_base::binary);
 		block_fstream.read(reinterpret_cast<char*>(block.data()), blocksize);
+
+		return block;
+	}catch(fs::filesystem_error& e) {
+		throw AbstractDirectory::no_such_block();
 	}catch(std::ifstream::failure& e) {
 		throw AbstractDirectory::no_such_block();
 	}
-
-	return block;
 }
 
 void EncStorage::put_block(const blob& encrypted_data_hash, const blob& data) {

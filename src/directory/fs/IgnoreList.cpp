@@ -19,48 +19,53 @@
 
 namespace librevault {
 
-IgnoreList::IgnoreList(FSDirectory& dir, Client& client) : Loggable(client), dir_(dir), client_(client) {
-	std::unique_lock<std::mutex> lk(ignore_mtx_);
-
+IgnoreList::IgnoreList(FSDirectory& dir, Client& client) : Loggable(dir), dir_(dir), client_(client) {
 	// Config paths
 	auto ignore_list_its = dir_.dir_options().equal_range("ignore");
 	for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++){
-		ignored_paths_.insert(ignore_list_it->second.get_value<fs::path>().generic_string());
+		add_ignored(ignore_list_it->second.get_value<fs::path>().generic_string());
 	}
 
 	// Predefined paths
-	ignored_paths_.insert(dir.make_relpath(dir_.block_path()));
-	ignored_paths_.insert(dir.make_relpath(dir_.db_path()));
-	ignored_paths_.insert(dir.make_relpath(dir_.db_path())+"-journal");
-	ignored_paths_.insert(dir.make_relpath(dir_.db_path())+"-wal");
-	ignored_paths_.insert(dir.make_relpath(dir_.db_path())+"-shm");
-	ignored_paths_.insert(dir.make_relpath(dir_.asm_path()));
-
-	ignored_paths_.erase(std::string());	// If one (or more) of the above returned empty string (aka if one (or more) of the above paths are outside open_path)
+	add_ignored( regex_escape(dir.make_relpath(dir_.block_path())) + R"((\/(.*))?)" );
+	add_ignored( regex_escape(dir.make_relpath(dir_.db_path())) );
+	add_ignored( regex_escape(dir.make_relpath(dir_.db_path())+"-journal") );
+	add_ignored( regex_escape(dir.make_relpath(dir_.db_path())+"-wal") );
+	add_ignored( regex_escape(dir.make_relpath(dir_.db_path())+"-shm") );
+	add_ignored( regex_escape(dir.make_relpath(dir_.asm_path())) );
 
 	log_->debug() << log_tag() << "IgnoreList initialized";
 }
 IgnoreList::~IgnoreList() {}
 
-const std::set<std::string>& IgnoreList::ignored_files() const {
-	return ignored_paths_;
-}
-
 bool IgnoreList::is_ignored(const std::string& relpath) const {
-	std::unique_lock<std::mutex> lk(ignore_mtx_);
-	return ignored_paths_.find(relpath) != ignored_paths_.end();
+	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
+	for(auto& ignored_path : ignored_paths_) {
+		if(std::regex_match(relpath, ignored_path.second)) return true;
+	}
+	return false;
 }
 
 void IgnoreList::add_ignored(const std::string& relpath){
-	std::unique_lock<std::mutex> lk(ignore_mtx_);
-	ignored_paths_.insert(relpath);
-	log_->debug() << log_tag() << "Added to IgnoreList: " << relpath;
+	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
+	if(! relpath.empty()) {
+		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
+		ignored_paths_.insert({relpath, std::move(relpath_regex)});
+		log_->debug() << log_tag() << "Added to IgnoreList: " << relpath;
+	}
 }
 
 void IgnoreList::remove_ignored(const std::string& relpath){
-	std::lock_guard<std::mutex> lk(ignore_mtx_);
+	std::lock_guard<std::mutex> lk(ignored_paths_mtx_);
 	ignored_paths_.erase(relpath);
 	log_->debug() << log_tag() << "Removed from IgnoreList: " << relpath;
+}
+
+std::regex IgnoreList::regex_escape_regex_ = std::regex("[.^$|()\\[\\]{}*+?\\\\]", std::regex::optimize);
+std::string IgnoreList::regex_escape_replace_ = "\\&";
+
+std::string IgnoreList::regex_escape(const std::string& str_to_escape) {
+	return std::regex_replace(str_to_escape, regex_escape_regex_, regex_escape_replace_, std::regex_constants::match_default | std::regex_constants::format_sed);
 }
 
 std::string IgnoreList::log_tag() const {return dir_.log_tag();}

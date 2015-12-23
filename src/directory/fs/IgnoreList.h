@@ -26,7 +26,6 @@ public:
 	IgnoreList(FSDirectory& dir, Client& client);
 	virtual ~IgnoreList();
 
-	const std::set<std::string>& ignored_files() const;
 	bool is_ignored(const std::string& relpath) const;
 
 	void add_ignored(const std::string& relpath);
@@ -36,9 +35,12 @@ private:
 	FSDirectory& dir_;
 	Client& client_;
 
-	std::set<std::string> ignored_paths_;
+	static std::regex regex_escape_regex_;
+	static std::string regex_escape_replace_;
+	static std::string regex_escape(const std::string& str_to_escape);
 
-	mutable std::mutex ignore_mtx_;
+	mutable std::mutex ignored_paths_mtx_;
+	std::map<std::string, std::regex> ignored_paths_;
 
 	std::string log_tag() const;
 };

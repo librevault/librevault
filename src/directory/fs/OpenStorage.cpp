@@ -14,7 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "OpenStorage.h"
+
 #include "FSDirectory.h"
+#include "IgnoreList.h"
+#include "AutoIndexer.h"
+
 #include "../Meta.h"
 
 namespace librevault {

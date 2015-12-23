@@ -23,7 +23,7 @@ class Client;
 class FSDirectory;
 class IgnoreList : protected Loggable {
 public:
-	IgnoreList(FSDirectory& dir, Client& client);
+	IgnoreList(FSDirectory& dir);
 	virtual ~IgnoreList() {}
 
 	bool is_ignored(const std::string& relpath) const;
@@ -33,7 +33,6 @@ public:
 
 private:
 	FSDirectory& dir_;
-	Client& client_;
 
 	static std::regex regex_escape_regex_;
 	static std::string regex_escape_replace_;
@@ -41,8 +40,6 @@ private:
 
 	mutable std::mutex ignored_paths_mtx_;
 	std::map<std::string, std::regex> ignored_paths_;
-
-	std::string log_tag() const;
 };
 
 } /* namespace librevault */

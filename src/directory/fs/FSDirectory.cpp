@@ -15,6 +15,14 @@
  */
 #include "FSDirectory.h"
 
+#include "IgnoreList.h"
+#include "Index.h"
+#include "MemoryCachedStorage.h"
+#include "EncStorage.h"
+#include "OpenStorage.h"
+#include "Indexer.h"
+#include "AutoIndexer.h"
+
 #include "../../Client.h"
 #include "../../net/parse_url.h"
 #include "../Exchanger.h"
@@ -33,9 +41,10 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 		block_path_(dir_options_.get<fs::path>("block_path", open_path_ / ".librevault")),
 		db_path_(dir_options_.get<fs::path>("db_path", block_path_ / "directory.db")),
 		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_ / "assembled.part")) {
+	name_ = name();
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
-	ignore_list = std::make_unique<IgnoreList>(*this, client_);
+	ignore_list = std::make_unique<IgnoreList>(*this);
 	index = std::make_unique<Index>(*this);
 
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
@@ -48,6 +57,8 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
 	}
 }
+
+FSDirectory::~FSDirectory() {}
 
 bool FSDirectory::have_meta(const blob& path_id) {
 	return path_id_info_.find(path_id) != path_id_info_.end();

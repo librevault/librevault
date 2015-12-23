@@ -42,7 +42,6 @@ public:
 	SQLiteDB& db() {return *db_;}
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.

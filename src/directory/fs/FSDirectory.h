@@ -18,17 +18,18 @@
 #include "../AbstractDirectory.h"
 
 #include "../Key.h"
-#include "IgnoreList.h"
-#include "Index.h"
-#include "MemoryCachedStorage.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
-#include "Indexer.h"
-#include "AutoIndexer.h"
 
 namespace librevault {
 
 class ExchangeGroup;
+
+class IgnoreList;
+class Index;
+class MemoryCachedStorage;
+class EncStorage;
+class OpenStorage;
+class Indexer;
+class AutoIndexer;
 
 class FSDirectory : public AbstractDirectory, public std::enable_shared_from_this<FSDirectory> {
 public:
@@ -50,7 +51,7 @@ public:
 
 	/* Constructors */
 	FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger);
-	virtual ~FSDirectory() {}
+	virtual ~FSDirectory();
 
 	/* Actions */
 	bool have_meta(const blob& path_id);

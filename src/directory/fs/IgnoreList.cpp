@@ -19,7 +19,7 @@
 
 namespace librevault {
 
-IgnoreList::IgnoreList(FSDirectory& dir, Client& client) : Loggable(dir), dir_(dir), client_(client) {
+IgnoreList::IgnoreList(FSDirectory& dir) : Loggable(dir), dir_(dir) {
 	// Config paths
 	auto ignore_list_its = dir_.dir_options().equal_range("ignore");
 	for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++){
@@ -66,7 +66,5 @@ std::string IgnoreList::regex_escape_replace_ = "\\&";
 std::string IgnoreList::regex_escape(const std::string& str_to_escape) {
 	return std::regex_replace(str_to_escape, regex_escape_regex_, regex_escape_replace_, std::regex_constants::match_default | std::regex_constants::format_sed);
 }
-
-std::string IgnoreList::log_tag() const {return dir_.log_tag();}
 
 } /* namespace librevault */

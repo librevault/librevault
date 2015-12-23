@@ -19,15 +19,14 @@
 
 namespace librevault {
 
-OpenStorage::OpenStorage(FSDirectory& dir, Client& client) :
-		log_(spdlog::get("Librevault")), dir_(dir),
+OpenStorage::OpenStorage(FSDirectory& dir) :
+		AbstractStorage(dir),
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {
 	bool open_path_created = fs::create_directories(dir_.open_path());
-	log_->debug() << dir_.log_tag() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
+	log_->debug() << log_tag() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
 	bool asm_path_created = fs::create_directories(dir_.asm_path().parent_path());
-	log_->debug() << dir_.log_tag() << "Assemble directory: " << dir_.asm_path().parent_path() << (asm_path_created ? " created" : "");
+	log_->debug() << log_tag() << "Assemble directory: " << dir_.asm_path().parent_path() << (asm_path_created ? " created" : "");
 }
-OpenStorage::~OpenStorage() {}
 
 bool OpenStorage::have_block(const blob& encrypted_data_hash) {
 	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
@@ -40,7 +39,7 @@ bool OpenStorage::have_block(const blob& encrypted_data_hash) {
 	return false;
 }
 
-std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_hash){
+std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> OpenStorage::get_both_blocks(const blob& encrypted_data_hash){
 	auto sql_result = index_.db().exec("SELECT blocks.blocksize, blocks.iv, files.meta, openfs.[offset] FROM blocks "
 			"JOIN openfs ON blocks.encrypted_data_hash = openfs.encrypted_data_hash "
 			"JOIN files ON openfs.path_id = files.path_id "
@@ -57,34 +56,34 @@ std::pair<blob, blob> OpenStorage::get_both_blocks(const blob& encrypted_data_ha
 		uint64_t offset		= row[3];
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
-		blob block(blocksize);
+		std::shared_ptr<blob> block = std::make_shared<blob>(blocksize);
 
 		try {
 			ifs.open(filepath, std::ios::binary);
 			ifs.seekg(offset);
-			ifs.read(reinterpret_cast<char*>(block.data()), blocksize);
+			ifs.read(reinterpret_cast<char*>(block->data()), blocksize);
 
-			blob encblock = cryptodiff::encrypt_block(block, key_.get_Encryption_Key(), iv);
+			std::shared_ptr<blob> encblock = std::make_shared<blob>(cryptodiff::encrypt_block(*block, key_.get_Encryption_Key(), iv));
 			// Check
-			if(verify_block(encrypted_data_hash, encblock, meta.strong_hash_type())) return {block, encblock};
+			if(verify_block(encrypted_data_hash, *encblock, meta.strong_hash_type())) return {block, encblock};
 		}catch(const std::ios::failure& e){}
 	}
 	throw AbstractDirectory::no_such_block();
 }
 
-blob OpenStorage::get_block(const blob& encrypted_data_hash){
+std::shared_ptr<blob> OpenStorage::get_block(const blob& encrypted_data_hash){
 	return get_both_blocks(encrypted_data_hash).second;
 }
 
 blob OpenStorage::get_openblock(const blob& encrypted_data_hash) {
 	try {
 		for(auto row : index_.db().exec("SELECT iv, blocksize FROM blocks WHERE encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}})){
-			blob encblock = enc_storage_.get_block(encrypted_data_hash);
-			return cryptodiff::decrypt_block(encblock, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
+			auto encblock_ptr = enc_storage_.get_block(encrypted_data_hash);
+			return cryptodiff::decrypt_block(*encblock_ptr, row[1].as_uint(), key_.get_Encryption_Key(), row[0].as_blob());
 		}
 		throw AbstractDirectory::no_such_block();
 	}catch(AbstractDirectory::no_such_block& e){
-		return get_both_blocks(encrypted_data_hash).first;
+		return *get_both_blocks(encrypted_data_hash).first;
 	}
 }
 

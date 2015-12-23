@@ -36,10 +36,12 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
 	ignore_list = std::make_unique<IgnoreList>(*this, client_);
-	index = std::make_unique<Index>(*this, client_);
-	enc_storage = std::make_unique<EncStorage>(*this, client_);
+	index = std::make_unique<Index>(*this);
+
+	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
+	enc_storage = std::make_unique<EncStorage>(*this);
 	if(key_.get_type() <= Key::Type::ReadOnly){
-		open_storage = std::make_unique<OpenStorage>(*this, client_);
+		open_storage = std::make_unique<OpenStorage>(*this);
 	}
 	if(key_.get_type() <= Key::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);
@@ -102,9 +104,18 @@ bool FSDirectory::have_block(const blob& encrypted_data_hash) {
 
 blob FSDirectory::get_block(const blob& encrypted_data_hash) {
 	try {
-		return enc_storage->get_block(encrypted_data_hash);
-	}catch(AbstractDirectory::no_such_block& e){
-		return open_storage->get_block(encrypted_data_hash);
+		// Cache hit
+		return *mem_storage->get_block(encrypted_data_hash);
+	}catch(AbstractDirectory::no_such_block& e) {
+		// Cache missed
+		std::shared_ptr<blob> block_ptr;
+		try {
+			block_ptr = enc_storage->get_block(encrypted_data_hash);
+		}catch(AbstractDirectory::no_such_block& e) {
+			block_ptr = open_storage->get_block(encrypted_data_hash);
+		}
+		mem_storage->put_block(encrypted_data_hash, block_ptr);
+		return *block_ptr;
 	}
 }
 
@@ -116,14 +127,6 @@ void FSDirectory::put_block(const blob& encrypted_data_hash, const blob& block) 
 /* Makers */
 std::string FSDirectory::make_relpath(const fs::path& path) const {
 	return ::librevault::make_relpath(path, open_path());
-}
-
-void FSDirectory::actualize_bitfield() {
-	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
-	for(auto smeta : index->get_Meta()){
-		auto bitfield = make_bitfield(smeta.meta());
-		path_id_info_[smeta.meta().path_id()] = {smeta.meta().revision(), bitfield};
-	}
 }
 
 bitfield_type FSDirectory::make_bitfield(const Meta& meta) {

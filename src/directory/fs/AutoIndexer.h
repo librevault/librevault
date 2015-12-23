@@ -22,10 +22,10 @@
 
 namespace librevault {
 
-class AutoIndexer {
+class AutoIndexer : public Loggable {
 public:
 	AutoIndexer(FSDirectory& dir, Client& client);
-	virtual ~AutoIndexer();
+	virtual ~AutoIndexer() {}
 
 	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);

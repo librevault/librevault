@@ -18,11 +18,10 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(FSDirectory& dir, Client& client) : log_(spdlog::get("Librevault")), dir_(dir), block_path_(dir.block_path()) {
+EncStorage::EncStorage(FSDirectory& dir) : AbstractStorage(dir), block_path_(dir.block_path()) {
 	bool block_path_created = fs::create_directories(block_path_);
-	log_->debug() << dir_.log_tag() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
+	log_->debug() << log_tag() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
 }
-EncStorage::~EncStorage() {}
 
 fs::path EncStorage::make_encblock_name(const blob& encrypted_data_hash) const {
 	return crypto::Base32().to_string(encrypted_data_hash);
@@ -36,19 +35,19 @@ bool EncStorage::have_block(const blob& encrypted_data_hash) {
 	return fs::exists(make_encblock_path(encrypted_data_hash));
 }
 
-blob EncStorage::get_block(const blob& encrypted_data_hash) {
+std::shared_ptr<blob> EncStorage::get_block(const blob& encrypted_data_hash) {
 	try {
 		auto block_path = make_encblock_path(encrypted_data_hash);
 
 		uint64_t blocksize = fs::file_size(block_path);
 		if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractDirectory::no_such_block();
 
-		blob block(blocksize);
+		std::shared_ptr<blob> block = std::make_shared<blob>(blocksize);
 
 		fs::ifstream block_fstream;
 		block_fstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		block_fstream.open(block_path, std::ios_base::in | std::ios_base::binary);
-		block_fstream.read(reinterpret_cast<char*>(block.data()), blocksize);
+		block_fstream.read(reinterpret_cast<char*>(block->data()), blocksize);
 
 		return block;
 	}catch(fs::filesystem_error& e) {
@@ -63,13 +62,13 @@ void EncStorage::put_block(const blob& encrypted_data_hash, const blob& data) {
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	log_->debug() << dir_.log_tag() << "Encrypted block " << make_encblock_name(encrypted_data_hash) << " pushed into EncStorage";
+	log_->debug() << log_tag() << "Encrypted block " << make_encblock_name(encrypted_data_hash) << " pushed into EncStorage";
 }
 
 void EncStorage::remove_block(const blob& encrypted_data_hash) {
 	fs::remove(make_encblock_path(encrypted_data_hash));
 
-	log_->debug() << dir_.log_tag() << "Block " << make_encblock_name(encrypted_data_hash) << " removed from EncStorage";
+	log_->debug() << log_tag() << "Block " << make_encblock_name(encrypted_data_hash) << " removed from EncStorage";
 }
 
 } /* namespace librevault */

@@ -24,7 +24,7 @@
 namespace librevault {
 
 class FSDirectory;
-class Indexer {
+class Indexer : public Loggable {
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -36,7 +36,7 @@ public:
 	};
 
 	Indexer(FSDirectory& dir, Client& client);
-	virtual ~Indexer();
+	virtual ~Indexer() {}
 
 	// Index manipulation
 	void index(const std::string& file_path);
@@ -48,7 +48,6 @@ public:
 	Meta::SignedMeta make_Meta(const std::string& relpath);
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 
 	const Key& key_;

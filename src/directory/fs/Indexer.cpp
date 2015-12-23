@@ -21,12 +21,11 @@
 namespace librevault {
 
 Indexer::Indexer(FSDirectory& dir, Client& client) :
-		log_(spdlog::get("Librevault")), dir_(dir),
+		Loggable(dir, "Indexer"), dir_(dir),
 		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
-Indexer::~Indexer() {}
 
 void Indexer::index(const std::string& file_path){
-	log_->trace() << dir_.log_tag() << "Indexer::index(" << file_path << ")";
+	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
 
 	Meta::SignedMeta smeta;
 
@@ -41,7 +40,7 @@ void Indexer::index(const std::string& file_path){
 		}catch(fs::filesystem_error& e){
 		}catch(AbstractDirectory::no_such_meta& e){
 		}catch(Meta::SignedMeta::signature_error& e){   // Alarm! DB is inconsistent
-			log_->warn() << dir_.log_tag() << "Signature mismatch in local DB";
+			log_->warn() << log_tag() << "Signature mismatch in local DB";
 		}
 
 		// Starting timer
@@ -54,10 +53,10 @@ void Indexer::index(const std::string& file_path){
 		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		log_->trace() << dir_.log_tag() << smeta.meta().debug_string();
-		log_->debug() << dir_.log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << smeta.meta().revision();
+		log_->trace() << log_tag() << smeta.meta().debug_string();
+		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << smeta.meta().revision();
 	}catch(std::runtime_error& e){
-		log_->notice() << dir_.log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
+		log_->notice() << log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
 	}
 
 	if(smeta) dir_.put_meta(smeta, true);
@@ -70,7 +69,7 @@ void Indexer::async_index(const std::string& file_path) {
 }
 
 void Indexer::async_index(const std::set<std::string>& file_path) {
-	log_->debug() << dir_.log_tag() << "Preparing to index " << file_path.size() << " entries.";
+	log_->debug() << log_tag() << "Preparing to index " << file_path.size() << " entries.";
 	for(auto file_path1 : file_path)
 		async_index(file_path1);
 }

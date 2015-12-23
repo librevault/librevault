@@ -20,6 +20,7 @@
 #include "../Key.h"
 #include "IgnoreList.h"
 #include "Index.h"
+#include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
 #include "Indexer.h"
@@ -39,8 +40,11 @@ public:
 	/* Components */
 	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
+
+	std::unique_ptr<MemoryCachedStorage> mem_storage;
 	std::unique_ptr<EncStorage> enc_storage;
 	std::unique_ptr<OpenStorage> open_storage;
+
 	std::unique_ptr<Indexer> indexer;
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
@@ -81,8 +85,6 @@ private:
 	const Key key_;
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
-	// Bitfield actualizer
-	void actualize_bitfield();
 	bitfield_type make_bitfield(const Meta& meta);
 };
 

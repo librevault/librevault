@@ -21,21 +21,25 @@ namespace librevault {
 
 class Client;
 class FSDirectory;
-class EncStorage : public AbstractStorage {
+// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
+class MemoryCachedStorage : public AbstractStorage {
 public:
-	EncStorage(FSDirectory& dir);
-	virtual ~EncStorage() {}
+	MemoryCachedStorage(FSDirectory& dir);
+	virtual ~MemoryCachedStorage() {}
 
 	bool have_block(const blob& encrypted_data_hash);
 	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash);
-	void put_block(const blob& encrypted_data_hash, const blob& data);	// FIXME: Check hash
+	void put_block(const blob& encrypted_data_hash, std::shared_ptr<blob> data);
 	void remove_block(const blob& encrypted_data_hash);
 
 private:
-	const fs::path& block_path_;
+	using encrypted_data_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
+	using list_iterator_type = std::list<encrypted_data_hash_data_type>::iterator;
 
-	fs::path make_encblock_name(const blob& encrypted_data_hash) const;
-	fs::path make_encblock_path(const blob& encrypted_data_hash) const;
+	std::list<encrypted_data_hash_data_type> cache_list_;
+	std::map<blob, list_iterator_type> cache_iteraror_map_;
+
+	bool overflow() const;
 };
 
 } /* namespace librevault */

@@ -24,7 +24,7 @@ class FSDirectory;
 class IgnoreList : protected Loggable {
 public:
 	IgnoreList(FSDirectory& dir, Client& client);
-	virtual ~IgnoreList();
+	virtual ~IgnoreList() {}
 
 	bool is_ignored(const std::string& relpath) const;
 

@@ -16,15 +16,16 @@
 #pragma once
 #include "../../pch.h"
 #include "../Meta.h"
+#include "../../util/Loggable.h"
 
 namespace librevault {
 
 class Client;
 class FSDirectory;
 
-class Index {
+class Index : public Loggable {
 public:
-	Index(FSDirectory& dir, Client& client);
+	Index(FSDirectory& dir);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -35,8 +36,6 @@ public:
 
 	/* Block getter */
 	uint32_t get_blocksize(const blob& encrypted_data_hash);
-
-	void wipe();
 
 	/* Properties */
 	std::list<Meta::SignedMeta> containing_block(const blob& encrypted_data_hash);

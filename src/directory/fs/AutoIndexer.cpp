@@ -21,7 +21,7 @@
 namespace librevault {
 
 AutoIndexer::AutoIndexer(FSDirectory& dir, Client& client) :
-		log_(spdlog::get("Librevault")),
+		Loggable(dir, "AutoIndexer"),
 		dir_(dir), client_(client),
 		monitor_(client_.dir_monitor_ios()), index_timer_(client_.dir_monitor_ios()) {
 	enqueue_files(dir.open_storage->pending_files());
@@ -29,7 +29,6 @@ AutoIndexer::AutoIndexer(FSDirectory& dir, Client& client) :
 	monitor_.add_directory(dir_.open_path().string());
 	monitor_operation();
 }
-AutoIndexer::~AutoIndexer() {}
 
 void AutoIndexer::enqueue_files(const std::string& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);

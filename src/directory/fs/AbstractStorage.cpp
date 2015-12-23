@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,25 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "../../pch.h"
-#include "../../util/Loggable.h"
+#include "AbstractStorage.h"
+#include "FSDirectory.h"
 
 namespace librevault {
 
-class FSDirectory;
-class AbstractStorage : public Loggable {
-public:
-	AbstractStorage(FSDirectory& dir);
-	virtual ~AbstractStorage() {};
-
-	bool verify_block(const blob& encrypted_data_hash, const blob& data, cryptodiff::StrongHashType strong_hash_type) const {
-		return encrypted_data_hash == cryptodiff::compute_strong_hash(data, strong_hash_type);
-	}
-	virtual std::shared_ptr<blob> get_block(const blob& block_hash) = 0;
-
-protected:
-	FSDirectory& dir_;
-};
+AbstractStorage::AbstractStorage(FSDirectory& dir) : Loggable(dir), dir_(dir) {};
 
 } /* namespace librevault */

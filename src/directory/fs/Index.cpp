@@ -18,14 +18,14 @@
 
 namespace librevault {
 
-Index::Index(FSDirectory& dir, Client& client) : log_(spdlog::get("Librevault")), dir_(dir) {
+Index::Index(FSDirectory& dir) : Loggable(dir, "Index"), dir_(dir) {
 	bool db_path_created = fs::create_directories(dir_.db_path().parent_path());
-	log_->debug() << dir_.log_tag() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
+	log_->debug() << log_tag() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
 
 	if(fs::exists(dir_.db_path()))
-		log_->debug() << dir_.log_tag() << "Opening SQLite3 DB: " << dir_.db_path();
+		log_->debug() << log_tag() << "Opening SQLite3 DB: " << dir_.db_path();
 	else
-		log_->debug() << dir_.log_tag() << "Creating new SQLite3 DB: " << dir_.db_path();
+		log_->debug() << log_tag() << "Creating new SQLite3 DB: " << dir_.db_path();
 	db_ = std::make_unique<SQLiteDB>(dir_.db_path());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
@@ -66,9 +66,9 @@ void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) 
 	}
 
 	if(fully_assembled)
-		log_->debug() << dir_.log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
 	else
-		log_->debug() << dir_.log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
 }
 
 std::list<Meta::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){

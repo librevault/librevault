@@ -34,14 +34,14 @@ public:
 		assemble_error() : error("Error during assembling file") {}
 	};
 
-	OpenStorage(FSDirectory& dir, Client& client);
-	virtual ~OpenStorage();
+	OpenStorage(FSDirectory& dir);
+	virtual ~OpenStorage() {}
 
 	// Path constructor
 	blob make_path_id(const std::string& relpath) const;
 
 	bool have_block(const blob& encrypted_data_hash);
-	blob get_block(const blob& encrypted_data_hash);
+	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash);
 	blob get_openblock(const blob& encrypted_data_hash);
 
 	// File assembler
@@ -63,14 +63,11 @@ public:
 	std::set<std::string> all_files();	// Sum of all
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
-	FSDirectory& dir_;
-
 	const Key& key_;
 	Index& index_;
 	EncStorage& enc_storage_;
 
-	std::pair<blob, blob> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
+	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
 };
 
 } /* namespace librevault */

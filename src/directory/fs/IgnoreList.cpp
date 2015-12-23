@@ -36,7 +36,6 @@ IgnoreList::IgnoreList(FSDirectory& dir, Client& client) : Loggable(dir), dir_(d
 
 	log_->debug() << log_tag() << "IgnoreList initialized";
 }
-IgnoreList::~IgnoreList() {}
 
 bool IgnoreList::is_ignored(const std::string& relpath) const {
 	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);

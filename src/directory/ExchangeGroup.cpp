@@ -18,30 +18,30 @@
 #include "fs/FSDirectory.h"
 #include "p2p/P2PDirectory.h"
 
+#include "fs/Index.h"
 #include "p2p/P2PProvider.h"
 
 #include "Exchanger.h"
 #include "../Client.h"
+
+#include "Uploader.h"
 #include "Downloader.h"
 
 namespace librevault {
 
 ExchangeGroup::ExchangeGroup(Client& client, Exchanger& exchanger) :
-		Loggable(client), client_(client), exchanger_(exchanger), downloader_(std::make_shared<Downloader>(client, *this)) {}
+		Loggable(client),
+		client_(client),
+		exchanger_(exchanger),
+		uploader_(std::make_shared<Uploader>(client, *this)),
+		downloader_(std::make_shared<Downloader>(client, *this)) {}
 
-void ExchangeGroup::request_introduce(std::shared_ptr<P2PDirectory> origin) {
-	for(auto& info : fs_dir_->path_id_info()) {
-		Meta::PathRevision revision;
-		revision.path_id_ = info.first;
-		revision.revision_ = info.second.first;
-		origin->post_have_meta(revision, info.second.second);
-	}
-}
-
+/* Actions */
+// FSDirectory actions
 void ExchangeGroup::notify_meta(std::shared_ptr<FSDirectory> origin,
-                                const Meta::PathRevision& revision,
-                                const bitfield_type& bitfield) {
-	downloader_->put_local_meta(revision, bitfield);
+                                Meta::PathRevision revision,
+                                bitfield_type bitfield) {
+	downloader_->notify_local_meta(revision, bitfield);
 
 	// Broadcast to all attached P2PDirectories
 	std::shared_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
@@ -51,7 +51,7 @@ void ExchangeGroup::notify_meta(std::shared_ptr<FSDirectory> origin,
 }
 
 void ExchangeGroup::notify_block(std::shared_ptr<FSDirectory> origin, const blob& encrypted_data_hash) {
-	downloader_->remove_needed_block(encrypted_data_hash);
+	downloader_->notify_local_block(encrypted_data_hash);
 
 	std::shared_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
 
@@ -60,11 +60,11 @@ void ExchangeGroup::notify_block(std::shared_ptr<FSDirectory> origin, const blob
 	}
 }
 
-void ExchangeGroup::notify_meta(std::shared_ptr<P2PDirectory> origin,
-                                const Meta::PathRevision& revision,
-                                const bitfield_type& bitfield) {
-	if(!fs_dir_->have_meta(revision))
-		origin->request_meta(revision);
+// RemoteDirectory actions
+void ExchangeGroup::handle_handshake(std::shared_ptr<RemoteDirectory> origin) {
+	for(auto& meta : fs_dir_->index->get_Meta()) {
+		origin->post_have_meta(meta.meta().path_revision(), fs_dir_->get_bitfield(meta.meta().path_revision()));
+	}
 }
 
 void ExchangeGroup::handle_choke(std::shared_ptr<RemoteDirectory> origin) {
@@ -74,36 +74,47 @@ void ExchangeGroup::handle_unchoke(std::shared_ptr<RemoteDirectory> origin) {
 	downloader_->handle_unchoke(origin);
 }
 void ExchangeGroup::handle_interested(std::shared_ptr<RemoteDirectory> origin) {
-	// FIXME: write good algorithm for upload
-	origin->unchoke();
+	uploader_->handle_interested(origin);
 }
 void ExchangeGroup::handle_not_interested(std::shared_ptr<RemoteDirectory> origin) {
-	// FIXME: write good algorithm for upload
-	origin->choke();
+	uploader_->handle_not_interested(origin);
+}
+
+void ExchangeGroup::notify_meta(std::shared_ptr<RemoteDirectory> origin,
+                                const Meta::PathRevision& revision,
+                                const bitfield_type& bitfield) {
+	if(fs_dir_->have_meta(revision))
+		downloader_->notify_remote_meta(origin, revision, bitfield);
+	else
+		origin->request_meta(revision);
+}
+
+void ExchangeGroup::notify_block(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash) {
+	downloader_->notify_remote_block(origin, encrypted_data_hash);
 }
 
 void ExchangeGroup::request_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision) {
 	try {
-		origin->post_meta(fs_dir_->get_meta(revision), fs_dir_->path_id_info().at(revision.path_id_).second);
+		origin->post_meta(fs_dir_->get_meta(revision), fs_dir_->get_bitfield(revision));
 	}catch(AbstractDirectory::no_such_meta& e){
 		log_->warn() << log_tag() << "Requested nonexistent Meta";
 	}
 }
 
-void ExchangeGroup::post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta) {
-	origin->interest(); //TODO: remove this ugly hack
+void ExchangeGroup::post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield) {
 	fs_dir_->put_meta(smeta);
+	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 
 void ExchangeGroup::request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
-	auto chunk = fs_dir_->get_chunk(encrypted_data_hash, offset, size);
-	origin->post_chunk(encrypted_data_hash, offset, chunk);
+	uploader_->request_chunk(origin, encrypted_data_hash, offset, size);
 }
 
 void ExchangeGroup::post_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset) {
 	downloader_->put_chunk(encrypted_data_hash, offset, chunk, origin);
 }
 
+/* Membership management */
 void ExchangeGroup::attach(std::shared_ptr<FSDirectory> fs_dir_ptr) {
 	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
 	fs_dir_ = fs_dir_ptr;
@@ -128,6 +139,8 @@ void ExchangeGroup::attach(std::shared_ptr<P2PDirectory> remote_ptr) {
 
 void ExchangeGroup::detach(std::shared_ptr<P2PDirectory> remote_ptr) {
 	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
+	downloader_->erase_remote(remote_ptr);
+
 	p2p_dirs_pubkeys_.erase(remote_ptr->remote_pubkey());
 	p2p_dirs_endpoints_.erase(remote_ptr->remote_endpoint());
 	p2p_dirs_.erase(remote_ptr);
@@ -145,13 +158,7 @@ bool ExchangeGroup::have_p2p_dir(const blob& pubkey) {
 	return p2p_dirs_pubkeys_.find(pubkey) != p2p_dirs_pubkeys_.end();
 }
 
-std::set<std::shared_ptr<FSDirectory>> ExchangeGroup::fs_dirs() const {
-	std::shared_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
-	return std::set<std::shared_ptr<FSDirectory>>{fs_dir_};
-}
-
-const std::set<std::shared_ptr<P2PDirectory>>& ExchangeGroup::p2p_dirs() const { return p2p_dirs_; }
-
+/* Getters */
 const Key& ExchangeGroup::key() const { return fs_dir_->key(); }
 const blob& ExchangeGroup::hash() const { return key().get_Hash(); }
 

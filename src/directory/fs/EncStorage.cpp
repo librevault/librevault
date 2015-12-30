@@ -18,24 +18,27 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(FSDirectory& dir) : AbstractStorage(dir), block_path_(dir.block_path()) {
+EncStorage::EncStorage(FSDirectory& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage"), block_path_(dir.block_path()) {
 	bool block_path_created = fs::create_directories(block_path_);
+#if BOOST_OS_WINDOWS
+	SetFileAttributes() // Use SetFileAttributes to set block_path_ as HIDDEN.
+#endif
 	log_->debug() << log_tag() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
 }
 
 fs::path EncStorage::make_encblock_name(const blob& encrypted_data_hash) const {
-	return crypto::Base32().to_string(encrypted_data_hash);
+	return std::string("block-") + crypto::Base32().to_string(encrypted_data_hash);
 }
 
 fs::path EncStorage::make_encblock_path(const blob& encrypted_data_hash) const {
 	return block_path_ / make_encblock_name(encrypted_data_hash);
 }
 
-bool EncStorage::have_block(const blob& encrypted_data_hash) {
+bool EncStorage::have_block(const blob& encrypted_data_hash) const {
 	return fs::exists(make_encblock_path(encrypted_data_hash));
 }
 
-std::shared_ptr<blob> EncStorage::get_block(const blob& encrypted_data_hash) {
+std::shared_ptr<blob> EncStorage::get_block(const blob& encrypted_data_hash) const {
 	try {
 		auto block_path = make_encblock_path(encrypted_data_hash);
 

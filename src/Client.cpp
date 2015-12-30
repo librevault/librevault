@@ -31,6 +31,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	cert_path_ = appdata_path_ / "cert.pem";
 
 	// Initializing log
+	name_ = "Client";
 	switch(args["-v"].asLong()) {
 		case 2:     init_log(spdlog::level::trace); break;
 		case 1:     init_log(spdlog::level::debug); break;

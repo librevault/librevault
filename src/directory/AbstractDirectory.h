@@ -24,7 +24,7 @@ class Client;
 class Exchanger;
 class ExchangeGroup;
 
-class AbstractDirectory : protected Loggable {
+class AbstractDirectory : public Loggable {
 	friend class ExchangeGroup;
 public:
 	struct error : std::runtime_error {
@@ -47,25 +47,15 @@ public:
 	virtual std::string name() const = 0;
 	std::shared_ptr<ExchangeGroup> exchange_group() {return exchange_group_.lock();}
 
-	const std::map<blob, std::pair<int64_t, bitfield_type>>& path_id_info() {return path_id_info_;}
-
 	// Other functions
 	static std::string path_id_readable(const blob& path_id);
 	static std::string encrypted_data_hash_readable(const blob& block_id);
-
-	// Loggable
-	std::string log_tag() const {return std::string("[") + name() + "] ";}
 
 protected:
 	Client& client_;
 	Exchanger& exchanger_;
 
 	std::weak_ptr<ExchangeGroup> exchange_group_;
-
-	std::map<blob, std::pair<int64_t, bitfield_type>> path_id_info_;
-	std::shared_timed_mutex path_id_info_mtx_;
-
-	bool will_accept_meta(const Meta::PathRevision& path_revision);
 };
 
 } /* namespace librevault */

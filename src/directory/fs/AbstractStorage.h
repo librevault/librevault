@@ -20,7 +20,7 @@
 namespace librevault {
 
 class FSDirectory;
-class AbstractStorage : public Loggable {
+class AbstractStorage {
 public:
 	AbstractStorage(FSDirectory& dir);
 	virtual ~AbstractStorage() {};
@@ -28,7 +28,7 @@ public:
 	bool verify_block(const blob& encrypted_data_hash, const blob& data, cryptodiff::StrongHashType strong_hash_type) const {
 		return encrypted_data_hash == cryptodiff::compute_strong_hash(data, strong_hash_type);
 	}
-	virtual std::shared_ptr<blob> get_block(const blob& block_hash) = 0;
+	virtual std::shared_ptr<blob> get_block(const blob& block_hash) const = 0;
 
 protected:
 	FSDirectory& dir_;

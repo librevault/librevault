@@ -36,7 +36,6 @@ public:
 	void prepare_deleted_assemble(const std::string& relpath);
 
 private:
-	std::shared_ptr<spdlog::logger> log_;
 	FSDirectory& dir_;
 	Client& client_;
 

@@ -30,12 +30,10 @@ StaticDiscovery::StaticDiscovery(Client& client, Exchanger& exchanger) :
 StaticDiscovery::~StaticDiscovery() {}
 
 void StaticDiscovery::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
-	for(auto& dir_ptr : group_ptr->fs_dirs()){
-		auto node_tree = dir_ptr->dir_options().equal_range("node");
-		for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
-			url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
-			add_node(connection_url, group_ptr);
-		}
+	auto node_tree = group_ptr->fs_dir()->dir_options().equal_range("node");
+	for(auto node_tree_it = node_tree.first; node_tree_it != node_tree.second; node_tree_it++){
+		url connection_url = parse_url(node_tree_it->second.get_value<std::string>());
+		add_node(connection_url, group_ptr);
 	}
 }
 

@@ -49,7 +49,6 @@ public:
 
 	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
 
-	void name(std::string new_name) const {name_ = std::move(new_name);}
 	std::string name() const {return name_;}
 
 	blob local_token();
@@ -60,7 +59,7 @@ public:
 
 	// Handshake
 	void perform_handshake();
-	bool is_handshaken() const {return handshake_performed_;}
+	bool is_handshaken() const {return is_handshaken_;}
 
 	// Choking
 	void choke();
@@ -91,7 +90,7 @@ private:
 	void update_remote_endpoint();
 
 	std::unique_ptr<AbstractParser> parser_;
-	bool handshake_performed_ = false;
+	bool is_handshaken_ = false;
 
 	websocketpp::connection_hdl connection_handle_;
 

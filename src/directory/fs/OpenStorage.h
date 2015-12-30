@@ -23,7 +23,7 @@
 namespace librevault {
 
 class FSDirectory;
-class OpenStorage : public AbstractStorage {
+class OpenStorage : public AbstractStorage, public Loggable {
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -40,13 +40,14 @@ public:
 	// Path constructor
 	blob make_path_id(const std::string& relpath) const;
 
-	bool have_block(const blob& encrypted_data_hash);
-	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash);
-	blob get_openblock(const blob& encrypted_data_hash);
+	bool have_block(const blob& encrypted_data_hash) const;
+	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash) const;
+	blob get_openblock(const blob& encrypted_data_hash) const;
 
 	// File assembler
 	/**
-	 * Searches for unassembled files ready to be assembled and assembles them
+	 * Tries to assemble files, indexed by Meta.
+	 * @param meta
 	 * @param delete_blocks
 	 */
 	void assemble(const Meta& meta, bool delete_blocks = true);
@@ -67,7 +68,14 @@ private:
 	Index& index_;
 	EncStorage& enc_storage_;
 
-	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_blocks(const blob& encrypted_data_hash);	// Returns std::pair(plaintext, encrypted)
+	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_blocks(const blob& encrypted_data_hash) const;	// Returns std::pair(plaintext, encrypted)
+
+	void assemble_deleted(const Meta& meta);
+	void assemble_symlink(const Meta& meta);
+	void assemble_directory(const Meta& meta);
+	void assemble_file(const Meta& meta, bool delete_blocks);
+
+	void apply_attrib(const Meta& meta);
 };
 
 } /* namespace librevault */

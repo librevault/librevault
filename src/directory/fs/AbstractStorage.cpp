@@ -18,6 +18,6 @@
 
 namespace librevault {
 
-AbstractStorage::AbstractStorage(FSDirectory& dir) : Loggable(dir), dir_(dir) {};
+AbstractStorage::AbstractStorage(FSDirectory& dir) : dir_(dir) {};
 
 } /* namespace librevault */

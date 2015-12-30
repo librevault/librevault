@@ -63,9 +63,11 @@ public:
 
 	blob get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
 
-	bool have_block(const blob& encrypted_data_hash);
+	bool have_block(const blob& encrypted_data_hash) const;
 	blob get_block(const blob& encrypted_data_hash);
 	void put_block(const blob& encrypted_data_hash, const blob& block);
+
+	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
 
 	/* Makers */
 	std::string make_relpath(const fs::path& path) const;
@@ -86,7 +88,7 @@ private:
 	const Key key_;
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
-	bitfield_type make_bitfield(const Meta& meta);
+	bitfield_type make_bitfield(const Meta& meta) const;
 };
 
 } /* namespace librevault */

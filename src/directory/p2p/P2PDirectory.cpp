@@ -82,7 +82,7 @@ void P2PDirectory::send_message(const blob& message) {
 }
 
 void P2PDirectory::perform_handshake() {
-	if(!exchange_group_.lock()) throw protocol_error();
+	if(!exchange_group()) throw protocol_error();
 
 	AbstractParser::Handshake message_struct;
 	message_struct.auth_token = local_token();
@@ -94,7 +94,7 @@ void P2PDirectory::perform_handshake() {
 
 /* RPC Actions */
 void P2PDirectory::choke() {
-	if(am_choking_ == false) {
+	if(! am_choking_) {
 		blob message = {AbstractParser::CHOKE};
 		send_message(message);
 		am_choking_ = true;
@@ -103,7 +103,7 @@ void P2PDirectory::choke() {
 	}
 }
 void P2PDirectory::unchoke() {
-	if(am_choking_ == true) {
+	if(am_choking_) {
 		blob message = {AbstractParser::UNCHOKE};
 		send_message(message);
 		am_choking_ = false;
@@ -112,7 +112,7 @@ void P2PDirectory::unchoke() {
 	}
 }
 void P2PDirectory::interest() {
-	if(am_interested_ == false) {
+	if(! am_interested_) {
 		blob message = {AbstractParser::INTERESTED};
 		send_message(message);
 		am_interested_ = true;
@@ -121,7 +121,7 @@ void P2PDirectory::interest() {
 	}
 }
 void P2PDirectory::uninterest() {
-	if(am_interested_ == true) {
+	if(am_interested_) {
 		blob message = {AbstractParser::NOT_INTERESTED};
 		send_message(message);
 		am_interested_ = false;
@@ -138,7 +138,7 @@ void P2PDirectory::post_have_meta(const Meta::PathRevision& revision, const bitf
 
 	log_->debug() << log_tag() << "==> HAVE_META:"
 		<< " path_id=" << path_id_readable(message.revision.path_id_)
-		<< " revision=" << path_id_readable(message.revision.path_id_)
+		<< " revision=" << message.revision.revision_
 		<< " bits=" << message.bitfield;
 }
 void P2PDirectory::post_have_block(const blob& encrypted_data_hash) {
@@ -258,30 +258,46 @@ void P2PDirectory::handle_Handshake(const blob& message_raw) {
 	if(role_ == P2PProvider::SERVER) perform_handshake();
 
 	log_->debug() << log_tag() << "LV Handshake successful";
-	handshake_performed_ = true;
+	is_handshaken_ = true;
 
-	exchange_group_.lock()->request_introduce(shared_from_this());
+	exchange_group_.lock()->handle_handshake(shared_from_this());
 }
 
 void P2PDirectory::handle_Choke(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_Choke()";
 	log_->debug() << log_tag() << "<== CHOKE";
-	exchange_group()->handle_choke(shared_from_this());
+
+	if(! peer_choking_) {
+		peer_choking_ = true;
+		exchange_group()->handle_choke(shared_from_this());
+	}
 }
 void P2PDirectory::handle_Unchoke(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_Unchoke()";
 	log_->debug() << log_tag() << "<== UNCHOKE";
-	exchange_group()->handle_unchoke(shared_from_this());
+
+	if(peer_choking_) {
+		peer_choking_ = false;
+		exchange_group()->handle_unchoke(shared_from_this());
+	}
 }
 void P2PDirectory::handle_Interested(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_Interested()";
 	log_->debug() << log_tag() << "<== INTERESTED";
-	exchange_group()->handle_interested(shared_from_this());
+
+	if(! peer_interested_) {
+		peer_interested_ = true;
+		exchange_group()->handle_interested(shared_from_this());
+	}
 }
 void P2PDirectory::handle_NotInterested(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_NotInterested()";
 	log_->debug() << log_tag() << "<== NOT_INTERESTED";
-	exchange_group()->handle_not_interested(shared_from_this());
+
+	if(peer_interested_) {
+		peer_interested_ = false;
+		exchange_group()->handle_not_interested(shared_from_this());
+	}
 }
 
 void P2PDirectory::handle_HaveMeta(const blob& message_raw) {
@@ -293,16 +309,15 @@ void P2PDirectory::handle_HaveMeta(const blob& message_raw) {
 		<< " revision=" << message_struct.revision.revision_
 		<< " bits=" << message_struct.bitfield;
 
-	path_id_info_.insert({message_struct.revision.path_id_, {message_struct.revision.revision_, message_struct.bitfield}});
 	exchange_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
 }
 void P2PDirectory::handle_HaveBlock(const blob& message_raw) {
-#   warning "Not implemented yet"
 	log_->trace() << log_tag() << "handle_HaveBlock()";
 
 	auto message_struct = parser_->parse_HaveBlock(message_raw);
 	log_->debug() << log_tag() << "<== HAVE_BLOCK:"
 		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash);
+	exchange_group()->notify_block(shared_from_this(), message_struct.encrypted_data_hash);
 }
 
 void P2PDirectory::handle_MetaRequest(const blob& message_raw) {
@@ -324,10 +339,7 @@ void P2PDirectory::handle_MetaReply(const blob& message_raw) {
 		<< " revision=" << message_struct.smeta.meta().revision()
 		<< " bits=" << message_struct.bitfield;
 
-	exchange_group()->post_meta(shared_from_this(), message_struct.smeta);
-
-	path_id_info_.insert({message_struct.smeta.meta().path_id(), {message_struct.smeta.meta().revision(), message_struct.bitfield}});
-	exchange_group()->notify_meta(shared_from_this(), message_struct.smeta.meta().path_revision(), message_struct.bitfield);
+	exchange_group()->post_meta(shared_from_this(), message_struct.smeta, message_struct.bitfield);
 }
 void P2PDirectory::handle_MetaCancel(const blob& message_raw) {
 #   warning "Not implemented yet"

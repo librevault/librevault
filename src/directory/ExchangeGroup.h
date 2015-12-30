@@ -28,6 +28,7 @@ class RemoteDirectory;
 class FSDirectory;
 class P2PDirectory;
 
+class Uploader;
 class Downloader;
 
 class ExchangeGroup : public std::enable_shared_from_this<ExchangeGroup>, protected Loggable {
@@ -44,20 +45,23 @@ public:
 	ExchangeGroup(Client& client, Exchanger& exchanger);
 
 	/* Actions */
+	// FSDirectory actions
+	void notify_meta(std::shared_ptr<FSDirectory> origin, Meta::PathRevision revision, bitfield_type bitfield);
+	void notify_block(std::shared_ptr<FSDirectory> origin, const blob& encrypted_data_hash);
+
+	// RemoteDirectory actions
+	void handle_handshake(std::shared_ptr<RemoteDirectory> origin);
+
 	void handle_choke(std::shared_ptr<RemoteDirectory> origin);
 	void handle_unchoke(std::shared_ptr<RemoteDirectory> origin);
 	void handle_interested(std::shared_ptr<RemoteDirectory> origin);
 	void handle_not_interested(std::shared_ptr<RemoteDirectory> origin);
 
-	void request_introduce(std::shared_ptr<P2PDirectory> origin);
-
-	void notify_meta(std::shared_ptr<FSDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_block(std::shared_ptr<FSDirectory> origin, const blob& encrypted_data_hash);
-
-	void notify_meta(std::shared_ptr<P2PDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void notify_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void notify_block(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash);
 
 	void request_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision);
-	void post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta);
+	void post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
 
 	void request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
 	void post_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset);
@@ -72,8 +76,8 @@ public:
 	bool have_p2p_dir(const blob& pubkey);
 
 	/* Getters */
-	std::set<std::shared_ptr<FSDirectory>> fs_dirs() const;
-	const std::set<std::shared_ptr<P2PDirectory>>& p2p_dirs() const;
+	std::shared_ptr<FSDirectory> fs_dir() const {return fs_dir_;}
+	std::set<std::shared_ptr<P2PDirectory>> p2p_dirs() const {return p2p_dirs_;}
 
 	const Key& key() const;
 	const blob& hash() const;
@@ -81,6 +85,7 @@ private:
 	Client& client_;
 	Exchanger& exchanger_;
 
+	std::shared_ptr<Uploader> uploader_;
 	std::shared_ptr<Downloader> downloader_;
 
 	/* Members */

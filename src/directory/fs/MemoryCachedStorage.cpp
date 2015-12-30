@@ -18,15 +18,13 @@
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(FSDirectory& dir) : AbstractStorage(dir) {
+MemoryCachedStorage::MemoryCachedStorage(FSDirectory& dir) : AbstractStorage(dir), Loggable(dir, "MemoryCachedStorage") {}
 
-}
-
-bool MemoryCachedStorage::have_block(const blob& encrypted_data_hash) {
+bool MemoryCachedStorage::have_block(const blob& encrypted_data_hash) const {
 	return cache_iteraror_map_.find(encrypted_data_hash) != cache_iteraror_map_.end();
 }
 
-std::shared_ptr<blob> MemoryCachedStorage::get_block(const blob& encrypted_data_hash) {
+std::shared_ptr<blob> MemoryCachedStorage::get_block(const blob& encrypted_data_hash) const {
 	auto it = cache_iteraror_map_.find(encrypted_data_hash);
 	if(it == cache_iteraror_map_.end()) {
 		throw AbstractDirectory::no_such_block();

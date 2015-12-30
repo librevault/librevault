@@ -40,7 +40,7 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 		open_path_(dir_options_.get<fs::path>("open_path")),
 		block_path_(dir_options_.get<fs::path>("block_path", open_path_ / ".librevault")),
 		db_path_(dir_options_.get<fs::path>("db_path", block_path_ / "directory.db")),
-		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_ / "assembled.part")) {
+		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_)) {
 	name_ = name();
 	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
 
@@ -60,13 +60,24 @@ FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger
 
 FSDirectory::~FSDirectory() {}
 
+// TODO: rewrite.
 bool FSDirectory::have_meta(const blob& path_id) {
-	return path_id_info_.find(path_id) != path_id_info_.end();
+	try {
+		get_meta(path_id);
+	}catch(AbstractDirectory::no_such_meta& e){
+		return false;
+	}
+	return true;
 }
 
+// TODO: rewrite.
 bool FSDirectory::have_meta(const Meta::PathRevision& path_revision) {
-	auto it = path_id_info_.find(path_revision.path_id_);
-	return it != path_id_info_.end() && it->second.first == path_revision.revision_;
+	try {
+		get_meta(path_revision);
+	}catch(AbstractDirectory::no_such_meta& e){
+		return false;
+	}
+	return true;
 }
 
 Meta::SignedMeta FSDirectory::get_meta(const blob& path_id) {
@@ -85,7 +96,6 @@ std::list<Meta::SignedMeta> FSDirectory::get_meta_containing(const blob& encrypt
 }
 
 void FSDirectory::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
-	std::unique_lock<std::shared_timed_mutex> lk(path_id_info_mtx_);
 	auto path_revision = smeta.meta().path_revision();
 
 	index->put_Meta(smeta, fully_assembled);
@@ -93,11 +103,13 @@ void FSDirectory::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
 	bitfield_type bitfield;
 	if(!fully_assembled) {
 		bitfield = make_bitfield(smeta.meta());
+		if(bitfield.all()) {
+			open_storage->assemble(smeta.meta(), true);
+		}
 	}else{
 		bitfield.resize(smeta.meta().blocks().size(), true);
 	}
 
-	path_id_info_[path_revision.path_id_] = {path_revision.revision_, bitfield};
 	exchange_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
@@ -109,7 +121,7 @@ blob FSDirectory::get_chunk(const blob& encrypted_data_hash, uint32_t offset, ui
 		throw AbstractDirectory::no_such_block();
 }
 
-bool FSDirectory::have_block(const blob& encrypted_data_hash) {
+bool FSDirectory::have_block(const blob& encrypted_data_hash) const {
 	return enc_storage->have_block(encrypted_data_hash) || open_storage->have_block(encrypted_data_hash);
 }
 
@@ -133,6 +145,21 @@ blob FSDirectory::get_block(const blob& encrypted_data_hash) {
 void FSDirectory::put_block(const blob& encrypted_data_hash, const blob& block) {
 	enc_storage->put_block(encrypted_data_hash, block);
 	exchange_group_.lock()->notify_block(shared_from_this(), encrypted_data_hash);
+
+	if(open_storage) {
+		auto meta_list = get_meta_containing(encrypted_data_hash);
+		for(auto& smeta : meta_list) {
+			auto bitfield = make_bitfield(smeta.meta());
+			if(bitfield.all()) {
+				open_storage->assemble(smeta.meta(), true);
+			}
+		}
+	}
+}
+
+// TODO: Maybe, add some caching
+bitfield_type FSDirectory::get_bitfield(const Meta::PathRevision& path_revision) {
+	return make_bitfield(get_meta(path_revision).meta());
 }
 
 /* Makers */
@@ -140,7 +167,7 @@ std::string FSDirectory::make_relpath(const fs::path& path) const {
 	return ::librevault::make_relpath(path, open_path());
 }
 
-bitfield_type FSDirectory::make_bitfield(const Meta& meta) {
+bitfield_type FSDirectory::make_bitfield(const Meta& meta) const {
 	bitfield_type bitfield(meta.blocks().size());
 
 	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.blocks().size(); bitfield_idx++)

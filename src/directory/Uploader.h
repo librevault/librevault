@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,29 +13,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "../pch.h"
 #pragma once
-#include "../../pch.h"
-#include "AbstractStorage.h"
+#include "../util/Loggable.h"
+#include "Key.h"
+#include "AbstractDirectory.h"
+#include "../util/AvailabilityMap.h"
 
 namespace librevault {
 
 class Client;
-class FSDirectory;
-class EncStorage : public AbstractStorage, public Loggable {
-public:
-	EncStorage(FSDirectory& dir);
-	virtual ~EncStorage() {}
+class RemoteDirectory;
+class ExchangeGroup;
 
-	bool have_block(const blob& encrypted_data_hash) const;
-	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash) const;
-	void put_block(const blob& encrypted_data_hash, const blob& data);	// FIXME: Check hash
-	void remove_block(const blob& encrypted_data_hash);
+class Uploader : public std::enable_shared_from_this<Uploader>, protected Loggable {
+public:
+	Uploader(Client& client, ExchangeGroup& exchange_group);
+
+	void handle_interested(std::shared_ptr<RemoteDirectory> remote);
+	void handle_not_interested(std::shared_ptr<RemoteDirectory> remote);
+
+	void request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
 
 private:
-	const fs::path& block_path_;
-
-	fs::path make_encblock_name(const blob& encrypted_data_hash) const;
-	fs::path make_encblock_path(const blob& encrypted_data_hash) const;
+	Client& client_;
+	ExchangeGroup& exchange_group_;
 };
 
 } /* namespace librevault */

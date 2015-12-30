@@ -24,8 +24,8 @@ protected:
 	mutable std::string name_;
 
 	Loggable() {}
-	Loggable(Loggable& parent_loggable) : log_(parent_loggable.log_) {}
-	Loggable(Loggable& parent_loggable, const std::string& name) : log_(parent_loggable.log_), name_(name) {}
+	Loggable(Loggable& parent_loggable) : log_(parent_loggable.log_), name_(parent_loggable.name_) {}
+	Loggable(Loggable& parent_loggable, const std::string& name) : log_(parent_loggable.log_), name_(parent_loggable.name_+"."+name) {}
 	virtual std::string log_tag() const {return name_.empty() ? "" : std::string("[") + name_ + "] ";}
 };
 

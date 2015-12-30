@@ -19,16 +19,17 @@
 
 namespace librevault {
 
+template <typename OffsetT = uint64_t>
 class AvailabilityMap {
 public:
 	struct error : public std::runtime_error {
 		error() : std::runtime_error("AvailabilityMap allocation error") {}
 	};
 
-	using offset_type = uint64_t;
+	using offset_type = OffsetT;
 	using underlying_container = std::map<offset_type, offset_type>;
 	using block_type = std::pair<offset_type, offset_type>;
-	using const_iterator = underlying_container::const_iterator;
+	using const_iterator = typename underlying_container::const_iterator;
 
 	AvailabilityMap(offset_type size) : size_original_(size), size_left_(size) {
 		available_map_.insert({0, size_original_});

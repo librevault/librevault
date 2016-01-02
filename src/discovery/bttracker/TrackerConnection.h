@@ -16,7 +16,7 @@
 #pragma once
 #include "../../pch.h"
 #include "../../util/Loggable.h"
-#include "../../net/parse_url.h"
+#include "src/util/parse_url.h"
 
 namespace librevault {
 

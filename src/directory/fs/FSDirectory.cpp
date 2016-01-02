@@ -24,7 +24,7 @@
 #include "AutoIndexer.h"
 
 #include "../../Client.h"
-#include "../../net/parse_url.h"
+#include "src/util/parse_url.h"
 #include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 

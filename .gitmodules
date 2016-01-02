@@ -4,12 +4,12 @@
 [submodule "contrib/spdlog"]
 	path = contrib/spdlog
 	url = https://github.com/GamePad64/spdlog.git
-[submodule "contrib/include/lvcrypto"]
-	path = contrib/include/lvcrypto
-	url = https://github.com/GamePad64/lvcrypto.git
 [submodule "contrib/include/lvsqlite3"]
 	path = contrib/include/lvsqlite3
 	url = https://github.com/GamePad64/lvsqlite3.git
 [submodule "contrib/docopt"]
 	path = contrib/docopt
 	url = https://github.com/docopt/docopt.cpp.git
+[submodule "liblibrevault"]
+	path = liblibrevault
+	url = https://bitbucket.org/librevault/liblibrevault

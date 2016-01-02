@@ -13,11 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../Client.h"
+#include "src/Client.h"
 #include "AbstractDirectory.h"
 #include "Exchanger.h"
-
-#include "../util/bit_reverse.h"
 
 namespace librevault {
 

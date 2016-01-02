@@ -20,7 +20,6 @@
 namespace librevault {
 
 class Client;
-class FSDirectory;
 // Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
 class MemoryCachedStorage : public AbstractStorage, public Loggable {
 public:

@@ -13,10 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "Meta.h"
-#include "../util/Loggable.h"
+#include <librevault/Meta.h>
+#include "src/util/Loggable.h"
 
 namespace librevault {
 

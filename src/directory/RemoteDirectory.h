@@ -15,7 +15,7 @@
  */
 #include "../pch.h"
 #pragma once
-#include "Meta.h"
+#include <librevault/Meta.h>
 #include "AbstractDirectory.h"
 
 namespace librevault {

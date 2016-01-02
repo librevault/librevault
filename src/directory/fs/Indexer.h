@@ -14,12 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
-#include "../Key.h"
+#include "src/pch.h"
 #include "Index.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
-#include "../Meta.h"
+#include <librevault/Meta.h>
 
 namespace librevault {
 

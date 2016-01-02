@@ -16,7 +16,7 @@
 #include "../pch.h"
 #pragma once
 #include "../util/Loggable.h"
-#include "Key.h"
+#include <librevault/Key.h>
 #include "AbstractDirectory.h"
 
 namespace librevault {

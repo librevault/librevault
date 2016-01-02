@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.2)
 # Settable options
 #============================================================================
 
-option(WITH_COTIRE "Use cotire for builds." ON)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 
 #============================================================================
@@ -13,14 +12,13 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
 #============================================================================
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-if(WITH_COTIRE)
-	include(cotire)
-endif()
 include(GNUInstallDirs)
 
 #============================================================================
 # Internal compiler options
 #============================================================================
+
+add_subdirectory(liblibrevault)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -88,10 +86,7 @@ configure_file("appver.in.h" "appver.h")
 #============================================================================
 
 add_executable(${PROJECT_NAME} ${SRCS})
-
-if(WITH_COTIRE)
-	cotire(${PROJECT_NAME})
-endif()
+target_link_libraries(${PROJECT_NAME} liblibrevault)
 
 #============================================================================
 # Third-party libraries
@@ -107,7 +102,6 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 # Docopt
 add_subdirectory("contrib/docopt")
-#include_directories("contrib/docopt")
 target_link_libraries(${PROJECT_NAME} docopt_s)
 
 # Boost
@@ -121,7 +115,6 @@ set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
-# /Boost
 
 # cpp-netlib
 #find_package(cppnetlib 0.11.1 REQUIRED)
@@ -163,11 +156,6 @@ target_include_directories(librevault-protobuf PUBLIC ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} librevault-protobuf)
-
-if(WITH_COTIRE)
-	set_source_files_properties("src/Version.cpp" PROPERTIES COTIRE_EXCLUDED ON)	# As it changes every commit
-	set_source_files_properties(${PROTO_SOURCES} PROPERTIES COTIRE_EXCLUDED ON)
-endif()
 
 # CryptoPP
 find_package(CryptoPP 5.6.2 REQUIRED)
@@ -212,11 +200,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include"
 #============================================================================
 
 if(BUILD_DOCUMENTATION)
-	find_package(Doxygen)
-	if(NOT DOXYGEN_FOUND)
-		message(FATAL_ERROR
-				"Doxygen is needed to build the documentation. Please install it correctly")
-	endif()
+	find_package(Doxygen REQUIRED)
 	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
 	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
 endif()

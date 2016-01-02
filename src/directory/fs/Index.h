@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
-#include "../Meta.h"
+#include "src/pch.h"
+#include <librevault/Meta.h>
 #include "../../util/Loggable.h"
 
 namespace librevault {

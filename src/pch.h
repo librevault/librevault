@@ -22,12 +22,12 @@
 #include <lvsqlite3/SQLiteWrapper.h>
 
 // LVCrypto
-#include <lvcrypto/HMAC-SHA3.h>
-#include <lvcrypto/Base64.h>
-#include <lvcrypto/Base32.h>
-#include <lvcrypto/LuhnModN.h>
-#include <lvcrypto/Hex.h>
-#include <lvcrypto/AES_CBC.h>
+#include <librevault/crypto/HMAC-SHA3.h>
+#include <librevault/crypto/Base64.h>
+#include <librevault/crypto/Base32.h>
+#include <librevault/crypto/LuhnModN.h>
+#include <librevault/crypto/Hex.h>
+#include <librevault/crypto/AES_CBC.h>
 
 // natpmp
 #include <natpmp.h>

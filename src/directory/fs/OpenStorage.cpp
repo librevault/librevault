@@ -19,8 +19,6 @@
 #include "IgnoreList.h"
 #include "AutoIndexer.h"
 
-#include "../Meta.h"
-
 namespace librevault {
 
 OpenStorage::OpenStorage(FSDirectory& dir) :

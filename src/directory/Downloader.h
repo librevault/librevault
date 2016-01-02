@@ -13,12 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "../util/Loggable.h"
-#include "Key.h"
 #include "RemoteDirectory.h"
-#include "../util/AvailabilityMap.h"
+
+#include "src/util/AvailabilityMap.h"
+
 
 namespace librevault {
 

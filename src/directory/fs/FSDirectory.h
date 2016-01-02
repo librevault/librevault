@@ -14,10 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
 #include "../AbstractDirectory.h"
-
-#include "../Key.h"
 
 namespace librevault {
 

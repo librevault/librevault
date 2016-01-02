@@ -23,7 +23,7 @@
 
 namespace librevault {
 
-class Key {
+class Secret {
 public:
 	enum Type : char {
 		Owner = 'A',	/// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
@@ -39,15 +39,15 @@ public:
 		format_error() : error("Secret format mismatch") {}
 	};
 	struct level_error : public error {
-		level_error() : error("Key has insufficient privileges for this action") {}
+		level_error() : error("Secret has insufficient privileges for this action") {}
 	};
 	struct crypto_error : public error {
 		crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
 	};
 
-	Key();
-	Key(Type type, const std::vector<uint8_t>& payload);
-	Key(std::string string_secret);
+	Secret();
+	Secret(Type type, const std::vector<uint8_t>& payload);
+	Secret(std::string string_secret);
 
 	std::string string() const {return secret_s;}
 	operator std::string() const {return string();}
@@ -55,8 +55,8 @@ public:
 	Type get_type() const {return (Type)secret_s.front();}
 	char get_check_char() const {return secret_s.back();}
 
-	// Key derivers
-	Key derive(Type key_type) const;
+	// Secret derivers
+	Secret derive(Type key_type) const;
 
 	// Payload getters
 	const std::vector<uint8_t>& get_Private_Key() const;
@@ -65,8 +65,8 @@ public:
 
 	const std::vector<uint8_t>& get_Hash() const;
 
-	bool operator== (const Key& key) const {return secret_s == key.secret_s;}
-	bool operator< (const Key& key) const {return secret_s < key.secret_s;}
+	bool operator== (const Secret& key) const {return secret_s == key.secret_s;}
+	bool operator< (const Secret& key) const {return secret_s < key.secret_s;}
 
 private:
 	static constexpr size_t private_key_size = 32;
@@ -86,6 +86,6 @@ private:
 	std::vector<uint8_t> get_payload() const;
 };
 
-std::ostream& operator<<(std::ostream& os, const Key& k);
+std::ostream& operator<<(std::ostream& os, const Secret& k);
 
 } /* namespace librevault */

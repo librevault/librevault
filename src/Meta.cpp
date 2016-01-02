@@ -24,7 +24,7 @@
 
 namespace librevault {
 
-Meta::SignedMeta::SignedMeta(blob raw_meta, blob signature, const Key& secret, bool check_signature) :
+Meta::SignedMeta::SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature) :
 	raw_meta_(std::make_shared<blob>(std::move(raw_meta))),
 	signature_(std::make_shared<blob>(std::move(signature))) {
 	// TODO: check signature
@@ -71,8 +71,8 @@ uint64_t Meta::size() const {
 	return total_size;
 }
 
-cryptodiff::FileMap Meta::filemap(const Key& key) {
-	cryptodiff::FileMap new_filemap(key.get_Encryption_Key());
+cryptodiff::FileMap Meta::filemap(const Secret& secret) {
+	cryptodiff::FileMap new_filemap(secret.get_Encryption_Key());
 
 	new_filemap.set_minblocksize(min_blocksize());
 	new_filemap.set_maxblocksize(max_blocksize());
@@ -91,22 +91,22 @@ void Meta::set_filemap(const cryptodiff::FileMap& new_filemap) {
 	set_blocks(new_filemap.blocks());
 }
 
-std::string Meta::path(const Key& key) const {
-	blob result = encrypted_path_ | crypto::De<crypto::AES_CBC>(key.get_Encryption_Key(), encrypted_path_iv_);
+std::string Meta::path(const Secret& secret) const {
+	blob result = encrypted_path_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), encrypted_path_iv_);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
-void Meta::set_path(const std::string& path, const Key& key) {
+void Meta::set_path(const std::string& path, const Secret& secret) {
 	randomize_encrypted_path_iv();
-	set_encrypted_path(path | crypto::AES_CBC(key.get_Encryption_Key(), encrypted_path_iv_));
+	set_encrypted_path(path | crypto::AES_CBC(secret.get_Encryption_Key(), encrypted_path_iv_));
 }
 
-std::string Meta::symlink_path(const Key& key) const {
-	blob result = symlink_encrypted_path_ | crypto::De<crypto::AES_CBC>(key.get_Encryption_Key(), symlink_encrypted_path_iv_);
+std::string Meta::symlink_path(const Secret& secret) const {
+	blob result = symlink_encrypted_path_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), symlink_encrypted_path_iv_);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
-void Meta::set_symlink_path(const std::string& path, const Key& key) {
+void Meta::set_symlink_path(const std::string& path, const Secret& secret) {
 	randomize_symlink_encrypted_path_iv();
-	set_symlink_encrypted_path(path | crypto::AES_CBC(key.get_Encryption_Key(), symlink_encrypted_path_iv_));
+	set_symlink_encrypted_path(path | crypto::AES_CBC(secret.get_Encryption_Key(), symlink_encrypted_path_iv_));
 }
 
 blob Meta::gen_random_iv() const {

@@ -16,7 +16,7 @@
 #pragma once
 
 #include <librevault/definitions.h>
-#include <librevault/Key.h>
+#include <librevault/Secret.h>
 #include <cryptodiff.h>
 
 namespace librevault {
@@ -80,7 +80,7 @@ public:
 		};
 
 		SignedMeta() {}
-		SignedMeta(blob raw_meta, blob signature, const Key& secret, bool check_signature = true);
+		SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature = true);
 
 		operator bool() const {return meta_ && raw_meta_ && signature_;}
 
@@ -113,15 +113,15 @@ public:
 	}
 	uint64_t size() const;
 
-	cryptodiff::FileMap filemap(const Key& key);
+	cryptodiff::FileMap filemap(const Secret& secret);
 	void set_filemap(const cryptodiff::FileMap& new_filemap);
 
 	// Path encryptors+setters
-	std::string path(const Key& key) const;
-	void set_path(const std::string& path, const Key& key);
+	std::string path(const Secret& secret) const;
+	void set_path(const std::string& path, const Secret& secret);
 
-	std::string symlink_path(const Key& key) const;
-	void set_symlink_path(const std::string& path, const Key& key);
+	std::string symlink_path(const Secret& secret) const;
+	void set_symlink_path(const std::string& path, const Secret& secret);
 
 	// IV randomizers
 	void randomize_encrypted_path_iv() {set_encrypted_path_iv(gen_random_iv());}

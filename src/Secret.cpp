@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <librevault/Key.h>
+#include <librevault/Secret.h>
 #include <librevault/crypto/LuhnModN.h>
 
 #include <cryptopp/eccrypto.h>
@@ -27,7 +27,7 @@ using CryptoPP::ASN1::secp256r1;
 
 namespace librevault {
 
-Key::Key() {
+Secret::Secret() {
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
 	private_key.Initialize(rng, secp256r1());
@@ -40,30 +40,30 @@ Key::Key() {
 	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
-Key::Key(Type type, const std::vector<uint8_t>& binary_part) {
+Secret::Secret(Type type, const std::vector<uint8_t>& binary_part) {
 	secret_s.append(1, type);
 	secret_s.append(crypto::Base58().to_string(binary_part));
 	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
 }
 
-Key::Key(std::string string_secret) : secret_s(std::move(string_secret)) {
+Secret::Secret(std::string string_secret) : secret_s(std::move(string_secret)) {
 	auto base58_payload = secret_s.substr(1, this->secret_s.size()-2);
 	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
 
 	// TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
 
-std::vector<uint8_t> Key::get_payload() const {	// TODO: Caching
+std::vector<uint8_t> Secret::get_payload() const {	// TODO: Caching
 	return secret_s.substr(1, this->secret_s.size()-2) | crypto::De<crypto::Base58>();
 }
 
-Key Key::derive(Type key_type) const {
+Secret Secret::derive(Type key_type) const {
 	if(key_type == get_type()) return *this;
 
 	switch(key_type){
 	case Owner:
 	case ReadWrite:
-		return Key(key_type, get_Private_Key());
+		return Secret(key_type, get_Private_Key());
 	case ReadOnly: {
 		std::vector<uint8_t> new_payload(public_key_size+encryption_key_size);
 
@@ -73,16 +73,16 @@ Key Key::derive(Type key_type) const {
 		auto encryption_key_s = get_Encryption_Key();
 		std::copy(encryption_key_s.begin(), encryption_key_s.end(), &new_payload[public_key_size]);
 
-		return Key(key_type, new_payload);
+		return Secret(key_type, new_payload);
 	}
 	case Download:
-		return Key(key_type, get_Encryption_Key());
+		return Secret(key_type, get_Encryption_Key());
 	default:
 		throw level_error();
 	}
 }
 
-const std::vector<uint8_t>& Key::get_Private_Key() const {
+const std::vector<uint8_t>& Secret::get_Private_Key() const {
 	if(!cached_private_key.empty()) return cached_private_key;
 
 	switch(get_type()){
@@ -96,7 +96,7 @@ const std::vector<uint8_t>& Key::get_Private_Key() const {
 	}
 }
 
-const std::vector<uint8_t>& Key::get_Encryption_Key() const {
+const std::vector<uint8_t>& Secret::get_Encryption_Key() const {
 	if(!cached_encryption_key.empty()) return cached_encryption_key;
 
 	switch(get_type()){
@@ -116,7 +116,7 @@ const std::vector<uint8_t>& Key::get_Encryption_Key() const {
 	}
 }
 
-const std::vector<uint8_t>& Key::get_Public_Key() const {
+const std::vector<uint8_t>& Secret::get_Public_Key() const {
 	if(!cached_public_key.empty()) return cached_public_key;
 
 	switch(get_type()){
@@ -146,7 +146,7 @@ const std::vector<uint8_t>& Key::get_Public_Key() const {
 	}
 }
 
-const std::vector<uint8_t>& Key::get_Hash() const {
+const std::vector<uint8_t>& Secret::get_Hash() const {
 	if(!cached_hash.empty()) return cached_hash;
 
 	cached_hash.resize(hash_size);
@@ -154,7 +154,7 @@ const std::vector<uint8_t>& Key::get_Hash() const {
 	return cached_hash;
 }
 
-std::ostream& operator<<(std::ostream& os, const Key& k){
+std::ostream& operator<<(std::ostream& os, const Secret& k){
 	return os << k.string();
 }
 

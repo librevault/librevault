@@ -22,12 +22,12 @@ include(GNUInstallDirs)
 # Internal compiler options
 #============================================================================
 
-### Setting compiler properties
+# Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(MSVC)
 	# Force to always compile with W4

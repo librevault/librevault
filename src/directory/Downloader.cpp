@@ -174,7 +174,7 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 			if(!requested) break;
 		}
 
-		maintain_timer_.expires_at(std::chrono::steady_clock::now() + std::chrono::seconds(10));  // TODO: Replace with value from config, maybe? We don't like hardcoded values.
+		maintain_timer_.expires_from_now(std::chrono::seconds(10));  // TODO: Replace with value from config, maybe? We don't like hardcoded values.
 		maintain_timer_.async_wait(std::bind(&Downloader::maintain_requests, this, std::placeholders::_1));
 	}
 }

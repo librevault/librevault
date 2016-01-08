@@ -16,6 +16,7 @@
 #include "Client.h"
 
 #include "directory/Exchanger.h"
+#include "control/ControlServer.h"
 
 namespace librevault {
 
@@ -38,17 +39,23 @@ Client::Client(std::map<std::string, docopt::value> args) {
 		default:    init_log(spdlog::level::info);
 	}
 
-	// Initializing components
+	// Initializing io_service
 	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
 	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
 
+	// Initializing cryptodiff
+	cryptodiff::set_io_service(etc_ios_->ios());
+
+	// Initializing components
 	config_ = std::make_unique<Config>(*this, config_path_);
 	exchanger_ = std::make_unique<Exchanger>(*this);
+	control_server_ = std::make_unique<ControlServer>(*this);
 }
 
 Client::~Client() {
-	exchanger_.reset();	// Deleted explicitly, because it must be deleted before writing config and destroying io_service;
+	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
+	exchanger_.reset();
 	config_.reset();
 }
 

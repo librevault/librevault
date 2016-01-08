@@ -47,6 +47,8 @@ public:
 	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
 	uint16_t mapped_port() const;
 
+	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
+
 	P2PProvider* p2p_provider();
 private:
 	Client& client_;

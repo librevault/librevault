@@ -90,6 +90,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <boost/range/adaptor/map.hpp>
+
 #include <boost/signals2.hpp>
 
 // docopt

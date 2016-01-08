@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../../pch.h"
+#include "src/pch.h"
 #pragma once
 #include "NodeKey.h"
 #include "src/util/parse_url.h"
-#include "../../util/Loggable.h"
+#include "src/util/Loggable.h"
 #include "websocket_config.h"
 
 namespace librevault {

@@ -23,6 +23,7 @@
 namespace librevault {
 
 class Exchanger;
+class ControlServer;
 class Client : public Loggable {
 public:
 	Client(std::map<std::string, docopt::value> args);
@@ -58,6 +59,7 @@ private:
 
 	// Components
 	std::unique_ptr<Exchanger> exchanger_;
+	std::unique_ptr<ControlServer> control_server_;
 
 	// Paths
 	fs::path default_appdata_path();

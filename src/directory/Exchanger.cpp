@@ -79,6 +79,13 @@ uint16_t Exchanger::mapped_port() const {
 	return natpmp_->public_port();
 }
 
+std::list<std::shared_ptr<ExchangeGroup>> Exchanger::groups() const {
+	std::list<std::shared_ptr<ExchangeGroup>> groups_list;
+	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
+		groups_list.push_back(group_ptr);
+	return groups_list;
+}
+
 P2PProvider* Exchanger::p2p_provider() {
 	return p2p_provider_.get();
 }

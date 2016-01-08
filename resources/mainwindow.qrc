@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/logo">
+        <file>favicon-v.svg</file>
+    </qresource>
+</RCC>

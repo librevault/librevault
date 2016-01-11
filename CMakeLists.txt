@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.2)
 # Settable options
 #============================================================================
 
+option(WITH_COTIRE "Use cotire for builds." ON)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 
 #============================================================================
@@ -12,6 +13,9 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
 #============================================================================
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+if(WITH_COTIRE)
+	include(cotire)
+endif()
 include(GNUInstallDirs)
 
 #============================================================================
@@ -87,6 +91,10 @@ configure_file("appver.in.h" "appver.h")
 
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} liblibrevault)
+
+if(WITH_COTIRE)
+	cotire(${PROJECT_NAME})
+endif()
 
 #============================================================================
 # Third-party libraries

@@ -20,6 +20,10 @@ namespace librevault {
 multi_io_service::multi_io_service(Loggable& parent_loggable, const std::string& name) :
 		Loggable(parent_loggable, name) {}
 
+multi_io_service::~multi_io_service() {
+	stop();
+}
+
 void multi_io_service::start(unsigned thread_count) {
 	ios_work_ = std::make_unique<io_service::work>(ios_);
 

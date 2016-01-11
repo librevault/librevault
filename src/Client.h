@@ -36,7 +36,7 @@ public:
 	Exchanger& exchanger(){return *exchanger_;}
 
 	const Version& version() const {return version_;}
-	ptree& config() {return config_->config();}
+	Config& config() {return *config_;}
 
 	io_service& ios() {return etc_ios_->ios();}
 	io_service& network_ios() {return network_ios_->ios();}

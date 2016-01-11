@@ -24,10 +24,43 @@ public:
 	Config(Loggable& parent_loggable, fs::path config_path);
 	~Config();
 
-	ptree& config() {return config_ptree_;}
+	const ptree& general_config() const;
+	const ptree& default_config() const;
+	const ptree& persistent_config() const;
+
+	enum ConfigType {
+		GENERAL,
+		DEFAULT,
+		PERSISTENT
+	};
+
+	template<class T>
+	T get(const std::string path, ConfigType type = GENERAL) {
+		switch(type) {
+			case GENERAL: return general_config().get<T>(path);
+			case DEFAULT: return default_config().get<T>(path);
+			case PERSISTENT: return persistent_config().get<T>(path);
+		}
+		return T();
+	}
+
+	const ptree& get_child(const std::string path, ConfigType type = GENERAL) {
+		switch(type) {
+			case GENERAL: return general_config().get_child(path);
+			case DEFAULT: return default_config().get_child(path);
+			case PERSISTENT: return persistent_config().get_child(path);
+		}
+		throw;
+	}
 private:
 	fs::path config_path_;
-	ptree config_ptree_;
+
+	mutable std::mutex file_config_mtx_, default_config_mtx_, merged_config_mtx_;
+	mutable std::unique_ptr<ptree> file_config_ptree_, default_config_ptree_, merged_config_ptree_;
+
+	ptree merged_config() const;
+	void merge_value(ptree& merged_conf, const ptree& actual_conf, const ptree& default_conf, const std::string& key) const;
+	void merge_child(ptree& merged_conf, const ptree& actual_conf, const ptree& default_conf, const std::string& key) const;
 };
 
 } /* namespace librevault */

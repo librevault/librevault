@@ -21,10 +21,12 @@ namespace librevault {
 
 IgnoreList::IgnoreList(FSDirectory& dir) : Loggable(dir), dir_(dir) {
 	// Config paths
-	auto ignore_list_its = dir_.dir_options().equal_range("ignore");
-	for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++){
-		add_ignored(ignore_list_it->second.get_value<fs::path>().generic_string());
-	}
+	try {
+		auto ignore_list_its = dir_.dir_options().get_child("ignore_paths").equal_range("");
+		for(auto ignore_list_it = ignore_list_its.first; ignore_list_it != ignore_list_its.second; ignore_list_it++) {
+			add_ignored(ignore_list_it->second.get_value<fs::path>().generic_string());
+		}
+	}catch(boost::property_tree::ptree_bad_path& e){}
 
 	// Predefined paths
 	add_ignored( regex_escape(dir.make_relpath(dir_.block_path())) + R"((\/(.*))?)" );

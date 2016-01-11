@@ -25,7 +25,7 @@ NATPMPService::NATPMPService(Client& client, Exchanger& exchanger) :
 		Loggable(client), client_(client), exchanger_(exchanger), repost_timer_(client.ios()) {
 	reset_public_port();
 
-	if(client_.config().get<bool>("net.natpmp.enabled", true)) perform_mapping();
+	if(client_.config().get<bool>("net.natpmp.enabled")) perform_mapping();
 }
 
 void NATPMPService::schedule_after(std::chrono::seconds interval) {
@@ -44,7 +44,7 @@ void NATPMPService::perform_mapping(const boost::system::error_code& error) {
 										  NATPMP_PROTOCOL_TCP,
 										  exchanger_.p2p_provider()->local_endpoint().port(),
 										  exchanger_.p2p_provider()->local_endpoint().port(),
-										  client_.config().get<uint32_t>("net.natpmp.lifetime", 3600));
+										  client_.config().get<uint32_t>("net.natpmp.lifetime"));
 	log_->trace() << log_tag() << "sendnewportmappingrequest return code:" << natpmp_ec;
 
 	do {

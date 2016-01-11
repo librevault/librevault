@@ -44,10 +44,8 @@ TrackerConnection::info_hash TrackerConnection::get_info_hash() const {
 TrackerConnection::peer_id TrackerConnection::get_peer_id() const {
 	TrackerConnection::peer_id pid;
 
-	std::string default_az_id = "-LV0001-";
-
-	std::string az_id = client_.config().get<std::string>("discovery.bttracker.azureus_id", default_az_id);
-	if(az_id.size() != 8) az_id = default_az_id;
+	std::string az_id = client_.config().get<std::string>("discovery.bttracker.azureus_id");
+	if(az_id.size() != 8) az_id = client_.config().get<std::string>("discovery.bttracker.azureus_id", Config::DEFAULT);
 
 	auto pubkey_bytes_left = pid.size() - az_id.size();
 

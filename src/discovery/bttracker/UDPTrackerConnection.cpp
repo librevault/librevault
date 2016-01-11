@@ -30,9 +30,8 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<
 		resolver_(client.ios()),
 		reconnect_timer_(client.ios()),
 		announce_timer_(client.ios()) {
-	announce_interval_ = std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15));
+	announce_interval_ = std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval"));
 
-	assert(tracker_address_.scheme == "udp");
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
 	bind_address_ = exchanger_.p2p_provider()->local_endpoint().address();
@@ -89,12 +88,12 @@ void UDPTrackerConnection::receive_loop(){
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
-	reconnect_timer_.expires_from_now(std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.udp.reconnect_interval", 60)));
+	reconnect_timer_.expires_from_now(std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.udp.reconnect_interval")));
 	reconnect_timer_.async_wait(std::bind(&UDPTrackerConnection::connect, this, std::placeholders::_1));
 }
 
 void UDPTrackerConnection::bump_announce_timer() {
-	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval", 15)));
+	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(client_.config().get<uint_least32_t>("discovery.bttracker.min_interval")));
 
 	announce_timer_.expires_from_now(announce_interval_);
 	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));

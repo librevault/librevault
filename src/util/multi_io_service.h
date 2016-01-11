@@ -22,6 +22,7 @@ namespace librevault {
 class multi_io_service : protected Loggable {
 public:
 	multi_io_service(Loggable& parent_loggable, const std::string& name);
+	~multi_io_service();
 
 	void start(unsigned thread_count);
 	void stop();

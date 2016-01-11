@@ -28,8 +28,6 @@
 namespace librevault {
 
 Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
-	auto folder_trees = client_.config().equal_range("folder");
-
 	p2p_provider_ = std::make_unique<P2PProvider>(client_, *this);
 	//cloud_provider_ = std::make_unique<CloudProvider>(client_, *this);
 
@@ -40,8 +38,13 @@ Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
 	multicast6_ = std::make_unique<MulticastDiscovery6>(client_, *this);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_, *this);
 
-	for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++){
-		add_directory(folder_tree_it->second);
+	try {
+		auto folder_trees = client_.config().get_child("folders").equal_range("");
+		for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++) {
+			add_directory(folder_tree_it->second);
+		}
+	}catch(boost::property_tree::ptree_bad_path& e) {
+		// No "folders" in config
 	}
 }
 Exchanger::~Exchanger() {}

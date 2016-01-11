@@ -54,7 +54,7 @@ void MulticastSender::send(){
 }
 
 /* MulticastDiscovery */
-MulticastDiscovery::MulticastDiscovery(Client& client, Exchanger& exchanger, ptree& options) :
+MulticastDiscovery::MulticastDiscovery(Client& client, Exchanger& exchanger, const ptree& options) :
 		DiscoveryService(client, exchanger), local_options_(options), socket_(client.ios()) {
 
 	bind_address_ = address::from_string(local_options_.get<std::string>("local_ip"));

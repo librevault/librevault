@@ -16,7 +16,7 @@
 #include "pch.h"
 #pragma once
 #include "Version.h"
-#include "util/Config.h"
+#include "src/control/Config.h"
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
 

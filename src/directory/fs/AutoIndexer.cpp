@@ -68,7 +68,7 @@ void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
 
 void AutoIndexer::bump_timer() {
 	if(index_timer_.expires_from_now() <= std::chrono::seconds(0)){
-		auto exp_timeout = std::chrono::milliseconds(dir_.dir_options().get<uint32_t>("index_event_timeout"));
+		auto exp_timeout = std::chrono::milliseconds(dir_.folder_config().index_event_timeout);
 
 		index_timer_.expires_from_now(exp_timeout);
 		index_timer_.async_wait(std::bind(&AutoIndexer::monitor_index, this, std::placeholders::_1));

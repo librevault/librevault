@@ -13,58 +13,69 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <natpmp.h>
 #include "NATPMPService.h"
-#include "../Client.h"
-#include "../directory/Exchanger.h"
-#include "../directory/p2p/P2PProvider.h"
+#include "src/Client.h"
+#include "src/directory/Exchanger.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include <natpmp.h>
 
 namespace librevault {
 
 NATPMPService::NATPMPService(Client& client, Exchanger& exchanger) :
-		Loggable(client), client_(client), exchanger_(exchanger), repost_timer_(client.ios()) {
-	reset_public_port();
-
-	if(client_.config().get<bool>("net.natpmp.enabled")) perform_mapping();
+		Loggable(client, "NATPMPService"), client_(client), exchanger_(exchanger), maintain_timer_(client.ios()) {
+	lifetime_ = std::chrono::seconds(0);
 }
 
-void NATPMPService::schedule_after(std::chrono::seconds interval) {
-	repost_timer_.expires_from_now(interval);
-	repost_timer_.async_wait(std::bind(&NATPMPService::perform_mapping, this, std::placeholders::_1));
-}
-
-void NATPMPService::perform_mapping(const boost::system::error_code& error) {
+void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 	if(error == boost::asio::error::operation_aborted) return;
 
-	int natpmp_ec = 0;
-	natpmp_ec = initnatpmp(&natpmp_, 0, 0);
-	log_->trace() << log_tag() << "initnatpmp return code:" << natpmp_ec;
+	if(maintain_timer_mtx_.try_lock()) {
+		natpmp_t natpmp;
+		int natpmp_ec = initnatpmp(&natpmp, 0, 0);
+		log_->trace() << log_tag() << "initnatpmp() = " << natpmp_ec;
 
-	natpmp_ec = sendnewportmappingrequest(&natpmp_,
-										  NATPMP_PROTOCOL_TCP,
-										  exchanger_.p2p_provider()->local_endpoint().port(),
-										  exchanger_.p2p_provider()->local_endpoint().port(),
-										  client_.config().get<uint32_t>("net.natpmp.lifetime"));
-	log_->trace() << log_tag() << "sendnewportmappingrequest return code:" << natpmp_ec;
+		natpmp_ec = sendnewportmappingrequest(&natpmp,
+		                                      NATPMP_PROTOCOL_TCP,
+		                                      exchanger_.p2p_provider()->local_endpoint().port(),
+		                                      exchanger_.p2p_provider()->local_endpoint().port(),
+		                                      lifetime_.count());
+		log_->trace() << log_tag() << "sendnewportmappingrequest() = " << natpmp_ec;
 
-	do {
-		natpmp_ec = readnatpmpresponseorretry(&natpmp_, &natpmp_resp_);
-	}while(natpmp_ec == NATPMP_TRYAGAIN);
-	log_->trace() << log_tag() << "readnatpmpresponseorretry return code:" << natpmp_ec;
+		natpmpresp_t natpmp_resp;
+		do {
+			natpmp_ec = readnatpmpresponseorretry(&natpmp, &natpmp_resp);
+		}while(natpmp_ec == NATPMP_TRYAGAIN);
+		log_->trace() << log_tag() << "readnatpmpresponseorretry() = " << natpmp_ec;
 
-	if(natpmp_ec >= 0){
-		public_port_ = natpmp_resp_.pnu.newportmapping.mappedpublicport;
-		log_->debug() << log_tag() << "Successfully set up port mapping " << exchanger_.p2p_provider()->local_endpoint().port() << " -> " << public_port_;
-		schedule_after(std::chrono::seconds(natpmp_resp_.pnu.newportmapping.lifetime));
-	}else{
-		reset_public_port();
-		log_->debug() << log_tag() << "Could not set up port mapping";
-		schedule_after(std::chrono::seconds(client_.config().get<uint32_t>("net.natpmp.lifetime")));
+		uint16_t public_port;
+		std::chrono::seconds next_request;
+		if(natpmp_ec >= 0) {
+			public_port = natpmp_resp.pnu.newportmapping.mappedpublicport;
+			log_->debug() << log_tag() << "Successfully set up port mapping " << exchanger_.p2p_provider()->local_endpoint().port() << " -> "
+				<< public_port;
+			next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
+		}else{
+			public_port = 0;
+			log_->debug() << log_tag() << "Could not set up port mapping";
+			next_request = lifetime_;
+		}
+
+		// emit signal
+		port_signal_(public_port);
+
+		maintain_timer_.expires_from_now(next_request);
+		maintain_timer_.async_wait(std::bind(&NATPMPService::maintain_mapping, this, std::placeholders::_1));
 	}
 }
 
-void NATPMPService::reset_public_port() {
-	public_port_ = exchanger_.p2p_provider()->local_endpoint().port();
+void NATPMPService::set_enabled(bool enabled) {
+	if(enabled) {
+		maintain_mapping();
+	}
+}
+
+void NATPMPService::set_lifetime(std::chrono::seconds lifetime) {
+	lifetime_ = lifetime;
 }
 
 } /* namespace librevault */

@@ -14,27 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <string>
-#include <cstdint>
+#include "src/pch.h"
 
 namespace librevault {
 
-struct url;
+class PortMappingService {
+public:
+	using port_signal_type = boost::signals2::signal<void(uint16_t)>;
+	port_signal_type& port_signal() {return port_signal_;}
 
-url parse_url(std::string url_str);
-
-struct url {
-	url() {}
-	url(const std::string& str) {*this = parse_url(std::move(str));}
-	std::string scheme;
-	std::string userinfo;
-	std::string host;
-	uint16_t port = 0;
-	std::string query;
-
-	bool is_ipv6 = false;
-
-	operator std::string() const;
+protected:
+	// Signals
+	port_signal_type port_signal_;
 };
 
 } /* namespace librevault */

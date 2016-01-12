@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <src/control/Config.h>
 #include "../../pch.h"
 #include "../../util/Loggable.h"
 
@@ -30,6 +31,8 @@ public:
 
 	void add_ignored(const std::string& relpath);
 	void remove_ignored(const std::string& relpath);
+
+	void set_ignored(const std::vector<std::string>& ignored_paths);
 
 private:
 	FSDirectory& dir_;

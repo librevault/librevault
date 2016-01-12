@@ -32,27 +32,27 @@
 
 namespace librevault {
 
-FSDirectory::FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger) :
+FSDirectory::FSDirectory(FolderConfig folder_config, Client& client, Exchanger& exchanger) :
 		AbstractDirectory(client, exchanger),
-		dir_options_(std::move(dir_options)),
-		key_(dir_options_.get<std::string>("key")),
+		folder_config_(std::move(folder_config)),
+		secret_(folder_config_.secret),
 
-		open_path_(dir_options_.get<fs::path>("open_path")),
-		block_path_(dir_options_.get<fs::path>("block_path", open_path_ / ".librevault")),
-		db_path_(dir_options_.get<fs::path>("db_path", block_path_ / "directory.db")),
-		asm_path_(dir_options_.get<fs::path>("asm_path", block_path_)) {
+		open_path_(folder_config_.open_path),
+		block_path_(!folder_config_.block_path.empty() ? folder_config_.block_path : open_path_ / ".librevault"),
+		db_path_(!folder_config_.db_path.empty() ? folder_config_.db_path : block_path_ / "directory.db"),
+		asm_path_(!folder_config_.asm_path.empty() ? folder_config_.asm_path : block_path_) {
 	name_ = name();
-	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)key_.get_type();
+	log_->debug() << log_tag() << "New FSDirectory: Key type=" << (char)secret_.get_type();
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
 	index = std::make_unique<Index>(*this);
 
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
 	enc_storage = std::make_unique<EncStorage>(*this);
-	if(key_.get_type() <= Key::Type::ReadOnly){
+	if(secret_.get_type() <= Secret::Type::ReadOnly){
 		open_storage = std::make_unique<OpenStorage>(*this);
 	}
-	if(key_.get_type() <= Key::Type::ReadWrite){
+	if(secret_.get_type() <= Secret::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);
 		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
 	}

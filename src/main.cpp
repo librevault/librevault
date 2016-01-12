@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "pch.h"
-#include <librevault/Key.h>
+#include <librevault/Secret.h>
 #include "Client.h"
 #include "Version.h"
 
@@ -53,16 +53,16 @@ int main(int argc, char** argv) {
 	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
 
 	if(args["gen-secret"].asBool()) {
-		Key k;
-		std::cout << k;
+		Secret s;
+		std::cout << s;
 		return 0;
 	}
 
 	if(args["derive"].asBool()) {
-		Key::Type type = (Key::Type)args["<type>"].asString().at(0);
+		Secret::Type type = (Secret::Type)args["<type>"].asString().at(0);
 		std::cout << type << std::endl;
-		Key k(args["<secret>"].asString());
-		std::cout << k.derive(type);
+		Secret s(args["<secret>"].asString());
+		std::cout << s.derive(type);
 		return 0;
 	}
 

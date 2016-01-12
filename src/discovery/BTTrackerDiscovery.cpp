@@ -27,14 +27,10 @@ using namespace boost::asio::ip;
 
 BTTrackerDiscovery::BTTrackerDiscovery(Client& client, Exchanger& exchanger) :
 		DiscoveryService(client, exchanger) {
-	if(client_.config().get<bool>("discovery.bttracker.enabled")){
-		auto all_trackers = client_.config().get_child("discovery.bttracker.trackers").equal_range("");
-		for(auto& it = all_trackers.first; it != all_trackers.second; it++){
-			url tracker_address = parse_url(it->second.get_value<std::string>());
-
-			log_->debug() << "Added BitTorrent tracker: " << (std::string)tracker_address;
-
-			trackers_.push_back(tracker_address);
+	if(client_.config().current.discovery_bttracker_enabled) {
+		for(auto tracker : client.config().current.discovery_bttracker_trackers) {
+			trackers_.push_back(tracker);
+			log_->debug() << "Added BitTorrent tracker: " << (std::string)tracker;
 		}
 	}else
 		log_->info() << "BitTorrent tracker discovery is disabled";

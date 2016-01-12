@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <src/control/Config.h>
 #include "../AbstractDirectory.h"
 
 namespace librevault {
@@ -35,6 +36,8 @@ public:
 		error() : error("FSDirectory error") {}
 	};
 
+	using FolderConfig = Config::config_type::FolderConfig;
+
 	/* Components */
 	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
@@ -47,7 +50,7 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 	/* Constructors */
-	FSDirectory(ptree dir_options, Client& client, Exchanger& exchanger);
+	FSDirectory(FolderConfig folder_config, Client& client, Exchanger& exchanger);
 	virtual ~FSDirectory();
 
 	/* Actions */
@@ -70,9 +73,9 @@ public:
 	std::string make_relpath(const fs::path& path) const;
 
 	/* Getters */
-	const ptree& dir_options() const {return dir_options_;}
+	const FolderConfig& folder_config() const {return folder_config_;}
 
-	const Key& key() const {return key_;}
+	const Secret& secret() const {return secret_;}
 	std::string name() const;
 
 	const fs::path& open_path() const {return open_path_;}
@@ -81,8 +84,8 @@ public:
 	const fs::path& asm_path() const {return asm_path_;}
 
 private:
-	ptree dir_options_;
-	const Key key_;
+	const FolderConfig folder_config_;
+	const Secret secret_;
 	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
 
 	bitfield_type make_bitfield(const Meta& meta) const;

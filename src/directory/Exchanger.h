@@ -13,10 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-
-#include "../util/Loggable.h"
+#include "src/pch.h"
+#include "src/util/Loggable.h"
+#include "src/control/Config.h"
 
 namespace librevault {
 
@@ -45,7 +45,9 @@ public:
 	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
 
 	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
-	uint16_t mapped_port() const;
+
+	uint16_t public_port() const {return public_port_;}
+	void set_public_port(uint16_t port);
 
 	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
 
@@ -60,6 +62,7 @@ private:
 	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
 
 	std::unique_ptr<NATPMPService> natpmp_;
+	uint16_t public_port_;
 
 	std::unique_ptr<StaticDiscovery> static_discovery_;
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
@@ -67,7 +70,7 @@ private:
 
 	std::string log_tag() const {return "Exchanger";}
 
-	void add_directory(const ptree& dir_options);
+	void add_directory(const Config::FolderConfig& folder_config);
 };
 
 } /* namespace librevault */

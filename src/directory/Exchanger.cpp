@@ -32,19 +32,15 @@ Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
 	//cloud_provider_ = std::make_unique<CloudProvider>(client_, *this);
 
 	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
+	natpmp_->port_signal().connect(std::bind(&Exchanger::set_public_port, this, std::placeholders::_1));
 
 	static_discovery_ = std::make_unique<StaticDiscovery>(client_, *this);
 	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, *this);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(client_, *this);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_, *this);
 
-	try {
-		auto folder_trees = client_.config().get_child("folders").equal_range("");
-		for(auto folder_tree_it = folder_trees.first; folder_tree_it != folder_trees.second; folder_tree_it++) {
-			add_directory(folder_tree_it->second);
-		}
-	}catch(boost::property_tree::ptree_bad_path& e) {
-		// No "folders" in config
+	for(auto& folder_config : client_.config().current.folders) {
+		add_directory(folder_config);
 	}
 }
 Exchanger::~Exchanger() {}
@@ -78,8 +74,9 @@ std::shared_ptr<ExchangeGroup> Exchanger::get_group(const blob& hash){
 	return nullptr;
 }
 
-uint16_t Exchanger::mapped_port() const {
-	return natpmp_->public_port();
+
+void Exchanger::set_public_port(uint16_t port) {
+	public_port_ = port ? port : p2p_provider_->local_endpoint().port();
 }
 
 std::list<std::shared_ptr<ExchangeGroup>> Exchanger::groups() const {
@@ -93,15 +90,15 @@ P2PProvider* Exchanger::p2p_provider() {
 	return p2p_provider_.get();
 }
 
-void Exchanger::add_directory(const ptree& dir_options) {
-	auto dir_ptr = std::make_shared<FSDirectory>(dir_options, client_, *this);
-	auto group_ptr = get_group(dir_ptr->key().get_Hash());
+void Exchanger::add_directory(const Config::FolderConfig& folder_config) {
+	auto dir_ptr = std::make_shared<FSDirectory>(folder_config, client_, *this);
+	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr){
 		group_ptr = std::make_shared<ExchangeGroup>(client_, *this);
 		group_ptr->attach(dir_ptr);
 		register_group(group_ptr);
 	}else{
-		throw std::runtime_error("Multiple directories with same key (or related to same key) are not supported now");
+		throw std::runtime_error("Multiple directories with same key (or derived from the same key) are not supported now");
 	}
 }
 

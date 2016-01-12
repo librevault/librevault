@@ -49,7 +49,7 @@ public:
 private:
 	FSDirectory& dir_;
 
-	const Key& key_;
+	const Secret& secret_;
 	Index& index_;
 	EncStorage& enc_storage_;
 	OpenStorage& open_storage_;

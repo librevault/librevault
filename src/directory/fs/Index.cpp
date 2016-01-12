@@ -74,7 +74,7 @@ void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) 
 std::list<Meta::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
 	std::list<Meta::SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list.push_back(Meta::SignedMeta(row[0], row[1], dir_.key()));
+		result_list.push_back(Meta::SignedMeta(row[0], row[1], dir_.secret()));
 	return result_list;
 }
 Meta::SignedMeta Index::get_Meta(const blob& path_id){

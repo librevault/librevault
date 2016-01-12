@@ -16,21 +16,9 @@
 #include "parse_url.h"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/asio/ip/address_v6.hpp>
 
 namespace librevault {
-
-url::operator std::string() const {
-	std::string result;
-	result += !scheme.empty() ? scheme + "://" : "";
-	result += userinfo;
-	result += host;
-	if(port != 0){
-		result += ":";
-		result += boost::lexical_cast<std::string>(port);
-	}
-	result += query;
-	return result;
-}
 
 url parse_url(std::string url_str){
 	boost::algorithm::trim(url_str);
@@ -67,6 +55,7 @@ url parse_url(std::string url_str){
 	if(*it_host_begin == '['){	// We have IPv6 address.
 		it_host_begin++;
 		it_host_end = std::find(it_host_begin, it_authority_end, ']');
+		parsed_url.is_ipv6 = true;
 	}else{
 		it_host_end = std::find(it_host_begin, it_authority_end, ':');
 	}
@@ -80,6 +69,24 @@ url parse_url(std::string url_str){
 	parsed_url.query.assign(it_authority_end, url_str.cend());
 
 	return parsed_url;
+}
+
+url::operator std::string() const {
+	std::string result;
+	result += !scheme.empty() ? scheme + "://" : "";
+	result += userinfo;
+
+	boost::asio::ip::address_v6 addr;
+	if(is_ipv6)
+		result += std::string("[") + addr.to_string() + "]";
+	else
+		result += host;
+	if(port != 0){
+		result += ":";
+		result += boost::lexical_cast<std::string>(port);
+	}
+	result += query;
+	return result;
 }
 
 } /* namespace librevault */

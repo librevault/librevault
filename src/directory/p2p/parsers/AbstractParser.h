@@ -101,7 +101,7 @@ public:
 	virtual MetaRequest parse_MetaRequest(const blob& message_raw) = 0;
 
 	virtual blob gen_MetaReply(const MetaReply& message_struct) = 0;
-	virtual MetaReply parse_MetaReply(const blob& message_raw, const Key& secret_verifier) = 0;
+	virtual MetaReply parse_MetaReply(const blob& message_raw, const Secret& secret_verifier) = 0;
 
 	virtual blob gen_MetaCancel(const MetaCancel& message_struct) = 0;
 	virtual MetaCancel parse_MetaCancel(const blob& message_raw) = 0;

@@ -63,11 +63,11 @@ void P2PDirectory::update_remote_endpoint() {
 }
 
 blob P2PDirectory::local_token() {
-	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key());
+	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(exchange_group_.lock()->secret().get_Public_Key());
 }
 
 blob P2PDirectory::remote_token() {
-	return remote_pubkey() | crypto::HMAC_SHA3_224(exchange_group_.lock()->key().get_Public_Key());
+	return remote_pubkey() | crypto::HMAC_SHA3_224(exchange_group_.lock()->secret().get_Public_Key());
 }
 
 void P2PDirectory::send_message(const blob& message) {
@@ -333,7 +333,7 @@ void P2PDirectory::handle_MetaRequest(const blob& message_raw) {
 void P2PDirectory::handle_MetaReply(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_MetaReply()";
 
-	auto message_struct = parser_->parse_MetaReply(message_raw, exchange_group()->key());
+	auto message_struct = parser_->parse_MetaReply(message_raw, exchange_group()->secret());
 	log_->debug() << log_tag() << "<== META_REPLY:"
 		<< " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
 		<< " revision=" << message_struct.smeta.meta().revision()

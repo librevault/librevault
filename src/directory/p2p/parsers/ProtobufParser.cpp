@@ -105,7 +105,7 @@ blob ProtobufParser::gen_MetaReply(const MetaReply& message_struct) {
 
 	return prepare_proto_message(message_protobuf, META_REPLY);
 }
-AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_raw, const Key& secret_verifier) {
+AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_raw, const Secret& secret_verifier) {
 	protocol::MetaReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 

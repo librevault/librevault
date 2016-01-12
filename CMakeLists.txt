@@ -92,10 +92,6 @@ configure_file("appver.in.h" "appver.h")
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} liblibrevault)
 
-if(WITH_COTIRE)
-	cotire(${PROJECT_NAME})
-endif()
-
 #============================================================================
 # Third-party libraries
 #============================================================================
@@ -202,6 +198,11 @@ endif()
 # Header-only libs
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include")
+
+# cotire invocation
+if(WITH_COTIRE)
+	cotire(${PROJECT_NAME})
+endif()
 
 #============================================================================
 # Documentation generation

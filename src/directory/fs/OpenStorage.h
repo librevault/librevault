@@ -16,7 +16,7 @@
 #pragma once
 #include "src/pch.h"
 #include "AbstractStorage.h"
-#include <librevault/Key.h>
+#include <librevault/Secret.h>
 #include "Index.h"
 #include "EncStorage.h"
 
@@ -64,7 +64,7 @@ public:
 	std::set<std::string> all_files();	// Sum of all
 
 private:
-	const Key& key_;
+	const Secret& secret_;
 	Index& index_;
 	EncStorage& enc_storage_;
 

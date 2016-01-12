@@ -159,7 +159,7 @@ bool ExchangeGroup::have_p2p_dir(const blob& pubkey) {
 }
 
 /* Getters */
-const Key& ExchangeGroup::key() const { return fs_dir_->key(); }
-const blob& ExchangeGroup::hash() const { return key().get_Hash(); }
+const Secret& ExchangeGroup::secret() const { return fs_dir_->secret(); }
+const blob& ExchangeGroup::hash() const { return secret().get_Hash(); }
 
 } /* namespace librevault */

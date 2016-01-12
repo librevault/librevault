@@ -14,40 +14,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../pch.h"
-#include "../util/Loggable.h"
+#include "PortMappingService.h"
+#include "src/util/Loggable.h"
 
 namespace librevault {
 
 class Client;
 class Exchanger;
 
-class NATPMPService : protected Loggable {
+class NATPMPService : public PortMappingService, public Loggable {
 public:
 	NATPMPService(Client& client, Exchanger& exchanger);
 
-	void perform_mapping(const boost::system::error_code& error = boost::system::error_code());
+	void set_enabled(bool enabled);
+	void set_lifetime(std::chrono::seconds lifetime);
 
-	void schedule_after(std::chrono::seconds interval);
-
-	// Setters
-	void reset_public_port();
-
-	// Getters
-	uint16_t public_port() const {return public_port_;}
-
-private:
+protected:
 	Client& client_;
 	Exchanger& exchanger_;
 
-	boost::asio::system_timer repost_timer_;
+	// Config values
+	bool enabled_;
+	std::chrono::seconds lifetime_;
 
-	natpmp_t natpmp_;
-	natpmpresp_t natpmp_resp_;
+	// Weak timer
+	boost::asio::system_timer maintain_timer_;
+	std::mutex maintain_timer_mtx_;
 
-	uint16_t public_port_;
-
-	std::string log_tag() const {return "[NATPMPService] ";}
+	void maintain_mapping(const boost::system::error_code& error = boost::system::error_code());
 };
 
 } /* namespace librevault */

@@ -16,7 +16,7 @@
 #include "../pch.h"
 #pragma once
 #include "../util/Loggable.h"
-#include <librevault/Key.h>
+#include <librevault/Secret.h>
 #include "AbstractDirectory.h"
 
 namespace librevault {
@@ -79,7 +79,7 @@ public:
 	std::shared_ptr<FSDirectory> fs_dir() const {return fs_dir_;}
 	std::set<std::shared_ptr<P2PDirectory>> p2p_dirs() const {return p2p_dirs_;}
 
-	const Key& key() const;
+	const Secret& secret() const;
 	const blob& hash() const;
 private:
 	Client& client_;

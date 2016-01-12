@@ -24,7 +24,7 @@ namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
 		Loggable(client, "ControlServer"), client_(client), timer_(client_.ios()) {
-	url bind_url = parse_url(client_.config().get<std::string>("control.listen"));
+	url bind_url = client_.config().current.control_listen;
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
@@ -111,7 +111,7 @@ std::string ControlServer::make_state_json() {
 	for(auto folder : client_.exchanger().groups()) {
 		ptree folder_json;
 		folder_json.put("path", folder->fs_dir()->open_path());
-		folder_json.put("secret", (std::string)folder->key());
+		folder_json.put("secret", (std::string)folder->secret());
 
 		// Peers
 		ptree peers_json;

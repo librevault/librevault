@@ -53,9 +53,6 @@ protected:
 
 	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 
-	// Options
-	const ptree& local_options_;
-
 	// UDP
 	udp_socket socket_;
 	udp_endpoint multicast_addr_;
@@ -66,7 +63,7 @@ protected:
 	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr);
 	void receive();
 
-	MulticastDiscovery(Client& client, Exchanger& exchanger, const ptree& options);
+	MulticastDiscovery(Client& client, Exchanger& exchanger);
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {

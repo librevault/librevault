@@ -24,8 +24,8 @@
 namespace librevault {
 
 Indexer::Indexer(FSDirectory& dir, Client& client) :
-		Loggable(dir, "Indexer"), dir_(dir),
-		key_(dir_.key()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
+	Loggable(dir, "Indexer"), dir_(dir),
+	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
 
 void Indexer::index(const std::string& file_path){
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
@@ -84,10 +84,10 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 	// Path ID aka HMAC of relpath aka SHA3(key | relpath);
 	meta.set_path_id(open_storage_.make_path_id(relpath));
 	// Encrypted path with IV
-	meta.set_path(relpath, key_);
+	meta.set_path(relpath, secret_);
 
 	// Type
-	fs::file_status file_status = dir_.dir_options().get("preserve_symlinks", true) ? fs::symlink_status(abspath) : fs::status(abspath);	// Preserves symlinks if such option is set.
+	fs::file_status file_status = dir_.folder_config().preserve_symlinks ? fs::symlink_status(abspath) : fs::status(abspath);	// Preserves symlinks if such option is set.
 
 	switch(file_status.type()){
 		case fs::regular_file: meta.set_meta_type(Meta::FILE); break;
@@ -109,14 +109,14 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 
 			if(meta.meta_type() == Meta::FILE){
 				// Update FileMap
-				cryptodiff::FileMap filemap = old_meta.filemap(key_);
+				cryptodiff::FileMap filemap = old_meta.filemap(secret_);
 				filemap.update(abspath.generic_string());
 				meta.set_filemap(filemap);
 			}
 		}catch(...){
 			if(meta.meta_type() == Meta::FILE){
 				// Create FileMap, if something got wrong
-				cryptodiff::FileMap filemap(key_.get_Encryption_Key());
+				cryptodiff::FileMap filemap(secret_.get_Encryption_Key());
 				filemap.set_strong_hash_type(get_strong_hash_type());
 				filemap.create(abspath.generic_string());
 				meta.set_filemap(filemap);
@@ -125,7 +125,7 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 
 		if(meta.meta_type() == Meta::SYMLINK){
 			// Symlink path = encrypted symlink destination.
-			meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), key_);
+			meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), secret_);
 		}else{
 			// File modification time
 			meta.set_mtime(fs::last_write_time(abspath));	// TODO: make analogue function for symlinks. Use boost::filesystem::last_write_time as a template. lstat for Unix and GetFileAttributesEx for Windows.
@@ -137,9 +137,9 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 			meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
 		}
 #elif BOOST_OS_UNIX
-		if(dir_.dir_options().get("preserve_unix_attrib", false)){
+		if(dir_.folder_config().preserve_unix_attrib){
 			struct stat stat_buf; int stat_err = 0;
-			if(dir_.dir_options().get("preserve_symlinks", true))
+			if(dir_.folder_config().preserve_symlinks)
 				stat_err = lstat(abspath.c_str(), &stat_buf);
 			else
 				stat_err = stat(abspath.c_str(), &stat_buf);
@@ -164,15 +164,15 @@ Meta::SignedMeta Indexer::sign(const Meta& meta) const {
 	blob signature;
 
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(key_.get_Private_Key().data(), key_.get_Private_Key().size()));
+	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret_.get_Private_Key().data(), secret_.get_Private_Key().size()));
 
 	signature.resize(signer.SignatureLength());
 	signer.SignMessage(rng, raw_meta.data(), raw_meta.size(), signature.data());
-	return Meta::SignedMeta(std::move(raw_meta), std::move(signature), key_, false);
+	return Meta::SignedMeta(std::move(raw_meta), std::move(signature), secret_, false);
 }
 
 cryptodiff::StrongHashType Indexer::get_strong_hash_type() {
-	return cryptodiff::StrongHashType(dir_.dir_options().get<uint8_t>("block_strong_hash_type", 0));
+	return dir_.folder_config().block_strong_hash_type;
 }
 
 } /* namespace librevault */

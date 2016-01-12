@@ -43,7 +43,7 @@ ControlServer::ControlServer(Client& client) :
 	ws_server_.listen(local_endpoint_);
 	ws_server_.start_accept();
 
-	send_state_json();
+	send_control_json();
 }
 
 ControlServer::~ControlServer() {}
@@ -72,7 +72,7 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	ws_server_assignment_.insert({connection_ptr, std::make_shared<ControlConnection>()});
 
-	send_state_json();
+	send_control_json();
 }
 
 void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr) {
@@ -80,7 +80,7 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 	blob message_raw = blob(std::make_move_iterator(message_ptr->get_payload().begin()), std::make_move_iterator(message_ptr->get_payload().end()));
 
 	try {
-		// handle message somehow
+		log_->trace() << message_ptr->get_payload();
 	}catch(std::runtime_error& e) {
 		log_->trace() << log_tag() << "on_message e:" << e.what();
 		ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, e.what());
@@ -90,22 +90,32 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 void ControlServer::on_fail(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_fail()";
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
-	send_state_json();
+	send_control_json();
 }
 
 void ControlServer::on_close(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_close()";
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
-	send_state_json();
+	send_control_json();
 }
 
-std::string ControlServer::make_state_json() {
-	ptree state_json;
+std::string ControlServer::make_control_json() {
+	ptree control_json;
 
 	// ID
-	static int state_json_id = 0;
-	state_json.put("id", state_json_id++);
+	static int control_json_id = 0;
+	control_json.put("id", control_json_id++);
 
+	control_json.add_child("config", client_.config().get_ptree());
+	control_json.add_child("state", make_state_json());
+
+	// result serialization
+	std::ostringstream os; boost::property_tree::write_json(os, control_json, false);
+	return os.str();
+}
+
+ptree ControlServer::make_state_json() const {
+	ptree state_json;
 	// Folders
 	ptree folders_json;
 	for(auto folder : client_.exchanger().groups()) {
@@ -126,28 +136,26 @@ std::string ControlServer::make_state_json() {
 	}
 	state_json.add_child("folders", folders_json);
 
-	// result serialization
-	std::ostringstream os; boost::property_tree::write_json(os, state_json, false);
-	return os.str();
+	return state_json;
 }
 
-void ControlServer::send_state_json(const boost::system::error_code& ec) {
-	log_->trace() << log_tag() << "send_state_json()";
+void ControlServer::send_control_json(const boost::system::error_code& ec) {
+	log_->trace() << log_tag() << "send_control_json()";
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	if(send_mutex_.try_lock()) {
 		std::unique_lock<decltype(send_mutex_)> maintain_timer_lk(send_mutex_, std::adopt_lock);
 		timer_.cancel();
 
-		auto state_json = make_state_json();
+		auto control_json = make_control_json();
 
 		for(auto conn_assignment : ws_server_assignment_) {
 			server::connection_ptr conn_ptr = conn_assignment.first;
-			conn_ptr->send(state_json);
+			conn_ptr->send(control_json);
 		}
 
 		timer_.expires_from_now(std::chrono::seconds(10));  // TODO: Replace with value from config.
-		timer_.async_wait(std::bind(&ControlServer::send_state_json, this, std::placeholders::_1));
+		timer_.async_wait(std::bind(&ControlServer::send_control_json, this, std::placeholders::_1));
 	}
 }
 

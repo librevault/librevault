@@ -87,7 +87,16 @@ Config::config_type Config::make_default_config() {
 	return config;
 }
 
-Config::config_type Config::convert_pt(const ptree& pt, const config_type& base) {
+ptree Config::get_ptree() const {
+	return convert_pt(current);
+}
+
+void Config::apply_ptree(const ptree& pt) {
+	auto new_config = convert_pt(pt, current);
+	std::swap(new_config, current);
+}
+
+Config::config_type Config::convert_pt(const ptree& pt, const config_type& base) const {
 	config_type config;
 
 	config.device_name                                  = pt.get("device_name", base.device_name);
@@ -154,12 +163,7 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 	return config;
 }
 
-void Config::apply_ptree(const ptree& pt) {
-	auto new_config = convert_pt(pt, current);
-	std::swap(new_config, current);
-}
-
-ptree Config::convert_pt(const config_type& config) {
+ptree Config::convert_pt(const config_type& config) const {
 	ptree pt;
 	pt.put("device_name", config.device_name);
 

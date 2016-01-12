@@ -16,14 +16,15 @@
 #include "pch.h"
 #pragma once
 #include "Version.h"
-#include "src/control/Config.h"
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
 
 namespace librevault {
 
+class Config;
 class Exchanger;
 class ControlServer;
+
 class Client : public Loggable {
 public:
 	Client(std::map<std::string, docopt::value> args);

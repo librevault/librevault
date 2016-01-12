@@ -98,14 +98,16 @@ public:
 		boost::signals2::signal<void(std::vector<config_type::FolderConfig>)> folders;
 	} signal;
 
-	config_type convert_pt(const ptree& pt, const config_type& base);
+	ptree get_ptree() const;
 	void apply_ptree(const ptree& pt);
-	ptree convert_pt(const config_type& config);
 
 	using FolderConfig = config_type::FolderConfig;
 
 private:
 	fs::path config_path_;
+
+	config_type convert_pt(const ptree& pt, const config_type& base) const;
+	ptree convert_pt(const config_type& config) const;
 
 	config_type make_default_config();
 };

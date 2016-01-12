@@ -47,8 +47,9 @@ private:
 	void on_fail(websocketpp::connection_hdl hdl);
 	void on_close(websocketpp::connection_hdl hdl);
 
-	std::string make_state_json();
-	void send_state_json(const boost::system::error_code& ec = boost::system::error_code());
+	std::string make_control_json();
+	ptree make_state_json() const;
+	void send_control_json(const boost::system::error_code& ec = boost::system::error_code());
 };
 
 } /* namespace librevault */

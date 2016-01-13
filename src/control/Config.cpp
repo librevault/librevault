@@ -170,8 +170,8 @@ ptree Config::convert_pt(const config_type& config) const {
 	pt.put("control.listen", (std::string)config.control_listen);
 
 	pt.put("net.listen", (std::string)config.net_listen);
-	pt.put("net.netpmp.enabled", config.net_natpmp_enabled);
-	pt.put("net.netpmp.lifetime", config.net_natpmp_lifetime.count());
+	pt.put("net.natpmp.enabled", config.net_natpmp_enabled);
+	pt.put("net.natpmp.lifetime", config.net_natpmp_lifetime.count());
 
 	pt.put("discovery.static.repeat_interval", config.discovery_static_repeat_interval.count());
 

@@ -23,13 +23,15 @@ namespace librevault {
 
 NATPMPService::NATPMPService(Client& client, Exchanger& exchanger) :
 		Loggable(client, "NATPMPService"), client_(client), exchanger_(exchanger), maintain_timer_(client.ios()) {
-	lifetime_ = std::chrono::seconds(0);
+	set_lifetime(client_.config().current.net_natpmp_lifetime);
+	set_enabled(client_.config().current.net_natpmp_enabled);
 }
 
 void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 	if(error == boost::asio::error::operation_aborted) return;
 
 	if(maintain_timer_mtx_.try_lock()) {
+		std::unique_lock<decltype(maintain_timer_mtx_)> maintain_timer_lk(maintain_timer_mtx_, std::adopt_lock);
 		natpmp_t natpmp;
 		int natpmp_ec = initnatpmp(&natpmp, 0, 0);
 		log_->trace() << log_tag() << "initnatpmp() = " << natpmp_ec;

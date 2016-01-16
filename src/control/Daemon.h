@@ -14,24 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include <QSystemTrayIcon>
-#include <QMenu>
 
-class Client;
-class TrayIcon : public QSystemTrayIcon {
+#include "pch.h"
+#include <QProcess>
+
+class Daemon : public QProcess {
 Q_OBJECT
 
 public:
-	TrayIcon(Client& client);
+	Daemon();
+	~Daemon();
+
+	void launch();
 
 signals:
-	void show_main_window();
-
-private:
-	Client& client_;
-	std::unique_ptr<QMenu> context_menu_;
+	void daemonReady(const QUrl& control_url);
 
 private slots:
-	void open_website();
+	void handleError(QProcess::ProcessError error);
+	void handleStandardOutput();
+
+protected:
+	bool listening_already = false;
 };

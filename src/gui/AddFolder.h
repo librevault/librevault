@@ -14,34 +14,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
-#include <QAbstractTableModel>
-#include <QJsonObject>
 
-class FolderModel : public QAbstractListModel {
+#include <QDialog>
+#include "src/pch.h"
+
+namespace Ui {
+class AddFolder;
+}
+
+class AddFolder : public QDialog {
 Q_OBJECT
 
 public:
-	FolderModel();
-	~FolderModel();
+	explicit AddFolder(QWidget* parent = 0);
+	~AddFolder();
 
-	int rowCount(const QModelIndex &parent = QModelIndex()) const;
-	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+signals:
+	void folderAdded(QString secret, QString path);
 
 public slots:
-	void handleControlJson(QJsonObject state_json);
+	void handleAccepted();
 
-private:
-	QJsonObject state_json_;
+protected:
+	std::unique_ptr<Ui::AddFolder> ui;
 
-	enum class Column {
-		NAME,
-		PEERS,
-		SECRET,
+	// Overrides
+	void showEvent(QShowEvent* e) override;
 
-		COLUMN_COUNT
-	};
+private slots:
+	void generateSecret();
+	void browseFolder();
+	//void validateSecret();
 };

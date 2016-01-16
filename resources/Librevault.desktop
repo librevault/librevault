@@ -1,0 +1,14 @@
+[Desktop Entry]
+Categories=Network;FileTransfer;P2P;Qt;
+Exec=librevault-gui %U
+GenericName=File synchronization
+Comment=Synchronize your folders securely using peer-2-peer or cloud or both. You choose.
+Icon=librevault
+Name=Librevault
+Terminal=false
+Type=Application
+
+# Translations
+Comment[ru]=Безопасная синхронизация данных через пиринговую сеть и облако.
+GenericName[ru]=File synchronization
+Name[ru]=Librevault

@@ -16,11 +16,14 @@
 #pragma once
 #include "pch.h"
 #include <QApplication>
+#include <QTranslator>
 
 class MainWindow;
+class Settings;
 class TrayIcon;
 class FolderModel;
 class ControlClient;
+class Daemon;
 
 class Client : public QApplication {
 Q_OBJECT
@@ -30,14 +33,18 @@ public:
 	~Client();
 
 public slots:
-	void exit();
+	void applyLocale(QString locale);
 
 private:
+	// Translation
+	QTranslator translator_;
+	QTranslator qt_translator_;
+
 	// GUI
 	std::unique_ptr<MainWindow> main_window_;
-	std::unique_ptr<TrayIcon> trayicon_;
 
 	std::unique_ptr<FolderModel> folder_model_;
 
 	std::unique_ptr<ControlClient> control_client_;
+	std::unique_ptr<Daemon> daemon_;
 };

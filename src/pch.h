@@ -18,31 +18,6 @@
 // Cryptodiff
 #include <cryptodiff.h>
 
-// spdlog
-#include <spdlog/spdlog.h>
-
-// OpenSSL
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-
-// Crypto++
-#include <cryptopp/aes.h>
-#include <cryptopp/ccm.h>
-#include <cryptopp/cryptlib.h>
-#include <cryptopp/eccrypto.h>
-#include <cryptopp/ecp.h>
-#include <cryptopp/files.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/hex.h>
-#include <cryptopp/integer.h>
-#include <cryptopp/oids.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/sha3.h>
-
-// Boost
-#include <boost/dynamic_bitset.hpp>
-#include <boost/endian/arithmetic.hpp>
-
 // Standard C++ Libraries
 #include <algorithm>
 #include <array>
@@ -70,23 +45,3 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-// OS-dependent
-#if BOOST_OS_LINUX
-#include <sys/types.h>
-#endif
-#if BOOST_OS_LINUX || BOOST_OS_UNIX || BOOST_OS_BSD
-#include <pwd.h>
-#include <unistd.h>
-#endif
-
-namespace librevault {
-
-using byte = uint8_t;
-using blob = std::vector<byte>;
-
-using bitfield_type = boost::dynamic_bitset<uint8_t>;
-
-using logger_ptr = std::shared_ptr<spdlog::logger>;
-
-} /* namespace librevault */

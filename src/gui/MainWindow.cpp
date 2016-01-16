@@ -16,28 +16,64 @@
 #include "MainWindow.h"
 #include "src/model/FolderModel.h"
 #include "ui_MainWindow.h"
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QCloseEvent>
+#include <QPushButton>
+#include <QDesktopServices>
 
-MainWindow::MainWindow(QWidget* parent) :
+MainWindow::MainWindow(Client& client, QWidget* parent) :
 		QMainWindow(parent),
+		client_(client),
 		ui(std::make_unique<Ui::MainWindow>()) {
 	ui->setupUi(this);
+
+	settings_ = std::make_unique<Settings>();
+	connect(settings_.get(), &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
+
+	add_folder_ = std::make_unique<AddFolder>();
+	connect(add_folder_.get(), &AddFolder::folderAdded, this, &MainWindow::folderAdded);
+
+	init_actions();
+	init_tray();
+	init_toolbar();
+	//auto button = new QPushButton();
+	//button->setText(tr("My Account"));
+	//button->setFlat(true);
+	//ui->statusBar->addPermanentWidget(button);
+	retranslateUi();
 }
 
 MainWindow::~MainWindow() {}
 
-void MainWindow::handle_state_json(QJsonObject state_json) {
-	QJsonDocument json_doc;
-	json_doc.setObject(state_json);
-	QString json_str = json_doc.toJson();
-	ui->state_display->setText(json_str);
+void MainWindow::retranslateUi() {
+	show_main_window_action->setText(tr("Show Librevault window"));
+	open_website_action->setText(tr("Open Librevault website"));
+	show_settings_window_action->setText(tr("Settings"));
+	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
+	exit_action->setText(tr("Quit Librevault"));    // TODO: Apply: https://ux.stackexchange.com/questions/50893/do-we-exit-quit-or-close-an-application
+	exit_action->setToolTip("Stop synchronization and exit Librevault application");
+	new_folder_action->setText(tr("New folder"));
+	new_folder_action->setToolTip(tr("Add new folder for synchronization"));
+	delete_folder_action->setText(tr("Delete"));
+	delete_folder_action->setToolTip(tr("Delete folder"));
+
+	ui->retranslateUi(this);
+	settings_->retranslateUi();
+}
+
+void MainWindow::handleControlJson(QJsonObject state_json) {
+	settings_->handleControlJson(state_json);
+}
+
+void MainWindow::openWebsite() {
+	QDesktopServices::openUrl(QUrl("https://librevault.com"));
+}
+
+void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
+	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
 }
 
 void MainWindow::set_model(FolderModel* model) {
 	ui->treeView->setModel(model);
-
 }
 
 void MainWindow::changeEvent(QEvent* e) {
@@ -51,7 +87,60 @@ void MainWindow::changeEvent(QEvent* e) {
 	}
 }
 
-void MainWindow::closeEvent(QCloseEvent* e) {
-	hide();
-	e->ignore();
+void MainWindow::init_actions() {
+	show_main_window_action = new QAction(this);
+	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::show);
+
+	open_website_action = new QAction(this);
+	connect(open_website_action, &QAction::triggered, this, &MainWindow::openWebsite);
+
+	show_settings_window_action = new QAction(this);
+	QIcon show_settings_window_action_icon(QIcon::fromTheme(QStringLiteral("preferences-system")));
+	show_settings_window_action->setIcon(show_settings_window_action_icon);
+	show_settings_window_action->setMenuRole(QAction::PreferencesRole);
+	connect(show_settings_window_action, &QAction::triggered, settings_.get(), &QDialog::show);
+
+	exit_action = new QAction(this);
+	QIcon exit_action_icon(QIcon::fromTheme(QStringLiteral("application-exit")));
+	exit_action->setIcon(exit_action_icon);
+	connect(exit_action, &QAction::triggered, this, &QCoreApplication::quit);
+
+	new_folder_action = new QAction(this);
+	QIcon new_folder_action_icon(QIcon::fromTheme(QStringLiteral("folder-new")));
+	new_folder_action->setIcon(new_folder_action_icon);
+	connect(new_folder_action, &QAction::triggered, add_folder_.get(), &AddFolder::show);
+
+	delete_folder_action = new QAction(this);
+	QIcon delete_folder_action_icon(QIcon::fromTheme(QStringLiteral("edit-delete")));
+	delete_folder_action->setIcon(delete_folder_action_icon);
+	delete_folder_action->setShortcut(Qt::Key_Delete);
+}
+
+void MainWindow::init_toolbar() {
+	ui->toolBar->addAction(new_folder_action);
+	ui->toolBar->addAction(delete_folder_action);
+	ui->toolBar->addSeparator();
+	ui->toolBar->addAction(show_settings_window_action);
+}
+
+void MainWindow::init_tray() {
+	// Context menu
+	tray_context_menu.addAction(show_main_window_action);
+	tray_context_menu.addAction(open_website_action);
+	tray_context_menu.addSeparator();
+	tray_context_menu.addAction(show_settings_window_action);
+	tray_context_menu.addSeparator();
+	tray_context_menu.addAction(exit_action);
+#ifdef Q_OS_MAC
+	qt_mac_set_dock_menu(tray_context_menu);
+#endif
+	tray_icon.setContextMenu(&tray_context_menu);
+
+	// Icon itself
+	connect(&tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::tray_icon_activated);
+
+	tray_icon.setIcon(QIcon(":/branding/librevault_icon.svg"));   // FIXME: Temporary measure. Need to display "sync" icon here. Also, theming support.
+	tray_icon.setToolTip(tr("Librevault"));
+
+	tray_icon.show();
 }

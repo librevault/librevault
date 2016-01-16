@@ -16,16 +16,38 @@
 #include <QJsonDocument>
 #include "ControlClient.h"
 
-ControlClient::ControlClient(const QString& attach_url) :
+ControlClient::ControlClient() :
 		QWebSocket() {
 	connect(this, &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
-	//this->open(QUrl("ws://127.0.0.1:61345"));
-	this->open(QUrl(attach_url));
 }
 
 ControlClient::~ControlClient() {}
 
 void ControlClient::handle_message(const QString& message) {
 	QJsonDocument json_document = QJsonDocument::fromJson(message.toUtf8());
-	emit state_json_received(json_document.object());
+	qDebug() << "<== " << json_document;
+	emit ControlJsonReceived(json_document.object());
+}
+
+void ControlClient::sendControlJson(QJsonObject control_json) {
+	QJsonDocument json_document(control_json);
+	qDebug() << "==> " << json_document;
+	this->sendTextMessage(json_document.toJson());
+}
+
+void ControlClient::sendConfigJson(QJsonObject config_json) {
+	QJsonObject control_json;
+	control_json["command"] = QStringLiteral("set_config");
+	control_json["config"] = config_json;
+	sendControlJson(control_json);
+}
+
+void ControlClient::sendAddFolderJson(QString secret, QString path) {
+	QJsonObject control_json, folder_json;
+	folder_json["secret"] = secret;
+	folder_json["open_path"] = path;
+
+	control_json["command"] = QStringLiteral("add_folder");
+	control_json["folder"] = folder_json;
+	sendControlJson(control_json);
 }

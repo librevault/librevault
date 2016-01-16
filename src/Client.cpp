@@ -15,13 +15,17 @@
  */
 #include "Client.h"
 #include "src/gui/MainWindow.h"
-#include "src/gui/TrayIcon.h"
+#include "src/gui/Settings.h"
 #include "src/model/FolderModel.h"
+#include "src/control/Daemon.h"
 #include "src/control/ControlClient.h"
 #include <QCommandLineParser>
+#include <QLibraryInfo>
 
 Client::Client(int &argc, char **argv, int appflags) :
 		QApplication(argc, argv, appflags) {
+	setQuitOnLastWindowClosed(false);
+	applyLocale(QLocale::system().name());
 	// Parsing arguments
 	QCommandLineParser parser;
 	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one"), "url");
@@ -29,25 +33,36 @@ Client::Client(int &argc, char **argv, int appflags) :
 	parser.process(*this);
 
 	// Creating components
-	control_client_ = std::make_unique<ControlClient>(parser.value(attach_option));
+	daemon_ = std::make_unique<Daemon>();
+	control_client_ = std::make_unique<ControlClient>();
+	if(parser.isSet(attach_option))
+		control_client_->open(QUrl(parser.value(attach_option)));
+	else {
+		connect(daemon_.get(), &Daemon::daemonReady, control_client_.get(), &QWebSocket::open);
+		daemon_->launch();
+	}
 
 	folder_model_ = std::make_unique<FolderModel>();
 
-	main_window_ = std::make_unique<MainWindow>();
-	trayicon_ = std::make_unique<TrayIcon>(*this);
+	main_window_ = std::make_unique<MainWindow>(*this);
 
 	// Setting model
 	main_window_->set_model(folder_model_.get());
 
 	// Connecting signals & slots
-	connect(trayicon_.get(), &TrayIcon::show_main_window, main_window_.get(), &QMainWindow::show);
-	connect(control_client_.get(), &ControlClient::state_json_received, main_window_.get(), &MainWindow::handle_state_json);
-	connect(control_client_.get(), &ControlClient::state_json_received, folder_model_.get(), &FolderModel::set_state_json);
+	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
+	connect(control_client_.get(), &ControlClient::ControlJsonReceived, folder_model_.get(), &FolderModel::handleControlJson);
+
+	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);
+	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
+}
+
+void Client::applyLocale(QString locale) {
+	qt_translator_.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+	this->installTranslator(&qt_translator_);
+	translator_.load(QStringLiteral(":/lang/librevault_") + locale);
+	this->installTranslator(&translator_);
+	//settings_->retranslateUi();
 }
 
 Client::~Client() {}
-
-void Client::exit() {
-	closeAllWindows();
-	quit();
-}

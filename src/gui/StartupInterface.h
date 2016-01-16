@@ -14,34 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
-#include <QAbstractTableModel>
-#include <QJsonObject>
 
-class FolderModel : public QAbstractListModel {
+#include "src/pch.h"
+#include <QObject>
+
+class StartupInterface : public QObject {
 Q_OBJECT
 
 public:
-	FolderModel();
-	~FolderModel();
+	StartupInterface(QObject* parent = 0);
+	~StartupInterface();
 
-	int rowCount(const QModelIndex &parent = QModelIndex()) const;
-	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+	bool isEnabled() const;
 
 public slots:
-	void handleControlJson(QJsonObject state_json);
+	void setEnabled(bool enabled);
+	void enable();
+	void disable();
 
-private:
-	QJsonObject state_json_;
-
-	enum class Column {
-		NAME,
-		PEERS,
-		SECRET,
-
-		COLUMN_COUNT
-	};
+protected:
+#ifdef Q_OS_LINUX
+	QString desktop_file_path;
+#endif
 };

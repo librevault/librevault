@@ -17,7 +17,12 @@
 
 #include <QMainWindow>
 #include <QJsonObject>
+#include <QSystemTrayIcon>
+#include <QMenu>
 #include "src/pch.h"
+#include "src/Client.h"
+#include "src/gui/Settings.h"
+#include "src/gui/AddFolder.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,17 +34,49 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget* parent = 0);
+	MainWindow(Client& client, QWidget* parent = 0);
 	~MainWindow();
 
 	void set_model(FolderModel* model);
 
+signals:
+	void newConfigIssued(QJsonObject config_json);
+	void folderAdded(QString secret, QString path);
+
 public slots:
-	void handle_state_json(QJsonObject state_json);
+	void retranslateUi();
+	void handleControlJson(QJsonObject state_json);
+	void openWebsite();
+
+protected slots:
+	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
 
 protected:
+	Client& client_;
 	std::unique_ptr<Ui::MainWindow> ui;
 
-	void changeEvent(QEvent* e);
-	void closeEvent(QCloseEvent* e);
+	/* Dialogs */
+	std::unique_ptr<Settings> settings_;
+	std::unique_ptr<AddFolder> add_folder_;
+
+	/* Event handlers (overrides) */
+	void changeEvent(QEvent* e) override;
+	//void closeEvent(QCloseEvent* e) override;
+
+	/* Actions */
+	QAction* show_main_window_action;
+	QAction* open_website_action;
+	QAction* show_settings_window_action;
+	QAction* exit_action;
+	QAction* new_folder_action;
+	QAction* delete_folder_action;
+
+	void init_actions();
+	void init_toolbar();
+
+	/* Tray icon */
+	QSystemTrayIcon tray_icon;
+	QMenu tray_context_menu;
+
+	void init_tray();
 };

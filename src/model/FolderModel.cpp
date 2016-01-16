@@ -35,8 +35,7 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 		auto folder_object = state_json_["folders"].toArray().at(index.row()).toObject();
 		switch(column) {
 			case Column::NAME: return folder_object["path"].toString();
-			case Column::PEERS: return tr("%1 peers").arg(folder_object["peers"].toArray().size());
-			//case Column::PEERS: return tr("%1 peers");
+			case Column::PEERS: return tr("%n peer(s)", "", folder_object["peers"].toArray().size());
 			case Column::SECRET: return folder_object["secret"].toString();
 			default: return QVariant();
 		}
@@ -62,7 +61,7 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 	return QVariant();
 }
 
-void FolderModel::set_state_json(QJsonObject state_json) {
-	state_json_ = state_json;
+void FolderModel::handleControlJson(QJsonObject state_json) {
+	state_json_ = state_json["state"].toObject();
 	emit dataChanged(createIndex(0,0), createIndex(0, 1));
 }

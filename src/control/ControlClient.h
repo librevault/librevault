@@ -23,11 +23,16 @@ class ControlClient : public QWebSocket {
 Q_OBJECT
 
 public:
-	ControlClient(const QString& attach_url = QString());
+	ControlClient();
 	~ControlClient();
 
 signals:
-	void state_json_received(QJsonObject state_json);
+	void ControlJsonReceived(QJsonObject control_json);
+
+public slots:
+	void sendControlJson(QJsonObject control_json);
+	void sendConfigJson(QJsonObject config_json);
+	void sendAddFolderJson(QString secret, QString path);
 
 private slots:
 	void handle_message(const QString& message);

@@ -1,5 +1,14 @@
 <RCC>
-    <qresource prefix="/logo">
-        <file>favicon-v.svg</file>
-    </qresource>
+  <qresource prefix="branding">
+    <file>librevault_icon.svg</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>ic_help_black_48px.svg</file>
+    <file>ic_account_box_black_48px.svg</file>
+    <file>ic_create_new_folder_black_48px.svg</file>
+    <file>ic_folder_black_48px.svg</file>
+    <file>ic_folder_special_black_48px.svg</file>
+    <file>ic_settings_black_48px.svg</file>
+    <file>ic_settings_ethernet_black_48px.svg</file>
+  </qresource>
 </RCC>

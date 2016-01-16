@@ -33,9 +33,19 @@ list(APPEND SRCS ${MAIN_UIS})
 list(APPEND SRCS ${MAIN_QRCS})
 
 #============================================================================
+# Third-party packages
+#============================================================================
+find_package(Qt5 5.4.0 REQUIRED COMPONENTS LinguistTools Widgets WebSockets WebKitWidgets)
+
+# Translation
+configure_file("src/lang/lang.qrc" "lang.qrc" COPYONLY)
+qt5_add_translation(${PROJECT_NAME}_QM "src/lang/librevault_ru.ts")
+qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_BINARY_DIR}/lang.qrc)
+list(APPEND SRCS ${${PROJECT_NAME}_QM_RC})
+
+#============================================================================
 # Compile targets
 #============================================================================
-
 add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} liblibrevault)
 
@@ -44,8 +54,4 @@ target_link_libraries(${PROJECT_NAME} liblibrevault)
 #============================================================================
 
 # Qt
-find_package(Qt5Widgets)
-find_package(Qt5WebSockets)
-
-target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets)
-
+target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)

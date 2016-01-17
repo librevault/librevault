@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 3.4)
 project(librevault-gui)
 
 #============================================================================
-# Internal compiler options
+# CMake modules
 #============================================================================
 
-add_subdirectory(liblibrevault)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GNUInstallDirs)
+
+#============================================================================
+# Internal compiler options
+#============================================================================
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -43,11 +48,12 @@ qt5_add_translation(${PROJECT_NAME}_QM "src/lang/librevault_ru.ts")
 qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_BINARY_DIR}/lang.qrc)
 list(APPEND SRCS ${${PROJECT_NAME}_QM_RC})
 
+find_package(lvcommon)
+
 #============================================================================
 # Compile targets
 #============================================================================
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} liblibrevault)
 
 #============================================================================
 # Third-party libraries
@@ -55,3 +61,13 @@ target_link_libraries(${PROJECT_NAME} liblibrevault)
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)
+
+# LVCommon
+target_link_libraries(${PROJECT_NAME} lvcommon-shared)
+
+#============================================================================
+# Third-party libraries
+#============================================================================
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES "resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)
+install(FILES "resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")

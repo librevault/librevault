@@ -13,28 +13,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "Login.h"
+#include "ui_Login.h"
+#include <QUrlQuery>
 
-#include <QWebSocket>
-#include <QJsonObject>
-#include "src/pch.h"
+Login::Login(QWidget* parent) :
+		QDialog(parent),
+		ui(std::make_unique<Ui::Login>()) {
+	ui->setupUi(this);
+}
 
-class ControlClient : public QWebSocket {
-Q_OBJECT
+Login::~Login() {}
 
-public:
-	ControlClient();
-	~ControlClient();
+void Login::display() {
+	this->setModal(true);
+	connect(ui->webView, &QWebView::urlChanged, this, &Login::urlChanged);
+	QDialog::show();
+}
 
-signals:
-	void ControlJsonReceived(QJsonObject control_json);
-
-public slots:
-	void sendControlJson(QJsonObject control_json);
-	void sendConfigJson(QJsonObject config_json);
-	void sendAddFolderJson(QString secret, QString path);
-	void sendRemoveFolderJson(QString secret);
-
-private slots:
-	void handle_message(const QString& message);
-};
+void Login::urlChanged(const QUrl& url) {
+	if(url.host() == "127.0.0.1") {
+		QUrlQuery fragment(url.fragment());
+		qDebug() << "access_token = " << fragment.queryItemValue("access_token");
+		qDebug() << "token_type = " << fragment.queryItemValue("token_type");
+		qDebug() << "secrets_key = " << fragment.queryItemValue("secrets_key");
+		//std::clog << url;
+	}
+}

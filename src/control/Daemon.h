@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "pch.h"
+#include "src/pch.h"
 #include <QProcess>
 
 class Daemon : public QProcess {

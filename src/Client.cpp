@@ -15,7 +15,6 @@
  */
 #include "Client.h"
 #include "src/gui/MainWindow.h"
-#include "src/gui/Settings.h"
 #include "src/model/FolderModel.h"
 #include "src/control/Daemon.h"
 #include "src/control/ControlClient.h"
@@ -42,19 +41,14 @@ Client::Client(int &argc, char **argv, int appflags) :
 		daemon_->launch();
 	}
 
-	folder_model_ = std::make_unique<FolderModel>();
-
 	main_window_ = std::make_unique<MainWindow>(*this);
-
-	// Setting model
-	main_window_->set_model(folder_model_.get());
 
 	// Connecting signals & slots
 	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
-	connect(control_client_.get(), &ControlClient::ControlJsonReceived, folder_model_.get(), &FolderModel::handleControlJson);
 
 	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);
 	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
+	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
 }
 
 void Client::applyLocale(QString locale) {

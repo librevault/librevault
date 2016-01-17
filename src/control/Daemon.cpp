@@ -23,7 +23,7 @@ Daemon::Daemon() :
 		QProcess() {
 	/* Process parameters */
 	// Program
-	setProgram(QStringLiteral("./librevault"));
+	setProgram(QStringLiteral("librevault"));
 	// Arguments
 	QStringList arguments;
 	//arguments << QString("--data=\"") + QCoreApplication::applicationDirPath() + "\"";

@@ -51,3 +51,10 @@ void ControlClient::sendAddFolderJson(QString secret, QString path) {
 	control_json["folder"] = folder_json;
 	sendControlJson(control_json);
 }
+
+void ControlClient::sendRemoveFolderJson(QString secret) {
+	QJsonObject control_json;
+	control_json["command"] = QStringLiteral("remove_folder");
+	control_json["secret"] = secret;
+	sendControlJson(control_json);
+}

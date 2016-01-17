@@ -42,6 +42,7 @@ public:
 signals:
 	void newConfigIssued(QJsonObject config_json);
 	void folderAdded(QString secret, QString path);
+	void folderRemoved(QString secret);
 
 public slots:
 	void retranslateUi();
@@ -50,10 +51,14 @@ public slots:
 
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
+	void handleRemoveFolder();
 
 protected:
 	Client& client_;
 	std::unique_ptr<Ui::MainWindow> ui;
+
+	/* Models */
+	std::unique_ptr<FolderModel> folder_model_;
 
 	/* Dialogs */
 	std::unique_ptr<Settings> settings_;

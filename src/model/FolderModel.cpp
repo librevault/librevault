@@ -23,7 +23,7 @@ FolderModel::FolderModel() :
 FolderModel::~FolderModel() {}
 
 int FolderModel::rowCount(const QModelIndex &parent) const {
-	state_json_["folders"].toArray().size();
+	return state_json_["folders"].toArray().size();
 }
 int FolderModel::columnCount(const QModelIndex &parent) const {
 	return (int)Column::COLUMN_COUNT;
@@ -63,5 +63,6 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 
 void FolderModel::handleControlJson(QJsonObject state_json) {
 	state_json_ = state_json["state"].toObject();
-	emit dataChanged(createIndex(0,0), createIndex(0, 1));
+	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
+	emit layoutChanged();
 }

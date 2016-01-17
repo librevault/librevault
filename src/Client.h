@@ -43,8 +43,6 @@ private:
 	// GUI
 	std::unique_ptr<MainWindow> main_window_;
 
-	std::unique_ptr<FolderModel> folder_model_;
-
 	std::unique_ptr<ControlClient> control_client_;
 	std::unique_ptr<Daemon> daemon_;
 };

@@ -19,13 +19,18 @@
 #include <QCloseEvent>
 #include <QPushButton>
 #include <QDesktopServices>
+#include <QDebug>
 
 MainWindow::MainWindow(Client& client, QWidget* parent) :
 		QMainWindow(parent),
 		client_(client),
 		ui(std::make_unique<Ui::MainWindow>()) {
 	ui->setupUi(this);
+	/* Initializing models */
+	folder_model_ = std::make_unique<FolderModel>();
+	set_model(folder_model_.get());
 
+	/* Initializing dialogs */
 	settings_ = std::make_unique<Settings>();
 	connect(settings_.get(), &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
@@ -62,6 +67,7 @@ void MainWindow::retranslateUi() {
 
 void MainWindow::handleControlJson(QJsonObject state_json) {
 	settings_->handleControlJson(state_json);
+	folder_model_->handleControlJson(state_json);
 }
 
 void MainWindow::openWebsite() {
@@ -70,6 +76,16 @@ void MainWindow::openWebsite() {
 
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
+}
+
+void MainWindow::handleRemoveFolder() {
+	auto selection_model = ui->treeView->selectionModel()->selectedRows(2);
+	for(auto model_index : selection_model) {
+		qDebug() << model_index;
+		QString secret = folder_model_->data(model_index).toString();
+		qDebug() << secret;
+		emit folderRemoved(secret);
+	}
 }
 
 void MainWindow::set_model(FolderModel* model) {
@@ -114,6 +130,7 @@ void MainWindow::init_actions() {
 	QIcon delete_folder_action_icon(QIcon::fromTheme(QStringLiteral("edit-delete")));
 	delete_folder_action->setIcon(delete_folder_action_icon);
 	delete_folder_action->setShortcut(Qt::Key_Delete);
+	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
 }
 
 void MainWindow::init_toolbar() {

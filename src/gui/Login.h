@@ -15,26 +15,29 @@
  */
 #pragma once
 
-#include <QWebSocket>
-#include <QJsonObject>
+#include <QDialog>
 #include "src/pch.h"
 
-class ControlClient : public QWebSocket {
+namespace Ui {
+class Login;
+}
+
+class Login : public QDialog {
 Q_OBJECT
 
 public:
-	ControlClient();
-	~ControlClient();
+	explicit Login(QWidget* parent = 0);
+	~Login();
 
 signals:
-	void ControlJsonReceived(QJsonObject control_json);
+	void loginCredentialsReceived(const QString& token, const QByteArray& secrets_key);
 
 public slots:
-	void sendControlJson(QJsonObject control_json);
-	void sendConfigJson(QJsonObject config_json);
-	void sendAddFolderJson(QString secret, QString path);
-	void sendRemoveFolderJson(QString secret);
+	void display();
+
+protected:
+	std::unique_ptr<Ui::Login> ui;
 
 private slots:
-	void handle_message(const QString& message);
+	void urlChanged(const QUrl& url);
 };

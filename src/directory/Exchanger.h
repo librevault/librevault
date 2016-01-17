@@ -51,6 +51,8 @@ public:
 
 	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
 
+	void add_directory(const Config::FolderConfig& folder_config);
+
 	P2PProvider* p2p_provider();
 private:
 	Client& client_;
@@ -69,8 +71,6 @@ private:
 	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 
 	std::string log_tag() const {return "Exchanger";}
-
-	void add_directory(const Config::FolderConfig& folder_config);
 };
 
 } /* namespace librevault */

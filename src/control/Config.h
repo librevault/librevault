@@ -61,11 +61,11 @@ public:
 			fs::path asm_path;
 			std::vector<std::string> ignore_paths;
 			std::vector<url> nodes;
-			milliseconds index_event_timeout;
-			bool preserve_unix_attrib;
-			bool preserve_windows_attrib;
-			bool preserve_symlinks;
-			cryptodiff::StrongHashType block_strong_hash_type;
+			milliseconds index_event_timeout = milliseconds(1000);
+			bool preserve_unix_attrib = false;
+			bool preserve_windows_attrib = false;
+			bool preserve_symlinks = true;
+			cryptodiff::StrongHashType block_strong_hash_type = cryptodiff::StrongHashType::SHA3_224;
 		};
 		std::vector<FolderConfig> folders;
 	} current;

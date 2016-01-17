@@ -15,6 +15,7 @@
  */
 #include "ControlServer.h"
 #include "src/Client.h"
+#include "src/control/Config.h"
 #include "src/directory/Exchanger.h"
 #include "src/directory/ExchangeGroup.h"
 #include "src/directory/fs/FSDirectory.h"
@@ -42,6 +43,11 @@ ControlServer::ControlServer(Client& client) :
 
 	ws_server_.listen(local_endpoint_);
 	ws_server_.start_accept();
+
+	// This string is for control client, that launches librevault daemon as its child process.
+	// It watches STDOUT for ^\[CONTROL\].*?(wss?:\/\/.*)$ regexp and connects to the first matched address.
+	// So, change it carefully, preserving the compatibility.
+	std::cout << "[CONTROL] Librevault Control is listening at ws://" << (std::string)bind_url << std::endl;
 
 	send_control_json();
 }
@@ -81,7 +87,13 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 
 	try {
 		log_->trace() << message_ptr->get_payload();
-	}catch(std::runtime_error& e) {
+		// Read as control_json;
+		std::istringstream is(message_ptr->get_payload());
+		ptree control_json;
+		boost::property_tree::json_parser::read_json(is, control_json);
+
+		handle_control_json(control_json);
+	}catch(std::runtime_error& e) { // FIXME: change to websocketpp exception
 		log_->trace() << log_tag() << "on_message e:" << e.what();
 		ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, e.what());
 	}
@@ -157,6 +169,31 @@ void ControlServer::send_control_json(const boost::system::error_code& ec) {
 		timer_.expires_from_now(std::chrono::seconds(10));  // TODO: Replace with value from config.
 		timer_.async_wait(std::bind(&ControlServer::send_control_json, this, std::placeholders::_1));
 	}
+}
+
+void ControlServer::handle_control_json(const ptree& control_json) {
+	try {
+		std::string command = control_json.get<std::string>("command");
+		if(command == "set_config") {
+			client_.config().apply_ptree(control_json.get_child("config"));
+		}else if(command == "add_folder") {
+			handle_add_folder_json(control_json.get_child("folder"));
+		}else
+			log_->debug() << "Could not handle control JSON: Unknown command: " << command;
+	}catch(boost::property_tree::ptree_bad_path& e) {
+		log_->debug() << "Could not handle control JSON: " << e.what();
+	}
+}
+
+void ControlServer::handle_add_folder_json(const ptree& folder_json) {
+	Config::FolderConfig folder_conf;
+	folder_conf.secret = Secret(folder_json.get<std::string>("secret"));
+	folder_conf.open_path = folder_json.get<fs::path>("open_path");
+	try {
+		client_.exchanger().add_directory(folder_conf);
+		client_.config().current.folders.push_back(folder_conf);
+		send_control_json();
+	}catch(...){}   // FIXME: specific exception
 }
 
 } /* namespace librevault */

@@ -50,6 +50,9 @@ private:
 	std::string make_control_json();
 	ptree make_state_json() const;
 	void send_control_json(const boost::system::error_code& ec = boost::system::error_code());
+
+	void handle_control_json(const ptree& control_json);
+	void handle_add_folder_json(const ptree& folder_json);
 };
 
 } /* namespace librevault */

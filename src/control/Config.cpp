@@ -158,7 +158,9 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 			// node!
 			config.folders.push_back(folder_config);
 		}
-	}catch(boost::property_tree::ptree_bad_path& e){}
+	}catch(boost::property_tree::ptree_bad_path& e){
+		config.folders = base.folders;
+	}
 
 	return config;
 }

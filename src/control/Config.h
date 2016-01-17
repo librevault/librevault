@@ -71,33 +71,6 @@ public:
 	} current;
 	const config_type defaults;
 
-	struct signals_type {
-		boost::signals2::signal<void(std::string)> device_name;
-		boost::signals2::signal<void(url)> control_listen;
-		boost::signals2::signal<void(url)> net_listen;
-		boost::signals2::signal<void(bool)> net_natpmp_enabled;
-		boost::signals2::signal<void(seconds)> net_natpmp_lifetime;
-		boost::signals2::signal<void(seconds)> discovery_static_repeat_interval;
-		boost::signals2::signal<void(bool)> discovery_multicast4_enabled;
-		boost::signals2::signal<void(address_v4)> discovery_multicast4_local_ip;
-		boost::signals2::signal<void(address_v4)> discovery_multicast4_ip;
-		boost::signals2::signal<void(uint16_t)> discovery_multicast4_port;
-		boost::signals2::signal<void(seconds)> discovery_multicast4_repeat_interval;
-		boost::signals2::signal<void(bool)> discovery_multicast6_enabled;
-		boost::signals2::signal<void(address_v6)> discovery_multicast6_local_ip;
-		boost::signals2::signal<void(address_v6)> discovery_multicast6_ip;
-		boost::signals2::signal<void(uint16_t)> discovery_multicast6_port;
-		boost::signals2::signal<void(seconds)> discovery_multicast6_repeat_interval;
-		boost::signals2::signal<void(bool)> discovery_bttracker_enabled;
-		boost::signals2::signal<void(unsigned)> discovery_bttracker_num_want;
-		boost::signals2::signal<void(seconds)> discovery_bttracker_min_interval;
-		boost::signals2::signal<void(std::string)> discovery_bttracker_azureus_id;
-		boost::signals2::signal<void(seconds)> discovery_bttracker_reconnect_interval;
-		boost::signals2::signal<void(seconds)> discovery_bttracker_packet_timeout;
-		boost::signals2::signal<void(std::vector<url>)> discovery_bttracker_trackers;
-		boost::signals2::signal<void(std::vector<config_type::FolderConfig>)> folders;
-	} signal;
-
 	ptree get_ptree() const;
 	void apply_ptree(const ptree& pt);
 

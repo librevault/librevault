@@ -72,7 +72,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 
 void NATPMPService::set_enabled(bool enabled) {
 	if(enabled) {
-		maintain_mapping();
+		client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));
 	}
 }
 

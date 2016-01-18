@@ -44,9 +44,6 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
 
-	// Initializing cryptodiff
-	cryptodiff::set_io_service(etc_ios_->ios());
-
 	// Initializing components
 	config_ = std::make_unique<Config>(*this, config_path_);
 	exchanger_ = std::make_unique<Exchanger>(*this);

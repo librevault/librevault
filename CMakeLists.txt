@@ -1,5 +1,5 @@
-project(librevault)
 cmake_minimum_required(VERSION 3.2)
+project(librevault VERSION 0.1.0)
 
 #============================================================================
 # Settable options
@@ -21,8 +21,6 @@ include(GNUInstallDirs)
 #============================================================================
 # Internal compiler options
 #============================================================================
-
-add_subdirectory(liblibrevault)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -90,7 +88,9 @@ configure_file("appver.in.h" "appver.h")
 #============================================================================
 
 add_executable(${PROJECT_NAME} ${SRCS})
-target_link_libraries(${PROJECT_NAME} liblibrevault)
+
+find_package(lvcommon)
+target_link_libraries(${PROJECT_NAME} lvcommon-shared)
 
 #============================================================================
 # Third-party libraries
@@ -105,7 +105,7 @@ find_package(Threads)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
 # Docopt
-add_subdirectory("contrib/docopt")
+find_package(docopt PATHS contrib/docopt)
 target_link_libraries(${PROJECT_NAME} docopt_s)
 
 # Boost
@@ -201,6 +201,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include"
 
 # cotire invocation
 if(WITH_COTIRE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "src/pch.h")
 	cotire(${PROJECT_NAME})
 endif()
 
@@ -213,3 +214,9 @@ if(BUILD_DOCUMENTATION)
 	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
 	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
 endif()
+
+#============================================================================
+# Install
+#============================================================================
+# Development package
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})

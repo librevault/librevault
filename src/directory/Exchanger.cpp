@@ -54,6 +54,7 @@ void Exchanger::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 	multicast6_->register_group(group_ptr);
 
 	bttracker_->register_group(group_ptr);
+	log_->debug() << log_tag() << "Group registered: " << group_ptr->secret();
 }
 
 void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
@@ -65,6 +66,7 @@ void Exchanger::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
 	static_discovery_->unregister_group(group_ptr);
 
 	hash_group_.erase(group_ptr->hash());
+	log_->debug() << log_tag() << "Group unregistered: " << group_ptr->secret();
 }
 
 std::shared_ptr<ExchangeGroup> Exchanger::get_group(const blob& hash){

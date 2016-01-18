@@ -53,6 +53,7 @@ private:
 
 	void handle_control_json(const ptree& control_json);
 	void handle_add_folder_json(const ptree& folder_json);
+	void handle_remove_folder_json(const ptree& folder_json);
 };
 
 } /* namespace librevault */

@@ -178,6 +178,8 @@ void ControlServer::handle_control_json(const ptree& control_json) {
 			client_.config().apply_ptree(control_json.get_child("config"));
 		}else if(command == "add_folder") {
 			handle_add_folder_json(control_json.get_child("folder"));
+		}else if(command == "remove_folder") {
+			handle_remove_folder_json(control_json);
 		}else
 			log_->debug() << "Could not handle control JSON: Unknown command: " << command;
 	}catch(boost::property_tree::ptree_bad_path& e) {
@@ -192,6 +194,21 @@ void ControlServer::handle_add_folder_json(const ptree& folder_json) {
 	try {
 		client_.exchanger().add_directory(folder_conf);
 		client_.config().current.folders.push_back(folder_conf);
+		send_control_json();
+	}catch(...){}   // FIXME: specific exception
+}
+
+void ControlServer::handle_remove_folder_json(const ptree& folder_json) {
+	Secret secret = Secret(folder_json.get<std::string>("secret"));
+	try {
+		auto group_ptr = client_.exchanger().get_group(secret.get_Hash());
+		client_.exchanger().unregister_group(group_ptr);
+		for(auto folder_conf_it = client_.config().current.folders.begin(); folder_conf_it != client_.config().current.folders.end(); folder_conf_it++) {
+			if(folder_conf_it->secret == secret) {
+				client_.config().current.folders.erase(folder_conf_it);
+				break;
+			}
+		}
 		send_control_json();
 	}catch(...){}   // FIXME: specific exception
 }

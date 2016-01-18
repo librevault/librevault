@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(liblibrevault)
-
-#============================================================================
-# Settable options
-#============================================================================
+project(lvcommon VERSION 0.9.0)
 
 #============================================================================
 # CMake modules
@@ -42,79 +38,114 @@ endif()
 # Sources & headers
 #============================================================================
 
-# Main sources
-file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "src/*.h")
-list(APPEND SRCS ${MAIN_SRCS})
-list(APPEND SRCS ${MAIN_HEADERS})
+file(GLOB_RECURSE lvcommon_SOURCES "src/*.cpp")
+file(GLOB_RECURSE lvcommon_HEADERS "include/*.h")
+
+#============================================================================
+# Third-party packages
+#============================================================================
+find_package(Threads)
+
+find_package(Protobuf REQUIRED)
+file(GLOB_RECURSE PROTO_LIST "src/*.proto")
+protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
+list(APPEND lvcommon_SOURCES ${PROTO_SOURCES})
 
 #============================================================================
 # Compile targets
 #============================================================================
 
-add_library(${PROJECT_NAME} ${SRCS})
-target_include_directories(${PROJECT_NAME} PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-		$<INSTALL_INTERFACE:include>
-		)
+add_library(lvcommon-object OBJECT ${lvcommon_SOURCES} ${PROTO_HEADERS})
+set_target_properties(lvcommon-object PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+target_include_directories(lvcommon-object PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+
+add_library(lvcommon-static STATIC $<TARGET_OBJECTS:lvcommon-object>)
+add_library(lvcommon-shared SHARED $<TARGET_OBJECTS:lvcommon-object>)
+
+target_include_directories(lvcommon-static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_include_directories(lvcommon-shared PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 
 if(NOT MSVC)
-	set(COMPAT_VERSION ${cryptopp_VERSION_MAJOR}.${cryptopp_VERSION_MINOR})
+	set(COMPAT_VERSION ${lvcommon_VERSION_MAJOR}.${lvcommon_VERSION_MINOR})
 
-	set_target_properties(liblibrevault
-			PROPERTIES
+	set_target_properties(lvcommon-static PROPERTIES
+			OUTPUT_NAME lvcommon
+			)
+
+	set_target_properties(lvcommon-shared PROPERTIES
 			SOVERSION ${COMPAT_VERSION}
-			OUTPUT_NAME librevault)
+			OUTPUT_NAME lvcommon
+			)
 endif()
 
 #============================================================================
 # Third-party libraries
 #============================================================================
 
-# Cryptodiff
-find_package(Cryptodiff REQUIRED)
-target_link_libraries(${PROJECT_NAME} cryptodiff-shared)
+### WinSock
+if(WIN32)
+	target_link_libraries(lvcommon-static ws2_32)
+	target_link_libraries(lvcommon-shared ws2_32)
+endif()
 
-# Pthreads
-find_package(Threads)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+### Threads
+target_link_libraries(lvcommon-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(lvcommon-shared PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
-# Boost
+### Boost
 set(Boost_COMPONENTS
 		system
-		filesystem)
+		filesystem
+		iostreams)
 set(Boost_USE_MULTITHREADED ON)
 
-find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+# shared executable
+find_package(Boost COMPONENTS ${Boost_COMPONENTS} REQUIRED)
+target_link_libraries(lvcommon-shared PRIVATE ${Boost_LIBRARIES})
+target_include_directories(lvcommon-shared PRIVATE ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost shared libraries: ${Boost_LIBRARIES}")
 
-# Protobuf
-find_package(Protobuf REQUIRED)
+# reset
+unset(Boost_LIBRARIES)
+set(Boost_USE_STATIC_LIBS ON)
 
-file(GLOB_RECURSE PROTO_LIST "src/*.proto")
-protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
+# static executable
+find_package(Boost COMPONENTS ${Boost_COMPONENTS} REQUIRED)
+target_link_libraries(lvcommon-static PRIVATE ${Boost_LIBRARIES})
+target_include_directories(lvcommon-static PRIVATE ${Boost_INCLUDE_DIRS})
+message(STATUS "Boost static libraries: ${Boost_LIBRARIES}")
 
-add_library(liblibrevault-protobuf STATIC ${PROTO_SOURCES} ${PROTO_HEADERS})
-target_include_directories(liblibrevault-protobuf PUBLIC ${PROTOBUF_INCLUDE_DIRS})
-target_link_libraries(liblibrevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
+### Protobuf
+target_include_directories(lvcommon-static PRIVATE ${PROTOBUF_INCLUDE_DIRS})
+target_include_directories(lvcommon-shared PRIVATE ${PROTOBUF_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} liblibrevault-protobuf)
+target_link_libraries(lvcommon-static PRIVATE ${PROTOBUF_LIBRARIES})
+target_link_libraries(lvcommon-shared PRIVATE ${PROTOBUF_LIBRARIES})
 
-# CryptoPP
-find_package(CryptoPP 5.6.2 REQUIRED)
-target_link_libraries(${PROJECT_NAME} cryptopp-shared)
+### CryptoPP
+find_package(CryptoPP 5.6.3 REQUIRED)
+target_link_libraries(lvcommon-static PRIVATE cryptopp-static)
+target_link_libraries(lvcommon-shared PRIVATE cryptopp-shared)
+
+### Cryptodiff
+find_package(cryptodiff REQUIRED)
+target_link_libraries(lvcommon-static PUBLIC cryptodiff-static)
+target_link_libraries(lvcommon-shared PUBLIC cryptodiff-shared)
 
 #============================================================================
-# Documentation generation
+# Install
 #============================================================================
+set(export_name "lvcommon-targets")
 
-if(BUILD_DOCUMENTATION)
-	find_package(Doxygen)
-	if(NOT DOXYGEN_FOUND)
-		message(FATAL_ERROR
-				"Doxygen is needed to build the documentation. Please install it correctly")
-	endif()
-	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
-	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
-endif()
+# Runtime package
+install(TARGETS lvcommon-shared EXPORT ${export_name} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# Development package
+install(TARGETS lvcommon-static EXPORT ${export_name} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(DIRECTORY include/ DESTINATION include)
+
+# Cmake Package
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file("${PROJECT_BINARY_DIR}/lvcommon-config-version.cmake" COMPATIBILITY SameMajorVersion)
+install(FILES cmake/lvcommon-config.cmake ${PROJECT_BINARY_DIR}/lvcommon-config-version.cmake DESTINATION "lib/cmake/lvcommon")
+install(EXPORT ${export_name} DESTINATION "lib/cmake/lvcommon")

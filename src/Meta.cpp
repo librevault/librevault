@@ -20,7 +20,7 @@
 #include <librevault/crypto/Base32.h>
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/AES_CBC.h>
-#include <osrng.h>
+#include <cryptopp/osrng.h>
 
 namespace librevault {
 

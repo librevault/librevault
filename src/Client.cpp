@@ -26,6 +26,9 @@ Client::Client(std::map<std::string, docopt::value> args) {
 		appdata_path_ = args["--data"].asString();
 	else
 		appdata_path_ = default_appdata_path();
+
+	fs::create_directories(appdata_path_);
+
 	config_path_ = appdata_path_ / (version().lowercase_name()+".conf");
 	log_path_ = appdata_path_ / (version().lowercase_name()+".log");
 	key_path_ = appdata_path_ / "key.pem";

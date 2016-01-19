@@ -25,8 +25,10 @@ Config::Config(Loggable& parent_loggable, fs::path config_path) :
 
 	ptree file_pt;
 	fs::ifstream options_fs(config_path_, std::ios::binary);
-	if(options_fs){
+	if(options_fs) {
 		boost::property_tree::json_parser::read_json(options_fs, file_pt);
+	}else{
+		file_pt.put("folders", "");
 	}
 	apply_ptree(file_pt);
 }
@@ -161,6 +163,7 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 	}catch(boost::property_tree::ptree_bad_path& e){
 		config.folders = base.folders;
 	}
+	config.folders.erase(std::remove_if(config.folders.begin(), config.folders.end(), [&](const FolderConfig& folder){return folder.open_path.empty();}), config.folders.end());
 
 	return config;
 }

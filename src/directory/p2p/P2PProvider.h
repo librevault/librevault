@@ -47,7 +47,6 @@ public:
 	// Getters
 	const tcp_endpoint& local_endpoint() const {return local_endpoint_;}
 	const NodeKey& node_key() const {return node_key_;}
-	std::shared_ptr<ssl_context> ssl_ctx() {return ssl_ctx_ptr_;}
 
 	server& ws_server() {return ws_server_;}
 	client& ws_client() {return ws_client_;}

@@ -86,8 +86,7 @@ private:
 	void on_message_client(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
 	void on_message(std::shared_ptr<P2PDirectory> dir_ptr, const blob& message_raw);
 
-	void on_fail(websocketpp::connection_hdl hdl);
-	void on_close(websocketpp::connection_hdl hdl);
+	void on_disconnect(websocketpp::connection_hdl hdl);
 };
 
 } /* namespace librevault */

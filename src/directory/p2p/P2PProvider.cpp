@@ -45,8 +45,8 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	ws_server_.set_validate_handler(std::bind(&P2PProvider::on_validate, this, std::placeholders::_1));
 	ws_server_.set_open_handler(std::bind(&P2PProvider::on_open, this, std::placeholders::_1));
 	ws_server_.set_message_handler(std::bind(&P2PProvider::on_message_server, this, std::placeholders::_1, std::placeholders::_2));
-	ws_server_.set_fail_handler(std::bind(&P2PProvider::on_fail, this, std::placeholders::_1));
-	ws_server_.set_close_handler(std::bind(&P2PProvider::on_close, this, std::placeholders::_1));
+	ws_server_.set_fail_handler(std::bind(&P2PProvider::on_disconnect, this, std::placeholders::_1));
+	ws_server_.set_close_handler(std::bind(&P2PProvider::on_disconnect, this, std::placeholders::_1));
 
 	ws_server_.listen(local_endpoint_);
 	ws_server_.start_accept();
@@ -62,8 +62,8 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	ws_client_.set_tls_init_handler(std::bind(&P2PProvider::on_tls_init, this, std::placeholders::_1));
 	ws_client_.set_open_handler(std::bind(&P2PProvider::on_open, this, std::placeholders::_1));
 	ws_client_.set_message_handler(std::bind(&P2PProvider::on_message_client, this, std::placeholders::_1, std::placeholders::_2));
-	ws_client_.set_fail_handler(std::bind(&P2PProvider::on_fail, this, std::placeholders::_1));
-	ws_client_.set_close_handler(std::bind(&P2PProvider::on_close, this, std::placeholders::_1));
+	ws_client_.set_fail_handler(std::bind(&P2PProvider::on_disconnect, this, std::placeholders::_1));
+	ws_client_.set_close_handler(std::bind(&P2PProvider::on_disconnect, this, std::placeholders::_1));
 
 	log_->info() << log_tag() << "Listening on " << local_endpoint();
 }
@@ -94,7 +94,7 @@ void P2PProvider::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<Ex
 }
 
 void P2PProvider::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr) {
-	if(!group_ptr->have_p2p_dir(pubkey)){
+	if(!group_ptr->have_p2p_dir(pubkey) && !is_loopback(pubkey)){
 		add_node(node_endpoint, group_ptr);
 	}
 }
@@ -280,20 +280,8 @@ void P2PProvider::on_message(std::shared_ptr<P2PDirectory> dir_ptr, const blob& 
 	}
 }
 
-void P2PProvider::on_fail(websocketpp::connection_hdl hdl) {
+void P2PProvider::on_disconnect(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_fail()";
-
-	auto dir_ptr = dir_ptr_from_hdl(hdl);
-	if(dir_ptr) {
-		if(dir_ptr->exchange_group())
-			dir_ptr->exchange_group()->detach(dir_ptr);
-
-		ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
-		ws_client_assignment_.erase(ws_client_.get_con_from_hdl(hdl));
-	}
-}
-void P2PProvider::on_close(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_close()";
 
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	if(dir_ptr) {

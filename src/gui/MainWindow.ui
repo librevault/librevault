@@ -65,7 +65,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="separator"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>

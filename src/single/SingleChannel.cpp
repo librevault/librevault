@@ -13,39 +13,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "pch.h"
-#include <QApplication>
-#include <QTranslator>
+#include "SingleChannel.h"
+#include <QCoreApplication>
 
-class MainWindow;
-class Settings;
-class TrayIcon;
-class FolderModel;
-class ControlClient;
-class Daemon;
-class SingleChannel;
+SingleChannel::SingleChannel() :
+		QUdpSocket() {
+	bool bound = bind(QHostAddress::LocalHost, 61346);
+	if(bound) {
+		connect(this, &SingleChannel::readyRead, this, &SingleChannel::datagramReceived);
+	}else{
+		writeDatagram("show", QHostAddress::LocalHost, 61346);
+		exit(1);
+	}
+}
 
-class Client : public QApplication {
-Q_OBJECT
+SingleChannel::~SingleChannel() {}
 
-public:
-	Client(int &argc, char **argv, int appflags = ApplicationFlags);
-	~Client();
+void SingleChannel::datagramReceived() {
+	while(hasPendingDatagrams()) {
+		QByteArray datagram(pendingDatagramSize(), 0);
+		QHostAddress sender;
+		uint16_t port;
 
-public slots:
-	void applyLocale(QString locale);
+		readDatagram(datagram.data(), datagram.size(), &sender, &port);
 
-private:
-	// Translation
-	QTranslator translator_;
-	QTranslator qt_translator_;
-
-	std::unique_ptr<SingleChannel> single_channel_;
-
-	std::unique_ptr<Daemon> daemon_;
-	std::unique_ptr<ControlClient> control_client_;
-
-	// GUI
-	std::unique_ptr<MainWindow> main_window_;
-};
+		if(datagram == "show")
+			emit showMainWindow();
+	}
+}

@@ -18,6 +18,7 @@
 #include "src/model/FolderModel.h"
 #include "src/control/Daemon.h"
 #include "src/control/ControlClient.h"
+#include "src/single/SingleChannel.h"
 #include <QCommandLineParser>
 #include <QLibraryInfo>
 
@@ -32,6 +33,8 @@ Client::Client(int &argc, char **argv, int appflags) :
 	parser.process(*this);
 
 	// Creating components
+	single_channel_ = std::make_unique<SingleChannel>();
+
 	daemon_ = std::make_unique<Daemon>();
 	control_client_ = std::make_unique<ControlClient>();
 	if(parser.isSet(attach_option))
@@ -44,6 +47,8 @@ Client::Client(int &argc, char **argv, int appflags) :
 	main_window_ = std::make_unique<MainWindow>(*this);
 
 	// Connecting signals & slots
+	connect(single_channel_.get(), &SingleChannel::showMainWindow, main_window_.get(), &QMainWindow::show);
+
 	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
 
 	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);

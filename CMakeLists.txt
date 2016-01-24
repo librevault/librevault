@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.4)
 project(librevault-gui)
 
 #============================================================================
+# Settable options
+#============================================================================
+
+option(BUILD_STATIC "Build static version of binary" OFF)
+
+#============================================================================
 # CMake modules
 #============================================================================
 
@@ -11,6 +17,10 @@ include(GNUInstallDirs)
 #============================================================================
 # Internal compiler options
 #============================================================================
+
+if(BUILD_STATIC)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+endif()
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +50,7 @@ list(APPEND SRCS ${MAIN_QRCS})
 #============================================================================
 # Third-party packages
 #============================================================================
-find_package(Qt5 5.4.0 REQUIRED COMPONENTS LinguistTools Widgets WebSockets WebKitWidgets)
+find_package(Qt5 5.3 REQUIRED COMPONENTS LinguistTools Widgets WebSockets WebKitWidgets)
 
 # Translation
 configure_file("src/lang/lang.qrc" "lang.qrc" COPYONLY)
@@ -63,7 +73,11 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)
 
 # LVCommon
-target_link_libraries(${PROJECT_NAME} lvcommon-shared)
+if(BUILD_STATIC)
+	target_link_libraries(${PROJECT_NAME} lvcommon-static)
+else()
+	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
+endif()
 
 #============================================================================
 # Third-party libraries

@@ -69,10 +69,6 @@ bool FSDirectory::have_meta(const Meta::PathRevision& path_revision) {
 	return true;
 }
 
-Meta::SignedMeta FSDirectory::get_meta(const blob& path_id) {
-	return index->get_Meta(path_id);
-}
-
 Meta::SignedMeta FSDirectory::get_meta(const Meta::PathRevision& path_revision) {
 	auto smeta = index->get_Meta(path_revision.path_id_);
 	if(smeta.meta().revision() == path_revision.revision_)

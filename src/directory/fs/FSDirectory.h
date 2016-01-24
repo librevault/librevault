@@ -55,7 +55,6 @@ public:
 
 	/* Actions */
 	bool have_meta(const Meta::PathRevision& path_revision);
-	Meta::SignedMeta get_meta(const blob& path_id);
 	Meta::SignedMeta get_meta(const Meta::PathRevision& path_revision);
 	std::list<Meta::SignedMeta> get_meta_containing(const blob& encrypted_data_hash);
 	void put_meta(Meta::SignedMeta smeta, bool fully_assembled = false);

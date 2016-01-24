@@ -24,7 +24,6 @@
 #include "AutoIndexer.h"
 
 #include "../../Client.h"
-#include "src/util/parse_url.h"
 #include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 
@@ -59,16 +58,6 @@ FSDirectory::FSDirectory(FolderConfig folder_config, Client& client, Exchanger& 
 }
 
 FSDirectory::~FSDirectory() {}
-
-// TODO: rewrite.
-bool FSDirectory::have_meta(const blob& path_id) {
-	try {
-		get_meta(path_id);
-	}catch(AbstractDirectory::no_such_meta& e){
-		return false;
-	}
-	return true;
-}
 
 // TODO: rewrite.
 bool FSDirectory::have_meta(const Meta::PathRevision& path_revision) {

@@ -162,7 +162,7 @@ target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} librevault-protobuf)
 
 # CryptoPP
-find_package(CryptoPP 5.6.2 REQUIRED)
+find_package(CryptoPP 5.6.3 REQUIRED)
 target_link_libraries(${PROJECT_NAME} cryptopp-shared)
 
 # libnatpmp

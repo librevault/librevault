@@ -54,7 +54,6 @@ public:
 	virtual ~FSDirectory();
 
 	/* Actions */
-	bool have_meta(const blob& path_id);
 	bool have_meta(const Meta::PathRevision& path_revision);
 	Meta::SignedMeta get_meta(const blob& path_id);
 	Meta::SignedMeta get_meta(const Meta::PathRevision& path_revision);

@@ -7,6 +7,7 @@ Third-party libraries
 - Crypto++ - Boost Software License
 - dir_monitor - Boost Software License
 - cpp-netlib - Boost Software License
+- docopt - Boost Software License/MIT (dual-licensed, using under the terms of Boost Software License)
 
 - Protocol Buffers - New BSD License
 - libnatpmp - New BSD License
@@ -23,5 +24,5 @@ Third-party libraries
 Own libraries
 -------------
 - Cryptodiff - Not decided yet
-- LVCrypto - CC0 (public domain)
+- LVCommon - Not decided yet
 - LVSQLite (aka SQLiteWrapper) - CC0 (public domain)

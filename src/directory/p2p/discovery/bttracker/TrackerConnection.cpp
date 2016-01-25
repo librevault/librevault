@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../bttracker/UDPTrackerConnection.h"
-#include "../../Client.h"
-#include "../../directory/ExchangeGroup.h"
-#include "../../directory/p2p/P2PProvider.h"
-#include "../../directory/fs/FSDirectory.h"
+#include "UDPTrackerConnection.h"
+#include "src/Client.h"
+#include "src/directory/ExchangeGroup.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include "src/directory/fs/FSDirectory.h"
 
 namespace librevault {
 

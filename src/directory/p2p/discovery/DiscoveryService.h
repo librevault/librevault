@@ -14,23 +14,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../pch.h"
-#include "DiscoveryService.h"
+#include "src/pch.h"
+#include "src/util/parse_url.h"
+#include "src/util/Loggable.h"
 
 namespace librevault {
 
-class StaticDiscovery : public DiscoveryService {
+class ExchangeGroup;
+class P2PProvider;
+class Client;
+
+class DiscoveryService : protected Loggable {
 public:
-	StaticDiscovery(Client& client);
-	virtual ~StaticDiscovery();
+	DiscoveryService(Client& client);
+	virtual ~DiscoveryService(){}
 
-	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
-	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
+	virtual void register_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
+	virtual void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
+
+	void add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr);
+	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr);
+	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
 protected:
-	std::set<std::shared_ptr<ExchangeGroup>> groups_;
-	//std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
-
-	std::string log_tag() const {return "[StaticDiscovery] ";}
+	Client& client_;
 };
 
 } /* namespace librevault */

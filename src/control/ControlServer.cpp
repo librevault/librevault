@@ -184,7 +184,7 @@ void ControlServer::handle_add_folder_json(const ptree& folder_json) {
 	folder_conf.secret = Secret(folder_json.get<std::string>("secret"));
 	folder_conf.open_path = folder_json.get<fs::path>("open_path");
 	try {
-		client_.add_directory(folder_conf);
+		client_.add_folder(folder_conf);
 		client_.config().current.folders.push_back(folder_conf);
 		send_control_json();
 	}catch(...){}   // FIXME: specific exception
@@ -194,7 +194,7 @@ void ControlServer::handle_remove_folder_json(const ptree& folder_json) {
 	Secret secret = Secret(folder_json.get<std::string>("secret"));
 	try {
 		auto group_ptr = client_.get_group(secret.get_Hash());
-		client_.unregister_group(group_ptr);
+		client_.remove_folder(group_ptr);
 		for(auto folder_conf_it = client_.config().current.folders.begin(); folder_conf_it != client_.config().current.folders.end(); folder_conf_it++) {
 			if(folder_conf_it->secret == secret) {
 				client_.config().current.folders.erase(folder_conf_it);

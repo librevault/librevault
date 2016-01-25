@@ -14,17 +14,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "StaticDiscovery.h"
-#include "../Client.h"
-#include "../directory/ExchangeGroup.h"
-#include "../directory/p2p/P2PProvider.h"
-#include "../directory/fs/FSDirectory.h"
+#include "src/Client.h"
+#include "src/directory/ExchangeGroup.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include "src/directory/fs/FSDirectory.h"
 
 namespace librevault {
 
 using namespace boost::asio::ip;
 
 StaticDiscovery::StaticDiscovery(Client& client) :
-	DiscoveryService(client) {}
+	DiscoveryService(client) {
+	client.folder_added_signal.connect(std::bind(&StaticDiscovery::register_group, this, std::placeholders::_1));
+	client.folder_removed_signal.connect(std::bind(&StaticDiscovery::unregister_group, this, std::placeholders::_1));
+}
 
 StaticDiscovery::~StaticDiscovery() {}
 

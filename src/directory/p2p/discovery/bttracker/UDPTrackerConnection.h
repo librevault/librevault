@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
+#include "src/pch.h"
 #include "TrackerConnection.h"
 
 namespace librevault {

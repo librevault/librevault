@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "BTTrackerDiscovery.h"
-#include "../Client.h"
-#include "../directory/ExchangeGroup.h"
-#include "../directory/p2p/P2PProvider.h"
-#include "../directory/fs/FSDirectory.h"
-#include "bttracker/UDPTrackerConnection.h"
+#include "src/Client.h"
+#include "src/directory/ExchangeGroup.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include "src/directory/fs/FSDirectory.h"
+#include "src/directory/p2p/discovery/bttracker/UDPTrackerConnection.h"
 
 namespace librevault {
 
@@ -31,6 +31,8 @@ BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
 			trackers_.push_back(tracker);
 			log_->debug() << "Added BitTorrent tracker: " << (std::string)tracker;
 		}
+		client.folder_added_signal.connect(std::bind(&BTTrackerDiscovery::register_group, this, std::placeholders::_1));
+		client.folder_removed_signal.connect(std::bind(&BTTrackerDiscovery::unregister_group, this, std::placeholders::_1));
 	}else
 		log_->info() << "BitTorrent tracker discovery is disabled";
 }

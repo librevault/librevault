@@ -13,12 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../bttracker/UDPTrackerConnection.h"
-#include "../../Client.h"
-#include "../../directory/p2p/P2PProvider.h"
-#include "../../directory/fs/FSDirectory.h"
+#include "UDPTrackerConnection.h"
+#include "src/Client.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include "src/directory/fs/FSDirectory.h"
 
-#include "../BTTrackerDiscovery.h"
+#include "src/directory/p2p/discovery/BTTrackerDiscovery.h"
 
 namespace librevault {
 
@@ -191,7 +191,7 @@ void UDPTrackerConnection::handle_announce() {
 			tracker_discovery_.add_node(endpoint, group_ptr_);
 		}
 	}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6){
-
+		// TODO: Implement IPv6 tracker discovery
 	}
 
 	announce_interval_ = std::chrono::seconds(reply->interval_);

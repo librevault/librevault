@@ -18,6 +18,9 @@
 #include "P2PDirectory.h"
 #include "../ExchangeGroup.h"
 #include "nat/NATPMPService.h"
+#include "discovery/StaticDiscovery.h"
+#include "discovery/MulticastDiscovery.h"
+#include "discovery/BTTrackerDiscovery.h"
 
 namespace librevault {
 
@@ -26,6 +29,11 @@ P2PProvider::P2PProvider(Client& client) :
 		client_(client),
 		node_key_(client) {
 	init_ws();
+
+	static_discovery_ = std::make_unique<StaticDiscovery>(client_);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(client_);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(client_);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_);
 
 	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
 	natpmp_->port_signal.connect(std::bind(&P2PProvider::set_public_port, this, std::placeholders::_1));

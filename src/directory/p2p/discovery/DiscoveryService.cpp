@@ -13,27 +13,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "../pch.h"
 #include "DiscoveryService.h"
-#include "src/util/parse_url.h"
+#include "src/directory/p2p/P2PProvider.h"
+#include "src/Client.h"
 
 namespace librevault {
 
-class TrackerConnection;
+DiscoveryService::DiscoveryService(Client& client) : Loggable(client), client_(client) {}
 
-class BTTrackerDiscovery : public DiscoveryService {
-public:
-	BTTrackerDiscovery(Client& client);
-	virtual ~BTTrackerDiscovery();
+void DiscoveryService::add_node(const url& node_url, std::shared_ptr<ExchangeGroup> group_ptr) {
+	client_.p2p_provider()->add_node(node_url, group_ptr);
+}
 
-	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
-	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
-protected:
-	std::unordered_multimap<std::shared_ptr<ExchangeGroup>, std::unique_ptr<TrackerConnection>> groups_;
+void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr) {
+	client_.p2p_provider()->add_node(node_endpoint, group_ptr);
+}
 
-	std::list<url> trackers_;
-	std::string log_tag() const {return "[BTTrackerDiscovery] ";}
-};
+void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr) {
+	client_.p2p_provider()->add_node(node_endpoint, pubkey, group_ptr);
+}
 
 } /* namespace librevault */

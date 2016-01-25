@@ -18,9 +18,6 @@
 #include "control/ControlServer.h"
 #include "directory/fs/FSDirectory.h"
 #include "directory/p2p/P2PProvider.h"
-#include "discovery/StaticDiscovery.h"
-#include "discovery/MulticastDiscovery.h"
-#include "discovery/BTTrackerDiscovery.h"
 #include "directory/ExchangeGroup.h"
 
 namespace librevault {
@@ -54,33 +51,13 @@ Client::Client(std::map<std::string, docopt::value> args) {
 
 	// Initializing components
 	config_ = std::make_unique<Config>(*this, config_path_);
-
 	p2p_provider_ = std::make_unique<P2PProvider>(*this);
 	//cloud_provider_ = std::make_unique<CloudProvider>(*this);
-
-	static_discovery_ = std::make_unique<StaticDiscovery>(*this);
-	multicast4_ = std::make_unique<MulticastDiscovery4>(*this);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(*this);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this);
-
 	control_server_ = std::make_unique<ControlServer>(*this);
 
 	for(auto& folder_config : config().current.folders) {
-		add_directory(folder_config);
+		add_folder(folder_config);
 	}
-}
-
-Client::~Client() {
-	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
-
-	bttracker_.reset();
-	multicast6_.reset();
-	multicast4_.reset();
-	static_discovery_.reset();
-
-	p2p_provider_.reset();
-
-	config_.reset();
 }
 
 void Client::init_log(spdlog::level::level_enum level) {
@@ -96,8 +73,8 @@ void Client::init_log(spdlog::level::level_enum level) {
 		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(Version::current().name()));
 #endif
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-				(log_path_.parent_path() / log_path_.stem()).generic_string(), // TODO: support filenames with multiple dots
-				log_path_.extension().generic_string().substr(1), 5*1024*1024, 6));
+			(log_path_.parent_path() / log_path_.stem()).generic_string(), // TODO: support filenames with multiple dots
+			log_path_.extension().generic_string().substr(1), 5 * 1024 * 1024, 6));
 
 		log_ = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
@@ -109,6 +86,12 @@ void Client::init_log(spdlog::level::level_enum level) {
 	cryptodiff::set_logger(log_);
 
 	log_->info() << Version::current().name() << " " << Version::current().version_string();
+}
+
+Client::~Client() {
+	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
+	p2p_provider_.reset();
+	config_.reset();
 }
 
 void Client::run() {
@@ -132,27 +115,9 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
-	hash_group_.insert({group_ptr->hash(), group_ptr});
-
-	static_discovery_->register_group(group_ptr);
-
-	multicast4_->register_group(group_ptr);
-	multicast6_->register_group(group_ptr);
-
-	bttracker_->register_group(group_ptr);
-	log_->debug() << log_tag() << "Group registered: " << group_ptr->secret();
-}
-
-void Client::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
-	bttracker_->unregister_group(group_ptr);
-
-	multicast4_->unregister_group(group_ptr);
-	multicast6_->unregister_group(group_ptr);
-
-	static_discovery_->unregister_group(group_ptr);
-
+void Client::remove_folder(std::shared_ptr<ExchangeGroup> group_ptr) {
 	hash_group_.erase(group_ptr->hash());
+	folder_removed_signal(group_ptr);
 	log_->debug() << log_tag() << "Group unregistered: " << group_ptr->secret();
 }
 
@@ -163,8 +128,8 @@ std::shared_ptr<ExchangeGroup> Client::get_group(const blob& hash) {
 	return nullptr;
 }
 
-std::list<std::shared_ptr<ExchangeGroup>> Client::groups() const {
-	std::list<std::shared_ptr<ExchangeGroup>> groups_list;
+std::vector<std::shared_ptr<ExchangeGroup>> Client::groups() const {
+	std::vector<std::shared_ptr<ExchangeGroup>> groups_list;
 	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
 		groups_list.push_back(group_ptr);
 	return groups_list;
@@ -174,15 +139,16 @@ P2PProvider* Client::p2p_provider() {
 	return p2p_provider_.get();
 }
 
-void Client::add_directory(const Config::FolderConfig& folder_config) {
+void Client::add_folder(const Config::FolderConfig& folder_config) {
 	auto dir_ptr = std::make_shared<FSDirectory>(folder_config, *this);
 	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr) {
-		group_ptr = std::make_shared<ExchangeGroup>(*this);
-		group_ptr->attach(dir_ptr);
-		register_group(group_ptr);
+		group_ptr = std::make_shared<ExchangeGroup>(dir_ptr, *this);
+		hash_group_.insert({group_ptr->hash(), group_ptr});
+
+		folder_added_signal(group_ptr);
 	}else {
-		throw std::runtime_error("Multiple directories with same key (or derived from the same key) are not supported now");
+		throw std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now");
 	}
 }
 

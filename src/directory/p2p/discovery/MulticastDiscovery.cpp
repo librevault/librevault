@@ -15,9 +15,9 @@
  */
 #include "MulticastDiscovery.h"
 #include "MulticastDiscovery.pb.h"
-#include "../Client.h"
-#include "../directory/ExchangeGroup.h"
-#include "../directory/p2p/P2PProvider.h"
+#include "src/Client.h"
+#include "src/directory/ExchangeGroup.h"
+#include "src/directory/p2p/P2PProvider.h"
 
 namespace librevault {
 
@@ -64,7 +64,10 @@ void MulticastSender::send() {
 
 /* MulticastDiscovery */
 MulticastDiscovery::MulticastDiscovery(Client& client) :
-	DiscoveryService(client), socket_(client.ios()) {}
+	DiscoveryService(client), socket_(client.ios()) {
+	client.folder_added_signal.connect(std::bind(&MulticastDiscovery::register_group, this, std::placeholders::_1));
+	client.folder_removed_signal.connect(std::bind(&MulticastDiscovery::unregister_group, this, std::placeholders::_1));
+}
 
 MulticastDiscovery::~MulticastDiscovery() {
 	socket_.set_option(multicast::leave_group(multicast_addr_.address()));

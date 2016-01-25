@@ -68,7 +68,6 @@ public:
 	/* Membership management */
 	void attach(std::shared_ptr<FSDirectory> fs_dir_ptr);
 	void attach(std::shared_ptr<P2PDirectory> remote_ptr);
-
 	void detach(std::shared_ptr<P2PDirectory> remote_ptr);
 
 	bool have_p2p_dir(const tcp_endpoint& endpoint);

@@ -28,15 +28,7 @@ class ExchangeGroup;
 
 // Providers
 class P2PProvider;
-
 class CloudProvider;
-
-// Discovery services
-class StaticDiscovery;
-
-class MulticastDiscovery;
-
-class BTTrackerDiscovery;
 
 class Client : public Loggable {
 public:
@@ -59,27 +51,23 @@ public:
 	fs::path key_path() const {return key_path_;}
 	fs::path cert_path() const {return cert_path_;}
 
+	/* Signals */
+	boost::signals2::signal<void(std::shared_ptr<ExchangeGroup>)> folder_added_signal;
+	boost::signals2::signal<void(std::shared_ptr<ExchangeGroup>)> folder_removed_signal;
+
 	// ExchangeGroup
-	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
-	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
+	void add_folder(const Config::FolderConfig& folder_config);
+	void remove_folder(std::shared_ptr<ExchangeGroup> group_ptr);
 
 	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
 
-	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
-
-	void add_directory(const Config::FolderConfig& folder_config);
+	std::vector<std::shared_ptr<ExchangeGroup>> groups() const;
 
 	P2PProvider* p2p_provider();
 private:
 	std::unique_ptr<Config> config_;	// Configuration
 
-	// Asynchronous/multithreaded operation
-	io_service main_loop_ios_;
-	std::unique_ptr<multi_io_service> network_ios_;
-	std::unique_ptr<multi_io_service> dir_monitor_ios_;
-	std::unique_ptr<multi_io_service> etc_ios_;
-
-	// Components
+	/* Components */
 	std::unique_ptr<ControlServer> control_server_;
 
 	// Remote
@@ -88,15 +76,17 @@ private:
 
 	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
 
-	std::unique_ptr<StaticDiscovery> static_discovery_;
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
-	std::unique_ptr<BTTrackerDiscovery> bttracker_;
+	/* Asynchronous/multithreaded operation */
+	io_service main_loop_ios_;
+	std::unique_ptr<multi_io_service> network_ios_;
+	std::unique_ptr<multi_io_service> dir_monitor_ios_;
+	std::unique_ptr<multi_io_service> etc_ios_;
 
-	// Paths
+	/* Paths */
 	fs::path default_appdata_path();
 	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_;
 
-	/* Initialization steps */
+	/* Initialization */
 	void init_log(spdlog::level::level_enum level);
 };
 

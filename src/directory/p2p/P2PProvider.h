@@ -25,6 +25,14 @@ namespace librevault {
 class ExchangeGroup;
 class P2PDirectory;
 
+/* Discovery services */
+class StaticDiscovery;
+
+class MulticastDiscovery;
+
+class BTTrackerDiscovery;
+
+/* Port mapping services */
 class NATPMPService;
 
 class P2PProvider : protected Loggable {
@@ -71,6 +79,12 @@ private:
 	std::unique_ptr<NATPMPService> natpmp_;
 	uint16_t public_port_;
 
+	/* Discovery services */
+	std::unique_ptr<StaticDiscovery> static_discovery_;
+	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+	std::unique_ptr<BTTrackerDiscovery> bttracker_;
+
+	/**/
 	std::set<tcp_endpoint> loopback_blacklist_;
 	std::mutex loopback_blacklist_mtx_;
 

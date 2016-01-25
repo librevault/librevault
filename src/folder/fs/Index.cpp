@@ -34,6 +34,20 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_->exec("CREATE TABLE IF NOT EXISTS openfs (encrypted_data_hash BLOB NOT NULL REFERENCES blocks (encrypted_data_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES files (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 
 	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_data_hash NOT IN (SELECT encrypted_data_hash FROM openfs); END;");
+
+	/* Create a special hash-file */
+	auto hash_txt = dir_.block_path() / "hash.txt";
+	fs::fstream ifs;
+	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
+	if(fs::exists(hash_txt)) {
+		ifs.open(hash_txt, std::ios_base::in);
+		std::string hexhash_file;
+		ifs >> hexhash_file;
+		if(hexhash_file != hexhash_conf) wipe();
+		ifs.close();
+	}
+	ifs.open(hash_txt, std::ios_base::out | std::ios_base::trunc);
+	ifs << hexhash_conf;
 }
 
 /* Meta manipulators */

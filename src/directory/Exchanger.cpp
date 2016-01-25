@@ -18,7 +18,6 @@
 #include "../Client.h"
 #include "fs/FSDirectory.h"
 #include "p2p/P2PProvider.h"
-#include "../nat/NATPMPService.h"
 #include "../discovery/StaticDiscovery.h"
 #include "../discovery/MulticastDiscovery.h"
 #include "../discovery/BTTrackerDiscovery.h"
@@ -30,9 +29,6 @@ namespace librevault {
 Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
 	p2p_provider_ = std::make_unique<P2PProvider>(client_, *this);
 	//cloud_provider_ = std::make_unique<CloudProvider>(client_, *this);
-
-	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
-	natpmp_->port_signal.connect(std::bind(&Exchanger::set_public_port, this, std::placeholders::_1));
 
 	static_discovery_ = std::make_unique<StaticDiscovery>(client_, *this);
 	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, *this);
@@ -74,11 +70,6 @@ std::shared_ptr<ExchangeGroup> Exchanger::get_group(const blob& hash){
 	if(it != hash_group_.end())
 		return it->second;
 	return nullptr;
-}
-
-
-void Exchanger::set_public_port(uint16_t port) {
-	public_port_ = port ? port : p2p_provider_->local_endpoint().port();
 }
 
 std::list<std::shared_ptr<ExchangeGroup>> Exchanger::groups() const {

@@ -18,6 +18,7 @@
 #include "P2PDirectory.h"
 #include "../ExchangeGroup.h"
 #include "../Exchanger.h"
+#include "nat/NATPMPService.h"
 
 namespace librevault {
 
@@ -26,10 +27,17 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 		client_(client),
 		exchanger_(exchanger),
 		node_key_(client) {
+	init_ws();
+
+	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
+	natpmp_->port_signal.connect(std::bind(&P2PProvider::set_public_port, this, std::placeholders::_1));
+}
+
+void P2PProvider::init_ws() {
 	ssl_ctx_ptr_ = make_ssl_ctx();
 
 	// Acceptor initialization
-	url bind_url = client.config().current.net_listen;
+	url bind_url = client_.config().current.net_listen;
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
@@ -37,7 +45,7 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	ws_server_.init_asio(&client_.network_ios());
 	ws_server_.set_reuse_addr(true);
 	ws_server_.set_user_agent(Version::current().user_agent());
-	ws_server_.set_max_message_size(10*1024*1024);
+	ws_server_.set_max_message_size(10 * 1024 * 1024);
 
 	// Handlers
 	ws_server_.set_tcp_pre_init_handler(std::bind(&P2PProvider::on_tcp_pre_init, this, std::placeholders::_1, SERVER));
@@ -55,7 +63,7 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	// General parameters
 	ws_client_.init_asio(&client_.network_ios());
 	ws_client_.set_user_agent(Version::current().user_agent());
-	ws_client_.set_max_message_size(10*1024*1024);
+	ws_client_.set_max_message_size(10 * 1024 * 1024);
 
 	// Handlers
 	ws_client_.set_tcp_pre_init_handler(std::bind(&P2PProvider::on_tcp_pre_init, this, std::placeholders::_1, CLIENT));
@@ -112,6 +120,10 @@ bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
 
 bool P2PProvider::is_loopback(const blob& pubkey) {
 	return node_key().public_key() == pubkey;
+}
+
+void P2PProvider::set_public_port(uint16_t port) {
+	public_port_ = port ? port : local_endpoint().port();
 }
 
 std::shared_ptr<P2PDirectory> P2PProvider::dir_ptr_from_hdl(websocketpp::connection_hdl hdl) {

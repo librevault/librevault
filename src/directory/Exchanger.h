@@ -46,9 +46,6 @@ public:
 
 	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
 
-	uint16_t public_port() const {return public_port_;}
-	void set_public_port(uint16_t port);
-
 	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
 
 	void add_directory(const Config::FolderConfig& folder_config);
@@ -62,9 +59,6 @@ private:
 	//std::unique_ptr<CloudProvider> cloud_provider_;
 
 	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
-
-	std::unique_ptr<NATPMPService> natpmp_;
-	uint16_t public_port_;
 
 	std::unique_ptr<StaticDiscovery> static_discovery_;
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;

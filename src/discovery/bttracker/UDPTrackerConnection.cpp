@@ -135,7 +135,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	request.key_ = gen_transaction_id();
 	request.num_want_ = client_.config().current.discovery_bttracker_num_want;
 
-	request.port_ = exchanger_.public_port();
+	request.port_ = exchanger_.p2p_provider()->public_port();
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
 		log_->debug() << log_tag() << "Announce sent. tID=" << transaction_id;

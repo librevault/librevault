@@ -21,8 +21,8 @@
 
 namespace librevault {
 
-NATPMPService::NATPMPService(Client& client, Exchanger& exchanger) :
-		Loggable(client, "NATPMPService"), client_(client), exchanger_(exchanger), maintain_timer_(client.ios()) {
+NATPMPService::NATPMPService(Client& client, P2PProvider& provider) :
+	Loggable(client, "NATPMPService"), client_(client), provider_(provider), maintain_timer_(client.ios()) {
 	set_lifetime(client_.config().current.net_natpmp_lifetime);
 	set_enabled(client_.config().current.net_natpmp_enabled);
 }
@@ -37,10 +37,10 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 		log_->trace() << log_tag() << "initnatpmp() = " << natpmp_ec;
 
 		natpmp_ec = sendnewportmappingrequest(&natpmp,
-		                                      NATPMP_PROTOCOL_TCP,
-		                                      exchanger_.p2p_provider()->local_endpoint().port(),
-		                                      exchanger_.p2p_provider()->local_endpoint().port(),
-		                                      lifetime_.count());
+			NATPMP_PROTOCOL_TCP,
+			provider_.local_endpoint().port(),
+			provider_.local_endpoint().port(),
+			lifetime_.count());
 		log_->trace() << log_tag() << "sendnewportmappingrequest() = " << natpmp_ec;
 
 		natpmpresp_t natpmp_resp;
@@ -53,7 +53,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 		std::chrono::seconds next_request;
 		if(natpmp_ec >= 0) {
 			public_port = natpmp_resp.pnu.newportmapping.mappedpublicport;
-			log_->debug() << log_tag() << "Successfully set up port mapping " << exchanger_.p2p_provider()->local_endpoint().port() << " -> "
+			log_->debug() << log_tag() << "Successfully set up port mapping " << provider_.local_endpoint().port() << " -> "
 				<< public_port;
 			next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
 		}else{

@@ -26,6 +26,8 @@ class Exchanger;
 class ExchangeGroup;
 class P2PDirectory;
 
+class NATPMPService;
+
 class P2PProvider : protected Loggable {
 public:
 	using server = websocketpp::server<asio_tls>;
@@ -40,11 +42,16 @@ public:
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<ExchangeGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
 
+	/* Loopback marking */
 	void mark_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const blob& pubkey);
 
-	// Getters
+	/* Port mapping services */
+	uint16_t public_port() const {return public_port_;}
+	void set_public_port(uint16_t port);
+
+	/* Getters */
 	const tcp_endpoint& local_endpoint() const {return local_endpoint_;}
 	const NodeKey& node_key() const {return node_key_;}
 
@@ -62,11 +69,18 @@ private:
 	tcp_endpoint local_endpoint_;
 	std::shared_ptr<ssl_context> ssl_ctx_ptr_;
 
+	/* Port mapping services */
+	std::unique_ptr<NATPMPService> natpmp_;
+	uint16_t public_port_;
+
 	std::set<tcp_endpoint> loopback_blacklist_;
 	std::mutex loopback_blacklist_mtx_;
 
 	std::unordered_map<server::connection_ptr, std::shared_ptr<P2PDirectory>> ws_server_assignment_;
 	std::unordered_map<client::connection_ptr, std::shared_ptr<P2PDirectory>> ws_client_assignment_;
+
+	/* Initialization */
+	void init_ws();
 
 	std::shared_ptr<P2PDirectory> dir_ptr_from_hdl(websocketpp::connection_hdl hdl);
 

@@ -20,18 +20,19 @@
 namespace librevault {
 
 class Client;
-class Exchanger;
+
+class P2PProvider;
 
 class NATPMPService : public PortMappingService, public Loggable {
 public:
-	NATPMPService(Client& client, Exchanger& exchanger);
+	NATPMPService(Client& client, P2PProvider& provider);
 
 	void set_enabled(bool enabled);
 	void set_lifetime(std::chrono::seconds lifetime);
 
 protected:
 	Client& client_;
-	Exchanger& exchanger_;
+	P2PProvider& provider_;
 
 	// Config values
 	bool enabled_;

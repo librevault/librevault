@@ -38,8 +38,8 @@ ControlServer::ControlServer(Client& client) :
 	ws_server_.set_validate_handler(std::bind(&ControlServer::on_validate, this, std::placeholders::_1));
 	ws_server_.set_open_handler(std::bind(&ControlServer::on_open, this, std::placeholders::_1));
 	ws_server_.set_message_handler(std::bind(&ControlServer::on_message, this, std::placeholders::_1, std::placeholders::_2));
-	ws_server_.set_fail_handler(std::bind(&ControlServer::on_fail, this, std::placeholders::_1));
-	ws_server_.set_close_handler(std::bind(&ControlServer::on_close, this, std::placeholders::_1));
+	ws_server_.set_fail_handler(std::bind(&ControlServer::on_disconnect, this, std::placeholders::_1));
+	ws_server_.set_close_handler(std::bind(&ControlServer::on_disconnect, this, std::placeholders::_1));
 
 	ws_server_.listen(local_endpoint_);
 	ws_server_.start_accept();
@@ -99,14 +99,8 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 	}
 }
 
-void ControlServer::on_fail(websocketpp::connection_hdl hdl) {
+void ControlServer::on_disconnect(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_fail()";
-	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
-	send_control_json();
-}
-
-void ControlServer::on_close(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_close()";
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
 	send_control_json();
 }

@@ -44,8 +44,7 @@ private:
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr);
-	void on_fail(websocketpp::connection_hdl hdl);
-	void on_close(websocketpp::connection_hdl hdl);
+	void on_disconnect(websocketpp::connection_hdl hdl);
 
 	std::string make_control_json();
 	ptree make_state_json() const;

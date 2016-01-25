@@ -36,7 +36,7 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	// General parameters
 	ws_server_.init_asio(&client_.network_ios());
 	ws_server_.set_reuse_addr(true);
-	ws_server_.set_user_agent(client_.version().user_agent());
+	ws_server_.set_user_agent(Version::current().user_agent());
 	ws_server_.set_max_message_size(10*1024*1024);
 
 	// Handlers
@@ -54,7 +54,7 @@ P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
 	/* WebSockets client initialization */
 	// General parameters
 	ws_client_.init_asio(&client_.network_ios());
-	ws_client_.set_user_agent(client_.version().user_agent());
+	ws_client_.set_user_agent(Version::current().user_agent());
 	ws_client_.set_max_message_size(10*1024*1024);
 
 	// Handlers

@@ -15,7 +15,6 @@
  */
 #include "pch.h"
 #pragma once
-#include "Version.h"
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
 
@@ -36,7 +35,6 @@ public:
 
 	Exchanger& exchanger(){return *exchanger_;}
 
-	const Version& version() const {return version_;}
 	Config& config() {return *config_;}
 
 	io_service& ios() {return etc_ios_->ios();}
@@ -49,7 +47,6 @@ public:
 	fs::path key_path() const {return key_path_;}
 	fs::path cert_path() const {return cert_path_;}
 private:
-	Version version_;	// Application name and version information (probably, it will contain application path and signature later)
 	std::unique_ptr<Config> config_;	// Configuration
 
 	// Asynchronous/multithreaded operation

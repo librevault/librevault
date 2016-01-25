@@ -32,7 +32,7 @@ ControlServer::ControlServer(Client& client) :
 	// General parameters
 	ws_server_.init_asio(&client_.ios());
 	ws_server_.set_reuse_addr(true);
-	ws_server_.set_user_agent(client_.version().user_agent());
+	ws_server_.set_user_agent(Version::current().user_agent());
 
 	// Handlers
 	ws_server_.set_validate_handler(std::bind(&ControlServer::on_validate, this, std::placeholders::_1));

@@ -29,8 +29,8 @@ Client::Client(std::map<std::string, docopt::value> args) {
 
 	fs::create_directories(appdata_path_);
 
-	config_path_ = appdata_path_ / (version().lowercase_name()+".conf");
-	log_path_ = appdata_path_ / (version().lowercase_name()+".log");
+	config_path_ = appdata_path_ / (Version::current().lowercase_name() + ".conf");
+	log_path_ = appdata_path_ / (Version::current().lowercase_name() + ".log");
 	key_path_ = appdata_path_ / "key.pem";
 	cert_path_ = appdata_path_ / "cert.pem";
 
@@ -62,20 +62,20 @@ Client::~Client() {
 void Client::init_log(spdlog::level::level_enum level) {
 	static std::mutex log_mtx;
 	std::unique_lock<decltype(log_mtx)> log_lk(log_mtx);
-	log_ = spdlog::get(version().name());
+	log_ = spdlog::get(Version::current().name());
 	if(!log_){
 		spdlog::set_async_mode(1024*1024);
 
 		std::vector<spdlog::sink_ptr> sinks;
 		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 #if(BOOST_OS_LINUX)
-		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(version().name()));
+		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(Version::current().name()));
 #endif
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
 				(log_path_.parent_path() / log_path_.stem()).generic_string(), // TODO: support filenames with multiple dots
 				log_path_.extension().generic_string().substr(1), 5*1024*1024, 6));
 
-		log_ = std::make_shared<spdlog::logger>(version().name(), sinks.begin(), sinks.end());
+		log_ = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
 
 		log_->set_level(level);
@@ -84,7 +84,7 @@ void Client::init_log(spdlog::level::level_enum level) {
 
 	cryptodiff::set_logger(log_);
 
-	log_->info() << version().name() << " " << version().version_string();
+	log_->info() << Version::current().name() << " " << Version::current().version_string();
 }
 
 void Client::run() {
@@ -110,20 +110,20 @@ void Client::shutdown(){
 
 fs::path Client::default_appdata_path(){
 #if BOOST_OS_WINDOWS
-	return fs::path(getenv("APPDATA")) / version().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
+	return fs::path(getenv("APPDATA")) / Version::current().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
 #elif BOOST_OS_MACOS
-	return fs::path(getenv("HOME")) / "Library/Preferences" / version().name();	// TODO: error-checking
+	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: error-checking
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return fs::path(xdg_ptr) / version().name();
+		return fs::path(xdg_ptr) / Version::current().name();
 	if(char* home_ptr = getenv("HOME"))
-		return fs::path(home_ptr) / ".config" / version().name();
+		return fs::path(home_ptr) / ".config" / Version::current().name();
 	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return fs::path(home_ptr) / ".config" / version().name();
-	return fs::path("/etc/xdg") / version().name();
+		return fs::path(home_ptr) / ".config" / Version::current().name();
+	return fs::path("/etc/xdg") / Version::current().name();
 #else
 	// Well, we will add some Android values here. And, maybe, others.
-	return fs::path(getenv("HOME")) / version().name();
+	return fs::path(getenv("HOME")) / Version::current().name();
 #endif
 }
 

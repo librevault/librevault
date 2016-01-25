@@ -20,12 +20,7 @@ namespace librevault {
 
 class PortMappingService {
 public:
-	using port_signal_type = boost::signals2::signal<void(uint16_t)>;
-	port_signal_type& port_signal() {return port_signal_;}
-
-protected:
-	// Signals
-	port_signal_type port_signal_;
+	boost::signals2::signal<void(uint16_t)> port_signal;
 };
 
 } /* namespace librevault */

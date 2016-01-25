@@ -63,7 +63,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 		}
 
 		// emit signal
-		port_signal_(public_port);
+		port_signal(public_port);
 
 		maintain_timer_.expires_from_now(next_request);
 		maintain_timer_.async_wait(std::bind(&NATPMPService::maintain_mapping, this, std::placeholders::_1));

@@ -32,7 +32,7 @@ Exchanger::Exchanger(Client& client) : Loggable(client), client_(client) {
 	//cloud_provider_ = std::make_unique<CloudProvider>(client_, *this);
 
 	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
-	natpmp_->port_signal().connect(std::bind(&Exchanger::set_public_port, this, std::placeholders::_1));
+	natpmp_->port_signal.connect(std::bind(&Exchanger::set_public_port, this, std::placeholders::_1));
 
 	static_discovery_ = std::make_unique<StaticDiscovery>(client_, *this);
 	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, *this);

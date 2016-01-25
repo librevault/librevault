@@ -14,13 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Client.h"
-#include "Exchanger.h"
 #include "RemoteDirectory.h"
 
 namespace librevault {
 
-RemoteDirectory::RemoteDirectory(Client& client, Exchanger& exchanger) :
-		AbstractDirectory(client, exchanger), client_(client), exchanger_(exchanger) {}
+RemoteDirectory::RemoteDirectory(Client& client) :
+	AbstractDirectory(client), client_(client) {}
 RemoteDirectory::~RemoteDirectory() {}
 
 } /* namespace librevault */

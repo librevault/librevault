@@ -17,12 +17,26 @@
 #pragma once
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
+#include "src/control/Config.h"
 
 namespace librevault {
 
 class Config;
-class Exchanger;
 class ControlServer;
+
+class ExchangeGroup;
+
+// Providers
+class P2PProvider;
+
+class CloudProvider;
+
+// Discovery services
+class StaticDiscovery;
+
+class MulticastDiscovery;
+
+class BTTrackerDiscovery;
 
 class Client : public Loggable {
 public:
@@ -32,8 +46,6 @@ public:
 	void run();
 	void shutdown();
 	void restart();
-
-	Exchanger& exchanger(){return *exchanger_;}
 
 	Config& config() {return *config_;}
 
@@ -46,6 +58,18 @@ public:
 	fs::path log_path() const {return log_path_;}
 	fs::path key_path() const {return key_path_;}
 	fs::path cert_path() const {return cert_path_;}
+
+	// ExchangeGroup
+	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);
+	void unregister_group(std::shared_ptr<ExchangeGroup> group_ptr);
+
+	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
+
+	std::list<std::shared_ptr<ExchangeGroup>> groups() const;
+
+	void add_directory(const Config::FolderConfig& folder_config);
+
+	P2PProvider* p2p_provider();
 private:
 	std::unique_ptr<Config> config_;	// Configuration
 
@@ -56,8 +80,17 @@ private:
 	std::unique_ptr<multi_io_service> etc_ios_;
 
 	// Components
-	std::unique_ptr<Exchanger> exchanger_;
 	std::unique_ptr<ControlServer> control_server_;
+
+	// Remote
+	std::unique_ptr<P2PProvider> p2p_provider_;
+	//std::unique_ptr<CloudProvider> cloud_provider_;
+
+	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
+
+	std::unique_ptr<StaticDiscovery> static_discovery_;
+	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 
 	// Paths
 	fs::path default_appdata_path();

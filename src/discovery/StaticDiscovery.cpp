@@ -15,7 +15,6 @@
  */
 #include "StaticDiscovery.h"
 #include "../Client.h"
-#include "../directory/Exchanger.h"
 #include "../directory/ExchangeGroup.h"
 #include "../directory/p2p/P2PProvider.h"
 #include "../directory/fs/FSDirectory.h"
@@ -24,8 +23,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-StaticDiscovery::StaticDiscovery(Client& client, Exchanger& exchanger) :
-		DiscoveryService(client, exchanger) {}
+StaticDiscovery::StaticDiscovery(Client& client) :
+	DiscoveryService(client) {}
 
 StaticDiscovery::~StaticDiscovery() {}
 

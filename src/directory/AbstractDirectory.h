@@ -20,7 +20,6 @@
 namespace librevault {
 
 class Client;
-class Exchanger;
 class ExchangeGroup;
 
 class AbstractDirectory : public Loggable {
@@ -39,7 +38,7 @@ public:
 		no_such_block() : error("Requested Block not found"){}
 	};
 
-	AbstractDirectory(Client& client, Exchanger& exchanger);
+	AbstractDirectory(Client& client);
 	virtual ~AbstractDirectory();
 
 	// AbstractDirectory properties
@@ -52,7 +51,6 @@ public:
 
 protected:
 	Client& client_;
-	Exchanger& exchanger_;
 
 	std::weak_ptr<ExchangeGroup> exchange_group_;
 };

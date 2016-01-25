@@ -15,8 +15,13 @@
  */
 #include "Client.h"
 
-#include "directory/Exchanger.h"
 #include "control/ControlServer.h"
+#include "directory/fs/FSDirectory.h"
+#include "directory/p2p/P2PProvider.h"
+#include "discovery/StaticDiscovery.h"
+#include "discovery/MulticastDiscovery.h"
+#include "discovery/BTTrackerDiscovery.h"
+#include "directory/ExchangeGroup.h"
 
 namespace librevault {
 
@@ -49,13 +54,32 @@ Client::Client(std::map<std::string, docopt::value> args) {
 
 	// Initializing components
 	config_ = std::make_unique<Config>(*this, config_path_);
-	exchanger_ = std::make_unique<Exchanger>(*this);
+
+	p2p_provider_ = std::make_unique<P2PProvider>(*this);
+	//cloud_provider_ = std::make_unique<CloudProvider>(*this);
+
+	static_discovery_ = std::make_unique<StaticDiscovery>(*this);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(*this);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(*this);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this);
+
 	control_server_ = std::make_unique<ControlServer>(*this);
+
+	for(auto& folder_config : config().current.folders) {
+		add_directory(folder_config);
+	}
 }
 
 Client::~Client() {
 	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
-	exchanger_.reset();
+
+	bttracker_.reset();
+	multicast6_.reset();
+	multicast4_.reset();
+	static_discovery_.reset();
+
+	p2p_provider_.reset();
+
 	config_.reset();
 }
 
@@ -106,6 +130,60 @@ void Client::shutdown(){
 	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();
+}
+
+void Client::register_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	hash_group_.insert({group_ptr->hash(), group_ptr});
+
+	static_discovery_->register_group(group_ptr);
+
+	multicast4_->register_group(group_ptr);
+	multicast6_->register_group(group_ptr);
+
+	bttracker_->register_group(group_ptr);
+	log_->debug() << log_tag() << "Group registered: " << group_ptr->secret();
+}
+
+void Client::unregister_group(std::shared_ptr<ExchangeGroup> group_ptr) {
+	bttracker_->unregister_group(group_ptr);
+
+	multicast4_->unregister_group(group_ptr);
+	multicast6_->unregister_group(group_ptr);
+
+	static_discovery_->unregister_group(group_ptr);
+
+	hash_group_.erase(group_ptr->hash());
+	log_->debug() << log_tag() << "Group unregistered: " << group_ptr->secret();
+}
+
+std::shared_ptr<ExchangeGroup> Client::get_group(const blob& hash) {
+	auto it = hash_group_.find(hash);
+	if(it != hash_group_.end())
+		return it->second;
+	return nullptr;
+}
+
+std::list<std::shared_ptr<ExchangeGroup>> Client::groups() const {
+	std::list<std::shared_ptr<ExchangeGroup>> groups_list;
+	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
+		groups_list.push_back(group_ptr);
+	return groups_list;
+}
+
+P2PProvider* Client::p2p_provider() {
+	return p2p_provider_.get();
+}
+
+void Client::add_directory(const Config::FolderConfig& folder_config) {
+	auto dir_ptr = std::make_shared<FSDirectory>(folder_config, *this);
+	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
+	if(!group_ptr) {
+		group_ptr = std::make_shared<ExchangeGroup>(*this);
+		group_ptr->attach(dir_ptr);
+		register_group(group_ptr);
+	}else {
+		throw std::runtime_error("Multiple directories with same key (or derived from the same key) are not supported now");
+	}
 }
 
 fs::path Client::default_appdata_path(){

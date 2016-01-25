@@ -22,7 +22,7 @@ namespace librevault {
 
 class RemoteDirectory : public AbstractDirectory {
 public:
-	RemoteDirectory(Client& client, Exchanger& exchanger);
+	RemoteDirectory(Client& client);
 	virtual ~RemoteDirectory();
 
 	// Choking
@@ -49,7 +49,6 @@ public:
 
 protected:
 	Client& client_;
-	Exchanger& exchanger_;
 
 	bool am_choking_ = true;
 	bool am_interested_ = false;

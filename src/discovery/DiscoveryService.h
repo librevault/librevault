@@ -23,11 +23,10 @@ namespace librevault {
 class ExchangeGroup;
 class P2PProvider;
 class Client;
-class Exchanger;
 
 class DiscoveryService : protected Loggable {
 public:
-	DiscoveryService(Client& client, Exchanger& exchanger);
+	DiscoveryService(Client& client);
 	virtual ~DiscoveryService(){}
 
 	virtual void register_group(std::shared_ptr<ExchangeGroup> group_ptr) = 0;
@@ -38,7 +37,6 @@ public:
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<ExchangeGroup> group_ptr);
 protected:
 	Client& client_;
-	Exchanger& exchanger_;
 };
 
 } /* namespace librevault */

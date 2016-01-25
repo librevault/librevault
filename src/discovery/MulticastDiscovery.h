@@ -63,12 +63,12 @@ protected:
 	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr);
 	void receive();
 
-	MulticastDiscovery(Client& client, Exchanger& exchanger);
+	MulticastDiscovery(Client& client);
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {
 public:
-	MulticastDiscovery4(Client& client, Exchanger& exchanger);
+	MulticastDiscovery4(Client& client);
 	virtual ~MulticastDiscovery4(){}
 
 	std::string log_tag() const {return "[MulticastDiscovery4] ";}
@@ -76,7 +76,7 @@ public:
 
 class MulticastDiscovery6 : public MulticastDiscovery {
 public:
-	MulticastDiscovery6(Client& client, Exchanger& exchanger);
+	MulticastDiscovery6(Client& client);
 	virtual ~MulticastDiscovery6(){}
 
 	std::string log_tag() const {return "[MulticastDiscovery6] ";}

@@ -14,17 +14,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "P2PDirectory.h"
-#include "P2PProvider.h"
 #include "../../Client.h"
-#include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 
 #include "parsers/ProtobufParser.h"
 
 namespace librevault {
 
-P2PDirectory::P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
-		RemoteDirectory(client, exchanger),
+P2PDirectory::P2PDirectory(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
+	RemoteDirectory(client),
 		provider_(provider),
 		connection_handle_(connection_handle) {
 	name_ = name;
@@ -33,8 +31,12 @@ P2PDirectory::P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& pr
 	parser_ = std::make_unique<ProtobufParser>();
 }
 
-P2PDirectory::P2PDirectory(Client& client, Exchanger &exchanger, P2PProvider &provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<ExchangeGroup> exchange_group) :
-		RemoteDirectory(client, exchanger),
+P2PDirectory::P2PDirectory(Client& client,
+                           P2PProvider& provider,
+                           std::string name,
+                           websocketpp::connection_hdl connection_handle,
+                           std::shared_ptr<ExchangeGroup> exchange_group) :
+	RemoteDirectory(client),
 		provider_(provider),
 		connection_handle_(connection_handle) {
 	name_ = name;
@@ -245,7 +247,7 @@ void P2PDirectory::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "<== HANDSHAKE";
 
 	// Attaching to ExchangeGroup
-	auto group_ptr = exchanger_.get_group(message_struct.dir_hash);
+	auto group_ptr = client_.get_group(message_struct.dir_hash);
 	if(group_ptr) {
 		update_remote_endpoint();
 		group_ptr->attach(shared_from_this());

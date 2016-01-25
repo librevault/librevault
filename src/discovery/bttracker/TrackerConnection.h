@@ -23,13 +23,12 @@ namespace librevault {
 class ExchangeGroup;
 class P2PProvider;
 class Client;
-class Exchanger;
 class BTTrackerDiscovery;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class TrackerConnection : protected Loggable {
 public:
-	TrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger);
+	TrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client);
 	virtual ~TrackerConnection();
 protected:
 	enum class Event : int32_t {
@@ -40,7 +39,6 @@ protected:
 	using peer_id = std::array<uint8_t, 20>;
 
 	Client& client_;
-	Exchanger& exchanger_;
 	BTTrackerDiscovery& tracker_discovery_;
 
 	url tracker_address_;

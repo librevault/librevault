@@ -15,7 +15,6 @@
  */
 #include "NATPMPService.h"
 #include "src/Client.h"
-#include "src/directory/Exchanger.h"
 #include "src/directory/p2p/P2PProvider.h"
 #include <natpmp.h>
 
@@ -71,9 +70,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 }
 
 void NATPMPService::set_enabled(bool enabled) {
-	if(enabled) {
-		client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));
-	}
+	if(enabled) client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));
 }
 
 void NATPMPService::set_lifetime(std::chrono::seconds lifetime) {

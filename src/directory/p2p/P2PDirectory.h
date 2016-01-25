@@ -38,8 +38,12 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle);
-	P2PDirectory(Client& client, Exchanger& exchanger, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<ExchangeGroup> exchange_group);
+	P2PDirectory(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle);
+	P2PDirectory(Client& client,
+	             P2PProvider& provider,
+	             std::string name,
+	             websocketpp::connection_hdl connection_handle,
+	             std::shared_ptr<ExchangeGroup> exchange_group);
 	~P2PDirectory();
 
 	/* Getters */

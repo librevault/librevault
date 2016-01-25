@@ -15,7 +15,6 @@
  */
 #include "BTTrackerDiscovery.h"
 #include "../Client.h"
-#include "../directory/Exchanger.h"
 #include "../directory/ExchangeGroup.h"
 #include "../directory/p2p/P2PProvider.h"
 #include "../directory/fs/FSDirectory.h"
@@ -25,8 +24,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-BTTrackerDiscovery::BTTrackerDiscovery(Client& client, Exchanger& exchanger) :
-		DiscoveryService(client, exchanger) {
+BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
+	DiscoveryService(client) {
 	if(client_.config().current.discovery_bttracker_enabled) {
 		for(auto tracker : client.config().current.discovery_bttracker_trackers) {
 			trackers_.push_back(tracker);
@@ -43,7 +42,7 @@ void BTTrackerDiscovery::register_group(std::shared_ptr<ExchangeGroup> group_ptr
 		std::unique_ptr<TrackerConnection> tracker_connection;
 
 		if(tracker_url.scheme == "udp") {
-			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, client_, exchanger_);
+			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, client_);
 		}
 
 		groups_.emplace(group_ptr, std::move(tracker_connection));

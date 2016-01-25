@@ -24,7 +24,7 @@ class TrackerConnection;
 
 class BTTrackerDiscovery : public DiscoveryService {
 public:
-	BTTrackerDiscovery(Client& client, Exchanger& exchanger);
+	BTTrackerDiscovery(Client& client);
 	virtual ~BTTrackerDiscovery();
 
 	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);

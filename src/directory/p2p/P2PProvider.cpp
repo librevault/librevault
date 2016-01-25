@@ -17,15 +17,13 @@
 #include "../../Client.h"
 #include "P2PDirectory.h"
 #include "../ExchangeGroup.h"
-#include "../Exchanger.h"
 #include "nat/NATPMPService.h"
 
 namespace librevault {
 
-P2PProvider::P2PProvider(Client& client, Exchanger& exchanger) :
+P2PProvider::P2PProvider(Client& client) :
 		Loggable(client, "P2PProvider"),
 		client_(client),
-		exchanger_(exchanger),
 		node_key_(client) {
 	init_ws();
 
@@ -83,7 +81,7 @@ void P2PProvider::add_node(url node_url, std::shared_ptr<ExchangeGroup> group_pt
 	node_url.scheme = "wss";
 
 	auto connection_ptr = ws_client_.get_connection(node_url, ec);
-	auto p2p_directory_ptr = std::make_shared<P2PDirectory>(client_, exchanger_, *this, node_url, connection_ptr, group_ptr);
+	auto p2p_directory_ptr = std::make_shared<P2PDirectory>(client_, *this, node_url, connection_ptr, group_ptr);
 	ws_client_assignment_.insert(std::make_pair(connection_ptr, p2p_directory_ptr));
 
 	log_->debug() << log_tag() << "Added node " << std::string(node_url);
@@ -197,7 +195,7 @@ void P2PProvider::on_tcp_pre_init(websocketpp::connection_hdl hdl, role_type rol
 
 	if(role == SERVER) {
 		auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
-		auto p2p_directory_ptr = std::make_shared<P2PDirectory>(client_, exchanger_, *this, connection_ptr->get_remote_endpoint(), connection_ptr);
+		auto p2p_directory_ptr = std::make_shared<P2PDirectory>(client_, *this, connection_ptr->get_remote_endpoint(), connection_ptr);
 		ws_server_assignment_.insert(std::make_pair(connection_ptr, p2p_directory_ptr));
 	}else{
 		auto connection_ptr = ws_client_.get_con_from_hdl(hdl);

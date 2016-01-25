@@ -15,17 +15,18 @@
  */
 #include "../bttracker/UDPTrackerConnection.h"
 #include "../../Client.h"
-#include "../../directory/Exchanger.h"
 #include "../../directory/ExchangeGroup.h"
 #include "../../directory/p2p/P2PProvider.h"
 #include "../../directory/fs/FSDirectory.h"
 
 namespace librevault {
 
-TrackerConnection::TrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger) :
+TrackerConnection::TrackerConnection(url tracker_address,
+                                     std::shared_ptr<ExchangeGroup> group_ptr,
+                                     BTTrackerDiscovery& tracker_discovery,
+                                     Client& client) :
 		Loggable(client),
 		client_(client),
-		exchanger_(exchanger),
 		tracker_discovery_(tracker_discovery),
 		tracker_address_(tracker_address),
 		group_ptr_(group_ptr) {
@@ -51,8 +52,8 @@ TrackerConnection::peer_id TrackerConnection::get_peer_id() const {
 	auto pubkey_bytes_left = pid.size() - az_id.size();
 
 	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(exchanger_.p2p_provider()->node_key().public_key().begin(),
-	          exchanger_.p2p_provider()->node_key().public_key().begin()+pubkey_bytes_left, pid.begin()+az_id.size());
+	std::copy(client_.p2p_provider()->node_key().public_key().begin(),
+		client_.p2p_provider()->node_key().public_key().begin() + pubkey_bytes_left, pid.begin() + az_id.size());
 
 	return pid;
 }

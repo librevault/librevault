@@ -15,12 +15,11 @@
  */
 #include "src/Client.h"
 #include "AbstractDirectory.h"
-#include "Exchanger.h"
 
 namespace librevault {
 
-AbstractDirectory::AbstractDirectory(Client& client, Exchanger& exchanger) :
-		Loggable(client), client_(client), exchanger_(exchanger) {}
+AbstractDirectory::AbstractDirectory(Client& client) :
+	Loggable(client), client_(client) {}
 AbstractDirectory::~AbstractDirectory() {}
 
 std::string AbstractDirectory::path_id_readable(const blob& path_id) {

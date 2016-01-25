@@ -50,7 +50,7 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 	/* Constructors */
-	FSDirectory(FolderConfig folder_config, Client& client, Exchanger& exchanger);
+	FSDirectory(FolderConfig folder_config, Client& client);
 	virtual ~FSDirectory();
 
 	/* Actions */

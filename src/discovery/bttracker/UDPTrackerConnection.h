@@ -22,12 +22,11 @@ namespace librevault {
 class ExchangeGroup;
 class P2PProvider;
 class Client;
-class Exchanger;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class UDPTrackerConnection : public TrackerConnection {
 public:
-	UDPTrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger);
+	UDPTrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client);
 	virtual ~UDPTrackerConnection();
 private:
 	enum class Action : int32_t {

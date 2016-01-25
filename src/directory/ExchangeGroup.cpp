@@ -19,9 +19,7 @@
 #include "p2p/P2PDirectory.h"
 
 #include "fs/Index.h"
-#include "p2p/P2PProvider.h"
 
-#include "Exchanger.h"
 #include "../Client.h"
 
 #include "Uploader.h"
@@ -29,10 +27,9 @@
 
 namespace librevault {
 
-ExchangeGroup::ExchangeGroup(Client& client, Exchanger& exchanger) :
+ExchangeGroup::ExchangeGroup(Client& client) :
 		Loggable(client),
 		client_(client),
-		exchanger_(exchanger),
 		uploader_(std::make_shared<Uploader>(client, *this)),
 		downloader_(std::make_shared<Downloader>(client, *this)) {}
 

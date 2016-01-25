@@ -22,7 +22,6 @@
 
 namespace librevault {
 
-class Exchanger;
 class ExchangeGroup;
 class P2PDirectory;
 
@@ -35,7 +34,7 @@ public:
 
 	enum role_type {SERVER, CLIENT};
 
-	P2PProvider(Client& client, Exchanger& exchanger);
+	P2PProvider(Client& client);
 	virtual ~P2PProvider();
 
 	void add_node(url node_url, std::shared_ptr<ExchangeGroup> group_ptr);
@@ -60,7 +59,6 @@ public:
 
 private:
 	Client& client_;
-	Exchanger& exchanger_;
 	NodeKey node_key_;
 
 	server ws_server_;

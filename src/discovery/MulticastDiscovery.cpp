@@ -18,7 +18,6 @@
 #include "../Client.h"
 #include "../directory/ExchangeGroup.h"
 #include "../directory/p2p/P2PProvider.h"
-#include "../directory/Exchanger.h"
 
 namespace librevault {
 
@@ -35,8 +34,8 @@ std::string MulticastSender::get_message() const {
 		protocol::MulticastDiscovery message;
 		message.set_port(parent_.client_.config().current.net_listen.port);
 		message.set_dir_hash(exchange_group_->secret().get_Hash().data(), exchange_group_->secret().get_Hash().size());
-		message.set_pubkey(parent_.exchanger_.p2p_provider()->node_key().public_key().data(),
-		                   parent_.exchanger_.p2p_provider()->node_key().public_key().size());
+		message.set_pubkey(parent_.client_.p2p_provider()->node_key().public_key().data(),
+			parent_.client_.p2p_provider()->node_key().public_key().size());
 
 		message_ = message.SerializeAsString();
 	}
@@ -64,8 +63,8 @@ void MulticastSender::send() {
 }
 
 /* MulticastDiscovery */
-MulticastDiscovery::MulticastDiscovery(Client& client, Exchanger& exchanger) :
-	DiscoveryService(client, exchanger), socket_(client.ios()) {}
+MulticastDiscovery::MulticastDiscovery(Client& client) :
+	DiscoveryService(client), socket_(client.ios()) {}
 
 MulticastDiscovery::~MulticastDiscovery() {
 	socket_.set_option(multicast::leave_group(multicast_addr_.address()));
@@ -124,8 +123,8 @@ void MulticastDiscovery::receive() {
 	                           std::bind(&MulticastDiscovery::process, this, buffer, std::placeholders::_2, endpoint));
 }
 
-MulticastDiscovery4::MulticastDiscovery4(Client& client, Exchanger& exchanger) :
-	MulticastDiscovery(client, exchanger) {
+MulticastDiscovery4::MulticastDiscovery4(Client& client) :
+	MulticastDiscovery(client) {
 	bind_address_ = client.config().current.discovery_multicast4_local_ip;
 	repeat_interval_ = client.config().current.discovery_multicast4_repeat_interval;
 	multicast_addr_.port(client.config().current.discovery_multicast4_port);
@@ -135,8 +134,8 @@ MulticastDiscovery4::MulticastDiscovery4(Client& client, Exchanger& exchanger) :
 	start();
 }
 
-MulticastDiscovery6::MulticastDiscovery6(Client& client, Exchanger& exchanger) :
-	MulticastDiscovery(client, exchanger) {
+MulticastDiscovery6::MulticastDiscovery6(Client& client) :
+	MulticastDiscovery(client) {
 	bind_address_ = client.config().current.discovery_multicast6_local_ip;
 	repeat_interval_ = client.config().current.discovery_multicast6_repeat_interval;
 	multicast_addr_.port(client.config().current.discovery_multicast6_port);

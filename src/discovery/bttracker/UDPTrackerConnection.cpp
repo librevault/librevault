@@ -15,7 +15,6 @@
  */
 #include "../bttracker/UDPTrackerConnection.h"
 #include "../../Client.h"
-#include "../../directory/Exchanger.h"
 #include "../../directory/p2p/P2PProvider.h"
 #include "../../directory/fs/FSDirectory.h"
 
@@ -23,8 +22,11 @@
 
 namespace librevault {
 
-UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<ExchangeGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, Exchanger& exchanger) :
-		TrackerConnection(tracker_address, group_ptr, tracker_discovery, client, exchanger),
+UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
+                                           std::shared_ptr<ExchangeGroup> group_ptr,
+                                           BTTrackerDiscovery& tracker_discovery,
+                                           Client& client) :
+	TrackerConnection(tracker_address, group_ptr, tracker_discovery, client),
 
 		socket_(client.ios()),
 		resolver_(client.ios()),
@@ -34,7 +36,7 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address, std::shared_ptr<
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = exchanger_.p2p_provider()->local_endpoint().address();
+	bind_address_ = client_.p2p_provider()->local_endpoint().address();
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 
@@ -135,7 +137,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	request.key_ = gen_transaction_id();
 	request.num_want_ = client_.config().current.discovery_bttracker_num_want;
 
-	request.port_ = exchanger_.p2p_provider()->public_port();
+	request.port_ = client_.p2p_provider()->public_port();
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
 		log_->debug() << log_tag() << "Announce sent. tID=" << transaction_id;

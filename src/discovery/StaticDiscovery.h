@@ -21,7 +21,7 @@ namespace librevault {
 
 class StaticDiscovery : public DiscoveryService {
 public:
-	StaticDiscovery(Client& client, Exchanger& exchanger);
+	StaticDiscovery(Client& client);
 	virtual ~StaticDiscovery();
 
 	void register_group(std::shared_ptr<ExchangeGroup> group_ptr);

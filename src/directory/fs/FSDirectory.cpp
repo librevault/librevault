@@ -24,15 +24,14 @@
 #include "AutoIndexer.h"
 
 #include "../../Client.h"
-#include "../Exchanger.h"
 #include "../ExchangeGroup.h"
 
 #include "../../util/make_relpath.h"
 
 namespace librevault {
 
-FSDirectory::FSDirectory(FolderConfig folder_config, Client& client, Exchanger& exchanger) :
-		AbstractDirectory(client, exchanger),
+FSDirectory::FSDirectory(FolderConfig folder_config, Client& client) :
+	AbstractDirectory(client),
 		folder_config_(std::move(folder_config)),
 		secret_(folder_config_.secret),
 

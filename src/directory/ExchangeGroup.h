@@ -22,7 +22,6 @@
 namespace librevault {
 
 class Client;
-class Exchanger;
 
 class RemoteDirectory;
 class FSDirectory;
@@ -42,7 +41,7 @@ public:
 		attach_error() : error("Could not attach remote to ExchangeGroup") {}
 	};
 
-	ExchangeGroup(Client& client, Exchanger& exchanger);
+	ExchangeGroup(Client& client);
 
 	/* Actions */
 	// FSDirectory actions
@@ -83,7 +82,6 @@ public:
 	const blob& hash() const;
 private:
 	Client& client_;
-	Exchanger& exchanger_;
 
 	std::shared_ptr<Uploader> uploader_;
 	std::shared_ptr<Downloader> downloader_;

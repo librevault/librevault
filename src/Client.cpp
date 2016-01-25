@@ -16,9 +16,9 @@
 #include "Client.h"
 
 #include "control/ControlServer.h"
-#include "directory/fs/FSDirectory.h"
-#include "directory/p2p/P2PProvider.h"
-#include "directory/ExchangeGroup.h"
+#include "src/folder/fs/FSFolder.h"
+#include "src/folder/p2p/P2PProvider.h"
+#include "src/folder/FolderGroup.h"
 
 namespace librevault {
 
@@ -53,7 +53,11 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	config_ = std::make_unique<Config>(*this, config_path_);
 	p2p_provider_ = std::make_unique<P2PProvider>(*this);
 	//cloud_provider_ = std::make_unique<CloudProvider>(*this);
+
+	/* Control Server */
 	control_server_ = std::make_unique<ControlServer>(*this);
+	control_server_->add_folder_signal.connect(std::bind(&Client::add_folder, this, std::placeholders::_1));
+	control_server_->remove_folder_signal.connect(std::bind(&Client::remove_folder, this, std::placeholders::_1));
 
 	for(auto& folder_config : config().current.folders) {
 		add_folder(folder_config);
@@ -115,21 +119,35 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::remove_folder(std::shared_ptr<ExchangeGroup> group_ptr) {
-	hash_group_.erase(group_ptr->hash());
-	folder_removed_signal(group_ptr);
-	log_->debug() << log_tag() << "Group unregistered: " << group_ptr->secret();
+void Client::add_folder(Config::FolderConfig folder_config) {
+	auto dir_ptr = std::make_shared<FSFolder>(folder_config, *this);
+	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
+	if(!group_ptr) {
+		group_ptr = std::make_shared<FolderGroup>(*this);
+		group_ptr->attach(dir_ptr);
+		hash_group_.insert({group_ptr->hash(), group_ptr});
+
+		folder_added_signal(group_ptr);
+	}else {
+		throw std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now");
+	}
 }
 
-std::shared_ptr<ExchangeGroup> Client::get_group(const blob& hash) {
+void Client::remove_folder(Secret secret) {
+	hash_group_.erase(secret.get_Hash());
+	folder_removed_signal(get_group(secret.get_Hash()));
+	log_->debug() << log_tag() << "Group unregistered: " << secret;
+}
+
+std::shared_ptr<FolderGroup> Client::get_group(const blob& hash) {
 	auto it = hash_group_.find(hash);
 	if(it != hash_group_.end())
 		return it->second;
 	return nullptr;
 }
 
-std::vector<std::shared_ptr<ExchangeGroup>> Client::groups() const {
-	std::vector<std::shared_ptr<ExchangeGroup>> groups_list;
+std::vector<std::shared_ptr<FolderGroup>> Client::groups() const {
+	std::vector<std::shared_ptr<FolderGroup>> groups_list;
 	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
 		groups_list.push_back(group_ptr);
 	return groups_list;
@@ -137,19 +155,6 @@ std::vector<std::shared_ptr<ExchangeGroup>> Client::groups() const {
 
 P2PProvider* Client::p2p_provider() {
 	return p2p_provider_.get();
-}
-
-void Client::add_folder(const Config::FolderConfig& folder_config) {
-	auto dir_ptr = std::make_shared<FSDirectory>(folder_config, *this);
-	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
-	if(!group_ptr) {
-		group_ptr = std::make_shared<ExchangeGroup>(dir_ptr, *this);
-		hash_group_.insert({group_ptr->hash(), group_ptr});
-
-		folder_added_signal(group_ptr);
-	}else {
-		throw std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now");
-	}
 }
 
 fs::path Client::default_appdata_path(){

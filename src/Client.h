@@ -24,7 +24,7 @@ namespace librevault {
 class Config;
 class ControlServer;
 
-class ExchangeGroup;
+class FolderGroup;
 
 // Providers
 class P2PProvider;
@@ -52,16 +52,16 @@ public:
 	fs::path cert_path() const {return cert_path_;}
 
 	/* Signals */
-	boost::signals2::signal<void(std::shared_ptr<ExchangeGroup>)> folder_added_signal;
-	boost::signals2::signal<void(std::shared_ptr<ExchangeGroup>)> folder_removed_signal;
+	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
+	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
-	// ExchangeGroup
-	void add_folder(const Config::FolderConfig& folder_config);
-	void remove_folder(std::shared_ptr<ExchangeGroup> group_ptr);
+	// FolderGroup
+	void add_folder(Config::FolderConfig folder_config);
+	void remove_folder(Secret secret);
 
-	std::shared_ptr<ExchangeGroup> get_group(const blob& hash);
+	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 
-	std::vector<std::shared_ptr<ExchangeGroup>> groups() const;
+	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 
 	P2PProvider* p2p_provider();
 private:
@@ -74,7 +74,7 @@ private:
 	std::unique_ptr<P2PProvider> p2p_provider_;
 	//std::unique_ptr<CloudProvider> cloud_provider_;
 
-	std::map<blob, std::shared_ptr<ExchangeGroup>> hash_group_;
+	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
 
 	/* Asynchronous/multithreaded operation */
 	io_service main_loop_ios_;

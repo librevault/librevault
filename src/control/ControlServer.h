@@ -17,7 +17,8 @@
 #include "src/pch.h"
 #include "src/util/parse_url.h"
 #include "src/util/Loggable.h"
-#include "src/directory/p2p/websocket_config.h"
+#include "src/folder/p2p/websocket_config.h"
+#include "src/control/Config.h"
 
 namespace librevault {
 
@@ -27,6 +28,9 @@ class ControlServer : public Loggable {
 public:
 	ControlServer(Client& client);
 	virtual ~ControlServer();
+
+	boost::signals2::signal<void(Config::FolderConfig)> add_folder_signal;
+	boost::signals2::signal<void(Secret)> remove_folder_signal;
 private:
 	struct ControlConnection {};
 

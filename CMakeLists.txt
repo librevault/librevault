@@ -44,7 +44,8 @@ file(GLOB_RECURSE lvcommon_HEADERS "include/*.h")
 #============================================================================
 # Third-party packages
 #============================================================================
-find_package(Threads)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 find_package(Protobuf REQUIRED)
 file(GLOB_RECURSE PROTO_LIST "src/*.proto")
@@ -89,8 +90,8 @@ if(WIN32)
 endif()
 
 ### Threads
-target_link_libraries(lvcommon-static PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(lvcommon-shared PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(lvcommon-static PRIVATE Threads::Threads)
+target_link_libraries(lvcommon-shared PRIVATE Threads::Threads)
 
 ### Boost
 set(Boost_COMPONENTS
@@ -119,8 +120,8 @@ message(STATUS "Boost static libraries: ${Boost_LIBRARIES}")
 target_include_directories(lvcommon-static PRIVATE ${PROTOBUF_INCLUDE_DIRS})
 target_include_directories(lvcommon-shared PRIVATE ${PROTOBUF_INCLUDE_DIRS})
 
-target_link_libraries(lvcommon-static PRIVATE ${PROTOBUF_LIBRARIES})
 target_link_libraries(lvcommon-shared PRIVATE ${PROTOBUF_LIBRARIES})
+target_link_libraries(lvcommon-static PRIVATE libprotobuf.a)
 
 ### CryptoPP
 find_package(CryptoPP 5.6.3 REQUIRED)

@@ -51,6 +51,7 @@ list(APPEND SRCS ${MAIN_QRCS})
 # Third-party packages
 #============================================================================
 find_package(Qt5 5.3 REQUIRED COMPONENTS LinguistTools Widgets WebSockets WebKitWidgets)
+find_package(Threads REQUIRED)
 
 # Translation
 configure_file("src/lang/lang.qrc" "lang.qrc" COPYONLY)

@@ -4,109 +4,114 @@
 <context>
     <name>AddFolder</name>
     <message>
-        <location filename="../gui/AddFolder.ui" line="26"/>
+        <location filename="../gui/AddFolder.ui" line="29"/>
         <source>Add Folder</source>
         <translation>Добавить папку</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="42"/>
+        <location filename="../gui/AddFolder.ui" line="48"/>
         <source>Secret</source>
         <translation>Ключ</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="48"/>
+        <location filename="../gui/AddFolder.ui" line="54"/>
         <source>&amp;Create new Secret or enter existing manually</source>
         <translation>&amp;Создать новый Ключ или ввести существующий</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="61"/>
+        <location filename="../gui/AddFolder.ui" line="64"/>
         <source>&amp;Select folder from Librevault Cloud</source>
         <translation>&amp;Выбрать папку из Librevault Cloud</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="86"/>
+        <location filename="../gui/AddFolder.ui" line="89"/>
         <source>Add this folder to Librevault Cloud</source>
         <translation>Добавить эту папку в Librevault Cloud</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="93"/>
+        <location filename="../gui/AddFolder.ui" line="96"/>
         <source>Cloud folder preferences</source>
         <translation>Параметры облачной папки</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="99"/>
+        <location filename="../gui/AddFolder.ui" line="102"/>
         <source>Folder name:</source>
         <translation>Название папки:</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="106"/>
+        <location filename="../gui/AddFolder.ui" line="109"/>
         <source>Enter the new name for the remote folder</source>
         <translation>Введите новое название для загружаемой папки</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="113"/>
+        <location filename="../gui/AddFolder.ui" line="116"/>
         <source>Secret type:</source>
         <translation>Тип Ключа:</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="135"/>
+        <location filename="../gui/AddFolder.ui" line="138"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will have full access to your folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы получите полный доступ к папке из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="145"/>
+        <location filename="../gui/AddFolder.ui" line="148"/>
         <source>&amp;Read Only</source>
         <translation>Только &amp;чтение</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="152"/>
+        <location filename="../gui/AddFolder.ui" line="155"/>
         <source>&amp;Download Only</source>
         <translation>Только з&amp;агрузка</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="159"/>
+        <location filename="../gui/AddFolder.ui" line="162"/>
         <source>Read &amp;Write</source>
         <translation>Чтение и &amp;запись</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="188"/>
+        <location filename="../gui/AddFolder.ui" line="191"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will not be able to modify files in this folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы не сможете изменять содержимое папки из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="204"/>
+        <location filename="../gui/AddFolder.ui" line="207"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;The private key will never leave this device. You will have to enter the Secret on your other devices.&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:8pt; font-weight:600;&quot;&gt;Note:&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; If you lose your Secret, you will lose access to your folder without an ability ro restore it&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Закрытый ключ не будет передан на сервер (даже в зашифрованном виде). Вам придётся ввести Ключ на всех остальных устройствах чтобы расшифровать данные&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:8pt; font-weight:600;&quot;&gt;Важно:&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; Если вы потеряете Ключ, то расшифровать папку будет невозможно.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="222"/>
+        <location filename="../gui/AddFolder.ui" line="225"/>
         <source>Secret:</source>
         <translation>Ключ:</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="229"/>
+        <location filename="../gui/AddFolder.ui" line="232"/>
         <source>Enter the Secret here or press &quot;Create new&quot; to generate a new one</source>
         <translation>Введите Ключ в это поле, либо нажмите &quot;Сгенерировать&quot;</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="236"/>
+        <location filename="../gui/AddFolder.ui" line="239"/>
         <source>Create new</source>
         <translation>Сгенерировать</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="257"/>
+        <location filename="../gui/AddFolder.ui" line="260"/>
         <source>Sync folder</source>
         <translation>Папка синхронизации</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="263"/>
+        <location filename="../gui/AddFolder.ui" line="266"/>
         <source>Location:</source>
         <translation>Местонахождение:</translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.ui" line="273"/>
+        <location filename="../gui/AddFolder.ui" line="276"/>
         <source>Browse...</source>
         <translation>Выбрать папку...</translation>
+    </message>
+    <message>
+        <location filename="../gui/AddFolder.cpp" line="61"/>
+        <source>Choose directory to sync</source>
+        <translation>Выберите папку для синхронизации</translation>
     </message>
 </context>
 <context>
@@ -199,7 +204,7 @@
 <context>
     <name>Client</name>
     <message>
-        <location filename="../Client.cpp" line="30"/>
+        <location filename="../Client.cpp" line="31"/>
         <source>Attach to running daemon instead of creating a new one</source>
         <translation type="unfinished"></translation>
     </message>
@@ -259,42 +264,42 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <name>MainWindow</name>
     <message>
         <location filename="../gui/MainWindow.ui" line="17"/>
-        <location filename="../gui/MainWindow.cpp" line="148"/>
+        <location filename="../gui/MainWindow.cpp" line="160"/>
         <source>Librevault</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="48"/>
+        <location filename="../gui/MainWindow.cpp" line="53"/>
         <source>Show Librevault window</source>
         <translation>Открыть окно Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="49"/>
+        <location filename="../gui/MainWindow.cpp" line="54"/>
         <source>Open Librevault website</source>
         <translation>Открыть веб-сайт Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="50"/>
+        <location filename="../gui/MainWindow.cpp" line="55"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="51"/>
+        <location filename="../gui/MainWindow.cpp" line="56"/>
         <source>Open Librevault settings</source>
         <translation>Открыть настройки Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="52"/>
+        <location filename="../gui/MainWindow.cpp" line="57"/>
         <source>Quit Librevault</source>
         <translation>Закрыть Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="54"/>
+        <location filename="../gui/MainWindow.cpp" line="59"/>
         <source>New folder</source>
         <translation>Новая папка</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="55"/>
+        <location filename="../gui/MainWindow.cpp" line="60"/>
         <source>Add new folder for synchronization</source>
         <translation>Добавить новую папку для синхронизации</translation>
     </message>
@@ -307,12 +312,12 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <translation type="vanished">Добавить папку по существующему ключу</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="56"/>
+        <location filename="../gui/MainWindow.cpp" line="61"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="57"/>
+        <location filename="../gui/MainWindow.cpp" line="62"/>
         <source>Delete folder</source>
         <translation>Удалить папку</translation>
     </message>

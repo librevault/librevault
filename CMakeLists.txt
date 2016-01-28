@@ -6,6 +6,7 @@ project(librevault-gui)
 #============================================================================
 
 option(BUILD_STATIC "Build static version of binary" OFF)
+option(BUILD_OPTWARE "Build software ready to be installed into /opt" OFF)
 
 #============================================================================
 # CMake modules
@@ -19,7 +20,11 @@ include(GNUInstallDirs)
 #============================================================================
 
 if(BUILD_STATIC)
-	set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_C_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
+	set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
 # Setting compiler properties
@@ -50,12 +55,25 @@ list(APPEND SRCS ${MAIN_QRCS})
 #============================================================================
 # Third-party packages
 #============================================================================
-find_package(Qt5 5.3 REQUIRED COMPONENTS LinguistTools Widgets WebSockets WebKitWidgets)
+set(Qt_COMPONENTS
+		LinguistTools
+		Widgets
+		WebSockets
+		WebKitWidgets
+		)
+if(BUILD_OPTWARE)
+	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+else()
+	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+endif()
 find_package(Threads REQUIRED)
 
 # Translation
 configure_file("src/lang/lang.qrc" "lang.qrc" COPYONLY)
-qt5_add_translation(${PROJECT_NAME}_QM "src/lang/librevault_ru.ts")
+qt5_add_translation(${PROJECT_NAME}_QM
+		"src/lang/librevault_en.ts"
+		"src/lang/librevault_ru.ts"
+		)
 qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_BINARY_DIR}/lang.qrc)
 list(APPEND SRCS ${${PROJECT_NAME}_QM_RC})
 
@@ -81,8 +99,17 @@ else()
 endif()
 
 #============================================================================
-# Third-party libraries
+# Install
 #============================================================================
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(BUILD_OPTWARE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+			INSTALL_RPATH "/opt/librevault/lib"
+			BUILD_WITH_INSTALL_RPATH TRUE
+			INSTALL_RPATH_USE_LINK_PATH TRUE
+			)
+	install(TARGETS ${PROJECT_NAME} DESTINATION "/opt/librevault")
+else()
+	install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 install(FILES "resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(FILES "resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")

@@ -113,6 +113,9 @@ void Client::run() {
 
 void Client::shutdown(){
 	log_->info() << "Exiting...";
+
+	hash_group_.clear();
+
 	dir_monitor_ios_->stop();
 	network_ios_->stop();
 	etc_ios_->stop();

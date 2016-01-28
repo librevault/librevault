@@ -4,8 +4,8 @@ project(librevault VERSION 0.1.0)
 #============================================================================
 # Settable options
 #============================================================================
-
-option(WITH_COTIRE "Use cotire for builds." ON)
+option(BUILD_STATIC "Build static version of executable" OFF)
+option(WITH_COTIRE "Use cotire for builds" ON)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
 
 #============================================================================
@@ -53,13 +53,11 @@ if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
 	endif()
 endif()
 
-option(BUILD_STATIC "Build static version of executable" OFF)
 if(BUILD_STATIC)
-	set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_MODULE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
-	set(Boost_USE_STATIC_LIBS ON)
+	set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_C_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
+	set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
@@ -89,20 +87,33 @@ configure_file("appver.in.h" "appver.h")
 
 add_executable(${PROJECT_NAME} ${SRCS})
 
-find_package(lvcommon)
-target_link_libraries(${PROJECT_NAME} lvcommon-shared)
-
 #============================================================================
 # Third-party libraries
 #============================================================================
 
 # Cryptodiff
 find_package(Cryptodiff REQUIRED)
-target_link_libraries(${PROJECT_NAME} cryptodiff-shared)
+if(BUILD_STATIC)
+	target_link_libraries(${PROJECT_NAME} cryptodiff-static)
+else()
+	target_link_libraries(${PROJECT_NAME} cryptodiff-shared)
+endif()
+
+# LVCommon
+find_package(lvcommon)
+if(BUILD_STATIC)
+	target_link_libraries(${PROJECT_NAME} lvcommon-static)
+else()
+	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
+endif()
 
 # Pthreads
-find_package(Threads)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+#if(BUILD_STATIC)
+#	target_link_libraries(${PROJECT_NAME} pthread.a)
+#else()
+#	find_package(Threads)
+#	target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+#endif()
 
 # Docopt
 find_package(docopt PATHS contrib/docopt)
@@ -114,7 +125,9 @@ set(Boost_COMPONENTS
 		filesystem
 		iostreams
 		thread)
-set(Boost_USE_MULTITHREADED ON)
+if(BUILD_STATIC)
+	set(Boost_USE_STATIC_LIBS ON)
+endif()
 
 find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
@@ -163,7 +176,11 @@ target_link_libraries(${PROJECT_NAME} librevault-protobuf)
 
 # CryptoPP
 find_package(CryptoPP 5.6.3 REQUIRED)
-target_link_libraries(${PROJECT_NAME} cryptopp-shared)
+if(BUILD_STATIC)
+	target_link_libraries(${PROJECT_NAME} cryptopp-static)
+else()
+	target_link_libraries(${PROJECT_NAME} cryptopp-shared)
+endif()
 
 # libnatpmp
 find_library(libnatpmp_LIBRARIES natpmp)
@@ -186,13 +203,12 @@ if(WIN32)
 endif()
 
 if(BUILD_STATIC)
+#	target_link_libraries(${PROJECT_NAME} stdc++.a)
+#	target_link_libraries(${PROJECT_NAME} m.a)
 	if(UNIX)
 		target_link_libraries(${PROJECT_NAME} dl)
-		target_link_libraries(${PROJECT_NAME} c.a)
+#		target_link_libraries(${PROJECT_NAME} c.a)
 	endif()
-	target_link_libraries(${PROJECT_NAME} stdc++.a)
-	target_link_libraries(${PROJECT_NAME} m.a)
-	target_link_libraries(${PROJECT_NAME} pthread.a)
 endif()
 
 # Header-only libs

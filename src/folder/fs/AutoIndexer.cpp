@@ -44,7 +44,7 @@ void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 }
 
 void AutoIndexer::prepare_file_assemble(bool with_removal, const std::string& relpath) {
-	unsigned skip_events = 3;	// REMOVED, RENAMED (NEW NAME), MODIFIED
+	unsigned skip_events = 2;	// REMOVED, RENAMED (NEW NAME), MODIFIED
 	//unsigned skip_events = 0;
 
 	for(unsigned i = 0; i < skip_events; i++)
@@ -99,6 +99,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 		if(prepared_assemble_it != prepared_assemble_.end()) {
 			prepared_assemble_.erase(prepared_assemble_it);
 			return;
+			// FIXME: "prepares" is a dirty hack. It must be EXTERMINATED!
 		}
 
 		if(!dir_.ignore_list->is_ignored(relpath)){

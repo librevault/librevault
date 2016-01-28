@@ -45,6 +45,7 @@ void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 
 void AutoIndexer::prepare_file_assemble(bool with_removal, const std::string& relpath) {
 	unsigned skip_events = 2;	// REMOVED, RENAMED (NEW NAME), MODIFIED
+	if(with_removal) skip_events++;
 	//unsigned skip_events = 0;
 
 	for(unsigned i = 0; i < skip_events; i++)

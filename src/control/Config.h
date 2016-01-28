@@ -74,7 +74,12 @@ public:
 	ptree get_ptree() const;
 	void apply_ptree(const ptree& pt);
 
+	void save();
+
 	using FolderConfig = config_type::FolderConfig;
+
+	void add_folder(FolderConfig folder_config);
+	void remove_folder(Secret secret);
 
 private:
 	fs::path config_path_;

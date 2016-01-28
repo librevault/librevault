@@ -34,11 +34,7 @@ Config::Config(Loggable& parent_loggable, fs::path config_path) :
 }
 
 Config::~Config() {
-	auto file_pt = convert_pt(current);
-	fs::ofstream options_fs(config_path_, std::ios::binary | std::ios::trunc);
-	if(options_fs){
-		boost::property_tree::json_parser::write_json(options_fs, file_pt);
-	}
+	save();
 }
 
 Config::config_type Config::make_default_config() {
@@ -96,6 +92,28 @@ ptree Config::get_ptree() const {
 void Config::apply_ptree(const ptree& pt) {
 	auto new_config = convert_pt(pt, current);
 	std::swap(new_config, current);
+	save();
+}
+
+void Config::save() {
+	auto file_pt = convert_pt(current);
+	fs::ofstream options_fs(config_path_, std::ios::binary | std::ios::trunc);
+	if(options_fs){
+		boost::property_tree::json_parser::write_json(options_fs, file_pt);
+	}
+}
+
+void Config::add_folder(FolderConfig folder_config) {
+	bool have = false;
+	for(auto& folder : current.folders)
+		if(folder.secret == folder_config.secret) have = true;
+	if(!have)
+		current.folders.push_back(folder_config);
+	save();
+}
+void Config::remove_folder(Secret secret) {
+	current.folders.erase(std::remove_if(current.folders.begin(), current.folders.end(), [&](const FolderConfig& fc){return fc.secret == secret;}), current.folders.end());
+	save();
 }
 
 Config::config_type Config::convert_pt(const ptree& pt, const config_type& base) const {

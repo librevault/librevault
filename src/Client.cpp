@@ -123,6 +123,7 @@ void Client::add_folder(Config::FolderConfig folder_config) {
 	auto dir_ptr = std::make_shared<FSFolder>(folder_config, *this);
 	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr) {
+		config().add_folder(folder_config);
 		group_ptr = std::make_shared<FolderGroup>(*this);
 		group_ptr->attach(dir_ptr);
 		hash_group_.insert({group_ptr->hash(), group_ptr});
@@ -135,6 +136,7 @@ void Client::add_folder(Config::FolderConfig folder_config) {
 
 void Client::remove_folder(Secret secret) {
 	hash_group_.erase(secret.get_Hash());
+	config().remove_folder(secret);
 	folder_removed_signal(get_group(secret.get_Hash()));
 	log_->debug() << log_tag() << "Group unregistered: " << secret;
 }

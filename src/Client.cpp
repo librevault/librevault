@@ -59,7 +59,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	control_server_->add_folder_signal.connect(std::bind(&Client::add_folder, this, std::placeholders::_1));
 	control_server_->remove_folder_signal.connect(std::bind(&Client::remove_folder, this, std::placeholders::_1));
 
-	for(auto& folder_config : config().current.folders) {
+	for(auto& folder_config : config().folders()) {
 		add_folder(folder_config);
 	}
 }

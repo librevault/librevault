@@ -36,7 +36,7 @@ public:
 		error() : error("FSFolder error") {}
 	};
 
-	using FolderConfig = Config::config_type::FolderConfig;
+	using FolderConfig = Config::FolderConfig;
 
 	/* Components */
 	std::unique_ptr<IgnoreList> ignore_list;

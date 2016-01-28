@@ -32,7 +32,7 @@ MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<Fol
 std::string MulticastSender::get_message() const {
 	if(message_.empty()) {
 		protocol::MulticastDiscovery message;
-		message.set_port(parent_.client_.config().current.net_listen.port);
+		message.set_port(parent_.client_.config().getNet_listen().port);
 		message.set_dir_hash(exchange_group_->secret().get_Hash().data(), exchange_group_->secret().get_Hash().size());
 		message.set_pubkey(parent_.client_.p2p_provider()->node_key().public_key().data(),
 			parent_.client_.p2p_provider()->node_key().public_key().size());
@@ -50,9 +50,9 @@ void MulticastSender::wait() {
 void MulticastSender::send() {
 	bool enabled = false;
 	if(parent_.bind_address_.is_v6())
-		enabled = parent_.client_.config().current.discovery_multicast6_enabled;
+		enabled = parent_.client_.config().isMulticast6_enabled();
 	else
-		enabled = parent_.client_.config().current.discovery_multicast4_enabled;
+		enabled = parent_.client_.config().isMulticast4_enabled();
 
 	if(enabled) {
 		parent_.socket_.async_send_to(boost::asio::buffer(get_message()), parent_.multicast_addr_, std::bind(&MulticastSender::wait, this));
@@ -128,10 +128,10 @@ void MulticastDiscovery::receive() {
 
 MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 	MulticastDiscovery(client) {
-	bind_address_ = client.config().current.discovery_multicast4_local_ip;
-	repeat_interval_ = client.config().current.discovery_multicast4_repeat_interval;
-	multicast_addr_.port(client.config().current.discovery_multicast4_port);
-	multicast_addr_.address(client.config().current.discovery_multicast4_ip);
+	bind_address_ = client.config().getMulticast4_local_ip();
+	repeat_interval_ = client.config().getMulticast4_repeat_interval();
+	multicast_addr_.port(client.config().getMulticast4_port());
+	multicast_addr_.address(client.config().getMulticast4_ip());
 
 	socket_.open(boost::asio::ip::udp::v4());
 	start();
@@ -139,10 +139,10 @@ MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 
 MulticastDiscovery6::MulticastDiscovery6(Client& client) :
 	MulticastDiscovery(client) {
-	bind_address_ = client.config().current.discovery_multicast6_local_ip;
-	repeat_interval_ = client.config().current.discovery_multicast6_repeat_interval;
-	multicast_addr_.port(client.config().current.discovery_multicast6_port);
-	multicast_addr_.address(client.config().current.discovery_multicast6_ip);
+	bind_address_ = client.config().getMulticast6_local_ip();
+	repeat_interval_ = client.config().getMulticast6_repeat_interval();
+	multicast_addr_.port(client.config().getMulticast6_port());
+	multicast_addr_.address(client.config().getMulticast6_ip());
 
 	socket_.open(boost::asio::ip::udp::v6());
 	socket_.set_option(boost::asio::ip::v6_only(true));

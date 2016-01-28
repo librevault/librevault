@@ -43,7 +43,7 @@ void P2PProvider::init_ws() {
 	ssl_ctx_ptr_ = make_ssl_ctx();
 
 	// Acceptor initialization
-	url bind_url = client_.config().current.net_listen;
+	url bind_url = client_.config().getNet_listen();
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */

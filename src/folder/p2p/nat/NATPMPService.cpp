@@ -22,8 +22,8 @@ namespace librevault {
 
 NATPMPService::NATPMPService(Client& client, P2PProvider& provider) :
 	Loggable(client, "NATPMPService"), client_(client), provider_(provider), maintain_timer_(client.ios()) {
-	set_lifetime(client_.config().current.net_natpmp_lifetime);
-	set_enabled(client_.config().current.net_natpmp_enabled);
+	set_lifetime(client_.config().getNatpmp_lifetime());
+	set_enabled(client_.config().isNatpmp_enabled());
 }
 
 void NATPMPService::maintain_mapping(const boost::system::error_code& error) {

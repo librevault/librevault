@@ -26,8 +26,8 @@ using namespace boost::asio::ip;
 
 BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
 	DiscoveryService(client) {
-	if(client_.config().current.discovery_bttracker_enabled) {
-		for(auto tracker : client.config().current.discovery_bttracker_trackers) {
+	if(client_.config().isBttracker_enabled()) {
+		for(auto tracker : client.config().getBttracker_trackers()) {
 			trackers_.push_back(tracker);
 			log_->debug() << "Added BitTorrent tracker: " << (std::string)tracker;
 		}

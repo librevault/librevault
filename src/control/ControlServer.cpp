@@ -23,7 +23,7 @@ namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
 		Loggable(client, "ControlServer"), client_(client), timer_(client_.ios()) {
-	url bind_url = client_.config().current.control_listen;
+	url bind_url = client_.config().getControl_listen();
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */

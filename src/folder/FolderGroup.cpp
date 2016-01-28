@@ -57,27 +57,27 @@ void FolderGroup::notify_block(std::shared_ptr<FSFolder> origin, const blob& enc
 	}
 }
 
-// RemoteDirectory actions
-void FolderGroup::handle_handshake(std::shared_ptr<RemoteDirectory> origin) {
+// RemoteFolder actions
+void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
 	for(auto& meta : fs_dir_->index->get_Meta()) {
 		origin->post_have_meta(meta.meta().path_revision(), fs_dir_->get_bitfield(meta.meta().path_revision()));
 	}
 }
 
-void FolderGroup::handle_choke(std::shared_ptr<RemoteDirectory> origin) {
+void FolderGroup::handle_choke(std::shared_ptr<RemoteFolder> origin) {
 	downloader_->handle_choke(origin);
 }
-void FolderGroup::handle_unchoke(std::shared_ptr<RemoteDirectory> origin) {
+void FolderGroup::handle_unchoke(std::shared_ptr<RemoteFolder> origin) {
 	downloader_->handle_unchoke(origin);
 }
-void FolderGroup::handle_interested(std::shared_ptr<RemoteDirectory> origin) {
+void FolderGroup::handle_interested(std::shared_ptr<RemoteFolder> origin) {
 	uploader_->handle_interested(origin);
 }
-void FolderGroup::handle_not_interested(std::shared_ptr<RemoteDirectory> origin) {
+void FolderGroup::handle_not_interested(std::shared_ptr<RemoteFolder> origin) {
 	uploader_->handle_not_interested(origin);
 }
 
-void FolderGroup::notify_meta(std::shared_ptr<RemoteDirectory> origin,
+void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
                               const Meta::PathRevision& revision,
                               const bitfield_type& bitfield) {
 	if(fs_dir_->have_meta(revision))
@@ -86,11 +86,11 @@ void FolderGroup::notify_meta(std::shared_ptr<RemoteDirectory> origin,
 		origin->request_meta(revision);
 }
 
-void FolderGroup::notify_block(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash) {
+void FolderGroup::notify_block(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash) {
 	downloader_->notify_remote_block(origin, encrypted_data_hash);
 }
 
-void FolderGroup::request_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision) {
+void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
 	try {
 		origin->post_meta(fs_dir_->get_meta(revision), fs_dir_->get_bitfield(revision));
 	}catch(AbstractFolder::no_such_meta& e){
@@ -98,16 +98,16 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteDirectory> origin, const Me
 	}
 }
 
-void FolderGroup::post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield) {
+void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield) {
 	fs_dir_->put_meta(smeta);
 	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 
-void FolderGroup::request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
+void FolderGroup::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
 	uploader_->request_chunk(origin, encrypted_data_hash, offset, size);
 }
 
-void FolderGroup::post_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset) {
+void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset) {
 	downloader_->put_chunk(encrypted_data_hash, offset, chunk, origin);
 }
 

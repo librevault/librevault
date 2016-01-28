@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../RemoteDirectory.h"
+#include "src/folder/RemoteFolder.h"
 #include "P2PProvider.h"
 
 namespace librevault {
@@ -24,7 +24,7 @@ class FolderGroup;
 class P2PProvider;
 class AbstractParser;
 
-class P2PFolder : public RemoteDirectory, public std::enable_shared_from_this<P2PFolder> {
+class P2PFolder : public RemoteFolder, public std::enable_shared_from_this<P2PFolder> {
 	friend class P2PProvider;
 public:
 	/* Errors */

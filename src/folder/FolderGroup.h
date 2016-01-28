@@ -23,7 +23,7 @@ namespace librevault {
 
 class Client;
 
-class RemoteDirectory;
+class RemoteFolder;
 class FSFolder;
 class P2PFolder;
 
@@ -48,22 +48,22 @@ public:
 	void notify_meta(std::shared_ptr<FSFolder> origin, Meta::PathRevision revision, bitfield_type bitfield);
 	void notify_block(std::shared_ptr<FSFolder> origin, const blob& encrypted_data_hash);
 
-	// RemoteDirectory actions
-	void handle_handshake(std::shared_ptr<RemoteDirectory> origin);
+	// RemoteFolder actions
+	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
 
-	void handle_choke(std::shared_ptr<RemoteDirectory> origin);
-	void handle_unchoke(std::shared_ptr<RemoteDirectory> origin);
-	void handle_interested(std::shared_ptr<RemoteDirectory> origin);
-	void handle_not_interested(std::shared_ptr<RemoteDirectory> origin);
+	void handle_choke(std::shared_ptr<RemoteFolder> origin);
+	void handle_unchoke(std::shared_ptr<RemoteFolder> origin);
+	void handle_interested(std::shared_ptr<RemoteFolder> origin);
+	void handle_not_interested(std::shared_ptr<RemoteFolder> origin);
 
-	void notify_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_block(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash);
+	void notify_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void notify_block(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash);
 
-	void request_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::PathRevision& revision);
-	void post_meta(std::shared_ptr<RemoteDirectory> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
+	void request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
+	void post_meta(std::shared_ptr<RemoteFolder> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
 
-	void request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
-	void post_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset);
+	void request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
+	void post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset);
 
 	/* Membership management */
 	void attach(std::shared_ptr<FSFolder> fs_dir_ptr);

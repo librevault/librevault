@@ -14,12 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "../Client.h"
-#include "RemoteDirectory.h"
+#include "RemoteFolder.h"
 
 namespace librevault {
 
-RemoteDirectory::RemoteDirectory(Client& client) :
+RemoteFolder::RemoteFolder(Client& client) :
 	AbstractFolder(client), client_(client) {}
-RemoteDirectory::~RemoteDirectory() {}
+RemoteFolder::~RemoteFolder() {}
 
 } /* namespace librevault */

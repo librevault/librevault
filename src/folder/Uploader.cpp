@@ -31,16 +31,16 @@ Uploader::Uploader(Client& client, FolderGroup& exchange_group) :
 	log_->trace() << log_tag() << "Uploader()";
 }
 
-void Uploader::handle_interested(std::shared_ptr<RemoteDirectory> remote) {
+void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
 	// TODO: write good choking algorithm.
 	remote->unchoke();
 }
-void Uploader::handle_not_interested(std::shared_ptr<RemoteDirectory> remote) {
+void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
 	// TODO: write good choking algorithm.
 	remote->choke();
 }
 
-void Uploader::request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
+void Uploader::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
 	try {
 		auto chunk = exchange_group_.fs_dir()->get_chunk(encrypted_data_hash, offset, size);
 		origin->post_chunk(encrypted_data_hash, offset, chunk);

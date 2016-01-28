@@ -20,10 +20,10 @@
 
 namespace librevault {
 
-class RemoteDirectory : public AbstractFolder {
+class RemoteFolder : public AbstractFolder {
 public:
-	RemoteDirectory(Client& client);
-	virtual ~RemoteDirectory();
+	RemoteFolder(Client& client);
+	virtual ~RemoteFolder();
 
 	// Choking
 	virtual void choke() = 0;

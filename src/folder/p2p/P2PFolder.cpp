@@ -22,7 +22,7 @@
 namespace librevault {
 
 P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
-	RemoteDirectory(client),
+	RemoteFolder(client),
 		provider_(provider),
 		connection_handle_(connection_handle) {
 	name_ = name;
@@ -36,7 +36,7 @@ P2PFolder::P2PFolder(Client& client,
                      std::string name,
                      websocketpp::connection_hdl connection_handle,
                      std::shared_ptr<FolderGroup> exchange_group) :
-	RemoteDirectory(client),
+	RemoteFolder(client),
 		provider_(provider),
 		connection_handle_(connection_handle) {
 	name_ = name;

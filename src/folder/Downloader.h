@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "RemoteDirectory.h"
+#include "RemoteFolder.h"
 
 #include "src/util/AvailabilityMap.h"
 
@@ -31,15 +31,15 @@ public:
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
 	void notify_local_block(const blob& encrypted_data_hash);
 
-	void notify_remote_meta(std::shared_ptr<RemoteDirectory> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notify_remote_block(std::shared_ptr<RemoteDirectory> remote, const blob& encrypted_data_hash);
+	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
+	void notify_remote_block(std::shared_ptr<RemoteFolder> remote, const blob& encrypted_data_hash);
 
-	void handle_choke(std::shared_ptr<RemoteDirectory> remote);
-	void handle_unchoke(std::shared_ptr<RemoteDirectory> remote);
+	void handle_choke(std::shared_ptr<RemoteFolder> remote);
+	void handle_unchoke(std::shared_ptr<RemoteFolder> remote);
 
-	void put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteDirectory> from);
+	void put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
 
-	void erase_remote(std::shared_ptr<RemoteDirectory> remote);
+	void erase_remote(std::shared_ptr<RemoteFolder> remote);
 
 private:
 	Client& client_;
@@ -47,12 +47,12 @@ private:
 
 	/* RAII wrapper for sending INTERESTED/NOT_INTERESTED messages. Should be used with reference counter */
 	struct InterestGuard {
-		InterestGuard(std::shared_ptr<RemoteDirectory> remote) : remote_(remote) {remote_->interest();}
+		InterestGuard(std::shared_ptr<RemoteFolder> remote) : remote_(remote) {remote_->interest();}
 		~InterestGuard() {remote_->uninterest();}
 	private:
-		std::shared_ptr<RemoteDirectory> remote_;
+		std::shared_ptr<RemoteFolder> remote_;
 	};
-	std::map<std::shared_ptr<RemoteDirectory>, std::weak_ptr<InterestGuard>> interest_guards_;
+	std::map<std::shared_ptr<RemoteFolder>, std::weak_ptr<InterestGuard>> interest_guards_;
 
 	/* Needed blocks+request management */
 	struct NeededBlock {
@@ -77,8 +77,8 @@ private:
 			uint32_t size;
 			std::chrono::steady_clock::time_point started;
 		};
-		std::multimap<std::shared_ptr<RemoteDirectory>, ChunkRequest> requests;
-		std::map<std::shared_ptr<RemoteDirectory>, std::shared_ptr<InterestGuard>> own_block;
+		std::multimap<std::shared_ptr<RemoteFolder>, ChunkRequest> requests;
+		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<InterestGuard>> own_block;
 
 	private:
 		AvailabilityMap<uint32_t> file_map_;
@@ -93,10 +93,10 @@ private:
 	std::mutex maintain_timer_mtx_;
 	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
 	bool request_one();
-	std::shared_ptr<RemoteDirectory> find_node_for_request(const blob& encrypted_data_hash);
+	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& encrypted_data_hash);
 
 	void add_needed_block(const blob& encrypted_data_hash);
-	void remove_requests_to(std::shared_ptr<RemoteDirectory> remote);
+	void remove_requests_to(std::shared_ptr<RemoteFolder> remote);
 };
 
 } /* namespace librevault */

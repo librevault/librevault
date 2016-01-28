@@ -53,13 +53,13 @@ void Downloader::notify_local_block(const blob& encrypted_data_hash) {
 	needed_blocks_.erase(encrypted_data_hash);
 }
 
-void Downloader::notify_remote_meta(std::shared_ptr<RemoteDirectory> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().blocks();
 	for(size_t block_idx = 0; block_idx < blocks.size(); block_idx++)
 		if(bitfield[block_idx])
 			notify_remote_block(remote, blocks[block_idx].encrypted_data_hash_);
 }
-void Downloader::notify_remote_block(std::shared_ptr<RemoteDirectory> remote, const blob& encrypted_data_hash) {
+void Downloader::notify_remote_block(std::shared_ptr<RemoteFolder> remote, const blob& encrypted_data_hash) {
 	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);
 	if(needed_block_it == needed_blocks_.end()) return;
 
@@ -82,18 +82,18 @@ void Downloader::notify_remote_block(std::shared_ptr<RemoteDirectory> remote, co
 	maintain_requests();
 }
 
-void Downloader::handle_choke(std::shared_ptr<RemoteDirectory> remote) {
+void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << "handle_choke()";
 	remove_requests_to(remote);
 	maintain_requests();
 }
 
-void Downloader::handle_unchoke(std::shared_ptr<RemoteDirectory> remote) {
+void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << "handle_unchoke()";
 	maintain_requests();
 }
 
-void Downloader::put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteDirectory> from) {
+void Downloader::put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
 	log_->trace() << log_tag() << "put_chunk()";
 	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);
 	if(needed_block_it == needed_blocks_.end()) return;
@@ -121,7 +121,7 @@ void Downloader::put_chunk(const blob& encrypted_data_hash, uint32_t offset, con
 	}
 }
 
-void Downloader::erase_remote(std::shared_ptr<RemoteDirectory> remote) {
+void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << "erase_remote()";
 
 	interest_guards_.erase(remote);
@@ -132,7 +132,7 @@ void Downloader::erase_remote(std::shared_ptr<RemoteDirectory> remote) {
 	}
 }
 
-void Downloader::remove_requests_to(std::shared_ptr<RemoteDirectory> remote) {
+void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << "remove_requests_to()";
 
 	for(auto& needed_block : needed_blocks_) {
@@ -209,7 +209,7 @@ bool Downloader::request_one() {
 	return false;
 }
 
-std::shared_ptr<RemoteDirectory> Downloader::find_node_for_request(const blob& encrypted_data_hash) {
+std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& encrypted_data_hash) {
 	//log_->trace() << log_tag() << "find_node_for_request()";
 
 	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);

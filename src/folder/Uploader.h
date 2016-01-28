@@ -22,17 +22,17 @@
 namespace librevault {
 
 class Client;
-class RemoteDirectory;
+class RemoteFolder;
 class FolderGroup;
 
 class Uploader : public std::enable_shared_from_this<Uploader>, protected Loggable {
 public:
 	Uploader(Client& client, FolderGroup& exchange_group);
 
-	void handle_interested(std::shared_ptr<RemoteDirectory> remote);
-	void handle_not_interested(std::shared_ptr<RemoteDirectory> remote);
+	void handle_interested(std::shared_ptr<RemoteFolder> remote);
+	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
 
-	void request_chunk(std::shared_ptr<RemoteDirectory> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
+	void request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
 
 private:
 	Client& client_;

@@ -115,7 +115,7 @@ void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& e
 void FolderGroup::attach(std::shared_ptr<FSFolder> fs_dir_ptr) {
 	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
 	fs_dir_ = fs_dir_ptr;
-	fs_dir_->exchange_group_ = shared_from_this();
+	fs_dir_->folder_group_ = shared_from_this();
 	name_ = crypto::Base32().to_string(hash());
 
 	log_->debug() << log_tag() << "Attached local " << fs_dir_ptr->name();
@@ -125,7 +125,7 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
 
 	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
-	remote_ptr->exchange_group_ = shared_from_this();
+	remote_ptr->folder_group_ = shared_from_this();
 
 	p2p_dirs_.insert(remote_ptr);
 	p2p_dirs_endpoints_.insert(remote_ptr->remote_endpoint());

@@ -94,7 +94,7 @@ void FSFolder::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
 		bitfield.resize(smeta.meta().blocks().size(), true);
 	}
 
-	exchange_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
+	folder_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
 blob FSFolder::get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
@@ -128,7 +128,7 @@ blob FSFolder::get_block(const blob& encrypted_data_hash) {
 
 void FSFolder::put_block(const blob& encrypted_data_hash, const blob& block) {
 	enc_storage->put_block(encrypted_data_hash, block);
-	exchange_group_.lock()->notify_block(shared_from_this(), encrypted_data_hash);
+	folder_group_.lock()->notify_block(shared_from_this(), encrypted_data_hash);
 
 	if(open_storage) {
 		auto meta_list = get_meta_containing(encrypted_data_hash);

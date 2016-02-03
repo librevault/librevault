@@ -21,30 +21,22 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role) :
 	RemoteFolder(client),
-		provider_(provider),
-		connection_handle_(connection_handle) {
+	provider_(provider),
+	connection_handle_(connection_handle) {
 	name_ = name;
-	role_ = P2PProvider::SERVER;
+	role_ = role;
 	log_->trace() << log_tag() << "Created";
 	parser_ = std::make_unique<ProtobufParser>();
 }
 
-P2PFolder::P2PFolder(Client& client,
-                     P2PProvider& provider,
-                     std::string name,
-                     websocketpp::connection_hdl connection_handle,
-                     std::shared_ptr<FolderGroup> exchange_group) :
-	RemoteFolder(client),
-		provider_(provider),
-		connection_handle_(connection_handle) {
-	name_ = name;
-	role_ = P2PProvider::CLIENT;
-	log_->trace() << log_tag() << "Created";
-	parser_ = std::make_unique<ProtobufParser>();
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
+	P2PFolder(client, provider, name, connection_handle, P2PProvider::SERVER) {}
 
-	exchange_group_ = exchange_group;
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<FolderGroup> folder_group) :
+	P2PFolder(client, provider, name, connection_handle, P2PProvider::CLIENT) {
+	folder_group_ = folder_group;
 }
 
 P2PFolder::~P2PFolder() {
@@ -65,11 +57,11 @@ void P2PFolder::update_remote_endpoint() {
 }
 
 blob P2PFolder::local_token() {
-	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(exchange_group_.lock()->secret().get_Public_Key());
+	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(folder_group_.lock()->secret().get_Public_Key());
 }
 
 blob P2PFolder::remote_token() {
-	return remote_pubkey() | crypto::HMAC_SHA3_224(exchange_group_.lock()->secret().get_Public_Key());
+	return remote_pubkey() | crypto::HMAC_SHA3_224(folder_group_.lock()->secret().get_Public_Key());
 }
 
 void P2PFolder::send_message(const blob& message) {
@@ -247,8 +239,8 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "<== HANDSHAKE";
 
 	// Attaching to FolderGroup
-	auto group_ptr = exchange_group_.lock();
-	if(exchange_group_.lock()) {
+	auto group_ptr = folder_group_.lock();
+	if(folder_group_.lock()) {
 		update_remote_endpoint();
 		group_ptr->attach(shared_from_this());
 	}
@@ -262,7 +254,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;
 
-	exchange_group_.lock()->handle_handshake(shared_from_this());
+	folder_group_.lock()->handle_handshake(shared_from_this());
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {

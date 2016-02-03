@@ -38,12 +38,13 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
+	P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role);
 	P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle);
 	P2PFolder(Client& client,
 	          P2PProvider& provider,
 	          std::string name,
 	          websocketpp::connection_hdl connection_handle,
-	          std::shared_ptr<FolderGroup> exchange_group);
+	          std::shared_ptr<FolderGroup> folder_group);
 	~P2PFolder();
 
 	/* Getters */

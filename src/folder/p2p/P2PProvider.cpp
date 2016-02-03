@@ -250,7 +250,7 @@ bool P2PProvider::on_validate(websocketpp::connection_hdl hdl) {
 	// Detect loopback
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	dir_ptr->update_remote_endpoint();
-	dir_ptr->exchange_group_ = client_.get_group(query_to_dir_hash(connection_ptr->get_uri()->get_resource()));
+	dir_ptr->folder_group_ = client_.get_group(query_to_dir_hash(connection_ptr->get_uri()->get_resource()));
 	if(is_loopback(dir_ptr->remote_pubkey()) || is_loopback(dir_ptr->remote_endpoint())) {
 		mark_loopback(dir_ptr->remote_endpoint());
 		return false;

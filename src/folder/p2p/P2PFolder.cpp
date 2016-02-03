@@ -17,7 +17,7 @@
 #include "src/Client.h"
 #include "src/folder/FolderGroup.h"
 
-#include "parsers/ProtobufParser.h"
+#include <librevault/protocol/ProtobufParser.h>
 
 namespace librevault {
 
@@ -88,7 +88,7 @@ void P2PFolder::perform_handshake() {
 
 	AbstractParser::Handshake message_struct;
 	message_struct.auth_token = local_token();
-	message_struct.dir_hash = exchange_group_.lock()->hash();
+	message_struct.device_name = client_.config().getDevice_name();
 
 	send_message(parser_->gen_Handshake(message_struct));
 	log_->debug() << log_tag() << "==> HANDSHAKE";
@@ -247,8 +247,8 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "<== HANDSHAKE";
 
 	// Attaching to FolderGroup
-	auto group_ptr = client_.get_group(message_struct.dir_hash);
-	if(group_ptr) {
+	auto group_ptr = exchange_group_.lock();
+	if(exchange_group_.lock()) {
 		update_remote_endpoint();
 		group_ptr->attach(shared_from_this());
 	}

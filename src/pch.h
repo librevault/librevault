@@ -156,8 +156,6 @@ using ssl_context = boost::asio::ssl::context;
 using byte = uint8_t;
 using blob = std::vector<byte>;
 
-using bitfield_type = boost::dynamic_bitset<uint8_t>;
-
 using logger_ptr = std::shared_ptr<spdlog::logger>;
 
 } /* namespace librevault */

@@ -215,7 +215,9 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include")
 
-# cotire invocation
+#============================================================================
+# Cotire invocation
+#============================================================================
 if(WITH_COTIRE)
 	set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "src/pch.h")
 	cotire(${PROJECT_NAME})

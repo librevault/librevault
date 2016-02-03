@@ -49,11 +49,6 @@ public:
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
 
-	/* Loopback marking */
-	void mark_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const blob& pubkey);
-
 	/* Port mapping services */
 	uint16_t public_port() const {return public_port_;}
 	void set_public_port(uint16_t port);
@@ -84,9 +79,13 @@ private:
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
 	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 
-	/**/
+	/* Loopback detection */
 	std::set<tcp_endpoint> loopback_blacklist_;
 	std::mutex loopback_blacklist_mtx_;
+
+	void mark_loopback(const tcp_endpoint& endpoint);
+	bool is_loopback(const tcp_endpoint& endpoint);
+	bool is_loopback(const blob& pubkey);
 
 	std::unordered_map<server::connection_ptr, std::shared_ptr<P2PFolder>> ws_server_assignment_;
 	std::unordered_map<client::connection_ptr, std::shared_ptr<P2PFolder>> ws_client_assignment_;
@@ -96,11 +95,11 @@ private:
 
 	std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl);
 
-	// TLS functions
+	/* TLS functions */
 	std::shared_ptr<ssl_context> make_ssl_ctx();
 	blob pubkey_from_cert(X509* x509);
 
-	// Handlers
+	/* Handlers */
 	void on_tcp_pre_init(websocketpp::connection_hdl hdl, role_type role);
 	std::shared_ptr<ssl_context> on_tls_init(websocketpp::connection_hdl hdl);
 	bool on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx);    // Not WebSockets callback, but asio::ssl
@@ -112,6 +111,10 @@ private:
 	void on_message(std::shared_ptr<P2PFolder> dir_ptr, const blob& message_raw);
 
 	void on_disconnect(websocketpp::connection_hdl hdl);
+
+	/* Generators */
+	std::string dir_hash_to_query(const blob& dir_hash);
+	blob query_to_dir_hash(const std::string& query);
 };
 
 } /* namespace librevault */

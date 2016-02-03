@@ -87,6 +87,8 @@ P2PProvider::~P2PProvider() {}
 void P2PProvider::add_node(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
 	websocketpp::lib::error_code ec;
 	node_url.scheme = "wss";
+	node_url.query = "/";
+	node_url.query += dir_hash_to_query(group_ptr->hash());
 
 	auto connection_ptr = ws_client_.get_connection(node_url, ec);
 	auto p2p_directory_ptr = std::make_shared<P2PFolder>(client_, *this, node_url, connection_ptr, group_ptr);
@@ -243,9 +245,12 @@ bool P2PProvider::on_validate(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	auto subprotocols = connection_ptr->get_requested_subprotocols();
 
+	log_->debug() << log_tag() << "Query: " << connection_ptr->get_uri()->get_resource();
+
 	// Detect loopback
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	dir_ptr->update_remote_endpoint();
+	dir_ptr->exchange_group_ = client_.get_group(query_to_dir_hash(connection_ptr->get_uri()->get_resource()));
 	if(is_loopback(dir_ptr->remote_pubkey()) || is_loopback(dir_ptr->remote_endpoint())) {
 		mark_loopback(dir_ptr->remote_endpoint());
 		return false;
@@ -309,6 +314,14 @@ void P2PProvider::on_disconnect(websocketpp::connection_hdl hdl) {
 		ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
 		ws_client_assignment_.erase(ws_client_.get_con_from_hdl(hdl));
 	}
+}
+
+std::string P2PProvider::dir_hash_to_query(const blob& dir_hash) {
+	return crypto::Hex().to_string(dir_hash);
+}
+
+blob P2PProvider::query_to_dir_hash(const std::string& query) {
+	return query.substr(1) | crypto::De<crypto::Hex>();
 }
 
 } /* namespace librevault */

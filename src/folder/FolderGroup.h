@@ -17,6 +17,7 @@
 #pragma once
 #include "../util/Loggable.h"
 #include <librevault/Secret.h>
+#include <librevault/util/bitfield_convert.h>
 #include "AbstractFolder.h"
 
 namespace librevault {

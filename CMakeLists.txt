@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(lvcommon VERSION 0.9.0)
+project(lvcommon VERSION 0.9.1)
 
 #============================================================================
 # CMake modules
@@ -18,16 +18,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-option(BUILD_STATIC "Build static version of executable" OFF)
-if(BUILD_STATIC)
-	set(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_MODULE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
-	set(Boost_USE_STATIC_LIBS ON)
-	set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-endif()
 
 if(WIN32)
 	add_definitions(-D_WIN32_WINNT=0x600)

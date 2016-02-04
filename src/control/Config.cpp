@@ -38,11 +38,11 @@ Config::~Config() {
 }
 
 void Config::init_default_config() {
-	defaults.device_name                                  = boost::asio::ip::host_name();
+	defaults.device_name = boost::asio::ip::host_name();
 
-	defaults.control_listen                               = parse_url("127.0.0.1:61345");
+	defaults.control_listen = parse_url("127.0.0.1:42344");
 
-	defaults.net_listen                                   = parse_url("[::]:51345");
+	defaults.net_listen = parse_url("[::]:42345");
 	defaults.natpmp_enabled = true;
 	defaults.natpmp_lifetime = seconds(3600);
 

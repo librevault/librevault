@@ -68,7 +68,6 @@ private:
 	client ws_client_;
 
 	tcp_endpoint local_endpoint_;
-	std::shared_ptr<ssl_context> ssl_ctx_ptr_;
 
 	/* Port mapping services */
 	std::unique_ptr<NATPMPService> natpmp_;

@@ -62,9 +62,12 @@ url parse_url(std::string url_str){
 	parsed_url.host.assign(it_host_begin, it_host_end);
 
 	// Authority->Port section
-	it_port_begin = std::find(it_host_end, it_authority_end, ':')+1;
+	it_port_begin = std::find(it_host_end, it_authority_end, ':');
 	it_port_end = it_authority_end;
-	parsed_url.port = boost::lexical_cast<uint16_t>(&*it_port_begin, std::distance(it_port_begin, it_port_end));
+	if(it_port_begin != it_port_end) {
+		++it_port_begin;
+		parsed_url.port = boost::lexical_cast<uint16_t>(&*it_port_begin, std::distance(it_port_begin, it_port_end));
+	}
 
 	parsed_url.query.assign(it_authority_end, url_str.cend());
 

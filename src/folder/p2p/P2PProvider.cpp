@@ -164,7 +164,7 @@ std::shared_ptr<ssl_context> P2PProvider::make_ssl_ctx() {
 	ssl_ctx_ptr->set_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
 	ssl_ctx_ptr->use_certificate_file(client_.cert_path().string(), ssl_context::pem);
 	ssl_ctx_ptr->use_private_key_file(client_.key_path().string(), ssl_context::pem);
-	SSL_CTX_set_cipher_list(ssl_ctx_ptr->native_handle(), "ECDH-ECDSA-AES256-GCM-SHA384:ECDH-ECDSA-AES256-SHA384:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-ECDSA-AES128-SHA256");
+	SSL_CTX_set_cipher_list(ssl_ctx_ptr->native_handle(), "ECDH+ECDSA+AES:!SHA");
 
 	return ssl_ctx_ptr;
 }

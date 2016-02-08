@@ -162,6 +162,13 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 			folder_config.preserve_windows_attrib       = folder_pt.get("preserve_windows_attrib", folder_config.preserve_windows_attrib);
 			folder_config.preserve_symlinks             = folder_pt.get("preserve_symlinks", folder_config.preserve_symlinks);
 			folder_config.block_strong_hash_type        = cryptodiff::StrongHashType(folder_pt.get("block_strong_hash_type", (unsigned)folder_config.block_strong_hash_type));
+
+			try {
+				auto eqkey_it = folder_pt.get_child("nodes").equal_range("");
+				for(auto it = eqkey_it.first; it != eqkey_it.second; it++) {
+					folder_config.nodes.push_back(url(it->second.get<std::string>("")));
+				}
+			}catch(boost::property_tree::ptree_bad_path& e){}
 			// node!
 			config.folders.push_back(folder_config);
 		}
@@ -227,6 +234,15 @@ ptree Config::convert_pt(const config_type& config) const {
 			folder_pt.put("preserve_windows_attrib", folder.preserve_windows_attrib);
 			folder_pt.put("preserve_symlinks", folder.preserve_symlinks);
 			folder_pt.put("block_strong_hash_type", folder.block_strong_hash_type);
+
+			ptree nodes_pt;
+			for(auto& node : folder.nodes) {
+				ptree node_pt;
+				node_pt.put("", (std::string)node);
+				nodes_pt.push_back({"", node_pt});
+			}
+			folder_pt.add_child("nodes", nodes_pt);
+
 			// TODO: Nodes for StaticDiscovery
 			folders_pt.push_back({"", folder_pt});
 		}

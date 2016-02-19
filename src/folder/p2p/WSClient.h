@@ -42,7 +42,6 @@ private:
 	void on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
 
 	/* Util */
-	std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl) override;
 	std::string dir_hash_to_query(const blob& dir_hash);
 
 	/* Actions */

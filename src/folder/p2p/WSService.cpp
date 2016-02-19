@@ -117,9 +117,13 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 		auto folder_group = dir_ptr->folder_group();
 		if(folder_group)
 			folder_group->detach(dir_ptr);
-
-		ws_assignment_.erase(hdl);
 	}
+	ws_assignment_.erase(hdl);
+}
+
+std::shared_ptr<P2PFolder> WSService::dir_ptr_from_hdl(websocketpp::connection_hdl hdl) {
+	auto it_server = ws_assignment_.find(hdl);
+	return it_server != ws_assignment_.end() ? it_server->second : nullptr;
 }
 
 } /* namespace librevault */

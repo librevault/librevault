@@ -38,7 +38,6 @@ protected:
 	void on_message_internal(websocketpp::connection_hdl hdl, server::message_ptr message_ptr);
 
 	/* Util */
-	std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl) override;
 	blob query_to_dir_hash(const std::string& query);
 
 	/* Actions */

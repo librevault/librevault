@@ -102,13 +102,6 @@ void WSServer::on_message_internal(websocketpp::connection_hdl hdl, server::mess
 	on_message(hdl, message_ptr->get_payload());
 }
 
-std::shared_ptr<P2PFolder> WSServer::dir_ptr_from_hdl(websocketpp::connection_hdl hdl) {
-	auto conn_ptr = ws_server_.get_con_from_hdl(hdl);
-	auto it_server = ws_assignment_.find(conn_ptr);
-
-	return it_server != ws_assignment_.end() ? it_server->second : nullptr;
-}
-
 blob WSServer::query_to_dir_hash(const std::string& query) {
 	return query.substr(1) | crypto::De<crypto::Hex>();
 }

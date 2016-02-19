@@ -53,7 +53,7 @@ protected:
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
 	/* Util */
-	virtual std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl) = 0;
+	std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl);
 
 	/* Actions */
 	virtual void close(websocketpp::connection_hdl hdl, const std::string& reason) = 0;

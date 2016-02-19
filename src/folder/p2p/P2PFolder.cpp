@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "P2PFolder.h"
+#include "WSService.h"
 #include "src/Client.h"
 #include "src/folder/FolderGroup.h"
 
@@ -22,9 +23,10 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role) :
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role) :
 	RemoteFolder(client),
 	provider_(provider),
+	ws_service_(ws_service),
 	connection_handle_(connection_handle) {
 	name_ = name;
 	role_ = role;
@@ -32,29 +34,16 @@ P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, we
 	parser_ = std::make_unique<ProtobufParser>();
 }
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle) :
-	P2PFolder(client, provider, name, connection_handle, P2PProvider::SERVER) {}
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle) :
+	P2PFolder(client, provider, ws_service, name, connection_handle, P2PProvider::SERVER) {}
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<FolderGroup> folder_group) :
-	P2PFolder(client, provider, name, connection_handle, P2PProvider::CLIENT) {
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<FolderGroup> folder_group) :
+	P2PFolder(client, provider, ws_service, name, connection_handle, P2PProvider::CLIENT) {
 	folder_group_ = folder_group;
 }
 
 P2PFolder::~P2PFolder() {
 	log_->debug() << log_tag() << "Destroyed";
-}
-
-void P2PFolder::update_remote_endpoint() {
-	switch(role_){
-		case P2PProvider::SERVER: {
-			auto con_ptr = provider_.ws_server().get_con_from_hdl(connection_handle_);
-			remote_endpoint_ = con_ptr->get_raw_socket().remote_endpoint();
-		} break;
-		case P2PProvider::CLIENT: {
-			auto con_ptr = provider_.ws_client().get_con_from_hdl(connection_handle_);
-			remote_endpoint_ = con_ptr->get_raw_socket().remote_endpoint();
-		} break;
-	}
 }
 
 blob P2PFolder::local_token() {
@@ -66,14 +55,7 @@ blob P2PFolder::remote_token() {
 }
 
 void P2PFolder::send_message(const blob& message) {
-	switch(role_){
-		case P2PProvider::SERVER: {
-			provider_.ws_server().get_con_from_hdl(connection_handle_)->send(message.data(), message.size());
-		} break;
-		case P2PProvider::CLIENT: {
-			provider_.ws_client().get_con_from_hdl(connection_handle_)->send(message.data(), message.size());
-		} break;
-	}
+	ws_service_.send_message(connection_handle_, message);
 }
 
 void P2PFolder::perform_handshake() {
@@ -241,10 +223,8 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 
 	// Attaching to FolderGroup
 	auto group_ptr = folder_group_.lock();
-	if(folder_group_.lock()) {
-		update_remote_endpoint();
+	if(folder_group_.lock())
 		group_ptr->attach(shared_from_this());
-	}
 	else throw FolderGroup::attach_error();
 
 	// Checking authentication using token

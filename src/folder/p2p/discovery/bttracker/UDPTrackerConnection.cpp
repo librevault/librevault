@@ -16,6 +16,7 @@
 #include "UDPTrackerConnection.h"
 #include "src/Client.h"
 #include "src/folder/p2p/P2PProvider.h"
+#include "src/folder/p2p/WSServer.h"
 #include "src/folder/fs/FSFolder.h"
 
 #include "src/folder/p2p/discovery/BTTrackerDiscovery.h"
@@ -36,7 +37,7 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = client_.p2p_provider()->local_endpoint().address();
+	bind_address_ = client_.p2p_provider()->ws_server()->local_endpoint().address();
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 

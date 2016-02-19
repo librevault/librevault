@@ -15,6 +15,7 @@
  */
 #include "DiscoveryService.h"
 #include "src/folder/p2p/P2PProvider.h"
+#include "src/folder/p2p/WSClient.h"
 #include "src/Client.h"
 
 namespace librevault {
@@ -22,15 +23,15 @@ namespace librevault {
 DiscoveryService::DiscoveryService(Client& client) : Loggable(client), client_(client) {}
 
 void DiscoveryService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->add_node(node_url, group_ptr);
+	client_.p2p_provider()->ws_client()->connect(node_url, group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->add_node(node_endpoint, group_ptr);
+	client_.p2p_provider()->ws_client()->connect(node_endpoint, group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->add_node(node_endpoint, pubkey, group_ptr);
+	client_.p2p_provider()->ws_client()->connect(node_endpoint, pubkey, group_ptr);
 }
 
 } /* namespace librevault */

@@ -22,10 +22,14 @@ namespace librevault {
 class Client;
 class FolderGroup;
 class P2PProvider;
+class WSService;
 class AbstractParser;
 
 class P2PFolder : public RemoteFolder, public std::enable_shared_from_this<P2PFolder> {
 	friend class P2PProvider;
+	friend class WSService;
+	friend class WSServer;
+	friend class WSClient;
 public:
 	/* Errors */
 	struct error : public std::runtime_error {
@@ -38,10 +42,11 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role);
-	P2PFolder(Client& client, P2PProvider& provider, std::string name, websocketpp::connection_hdl connection_handle);
+	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role);
+	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle);
 	P2PFolder(Client& client,
 	          P2PProvider& provider,
+	          WSService& ws_service,
 	          std::string name,
 	          websocketpp::connection_hdl connection_handle,
 	          std::shared_ptr<FolderGroup> folder_group);
@@ -49,9 +54,8 @@ public:
 
 	/* Getters */
 	const blob& remote_pubkey() const {return remote_pubkey_;}
-	void remote_pubkey(blob new_remote_pubkey) {remote_pubkey_ = std::move(new_remote_pubkey);}
-
 	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
+	const P2PProvider::role_type role() const {return role_;}
 
 	std::string name() const {return name_;}
 
@@ -84,14 +88,14 @@ public:
 
 protected:
 	blob remote_pubkey_;
+	tcp_endpoint remote_endpoint_;
+
 	void handle_message(const blob& message);
 
 private:
 	P2PProvider& provider_;
+	WSService& ws_service_;
 	P2PProvider::role_type role_;
-
-	tcp_endpoint remote_endpoint_;
-	void update_remote_endpoint();
 
 	std::unique_ptr<AbstractParser> parser_;
 	bool is_handshaken_ = false;

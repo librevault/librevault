@@ -16,6 +16,7 @@
 #include "NATPMPService.h"
 #include "src/Client.h"
 #include "src/folder/p2p/P2PProvider.h"
+#include "src/folder/p2p/WSServer.h"
 #include <natpmp.h>
 
 namespace librevault {
@@ -37,8 +38,8 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 
 		natpmp_ec = sendnewportmappingrequest(&natpmp,
 			NATPMP_PROTOCOL_TCP,
-			provider_.local_endpoint().port(),
-			provider_.local_endpoint().port(),
+			provider_.ws_server()->local_endpoint().port(),
+			provider_.ws_server()->local_endpoint().port(),
 			lifetime_.count());
 		log_->trace() << log_tag() << "sendnewportmappingrequest() = " << natpmp_ec;
 
@@ -52,7 +53,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 		std::chrono::seconds next_request;
 		if(natpmp_ec >= 0) {
 			public_port = natpmp_resp.pnu.newportmapping.mappedpublicport;
-			log_->debug() << log_tag() << "Successfully set up port mapping " << provider_.local_endpoint().port() << " -> "
+			log_->debug() << log_tag() << "Successfully set up port mapping " << provider_.ws_server()->local_endpoint().port() << " -> "
 				<< public_port;
 			next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
 		}else{

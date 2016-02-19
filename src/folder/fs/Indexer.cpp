@@ -46,14 +46,10 @@ void Indexer::index(const std::string& file_path){
 			log_->warn() << log_tag() << "Signature mismatch in local DB";
 		}
 
-		// Starting timer
-		std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();
+		auto before_index = std::chrono::steady_clock::now();  // Starting timer
+		smeta = make_Meta(file_path);   // Actual indexing
+		auto after_index = std::chrono::steady_clock::now();   // Stopping timer
 
-		// Actual indexing
-		smeta = make_Meta(file_path);
-
-		// Stopping timer
-		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
 		log_->trace() << log_tag() << smeta.meta().debug_string();
@@ -87,15 +83,7 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 	meta.set_path(relpath, secret_);
 
 	// Type
-	fs::file_status file_status = dir_.folder_config().preserve_symlinks ? fs::symlink_status(abspath) : fs::status(abspath);	// Preserves symlinks if such option is set.
-
-	switch(file_status.type()){
-		case fs::regular_file: meta.set_meta_type(Meta::FILE); break;
-		case fs::directory_file: meta.set_meta_type(Meta::DIRECTORY); break;
-		case fs::symlink_file: meta.set_meta_type(Meta::SYMLINK); break;
-		case fs::file_not_found: meta.set_meta_type(Meta::DELETED); break;
-		default: throw unsupported_filetype();
-	}
+	meta.set_meta_type(get_type(abspath));
 
 	if(meta.meta_type() != Meta::DELETED){
 		try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
@@ -156,6 +144,18 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 	meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
 
 	return sign(meta);
+}
+
+Meta::Type Indexer::get_type(const fs::path& path) {
+	fs::file_status file_status = dir_.folder_config().preserve_symlinks ? fs::symlink_status(path) : fs::status(path);	// Preserves symlinks if such option is set.
+
+	switch(file_status.type()){
+		case fs::regular_file: return Meta::FILE;
+		case fs::directory_file: return Meta::DIRECTORY;
+		case fs::symlink_file: return Meta::SYMLINK;
+		case fs::file_not_found: return Meta::DELETED;
+		default: throw unsupported_filetype();
+	}
 }
 
 Meta::SignedMeta Indexer::sign(const Meta& meta) const {

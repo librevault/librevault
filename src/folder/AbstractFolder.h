@@ -44,7 +44,7 @@ public:
 
 	// AbstractFolder properties
 	virtual std::string name() const = 0;
-	std::shared_ptr<FolderGroup> exchange_group() {return folder_group_.lock();}
+	std::shared_ptr<FolderGroup> folder_group();
 
 	// Other functions
 	static std::string path_id_readable(const blob& path_id);

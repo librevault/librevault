@@ -17,6 +17,7 @@
 #include "src/Client.h"
 #include "src/folder/FolderGroup.h"
 
+#include <librevault/Tokens.h>
 #include <librevault/protocol/ProtobufParser.h>
 
 namespace librevault {
@@ -57,11 +58,11 @@ void P2PFolder::update_remote_endpoint() {
 }
 
 blob P2PFolder::local_token() {
-	return provider_.node_key().public_key() | crypto::HMAC_SHA3_224(folder_group_.lock()->secret().get_Public_Key());
+	return derive_token(folder_group_.lock()->secret(), provider_.node_key().public_key());
 }
 
 blob P2PFolder::remote_token() {
-	return remote_pubkey() | crypto::HMAC_SHA3_224(folder_group_.lock()->secret().get_Public_Key());
+	return derive_token(folder_group_.lock()->secret(), remote_pubkey());
 }
 
 void P2PFolder::send_message(const blob& message) {
@@ -76,7 +77,7 @@ void P2PFolder::send_message(const blob& message) {
 }
 
 void P2PFolder::perform_handshake() {
-	if(!exchange_group()) throw protocol_error();
+	if(!folder_group()) throw protocol_error();
 
 	AbstractParser::Handshake message_struct;
 	message_struct.auth_token = local_token();
@@ -210,7 +211,7 @@ void P2PFolder::cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, u
 }
 
 void P2PFolder::handle_message(const blob& message_raw) {
-	AbstractParser::message_type message_type = (AbstractParser::message_type)message_raw[0];
+	AbstractParser::message_type message_type = parser_->parse_MessageType(message_raw);
 
 	if(is_handshaken()) {
 		switch(message_type) {
@@ -263,7 +264,7 @@ void P2PFolder::handle_Choke(const blob& message_raw) {
 
 	if(! peer_choking_) {
 		peer_choking_ = true;
-		exchange_group()->handle_choke(shared_from_this());
+		folder_group()->handle_choke(shared_from_this());
 	}
 }
 void P2PFolder::handle_Unchoke(const blob& message_raw) {
@@ -272,7 +273,7 @@ void P2PFolder::handle_Unchoke(const blob& message_raw) {
 
 	if(peer_choking_) {
 		peer_choking_ = false;
-		exchange_group()->handle_unchoke(shared_from_this());
+		folder_group()->handle_unchoke(shared_from_this());
 	}
 }
 void P2PFolder::handle_Interested(const blob& message_raw) {
@@ -281,7 +282,7 @@ void P2PFolder::handle_Interested(const blob& message_raw) {
 
 	if(! peer_interested_) {
 		peer_interested_ = true;
-		exchange_group()->handle_interested(shared_from_this());
+		folder_group()->handle_interested(shared_from_this());
 	}
 }
 void P2PFolder::handle_NotInterested(const blob& message_raw) {
@@ -290,7 +291,7 @@ void P2PFolder::handle_NotInterested(const blob& message_raw) {
 
 	if(peer_interested_) {
 		peer_interested_ = false;
-		exchange_group()->handle_not_interested(shared_from_this());
+		folder_group()->handle_not_interested(shared_from_this());
 	}
 }
 
@@ -303,7 +304,7 @@ void P2PFolder::handle_HaveMeta(const blob& message_raw) {
 		<< " revision=" << message_struct.revision.revision_
 		<< " bits=" << message_struct.bitfield;
 
-	exchange_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
+	folder_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
 }
 void P2PFolder::handle_HaveBlock(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_HaveBlock()";
@@ -311,7 +312,7 @@ void P2PFolder::handle_HaveBlock(const blob& message_raw) {
 	auto message_struct = parser_->parse_HaveBlock(message_raw);
 	log_->debug() << log_tag() << "<== HAVE_BLOCK:"
 		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash);
-	exchange_group()->notify_block(shared_from_this(), message_struct.encrypted_data_hash);
+	folder_group()->notify_block(shared_from_this(), message_struct.encrypted_data_hash);
 }
 
 void P2PFolder::handle_MetaRequest(const blob& message_raw) {
@@ -322,18 +323,18 @@ void P2PFolder::handle_MetaRequest(const blob& message_raw) {
 		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
 		<< " revision=" << message_struct.revision.revision_;
 
-	exchange_group()->request_meta(shared_from_this(), message_struct.revision);
+	folder_group()->request_meta(shared_from_this(), message_struct.revision);
 }
 void P2PFolder::handle_MetaReply(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_MetaReply()";
 
-	auto message_struct = parser_->parse_MetaReply(message_raw, exchange_group()->secret());
+	auto message_struct = parser_->parse_MetaReply(message_raw, folder_group()->secret());
 	log_->debug() << log_tag() << "<== META_REPLY:"
 		<< " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
 		<< " revision=" << message_struct.smeta.meta().revision()
 		<< " bits=" << message_struct.bitfield;
 
-	exchange_group()->post_meta(shared_from_this(), message_struct.smeta, message_struct.bitfield);
+	folder_group()->post_meta(shared_from_this(), message_struct.smeta, message_struct.bitfield);
 }
 void P2PFolder::handle_MetaCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
@@ -354,7 +355,7 @@ void P2PFolder::handle_ChunkRequest(const blob& message_raw) {
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset;
 
-	exchange_group()->request_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.offset, message_struct.length);
+	folder_group()->request_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.offset, message_struct.length);
 }
 void P2PFolder::handle_ChunkReply(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_ChunkReply()";
@@ -364,7 +365,7 @@ void P2PFolder::handle_ChunkReply(const blob& message_raw) {
 		<< " encrypted_data_hash=" << encrypted_data_hash_readable(message_struct.encrypted_data_hash)
 		<< " offset=" << message_struct.offset;
 
-	exchange_group()->post_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.content, message_struct.offset);
+	folder_group()->post_chunk(shared_from_this(), message_struct.encrypted_data_hash, message_struct.content, message_struct.offset);
 }
 void P2PFolder::handle_ChunkCancel(const blob& message_raw) {
 #   warning "Not implemented yet"

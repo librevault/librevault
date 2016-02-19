@@ -54,6 +54,7 @@ void P2PProvider::init_ws() {
 	// Handlers
 	ws_server_.set_tcp_pre_init_handler(std::bind(&P2PProvider::on_tcp_pre_init, this, std::placeholders::_1, SERVER));
 	ws_server_.set_tls_init_handler(std::bind(&P2PProvider::on_tls_init, this, std::placeholders::_1));
+	ws_server_.set_tcp_post_init_handler(std::bind(&P2PProvider::on_tcp_post_init, this, std::placeholders::_1));
 	ws_server_.set_validate_handler(std::bind(&P2PProvider::on_validate, this, std::placeholders::_1));
 	ws_server_.set_open_handler(std::bind(&P2PProvider::on_open, this, std::placeholders::_1));
 	ws_server_.set_message_handler(std::bind(&P2PProvider::on_message_server, this, std::placeholders::_1, std::placeholders::_2));
@@ -207,8 +208,7 @@ void P2PProvider::on_tcp_pre_init(websocketpp::connection_hdl hdl, role_type rol
 		ws_server_assignment_.insert(std::make_pair(connection_ptr, p2p_directory_ptr));
 	}else{
 		auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
-		auto p2p_directory_ptr = ws_client_assignment_[connection_ptr];
-
+		//auto p2p_directory_ptr = ws_client_assignment_[connection_ptr];
 		connection_ptr->add_subprotocol("librevault");
 	}
 }
@@ -224,36 +224,56 @@ std::shared_ptr<ssl_context> P2PProvider::on_tls_init(websocketpp::connection_hd
 bool P2PProvider::on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx) {
 	log_->trace() << log_tag() << "on_tls_verify()";
 
-	char subject_name[256];
-	X509* x509 = X509_STORE_CTX_get_current_cert(ctx.native_handle());
-	X509_NAME_oneline(X509_get_subject_name(x509), subject_name, 256);
-
-	auto dir_ptr = dir_ptr_from_hdl(hdl);
-	dir_ptr->remote_pubkey(pubkey_from_cert(x509));
-
-	log_->trace() << log_tag() << "TLS " << preverified << " " << subject_name << " " << crypto::Hex().to_string(dir_ptr->remote_pubkey());
-
 	// FIXME: Hey, just returning `true` isn't good enough, yes?
 	return true;
+}
+
+void P2PProvider::on_tcp_post_init(websocketpp::connection_hdl hdl) {
+	auto connection_ptr_client = ws_client_.get_con_from_hdl(hdl);
+	auto connection_ptr_server = ws_server_.get_con_from_hdl(hdl);
+
+	struct connection_error{};
+	try {
+		auto dir_ptr = dir_ptr_from_hdl(hdl);
+
+		// Validate SSL certificate
+		X509* x509 = nullptr;
+		if(connection_ptr_client)
+			x509 = SSL_get_peer_certificate(connection_ptr_client->get_socket().native_handle());
+		else
+			x509 = SSL_get_peer_certificate(connection_ptr_server->get_socket().native_handle());
+
+		if(x509)
+			dir_ptr->remote_pubkey(pubkey_from_cert(x509));
+		else
+			throw connection_error();
+
+		// Detect loopback
+		dir_ptr->update_remote_endpoint();
+		if(is_loopback(dir_ptr->remote_pubkey()) || is_loopback(dir_ptr->remote_endpoint())) {
+			mark_loopback(dir_ptr->remote_endpoint());
+			throw connection_error();
+		}
+	}catch(connection_error& e){
+		if(connection_ptr_client)
+			connection_ptr_client->terminate(websocketpp::lib::error_code());
+		else if(connection_ptr_server)
+			connection_ptr_server->terminate(websocketpp::lib::error_code());
+	}
 }
 
 bool P2PProvider::on_validate(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_validate()";
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
-	auto subprotocols = connection_ptr->get_requested_subprotocols();
-
-	log_->debug() << log_tag() << "Query: " << connection_ptr->get_uri()->get_resource();
-
-	// Detect loopback
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
-	dir_ptr->update_remote_endpoint();
-	dir_ptr->folder_group_ = client_.get_group(query_to_dir_hash(connection_ptr->get_uri()->get_resource()));
-	if(is_loopback(dir_ptr->remote_pubkey()) || is_loopback(dir_ptr->remote_endpoint())) {
-		mark_loopback(dir_ptr->remote_endpoint());
-		return false;
-	}
 
+	// Query validation
+	log_->debug() << log_tag() << "Query: " << connection_ptr->get_uri()->get_resource();
+	dir_ptr->folder_group_ = client_.get_group(query_to_dir_hash(connection_ptr->get_uri()->get_resource()));
+
+	// Subprotocol management
+	auto subprotocols = connection_ptr->get_requested_subprotocols();
 	if(std::find(subprotocols.begin(), subprotocols.end(), "librevault") != subprotocols.end()) {
 		connection_ptr->select_subprotocol("librevault");
 		return true;
@@ -302,12 +322,13 @@ void P2PProvider::on_message(std::shared_ptr<P2PFolder> dir_ptr, const blob& mes
 }
 
 void P2PProvider::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_fail()";
+	log_->trace() << log_tag() << "on_disconnect()";
 
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	if(dir_ptr) {
-		if(dir_ptr->exchange_group())
-			dir_ptr->exchange_group()->detach(dir_ptr);
+		auto folder_group = dir_ptr->folder_group();
+		if(folder_group)
+			folder_group->detach(dir_ptr);
 
 		ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
 		ws_client_assignment_.erase(ws_client_.get_con_from_hdl(hdl));

@@ -102,6 +102,7 @@ private:
 	void on_tcp_pre_init(websocketpp::connection_hdl hdl, role_type role);
 	std::shared_ptr<ssl_context> on_tls_init(websocketpp::connection_hdl hdl);
 	bool on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx);    // Not WebSockets callback, but asio::ssl
+	void on_tcp_post_init(websocketpp::connection_hdl hdl);
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_open(websocketpp::connection_hdl hdl);
 

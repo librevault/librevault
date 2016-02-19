@@ -38,6 +38,7 @@
 // OpenSSL
 #include <openssl/pem.h>
 #include <openssl/x509.h>
+#include <openssl/ssl.h>
 
 // Crypto++
 #include <cryptopp/aes.h>

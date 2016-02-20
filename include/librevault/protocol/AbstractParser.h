@@ -88,6 +88,12 @@ public:
 	// gen_* messages return messages in format <type=byte><payload>
 	// parse_* messages take argument in format <type=byte><payload>
 
+	message_type parse_MessageType(const blob& message_raw) {
+		if(!message_raw.empty())
+			return (message_type)message_raw[0];
+		else throw parse_error();
+	}
+
 	virtual blob gen_Handshake(const Handshake& message_struct) = 0;
 	virtual Handshake parse_Handshake(const blob& message_raw) = 0;
 

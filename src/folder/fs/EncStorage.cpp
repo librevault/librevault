@@ -21,7 +21,7 @@ namespace librevault {
 EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage"), block_path_(dir.block_path()) {
 	bool block_path_created = fs::create_directories(block_path_);
 #if BOOST_OS_WINDOWS
-	SetFileAttributes() // Use SetFileAttributes to set block_path_ as HIDDEN.
+	//SetFileAttributes() // Use SetFileAttributes to set block_path_ as HIDDEN.
 #endif
 	log_->debug() << log_tag() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
 }

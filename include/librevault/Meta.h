@@ -76,10 +76,11 @@ public:
 	class SignedMeta {
 	public:
 		struct signature_error : error {
-			signature_error() : error("Signature mismatch") {}
+			signature_error() : error("Meta signature mismatch") {}
 		};
 
 		SignedMeta() {}
+		SignedMeta(Meta meta, const Secret& secret);
 		SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature = true);
 
 		operator bool() const {return meta_ && raw_meta_ && signature_;}
@@ -97,7 +98,7 @@ public:
 
 	/* Class methods */
 	Meta();
-	Meta(const blob& meta_s);
+	explicit Meta(const blob& meta_s);
 	virtual ~Meta();
 
 	/* Serialization */

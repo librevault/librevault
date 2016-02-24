@@ -21,13 +21,43 @@
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/AES_CBC.h>
 #include <cryptopp/osrng.h>
+#include <cryptopp/oids.h>
+#include <cryptopp/ecp.h>
+#include <cryptopp/sha3.h>
+#include <cryptopp/eccrypto.h>
 
 namespace librevault {
+
+Meta::SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
+	meta_ = std::make_shared<Meta>(std::move(meta));
+	raw_meta_ = std::make_shared<blob>(meta.serialize());
+	blob signature;
+
+	CryptoPP::AutoSeededRandomPool rng;
+	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
+	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret.get_Private_Key().data(), secret.get_Private_Key().size()));
+
+	signature_ = std::make_shared<blob>(signer.SignatureLength());
+	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature.data());
+}
 
 Meta::SignedMeta::SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature) :
 	raw_meta_(std::make_shared<blob>(std::move(raw_meta))),
 	signature_(std::make_shared<blob>(std::move(signature))) {
-	// TODO: check signature
+
+	if(check_signature) {
+		try {
+			CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
+			verifier.AccessKey().AccessGroupParameters() = CryptoPP::ASN1::secp256r1();
+			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
+			verifier.AccessKey().AccessGroupParameters().DecodeElement(secret.get_Public_Key().data(), true);
+			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
+				throw signature_error();
+		}catch(CryptoPP::Exception& e){
+			throw signature_error();
+		}
+	}
+
 	meta_ = std::make_shared<Meta>(*raw_meta_);
 }
 

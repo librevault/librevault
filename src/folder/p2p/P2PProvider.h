@@ -17,11 +17,8 @@
 #pragma once
 #include "NodeKey.h"
 #include "src/util/Loggable.h"
-#include "websocket_config.h"
 
 namespace librevault {
-
-class P2PFolder;
 
 class WSServer;
 class WSClient;

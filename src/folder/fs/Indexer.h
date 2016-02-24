@@ -59,9 +59,6 @@ private:
 	/* File analyzers */
 	Meta::Type get_type(const fs::path& path);
 
-	/* Signer */
-	Meta::SignedMeta sign(const Meta& meta) const;
-
 	cryptodiff::StrongHashType get_strong_hash_type();
 };
 

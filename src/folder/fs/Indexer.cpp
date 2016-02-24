@@ -142,7 +142,7 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 	// Revision
 	meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
 
-	return sign(meta);
+	return Meta::SignedMeta(meta, secret_);
 }
 
 Meta::Type Indexer::get_type(const fs::path& path) {
@@ -155,19 +155,6 @@ Meta::Type Indexer::get_type(const fs::path& path) {
 		case fs::file_not_found: return Meta::DELETED;
 		default: throw unsupported_filetype();
 	}
-}
-
-Meta::SignedMeta Indexer::sign(const Meta& meta) const {
-	CryptoPP::AutoSeededRandomPool rng;
-	blob raw_meta = meta.serialize();
-	blob signature;
-
-	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret_.get_Private_Key().data(), secret_.get_Private_Key().size()));
-
-	signature.resize(signer.SignatureLength());
-	signer.SignMessage(rng, raw_meta.data(), raw_meta.size(), signature.data());
-	return Meta::SignedMeta(std::move(raw_meta), std::move(signature), secret_, false);
 }
 
 cryptodiff::StrongHashType Indexer::get_strong_hash_type() {

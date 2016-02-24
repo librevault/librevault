@@ -46,10 +46,9 @@ void Indexer::index(const std::string& file_path){
 			log_->warn() << log_tag() << "Signature mismatch in local DB";
 		}
 
-		auto before_index = std::chrono::steady_clock::now();  // Starting timer
+		std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();  // Starting timer
 		smeta = make_Meta(file_path);   // Actual indexing
-		auto after_index = std::chrono::steady_clock::now();   // Stopping timer
-
+		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
 		log_->trace() << log_tag() << smeta.meta().debug_string();
@@ -106,7 +105,7 @@ Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
 				// Create FileMap, if something got wrong
 				cryptodiff::FileMap filemap(secret_.get_Encryption_Key());
 				filemap.set_strong_hash_type(get_strong_hash_type());
-				filemap.create(abspath.generic_string());
+				filemap.update(abspath.generic_string());
 				meta.set_filemap(filemap);
 			}
 		}

@@ -16,7 +16,7 @@
 #pragma once
 
 #include "Secret.h"
-#include "crypto/SHA3.h"
+#include "crypto/HMAC-SHA3.h"
 
 namespace librevault {
 

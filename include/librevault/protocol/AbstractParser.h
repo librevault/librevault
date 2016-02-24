@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <librevault/Meta.h>
-#include <librevault/util/bitfield_convert.h>
+#include "../Meta.h"
+#include "../util/bitfield_convert.h"
 
 namespace librevault {
 

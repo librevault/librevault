@@ -46,7 +46,7 @@ list(APPEND lvcommon_SOURCES ${PROTO_SOURCES})
 # Compile targets
 #============================================================================
 
-add_library(lvcommon-object OBJECT ${lvcommon_SOURCES} ${PROTO_HEADERS})
+add_library(lvcommon-object OBJECT ${lvcommon_SOURCES} ${lvcommon_HEADERS} ${PROTO_HEADERS})
 set_target_properties(lvcommon-object PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 target_include_directories(lvcommon-object PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 

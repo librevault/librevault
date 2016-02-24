@@ -15,8 +15,8 @@
  */
 #pragma once
 
-#include <librevault/definitions.h>
-#include <librevault/Secret.h>
+#include "definitions.h"
+#include "Secret.h"
 #include <cryptodiff.h>
 
 namespace librevault {

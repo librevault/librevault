@@ -17,11 +17,9 @@
 #include <librevault/crypto/LuhnModN.h>
 
 #include <cryptopp/eccrypto.h>
-#include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/sha3.h>
 #include <cryptopp/osrng.h>
-#include <cryptopp/integer.h>
 
 using CryptoPP::ASN1::secp256r1;
 

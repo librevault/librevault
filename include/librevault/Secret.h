@@ -19,7 +19,7 @@
 #include <vector>
 #include <stdexcept>
 
-#include <librevault/definitions.h>
+#include "definitions.h"
 
 namespace librevault {
 

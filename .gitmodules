@@ -9,7 +9,4 @@
 	url = https://github.com/GamePad64/lvsqlite3.git
 [submodule "contrib/docopt"]
 	path = contrib/docopt
-	url = https://github.com/docopt/docopt.cpp.git
-[submodule "liblibrevault"]
-	path = liblibrevault
-	url = https://bitbucket.org/librevault/liblibrevault
+	url = https://github.com/GamePad64/docopt.cpp.git

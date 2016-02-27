@@ -123,14 +123,17 @@ public:
 	std::string path(const Secret& secret) const;
 	void set_path(const std::string& path, const Secret& secret);   // Also, computes and sets path_id
 	AES_CBC_DATA& raw_path() {return path_;}
+	const AES_CBC_DATA& raw_path() const {return path_;}
 
 	std::string symlink_path(const Secret& secret) const;
 	void set_symlink_path(const std::string& path, const Secret& secret);
 	AES_CBC_DATA& raw_symlink_path() {return symlink_path_;}
+	const AES_CBC_DATA& raw_symlink_path() const {return symlink_path_;}
 
 	RabinGlobalParams rabin_global_params(const Secret& secret) const;
 	void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
 	AES_CBC_DATA& raw_rabin_global_params() {return rabin_global_params_;}
+	const AES_CBC_DATA& raw_rabin_global_params() const {return rabin_global_params_;}
 
 	// Dumb getters & setters
 	const blob& path_id() const {return path_id_;}

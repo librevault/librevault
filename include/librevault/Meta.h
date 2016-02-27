@@ -17,45 +17,70 @@
 
 #include "definitions.h"
 #include "Secret.h"
-#include <cryptodiff.h>
+#include "util/AES_CBC_DATA.h"
 
 namespace librevault {
 
 class Meta {
 public:
-	enum Type : uint8_t {FILE = 0, DIRECTORY = 1, SYMLINK = 2, DELETED = 255};
-	using StrongHashType = cryptodiff::StrongHashType;
-	using WeakHashType = cryptodiff::WeakHashType;
-	using Block = cryptodiff::Block;
+	enum Type : uint8_t {FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255};
+	enum AlgorithmType : uint8_t {RABIN=0/*, RSYNC=1, RSYNC64=2*/};
+	enum StrongHashType : uint8_t {SHA3_224=0, SHA2_224=1};
+	struct Chunk {
+		blob ct_hash;
+		uint32_t size;
+		blob iv;
+
+		blob pt_hmac;
+
+		static blob encrypt(const blob& chunk, const blob& key, const blob& iv);
+		static blob decrypt(const blob& chunk, uint32_t size, const blob& key, const blob& iv);
+
+		static blob compute_strong_hash(const blob& chunk, StrongHashType type);
+	};
+
+	struct RabinGlobalParams {
+		uint64_t polynomial = 0x3DA3358B4DC173LL;
+		uint32_t polynomial_degree = 53;
+		uint32_t polynomial_shift = 53 - 8;
+		uint32_t avg_bits = 20;
+	};
 
 private:
 	/* Meta fields, must be serialized together and then signed */
-	blob path_id_;	// aka path_hmac;
-	blob encrypted_path_;	// aka encpath;
-	blob encrypted_path_iv_;	// aka encpath_iv;
+
+	/* Required data */
+	blob path_id_;
+	AES_CBC_DATA path_;
 	Type meta_type_ = FILE;
 	int64_t revision_ = 0;	// timestamp of Meta modification
 
+	/* Content-specific metadata */
+	// Generic metadata
 	int64_t mtime_ = 0;	// file/directory mtime
-
-	// Symlinks only
-	blob symlink_encrypted_path_;
-	blob symlink_encrypted_path_iv_;
-
-	// Windows-specific
+	/// Windows-specific
 	uint32_t windows_attrib_ = 0;
-	// Unix-specific
+	/// Unix-specific
 	uint32_t mode_ = 0;
 	uint32_t uid_ = 0;
 	uint32_t gid_ = 0;
 
-	// Filemap-derived data
-	uint32_t max_blocksize_ = 0;
-	uint32_t min_blocksize_ = 0;
-	StrongHashType strong_hash_type_ = StrongHashType::SHA3_224;
-	WeakHashType weak_hash_type_ = WeakHashType::RSYNC;
+	// Symlink metadata
+	AES_CBC_DATA symlink_path_;
 
-	std::vector<Block> blocks_;
+	// File metadata
+	/// Algorithm selection
+	AlgorithmType algorithm_type_ = (AlgorithmType)0;
+	StrongHashType strong_hash_type_ = (StrongHashType)0;
+
+	/// Uni-algorithm parameters
+	uint32_t max_chunksize_ = 0;
+	uint32_t min_chunksize_ = 0;
+
+	/// Rabin algorithm parameters
+	AES_CBC_DATA rabin_global_params_;
+
+	std::vector<Chunk> chunks_;
 
 public:
 	/* Nested structs & classes */
@@ -68,32 +93,10 @@ public:
 		parse_error() : error("Parse error") {}
 	};
 
+	/// Used for querying specific version of Meta
 	struct PathRevision {
 		blob path_id_;
 		int64_t revision_;
-	};
-
-	class SignedMeta {
-	public:
-		struct signature_error : error {
-			signature_error() : error("Meta signature mismatch") {}
-		};
-
-		SignedMeta() {}
-		SignedMeta(Meta meta, const Secret& secret);
-		SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature = true);
-
-		operator bool() const {return meta_ && raw_meta_ && signature_;}
-
-		// Getters
-		const Meta& meta() const {return *meta_;}
-		const blob& raw_meta() const {return *raw_meta_;}
-		const blob& signature() const {return *signature_;}
-	private:
-		std::shared_ptr<Meta> meta_;
-
-		std::shared_ptr<blob> raw_meta_;
-		std::shared_ptr<blob> signature_;
 	};
 
 	/* Class methods */
@@ -105,38 +108,33 @@ public:
 	blob serialize() const;
 	void parse(const blob& serialized_data);
 
-	/* Debug */
-	std::string debug_string() const;
+	/* Validation */
+	//bool validate() const;
+	//bool validate(const Secret& secret) const;
+
+	/* Generators */
+	static blob make_path_id(const std::string& path, const Secret& secret);
 
 	/* Smart getters+setters */
-	PathRevision path_revision() const {
-		return PathRevision{path_id(), revision()};
-	}
+	PathRevision path_revision() const {return PathRevision{path_id(), revision()};}
 	uint64_t size() const;
 
-	cryptodiff::FileMap filemap(const Secret& secret);
-	void set_filemap(const cryptodiff::FileMap& new_filemap);
-
-	// Path encryptors+setters
+	// Encryptors/decryptors
 	std::string path(const Secret& secret) const;
-	void set_path(const std::string& path, const Secret& secret);
+	void set_path(const std::string& path, const Secret& secret);   // Also, computes and sets path_id
+	AES_CBC_DATA& raw_path() {return path_;}
 
 	std::string symlink_path(const Secret& secret) const;
 	void set_symlink_path(const std::string& path, const Secret& secret);
+	AES_CBC_DATA& raw_symlink_path() {return symlink_path_;}
 
-	// IV randomizers
-	void randomize_encrypted_path_iv() {set_encrypted_path_iv(gen_random_iv());}
-	void randomize_symlink_encrypted_path_iv() {set_symlink_encrypted_path_iv(gen_random_iv());}
+	RabinGlobalParams rabin_global_params(const Secret& secret) const;
+	void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
+	AES_CBC_DATA& raw_rabin_global_params() {return rabin_global_params_;}
 
 	// Dumb getters & setters
 	const blob& path_id() const {return path_id_;}
 	void set_path_id(const blob& path_id) {path_id_ = path_id;}
-
-	const blob& encrypted_path() const {return encrypted_path_;}
-	void set_encrypted_path(const blob& encrypted_path) {encrypted_path_ = encrypted_path;}
-
-	const blob& encrypted_path_iv() const {return encrypted_path_iv_;}
-	void set_encrypted_path_iv(const blob& encrypted_path_iv) {encrypted_path_iv_ = encrypted_path_iv;}
 
 	Type meta_type() const {return meta_type_;}
 	void set_meta_type(Type meta_type) {meta_type_ = meta_type;}
@@ -146,12 +144,6 @@ public:
 
 	int64_t mtime() const {return mtime_;}
 	void set_mtime(int64_t mtime) {mtime_ = mtime;}
-
-	const blob& symlink_encrypted_path() const {return symlink_encrypted_path_;}
-	void set_symlink_encrypted_path(const blob& symlink_encrypted_path) {symlink_encrypted_path_ = symlink_encrypted_path;}
-
-	const blob& symlink_encrypted_path_iv() const {return symlink_encrypted_path_iv_;}
-	void set_symlink_encrypted_path_iv(const blob& symlink_encrypted_path_iv) {symlink_encrypted_path_iv_ = symlink_encrypted_path_iv;}
 
 	uint32_t windows_attrib() const {return windows_attrib_;}
 	void set_windows_attrib(uint32_t windows_attrib) {windows_attrib_ = windows_attrib;}
@@ -165,22 +157,20 @@ public:
 	uint32_t gid() const {return gid_;}
 	void set_gid(uint32_t gid) {gid_ = gid;}
 
-	uint32_t min_blocksize() const {return min_blocksize_;}
-	void set_min_blocksize(uint32_t min_blocksize) {min_blocksize_ = min_blocksize;}
-
-	uint32_t max_blocksize() const {return max_blocksize_;}
-	void set_max_blocksize(uint32_t max_blocksize) {max_blocksize_ = max_blocksize;}
+	AlgorithmType algorithm_type() const {return algorithm_type_;}
+	void set_algorithm_type(AlgorithmType algorithm_type) {algorithm_type_ = algorithm_type;}
 
 	StrongHashType strong_hash_type() const {return strong_hash_type_;}
 	void set_strong_hash_type(StrongHashType strong_hash_type) {strong_hash_type_ = strong_hash_type;}
 
-	WeakHashType weak_hash_type() const {return weak_hash_type_;}
-	void set_weak_hash_type(WeakHashType weak_hash_type) {weak_hash_type_ = weak_hash_type;}
+	uint32_t min_chunksize() const {return min_chunksize_;}
+	void set_min_chunksize(uint32_t min_chunksize) {min_chunksize_ = min_chunksize;}
 
-	const std::vector<Block>& blocks() const {return blocks_;}
-	void set_blocks(const std::vector<Block>& blocks) {blocks_ = blocks;}
-private:
-	blob gen_random_iv() const;
+	uint32_t max_chunksize() const {return max_chunksize_;}
+	void set_max_chunksize(uint32_t max_chunksize) {max_chunksize_ = max_chunksize;}
+
+	const std::vector<Chunk>& chunks() const {return chunks_;}
+	void set_chunks(const std::vector<Chunk>& chunks) {chunks_ = chunks;}
 };
 
 } /* namespace librevault */

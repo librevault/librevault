@@ -113,7 +113,7 @@ AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_ra
 
 	bitfield_type converted_bitfield = convert_bitfield(blob(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
-	return MetaReply{Meta::SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier), std::move(converted_bitfield)};
+	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier), std::move(converted_bitfield)};
 }
 
 blob ProtobufParser::gen_MetaCancel(const MetaCancel& message_struct) {

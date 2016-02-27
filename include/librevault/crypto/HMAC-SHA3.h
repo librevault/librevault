@@ -11,7 +11,6 @@
 #pragma once
 #include "Transformer.h"
 #include <cryptopp/sha3.h>
-#include <cryptopp/hmac.h>
 
 namespace librevault {
 namespace crypto {
@@ -30,7 +29,7 @@ class HMAC_SHA3_224 : public OneWayTransformer {
 	const blob key_;
 	mutable CryptoPP::SHA3_224 hasher_;
 public:
-	HMAC_SHA3_224(blob key) : key_(key) {}
+	HMAC_SHA3_224(blob key) : key_(std::move(key)) {}
 	virtual ~HMAC_SHA3_224() {}
 
 	blob compute(const blob& data) const {

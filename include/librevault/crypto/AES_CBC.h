@@ -13,6 +13,7 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/ccm.h>
 #include <cryptopp/filters.h>
+#include <cryptopp/osrng.h>
 
 namespace librevault {
 namespace crypto {
@@ -52,6 +53,12 @@ public:
 		);
 
 		return blob(std::make_move_iterator(plaintext.begin()), std::make_move_iterator(plaintext.end()));
+	}
+
+	static blob random_iv() {
+		blob random_iv(16);
+		CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(random_iv.data(), random_iv.size());
+		return random_iv;
 	}
 
 	virtual blob to(const blob& data) const {return encrypt(data);}

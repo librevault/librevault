@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../Meta.h"
+#include "../SignedMeta.h"
 #include "../util/bitfield_convert.h"
 
 namespace librevault {
@@ -58,7 +58,7 @@ public:
 		Meta::PathRevision revision;
 	};
 	struct MetaReply {
-		Meta::SignedMeta smeta;
+		SignedMeta smeta;
 		bitfield_type bitfield;
 	};
 	struct MetaCancel {

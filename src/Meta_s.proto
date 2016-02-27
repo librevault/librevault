@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2016 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,38 +16,63 @@
 syntax = "proto3";
 package librevault.serialization;
 
-message Meta_s {
-	// Necessary data
+message AES_CBC {
+	bytes ct = 1;
+	bytes iv = 2;
+}
+
+message Meta {
+	/* Required metadata */
 	bytes path_id = 1;
-	bytes encrypted_path = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
-	bytes encrypted_path_iv = 3;	// IV for AES-256-CBC encrypted encpath.
-	uint32 meta_type = 4;
-	int64 revision = 5;
+	AES_CBC path = 2;	// AES-256-CBC encrypted normalized path relative to sync directory path. It cannot contain dot (".") and dot-dot ("..") elements. Directory path MUST NOT end with trailing slash ("/"). Separators MUST be slashes ("/").
+	uint32 meta_type = 3;
+	int64 revision = 4;
 
-	// Other types of metadata
-	int64 mtime = 6;
-	/// Symlinks only
-	bytes symlink_encrypted_path = 7;
-	bytes symlink_encrypted_path_iv = 8;
-
-	/// Windows-specific
-	uint32 windows_attrib = 9;
-	/// Unix-specific
-	uint32 mode = 10;
-    uint32 uid = 11;
-    uint32 gid = 12;
-
-	// Filemap-derived data
-	uint32 max_blocksize = 16;
-	uint32 min_blocksize = 17;
-	uint32 strong_hash_type = 18;
-	uint32 weak_hash_type = 19;
-
-	message Block_s {
-		bytes encrypted_data_hash = 1;
-		bytes encrypted_rsync_hashes = 2;
-		uint32 blocksize = 3;
-		bytes iv = 4;
+	/* Content-specific metadata */
+	message GenericMetadata {	// Filesystem attributes (ALL AND NOT DELETED)
+    	int64 mtime = 1;
+    	// Windows-specific
+    	uint32 windows_attrib = 2;
+    	// Unix-specific
+    	uint32 mode = 3;
+        uint32 uid = 4;
+        uint32 gid = 5;
 	}
-	repeated Block_s blocks = 20;
+	message SymlinkMetadata {
+    	AES_CBC symlink_path = 1;
+	}
+
+	message FileMetadata {
+		// Algorithm selection
+		uint32 algorithm_type = 1;
+		uint32 strong_hash_type = 2;
+
+		// Uni-algorithm parameters
+		uint32 max_chunksize = 3;
+		uint32 min_chunksize = 4;
+
+		// Rabin algorithm parameters
+		message RabinGlobalParams {
+			uint64 polynomial = 1;
+			uint32 polynomial_degree = 2;
+			uint32 polynomial_shift = 3;
+			uint32 avg_bits = 4;
+		}
+		AES_CBC rabin_global_params = 5;
+
+		message Chunk {
+			bytes ct_hash = 1;
+			uint32 size = 2;
+			bytes iv = 3;
+
+			bytes pt_hmac = 4;
+		}
+		repeated Chunk chunks = 255;
+	}
+
+	GenericMetadata generic_metadata = 16;
+	oneof type_specific_metadata {
+		SymlinkMetadata symlink_metadata = 17;
+		FileMetadata file_metadata = 18;
+	}
 }

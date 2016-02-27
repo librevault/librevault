@@ -13,52 +13,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <librevault/Meta.h>
+#include <include/librevault/Meta.h>
 #include <Meta_s.pb.h>
-
-#include <sstream>
-#include <librevault/crypto/Base32.h>
-#include <librevault/crypto/Hex.h>
-#include <librevault/crypto/AES_CBC.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/oids.h>
-#include <cryptopp/ecp.h>
-#include <cryptopp/sha3.h>
-#include <cryptopp/eccrypto.h>
+#include <include/librevault/crypto/AES_CBC.h>
+#include <include/librevault/crypto/SHA3.h>
+#include <include/librevault/crypto/SHA2.h>
+#include <include/librevault/crypto/HMAC-SHA3.h>
 
 namespace librevault {
 
-Meta::SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
-	meta_ = std::make_shared<Meta>(std::move(meta));
-	raw_meta_ = std::make_shared<blob>(meta.serialize());
-	blob signature;
-
-	CryptoPP::AutoSeededRandomPool rng;
-	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret.get_Private_Key().data(), secret.get_Private_Key().size()));
-
-	signature_ = std::make_shared<blob>(signer.SignatureLength());
-	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature.data());
+blob Meta::Chunk::encrypt(const blob& chunk, const blob& key, const blob& iv) {
+	return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
 }
 
-Meta::SignedMeta::SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature) :
-	raw_meta_(std::make_shared<blob>(std::move(raw_meta))),
-	signature_(std::make_shared<blob>(std::move(signature))) {
+blob Meta::Chunk::decrypt(const blob& chunk, uint32_t size, const blob& key, const blob& iv) {
+	return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
+}
 
-	if(check_signature) {
-		try {
-			CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-			verifier.AccessKey().AccessGroupParameters() = CryptoPP::ASN1::secp256r1();
-			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-			verifier.AccessKey().AccessGroupParameters().DecodeElement(secret.get_Public_Key().data(), true);
-			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
-				throw signature_error();
-		}catch(CryptoPP::Exception& e){
-			throw signature_error();
-		}
+blob Meta::Chunk::compute_strong_hash(const blob& chunk, StrongHashType type) {
+	switch(type){
+		case SHA3_224: return chunk | crypto::SHA3(224);
+		case SHA2_224: return chunk | crypto::SHA2(224);
+		default: return std::vector<uint8_t>();	// TODO: throw some exception.
 	}
-
-	meta_ = std::make_shared<Meta>(*raw_meta_);
 }
 
 Meta::Meta() {}
@@ -67,114 +44,141 @@ Meta::Meta(const blob& meta_s) {
 }
 Meta::~Meta() {}
 
-std::string Meta::debug_string() const {
-	std::ostringstream os;
+/*bool Meta::validate() const {
+	if(path_id_.size() != 28) return false; // Hash size mismatch
 
-	os	<< "path_id: " << crypto::Base32().to_string(path_id_) << "; "
-		<< "encrypted_path: " << crypto::Hex().to_string(encrypted_path_) << "; "
-		<< "encrypted_path_iv: " << crypto::Hex().to_string(encrypted_path_iv_) << "; "
-		<< "meta_type: " << meta_type_ << "; "
-		<< "revision: " << revision_ << "; "
+	// AES
+	if(!path_.check()) return false;   // Data/IV size mismatch
 
-		<< "mtime: " << mtime_ << "; "
+	if(meta_type_ == Type::FILE) {
+		if(algorithm_type_ != RABIN
+			|| strong_hash_type_ > SHA2_224 // Unknown cryptographic hashing algorithm
+			|| max_blocksize_ == 0 || min_blocksize_ == 0 || max_blocksize_ > min_blocksize_) return false;    // Invalid block constraints
 
-		<< "symlink_encrypted_path: " << crypto::Hex().to_string(symlink_encrypted_path_) << "; "
-		<< "symlink_encrypted_path_iv: " << crypto::Hex().to_string(symlink_encrypted_path_iv_) << "; "
+		if(algorithm_type_ == RABIN && !rabin_global_params_.check()) return false;
 
-		<< "windows_attrib: " << windows_attrib_ << "; "
-		<< "mode: " << std::oct << mode_ << std::dec << "; "
-		<< "uid: " << uid_ << "; "
-		<< "gid: " << gid_ << "; "
+		for(auto& block : blocks()) {
+			if(block.blocksize_ > max_blocksize_ || block.blocksize_ == 0)   // Broken block constraint
+			if(block.encrypted_data_hash_.size() != 28) return false;
+			if(block.iv_.size() != 16) return false;
 
-		<< "max_blocksize: " << max_blocksize_ << "; "
-		<< "min_blocksize: " << min_blocksize_ << "; "
-		<< "strong_hash_type: " << strong_hash_type_ << "; "
-		<< "weak_hash_type: " << weak_hash_type_;
-	return os.str();
+			if(block.preencrypted_data_hmac_.size() != 28) return false;
+		}
+	}
+
+	if(meta_type_ == Type::SYMLINK && !symlink_path_.check()) return false;
+
+	return true;
 }
+
+bool Meta::validate(const Secret& secret) const {
+	if(! validate()) return false;  // "Easy" validation failed
+
+	if(make_path_id(path(secret), secret) != path_id_) return false;    // path_id is inconsistent with encrypted_path and its iv
+
+	try {
+		auto params = rabin_global_params(secret);
+		// TODO: Check rabin parameters somehow
+	}catch(parse_error& e){
+		return false;
+	}
+
+	return true;
+}*/
 
 uint64_t Meta::size() const {
 	uint64_t total_size = 0;
-	for(auto& block : blocks()){
-		total_size += block.blocksize_;
+	for(auto& chunk : chunks()){
+		total_size += chunk.size;
 	}
 	return total_size;
 }
 
-cryptodiff::FileMap Meta::filemap(const Secret& secret) {
-	cryptodiff::FileMap new_filemap(secret.get_Encryption_Key());
-
-	new_filemap.set_minblocksize(min_blocksize());
-	new_filemap.set_maxblocksize(max_blocksize());
-	new_filemap.set_strong_hash_type(strong_hash_type());
-	new_filemap.set_weak_hash_type(weak_hash_type());
-	new_filemap.set_blocks(blocks());
-
-	return new_filemap;
-}
-
-void Meta::set_filemap(const cryptodiff::FileMap& new_filemap) {
-	set_min_blocksize(new_filemap.minblocksize());
-	set_max_blocksize(new_filemap.maxblocksize());
-	set_strong_hash_type(new_filemap.strong_hash_type());
-	set_weak_hash_type(new_filemap.weak_hash_type());
-	set_blocks(new_filemap.blocks());
-}
-
 std::string Meta::path(const Secret& secret) const {
-	blob result = encrypted_path_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), encrypted_path_iv_);
+	blob result = path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
 void Meta::set_path(const std::string& path, const Secret& secret) {
-	randomize_encrypted_path_iv();
-	set_encrypted_path(path | crypto::AES_CBC(secret.get_Encryption_Key(), encrypted_path_iv_));
+	set_path_id(make_path_id(path, secret));
+	path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
 
 std::string Meta::symlink_path(const Secret& secret) const {
-	blob result = symlink_encrypted_path_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), symlink_encrypted_path_iv_);
+	blob result = symlink_path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
 void Meta::set_symlink_path(const std::string& path, const Secret& secret) {
-	randomize_symlink_encrypted_path_iv();
-	set_symlink_encrypted_path(path | crypto::AES_CBC(secret.get_Encryption_Key(), symlink_encrypted_path_iv_));
+	symlink_path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
 
-blob Meta::gen_random_iv() const {
-	blob random_iv(16);
-	CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(random_iv.data(), random_iv.size());
-	return random_iv;
+Meta::RabinGlobalParams Meta::rabin_global_params(const Secret& secret) const {
+	auto decrypted = rabin_global_params_.get_plain(secret);
+
+	serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
+	bool parsed_well = rabin_global_params_s.ParseFromArray(decrypted.data(), decrypted.size());
+	if(!parsed_well) throw parse_error();
+
+	Meta::RabinGlobalParams rabin_global_params;
+	rabin_global_params.polynomial = rabin_global_params_s.polynomial();
+	rabin_global_params.polynomial_degree = rabin_global_params_s.polynomial_degree();
+	rabin_global_params.polynomial_shift = rabin_global_params_s.polynomial_shift();
+	rabin_global_params.avg_bits = rabin_global_params_s.avg_bits();
+
+	return rabin_global_params;
+}
+void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret) {
+	serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
+	rabin_global_params_s.set_polynomial(rabin_global_params.polynomial);
+	rabin_global_params_s.set_polynomial_degree(rabin_global_params.polynomial_degree);
+	rabin_global_params_s.set_polynomial_shift(rabin_global_params.polynomial_shift);
+	rabin_global_params_s.set_avg_bits(rabin_global_params.avg_bits);
+
+	blob serialized(rabin_global_params_s.ByteSize());
+	rabin_global_params_s.SerializeToArray(serialized.data(), serialized.size());
+
+	rabin_global_params_.set_plain(serialized, secret);
 }
 
 blob Meta::serialize() const {
-	serialization::Meta_s meta_s;
-	meta_s.set_path_id(path_id().data(), path_id().size());
-	meta_s.set_encrypted_path(encrypted_path().data(), encrypted_path().size());
-	meta_s.set_encrypted_path_iv(encrypted_path_iv().data(), encrypted_path_iv().size());
-	meta_s.set_meta_type((uint32_t)meta_type());
-	meta_s.set_revision(revision());
+	serialization::Meta meta_s;
 
-	meta_s.set_mtime(mtime());
+	meta_s.set_path_id(path_id_.data(), path_id_.size());
+	meta_s.mutable_path()->set_ct(path_.ct.data(), path_.ct.size());
+	meta_s.mutable_path()->set_iv(path_.ct.data(), path_.ct.size());
+	meta_s.set_meta_type((uint32_t)meta_type_);
+	meta_s.set_revision(revision_);
 
-	meta_s.set_symlink_encrypted_path(symlink_encrypted_path().data(), symlink_encrypted_path().size());
-	meta_s.set_symlink_encrypted_path_iv(symlink_encrypted_path_iv().data(), symlink_encrypted_path_iv().size());
+	if(meta_type_ != DELETED) {
+		meta_s.mutable_generic_metadata()->set_mtime(mtime_);
+		meta_s.mutable_generic_metadata()->set_windows_attrib(windows_attrib_);
+		meta_s.mutable_generic_metadata()->set_mode(mode_);
+		meta_s.mutable_generic_metadata()->set_uid(uid_);
+		meta_s.mutable_generic_metadata()->set_gid(gid_);
+	}
 
-	meta_s.set_windows_attrib(windows_attrib());
+	if(meta_type_ == SYMLINK) {
+		meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_ct(symlink_path_.ct.data(), symlink_path_.ct.size());
+		meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_iv(symlink_path_.iv.data(), symlink_path_.iv.size());
+	}
 
-	meta_s.set_mode(mode());
-	meta_s.set_uid(uid());
-	meta_s.set_gid(gid());
+	if(meta_type_ == FILE) {
+		meta_s.mutable_file_metadata()->set_algorithm_type((uint32_t)algorithm_type_);
+		meta_s.mutable_file_metadata()->set_strong_hash_type((uint32_t)strong_hash_type_);
 
-	meta_s.set_max_blocksize(max_blocksize());
-	meta_s.set_min_blocksize(min_blocksize());
-	meta_s.set_strong_hash_type((uint32_t)strong_hash_type());
-	meta_s.set_weak_hash_type((uint32_t)weak_hash_type());
+		meta_s.mutable_file_metadata()->set_max_chunksize(max_chunksize_);
+		meta_s.mutable_file_metadata()->set_min_chunksize(min_chunksize_);
 
-	for(auto& block : blocks()){
-		auto block_s = meta_s.add_blocks();
-		block_s->set_encrypted_data_hash(block.encrypted_data_hash_.data(), block.encrypted_data_hash_.size());
-		block_s->set_encrypted_rsync_hashes(block.encrypted_rsync_hashes_.data(), block.encrypted_rsync_hashes_.size());
-		block_s->set_blocksize(block.blocksize_);
-		block_s->set_iv(block.iv_.data(), block.iv_.size());
+		meta_s.mutable_file_metadata()->mutable_rabin_global_params()->set_ct(rabin_global_params_.ct.data(), rabin_global_params_.ct.size());
+		meta_s.mutable_file_metadata()->mutable_rabin_global_params()->set_iv(rabin_global_params_.iv.data(), rabin_global_params_.iv.size());
+
+		for(auto& chunk : chunks()) {
+			auto chunk_s = meta_s.mutable_file_metadata()->add_chunks();
+			chunk_s->set_ct_hash(chunk.ct_hash.data(), chunk.ct_hash.size());
+			chunk_s->set_size(chunk.size);
+			chunk_s->set_iv(chunk.iv.data(), chunk.iv.size());
+
+			chunk_s->set_pt_hmac(chunk.pt_hmac.data(), chunk.pt_hmac.size());
+		}
 	}
 
 	blob serialized_data(meta_s.ByteSize());
@@ -183,41 +187,55 @@ blob Meta::serialize() const {
 }
 
 void Meta::parse(const blob &serialized_data) {
-	serialization::Meta_s meta_s;
+	serialization::Meta meta_s;
 
 	bool parsed_well = meta_s.ParseFromArray(serialized_data.data(), serialized_data.size());
 	if(!parsed_well) throw parse_error();
 
 	path_id_.assign(meta_s.path_id().begin(), meta_s.path_id().end());
-	encrypted_path_.assign(meta_s.encrypted_path().begin(), meta_s.encrypted_path().end());
-	encrypted_path_iv_.assign(meta_s.encrypted_path_iv().begin(), meta_s.encrypted_path_iv().end());
+	path_.ct.assign(meta_s.path().ct().begin(), meta_s.path().ct().end());
+	path_.iv.assign(meta_s.path().iv().begin(), meta_s.path().iv().end());
 	meta_type_ = (Type)meta_s.meta_type();
 	revision_ = (int64_t)meta_s.revision();
 
-	mtime_ = (int64_t)meta_s.mtime();
+	if(meta_type_ != DELETED) {
+		mtime_ = meta_s.generic_metadata().mtime();
+		windows_attrib_ = meta_s.generic_metadata().windows_attrib();
+		mode_ = meta_s.generic_metadata().mode();
+		uid_ = meta_s.generic_metadata().uid();
+		gid_ = meta_s.generic_metadata().gid();
+	}else if(meta_s.type_specific_metadata_case() == 0) throw parse_error();
 
-	symlink_encrypted_path_.assign(meta_s.symlink_encrypted_path().begin(), meta_s.symlink_encrypted_path().end());
-	symlink_encrypted_path_iv_.assign(meta_s.symlink_encrypted_path_iv().begin(), meta_s.symlink_encrypted_path_iv().end());
-
-	windows_attrib_ = meta_s.windows_attrib();
-
-	mode_ = meta_s.mode();
-	uid_ = meta_s.uid();
-	gid_ = meta_s.gid();
-
-	max_blocksize_ = meta_s.max_blocksize();
-	min_blocksize_ = meta_s.min_blocksize();
-	strong_hash_type_ = (StrongHashType)meta_s.strong_hash_type();
-	weak_hash_type_ = (WeakHashType)meta_s.weak_hash_type();
-
-	for(auto& block_s : meta_s.blocks()){
-		Block block;
-		block.encrypted_data_hash_.assign(block_s.encrypted_data_hash().begin(), block_s.encrypted_data_hash().end());
-		block.encrypted_rsync_hashes_.assign(block_s.encrypted_rsync_hashes().begin(), block_s.encrypted_rsync_hashes().end());
-		block.blocksize_ = block_s.blocksize();
-		block.iv_.assign(block_s.iv().begin(), block_s.iv().end());
-		blocks_.push_back(block);
+	if(meta_type_ == SYMLINK) {
+		if(meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata) throw parse_error();
+		symlink_path_.ct.assign(meta_s.symlink_metadata().symlink_path().ct().begin(), meta_s.symlink_metadata().symlink_path().ct().end());
+		symlink_path_.iv.assign(meta_s.symlink_metadata().symlink_path().iv().begin(), meta_s.symlink_metadata().symlink_path().iv().end());
 	}
+
+	if(meta_type_ == FILE) {
+		if(meta_s.type_specific_metadata_case() != meta_s.kFileMetadata) throw parse_error();
+		algorithm_type_ = (AlgorithmType)meta_s.file_metadata().algorithm_type();
+		strong_hash_type_ = (StrongHashType)meta_s.file_metadata().strong_hash_type();
+		max_chunksize_ = meta_s.file_metadata().max_chunksize();
+		min_chunksize_ = meta_s.file_metadata().min_chunksize();
+
+		rabin_global_params_.ct.assign(meta_s.file_metadata().rabin_global_params().ct().begin(), meta_s.file_metadata().rabin_global_params().ct().end());
+		rabin_global_params_.iv.assign(meta_s.file_metadata().rabin_global_params().iv().begin(), meta_s.file_metadata().rabin_global_params().iv().end());
+
+		for(auto& chunk_s : meta_s.file_metadata().chunks()) {
+			Chunk chunk;
+			chunk.ct_hash.assign(chunk_s.ct_hash().begin(), chunk_s.ct_hash().end());
+			chunk.size = chunk_s.size();
+			chunk.iv.assign(chunk_s.iv().begin(), chunk_s.iv().end());
+			chunk.pt_hmac.assign(chunk_s.pt_hmac().begin(), chunk_s.pt_hmac().end());
+
+			chunks_.push_back(chunk);
+		}
+	}
+}
+
+blob Meta::make_path_id(const std::string& path, const Secret& secret) {
+	return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
 }
 
 } /* namespace librevault */

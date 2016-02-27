@@ -10,20 +10,21 @@
  */
 #pragma once
 #include "Transformer.h"
-#include <cryptopp/sha3.h>
+#include <cryptopp/sha.h>
+#include <cryptopp/hmac.h>
 
 namespace librevault {
 namespace crypto {
 
-class SHA3 : public OneWayTransformer {
-	mutable CryptoPP::SHA3 hasher;
+class HMAC_SHA2_224 : public OneWayTransformer {
+	mutable CryptoPP::HMAC<CryptoPP::SHA224> hasher_;
 public:
-	SHA3(size_t size) : hasher(size/8) {}
-	virtual ~SHA3() {}
+	HMAC_SHA2_224(const blob& key) : hasher(key.data(), key.size()) {}
+	virtual ~HMAC_SHA2_224() {}
 
 	blob compute(const blob& data) const {
-		blob result(hasher.DigestSize());
-		hasher.CalculateDigest(result.data(), data.data(), data.size());
+		blob result(hasher_.DigestSize());
+		hasher_.CalculateDigest(result.data(), data.data(), data.size());
 		return result;
 	}
 	blob to(const blob& data) const {

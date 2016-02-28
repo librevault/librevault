@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(lvcommon VERSION 0.9.1)
+project(lvcommon VERSION 0.9.4)
 
 #============================================================================
 # CMake modules
@@ -117,11 +117,6 @@ target_link_libraries(lvcommon-static PRIVATE libprotobuf.a)
 find_package(CryptoPP 5.6.3 REQUIRED)
 target_link_libraries(lvcommon-static PRIVATE cryptopp-static)
 target_link_libraries(lvcommon-shared PRIVATE cryptopp-shared)
-
-### Cryptodiff
-find_package(cryptodiff REQUIRED)
-target_link_libraries(lvcommon-static PUBLIC cryptodiff-static)
-target_link_libraries(lvcommon-shared PUBLIC cryptodiff-shared)
 
 #============================================================================
 # Install

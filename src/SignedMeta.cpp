@@ -41,9 +41,12 @@ SignedMeta::SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool
 	if(check_signature) {
 		try {
 			CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-			verifier.AccessKey().AccessGroupParameters() = CryptoPP::ASN1::secp256r1();
+			CryptoPP::ECP::Point p;
+
+			verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
 			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-			verifier.AccessKey().AccessGroupParameters().DecodeElement(secret.get_Public_Key().data(), true);
+			verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, secret.get_Public_Key().data(), secret.get_Public_Key().size());
+			verifier.AccessKey().SetPublicElement(p);
 			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
 				throw signature_error();
 		}catch(CryptoPP::Exception& e){

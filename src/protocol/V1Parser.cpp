@@ -13,19 +13,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "include/librevault/protocol/ProtobufParser.h"
+#include "include/librevault/protocol/V1Parser.h"
 #include "WireProtocol.pb.h"
 
 namespace librevault {
 
-blob ProtobufParser::gen_Handshake(const Handshake& message_struct) {
+blob V1Parser::gen_Handshake(const Handshake& message_struct) {
 	protocol::Handshake message_protobuf;
 	message_protobuf.set_auth_token(message_struct.auth_token.data(), message_struct.auth_token.size());
 	message_protobuf.set_device_name(message_struct.device_name.data(), message_struct.device_name.size());
 
 	return prepare_proto_message(message_protobuf, HANDSHAKE);
 }
-AbstractParser::Handshake ProtobufParser::parse_Handshake(const blob& message_raw) {
+V1Parser::Handshake V1Parser::parse_Handshake(const blob& message_raw) {
 	protocol::Handshake message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -36,7 +36,7 @@ AbstractParser::Handshake ProtobufParser::parse_Handshake(const blob& message_ra
 	return message_struct;
 }
 
-blob ProtobufParser::gen_HaveMeta(const HaveMeta& message_struct) {
+blob V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
 	protocol::HaveMeta message_protobuf;
 
 	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
@@ -47,7 +47,7 @@ blob ProtobufParser::gen_HaveMeta(const HaveMeta& message_struct) {
 
 	return prepare_proto_message(message_protobuf, HAVE_META);
 }
-AbstractParser::HaveMeta ProtobufParser::parse_HaveMeta(const blob& message_raw) {
+V1Parser::HaveMeta V1Parser::parse_HaveMeta(const blob& message_raw) {
 	protocol::HaveMeta message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -59,31 +59,31 @@ AbstractParser::HaveMeta ProtobufParser::parse_HaveMeta(const blob& message_raw)
 	return message_struct;
 }
 
-blob ProtobufParser::gen_HaveBlock(const HaveBlock& message_struct) {
-	protocol::HaveBlock message_protobuf;
+blob V1Parser::gen_HaveChunk(const HaveChunk& message_struct) {
+	protocol::HaveChunk message_protobuf;
 
-	message_protobuf.set_encrypted_data_hash(message_struct.encrypted_data_hash.data(), message_struct.encrypted_data_hash.size());
+	message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
 
-	return prepare_proto_message(message_protobuf, HAVE_BLOCK);
+	return prepare_proto_message(message_protobuf, HAVE_CHUNK);
 }
-AbstractParser::HaveBlock ProtobufParser::parse_HaveBlock(const blob& message_raw) {
-	protocol::HaveBlock message_protobuf;
+V1Parser::HaveChunk V1Parser::parse_HaveChunk(const blob& message_raw) {
+	protocol::HaveChunk message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	HaveBlock message_struct;
-	message_struct.encrypted_data_hash = blob(message_protobuf.encrypted_data_hash().begin(), message_protobuf.encrypted_data_hash().end());
+	HaveChunk message_struct;
+	message_struct.ct_hash = blob(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
 
 	return message_struct;
 }
 
-blob ProtobufParser::gen_MetaRequest(const MetaRequest& message_struct) {
+blob V1Parser::gen_MetaRequest(const MetaRequest& message_struct) {
 	protocol::MetaRequest message_protobuf;
 	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
 
 	return prepare_proto_message(message_protobuf, META_REQUEST);
 }
-AbstractParser::MetaRequest ProtobufParser::parse_MetaRequest(const blob& message_raw) {
+V1Parser::MetaRequest V1Parser::parse_MetaRequest(const blob& message_raw) {
 	protocol::MetaRequest message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -94,7 +94,7 @@ AbstractParser::MetaRequest ProtobufParser::parse_MetaRequest(const blob& messag
 	return message_struct;
 }
 
-blob ProtobufParser::gen_MetaReply(const MetaReply& message_struct) {
+blob V1Parser::gen_MetaReply(const MetaReply& message_struct) {
 	protocol::MetaReply message_protobuf;
 	message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
 	message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
@@ -104,7 +104,7 @@ blob ProtobufParser::gen_MetaReply(const MetaReply& message_struct) {
 
 	return prepare_proto_message(message_protobuf, META_REPLY);
 }
-AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_raw, const Secret& secret_verifier) {
+V1Parser::MetaReply V1Parser::parse_MetaReply(const blob& message_raw, const Secret& secret_verifier) {
 	protocol::MetaReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -116,14 +116,14 @@ AbstractParser::MetaReply ProtobufParser::parse_MetaReply(const blob& message_ra
 	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier), std::move(converted_bitfield)};
 }
 
-blob ProtobufParser::gen_MetaCancel(const MetaCancel& message_struct) {
+blob V1Parser::gen_MetaCancel(const MetaCancel& message_struct) {
 	protocol::MetaCancel message_protobuf;
 	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
 
 	return prepare_proto_message(message_protobuf, META_CANCEL);
 }
-AbstractParser::MetaCancel ProtobufParser::parse_MetaCancel(const blob& message_raw) {
+V1Parser::MetaCancel V1Parser::parse_MetaCancel(const blob& message_raw) {
 	protocol::MetaCancel message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -134,60 +134,60 @@ AbstractParser::MetaCancel ProtobufParser::parse_MetaCancel(const blob& message_
 	return message_struct;
 }
 
-blob ProtobufParser::gen_ChunkRequest(const ChunkRequest& message_struct) {
-	protocol::ChunkRequest message_protobuf;
-	message_protobuf.set_encrypted_data_hash(message_struct.encrypted_data_hash.data(), message_struct.encrypted_data_hash.size());
+blob V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {
+	protocol::BlockRequest message_protobuf;
+	message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
 	message_protobuf.set_offset(message_struct.offset);
 	message_protobuf.set_length(message_struct.length);
 
-	return prepare_proto_message(message_protobuf, CHUNK_REQUEST);
+	return prepare_proto_message(message_protobuf, BLOCK_REQUEST);
 }
-AbstractParser::ChunkRequest ProtobufParser::parse_ChunkRequest(const blob& message_raw) {
-	protocol::ChunkRequest message_protobuf;
+V1Parser::BlockRequest V1Parser::parse_BlockRequest(const blob& message_raw) {
+	protocol::BlockRequest message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	ChunkRequest message_struct;
-	message_struct.encrypted_data_hash.assign(message_protobuf.encrypted_data_hash().begin(), message_protobuf.encrypted_data_hash().end());
+	BlockRequest message_struct;
+	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.length = message_protobuf.length();
 
 	return message_struct;
 }
 
-blob ProtobufParser::gen_ChunkReply(const ChunkReply& message_struct) {
-	protocol::ChunkReply message_protobuf;
-	message_protobuf.set_encrypted_data_hash(message_struct.encrypted_data_hash.data(), message_struct.encrypted_data_hash.size());
+blob V1Parser::gen_BlockReply(const BlockReply& message_struct) {
+	protocol::BlockReply message_protobuf;
+	message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
 	message_protobuf.set_offset(message_struct.offset);
 	message_protobuf.set_content(message_struct.content.data(), message_struct.content.size());
 
-	return prepare_proto_message(message_protobuf, CHUNK_REPLY);
+	return prepare_proto_message(message_protobuf, BLOCK_REPLY);
 }
-AbstractParser::ChunkReply ProtobufParser::parse_ChunkReply(const blob& message_raw) {
-	protocol::ChunkReply message_protobuf;
+V1Parser::BlockReply V1Parser::parse_BlockReply(const blob& message_raw) {
+	protocol::BlockReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	ChunkReply message_struct;
-	message_struct.encrypted_data_hash.assign(message_protobuf.encrypted_data_hash().begin(), message_protobuf.encrypted_data_hash().end());
+	BlockReply message_struct;
+	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.content.assign(message_protobuf.content().begin(), message_protobuf.content().end());
 
 	return message_struct;
 }
 
-blob ProtobufParser::gen_ChunkCancel(const ChunkCancel& message_struct) {
-	protocol::ChunkCancel message_protobuf;
-	message_protobuf.set_encrypted_data_hash(message_struct.encrypted_data_hash.data(), message_struct.encrypted_data_hash.size());
+blob V1Parser::gen_BlockCancel(const BlockCancel& message_struct) {
+	protocol::BlockCancel message_protobuf;
+	message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
 	message_protobuf.set_offset(message_struct.offset);
 	message_protobuf.set_length(message_struct.length);
 
-	return prepare_proto_message(message_protobuf, CHUNK_CANCEL);
+	return prepare_proto_message(message_protobuf, BLOCK_CANCEL);
 }
-AbstractParser::ChunkCancel ProtobufParser::parse_ChunkCancel(const blob& message_raw) {
-	protocol::ChunkCancel message_protobuf;
+V1Parser::BlockCancel V1Parser::parse_BlockCancel(const blob& message_raw) {
+	protocol::BlockCancel message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	ChunkCancel message_struct;
-	message_struct.encrypted_data_hash.assign(message_protobuf.encrypted_data_hash().begin(), message_protobuf.encrypted_data_hash().end());
+	BlockCancel message_struct;
+	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.length = message_protobuf.length();
 

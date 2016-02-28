@@ -27,8 +27,8 @@ message HaveMeta {
 	bytes bitfield = 3;
 }
 
-message HaveBlock {
-	bytes encrypted_data_hash = 1;
+message HaveChunk {
+	bytes ct_hash = 1;
 }
 
 message MetaRequest {
@@ -47,20 +47,20 @@ message MetaCancel {
 	int64 revision = 2;
 }
 
-message ChunkRequest {
-	bytes encrypted_data_hash = 1;
+message BlockRequest {
+	bytes ct_hash = 1;
 	uint32 offset = 2;
 	uint32 length = 3;
 }
 
-message ChunkReply {
-	bytes encrypted_data_hash = 1;
+message BlockReply {
+	bytes ct_hash = 1;
 	uint32 offset = 2;
 	bytes content = 3;
 }
 
-message ChunkCancel {
-	bytes encrypted_data_hash = 1;
+message BlockCancel {
+	bytes ct_hash = 1;
 	uint32 offset = 2;
 	uint32 length = 3;
 }

@@ -34,7 +34,7 @@ blob AES_CBC_DATA::get_plain(const Secret& secret) const {
 	try {
 		return ct | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), iv);
 	}catch(const CryptoPP::Exception& e){
-		throw Meta::parse_error();
+		throw Meta::parse_error("Parse error: Decryption failed");
 	}
 }
 

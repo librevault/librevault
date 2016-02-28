@@ -44,34 +44,32 @@ Meta::Meta(const blob& meta_s) {
 }
 Meta::~Meta() {}
 
-/*bool Meta::validate() const {
+bool Meta::validate() const {
 	if(path_id_.size() != 28) return false; // Hash size mismatch
-
-	// AES
 	if(!path_.check()) return false;   // Data/IV size mismatch
+
+	if(meta_type_ == Type::SYMLINK && !symlink_path_.check()) return false;
 
 	if(meta_type_ == Type::FILE) {
 		if(algorithm_type_ != RABIN
 			|| strong_hash_type_ > SHA2_224 // Unknown cryptographic hashing algorithm
-			|| max_blocksize_ == 0 || min_blocksize_ == 0 || max_blocksize_ > min_blocksize_) return false;    // Invalid block constraints
+			|| max_chunksize_ == 0 || min_chunksize_ == 0 || max_chunksize_ > min_chunksize_) return false;    // Invalid chunk constraints
 
 		if(algorithm_type_ == RABIN && !rabin_global_params_.check()) return false;
 
-		for(auto& block : blocks()) {
-			if(block.blocksize_ > max_blocksize_ || block.blocksize_ == 0)   // Broken block constraint
-			if(block.encrypted_data_hash_.size() != 28) return false;
-			if(block.iv_.size() != 16) return false;
+		for(auto& chunk : chunks()) {
+			if(chunk.size > max_chunksize_ || chunk.size == 0)   // Broken chunk constraint
+			if(chunk.ct_hash.size() != 28) return false;
+			if(chunk.iv.size() != 16) return false;
 
-			if(block.preencrypted_data_hmac_.size() != 28) return false;
+			if(chunk.pt_hmac.size() != 28) return false;
 		}
 	}
-
-	if(meta_type_ == Type::SYMLINK && !symlink_path_.check()) return false;
 
 	return true;
 }
 
-bool Meta::validate(const Secret& secret) const {
+/*bool Meta::validate(const Secret& secret) const {
 	if(! validate()) return false;  // "Easy" validation failed
 
 	if(make_path_id(path(secret), secret) != path_id_) return false;    // path_id is inconsistent with encrypted_path and its iv
@@ -116,7 +114,7 @@ Meta::RabinGlobalParams Meta::rabin_global_params(const Secret& secret) const {
 
 	serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
 	bool parsed_well = rabin_global_params_s.ParseFromArray(decrypted.data(), decrypted.size());
-	if(!parsed_well) throw parse_error();
+	if(!parsed_well) throw parse_error("Parse error: Rabin signature parameters parsing failed");
 
 	Meta::RabinGlobalParams rabin_global_params;
 	rabin_global_params.polynomial = rabin_global_params_s.polynomial();
@@ -190,7 +188,7 @@ void Meta::parse(const blob &serialized_data) {
 	serialization::Meta meta_s;
 
 	bool parsed_well = meta_s.ParseFromArray(serialized_data.data(), serialized_data.size());
-	if(!parsed_well) throw parse_error();
+	if(!parsed_well) throw parse_error("Parse error: Protobuf parsing failed");
 
 	path_id_.assign(meta_s.path_id().begin(), meta_s.path_id().end());
 	path_.ct.assign(meta_s.path().ct().begin(), meta_s.path().ct().end());
@@ -204,16 +202,16 @@ void Meta::parse(const blob &serialized_data) {
 		mode_ = meta_s.generic_metadata().mode();
 		uid_ = meta_s.generic_metadata().uid();
 		gid_ = meta_s.generic_metadata().gid();
-	}else if(meta_s.type_specific_metadata_case() == 0) throw parse_error();
+	}else if(meta_s.type_specific_metadata_case() == 0) throw parse_error("Parse error: Type specific metadata not found");
 
 	if(meta_type_ == SYMLINK) {
-		if(meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata) throw parse_error();
+		if(meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata) throw parse_error("Parse error: Symlink metadata needed");
 		symlink_path_.ct.assign(meta_s.symlink_metadata().symlink_path().ct().begin(), meta_s.symlink_metadata().symlink_path().ct().end());
 		symlink_path_.iv.assign(meta_s.symlink_metadata().symlink_path().iv().begin(), meta_s.symlink_metadata().symlink_path().iv().end());
 	}
 
 	if(meta_type_ == FILE) {
-		if(meta_s.type_specific_metadata_case() != meta_s.kFileMetadata) throw parse_error();
+		if(meta_s.type_specific_metadata_case() != meta_s.kFileMetadata) throw parse_error("Parse error: File metadata needed");
 		algorithm_type_ = (AlgorithmType)meta_s.file_metadata().algorithm_type();
 		strong_hash_type_ = (StrongHashType)meta_s.file_metadata().strong_hash_type();
 		max_chunksize_ = meta_s.file_metadata().max_chunksize();

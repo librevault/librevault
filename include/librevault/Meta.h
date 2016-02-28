@@ -90,6 +90,7 @@ public:
 	};
 
 	struct parse_error : error {
+		parse_error(const char* what) : error(what) {}
 		parse_error() : error("Parse error") {}
 	};
 
@@ -109,7 +110,7 @@ public:
 	void parse(const blob& serialized_data);
 
 	/* Validation */
-	//bool validate() const;
+	bool validate() const;
 	//bool validate(const Secret& secret) const;
 
 	/* Generators */

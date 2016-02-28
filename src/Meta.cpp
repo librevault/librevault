@@ -142,7 +142,7 @@ blob Meta::serialize() const {
 
 	meta_s.set_path_id(path_id_.data(), path_id_.size());
 	meta_s.mutable_path()->set_ct(path_.ct.data(), path_.ct.size());
-	meta_s.mutable_path()->set_iv(path_.ct.data(), path_.ct.size());
+	meta_s.mutable_path()->set_iv(path_.iv.data(), path_.iv.size());
 	meta_s.set_meta_type((uint32_t)meta_type_);
 	meta_s.set_revision(revision_);
 

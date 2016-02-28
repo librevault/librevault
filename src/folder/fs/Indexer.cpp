@@ -18,8 +18,9 @@
 #include "FSFolder.h"
 #include "IgnoreList.h"
 
-#include "../../Client.h"
-#include "../../util/byte_convert.h"
+#include "src/Client.h"
+#include "src/util/byte_convert.h"
+#include "contrib/rabin/rabin.h"
 
 namespace librevault {
 
@@ -30,20 +31,20 @@ Indexer::Indexer(FSFolder& dir, Client& client) :
 void Indexer::index(const std::string& file_path){
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
 
-	Meta::SignedMeta smeta;
+	SignedMeta smeta;
 
 	try {
 		if(dir_.ignore_list->is_ignored(file_path)) throw error("File is ignored");
 
 		try {
-			smeta = index_.get_Meta(open_storage_.make_path_id(file_path));
+			smeta = index_.get_Meta(Meta::make_path_id(file_path, secret_));
 			if(fs::last_write_time(fs::absolute(file_path, dir_.open_path())) == smeta.meta().mtime()) {
-				throw error("Modification time is not changed");
+				throw abort_index("Modification time is not changed");
 			}
 		}catch(fs::filesystem_error& e){
 		}catch(AbstractFolder::no_such_meta& e){
-		}catch(Meta::SignedMeta::signature_error& e){   // Alarm! DB is inconsistent
-			log_->warn() << log_tag() << "Signature mismatch in local DB";
+		}catch(Meta::error& e){
+			log_->warn() << log_tag() << "Meta in DB is inconsistent, trying to reindex: " << e.what();
 		}
 
 		std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();  // Starting timer
@@ -51,10 +52,11 @@ void Indexer::index(const std::string& file_path){
 		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		log_->trace() << log_tag() << smeta.meta().debug_string();
 		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << smeta.meta().revision();
-	}catch(std::runtime_error& e){
+	}catch(abort_index& e){
 		log_->notice() << log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
+	}catch(std::runtime_error& e){
+		log_->warn() << log_tag() << "Skipping " << file_path << ". Error: " << e.what();
 	}
 
 	if(smeta) dir_.put_meta(smeta, true);
@@ -72,77 +74,37 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 		async_index(file_path1);
 }
 
-Meta::SignedMeta Indexer::make_Meta(const std::string& relpath){
-	Meta meta;
+SignedMeta Indexer::make_Meta(const std::string& relpath) {
+	log_->debug() << log_tag() << "make_Meta(" << relpath << ")";
+	Meta old_meta, new_meta;
 	auto abspath = fs::absolute(relpath, dir_.open_path());
 
-	// Path ID aka HMAC of relpath aka SHA3(key | relpath);
-	meta.set_path_id(open_storage_.make_path_id(relpath));
-	// Encrypted path with IV
-	meta.set_path(relpath, secret_);
+	new_meta.set_path(relpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
-	// Type
-	meta.set_meta_type(get_type(abspath));
+	new_meta.set_meta_type(get_type(abspath));  // Type
+	if(new_meta.meta_type() != Meta::DELETED)
+		update_fsattrib(old_meta, new_meta, abspath);   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
-	if(meta.meta_type() != Meta::DELETED){
-		try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
-			Meta old_meta(index_.get_Meta(meta.path_id()).meta());
-
-			// Preserve old values of attributes
-			meta.set_windows_attrib(old_meta.windows_attrib());
-			meta.set_mode(old_meta.mode());
-			meta.set_uid(old_meta.uid());
-			meta.set_gid(old_meta.gid());
-
-			if(meta.meta_type() == Meta::FILE){
-				// Update FileMap
-				cryptodiff::FileMap filemap = old_meta.filemap(secret_);
-				filemap.update(abspath.generic_string());
-				meta.set_filemap(filemap);
-			}
-		}catch(...){
-			if(meta.meta_type() == Meta::FILE){
-				// Create FileMap, if something got wrong
-				cryptodiff::FileMap filemap(secret_.get_Encryption_Key());
-				filemap.set_strong_hash_type(get_strong_hash_type());
-				filemap.update(abspath.generic_string());
-				meta.set_filemap(filemap);
-			}
-		}
-
-		if(meta.meta_type() == Meta::SYMLINK){
-			// Symlink path = encrypted symlink destination.
-			meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), secret_);
-		}else{
-			// File modification time
-			meta.set_mtime(fs::last_write_time(abspath));	// TODO: make analogue function for symlinks. Use boost::filesystem::last_write_time as a template. lstat for Unix and GetFileAttributesEx for Windows.
-		}
-
-		// Write new values of attributes (if enabled in config)
-#if BOOST_OS_WINDOWS
-		if(dir_.dir_options().get("preserve_windows_attrib", false)){
-			meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
-		}
-#elif BOOST_OS_UNIX
-		if(dir_.folder_config().preserve_unix_attrib){
-			struct stat stat_buf; int stat_err = 0;
-			if(dir_.folder_config().preserve_symlinks)
-				stat_err = lstat(abspath.c_str(), &stat_buf);
-			else
-				stat_err = stat(abspath.c_str(), &stat_buf);
-			if(stat_err == 0){
-				meta.set_mode(stat_buf.st_mode);
-				meta.set_uid(stat_buf.st_uid);
-				meta.set_gid(stat_buf.st_gid);
-			}
-		}
-#endif
+	try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
+		auto old_smeta = index_.get_Meta(new_meta.path_id());
+		old_meta = old_smeta.meta();
+	}catch(...){
+		if(new_meta.meta_type() == Meta::DELETED) throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 	}
 
-	// Revision
-	meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
+	if(old_meta.meta_type() == Meta::DELETED && new_meta.meta_type() == Meta::DELETED)
+		throw abort_index("Old Meta is DELETED, new Meta is DELETED");
 
-	return Meta::SignedMeta(meta, secret_);
+	if(new_meta.meta_type() == Meta::FILE)
+		update_chunks(old_meta, new_meta, abspath);
+
+	if(new_meta.meta_type() == Meta::SYMLINK)
+		new_meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), secret_); // Symlink path = encrypted symlink destination.
+
+	// Revision
+	new_meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
+
+	return SignedMeta(new_meta, secret_);
 }
 
 Meta::Type Indexer::get_type(const fs::path& path) {
@@ -157,8 +119,113 @@ Meta::Type Indexer::get_type(const fs::path& path) {
 	}
 }
 
-cryptodiff::StrongHashType Indexer::get_strong_hash_type() {
-	return dir_.folder_config().block_strong_hash_type;
+void Indexer::update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path) {
+	// First, preserve old values of attributes
+	new_meta.set_windows_attrib(old_meta.windows_attrib());
+	new_meta.set_mode(old_meta.mode());
+	new_meta.set_uid(old_meta.uid());
+	new_meta.set_gid(old_meta.gid());
+
+	if(new_meta.meta_type() != Meta::SYMLINK)
+		new_meta.set_mtime(fs::last_write_time(path));   // File/directory modification time
+	else {
+		// TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for Unix and GetFileAttributesEx for Windows.
+	}
+
+	// Then, write new values of attributes (if enabled in config)
+#if BOOST_OS_WINDOWS
+	if(dir_.dir_options().get("preserve_windows_attrib", false)) {
+		meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
+	}
+#elif BOOST_OS_UNIX
+	if(dir_.folder_config().preserve_unix_attrib) {
+		struct stat stat_buf; int stat_err = 0;
+		if(dir_.folder_config().preserve_symlinks)
+			stat_err = lstat(path.c_str(), &stat_buf);
+		else
+			stat_err = stat(path.c_str(), &stat_buf);
+		if(stat_err == 0){
+			new_meta.set_mode(stat_buf.st_mode);
+			new_meta.set_uid(stat_buf.st_uid);
+			new_meta.set_gid(stat_buf.st_gid);
+		}
+	}
+#endif
+}
+
+void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path) {
+	Meta::RabinGlobalParams rabin_global_params;
+
+	if(old_meta.meta_type() == Meta::FILE && old_meta.validate()) {
+		new_meta.set_algorithm_type(old_meta.algorithm_type());
+		new_meta.set_strong_hash_type(old_meta.strong_hash_type());
+
+		new_meta.set_max_chunksize(old_meta.max_chunksize());
+		new_meta.set_min_chunksize(old_meta.min_chunksize());
+
+		new_meta.raw_rabin_global_params() = old_meta.raw_rabin_global_params();
+
+		rabin_global_params = old_meta.rabin_global_params(secret_);
+	}else{
+		new_meta.set_algorithm_type(Meta::RABIN);
+		new_meta.set_strong_hash_type(dir_.folder_config().chunk_strong_hash_type);
+
+		new_meta.set_max_chunksize(8*1024*1024);
+		new_meta.set_min_chunksize(1*1024*1024);
+
+		// TODO: Generate a new polynomial for rabin_global_params here to prevent a possible fingerprinting attack.
+	}
+
+	// IV reuse
+	std::map<blob, blob> pt_hmac__iv;
+	for(auto& chunk : old_meta.chunks()) {
+		pt_hmac__iv.insert({chunk.pt_hmac, chunk.iv});
+	}
+
+	// Initializing chunker
+	rabin_t hasher;
+	hasher.average_bits = rabin_global_params.avg_bits;
+	hasher.minsize = new_meta.min_chunksize();
+	hasher.maxsize = new_meta.max_chunksize();
+	hasher.polynomial = rabin_global_params.polynomial;
+	hasher.polynomial_degree = rabin_global_params.polynomial_degree;
+	hasher.polynomial_shift = rabin_global_params.polynomial_shift;
+
+	hasher.mask = uint64_t((1<<uint64_t(hasher.average_bits))-1);
+
+	rabin_init(&hasher);
+
+	// Chunking
+	std::vector<Meta::Chunk> chunks;
+
+	blob buffer;
+	buffer.reserve(hasher.maxsize);
+
+	fs::ifstream fs(path, std::ios_base::binary);
+
+	while(!fs.eof()) {
+		buffer.push_back(fs.get());
+		//size_t len = fread(buf, 1, sizeof(buf), stdin);
+		uint8_t *ptr = &buffer.back();
+
+		if(rabin_next_chunk(&hasher, ptr, 1) == 1) {    // Found a chunk
+			chunks.push_back(populate_chunk(new_meta, buffer));
+			buffer.clear();
+		}
+	}
+
+	if(rabin_finalize(&hasher) != 0)
+		chunks.push_back(populate_chunk(new_meta, buffer));
+}
+
+Meta::Chunk Indexer::populate_chunk(const Meta& new_meta, const blob& data) {
+	log_->debug() << log_tag() << data.size();
+	Meta::Chunk chunk;
+	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
+	chunk.iv = crypto::AES_CBC::random_iv();
+	chunk.size = data.size();
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta.strong_hash_type());
+	return chunk;
 }
 
 } /* namespace librevault */

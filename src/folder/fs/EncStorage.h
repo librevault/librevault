@@ -26,16 +26,16 @@ public:
 	EncStorage(FSFolder& dir);
 	virtual ~EncStorage() {}
 
-	bool have_block(const blob& encrypted_data_hash) const;
-	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash) const;
-	void put_block(const blob& encrypted_data_hash, const blob& data);	// FIXME: Check hash
-	void remove_block(const blob& encrypted_data_hash);
+	bool have_chunk(const blob& ct_hash) const;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, const blob& chunk_pt);	// FIXME: Check hash
+	void remove_chunk(const blob& ct_hash);
 
 private:
-	const fs::path& block_path_;
+	const fs::path& chunk_path_;
 
-	fs::path make_encblock_name(const blob& encrypted_data_hash) const;
-	fs::path make_encblock_path(const blob& encrypted_data_hash) const;
+	fs::path make_chunk_ct_name(const blob& ct_hash) const;
+	fs::path make_chunk_ct_path(const blob& ct_hash) const;
 };
 
 } /* namespace librevault */

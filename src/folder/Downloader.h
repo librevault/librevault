@@ -29,15 +29,15 @@ public:
 	Downloader(Client& client, FolderGroup& exchange_group);
 
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_local_block(const blob& encrypted_data_hash);
+	void notify_local_chunk(const blob& ct_hash);
 
 	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notify_remote_block(std::shared_ptr<RemoteFolder> remote, const blob& encrypted_data_hash);
+	void notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash);
 
 	void handle_choke(std::shared_ptr<RemoteFolder> remote);
 	void handle_unchoke(std::shared_ptr<RemoteFolder> remote);
 
-	void put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
+	void put_chunk(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
 
 	void erase_remote(std::shared_ptr<RemoteFolder> remote);
 
@@ -55,12 +55,12 @@ private:
 	std::map<std::shared_ptr<RemoteFolder>, std::weak_ptr<InterestGuard>> interest_guards_;
 
 	/* Needed blocks+request management */
-	struct NeededBlock {
-		NeededBlock(uint32_t size);
-		~NeededBlock();
+	struct NeededChunk {
+		NeededChunk(uint32_t size);
+		~NeededChunk();
 
-		blob get_block();
-		void put_chunk(uint32_t offset, const blob& content);
+		blob get_chunk();
+		void put_block(uint32_t offset, const blob& content);
 
 		// size-related functions
 		uint64_t size() const {return file_map_.size_original();}
@@ -72,13 +72,13 @@ private:
 		const AvailabilityMap<uint32_t>& file_map() const {return file_map_;}
 
 		/* Request-oriented functions */
-		struct ChunkRequest {
+		struct BlockRequest {
 			uint32_t offset;
 			uint32_t size;
 			std::chrono::steady_clock::time_point started;
 		};
-		std::multimap<std::shared_ptr<RemoteFolder>, ChunkRequest> requests;
-		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<InterestGuard>> own_block;
+		std::multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
+		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<InterestGuard>> own_chunk;
 
 	private:
 		AvailabilityMap<uint32_t> file_map_;
@@ -86,16 +86,16 @@ private:
 		boost::iostreams::mapped_file mapped_file_;
 	};
 
-	std::map<blob, std::shared_ptr<NeededBlock>> needed_blocks_;
+	std::map<blob, std::shared_ptr<NeededChunk>> needed_chunks_;
 	size_t requests_overall() const;
 
 	boost::asio::steady_timer maintain_timer_;
 	std::mutex maintain_timer_mtx_;
 	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
 	bool request_one();
-	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& encrypted_data_hash);
+	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
 
-	void add_needed_block(const blob& encrypted_data_hash);
+	void add_needed_chunk(const blob& ct_hash);
 	void remove_requests_to(std::shared_ptr<RemoteFolder> remote);
 };
 

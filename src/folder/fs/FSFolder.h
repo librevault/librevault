@@ -15,6 +15,7 @@
  */
 #pragma once
 #include <src/control/Config.h>
+#include <librevault/SignedMeta.h>
 #include "src/folder/AbstractFolder.h"
 
 namespace librevault {
@@ -55,15 +56,15 @@ public:
 
 	/* Actions */
 	bool have_meta(const Meta::PathRevision& path_revision);
-	Meta::SignedMeta get_meta(const Meta::PathRevision& path_revision);
-	std::list<Meta::SignedMeta> get_meta_containing(const blob& encrypted_data_hash);
-	void put_meta(Meta::SignedMeta smeta, bool fully_assembled = false);
+	SignedMeta get_meta(const Meta::PathRevision& path_revision);
+	std::list<SignedMeta> get_meta_containing(const blob& ct_hash);
+	void put_meta(SignedMeta smeta, bool fully_assembled = false);
 
-	blob get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
+	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
-	bool have_block(const blob& encrypted_data_hash) const;
-	blob get_block(const blob& encrypted_data_hash);
-	void put_block(const blob& encrypted_data_hash, const blob& block);
+	bool have_chunk(const blob& ct_hash) const;
+	blob get_chunk(const blob& ct_hash);
+	void put_chunk(const blob& ct_hash, const blob& chunk);
 
 	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
 
@@ -77,14 +78,14 @@ public:
 	std::string name() const;
 
 	const fs::path& open_path() const {return open_path_;}
-	const fs::path& block_path() const {return block_path_;}
+	const fs::path& chunk_path() const {return chunk_path_;}
 	const fs::path& db_path() const {return db_path_;}
 	const fs::path& asm_path() const {return asm_path_;}
 
 private:
 	const FolderConfig folder_config_;
 	const Secret secret_;
-	const fs::path open_path_, block_path_, db_path_, asm_path_;	// Paths
+	const fs::path open_path_, chunk_path_, db_path_, asm_path_;	// Paths
 
 	bitfield_type make_bitfield(const Meta& meta) const;
 };

@@ -26,16 +26,16 @@ public:
 	MemoryCachedStorage(FSFolder& dir);
 	virtual ~MemoryCachedStorage() {}
 
-	bool have_block(const blob& encrypted_data_hash) const;
-	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash) const;
-	void put_block(const blob& encrypted_data_hash, std::shared_ptr<blob> data);
-	void remove_block(const blob& encrypted_data_hash);
+	bool have_chunk(const blob& ct_hash) const;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
+	void remove_chunk(const blob& ct_hash);
 
 private:
-	using encrypted_data_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
-	using list_iterator_type = std::list<encrypted_data_hash_data_type>::iterator;
+	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
+	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
 
-	mutable std::list<encrypted_data_hash_data_type> cache_list_;
+	mutable std::list<ct_hash_data_type> cache_list_;
 	std::map<blob, list_iterator_type> cache_iteraror_map_;
 
 	bool overflow() const;

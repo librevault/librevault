@@ -29,14 +29,14 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_ = std::make_unique<SQLiteDB>(dir_.db_path());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
-	db_->exec("CREATE TABLE IF NOT EXISTS files (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS blocks (encrypted_data_hash BLOB NOT NULL PRIMARY KEY, blocksize INTEGER NOT NULL, iv BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS openfs (encrypted_data_hash BLOB NOT NULL REFERENCES blocks (encrypted_data_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES files (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS chunk (ct_hash BLOB NOT NULL PRIMARY KEY, size INTEGER NOT NULL, iv BLOB NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 
-	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM blocks WHERE encrypted_data_hash NOT IN (SELECT encrypted_data_hash FROM openfs); END;");
+	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");
 
 	/* Create a special hash-file */
-	auto hash_txt = dir_.block_path() / "hash.txt";
+	auto hash_txt = dir_.chunk_path() / "hash.txt";
 	fs::fstream ifs;
 	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
 	if(fs::exists(hash_txt)) {
@@ -52,31 +52,31 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 
 /* Meta manipulators */
 
-void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) {
+void Index::put_Meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, "put_Meta");
 
-	db_->exec("INSERT OR REPLACE INTO files (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
+	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
 			{":path_id", signed_meta.meta().path_id()},
 			{":meta", signed_meta.raw_meta()},
 			{":signature", signed_meta.signature()}
 	});
 
 	uint64_t offset = 0;
-	for(auto block : signed_meta.meta().blocks()){
-		db_->exec("INSERT OR IGNORE INTO blocks (encrypted_data_hash, blocksize, iv) VALUES (:encrypted_data_hash, :blocksize, :iv);", {
-				{":encrypted_data_hash", block.encrypted_data_hash_},
-				{":blocksize", (uint64_t)block.blocksize_},
-				{":iv", block.iv_}
+	for(auto chunk : signed_meta.meta().chunks()){
+		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
+				{":ct_hash", chunk.ct_hash},
+				{":size", (uint64_t)chunk.size},
+				{":iv", chunk.iv}
 		});
 
-		db_->exec("INSERT OR REPLACE INTO openfs (encrypted_data_hash, path_id, [offset], assembled) VALUES (:encrypted_data_hash, :path_id, :offset, :assembled);", {
-				{":encrypted_data_hash", block.encrypted_data_hash_},
+		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
+				{":ct_hash", chunk.ct_hash},
 				{":path_id", signed_meta.meta().path_id()},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
 
-		offset += block.blocksize_;
+		offset += chunk.size;
 	}
 
 	if(fully_assembled)
@@ -85,29 +85,29 @@ void Index::put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled) 
 		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
 }
 
-std::list<Meta::SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
-	std::list<Meta::SignedMeta> result_list;
+std::list<SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
+	std::list<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list.push_back(Meta::SignedMeta(row[0], row[1], dir_.secret()));
+		result_list.push_back(SignedMeta(row[0], row[1], dir_.secret()));
 	return result_list;
 }
-Meta::SignedMeta Index::get_Meta(const blob& path_id){
-	auto meta_list = get_Meta("SELECT meta, signature FROM files WHERE path_id=:path_id LIMIT 1", {
+SignedMeta Index::get_Meta(const blob& path_id){
+	auto meta_list = get_Meta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
 			{":path_id", path_id}
 	});
 
 	if(meta_list.empty()) throw AbstractFolder::no_such_meta();
 	return *meta_list.begin();
 }
-std::list<Meta::SignedMeta> Index::get_Meta(){
-	return get_Meta("SELECT meta, signature FROM files");
+std::list<SignedMeta> Index::get_Meta(){
+	return get_Meta("SELECT meta, signature FROM meta");
 }
 
 /* Block getter */
 
-uint32_t Index::get_blocksize(const blob& encrypted_data_hash) {
-	auto sql_result = db_->exec("SELECT blocksize FROM blocks WHERE encrypted_data_hash=:encrypted_data_hash", {
-		                                   {":encrypted_data_hash", encrypted_data_hash}
+uint32_t Index::get_chunk_size(const blob& ct_hash) {
+	auto sql_result = db_->exec("SELECT size FROM chunk WHERE ct_hash=:ct_hash", {
+		                                   {":ct_hash", ct_hash}
 	                                   });
 
 	if(sql_result.have_rows())
@@ -115,13 +115,13 @@ uint32_t Index::get_blocksize(const blob& encrypted_data_hash) {
 	return 0;
 }
 
-std::list<Meta::SignedMeta> Index::containing_block(const blob& encrypted_data_hash) {
-	return get_Meta("SELECT files.meta, files.signature FROM files JOIN openfs ON files.path_id=openfs.path_id WHERE openfs.encrypted_data_hash=:encrypted_data_hash", {{":encrypted_data_hash", encrypted_data_hash}});
+std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
+	return get_Meta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash", {{":ct_hash", ct_hash}});
 }
 
 void Index::wipe() {
-	db_->exec("DELETE FROM files");
-	db_->exec("DELETE FROM blocks");
+	db_->exec("DELETE FROM meta");
+	db_->exec("DELETE FROM chunk");
 	db_->exec("DELETE FROM openfs");
 }
 

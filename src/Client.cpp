@@ -45,7 +45,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	}
 
 	// Initializing io_service
-	dir_monitor_ios_ = std::make_unique<multi_io_service>(*this, "dir_monitor_ios");
+	bulk_ios_ = std::make_unique<multi_io_service>(*this, "bulk_ios");
 	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
 
@@ -87,8 +87,6 @@ void Client::init_log(spdlog::level::level_enum level) {
 		log_->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
 	}
 
-	cryptodiff::set_logger(log_);
-
 	log_->info() << Version::current().name() << " " << Version::current().version_string();
 }
 
@@ -99,7 +97,7 @@ Client::~Client() {
 }
 
 void Client::run() {
-	dir_monitor_ios_->start(1);
+	bulk_ios_->start(std::thread::hardware_concurrency());
 	network_ios_->start(1);
 	etc_ios_->start(std::thread::hardware_concurrency());
 
@@ -116,7 +114,7 @@ void Client::shutdown(){
 
 	hash_group_.clear();
 
-	dir_monitor_ios_->stop();
+	bulk_ios_->stop();
 	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();

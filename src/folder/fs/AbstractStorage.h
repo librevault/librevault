@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <librevault/Meta.h>
 #include "src/util/Loggable.h"
 
 namespace librevault {
@@ -24,10 +25,10 @@ public:
 	AbstractStorage(FSFolder& dir);
 	virtual ~AbstractStorage() {};
 
-	bool verify_block(const blob& encrypted_data_hash, const blob& data, cryptodiff::StrongHashType strong_hash_type) const {
-		return encrypted_data_hash == cryptodiff::compute_strong_hash(data, strong_hash_type);
+	bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
 	}
-	virtual std::shared_ptr<blob> get_block(const blob& block_hash) const = 0;
+	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
 
 protected:
 	FSFolder& dir_;

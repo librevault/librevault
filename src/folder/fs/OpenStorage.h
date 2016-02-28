@@ -37,22 +37,19 @@ public:
 	OpenStorage(FSFolder& dir);
 	virtual ~OpenStorage() {}
 
-	// Path constructor
-	blob make_path_id(const std::string& relpath) const;
-
-	bool have_block(const blob& encrypted_data_hash) const;
-	std::shared_ptr<blob> get_block(const blob& encrypted_data_hash) const;
-	blob get_openblock(const blob& encrypted_data_hash) const;
+	bool have_chunk(const blob& ct_hash) const;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	blob get_chunk_pt(const blob& ct_hash) const;
 
 	// File assembler
 	/**
 	 * Tries to assemble files, indexed by Meta.
 	 * @param meta
-	 * @param delete_blocks
+	 * @param delete_chunks
 	 */
-	void assemble(const Meta& meta, bool delete_blocks = true);
+	void assemble(const Meta& meta, bool delete_chunks = true);
 	/**
-	 * Tries to split unencrypted file into separate encrypted blocks, pushing them into EncStorage.
+	 * Tries to split unencrypted file into separate encrypted chunks, pushing them into EncStorage.
 	 * @param file_path
 	 * @param delete_file
 	 */
@@ -68,12 +65,12 @@ private:
 	Index& index_;
 	EncStorage& enc_storage_;
 
-	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_blocks(const blob& encrypted_data_hash) const;	// Returns std::pair(plaintext, encrypted)
+	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_chunks(const blob& ct_hash) const;	// Returns std::pair(plaintext, encrypted)
 
 	void assemble_deleted(const Meta& meta);
 	void assemble_symlink(const Meta& meta);
 	void assemble_directory(const Meta& meta);
-	void assemble_file(const Meta& meta, bool delete_blocks);
+	void assemble_file(const Meta& meta, bool delete_chunks);
 
 	void apply_attrib(const Meta& meta);
 };

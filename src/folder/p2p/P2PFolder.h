@@ -16,6 +16,7 @@
 #pragma once
 #include "src/folder/RemoteFolder.h"
 #include "P2PProvider.h"
+#include <librevault/protocol/V1Parser.h>
 
 namespace librevault {
 
@@ -23,7 +24,6 @@ class Client;
 class FolderGroup;
 class P2PProvider;
 class WSService;
-class AbstractParser;
 
 class P2PFolder : public RemoteFolder, public std::enable_shared_from_this<P2PFolder> {
 	friend class P2PProvider;
@@ -76,15 +76,15 @@ public:
 	void uninterest();
 
 	void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void post_have_block(const blob& encrypted_data_hash);
+	void post_have_chunk(const blob& ct_hash);
 
 	void request_meta(const Meta::PathRevision& revision);
-	void post_meta(const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
+	void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
 	void cancel_meta(const Meta::PathRevision& revision);
 
-	void request_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
-	void post_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk);
-	void cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
+	void request_block(const blob& ct_hash, uint32_t offset, uint32_t size);
+	void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk);
+	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
 protected:
 	blob remote_pubkey_;
@@ -97,7 +97,7 @@ private:
 	WSService& ws_service_;
 	P2PProvider::role_type role_;
 
-	std::unique_ptr<AbstractParser> parser_;
+	V1Parser parser_;
 	bool is_handshaken_ = false;
 
 	websocketpp::connection_hdl connection_handle_;
@@ -111,15 +111,15 @@ private:
 	void handle_NotInterested(const blob& message_raw);
 
 	void handle_HaveMeta(const blob& message_raw);
-	void handle_HaveBlock(const blob& message_raw);
+	void handle_HaveChunk(const blob& message_raw);
 
 	void handle_MetaRequest(const blob& message_raw);
 	void handle_MetaReply(const blob& message_raw);
 	void handle_MetaCancel(const blob& message_raw);
 
-	void handle_ChunkRequest(const blob& message_raw);
-	void handle_ChunkReply(const blob& message_raw);
-	void handle_ChunkCancel(const blob& message_raw);
+	void handle_BlockRequest(const blob& message_raw);
+	void handle_BlockReply(const blob& message_raw);
+	void handle_BlockCancel(const blob& message_raw);
 };
 
 } /* namespace librevault */

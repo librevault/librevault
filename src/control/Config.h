@@ -17,7 +17,7 @@
 #include <src/util/parse_url.h>
 #include "src/pch.h"
 #include "src/util/Loggable.h"
-#include <librevault/Secret.h>
+#include <librevault/Meta.h>
 
 namespace librevault {
 
@@ -83,7 +83,7 @@ public:
 	struct FolderConfig {
 		Secret secret;
 		fs::path open_path;
-		fs::path block_path;
+		fs::path chunk_path;
 		fs::path db_path;
 		fs::path asm_path;
 		std::vector<std::string> ignore_paths;
@@ -92,7 +92,7 @@ public:
 		bool preserve_unix_attrib = false;
 		bool preserve_windows_attrib = false;
 		bool preserve_symlinks = true;
-		cryptodiff::StrongHashType block_strong_hash_type = cryptodiff::StrongHashType::SHA3_224;
+		Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
 	};
 
 	void add_folder(FolderConfig folder_config);

@@ -36,8 +36,8 @@ std::string AbstractFolder::path_id_readable(const blob& path_id) {
 	return crypto::Base32().to_string(path_id);
 }
 
-std::string AbstractFolder::encrypted_data_hash_readable(const blob& block_id) {
-	return crypto::Base32().to_string(block_id);
+std::string AbstractFolder::ct_hash_readable(const blob& ct_hash) {
+	return crypto::Base32().to_string(ct_hash);
 }
 
 } /* namespace librevault */

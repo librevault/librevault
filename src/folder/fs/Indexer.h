@@ -30,8 +30,12 @@ public:
 		error() : error("Indexer error") {}
 	};
 
-	struct unsupported_filetype : error {
-		unsupported_filetype() : error("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
+	struct abort_index : error {
+		abort_index(const char* what) : error(what) {}
+	};
+
+	struct unsupported_filetype : abort_index {
+		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
 	};
 
 	Indexer(FSFolder& dir, Client& client);
@@ -44,7 +48,7 @@ public:
 	void async_index(const std::set<std::string>& file_path);
 
 	// Meta functions
-	Meta::SignedMeta make_Meta(const std::string& relpath);
+	SignedMeta make_Meta(const std::string& relpath);
 
 private:
 	FSFolder& dir_;
@@ -58,8 +62,9 @@ private:
 
 	/* File analyzers */
 	Meta::Type get_type(const fs::path& path);
-
-	cryptodiff::StrongHashType get_strong_hash_type();
+	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path);
+	void update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path);
+	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data);
 };
 
 } /* namespace librevault */

@@ -36,9 +36,9 @@ FSFolder::FSFolder(FolderConfig folder_config, Client& client) :
 		secret_(folder_config_.secret),
 
 		open_path_(folder_config_.open_path),
-		block_path_(!folder_config_.block_path.empty() ? folder_config_.block_path : open_path_ / ".librevault"),
-		db_path_(!folder_config_.db_path.empty() ? folder_config_.db_path : block_path_ / "directory.db"),
-		asm_path_(!folder_config_.asm_path.empty() ? folder_config_.asm_path : block_path_) {
+		chunk_path_(!folder_config_.chunk_path.empty() ? folder_config_.chunk_path : open_path_ / ".librevault"),
+		db_path_(!folder_config_.db_path.empty() ? folder_config_.db_path : chunk_path_ / "directory.db"),
+		asm_path_(!folder_config_.asm_path.empty() ? folder_config_.asm_path : chunk_path_) {
 	name_ = name();
 	log_->debug() << log_tag() << "New FSFolder: Key type=" << (char)secret_.get_type();
 
@@ -68,18 +68,18 @@ bool FSFolder::have_meta(const Meta::PathRevision& path_revision) {
 	return true;
 }
 
-Meta::SignedMeta FSFolder::get_meta(const Meta::PathRevision& path_revision) {
+SignedMeta FSFolder::get_meta(const Meta::PathRevision& path_revision) {
 	auto smeta = index->get_Meta(path_revision.path_id_);
 	if(smeta.meta().revision() == path_revision.revision_)
 		return smeta;
 	else throw AbstractFolder::no_such_meta();
 }
 
-std::list<Meta::SignedMeta> FSFolder::get_meta_containing(const blob& encrypted_data_hash) {
-	return index->containing_block(encrypted_data_hash);
+std::list<SignedMeta> FSFolder::get_meta_containing(const blob& ct_hash) {
+	return index->containing_chunk(ct_hash);
 }
 
-void FSFolder::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
+void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 	auto path_revision = smeta.meta().path_revision();
 
 	index->put_Meta(smeta, fully_assembled);
@@ -91,47 +91,47 @@ void FSFolder::put_meta(Meta::SignedMeta smeta, bool fully_assembled) {
 			open_storage->assemble(smeta.meta(), true);
 		}
 	}else{
-		bitfield.resize(smeta.meta().blocks().size(), true);
+		bitfield.resize(smeta.meta().chunks().size(), true);
 	}
 
 	folder_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
-blob FSFolder::get_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
-	auto block = get_block(encrypted_data_hash);
+blob FSFolder::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
+	auto block = get_chunk(ct_hash);
 	if(offset < block.size() && size <= block.size()-offset)
 		return blob(block.begin()+offset, block.begin()+offset+size);
 	else
-		throw AbstractFolder::no_such_block();
+		throw AbstractFolder::no_such_chunk();
 }
 
-bool FSFolder::have_block(const blob& encrypted_data_hash) const {
-	return enc_storage->have_block(encrypted_data_hash) || open_storage->have_block(encrypted_data_hash);
+bool FSFolder::have_chunk(const blob& ct_hash) const {
+	return enc_storage->have_chunk(ct_hash) || open_storage->have_chunk(ct_hash);
 }
 
-blob FSFolder::get_block(const blob& encrypted_data_hash) {
+blob FSFolder::get_chunk(const blob& ct_hash) {
 	try {
 		// Cache hit
-		return *mem_storage->get_block(encrypted_data_hash);
-	}catch(AbstractFolder::no_such_block& e) {
+		return *mem_storage->get_chunk(ct_hash);
+	}catch(AbstractFolder::no_such_chunk& e) {
 		// Cache missed
 		std::shared_ptr<blob> block_ptr;
 		try {
-			block_ptr = enc_storage->get_block(encrypted_data_hash);
-		}catch(AbstractFolder::no_such_block& e) {
-			block_ptr = open_storage->get_block(encrypted_data_hash);
+			block_ptr = enc_storage->get_chunk(ct_hash);
+		}catch(AbstractFolder::no_such_chunk& e) {
+			block_ptr = open_storage->get_chunk(ct_hash);
 		}
-		mem_storage->put_block(encrypted_data_hash, block_ptr);
+		mem_storage->put_chunk(ct_hash, block_ptr);
 		return *block_ptr;
 	}
 }
 
-void FSFolder::put_block(const blob& encrypted_data_hash, const blob& block) {
-	enc_storage->put_block(encrypted_data_hash, block);
-	folder_group_.lock()->notify_block(shared_from_this(), encrypted_data_hash);
+void FSFolder::put_chunk(const blob& ct_hash, const blob& chunk) {
+	enc_storage->put_chunk(ct_hash, chunk);
+	folder_group_.lock()->notify_chunk(shared_from_this(), ct_hash);
 
 	if(open_storage) {
-		auto meta_list = get_meta_containing(encrypted_data_hash);
+		auto meta_list = get_meta_containing(ct_hash);
 		for(auto& smeta : meta_list) {
 			auto bitfield = make_bitfield(smeta.meta());
 			if(bitfield.all()) {
@@ -152,10 +152,10 @@ std::string FSFolder::make_relpath(const fs::path& path) const {
 }
 
 bitfield_type FSFolder::make_bitfield(const Meta& meta) const {
-	bitfield_type bitfield(meta.blocks().size());
+	bitfield_type bitfield(meta.chunks().size());
 
-	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.blocks().size(); bitfield_idx++)
-		if(have_block(meta.blocks().at(bitfield_idx).encrypted_data_hash_))
+	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
+		if(have_chunk(meta.chunks().at(bitfield_idx).ct_hash))
 			bitfield[bitfield_idx] = true;
 
 	return bitfield;
@@ -163,7 +163,7 @@ bitfield_type FSFolder::make_bitfield(const Meta& meta) const {
 
 /* Getters */
 std::string FSFolder::name() const {
-	return open_path_.empty() ? block_path_.string() : open_path_.string();
+	return open_path_.empty() ? chunk_path_.string() : open_path_.string();
 }
 
 } /* namespace librevault */

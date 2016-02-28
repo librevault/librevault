@@ -12,6 +12,7 @@ Third-party libraries
 - Protocol Buffers - New BSD License
 - libnatpmp - New BSD License
 - WebSocket++ - New BSD License
+- rabin-cdc - Simplified BSD License
 
 - spdlog - MIT
 - cURL - MIT
@@ -23,6 +24,5 @@ Third-party libraries
 
 Own libraries
 -------------
-- Cryptodiff - Not decided yet
 - LVCommon - Not decided yet
 - LVSQLite (aka SQLiteWrapper) - CC0 (public domain)

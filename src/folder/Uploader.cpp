@@ -40,11 +40,11 @@ void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
 	remote->choke();
 }
 
-void Uploader::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
+void Uploader::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
 	try {
-		auto chunk = exchange_group_.fs_dir()->get_chunk(encrypted_data_hash, offset, size);
-		origin->post_chunk(encrypted_data_hash, offset, chunk);
-	}catch(AbstractFolder::no_such_block& e){
+		auto chunk = exchange_group_.fs_dir()->get_block(ct_hash, offset, size);
+		origin->post_block(ct_hash, offset, chunk);
+	}catch(AbstractFolder::no_such_chunk& e){
 		log_->warn() << log_tag() << "Requested nonexistent chunk";
 	}
 }

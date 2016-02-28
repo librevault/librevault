@@ -47,13 +47,13 @@ void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
 	}
 }
 
-void FolderGroup::notify_block(std::shared_ptr<FSFolder> origin, const blob& encrypted_data_hash) {
-	downloader_->notify_local_block(encrypted_data_hash);
+void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash) {
+	downloader_->notify_local_chunk(ct_hash);
 
 	std::shared_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
 
 	for(auto p2p_dir : p2p_dirs_) {
-		p2p_dir->post_have_block(encrypted_data_hash);
+		p2p_dir->post_have_chunk(ct_hash);
 	}
 }
 
@@ -86,8 +86,8 @@ void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
 		origin->request_meta(revision);
 }
 
-void FolderGroup::notify_block(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash) {
-	downloader_->notify_remote_block(origin, encrypted_data_hash);
+void FolderGroup::notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash) {
+	downloader_->notify_remote_chunk(origin, ct_hash);
 }
 
 void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
@@ -98,17 +98,17 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta:
 	}
 }
 
-void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield) {
+void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
 	fs_dir_->put_meta(smeta);
 	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 
-void FolderGroup::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size) {
-	uploader_->request_chunk(origin, encrypted_data_hash, offset, size);
+void FolderGroup::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+	uploader_->request_chunk(origin, ct_hash, offset, size);
 }
 
-void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset) {
-	downloader_->put_chunk(encrypted_data_hash, offset, chunk, origin);
+void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset) {
+	downloader_->put_chunk(ct_hash, offset, chunk, origin);
 }
 
 /* Membership management */

@@ -15,8 +15,8 @@
  */
 #pragma once
 #include "src/pch.h"
-#include <librevault/Meta.h>
-#include "../../util/Loggable.h"
+#include <librevault/SignedMeta.h>
+#include "src/util/Loggable.h"
 
 namespace librevault {
 
@@ -29,16 +29,16 @@ public:
 	virtual ~Index() {}
 
 	/* Meta manipulators */
-	Meta::SignedMeta get_Meta(const blob& path_id);
-	std::list<Meta::SignedMeta> get_Meta();
+	SignedMeta get_Meta(const blob& path_id);
+	std::list<SignedMeta> get_Meta();
 
-	void put_Meta(const Meta::SignedMeta& signed_meta, bool fully_assembled);
+	void put_Meta(const SignedMeta& signed_meta, bool fully_assembled);
 
-	/* Block getter */
-	uint32_t get_blocksize(const blob& encrypted_data_hash);
+	/* Chunk getter */
+	uint32_t get_chunk_size(const blob& ct_hash);
 
 	/* Properties */
-	std::list<Meta::SignedMeta> containing_block(const blob& encrypted_data_hash);
+	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
 	SQLiteDB& db() {return *db_;}
 
 private:
@@ -46,7 +46,7 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	std::list<Meta::SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	std::list<SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
 	void wipe();
 };
 

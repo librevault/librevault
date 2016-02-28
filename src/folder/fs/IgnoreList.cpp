@@ -56,7 +56,7 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 	}
 
 	// Predefined paths
-	add_ignored(regex_escape(dir_.make_relpath(dir_.block_path())) + R"((\/(.*))?)");
+	add_ignored(regex_escape(dir_.make_relpath(dir_.chunk_path())) + R"((\/(.*))?)");
 	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path())));
 	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path()) + "-journal"));
 	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path()) + "-wal"));

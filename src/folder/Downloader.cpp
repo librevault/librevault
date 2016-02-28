@@ -37,31 +37,31 @@ Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	log_->trace() << log_tag() << "notify_local_meta()";
 	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
-	for(size_t block_idx = 0; block_idx < smeta.meta().blocks().size(); block_idx++) {
+	for(size_t block_idx = 0; block_idx < smeta.meta().chunks().size(); block_idx++) {
 		if(! bitfield[block_idx]) {
 			// We haven't this block, we need to download it
-			add_needed_block(smeta.meta().blocks().at(block_idx).encrypted_data_hash_);
+			add_needed_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
 		} else {
 			// We have have block, remove from needed
-			notify_local_block(smeta.meta().blocks().at(block_idx).encrypted_data_hash_);
+			notify_local_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
 		}
 	}
 }
 
-void Downloader::notify_local_block(const blob& encrypted_data_hash) {
-	log_->trace() << log_tag() << "notify_local_block()";
-	needed_blocks_.erase(encrypted_data_hash);
+void Downloader::notify_local_chunk(const blob& ct_hash) {
+	log_->trace() << log_tag() << "notify_local_chunk()";
+	needed_chunks_.erase(ct_hash);
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
-	auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().blocks();
+	auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
 	for(size_t block_idx = 0; block_idx < blocks.size(); block_idx++)
 		if(bitfield[block_idx])
-			notify_remote_block(remote, blocks[block_idx].encrypted_data_hash_);
+			notify_remote_chunk(remote, blocks[block_idx].ct_hash);
 }
-void Downloader::notify_remote_block(std::shared_ptr<RemoteFolder> remote, const blob& encrypted_data_hash) {
-	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);
-	if(needed_block_it == needed_blocks_.end()) return;
+void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash) {
+	auto needed_block_it = needed_chunks_.find(ct_hash);
+	if(needed_block_it == needed_chunks_.end()) return;
 
 	std::shared_ptr<InterestGuard> guard;
 	auto existing_guard_it = interest_guards_.find(remote);
@@ -77,7 +77,7 @@ void Downloader::notify_remote_block(std::shared_ptr<RemoteFolder> remote, const
 		interest_guards_.insert({remote, guard});
 	}
 
-	needed_block_it->second->own_block.insert({remote, guard});
+	needed_block_it->second->own_chunk.insert({remote, guard});
 
 	maintain_requests();
 }
@@ -93,10 +93,10 @@ void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
 	maintain_requests();
 }
 
-void Downloader::put_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
+void Downloader::put_chunk(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
 	log_->trace() << log_tag() << "put_chunk()";
-	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);
-	if(needed_block_it == needed_blocks_.end()) return;
+	auto needed_block_it = needed_chunks_.find(ct_hash);
+	if(needed_block_it == needed_chunks_.end()) return;
 
 	auto& requests = needed_block_it->second->requests;
 	for(auto request_it = requests.begin(); request_it != requests.end();) {
@@ -109,9 +109,9 @@ void Downloader::put_chunk(const blob& encrypted_data_hash, uint32_t offset, con
 			incremented_already = true;
 			request_it = requests.erase(request_it);
 
-			needed_block_it->second->put_chunk(offset, data);
+			needed_block_it->second->put_block(offset, data);
 			if(needed_block_it->second->full()) {
-				exchange_group_.fs_dir()->put_block(encrypted_data_hash, needed_block_it->second->get_block());
+				exchange_group_.fs_dir()->put_chunk(ct_hash, needed_block_it->second->get_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
 			maintain_requests();
@@ -126,27 +126,27 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 
 	interest_guards_.erase(remote);
 
-	for(auto& needed_block : needed_blocks_) {
+	for(auto& needed_block : needed_chunks_) {
 		needed_block.second->requests.erase(remote);
-		needed_block.second->own_block.erase(remote);
+		needed_block.second->own_chunk.erase(remote);
 	}
 }
 
 void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << "remove_requests_to()";
 
-	for(auto& needed_block : needed_blocks_) {
+	for(auto& needed_block : needed_chunks_) {
 		needed_block.second->requests.erase(remote);
 	}
 }
 
-void Downloader::add_needed_block(const blob& encrypted_data_hash) {
-	log_->trace() << log_tag() << "add_needed_block()";
+void Downloader::add_needed_chunk(const blob& ct_hash) {
+	log_->trace() << log_tag() << "add_needed_chunk()";
 
-	uint32_t unencrypted_blocksize = exchange_group_.fs_dir()->index->get_blocksize(encrypted_data_hash);
+	uint32_t unencrypted_blocksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
 	uint32_t padded_blocksize = unencrypted_blocksize % 16 == 0 ? unencrypted_blocksize : ((unencrypted_blocksize/16)+1)*16;
-	auto needed_block = std::make_shared<NeededBlock>(padded_blocksize);   // FIXME: This will crash in x32 with OOM because of many mmaped files. Solution: replace mmap with fopen/fwrite/fclose
-	needed_blocks_.insert({encrypted_data_hash, needed_block});
+	auto needed_block = std::make_shared<NeededChunk>(padded_blocksize);   // FIXME: This will crash in x32 with OOM because of many mmaped files. Solution: replace mmap with fopen/fwrite/fclose
+	needed_chunks_.insert({ct_hash, needed_block});
 }
 
 void Downloader::maintain_requests(const boost::system::error_code& ec) {
@@ -158,7 +158,7 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		maintain_timer_.cancel();
 
 		// Prune old requests by timeout
-		for(auto& needed_block : needed_blocks_) {
+		for(auto& needed_block : needed_chunks_) {
 			auto& requests = needed_block.second->requests;
 			for(auto request = requests.begin(); request != requests.end(); ) {
 				if(request->second.started > std::chrono::steady_clock::now() + std::chrono::seconds(10))   // TODO: In config. Very important.
@@ -182,11 +182,11 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 bool Downloader::request_one() {
 	log_->trace() << log_tag() << "request_one()";
 	// Try to choose block to request
-	for(auto& needed_block : needed_blocks_) {
-		auto& encrypted_data_hash = needed_block.first;
+	for(auto& needed_block : needed_chunks_) {
+		auto& ct_hash = needed_block.first;
 
 		// Try to choose a remote to request this block from
-		auto remote = find_node_for_request(encrypted_data_hash);
+		auto remote = find_node_for_request(ct_hash);
 		if(remote == nullptr) continue;
 
 		// Rebuild request map to determine, which chunk to download now.
@@ -196,12 +196,12 @@ bool Downloader::request_one() {
 
 		// Request, actually
 		if(!request_map.full()) {
-			NeededBlock::ChunkRequest request;
+			NeededChunk::BlockRequest request;
 			request.offset = request_map.begin()->first;
 			request.size = std::min(request_map.begin()->second, uint32_t(32*1024));    // TODO: Chunk size should be defined in an another place.
 			request.started = std::chrono::steady_clock::now();
 
-			remote->request_chunk(encrypted_data_hash, request.offset, request.size);
+			remote->request_block(ct_hash, request.offset, request.size);
 			needed_block.second->requests.insert({remote, request});
 			return true;
 		}
@@ -209,15 +209,15 @@ bool Downloader::request_one() {
 	return false;
 }
 
-std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& encrypted_data_hash) {
+std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_hash) {
 	//log_->trace() << log_tag() << "find_node_for_request()";
 
-	auto needed_block_it = needed_blocks_.find(encrypted_data_hash);
-	if(needed_block_it == needed_blocks_.end()) return nullptr;
+	auto needed_block_it = needed_chunks_.find(ct_hash);
+	if(needed_block_it == needed_chunks_.end()) return nullptr;
 
 	auto needed_block_ptr = needed_block_it->second;
 
-	for(auto owner_remote : needed_block_ptr->own_block)
+	for(auto owner_remote : needed_block_ptr->own_chunk)
 		if(! owner_remote.first->peer_choking()) return owner_remote.first; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;
@@ -225,12 +225,12 @@ std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& encr
 
 size_t Downloader::requests_overall() const {
 	size_t requests_overall_result = 0;
-	for(auto& needed_block : needed_blocks_)
+	for(auto& needed_block : needed_chunks_)
 		requests_overall_result += needed_block.second->requests.size();
 	return requests_overall_result;
 }
 
-Downloader::NeededBlock::NeededBlock(uint32_t size) : file_map_(size) {
+Downloader::NeededChunk::NeededChunk(uint32_t size) : file_map_(size) {
 	if(BOOST_OS_WINDOWS)
 		this_block_path_ = getenv("TEMP");
 	else
@@ -244,20 +244,20 @@ Downloader::NeededBlock::NeededBlock(uint32_t size) : file_map_(size) {
 	mapped_file_.open(this_block_path_);
 }
 
-Downloader::NeededBlock::~NeededBlock() {
+Downloader::NeededChunk::~NeededChunk() {
 	mapped_file_.close();
 	fs::remove(this_block_path_);
 }
 
-blob Downloader::NeededBlock::get_block() {
+blob Downloader::NeededChunk::get_chunk() {
 	if(file_map_.size_left() == 0) {
 		blob content(size());
 		std::copy(mapped_file_.data(), mapped_file_.data() + size(), content.data());
 		return content;
-	}else throw AbstractFolder::no_such_block();
+	}else throw AbstractFolder::no_such_chunk();
 }
 
-void Downloader::NeededBlock::put_chunk(uint32_t offset, const blob& content) {
+void Downloader::NeededChunk::put_block(uint32_t offset, const blob& content) {
 	auto inserted = file_map_.insert({offset, content.size()}).second;
 	if(inserted) std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
 }

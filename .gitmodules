@@ -1,6 +1,7 @@
 [submodule "contrib/dir_monitor"]
 	path = contrib/dir_monitor
 	url = https://github.com/Librevault/dir_monitor.git
+	branch = master
 [submodule "contrib/spdlog"]
 	path = contrib/spdlog
 	url = https://github.com/GamePad64/spdlog.git
@@ -10,3 +11,7 @@
 [submodule "contrib/docopt"]
 	path = contrib/docopt
 	url = https://github.com/GamePad64/docopt.cpp.git
+[submodule "contrib/rabin"]
+	path = contrib/rabin
+	url = https://github.com/Librevault/rabin.git
+	branch = master

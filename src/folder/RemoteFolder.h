@@ -16,6 +16,7 @@
 #include "../pch.h"
 #pragma once
 #include <librevault/Meta.h>
+#include <librevault/SignedMeta.h>
 #include "AbstractFolder.h"
 
 namespace librevault {
@@ -32,15 +33,15 @@ public:
 	virtual void uninterest() = 0;
 
 	virtual void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) = 0;
-	virtual void post_have_block(const blob& encrypted_data_hash) = 0;
+	virtual void post_have_chunk(const blob& ct_hash) = 0;
 
 	virtual void request_meta(const Meta::PathRevision& revision) = 0;
-	virtual void post_meta(const Meta::SignedMeta& smeta, const bitfield_type& bitfield) = 0;
+	virtual void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) = 0;
 	virtual void cancel_meta(const Meta::PathRevision& revision) = 0;
 
-	virtual void request_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) = 0;
-	virtual void post_chunk(const blob& encrypted_data_hash, uint32_t offset, const blob& chunk) = 0;
-	virtual void cancel_chunk(const blob& encrypted_data_hash, uint32_t offset, uint32_t size) = 0;
+	virtual void request_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
+	virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
+	virtual void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
 
 	bool am_choking() const {return am_choking_;}
 	bool am_interested() const {return am_interested_;}

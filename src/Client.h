@@ -43,7 +43,7 @@ public:
 
 	io_service& ios() {return etc_ios_->ios();}
 	io_service& network_ios() {return network_ios_->ios();}
-	io_service& dir_monitor_ios() {return etc_ios_->ios();}
+	io_service& bulk_ios() {return bulk_ios_->ios();}
 
 	fs::path appdata_path() const {return appdata_path_;}
 	fs::path config_path() const {return config_path_;}
@@ -79,7 +79,7 @@ private:
 	/* Asynchronous/multithreaded operation */
 	io_service main_loop_ios_;
 	std::unique_ptr<multi_io_service> network_ios_;
-	std::unique_ptr<multi_io_service> dir_monitor_ios_;
+	std::unique_ptr<multi_io_service> bulk_ios_;
 	std::unique_ptr<multi_io_service> etc_ios_;
 
 	/* Paths */

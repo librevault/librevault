@@ -153,7 +153,7 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 			FolderConfig folder_config;
 			folder_config.secret                        = Secret(folder_pt.get<std::string>("secret"));
 			folder_config.open_path                     = folder_pt.get<fs::path>("open_path");
-			folder_config.block_path                    = folder_pt.get<fs::path>("block_path", "");
+			folder_config.chunk_path                    = folder_pt.get<fs::path>("chunk_path", "");
 			folder_config.db_path                       = folder_pt.get<fs::path>("db_path", "");
 			folder_config.asm_path                      = folder_pt.get<fs::path>("asm_path", "");
 
@@ -161,7 +161,7 @@ Config::config_type Config::convert_pt(const ptree& pt, const config_type& base)
 			folder_config.preserve_unix_attrib          = folder_pt.get("preserve_unix_attrib", folder_config.preserve_unix_attrib);
 			folder_config.preserve_windows_attrib       = folder_pt.get("preserve_windows_attrib", folder_config.preserve_windows_attrib);
 			folder_config.preserve_symlinks             = folder_pt.get("preserve_symlinks", folder_config.preserve_symlinks);
-			folder_config.block_strong_hash_type        = cryptodiff::StrongHashType(folder_pt.get("block_strong_hash_type", (unsigned)folder_config.block_strong_hash_type));
+			folder_config.chunk_strong_hash_type        = Meta::StrongHashType(folder_pt.get("chunk_strong_hash_type", (unsigned)folder_config.chunk_strong_hash_type));
 
 			try {
 				auto eqkey_it = folder_pt.get_child("nodes").equal_range("");
@@ -225,7 +225,7 @@ ptree Config::convert_pt(const config_type& config) const {
 			ptree folder_pt;
 			folder_pt.put("secret", folder.secret);
 			folder_pt.put("open_path", folder.open_path);
-			folder_pt.put("block_path", folder.block_path);
+			folder_pt.put("chunk_path", folder.chunk_path);
 			folder_pt.put("db_path", folder.db_path);
 			folder_pt.put("asm_path", folder.asm_path);
 
@@ -233,7 +233,7 @@ ptree Config::convert_pt(const config_type& config) const {
 			folder_pt.put("preserve_unix_attrib", folder.preserve_unix_attrib);
 			folder_pt.put("preserve_windows_attrib", folder.preserve_windows_attrib);
 			folder_pt.put("preserve_symlinks", folder.preserve_symlinks);
-			folder_pt.put("block_strong_hash_type", folder.block_strong_hash_type);
+			folder_pt.put("chunk_strong_hash_type", folder.chunk_strong_hash_type);
 
 			ptree nodes_pt;
 			for(auto& node : folder.nodes) {

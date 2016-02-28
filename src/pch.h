@@ -15,9 +15,6 @@
  */
 #pragma once
 
-// Cryptodiff
-#include <cryptodiff.h>
-
 // SQLiteWrapper
 #include <lvsqlite3/SQLiteWrapper.h>
 
@@ -106,6 +103,7 @@
 #include <ctime>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <list>

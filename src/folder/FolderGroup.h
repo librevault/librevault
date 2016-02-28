@@ -18,6 +18,7 @@
 #include "../util/Loggable.h"
 #include <librevault/Secret.h>
 #include <librevault/util/bitfield_convert.h>
+#include <librevault/SignedMeta.h>
 #include "AbstractFolder.h"
 
 namespace librevault {
@@ -47,7 +48,7 @@ public:
 	/* Actions */
 	// FSFolder actions
 	void notify_meta(std::shared_ptr<FSFolder> origin, Meta::PathRevision revision, bitfield_type bitfield);
-	void notify_block(std::shared_ptr<FSFolder> origin, const blob& encrypted_data_hash);
+	void notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash);
 
 	// RemoteFolder actions
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
@@ -58,13 +59,13 @@ public:
 	void handle_not_interested(std::shared_ptr<RemoteFolder> origin);
 
 	void notify_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_block(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash);
+	void notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash);
 
 	void request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
-	void post_meta(std::shared_ptr<RemoteFolder> origin, const Meta::SignedMeta& smeta, const bitfield_type& bitfield);
+	void post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
 
-	void request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, uint32_t offset, uint32_t size);
-	void post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& encrypted_data_hash, const blob& chunk, uint32_t offset);
+	void request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
+	void post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset);
 
 	/* Membership management */
 	void attach(std::shared_ptr<FSFolder> fs_dir_ptr);

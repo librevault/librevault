@@ -18,60 +18,60 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage"), block_path_(dir.block_path()) {
-	bool block_path_created = fs::create_directories(block_path_);
+EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage"), chunk_path_(dir.chunk_path()) {
+	bool chunk_path_created = fs::create_directories(chunk_path_);
 #if BOOST_OS_WINDOWS
-	//SetFileAttributes() // Use SetFileAttributes to set block_path_ as HIDDEN.
+	//SetFileAttributes() // Use SetFileAttributes to set chunk_path_ as HIDDEN.
 #endif
-	log_->debug() << log_tag() << "Block directory: " << block_path_ << (block_path_created ? " created" : "");
+	log_->debug() << log_tag() << "Block directory: " << chunk_path_ << (chunk_path_created ? " created" : "");
 }
 
-fs::path EncStorage::make_encblock_name(const blob& encrypted_data_hash) const {
-	return std::string("block-") + crypto::Base32().to_string(encrypted_data_hash);
+fs::path EncStorage::make_chunk_ct_name(const blob& ct_hash) const {
+	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
 }
 
-fs::path EncStorage::make_encblock_path(const blob& encrypted_data_hash) const {
-	return block_path_ / make_encblock_name(encrypted_data_hash);
+fs::path EncStorage::make_chunk_ct_path(const blob& ct_hash) const {
+	return chunk_path_ / make_chunk_ct_name(ct_hash);
 }
 
-bool EncStorage::have_block(const blob& encrypted_data_hash) const {
-	return fs::exists(make_encblock_path(encrypted_data_hash));
+bool EncStorage::have_chunk(const blob& ct_hash) const {
+	return fs::exists(make_chunk_ct_path(ct_hash));
 }
 
-std::shared_ptr<blob> EncStorage::get_block(const blob& encrypted_data_hash) const {
+std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 	try {
-		auto block_path = make_encblock_path(encrypted_data_hash);
+		auto chunk_path = make_chunk_ct_path(ct_hash);
 
-		uint64_t blocksize = fs::file_size(block_path);
-		if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractFolder::no_such_block();
+		uint64_t blocksize = fs::file_size(chunk_path);
+		if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractFolder::no_such_chunk();
 
-		std::shared_ptr<blob> block = std::make_shared<blob>(blocksize);
+		std::shared_ptr<blob> chunk = std::make_shared<blob>(blocksize);
 
 		fs::ifstream block_fstream;
 		block_fstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		block_fstream.open(block_path, std::ios_base::in | std::ios_base::binary);
-		block_fstream.read(reinterpret_cast<char*>(block->data()), blocksize);
+		block_fstream.open(chunk_path, std::ios_base::in | std::ios_base::binary);
+		block_fstream.read(reinterpret_cast<char*>(chunk->data()), blocksize);
 
-		return block;
+		return chunk;
 	}catch(fs::filesystem_error& e) {
-		throw AbstractFolder::no_such_block();
+		throw AbstractFolder::no_such_chunk();
 	}catch(std::ifstream::failure& e) {
-		throw AbstractFolder::no_such_block();
+		throw AbstractFolder::no_such_chunk();
 	}
 }
 
-void EncStorage::put_block(const blob& encrypted_data_hash, const blob& data) {
-	auto block_path = make_encblock_path(encrypted_data_hash);
+void EncStorage::put_chunk(const blob& ct_hash, const blob& data) {
+	auto block_path = make_chunk_ct_path(ct_hash);
 	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
 	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
 
-	log_->debug() << log_tag() << "Encrypted block " << make_encblock_name(encrypted_data_hash) << " pushed into EncStorage";
+	log_->debug() << log_tag() << "Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage";
 }
 
-void EncStorage::remove_block(const blob& encrypted_data_hash) {
-	fs::remove(make_encblock_path(encrypted_data_hash));
+void EncStorage::remove_chunk(const blob& ct_hash) {
+	fs::remove(make_chunk_ct_path(ct_hash));
 
-	log_->debug() << log_tag() << "Block " << make_encblock_name(encrypted_data_hash) << " removed from EncStorage";
+	log_->debug() << log_tag() << "Block " << make_chunk_ct_name(ct_hash) << " removed from EncStorage";
 }
 
 } /* namespace librevault */

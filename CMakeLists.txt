@@ -91,13 +91,9 @@ add_executable(${PROJECT_NAME} ${SRCS})
 # Third-party libraries
 #============================================================================
 
-# Cryptodiff
-find_package(Cryptodiff REQUIRED)
-if(BUILD_STATIC)
-	target_link_libraries(${PROJECT_NAME} cryptodiff-static)
-else()
-	target_link_libraries(${PROJECT_NAME} cryptodiff-shared)
-endif()
+# rabin
+add_subdirectory("contrib/rabin")
+target_link_libraries(${PROJECT_NAME} rabin)
 
 # LVCommon
 find_package(lvcommon)

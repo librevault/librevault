@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <librevault/Meta.h>
 #include <librevault/util/bitfield_convert.h>
 #include "src/util/Loggable.h"
 
@@ -35,8 +34,8 @@ public:
 		no_such_meta() : error("Requested Meta not found"){}
 	};
 
-	struct no_such_block : public error {
-		no_such_block() : error("Requested Block not found"){}
+	struct no_such_chunk : public error {
+		no_such_chunk() : error("Requested Chunk not found"){}
 	};
 
 	AbstractFolder(Client& client);
@@ -48,7 +47,7 @@ public:
 
 	// Other functions
 	static std::string path_id_readable(const blob& path_id);
-	static std::string encrypted_data_hash_readable(const blob& block_id);
+	static std::string ct_hash_readable(const blob& ct_hash);
 
 protected:
 	Client& client_;

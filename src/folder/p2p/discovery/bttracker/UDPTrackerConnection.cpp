@@ -29,10 +29,10 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
                                            Client& client) :
 	TrackerConnection(tracker_address, group_ptr, tracker_discovery, client),
 
-		socket_(client.ios()),
-		resolver_(client.ios()),
-		reconnect_timer_(client.ios()),
-		announce_timer_(client.ios()) {
+		socket_(client.network_ios()),
+		resolver_(client.network_ios()),
+		reconnect_timer_(client.network_ios()),
+		announce_timer_(client.network_ios()) {
 	announce_interval_ = client_.config().getBttracker_min_interval();
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}

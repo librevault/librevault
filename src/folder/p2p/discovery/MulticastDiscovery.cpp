@@ -25,7 +25,7 @@ using namespace boost::asio::ip;
 
 /* MulticastSender */
 MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<FolderGroup> exchange_group) :
-	parent_(parent), exchange_group_(exchange_group), repeat_timer_(parent_.client_.ios()), repeat_interval_(parent.repeat_interval_) {
+	parent_(parent), exchange_group_(exchange_group), repeat_timer_(parent_.client_.network_ios()), repeat_interval_(parent.repeat_interval_) {
 	send();
 }
 
@@ -64,7 +64,7 @@ void MulticastSender::send() {
 
 /* MulticastDiscovery */
 MulticastDiscovery::MulticastDiscovery(Client& client) :
-	DiscoveryService(client), socket_(client.ios()) {
+	DiscoveryService(client), socket_(client.network_ios()) {
 	client.folder_added_signal.connect(std::bind(&MulticastDiscovery::register_group, this, std::placeholders::_1));
 	client.folder_removed_signal.connect(std::bind(&MulticastDiscovery::unregister_group, this, std::placeholders::_1));
 }

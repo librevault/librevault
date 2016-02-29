@@ -63,7 +63,7 @@ void Indexer::index(const std::string& file_path){
 }
 
 void Indexer::async_index(const std::string& file_path) {
-	client_.ios().post(std::bind([this](const std::string& file_path){
+	client_.bulk_ios().post(std::bind([this](const std::string& file_path){
 		index(file_path);
 	}, file_path));
 }

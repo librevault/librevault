@@ -22,7 +22,7 @@
 namespace librevault {
 
 NATPMPService::NATPMPService(Client& client, P2PProvider& provider) :
-	Loggable(client, "NATPMPService"), client_(client), provider_(provider), maintain_timer_(client.ios()) {
+	Loggable(client, "NATPMPService"), client_(client), provider_(provider), maintain_timer_(client.network_ios()) {
 	set_lifetime(client_.config().getNatpmp_lifetime());
 	set_enabled(client_.config().isNatpmp_enabled());
 }

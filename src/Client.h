@@ -37,7 +37,6 @@ public:
 
 	void run();
 	void shutdown();
-	void restart();
 
 	Config& config() {return *config_;}
 

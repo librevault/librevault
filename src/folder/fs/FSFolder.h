@@ -60,8 +60,6 @@ public:
 	std::list<SignedMeta> get_meta_containing(const blob& ct_hash);
 	void put_meta(SignedMeta smeta, bool fully_assembled = false);
 
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-
 	bool have_chunk(const blob& ct_hash) const;
 	blob get_chunk(const blob& ct_hash);
 	void put_chunk(const blob& ct_hash, const blob& chunk);

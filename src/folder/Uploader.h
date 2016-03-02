@@ -32,11 +32,13 @@ public:
 	void handle_interested(std::shared_ptr<RemoteFolder> remote);
 	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
 
-	void request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
+	void request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
 	Client& client_;
 	FolderGroup& exchange_group_;
+
+	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

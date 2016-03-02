@@ -97,14 +97,6 @@ void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 	folder_group_.lock()->notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
-blob FSFolder::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
-	auto block = get_chunk(ct_hash);
-	if(offset < block.size() && size <= block.size()-offset)
-		return blob(block.begin()+offset, block.begin()+offset+size);
-	else
-		throw AbstractFolder::no_such_chunk();
-}
-
 bool FSFolder::have_chunk(const blob& ct_hash) const {
 	return enc_storage->have_chunk(ct_hash) || open_storage->have_chunk(ct_hash);
 }

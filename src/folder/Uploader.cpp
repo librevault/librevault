@@ -40,13 +40,20 @@ void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
 	remote->choke();
 }
 
-void Uploader::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+void Uploader::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
 	try {
-		auto chunk = exchange_group_.fs_dir()->get_block(ct_hash, offset, size);
-		origin->post_block(ct_hash, offset, chunk);
+		origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
 	}catch(AbstractFolder::no_such_chunk& e){
 		log_->warn() << log_tag() << "Requested nonexistent chunk";
 	}
+}
+
+blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
+	auto chunk = exchange_group_.fs_dir()->get_chunk(ct_hash);
+	if(offset < chunk.size() && size <= chunk.size()-offset)
+		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
+	else
+		throw AbstractFolder::no_such_chunk();
 }
 
 } /* namespace librevault */

@@ -38,12 +38,12 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 	log_->trace() << log_tag() << "notify_local_meta()";
 	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
 	for(size_t block_idx = 0; block_idx < smeta.meta().chunks().size(); block_idx++) {
-		if(! bitfield[block_idx]) {
-			// We haven't this block, we need to download it
-			add_needed_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
-		} else {
+		if(bitfield[block_idx]) {
 			// We have have block, remove from needed
 			notify_local_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
+		} else {
+			// We haven't this block, we need to download it
+			add_needed_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
 		}
 	}
 }

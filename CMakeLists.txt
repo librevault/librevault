@@ -135,28 +135,32 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 #link_libraries(${CPPNETLIB_LIBRARIES})
 
 # cURL
-find_package(CURL)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
+#find_package(CURL)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+#target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
 
 # SQLite
 find_package(Sqlite3)
 
-file(GLOB_RECURSE LVSQLITE3_SRCS "contrib/include/lvsqlite3/*")
-add_library(lvsqlite3-bundled STATIC ${LVSQLITE3_SRCS})
-target_include_directories(lvsqlite3-bundled PUBLIC "contrib/include")
-
 if(SQLITE3_FOUND)
-	target_include_directories(lvsqlite3-bundled PUBLIC ${SQLITE3_INCLUDE_DIR})
-	target_link_libraries(lvsqlite3-bundled ${SQLITE3_LIBRARIES})
+	target_include_directories(${PROJECT_NAME} PUBLIC ${SQLITE3_INCLUDE_DIR})
+	target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
 else()
 	add_library(sqlite3-bundled STATIC contrib/sqlite3/sqlite3.c)
-	target_include_directories(lvsqlite3-bundled PUBLIC "contrib/sqlite3")
-	target_link_libraries(lvsqlite3-bundled sqlite3-bundled)
+	target_include_directories(sqlite3-bundled PUBLIC "contrib/sqlite3")
+	target_link_libraries(${PROJECT_NAME} sqlite3-bundled)
 endif()
 
-target_link_libraries(${PROJECT_NAME} lvsqlite3-bundled)
-# /SQLite
+# JsonCpp
+#if(JSONCPP_FOUND)
+#	target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
+#else()
+	add_library(jsoncpp-bundled STATIC contrib/jsoncpp/jsoncpp.cpp)
+	target_include_directories(jsoncpp-bundled PUBLIC "contrib/jsoncpp")
+	target_link_libraries(${PROJECT_NAME} jsoncpp-bundled)
+#endif()
+
+target_link_libraries(${PROJECT_NAME} jsoncpp-bundled)
 
 # Protobuf
 find_package(Protobuf REQUIRED)
@@ -208,7 +212,6 @@ if(BUILD_STATIC)
 endif()
 
 # Header-only libs
-target_include_directories(${PROJECT_NAME} PRIVATE "contrib/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include")
 
 #============================================================================

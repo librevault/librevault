@@ -129,16 +129,6 @@ find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 
-# cpp-netlib
-#find_package(cppnetlib 0.11.1 REQUIRED)
-#include_directories(${CPPNETLIB_INCLUDE_DIRS})
-#link_libraries(${CPPNETLIB_LIBRARIES})
-
-# cURL
-#find_package(CURL)
-#target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
-#target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
-
 # SQLite
 find_package(Sqlite3)
 

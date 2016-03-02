@@ -17,6 +17,7 @@
 #include "src/pch.h"
 #include <librevault/SignedMeta.h>
 #include "src/util/Loggable.h"
+#include "src/util/SQLiteWrapper.h"
 
 namespace librevault {
 

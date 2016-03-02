@@ -70,7 +70,7 @@ private:
 		boost::endian::big_int64_t uploaded_;
 		boost::endian::big_int32_t event_ = (int32_t)Event::EVENT_NONE;
 		boost::endian::big_uint32_t ip_ = 0;
-		uint32_t key_;
+		int32_t key_;
 		boost::endian::big_int32_t num_want_;
 		boost::endian::big_uint16_t port_;
 		boost::endian::big_uint16_t extensions_ = 0;

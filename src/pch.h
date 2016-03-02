@@ -15,9 +15,6 @@
  */
 #pragma once
 
-// SQLiteWrapper
-#include <lvsqlite3/SQLiteWrapper.h>
-
 // LVCrypto
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/Base64.h>

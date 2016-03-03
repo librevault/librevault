@@ -103,12 +103,12 @@ void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMe
 	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 
-void FolderGroup::request_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
-	uploader_->request_chunk(origin, ct_hash, offset, size);
+void FolderGroup::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+	uploader_->request_block(origin, ct_hash, offset, size);
 }
 
 void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset) {
-	downloader_->put_chunk(ct_hash, offset, chunk, origin);
+	downloader_->put_block(ct_hash, offset, chunk, origin);
 }
 
 /* Membership management */

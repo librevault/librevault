@@ -37,7 +37,7 @@ public:
 	void handle_choke(std::shared_ptr<RemoteFolder> remote);
 	void handle_unchoke(std::shared_ptr<RemoteFolder> remote);
 
-	void put_chunk(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
+	void put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
 
 	void erase_remote(std::shared_ptr<RemoteFolder> remote);
 

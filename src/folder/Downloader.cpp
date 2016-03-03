@@ -93,8 +93,8 @@ void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
 	maintain_requests();
 }
 
-void Downloader::put_chunk(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
-	log_->trace() << log_tag() << "put_chunk()";
+void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
+	log_->trace() << log_tag() << "put_block()";
 	auto needed_block_it = needed_chunks_.find(ct_hash);
 	if(needed_block_it == needed_chunks_.end()) return;
 

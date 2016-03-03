@@ -18,6 +18,7 @@
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
 #include "src/control/Config.h"
+#include "src/folder/FolderGroup.h"
 
 namespace librevault {
 
@@ -43,12 +44,6 @@ public:
 	io_service& ios() {return etc_ios_->ios();}
 	io_service& network_ios() {return network_ios_->ios();}
 	io_service& bulk_ios() {return bulk_ios_->ios();}
-
-	fs::path appdata_path() const {return appdata_path_;}
-	fs::path config_path() const {return config_path_;}
-	fs::path log_path() const {return log_path_;}
-	fs::path key_path() const {return key_path_;}
-	fs::path cert_path() const {return cert_path_;}
 
 	/* Signals */
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
@@ -80,10 +75,6 @@ private:
 	std::unique_ptr<multi_io_service> network_ios_;
 	std::unique_ptr<multi_io_service> bulk_ios_;
 	std::unique_ptr<multi_io_service> etc_ios_;
-
-	/* Paths */
-	fs::path default_appdata_path();
-	fs::path appdata_path_, config_path_, log_path_, key_path_, cert_path_;
 
 	/* Initialization */
 	void init_log(spdlog::level::level_enum level);

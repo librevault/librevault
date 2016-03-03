@@ -74,7 +74,7 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << "on_open()";
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
-	ws_server_assignment_.insert({connection_ptr, std::make_shared<ControlConnection>()});
+	ws_server_assignment_.insert(connection_ptr);
 
 	send_control_json();
 }

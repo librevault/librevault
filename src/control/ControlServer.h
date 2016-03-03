@@ -32,13 +32,11 @@ public:
 	boost::signals2::signal<void(Config::FolderConfig)> add_folder_signal;
 	boost::signals2::signal<void(Secret)> remove_folder_signal;
 private:
-	struct ControlConnection {};
-
 	using server = websocketpp::server<asio_notls>;
 	Client& client_;
 
 	server ws_server_;
-	std::unordered_map<server::connection_ptr, std::shared_ptr<ControlConnection>> ws_server_assignment_;
+	std::unordered_set<server::connection_ptr> ws_server_assignment_;
 
 	tcp_endpoint local_endpoint_;
 

@@ -106,7 +106,11 @@ void NodeKey::write_key(){
 }
 
 void NodeKey::gen_certificate() {
-	FILE* f = fopen(client_.key_path().string().c_str(), "r");
+#if BOOST_OS_WINDOWS
+	FILE * f = _wfopen(Config::get()->paths().key_path.c_str(), L"r");
+#else
+	FILE * f = fopen(Config::get()->paths().key_path.c_str(), "r");
+#endif
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
@@ -139,7 +143,11 @@ void NodeKey::gen_certificate() {
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = fopen(client_.cert_path().string().c_str(), "wb");
+#if BOOST_OS_WINDOWS
+	FILE * x509_file = _wfopen(Config::get()->paths().cert_path.c_str(), L"wb");
+#else
+	FILE * x509_file = fopen(Config::get()->paths().cert_path.c_str(), "wb");
+#endif
 	if (!x509_file) {
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}

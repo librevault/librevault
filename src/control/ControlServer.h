@@ -20,7 +20,6 @@
 #include "src/folder/p2p/websocket_config.h"
 #include "src/control/Config.h"
 #include "src/control/FolderParams.h"
-#include <boost/property_tree/ptree.hpp>
 
 namespace librevault {
 
@@ -30,8 +29,6 @@ class ControlServer : public Loggable {
 public:
 	ControlServer(Client& client);
 	virtual ~ControlServer();
-
-	using ptree = boost::property_tree::ptree;
 
 	boost::signals2::signal<void(FolderParams)> add_folder_signal;
 	boost::signals2::signal<void(Secret)> remove_folder_signal;
@@ -53,12 +50,12 @@ private:
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
 	std::string make_control_json();
-	ptree make_state_json() const;
+	Json::Value make_state_json() const;
 	void send_control_json(const boost::system::error_code& ec = boost::system::error_code());
 
-	void handle_control_json(const ptree& control_json);
-	void handle_add_folder_json(const ptree& folder_json);
-	void handle_remove_folder_json(const ptree& folder_json);
+	void handle_control_json(const Json::Value& control_json);
+	void handle_add_folder_json(const Json::Value& folder_json);
+	void handle_remove_folder_json(const Json::Value& folder_json);
 };
 
 } /* namespace librevault */

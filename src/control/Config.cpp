@@ -38,6 +38,8 @@ Config::~Config() {
 	save();
 }
 
+std::unique_ptr<Config> Config::instance_ = nullptr;
+
 void Config::set_client(Json::Value client_conf) {
 	client_custom_ = std::move(client_conf);
 	make_merged_client();
@@ -106,8 +108,9 @@ void Config::load() {
 	fs::ifstream client_ifs(paths_.client_config_path, std::ifstream::binary);
 	fs::ifstream folders_ifs(paths_.folders_config_path, std::ifstream::binary);
 
-	client_ifs >> client_custom_;
-	folders_ifs >> folders_custom_;
+	Json::Reader r;
+	r.parse(client_ifs, client_custom_);
+	r.parse(folders_ifs, folders_custom_);
 
 	set_client(client_custom_);
 	set_folders(folders_custom_);

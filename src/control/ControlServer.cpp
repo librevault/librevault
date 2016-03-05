@@ -18,7 +18,6 @@
 #include "src/folder/FolderGroup.h"
 #include "src/folder/fs/FSFolder.h"
 #include "src/folder/p2p/P2PFolder.h"
-#include <boost/property_tree/json_parser.hpp>
 
 namespace librevault {
 
@@ -83,14 +82,12 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 
 void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr) {
 	log_->trace() << log_tag() << "on_message()";
-	blob message_raw = blob(std::make_move_iterator(message_ptr->get_payload().begin()), std::make_move_iterator(message_ptr->get_payload().end()));
 
 	try {
 		log_->trace() << message_ptr->get_payload();
 		// Read as control_json;
-		std::istringstream is(message_ptr->get_payload());
-		ptree control_json;
-		boost::property_tree::json_parser::read_json(is, control_json);
+		Json::Value control_json;
+		Json::Reader r; r.parse(message_ptr->get_payload(), control_json);
 
 		handle_control_json(control_json);
 	}catch(std::runtime_error& e) { // FIXME: change to websocketpp exception
@@ -106,41 +103,34 @@ void ControlServer::on_disconnect(websocketpp::connection_hdl hdl) {
 }
 
 std::string ControlServer::make_control_json() {
-	ptree control_json;
+	Json::Value control_json;
 
 	// ID
 	static int control_json_id = 0;
-	control_json.put("id", control_json_id++);
-
-	control_json.add_child("config", client_.config().get_ptree());
-	control_json.add_child("state", make_state_json());
+	control_json["id"] = control_json_id++;
+	control_json["client"] = Config::get()->client();
+	control_json["folders"] = Config::get()->folders();
+	control_json["state"] = make_state_json();
 
 	// result serialization
-	std::ostringstream os; boost::property_tree::write_json(os, control_json, false);
+	std::ostringstream os; os << control_json;
 	return os.str();
 }
 
-ptree ControlServer::make_state_json() const {
-	ptree state_json;
-	// Folders
-	ptree folders_json;
+Json::Value ControlServer::make_state_json() const {
+	Json::Value state_json;
 	for(auto folder : client_.groups()) {
-		ptree folder_json;
-		folder_json.put("path", folder->fs_dir()->path());
-		folder_json.put("secret", (std::string)folder->secret());
+		Json::Value folder_json;
+		folder_json["path"] = folder->fs_dir()->path().string();
+		folder_json["secret"] = folder->secret().string();
 
 		// Peers
-		ptree peers_json;
 		for(auto p2p_peer : folder->p2p_dirs()) {
-			ptree peer_json;
-			peer_json.put("endpoint", p2p_peer->remote_endpoint());
-			peers_json.push_back({"", peer_json});
+			std::ostringstream os; os << p2p_peer->remote_endpoint();
+			folder_json["endpoint"].append(os.str());
 		}
-		folder_json.add_child("peers", peers_json);
-
-		folders_json.push_back({"", folder_json});
+		state_json["folders"].append(folder_json);
 	}
-	state_json.add_child("folders", folders_json);
 
 	return state_json;
 }
@@ -163,33 +153,27 @@ void ControlServer::send_control_json(const boost::system::error_code& ec) {
 	}
 }
 
-void ControlServer::handle_control_json(const ptree& control_json) {
-	try {
-		std::string command = control_json.get<std::string>("command");
-		if(command == "set_config") {
-			client_.config().apply_ptree(control_json.get_child("config"));
-		}else if(command == "add_folder") {
-			handle_add_folder_json(control_json.get_child("folder"));
-		}else if(command == "remove_folder") {
-			handle_remove_folder_json(control_json);
-		}else
-			log_->debug() << "Could not handle control JSON: Unknown command: " << command;
-	}catch(boost::property_tree::ptree_bad_path& e) {
-		log_->debug() << "Could not handle control JSON: " << e.what();
-	}
+void ControlServer::handle_control_json(const Json::Value& control_json) {
+	std::string command = control_json["command"].asString();
+	if(command == "set_config") {
+		//client_.config().apply_ptree(control_json.get_child("config"));
+	}else if(command == "add_folder") {
+		handle_add_folder_json(control_json["folder"]);
+	}else if(command == "remove_folder") {
+		handle_remove_folder_json(control_json["folder"]);
+	}else
+		log_->debug() << "Could not handle control JSON: Unknown command: " << command;
 }
 
-void ControlServer::handle_add_folder_json(const ptree& folder_json) {
-	Config::FolderConfig folder_conf;
-	folder_conf.secret = Secret(folder_json.get<std::string>("secret"));
-	folder_conf.open_path = folder_json.get<fs::path>("path");
+void ControlServer::handle_add_folder_json(const Json::Value& folder_json) {
+	FolderParams params(folder_json);
 
-	add_folder_signal(folder_conf);
+	add_folder_signal(params);
 	send_control_json();
 }
 
-void ControlServer::handle_remove_folder_json(const ptree& folder_json) {
-	Secret secret = Secret(folder_json.get<std::string>("secret"));
+void ControlServer::handle_remove_folder_json(const Json::Value& folder_json) {
+	Secret secret = Secret(folder_json["secret"].asString());
 	remove_folder_signal(secret);
 	send_control_json();
 }

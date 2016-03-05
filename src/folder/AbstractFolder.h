@@ -42,7 +42,7 @@ public:
 	virtual ~AbstractFolder();
 
 	// AbstractFolder properties
-	virtual std::string name() const = 0;
+	const std::string& name() const {return name_;}
 	std::shared_ptr<FolderGroup> folder_group();
 
 	// Other functions

@@ -19,14 +19,13 @@
 namespace librevault {
 
 Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
-	bool db_path_created = fs::create_directories(dir_.db_path().parent_path());
-	log_->debug() << log_tag() << "Database directory: " << dir_.db_path().parent_path() << (db_path_created ? " created" : "");
+	auto db_filepath = dir_.system_path() / "librevault.db";
 
-	if(fs::exists(dir_.db_path()))
-		log_->debug() << log_tag() << "Opening SQLite3 DB: " << dir_.db_path();
+	if(fs::exists(db_filepath))
+		log_->debug() << log_tag() << "Opening SQLite3 DB: " << db_filepath;
 	else
-		log_->debug() << log_tag() << "Creating new SQLite3 DB: " << dir_.db_path();
-	db_ = std::make_unique<SQLiteDB>(dir_.db_path());
+		log_->debug() << log_tag() << "Creating new SQLite3 DB: " << db_filepath;
+	db_ = std::make_unique<SQLiteDB>(db_filepath);
 	db_->exec("PRAGMA foreign_keys = ON;");
 
 	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
@@ -36,7 +35,7 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");
 
 	/* Create a special hash-file */
-	auto hash_txt = dir_.chunk_path() / "hash.txt";
+	auto hash_txt = dir_.system_path() / "hash.txt";
 	fs::fstream ifs;
 	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
 	if(fs::exists(hash_txt)) {

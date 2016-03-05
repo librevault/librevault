@@ -23,12 +23,7 @@ namespace librevault {
 
 OpenStorage::OpenStorage(FSFolder& dir) :
 	AbstractStorage(dir), Loggable(dir, "OpenStorage"),
-	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {
-	bool open_path_created = fs::create_directories(dir_.open_path());
-	log_->debug() << log_tag() << "Open directory: " << dir_.open_path() << (open_path_created ? " created" : "");
-	bool asm_path_created = fs::create_directories(dir_.asm_path());
-	log_->debug() << log_tag() << "Assemble directory: " << dir_.asm_path() << (asm_path_created ? " created" : "");
-}
+	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const {
 	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
@@ -63,7 +58,7 @@ std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> OpenStorage::get_both_ch
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
 		try {
-			ifs.open(fs::absolute(smeta.meta().path(secret_), dir_.open_path()), std::ios::binary);
+			ifs.open(fs::absolute(smeta.meta().path(secret_), dir_.path()), std::ios::binary);
 			ifs.seekg(offset);
 			ifs.read(reinterpret_cast<char*>(chunk_pt->data()), chunk.size);
 
@@ -109,7 +104,7 @@ void OpenStorage::assemble(const Meta& meta, bool delete_chunks){
 void OpenStorage::assemble_deleted(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_deleted()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.open_path());
+	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
@@ -126,7 +121,7 @@ void OpenStorage::assemble_deleted(const Meta& meta) {
 void OpenStorage::assemble_symlink(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_symlink()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.open_path());
+	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	fs::remove_all(file_path);
 	fs::create_symlink(meta.symlink_path(secret_), file_path);
 }
@@ -134,7 +129,7 @@ void OpenStorage::assemble_symlink(const Meta& meta) {
 void OpenStorage::assemble_directory(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_directory()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.open_path());
+	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	auto relpath = dir_.make_relpath(file_path);
 
 	bool removed = false;
@@ -149,9 +144,9 @@ void OpenStorage::assemble_directory(const Meta& meta) {
 void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
 	log_->trace() << log_tag() << "assemble_file()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.open_path());
+	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	auto relpath = dir_.make_relpath(file_path);
-	auto assembled_file = dir_.asm_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
+	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	fs::ofstream ofs(assembled_file, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -180,10 +175,10 @@ void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
 }
 
 void OpenStorage::apply_attrib(const Meta& meta) {
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.open_path());
+	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 
 #if BOOST_OS_UNIX
-	if(dir_.folder_config().preserve_unix_attrib) {
+	if(dir_.params().preserve_unix_attrib) {
 		if(meta.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
 			ec = chmod(file_path.c_str(), meta.mode());
@@ -215,7 +210,7 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 		index_.db().exec("UPDATE openfs SET assembled=0 WHERE file_path_hmac=:path_hmac", {
 				{":path_hmac", path_id}
 		});
-		fs::remove(fs::absolute(file_path, dir_.open_path()));
+		fs::remove(fs::absolute(file_path, dir_.path()));
 	}
 }
 */
@@ -223,7 +218,7 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 std::set<std::string> OpenStorage::open_files(){
 	std::set<std::string> file_list;
 
-	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.open_path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
+	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
 		auto relpath = dir_.make_relpath(dir_entry_it->path());
 
 		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);

@@ -57,8 +57,6 @@ public:
 	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
 	const P2PProvider::role_type role() const {return role_;}
 
-	std::string name() const {return name_;}
-
 	blob local_token();
 	blob remote_token();
 

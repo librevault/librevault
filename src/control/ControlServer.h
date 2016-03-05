@@ -19,6 +19,8 @@
 #include "src/util/Loggable.h"
 #include "src/folder/p2p/websocket_config.h"
 #include "src/control/Config.h"
+#include "src/control/FolderParams.h"
+#include <boost/property_tree/ptree.hpp>
 
 namespace librevault {
 
@@ -29,7 +31,9 @@ public:
 	ControlServer(Client& client);
 	virtual ~ControlServer();
 
-	boost::signals2::signal<void(Config::FolderConfig)> add_folder_signal;
+	using ptree = boost::property_tree::ptree;
+
+	boost::signals2::signal<void(FolderParams)> add_folder_signal;
 	boost::signals2::signal<void(Secret)> remove_folder_signal;
 private:
 	using server = websocketpp::server<asio_notls>;

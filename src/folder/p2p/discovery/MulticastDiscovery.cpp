@@ -18,6 +18,7 @@
 #include "src/Client.h"
 #include "src/folder/FolderGroup.h"
 #include "src/folder/p2p/P2PProvider.h"
+#include "src/folder/p2p/WSServer.h"
 
 namespace librevault {
 
@@ -32,7 +33,7 @@ MulticastSender::MulticastSender(MulticastDiscovery& parent, std::shared_ptr<Fol
 std::string MulticastSender::get_message() const {
 	if(message_.empty()) {
 		protocol::MulticastDiscovery message;
-		message.set_port(parent_.client_.config().getNet_listen().port);
+		message.set_port(parent_.client_.p2p_provider()->ws_server()->local_endpoint().port());
 		message.set_dir_hash(exchange_group_->secret().get_Hash().data(), exchange_group_->secret().get_Hash().size());
 		message.set_pubkey(parent_.client_.p2p_provider()->node_key().public_key().data(),
 			parent_.client_.p2p_provider()->node_key().public_key().size());
@@ -50,9 +51,10 @@ void MulticastSender::wait() {
 void MulticastSender::send() {
 	bool enabled = false;
 	if(parent_.bind_address_.is_v6())
-		enabled = parent_.client_.config().isMulticast6_enabled();
+		//enabled = parent_.client_.config().isMulticast6_enabled();
+		enabled = Config::get()->client()["multicast6_enabled"].asBool();
 	else
-		enabled = parent_.client_.config().isMulticast4_enabled();
+		enabled = Config::get()->client()["multicast4_enabled"].asBool();
 
 	if(enabled) {
 		parent_.socket_.async_send_to(boost::asio::buffer(get_message()), parent_.multicast_addr_, std::bind(&MulticastSender::wait, this));
@@ -128,10 +130,13 @@ void MulticastDiscovery::receive() {
 
 MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 	MulticastDiscovery(client) {
-	bind_address_ = client.config().getMulticast4_local_ip();
-	repeat_interval_ = client.config().getMulticast4_repeat_interval();
-	multicast_addr_.port(client.config().getMulticast4_port());
-	multicast_addr_.address(client.config().getMulticast4_ip());
+
+	bind_address_ = address_v4::any();
+	repeat_interval_ = seconds(Config::get()->client()["multicast4_repeat_interval"].asUInt64());
+
+	auto multicast_group_url = url(Config::get()->client()["multicast4_group"].asString());
+	multicast_addr_.port(multicast_group_url.port);
+	multicast_addr_.address(address::from_string(multicast_group_url.host));
 
 	socket_.open(boost::asio::ip::udp::v4());
 	start();
@@ -139,10 +144,13 @@ MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 
 MulticastDiscovery6::MulticastDiscovery6(Client& client) :
 	MulticastDiscovery(client) {
-	bind_address_ = client.config().getMulticast6_local_ip();
-	repeat_interval_ = client.config().getMulticast6_repeat_interval();
-	multicast_addr_.port(client.config().getMulticast6_port());
-	multicast_addr_.address(client.config().getMulticast6_ip());
+
+	bind_address_ = address_v6::any();
+	repeat_interval_ = seconds(Config::get()->client()["multicast6_repeat_interval"].asUInt64());
+
+	auto multicast_group_url = url(Config::get()->client()["multicast6_group"].asString());
+	multicast_addr_.port(multicast_group_url.port);
+	multicast_addr_.address(address::from_string(multicast_group_url.host));
 
 	socket_.open(boost::asio::ip::udp::v6());
 	socket_.set_option(boost::asio::ip::v6_only(true));

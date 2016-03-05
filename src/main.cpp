@@ -33,6 +33,7 @@ See on: https://librevault.com
 Usage:
   librevault [-v | -vv] [--data=<dir>]
   librevault gen-secret
+  librevault gen-config
   librevault derive <secret> <type>
   librevault (-h | --help)
   librevault --version
@@ -65,6 +66,15 @@ int main(int argc, char** argv) {
 		std::cout << s.derive(type);
 		return 0;
 	}
+
+	// Initializing config
+	fs::path appdata_path;
+	if(args["--data"].isString())
+		appdata_path = args["--data"].asString();
+	Config::init(appdata_path);
+
+	if(args["gen-config"].asBool())
+		std::cout << Config::get()->client_defaults().toStyledString();
 
 	// Okay, that's a bit of fun, actually.
 	std::cout

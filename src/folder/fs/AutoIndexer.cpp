@@ -27,7 +27,7 @@ AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		monitor_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
 	enqueue_files(dir.open_storage->pending_files());
 
-	monitor_.add_directory(dir_.open_path().string());
+	monitor_.add_directory(dir_.path().string());
 	monitor_operation();
 }
 
@@ -69,7 +69,7 @@ void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
 
 void AutoIndexer::bump_timer() {
 	if(index_timer_.expires_from_now() <= std::chrono::seconds(0)){
-		auto exp_timeout = std::chrono::milliseconds(dir_.folder_config().index_event_timeout);
+		auto exp_timeout = std::chrono::milliseconds(dir_.params().index_event_timeout);
 
 		index_timer_.expires_from_now(exp_timeout);
 		index_timer_.async_wait(std::bind(&AutoIndexer::monitor_index, this, std::placeholders::_1));

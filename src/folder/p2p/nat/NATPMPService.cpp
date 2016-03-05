@@ -23,8 +23,9 @@ namespace librevault {
 
 NATPMPService::NATPMPService(Client& client, P2PProvider& provider) :
 	Loggable(client, "NATPMPService"), client_(client), provider_(provider), maintain_timer_(client.network_ios()) {
-	set_lifetime(client_.config().getNatpmp_lifetime());
-	set_enabled(client_.config().isNatpmp_enabled());
+
+	reload_config();
+	Config::get()->config_changed.connect(std::bind(&NATPMPService::reload_config, this));
 }
 
 void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
@@ -39,7 +40,7 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 		natpmp_ec = sendnewportmappingrequest(&natpmp,
 			NATPMP_PROTOCOL_TCP,
 			provider_.ws_server()->local_endpoint().port(),
-			provider_.ws_server()->local_endpoint().port(),
+			provider_.ws_server()->local_endpoint().port(), // TODO: invoke on port change (maybe, signal?)
 			lifetime_.count());
 		log_->trace() << log_tag() << "sendnewportmappingrequest() = " << natpmp_ec;
 
@@ -70,12 +71,15 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 	}
 }
 
-void NATPMPService::set_enabled(bool enabled) {
-	if(enabled) client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));
-}
+void NATPMPService::reload_config() {
+	bool new_enabled = Config::get()->client()["natpmp_enabled"].asBool();
+	seconds new_lifetime = seconds(Config::get()->client()["natpmp_lifetime"].asUInt64());
 
-void NATPMPService::set_lifetime(std::chrono::seconds lifetime) {
-	lifetime_ = lifetime;
+	if((new_lifetime != lifetime_ || new_enabled != enabled_) && new_enabled)
+		client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));
+
+	enabled_ = new_enabled;
+	lifetime_ = new_lifetime;
 }
 
 } /* namespace librevault */

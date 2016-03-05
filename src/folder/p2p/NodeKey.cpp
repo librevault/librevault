@@ -49,8 +49,8 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	return private_key_;
 }
 
-void NodeKey::write_key(){
-	fs::ofstream ofs(client_.key_path(), std::ios_base::binary);
+void NodeKey::write_key() {
+	fs::ofstream ofs(Config::get()->paths().key_path, std::ios_base::binary);
 
 	ofs << "-----BEGIN EC PRIVATE KEY-----" << std::endl;
 	auto& group_params = private_key_.GetGroupParameters();

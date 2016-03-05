@@ -16,6 +16,7 @@
 #pragma once
 #include <src/control/Config.h>
 #include <librevault/SignedMeta.h>
+#include <src/control/FolderParams.h>
 #include "src/folder/AbstractFolder.h"
 
 namespace librevault {
@@ -37,8 +38,6 @@ public:
 		error() : error("FSFolder error") {}
 	};
 
-	using FolderConfig = Config::FolderConfig;
-
 	/* Components */
 	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
@@ -51,7 +50,7 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 	/* Constructors */
-	FSFolder(FolderConfig folder_config, Client& client);
+	FSFolder(FolderParams new_params, Client& client);
 	virtual ~FSFolder();
 
 	/* Actions */
@@ -67,23 +66,16 @@ public:
 	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
 
 	/* Makers */
-	std::string make_relpath(const fs::path& path) const;
+	std::string make_relpath(const fs::path& abspath) const;
 
 	/* Getters */
-	const FolderConfig& folder_config() const {return folder_config_;}
-
-	const Secret& secret() const {return secret_;}
-	std::string name() const;
-
-	const fs::path& open_path() const {return open_path_;}
-	const fs::path& chunk_path() const {return chunk_path_;}
-	const fs::path& db_path() const {return db_path_;}
-	const fs::path& asm_path() const {return asm_path_;}
+	const FolderParams& params() const {return folder_config_;}
+	const Secret& secret() const {return params().secret;}
+	const fs::path& path() const {return params().path;}
+	const fs::path& system_path() const {return params().system_path;}
 
 private:
-	const FolderConfig folder_config_;
-	const Secret secret_;
-	const fs::path open_path_, chunk_path_, db_path_, asm_path_;	// Paths
+	const FolderParams folder_config_;
 
 	bitfield_type make_bitfield(const Meta& meta) const;
 };

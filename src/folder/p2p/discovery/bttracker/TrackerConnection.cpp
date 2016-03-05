@@ -45,7 +45,8 @@ TrackerConnection::info_hash TrackerConnection::get_info_hash() const {
 TrackerConnection::peer_id TrackerConnection::get_peer_id() const {
 	TrackerConnection::peer_id pid;
 
-	std::string az_id = client_.config().getBttracker_azureus_id();
+	//std::string az_id = client_.config().getBttracker_azureus_id();
+	std::string az_id = Config::get()->client()["bttracker_azureus_id"].asString();
 	az_id.resize(8);
 
 	auto pubkey_bytes_left = pid.size() - az_id.size();

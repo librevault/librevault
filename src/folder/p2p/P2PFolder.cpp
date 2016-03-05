@@ -61,7 +61,7 @@ void P2PFolder::perform_handshake() {
 
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
-	message_struct.device_name = client_.config().getDevice_name();
+	message_struct.device_name = Config::get()->client()["client_name"].asString();
 
 	send_message(parser_.gen_Handshake(message_struct));
 	log_->debug() << log_tag() << "==> HANDSHAKE";
@@ -329,7 +329,7 @@ void P2PFolder::handle_BlockRequest(const blob& message_raw) {
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset;
 
-	folder_group()->request_chunk(shared_from_this(), message_struct.ct_hash, message_struct.offset, message_struct.length);
+	folder_group()->request_block(shared_from_this(), message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 void P2PFolder::handle_BlockReply(const blob& message_raw) {
 	log_->trace() << log_tag() << "handle_BlockReply()";

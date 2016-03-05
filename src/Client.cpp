@@ -23,19 +23,6 @@
 namespace librevault {
 
 Client::Client(std::map<std::string, docopt::value> args) {
-	// Initializing paths
-	if(args["--data"].isString())
-		appdata_path_ = args["--data"].asString();
-	else
-		appdata_path_ = default_appdata_path();
-
-	fs::create_directories(appdata_path_);
-
-	config_path_ = appdata_path_ / (Version::current().lowercase_name() + ".conf");
-	log_path_ = appdata_path_ / (Version::current().lowercase_name() + ".log");
-	key_path_ = appdata_path_ / "key.pem";
-	cert_path_ = appdata_path_ / "cert.pem";
-
 	// Initializing log
 	name_ = "Client";
 	switch(args["-v"].asLong()) {
@@ -50,7 +37,6 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
 
 	// Initializing components
-	config_ = std::make_unique<Config>(*this, config_path_);
 	p2p_provider_ = std::make_unique<P2PProvider>(*this);
 	//cloud_provider_ = std::make_unique<CloudProvider>(*this);
 
@@ -59,7 +45,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	control_server_->add_folder_signal.connect(std::bind(&Client::add_folder, this, std::placeholders::_1));
 	control_server_->remove_folder_signal.connect(std::bind(&Client::remove_folder, this, std::placeholders::_1));
 
-	for(auto& folder_config : config().folders()) {
+	for(auto& folder_config : Config::get()->folders()) {
 		add_folder(folder_config);
 	}
 }
@@ -76,9 +62,10 @@ void Client::init_log(spdlog::level::level_enum level) {
 #if(BOOST_OS_LINUX)
 		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(Version::current().name()));
 #endif
+		auto& log_path = Config::get()->paths().log_path;
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-			(log_path_.parent_path() / log_path_.stem()).generic_string(), // TODO: support filenames with multiple dots
-			log_path_.extension().generic_string().substr(1), 5 * 1024 * 1024, 6));
+			(log_path.parent_path() / log_path.stem()).generic_string(), // TODO: support filenames with multiple dots
+			log_path.extension().generic_string().substr(1), 5 * 1024 * 1024, 6));
 
 		log_ = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);
@@ -93,7 +80,6 @@ void Client::init_log(spdlog::level::level_enum level) {
 Client::~Client() {
 	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
 	p2p_provider_.reset();
-	config_.reset();
 }
 
 void Client::run() {
@@ -120,11 +106,11 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::add_folder(Config::FolderConfig folder_config) {
-	auto dir_ptr = std::make_shared<FSFolder>(folder_config, *this);
+void Client::add_folder(FolderParams folder_config) {
+	auto dir_ptr = std::make_shared<FSFolder>(std::move(folder_config), *this);
 	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr) {
-		config().add_folder(folder_config);
+		//config().add_folder(folder_config);   // TODO: Remove from config
 		group_ptr = std::make_shared<FolderGroup>(*this);
 		group_ptr->attach(dir_ptr);
 		hash_group_.insert({group_ptr->hash(), group_ptr});
@@ -137,7 +123,7 @@ void Client::add_folder(Config::FolderConfig folder_config) {
 
 void Client::remove_folder(Secret secret) {
 	hash_group_.erase(secret.get_Hash());
-	config().remove_folder(secret);
+	//config().remove_folder(secret);   // TODO: Add to config
 	folder_removed_signal(get_group(secret.get_Hash()));
 	log_->debug() << log_tag() << "Group unregistered: " << secret;
 }
@@ -158,25 +144,6 @@ std::vector<std::shared_ptr<FolderGroup>> Client::groups() const {
 
 P2PProvider* Client::p2p_provider() {
 	return p2p_provider_.get();
-}
-
-fs::path Client::default_appdata_path(){
-#if BOOST_OS_WINDOWS
-	return fs::path(getenv("APPDATA")) / Version::current().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
-#elif BOOST_OS_MACOS
-	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: error-checking
-#elif BOOST_OS_LINUX || BOOST_OS_UNIX
-	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return fs::path(xdg_ptr) / Version::current().name();
-	if(char* home_ptr = getenv("HOME"))
-		return fs::path(home_ptr) / ".config" / Version::current().name();
-	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return fs::path(home_ptr) / ".config" / Version::current().name();
-	return fs::path("/etc/xdg") / Version::current().name();
-#else
-	// Well, we will add some Android values here. And, maybe, others.
-	return fs::path(getenv("HOME")) / Version::current().name();
-#endif
 }
 
 } /* namespace librevault */

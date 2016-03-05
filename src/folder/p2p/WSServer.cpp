@@ -22,7 +22,7 @@ namespace librevault {
 
 WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, provider) {
 	// Acceptor initialization
-	url bind_url = client_.config().getNet_listen();
+	url bind_url = url(Config::get()->client()["p2p_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */

@@ -19,7 +19,7 @@
 namespace librevault {
 
 IgnoreList::IgnoreList(FSFolder& dir) : Loggable(dir), dir_(dir) {
-	set_ignored(dir_.folder_config().ignore_paths);
+	set_ignored(dir_.params().ignore_paths);
 
 	log_->debug() << log_tag() << "IgnoreList initialized";
 }
@@ -51,17 +51,12 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 	ignored_paths_.clear();
 
 	// Config paths
-	for(auto path : dir_.folder_config().ignore_paths) {
+	for(auto path : dir_.params().ignore_paths) {
 		add_ignored(path);
 	}
 
 	// Predefined paths
-	add_ignored(regex_escape(dir_.make_relpath(dir_.chunk_path())) + R"((?:\/(?:.*))?)");
-	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path())));
-	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path()) + "-journal"));
-	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path()) + "-wal"));
-	add_ignored(regex_escape(dir_.make_relpath(dir_.db_path()) + "-shm"));
-	add_ignored(regex_escape(dir_.make_relpath(dir_.asm_path())));
+	add_ignored(regex_escape(dir_.make_relpath(dir_.system_path())) + R"((?:\/(?:.*))?)");
 }
 
 std::regex IgnoreList::regex_escape_regex_ = std::regex("[.^$|()\\[\\]{}*+?\\\\]", std::regex::optimize);

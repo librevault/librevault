@@ -18,20 +18,14 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage"), chunk_path_(dir.chunk_path()) {
-	bool chunk_path_created = fs::create_directories(chunk_path_);
-#if BOOST_OS_WINDOWS
-	//SetFileAttributes() // Use SetFileAttributes to set chunk_path_ as HIDDEN.
-#endif
-	log_->debug() << log_tag() << "Block directory: " << chunk_path_ << (chunk_path_created ? " created" : "");
-}
+EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage") {}
 
 fs::path EncStorage::make_chunk_ct_name(const blob& ct_hash) const {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
 }
 
 fs::path EncStorage::make_chunk_ct_path(const blob& ct_hash) const {
-	return chunk_path_ / make_chunk_ct_name(ct_hash);
+	return dir_.system_path() / make_chunk_ct_name(ct_hash);
 }
 
 bool EncStorage::have_chunk(const blob& ct_hash) const {

@@ -32,8 +32,6 @@ public:
 	void remove_chunk(const blob& ct_hash);
 
 private:
-	const fs::path& chunk_path_;
-
 	fs::path make_chunk_ct_name(const blob& ct_hash) const;
 	fs::path make_chunk_ct_path(const blob& ct_hash) const;
 };

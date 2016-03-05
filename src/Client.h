@@ -19,6 +19,7 @@
 #include "util/multi_io_service.h"
 #include "src/control/Config.h"
 #include "src/folder/FolderGroup.h"
+#include "src/control/FolderParams.h"
 
 namespace librevault {
 
@@ -39,8 +40,6 @@ public:
 	void run();
 	void shutdown();
 
-	Config& config() {return *config_;}
-
 	io_service& ios() {return etc_ios_->ios();}
 	io_service& network_ios() {return network_ios_->ios();}
 	io_service& bulk_ios() {return bulk_ios_->ios();}
@@ -50,7 +49,7 @@ public:
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
 	// FolderGroup
-	void add_folder(Config::FolderConfig folder_config);
+	void add_folder(FolderParams params);
 	void remove_folder(Secret secret);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
@@ -59,8 +58,6 @@ public:
 
 	P2PProvider* p2p_provider();
 private:
-	std::unique_ptr<Config> config_;	// Configuration
-
 	/* Components */
 	std::unique_ptr<ControlServer> control_server_;
 

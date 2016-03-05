@@ -151,4 +151,6 @@ using blob = std::vector<byte>;
 
 using logger_ptr = std::shared_ptr<spdlog::logger>;
 
+using seconds = std::chrono::seconds;
+
 } /* namespace librevault */

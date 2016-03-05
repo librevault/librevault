@@ -18,12 +18,14 @@
 #include "src/folder/FolderGroup.h"
 #include "src/folder/fs/FSFolder.h"
 #include "src/folder/p2p/P2PFolder.h"
+#include <boost/property_tree/json_parser.hpp>
 
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
 		Loggable(client, "ControlServer"), client_(client), timer_(client_.ios()) {
-	url bind_url = client_.config().getControl_listen();
+	//url bind_url = client_.config().getControl_listen();
+	url bind_url = parse_url(Config::get()->client()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
@@ -124,7 +126,7 @@ ptree ControlServer::make_state_json() const {
 	ptree folders_json;
 	for(auto folder : client_.groups()) {
 		ptree folder_json;
-		folder_json.put("path", folder->fs_dir()->open_path());
+		folder_json.put("path", folder->fs_dir()->path());
 		folder_json.put("secret", (std::string)folder->secret());
 
 		// Peers
@@ -153,10 +155,8 @@ void ControlServer::send_control_json(const boost::system::error_code& ec) {
 
 		auto control_json = make_control_json();
 
-		for(auto conn_assignment : ws_server_assignment_) {
-			server::connection_ptr conn_ptr = conn_assignment.first;
-			conn_ptr->send(control_json);
-		}
+		for(auto conn_assignment : ws_server_assignment_)
+			conn_assignment->send(control_json);
 
 		timer_.expires_from_now(std::chrono::seconds(1));  // TODO: Replace with value from config.
 		timer_.async_wait(std::bind(&ControlServer::send_control_json, this, std::placeholders::_1));
@@ -182,7 +182,7 @@ void ControlServer::handle_control_json(const ptree& control_json) {
 void ControlServer::handle_add_folder_json(const ptree& folder_json) {
 	Config::FolderConfig folder_conf;
 	folder_conf.secret = Secret(folder_json.get<std::string>("secret"));
-	folder_conf.open_path = folder_json.get<fs::path>("open_path");
+	folder_conf.open_path = folder_json.get<fs::path>("path");
 
 	add_folder_signal(folder_conf);
 	send_control_json();

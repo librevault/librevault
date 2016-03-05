@@ -30,27 +30,31 @@
 
 namespace librevault {
 
-FSFolder::FSFolder(FolderConfig folder_config, Client& client) :
+FSFolder::FSFolder(FolderParams new_params, Client& client) :
 	AbstractFolder(client),
-		folder_config_(std::move(folder_config)),
-		secret_(folder_config_.secret),
+		folder_config_(std::move(new_params))  {
+	// Creating directories
+	bool path_created = fs::create_directories(params().path);
+	bool system_path_created = fs::create_directories(params().system_path);
+#if BOOST_OS_WINDOWS
+	//SetFileAttributes() // Use SetFileAttributes to set chunk_path_ as HIDDEN.
+#endif
 
-		open_path_(folder_config_.open_path),
-		chunk_path_(!folder_config_.chunk_path.empty() ? folder_config_.chunk_path : open_path_ / ".librevault"),
-		db_path_(!folder_config_.db_path.empty() ? folder_config_.db_path : chunk_path_ / "directory.db"),
-		asm_path_(!folder_config_.asm_path.empty() ? folder_config_.asm_path : chunk_path_) {
-	name_ = name();
-	log_->debug() << log_tag() << "New FSFolder: Key type=" << (char)secret_.get_type();
+	name_ = (!params().path.empty() ? params().path : params().system_path).string();
+	log_->debug() << log_tag() << "New FSFolder:"
+		<< " Key type=" << (char)params().secret.get_type()
+		<< " Path" << (path_created ? " created" : "") << "=" << params().path
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path;
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
 	index = std::make_unique<Index>(*this);
 
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
 	enc_storage = std::make_unique<EncStorage>(*this);
-	if(secret_.get_type() <= Secret::Type::ReadOnly){
+	if(params().secret.get_type() <= Secret::Type::ReadOnly){
 		open_storage = std::make_unique<OpenStorage>(*this);
 	}
-	if(secret_.get_type() <= Secret::Type::ReadWrite){
+	if(params().secret.get_type() <= Secret::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);
 		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
 	}
@@ -139,8 +143,8 @@ bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
 }
 
 /* Makers */
-std::string FSFolder::make_relpath(const fs::path& path) const {
-	return ::librevault::make_relpath(path, open_path());
+std::string FSFolder::make_relpath(const fs::path& abspath) const {
+	return ::librevault::make_relpath(abspath, path());
 }
 
 bitfield_type FSFolder::make_bitfield(const Meta& meta) const {
@@ -151,11 +155,6 @@ bitfield_type FSFolder::make_bitfield(const Meta& meta) const {
 			bitfield[bitfield_idx] = true;
 
 	return bitfield;
-}
-
-/* Getters */
-std::string FSFolder::name() const {
-	return open_path_.empty() ? chunk_path_.string() : open_path_.string();
 }
 
 } /* namespace librevault */

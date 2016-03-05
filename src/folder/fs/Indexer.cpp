@@ -38,7 +38,7 @@ void Indexer::index(const std::string& file_path){
 
 		try {
 			smeta = index_.get_Meta(Meta::make_path_id(file_path, secret_));
-			if(fs::last_write_time(fs::absolute(file_path, dir_.open_path())) == smeta.meta().mtime()) {
+			if(fs::last_write_time(fs::absolute(file_path, dir_.path())) == smeta.meta().mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(fs::filesystem_error& e){
@@ -77,7 +77,7 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	log_->debug() << log_tag() << "make_Meta(" << relpath << ")";
 	Meta old_meta, new_meta;
-	auto abspath = fs::absolute(relpath, dir_.open_path());
+	auto abspath = fs::absolute(relpath, dir_.path());
 
 	new_meta.set_path(relpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
@@ -108,7 +108,7 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 }
 
 Meta::Type Indexer::get_type(const fs::path& path) {
-	fs::file_status file_status = dir_.folder_config().preserve_symlinks ? fs::symlink_status(path) : fs::status(path);	// Preserves symlinks if such option is set.
+	fs::file_status file_status = dir_.params().preserve_symlinks ? fs::symlink_status(path) : fs::status(path);	// Preserves symlinks if such option is set.
 
 	switch(file_status.type()){
 		case fs::regular_file: return Meta::FILE;
@@ -138,9 +138,9 @@ void Indexer::update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::pa
 		meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
 	}
 #elif BOOST_OS_UNIX
-	if(dir_.folder_config().preserve_unix_attrib) {
+	if(dir_.params().preserve_unix_attrib) {
 		struct stat stat_buf; int stat_err = 0;
-		if(dir_.folder_config().preserve_symlinks)
+		if(dir_.params().preserve_symlinks)
 			stat_err = lstat(path.c_str(), &stat_buf);
 		else
 			stat_err = stat(path.c_str(), &stat_buf);
@@ -168,7 +168,7 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 		rabin_global_params = old_meta.rabin_global_params(secret_);
 	}else{
 		new_meta.set_algorithm_type(Meta::RABIN);
-		new_meta.set_strong_hash_type(dir_.folder_config().chunk_strong_hash_type);
+		new_meta.set_strong_hash_type(dir_.params().chunk_strong_hash_type);
 
 		new_meta.set_max_chunksize(8*1024*1024);
 		new_meta.set_min_chunksize(1*1024*1024);

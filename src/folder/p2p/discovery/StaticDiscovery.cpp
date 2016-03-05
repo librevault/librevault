@@ -32,7 +32,7 @@ StaticDiscovery::StaticDiscovery(Client& client) :
 StaticDiscovery::~StaticDiscovery() {}
 
 void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& node : group_ptr->fs_dir()->folder_config().nodes){
+	for(auto& node : group_ptr->fs_dir()->params().nodes){  // TODO: remove fs_dir
 		add_node(node, group_ptr);
 	}
 }

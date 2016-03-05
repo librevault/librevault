@@ -27,8 +27,7 @@ class NATPMPService : public PortMappingService, public Loggable {
 public:
 	NATPMPService(Client& client, P2PProvider& provider);
 
-	void set_enabled(bool enabled);
-	void set_lifetime(std::chrono::seconds lifetime);
+	void reload_config();
 
 protected:
 	Client& client_;
@@ -36,7 +35,7 @@ protected:
 
 	// Config values
 	bool enabled_;
-	std::chrono::seconds lifetime_;
+	seconds lifetime_;
 
 	// Weak timer
 	boost::asio::system_timer maintain_timer_;

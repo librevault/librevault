@@ -14,40 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifndef LIBREVAULT_GUI_OSXICONINTERFACE_H
+#define LIBREVAULT_GUI_OSXICONINTERFACE_H
 
-#include <QtWidgets>
-#ifdef Q_OS_MAC
-#   include <QMacToolbar>
-#endif
+void set_named_image(void* nstoolbaritem, void* str);
 
-class Pager : public QWidget {
-Q_OBJECT
-
-public:
-	Pager(QHBoxLayout* layout, QWidget* parent = 0);
-
-signals:
-	void pageSelected(int page);
-
-public:
-	int add_page();
-	void set_text(int page, const QString& text);
-	void set_icon(int page, const QIcon& icon);
-	void set_icon(int page, const QString& name);
-
-	int page_count() const;
-
-private slots:
-	void buttonClicked(int page);
-
-private:
-
-#ifndef Q_OS_MAC
-	QHBoxLayout* layout_;
-	std::vector<QToolButton*> buttons_;
-#else
-	QMacToolBar *toolbar;
-	std::vector<QMacToolBarItem*> buttons_;
-#endif
-};
+#endif //LIBREVAULT_GUI_OSXICONINTERFACE_H

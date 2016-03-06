@@ -13,8 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #include "Pager.h"
+
+#ifndef Q_OS_MAC
 
 Pager::Pager(QHBoxLayout* layout, QWidget* parent) : QWidget(parent), layout_(layout) {}
 
@@ -50,9 +51,17 @@ void Pager::set_icon(int page, const QIcon& icon) {
 	buttons_[page]->setIcon(icon);
 }
 
+void Pager::set_icon(int page, const QString& name) {}
+
+int Pager::page_count() const {
+	return (int)buttons_.size();
+}
+
 void Pager::buttonClicked(int page) {
 	for(int button_idx = 0; button_idx < buttons_.size(); button_idx++) {
 		buttons_[button_idx]->setChecked(button_idx == page);
 	}
 	emit pageSelected(page);
 }
+
+#endif

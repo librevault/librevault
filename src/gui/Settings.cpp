@@ -141,7 +141,7 @@ void Settings::process_ui_states() {
 void Settings::init_selector() {
 	int page;
 
-	pager = new Pager(ui->controlBar, parentWidget());
+	pager = new Pager(ui->controlBar, this);
 
 	page = pager->add_page();
 	pager->set_icon(page, page_icon((Page)page));

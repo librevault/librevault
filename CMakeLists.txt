@@ -231,6 +231,11 @@ if(WIN32)
 	target_link_libraries(${PROJECT_NAME} Iphlpapi)
 endif()
 
+## CoreFoundation
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")
+endif()
+
 if(BUILD_STATIC)
 #	target_link_libraries(${PROJECT_NAME} stdc++.a)
 #	target_link_libraries(${PROJECT_NAME} m.a)

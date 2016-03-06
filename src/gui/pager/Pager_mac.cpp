@@ -20,8 +20,6 @@
 
 Pager::Pager(QHBoxLayout* layout, QWidget* parent) : QWidget(parent) {
 	toolbar = new QMacToolBar(parent);
-	parent->window()->winId();
-	toolbar->attachToWindow(parent->window()->windowHandle());
 }
 
 int Pager::add_page() {
@@ -43,12 +41,20 @@ void Pager::set_icon(int page, const QIcon& icon) {
 	buttons_[page]->setIcon(icon);
 }
 
-void Pager::set_icon(int page, const QString& name) {
-	set_named_image(buttons_[page]->nativeToolBarItem(), NULL);
+void Pager::set_theme_icon(int page, const QString& name) {
+	QByteArray ba = name.toLatin1();
+	set_named_image(buttons_[page]->nativeToolBarItem(), (void*)ba.data());
 }
 
 int Pager::page_count() const {
 	return (int)buttons_.size();
+}
+
+void Pager::show() {
+	select_item(toolbar->nativeToolbar(), buttons_[0]->nativeToolBarItem());
+
+	parentWidget()->window()->winId();
+	toolbar->attachToWindow(parentWidget()->window()->windowHandle());
 }
 
 void Pager::buttonClicked(int page) {

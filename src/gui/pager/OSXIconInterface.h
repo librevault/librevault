@@ -18,5 +18,6 @@
 #define LIBREVAULT_GUI_OSXICONINTERFACE_H
 
 void set_named_image(void* nstoolbaritem, void* str);
+void select_item(void* nstoolbar, void* nstoolbaritem);
 
 #endif //LIBREVAULT_GUI_OSXICONINTERFACE_H

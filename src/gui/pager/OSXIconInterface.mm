@@ -14,42 +14,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <AppKit/NSToolbar.h>
+#include <AppKit/NSToolbarItem.h>
+#include <AppKit/NSImage.h>
+#include "OSXIconInterface.h"
 
-#include <QtWidgets>
-#ifdef Q_OS_MAC
-#   include <QMacToolbar>
-#endif
+void set_named_image(void* nstoolbaritem, void* str) {
+	NSToolbarItem* item = (NSToolbarItem*)nstoolbaritem;
+	const char* c_str = (const char*)str;
 
-class Pager : public QWidget {
-Q_OBJECT
+	NSString *nsstr = [NSString stringWithUTF8String:c_str];
+	NSImage* image = [NSImage imageNamed:nsstr];
+	item.image = image;
+}
 
-public:
-	Pager(QHBoxLayout* layout, QWidget* parent = 0);
+void select_item(void* nstoolbar, void* nstoolbaritem) {
+	NSToolbar* toolbar = (NSToolbar*)nstoolbar;
+	NSToolbarItem* item = (NSToolbarItem*)nstoolbaritem;
+	NSString* item_id = item.itemIdentifier;
 
-signals:
-	void pageSelected(int page);
-
-public:
-	int add_page();
-	void set_text(int page, const QString& text);
-	void set_icon(int page, const QIcon& icon);
-	void set_theme_icon(int page, const QString& name);
-
-	int page_count() const;
-
-	void show();
-
-private slots:
-	void buttonClicked(int page);
-
-private:
-
-#ifndef Q_OS_MAC
-	QHBoxLayout* layout_;
-	std::vector<QToolButton*> buttons_;
-#else
-	QMacToolBar *toolbar;
-	std::vector<QMacToolBarItem*> buttons_;
-#endif
-};
+	[toolbar setSelectedItemIdentifier:item_id];
+}

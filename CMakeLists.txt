@@ -61,11 +61,10 @@ set(Qt_COMPONENTS
 		WebSockets
 		WebKitWidgets
 		)
-if(BUILD_OPTWARE)
-	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-else()
-	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
+find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 find_package(Threads REQUIRED)
 
 # Translation
@@ -90,6 +89,9 @@ add_executable(${PROJECT_NAME} ${SRCS})
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(${PROJECT_NAME} Qt5::MacExtras)
+endif()
 
 # LVCommon
 if(BUILD_STATIC)

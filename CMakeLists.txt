@@ -13,9 +13,6 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
 #============================================================================
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-if(WITH_COTIRE)
-	include(cotire)
-endif()
 include(GNUInstallDirs)
 
 #============================================================================
@@ -226,14 +223,6 @@ endif()
 
 # Header-only libs
 target_include_directories(${PROJECT_NAME} PRIVATE "contrib/dir_monitor/include")
-
-#============================================================================
-# Cotire invocation
-#============================================================================
-if(WITH_COTIRE)
-	set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "src/pch.h")
-	cotire(${PROJECT_NAME})
-endif()
 
 #============================================================================
 # Documentation generation

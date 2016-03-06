@@ -122,12 +122,12 @@ public:
 
 	// Encryptors/decryptors
 	std::string path(const Secret& secret) const;
-	void set_path(const std::string& path, const Secret& secret);   // Also, computes and sets path_id
+	void set_path(std::string path, const Secret& secret);   // Also, computes and sets path_id
 	AES_CBC_DATA& raw_path() {return path_;}
 	const AES_CBC_DATA& raw_path() const {return path_;}
 
 	std::string symlink_path(const Secret& secret) const;
-	void set_symlink_path(const std::string& path, const Secret& secret);
+	void set_symlink_path(std::string path, const Secret& secret);
 	AES_CBC_DATA& raw_symlink_path() {return symlink_path_;}
 	const AES_CBC_DATA& raw_symlink_path() const {return symlink_path_;}
 

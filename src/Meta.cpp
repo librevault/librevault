@@ -96,7 +96,7 @@ std::string Meta::path(const Secret& secret) const {
 	blob result = path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
-void Meta::set_path(const std::string& path, const Secret& secret) {
+void Meta::set_path(std::string path, const Secret& secret) {
 	set_path_id(make_path_id(path, secret));
 	path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
@@ -105,7 +105,7 @@ std::string Meta::symlink_path(const Secret& secret) const {
 	blob result = symlink_path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
-void Meta::set_symlink_path(const std::string& path, const Secret& secret) {
+void Meta::set_symlink_path(std::string path, const Secret& secret) {
 	symlink_path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
 

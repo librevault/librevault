@@ -19,6 +19,7 @@
 #include <QToolButton>
 #include <QJsonObject>
 #include <QUrl>
+#include <src/gui/pager/Pager.h>
 #include "src/pch.h"
 #include "StartupInterface.h"
 
@@ -44,7 +45,7 @@ signals:
 	void newConfigIssued(QJsonObject config_json);
 
 public slots:
-	void selectPage(Page page);
+	void selectPage(int page);
 	void retranslateUi();
 	void handleControlJson(QJsonObject control_json);
 
@@ -59,8 +60,6 @@ protected:
 
 	// Selector
 	void init_selector();
-	void add_page_selector(Page page);
-	std::map<Page, QToolButton*> buttons;
 	QString page_name(Page page);
 	QIcon page_icon(Page page);
 
@@ -73,6 +72,7 @@ private slots:
 	void cancelPressed();
 
 protected:
+	Pager* pager;
 	std::unique_ptr<StartupInterface> startup_interface;
 	QUrl net_listen;
 };

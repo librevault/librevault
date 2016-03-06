@@ -31,16 +31,13 @@ Settings::Settings(QWidget* parent) :
 
 Settings::~Settings() {}
 
-void Settings::selectPage(Page page) {
-	for(auto selector_button : buttons) {
-		selector_button.second->setChecked(page == selector_button.first);
-	}
-	ui->stackedWidget->setCurrentIndex((int)page);
+void Settings::selectPage(int page) {
+	ui->stackedWidget->setCurrentIndex(page);
 }
 
 void Settings::retranslateUi() {
-	for(auto selector_button : buttons) {
-		selector_button.second->setText(page_name(selector_button.first));
+	for(int page = 0; page < pager->page_count(); page++) {
+		pager->set_text(page, page_name((Page)page));
 	}
 	ui->retranslateUi(this);
 }
@@ -142,33 +139,20 @@ void Settings::process_ui_states() {
 }
 
 void Settings::init_selector() {
-	add_page_selector(Page::PAGE_GENERAL);
-	add_page_selector(Page::PAGE_ACCOUNT);
-	add_page_selector(Page::PAGE_NETWORK);
-	add_page_selector(Page::PAGE_ADVANCED);
-}
+	int page;
 
-void Settings::add_page_selector(Page page) {
-	auto toolButton = new QToolButton(this);
-	buttons.insert({page, toolButton});
+	pager = new Pager(ui->controlBar, parentWidget());
 
-	QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-	sizePolicy.setHorizontalStretch(0);
-	sizePolicy.setVerticalStretch(0);
-	sizePolicy.setHeightForWidth(toolButton->sizePolicy().hasHeightForWidth());
-	toolButton->setSizePolicy(sizePolicy);
+	page = pager->add_page();
+	pager->set_icon(page, page_icon((Page)page));
+	page = pager->add_page();
+	pager->set_icon(page, page_icon((Page)page));
+	page = pager->add_page();
+	pager->set_icon(page, page_icon((Page)page));
+	page = pager->add_page();
+	pager->set_icon(page, page_icon((Page)page));
 
-	toolButton->setIcon(page_icon(page));
-	toolButton->setIconSize(QSize(32, 32));
-
-	toolButton->setCheckable(true);
-	toolButton->setChecked(page == Page::PAGE_GENERAL);
-	toolButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-	ui->controlBar->addWidget(toolButton);
-	connect(toolButton, &QToolButton::clicked, this, [=](){
-		selectPage(page);
-	});
+	connect(pager, &Pager::pageSelected, this, &Settings::selectPage);
 }
 
 QString Settings::page_name(Page page) {

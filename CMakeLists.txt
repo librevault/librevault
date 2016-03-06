@@ -234,6 +234,7 @@ endif()
 ## CoreFoundation
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")
+	target_link_libraries(${PROJECT_NAME} "-framework CoreServices")
 endif()
 
 if(BUILD_STATIC)

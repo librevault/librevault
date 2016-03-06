@@ -114,9 +114,17 @@ target_link_libraries(lvcommon-shared PRIVATE ${PROTOBUF_LIBRARIES})
 target_link_libraries(lvcommon-static PRIVATE libprotobuf.a)
 
 ### CryptoPP
-find_package(CryptoPP 5.6.3 REQUIRED)
-target_link_libraries(lvcommon-static PRIVATE cryptopp-static)
-target_link_libraries(lvcommon-shared PRIVATE cryptopp-shared)
+find_package(CryptoPP 5.6.3 CONFIG)
+if(CryptoPP_FOUND)
+	target_link_libraries(lvcommon-static cryptopp-static)
+	target_link_libraries(lvcommon-shared cryptopp-shared)
+else()
+	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
+
+	target_include_directories(${PROJECT_NAME} ${CRYPTOPP_INCLUDE_DIRS})
+	target_link_libraries(lvcommon-static ${CRYPTOPP_LIBRARIES})
+	target_link_libraries(lvcommon-shared ${CRYPTOPP_LIBRARIES})
+endif()
 
 #============================================================================
 # Install

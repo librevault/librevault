@@ -41,7 +41,7 @@ void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
 	downloader_->notify_local_meta(revision, bitfield);
 
 	// Broadcast to all attached P2PDirectories
-	std::shared_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
+	std::unique_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
 	for(auto p2p_dir : p2p_dirs_) {
 		p2p_dir->post_have_meta(revision, bitfield);
 	}
@@ -50,7 +50,7 @@ void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
 void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash) {
 	downloader_->notify_local_chunk(ct_hash);
 
-	std::shared_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
+	std::unique_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
 
 	for(auto p2p_dir : p2p_dirs_) {
 		p2p_dir->post_have_chunk(ct_hash);
@@ -146,12 +146,12 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 }
 
 bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
-	std::shared_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
+	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
 	return p2p_dirs_endpoints_.find(endpoint) != p2p_dirs_endpoints_.end();
 }
 
 bool FolderGroup::have_p2p_dir(const blob& pubkey) {
-	std::shared_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
+	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
 	return p2p_dirs_pubkeys_.find(pubkey) != p2p_dirs_pubkeys_.end();
 }
 

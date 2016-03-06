@@ -88,7 +88,7 @@ private:
 	std::shared_ptr<Downloader> downloader_;
 
 	/* Members */
-	mutable std::shared_timed_mutex dirs_mtx_;
+	mutable std::mutex dirs_mtx_;
 
 	std::shared_ptr<FSFolder> fs_dir_;
 	std::set<std::shared_ptr<P2PFolder>> p2p_dirs_;

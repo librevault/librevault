@@ -178,7 +178,7 @@ if(CryptoPP_FOUND)
 else()
 	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
 
-	target_include_directories(${PROJECT_NAME} ${CRYPTOPP_INCLUDE_DIRS})
+	target_include_directories(${PROJECT_NAME} PUBLIC ${CRYPTOPP_INCLUDE_DIRS})
 	target_link_libraries(${PROJECT_NAME} ${CRYPTOPP_LIBRARIES})
 endif()
 

@@ -111,12 +111,13 @@ endif()
 #	target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 #endif()
 
-# Docopt
-find_package(spdlog)
-if(NOT spdlog_FOUND)
-	add_subdirectory(contrib/spdlog)
-endif()
-target_link_libraries(${PROJECT_NAME} spdlog)
+# Spdlog
+#find_package(spdlog)
+#if(NOT spdlog_FOUND)
+#	add_subdirectory(contrib/spdlog)
+#endif()
+#target_link_libraries(${PROJECT_NAME} spdlog)
+target_include_directories(${PROJECT_NAME} PRIVATE contrib/spdlog/include)
 
 # Docopt
 find_package(docopt)

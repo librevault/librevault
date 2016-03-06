@@ -21,6 +21,10 @@
 #include <QDesktopServices>
 #include <QDebug>
 
+#ifdef Q_OS_MAC
+void qt_mac_set_dock_menu(QMenu *menu);
+#endif
+
 MainWindow::MainWindow(Client& client, QWidget* parent) :
 		QMainWindow(parent),
 		client_(client),
@@ -149,7 +153,7 @@ void MainWindow::init_tray() {
 	tray_context_menu.addSeparator();
 	tray_context_menu.addAction(exit_action);
 #ifdef Q_OS_MAC
-	qt_mac_set_dock_menu(tray_context_menu);
+	qt_mac_set_dock_menu(&tray_context_menu);
 #endif
 	tray_icon.setContextMenu(&tray_context_menu);
 

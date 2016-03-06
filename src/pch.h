@@ -15,9 +15,6 @@
  */
 #pragma once
 
-// Cryptodiff
-#include <cryptodiff.h>
-
 // Standard C++ Libraries
 #include <algorithm>
 #include <array>

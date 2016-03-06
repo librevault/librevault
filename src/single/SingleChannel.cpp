@@ -18,11 +18,11 @@
 
 SingleChannel::SingleChannel() :
 		QUdpSocket() {
-	bool bound = bind(QHostAddress::LocalHost, 61346);
+	bool bound = bind(QHostAddress::LocalHost, 42343);
 	if(bound) {
 		connect(this, &SingleChannel::readyRead, this, &SingleChannel::datagramReceived);
 	}else{
-		writeDatagram("show", QHostAddress::LocalHost, 61346);
+		writeDatagram("show", QHostAddress::LocalHost, 42343);
 		exit(1);
 	}
 }

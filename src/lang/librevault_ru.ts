@@ -357,7 +357,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <message>
         <location filename="../gui/Settings.ui" line="173"/>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
-        <translation type="unfinished">Войдите с учётной записью Librevault Cloud, чтобы синхронизировать папки со всеми вашими устройствами</translation>
+        <translation>Войдите с учётной записью Librevault Cloud, чтобы синхронизировать папки со всеми вашими устройствами</translation>
     </message>
     <message>
         <location filename="../gui/Settings.ui" line="196"/>

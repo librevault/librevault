@@ -13,9 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../../pch.h"
-#include "../../util/Loggable.h"
 #pragma once
+#include <websocketpp/config/asio.hpp>
+#include <websocketpp/config/asio_client.hpp>
+#include <websocketpp/server.hpp>
+#include <websocketpp/client.hpp>
+#include <websocketpp/logger/stub.hpp>
 
 namespace librevault {
 

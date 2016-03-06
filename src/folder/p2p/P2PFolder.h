@@ -17,6 +17,7 @@
 #include "src/folder/RemoteFolder.h"
 #include "P2PProvider.h"
 #include <librevault/protocol/V1Parser.h>
+#include <websocketpp/common/connection_hdl.hpp>
 
 namespace librevault {
 

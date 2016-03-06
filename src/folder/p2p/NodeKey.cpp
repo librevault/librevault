@@ -15,6 +15,7 @@
  */
 #include "NodeKey.h"
 #include "../../Client.h"
+#include <openssl/pem.h>
 
 namespace librevault {
 

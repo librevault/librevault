@@ -23,16 +23,8 @@
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/AES_CBC.h>
 
-// dir_monitor
-#include <dir_monitor/dir_monitor.hpp>
-
 // spdlog
 #include <spdlog/spdlog.h>
-
-// OpenSSL
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/ssl.h>
 
 // Crypto++
 #include <cryptopp/aes.h>
@@ -47,13 +39,6 @@
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/sha3.h>
-
-// Websocket++
-#include <websocketpp/config/asio.hpp>
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/server.hpp>
-#include <websocketpp/client.hpp>
-#include <websocketpp/logger/stub.hpp>
 
 // Boost
 #include <boost/algorithm/string.hpp>

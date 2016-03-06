@@ -14,10 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
+#include "src/pch.h"
 #include "Index.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
+
+#include <dir_monitor/dir_monitor.hpp>
 
 namespace librevault {
 

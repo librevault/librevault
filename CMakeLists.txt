@@ -116,8 +116,8 @@ target_link_libraries(lvcommon-static PRIVATE libprotobuf.a)
 ### CryptoPP
 find_package(CryptoPP 5.6.3 CONFIG)
 if(CryptoPP_FOUND)
-	target_link_libraries(lvcommon-static cryptopp-static)
-	target_link_libraries(lvcommon-shared cryptopp-shared)
+	target_link_libraries(lvcommon-static PRIVATE cryptopp-static)
+	target_link_libraries(lvcommon-shared PRIVATE cryptopp-shared)
 else()
 	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
 

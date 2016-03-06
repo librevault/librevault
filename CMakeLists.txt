@@ -121,9 +121,10 @@ if(CryptoPP_FOUND)
 else()
 	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
 
-	target_include_directories(${PROJECT_NAME} ${CRYPTOPP_INCLUDE_DIRS})
-	target_link_libraries(lvcommon-static ${CRYPTOPP_LIBRARIES})
-	target_link_libraries(lvcommon-shared ${CRYPTOPP_LIBRARIES})
+	target_include_directories(lvcommon-static PRIVATE ${CRYPTOPP_INCLUDE_DIRS})
+	target_include_directories(lvcommon-shared PRIVATE ${CRYPTOPP_INCLUDE_DIRS})
+	target_link_libraries(lvcommon-static PRIVATE ${CRYPTOPP_LIBRARIES})
+	target_link_libraries(lvcommon-shared PRIVATE ${CRYPTOPP_LIBRARIES})
 endif()
 
 #============================================================================

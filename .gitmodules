@@ -18,3 +18,7 @@
 	path = contrib/libnatpmp
 	url = https://github.com/Librevault/libnatpmp.git
 	branch = master
+[submodule "contrib/websocketpp"]
+	path = contrib/websocketpp
+	url = https://github.com/Librevault/websocketpp
+	branch = master

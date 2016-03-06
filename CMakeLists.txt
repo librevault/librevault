@@ -103,6 +103,10 @@ else()
 	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
 endif()
 
+# WebSocket++
+add_subdirectory("contrib/websocketpp")
+target_include_directories(${PROJECT_NAME} PRIVATE contrib/websocketpp)
+
 # Pthreads
 #if(BUILD_STATIC)
 #	target_link_libraries(${PROJECT_NAME} pthread.a)

@@ -165,19 +165,27 @@ target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} librevault-protobuf)
 
 # CryptoPP
-find_package(CryptoPP 5.6.3 REQUIRED)
-if(BUILD_STATIC)
-	target_link_libraries(${PROJECT_NAME} cryptopp-static)
+find_package(CryptoPP 5.6.3 CONFIG)
+if(CryptoPP_FOUND)
+	if(BUILD_STATIC)
+		target_link_libraries(${PROJECT_NAME} cryptopp-static)
+	else()
+		target_link_libraries(${PROJECT_NAME} cryptopp-shared)
+	endif()
 else()
-	target_link_libraries(${PROJECT_NAME} cryptopp-shared)
+	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
+
+	target_include_directories(${PROJECT_NAME} ${CRYPTOPP_INCLUDE_DIRS})
+	target_link_libraries(${PROJECT_NAME} ${CRYPTOPP_LIBRARIES})
 endif()
 
 # libnatpmp
-find_library(libnatpmp_LIBRARIES natpmp)
-target_link_libraries(${PROJECT_NAME} ${libnatpmp_LIBRARIES})
-
-if(WIN32)
-	add_definitions(-DNATPMP_STATICLIB)
+find_library(libnatpmp_LIBRARIES libnatpmp)
+if(NOT libnatpmp_FOUND)
+	add_subdirectory(contrib/libnatpmp)
+	target_link_libraries(${PROJECT_NAME} natpmp)
+else()
+	target_link_libraries(${PROJECT_NAME} ${libnatpmp_LIBRARIES})
 endif()
 
 # OpenSSL

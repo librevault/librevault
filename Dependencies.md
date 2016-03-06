@@ -20,6 +20,13 @@ Third-party libraries
 
 - SQLite - Public domain
 
+CMake Modules
+-------------
+- cotire - MIT
+- FindSqlite3 - New BSD License
+- FindCryptoPP - MIT
+- GetGitRevisionDescription - Boost Software License
+
 Own libraries
 -------------
 - LVCommon - Not decided yet

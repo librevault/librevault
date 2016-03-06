@@ -32,6 +32,7 @@ Config::Config(fs::path appdata_path) {
 	paths_.cert_path = paths_.appdata_path / "cert.pem";
 
 	make_defaults();
+	load();
 }
 
 Config::~Config() {
@@ -60,26 +61,26 @@ void Config::make_defaults() {
 	client_defaults_["p2p_listen"] = "[::]:42345";
 	client_defaults_["natpmp_enabled"] = true;
 	client_defaults_["natpmp_lifetime"] = 3600;
-	client_defaults_["static_discovery_repeat_interval"] = 30;
-	client_defaults_["multicast4_discovery_enabled"] = true;
-	client_defaults_["multicast4_discovery_group"] = "239.192.152.144:28914";
-	client_defaults_["multicast4_discovery_repeat_interval"] = 30;
-	client_defaults_["multicast6_discovery_enabled"] = true;
-	client_defaults_["multicast6_discovery_group"] = "[ff08::BD02]:28914";
-	client_defaults_["multicast6_discovery_repeat_interval"] = 30;
-	client_defaults_["bttracker_discovery_enabled"] = true;
-	client_defaults_["bttracker_discovery_num_want"] = 30;
-	client_defaults_["bttracker_discovery_min_interval"] = 15;
-	client_defaults_["bttracker_discovery_azureus_id"] = "-LV0001-";
-	client_defaults_["bttracker_discovery_reconnect_interval"] = 30;
-	client_defaults_["bttracker_discovery_packet_timeout"] = 10;
+	client_defaults_["predef_repeat_interval"] = 30;
+	client_defaults_["multicast4_enabled"] = true;
+	client_defaults_["multicast4_group"] = "239.192.152.144:28914";
+	client_defaults_["multicast4_repeat_interval"] = 30;
+	client_defaults_["multicast6_enabled"] = true;
+	client_defaults_["multicast6_group"] = "[ff08::BD02]:28914";
+	client_defaults_["multicast6_repeat_interval"] = 30;
+	client_defaults_["bttracker_enabled"] = true;
+	client_defaults_["bttracker_num_want"] = 30;
+	client_defaults_["bttracker_min_interval"] = 15;
+	client_defaults_["bttracker_azureus_id"] = "-LV0001-";
+	client_defaults_["bttracker_reconnect_interval"] = 30;
+	client_defaults_["bttracker_packet_timeout"] = 10;
 
 	//client_defaults_["bttracker_discovery_trackers"].append("udp://discovery.librevault.com:42340");  // TODO: Soon, guys!
-	client_defaults_["bttracker_discovery_trackers"].append("udp://tracker.openbittorrent.com:80");
-	client_defaults_["bttracker_discovery_trackers"].append("udp://open.demonii.com:1337");
-	client_defaults_["bttracker_discovery_trackers"].append("udp://tracker.coppersurfer.tk:6969");
-	client_defaults_["bttracker_discovery_trackers"].append("udp://tracker.leechers-paradise.org:6969");
-	client_defaults_["bttracker_discovery_trackers"].append("udp://tracker.opentrackr.org:1337");
+	client_defaults_["bttracker_trackers"].append("udp://tracker.openbittorrent.com:80");
+	client_defaults_["bttracker_trackers"].append("udp://open.demonii.com:1337");
+	client_defaults_["bttracker_trackers"].append("udp://tracker.coppersurfer.tk:6969");
+	client_defaults_["bttracker_trackers"].append("udp://tracker.leechers-paradise.org:6969");
+	client_defaults_["bttracker_trackers"].append("udp://tracker.opentrackr.org:1337");
 
 	/* folders_defaults_ */
 	folders_defaults_.clear();

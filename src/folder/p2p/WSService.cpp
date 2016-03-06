@@ -101,7 +101,7 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 	log_->trace() << log_tag() << "on_message()";
 
 	try {
-		blob message_blob = blob(std::make_move_iterator(message_raw.begin()), std::make_move_iterator(message_raw.end()));
+		blob message_blob = blob(message_raw.begin(), message_raw.end());
 		dir_ptr_from_hdl(hdl)->handle_message(message_blob);
 	}catch(std::runtime_error& e) {
 		log_->trace() << log_tag() << "on_message e:" << e.what();

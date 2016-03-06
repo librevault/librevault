@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "include/librevault/protocol/V1Parser.h"
-#include "WireProtocol.pb.h"
+#include "V1Protocol.pb.h"
 
 namespace librevault {
 

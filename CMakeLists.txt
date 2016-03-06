@@ -112,7 +112,10 @@ endif()
 #endif()
 
 # Docopt
-find_package(docopt PATHS contrib/docopt)
+find_package(docopt)
+if(NOT docopt_FOUND)
+	add_subdirectory(contrib/docopt)
+endif()
 target_link_libraries(${PROJECT_NAME} docopt_s)
 
 # Boost

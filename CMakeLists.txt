@@ -112,6 +112,13 @@ endif()
 #endif()
 
 # Docopt
+find_package(spdlog)
+if(NOT spdlog_FOUND)
+	add_subdirectory(contrib/spdlog)
+endif()
+target_link_libraries(${PROJECT_NAME} spdlog)
+
+# Docopt
 find_package(docopt)
 if(NOT docopt_FOUND)
 	add_subdirectory(contrib/docopt)

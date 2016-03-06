@@ -9,9 +9,10 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #pragma once
-#include <memory>
-#include <vector>
 #include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace librevault {
 namespace crypto {

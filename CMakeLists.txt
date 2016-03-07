@@ -199,7 +199,7 @@ target_link_libraries(librevault-protobuf PUBLIC ${PROTOBUF_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} librevault-protobuf)
 
 # CryptoPP
-find_package(CryptoPP 5.6.3 CONFIG)
+find_package(CryptoPP 5.6.3 QUIET CONFIG)
 if(CryptoPP_FOUND)
 	if(BUILD_STATIC)
 		target_link_libraries(${PROJECT_NAME} cryptopp-static)

@@ -217,7 +217,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 
 	// Attaching to FolderGroup
 	auto group_ptr = folder_group_.lock();
-	if(folder_group_.lock())
+	if(group_ptr)
 		group_ptr->attach(shared_from_this());
 	else throw FolderGroup::attach_error();
 
@@ -229,7 +229,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;
 
-	folder_group_.lock()->handle_handshake(shared_from_this());
+	group_ptr->handle_handshake(shared_from_this());
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {

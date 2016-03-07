@@ -22,7 +22,6 @@ Third-party libraries
 
 CMake Modules
 -------------
-- cotire - MIT
 - FindSqlite3 - New BSD License
 - FindCryptoPP - MIT
 - GetGitRevisionDescription - Boost Software License

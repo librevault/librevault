@@ -23,13 +23,7 @@ AbstractFolder::AbstractFolder(Client& client) :
 AbstractFolder::~AbstractFolder() {}
 
 std::shared_ptr<FolderGroup> AbstractFolder::folder_group() {
-	auto group_ptr = folder_group_.lock();
-	if(group_ptr)
-		return group_ptr;
-	else {
-		log_->error() << log_tag() << "Folder group is not available (Application error)";
-		throw error("Folder group is not available (Application error)");
-	}
+	return std::shared_ptr<FolderGroup>(folder_group_);
 }
 
 std::string AbstractFolder::path_id_readable(const blob& path_id) {

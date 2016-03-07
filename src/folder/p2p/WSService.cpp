@@ -114,9 +114,13 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	if(dir_ptr) {
-		auto folder_group = dir_ptr->folder_group();
-		if(folder_group)
-			folder_group->detach(dir_ptr);
+		try {
+			auto folder_group = dir_ptr->folder_group();
+			if(folder_group)
+				folder_group->detach(dir_ptr);
+		}catch(const std::bad_weak_ptr& e){
+			log_->debug() << log_tag() << "on_disconnect() e:" << e.what();
+		}
 	}
 	ws_assignment_.erase(hdl);
 }

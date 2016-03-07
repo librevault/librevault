@@ -73,8 +73,11 @@ int main(int argc, char** argv) {
 		appdata_path = args["--data"].asString();
 	Config::init(appdata_path);
 
-	if(args["gen-config"].asBool())
+	if(args["gen-config"].asBool()) {
 		std::cout << Config::get()->client_defaults().toStyledString();
+		return 0;
+	}
+
 
 	// Okay, that's a bit of fun, actually.
 	std::cout

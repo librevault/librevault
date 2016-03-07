@@ -59,14 +59,22 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 	add_ignored(regex_escape(dir_.make_relpath(dir_.system_path())) + R"((?:\/(?:.*))?)");
 }
 
-std::regex IgnoreList::regex_escape_regex_ = std::regex("[.^$|()\\[\\]{}*+?\\\\]", std::regex::optimize);
-std::string IgnoreList::regex_escape_replace_ = "\\&";
+std::string IgnoreList::regex_escape(std::string str_to_escape) {
+	boost::replace_all(str_to_escape, "\\", "\\\\");
+	boost::replace_all(str_to_escape, "^", "\\^");
+	boost::replace_all(str_to_escape, ".", "\\.");
+	boost::replace_all(str_to_escape, "$", "\\$");
+	boost::replace_all(str_to_escape, "|", "\\|");
+	boost::replace_all(str_to_escape, "(", "\\(");
+	boost::replace_all(str_to_escape, ")", "\\)");
+	boost::replace_all(str_to_escape, "[", "\\[");
+	boost::replace_all(str_to_escape, "]", "\\]");
+	boost::replace_all(str_to_escape, "*", "\\*");
+	boost::replace_all(str_to_escape, "+", "\\+");
+	boost::replace_all(str_to_escape, "?", "\\?");
+	boost::replace_all(str_to_escape, "/", "\\/");
 
-std::string IgnoreList::regex_escape(const std::string& str_to_escape) {
-	return std::regex_replace(str_to_escape,
-		regex_escape_regex_,
-		regex_escape_replace_,
-		std::regex_constants::match_default | std::regex_constants::format_sed);
+	return str_to_escape;
 }
 
 } /* namespace librevault */

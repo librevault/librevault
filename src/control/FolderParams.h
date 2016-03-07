@@ -30,6 +30,9 @@ struct FolderParams {
 		preserve_windows_attrib(json_params["preserve_windows_attrib"].asBool()),
 		preserve_symlinks(json_params["preserve_symlinks"].asBool()),
 		chunk_strong_hash_type(Meta::StrongHashType(json_params["chunk_strong_hash_type"].asInt())) {
+
+		if(system_path.empty()) system_path = path / ".librevault";
+
 		for(auto ignore_path : json_params["ignore_paths"])
 			ignore_paths.push_back(ignore_path.asString());
 		for(auto node : json_params["nodes"])

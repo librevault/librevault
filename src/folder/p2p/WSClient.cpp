@@ -38,6 +38,7 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 }
 
 void WSClient::connect(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
+	log_->trace() << log_tag() << "connect(" << (std::string)node_url << ")";
 	websocketpp::lib::error_code ec;
 	node_url.scheme = "wss";
 	node_url.query = "/";
@@ -79,6 +80,8 @@ void WSClient::on_tcp_pre_init(websocketpp::connection_hdl hdl) {
 }
 
 void WSClient::on_tcp_post_init(websocketpp::connection_hdl hdl) {
+	log_->trace() << log_tag() << "on_tcp_post_init()";
+
 	auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
 
 	try {

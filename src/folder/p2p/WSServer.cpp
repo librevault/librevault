@@ -57,6 +57,7 @@ void WSServer::on_tcp_pre_init(websocketpp::connection_hdl hdl) {
 }
 
 void WSServer::on_tcp_post_init(websocketpp::connection_hdl hdl) {
+	log_->trace() << log_tag() << "on_tcp_post_init()";
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 
 	try {

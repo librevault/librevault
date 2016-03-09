@@ -85,7 +85,7 @@ Client::~Client() {
 void Client::run() {
 	bulk_ios_->start(std::thread::hardware_concurrency());
 	network_ios_->start(1);
-	etc_ios_->start(std::thread::hardware_concurrency());
+	etc_ios_->start(1);
 
 	// Main loop/signal processing loop
 	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);

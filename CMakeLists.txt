@@ -131,7 +131,7 @@ target_link_libraries(${PROJECT_NAME} jsoncpp-bundled)
 
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
-if(${libnatpmp_LIBRARIES} EQUAL "libnatpmp_LIBRARIES-NOTFOUND")
+if(NOT libnatpmp_LIBRARIES)
 	add_subdirectory(contrib/libnatpmp)
 	target_link_libraries(${PROJECT_NAME} natpmp)
 else()

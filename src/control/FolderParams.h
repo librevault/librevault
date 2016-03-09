@@ -15,7 +15,8 @@
  */
 #pragma once
 #include "src/pch.h"
-#include "contrib/jsoncpp/json/json.h"
+#include "src/util/parse_url.h"
+#include <json/json.h>
 
 namespace librevault {
 

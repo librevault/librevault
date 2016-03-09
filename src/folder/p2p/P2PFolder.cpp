@@ -16,6 +16,7 @@
 #include "P2PFolder.h"
 #include "WSService.h"
 #include "src/Client.h"
+#include "src/control/Config.h"
 #include "src/folder/FolderGroup.h"
 
 #include <librevault/Tokens.h>
@@ -189,7 +190,7 @@ void P2PFolder::cancel_block(const blob& ct_hash, uint32_t offset, uint32_t leng
 void P2PFolder::handle_message(const blob& message_raw) {
 	V1Parser::message_type message_type = parser_.parse_MessageType(message_raw);
 
-	if(is_handshaken()) {
+	if(ready()) {
 		switch(message_type) {
 			case V1Parser::CHOKE: handle_Choke(message_raw); break;
 			case V1Parser::UNCHOKE: handle_Unchoke(message_raw); break;

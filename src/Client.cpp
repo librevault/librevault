@@ -106,8 +106,8 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::add_folder(FolderParams folder_config) {
-	auto dir_ptr = std::make_shared<FSFolder>(std::move(folder_config), *this);
+void Client::add_folder(const FolderParams& params) {
+	auto dir_ptr = std::make_shared<FSFolder>(params, *this);
 	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr) {
 		//config().add_folder(folder_config);   // TODO: Remove from config
@@ -121,7 +121,7 @@ void Client::add_folder(FolderParams folder_config) {
 	}
 }
 
-void Client::remove_folder(Secret secret) {
+void Client::remove_folder(const Secret& secret) {
 	hash_group_.erase(secret.get_Hash());
 	//config().remove_folder(secret);   // TODO: Add to config
 	folder_removed_signal(get_group(secret.get_Hash()));

@@ -23,22 +23,11 @@
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/AES_CBC.h>
 
-// spdlog
-#include <spdlog/spdlog.h>
-
 // Crypto++
-#include <cryptopp/aes.h>
-#include <cryptopp/ccm.h>
-#include <cryptopp/cryptlib.h>
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
-#include <cryptopp/files.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/hex.h>
-#include <cryptopp/integer.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
-#include <cryptopp/sha3.h>
 
 // Boost
 #include <boost/algorithm/string.hpp>
@@ -132,8 +121,6 @@ using ssl_context = boost::asio::ssl::context;
 
 using byte = uint8_t;
 using blob = std::vector<byte>;
-
-using logger_ptr = std::shared_ptr<spdlog::logger>;
 
 using seconds = std::chrono::seconds;
 

@@ -13,22 +13,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "src/Version.h"
-#include <spdlog/spdlog.h>
+#include "DiscoveryInstance.h"
+#include "src/folder/FolderGroup.h"
 
 namespace librevault {
 
-class Loggable {
-protected:
-	std::shared_ptr<spdlog::logger> log_;
-	mutable std::string name_;
-
-	Loggable() {}
-	Loggable(const std::string& name) : log_(spdlog::get(Version::current().name())), name_(name) {}
-	Loggable(Loggable& parent_loggable) : log_(parent_loggable.log_), name_(parent_loggable.name_) {}
-	Loggable(Loggable& parent_loggable, const std::string& name) : log_(parent_loggable.log_), name_(parent_loggable.name_+"."+name) {}
-	virtual std::string log_tag() const {return name_.empty() ? "" : std::string("[") + name_ + "] ";}
-};
+DiscoveryInstance::DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoveryService& service) :
+	group_(group),
+	service_(service) {}
 
 } /* namespace librevault */

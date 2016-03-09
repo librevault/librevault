@@ -17,20 +17,18 @@
 #pragma once
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
-#include "src/control/Config.h"
-#include "src/folder/FolderGroup.h"
-#include "src/control/FolderParams.h"
 
 namespace librevault {
 
-class Config;
+/* Components */
 class ControlServer;
-
-class FolderGroup;
-
-// Providers
 class P2PProvider;
 class CloudProvider;
+
+/* Folder info */
+class FolderGroup;
+class FolderParams;
+class Secret;
 
 class Client : public Loggable {
 public:
@@ -49,8 +47,8 @@ public:
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
 	// FolderGroup
-	void add_folder(FolderParams params);
-	void remove_folder(Secret secret);
+	void add_folder(const FolderParams& params);
+	void remove_folder(const Secret& secret);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 

@@ -66,9 +66,9 @@ public:
 
 	// Handshake
 	void perform_handshake();
-	bool is_handshaken() const {return is_handshaken_;}
+	bool ready() const {return is_handshaken_;}
 
-	// Choking
+	/* Message senders */
 	void choke();
 	void unchoke();
 	void interest();

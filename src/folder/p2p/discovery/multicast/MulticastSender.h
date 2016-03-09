@@ -15,30 +15,26 @@
  */
 #pragma once
 #include "src/pch.h"
-#include "src/util/parse_url.h"
-#include "src/util/Loggable.h"
+#include "src/folder/p2p/discovery/DiscoveryInstance.h"
 
 namespace librevault {
 
-class FolderGroup;
-class Client;
+class MulticastDiscovery;
 
-class DiscoveryService : public Loggable {
+class MulticastSender : public DiscoveryInstance, public Loggable {
 public:
-	DiscoveryService(Client& client);
-	virtual ~DiscoveryService(){}
+	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service);
 
-	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
-	virtual void unregister_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
+	void consume(const tcp_endpoint& node_endpoint, const blob& pubkey);
 
-	void add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr);
-	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
-	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
+private:
+	boost::asio::steady_timer repeat_timer_;
+	std::mutex repeat_timer_mtx_;
 
-	Client& client() {return client_;}
+	mutable std::string message_;
+	std::string get_message() const;
 
-protected:
-	Client& client_;
+	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
 };
 
 } /* namespace librevault */

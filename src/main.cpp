@@ -15,6 +15,7 @@
  */
 #include "pch.h"
 #include <librevault/Secret.h>
+#include "control/Config.h"
 #include "Client.h"
 #include "Version.h"
 

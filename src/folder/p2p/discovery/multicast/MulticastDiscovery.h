@@ -15,55 +15,40 @@
  */
 #pragma once
 #include "src/pch.h"
-#include "DiscoveryService.h"
+#include "src/folder/p2p/discovery/DiscoveryService.h"
 
 namespace librevault {
 
-class MulticastDiscovery;
-
-class MulticastSender {
-public:
-	MulticastSender(MulticastDiscovery& parent, std::shared_ptr<FolderGroup> exchange_group);
-	std::string get_message() const;
-
-	void wait();
-	void send();
-
-private:
-	MulticastDiscovery& parent_;
-	std::shared_ptr<FolderGroup> exchange_group_;
-
-	boost::asio::system_timer repeat_timer_;
-	std::chrono::seconds& repeat_interval_;
-
-	mutable std::string message_;
-};
-
-class MulticastDiscovery : public DiscoveryService {
+class MulticastSender;
+class MulticastDiscovery : public DiscoveryService, public std::enable_shared_from_this<MulticastDiscovery> {
 	friend class MulticastSender;
 public:
 	virtual ~MulticastDiscovery();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
+
+	virtual void reload_config() = 0;
+
 protected:
 	using udp_buffer = std::array<char, 65536>;
 
-	std::map<std::shared_ptr<FolderGroup>, std::shared_ptr<MulticastSender>> senders_;
-
+	/* Config parameters */
+	bool enabled_;
+	udp_endpoint group_;
 	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 
-	// UDP
+	/* Other members */
+	std::map<blob, std::shared_ptr<MulticastSender>> senders_;
 	udp_socket socket_;
-	udp_endpoint multicast_addr_;
-	address bind_address_;
+	address bind_addr_;
+
+	MulticastDiscovery(Client& client, address bind_addr);
 
 	void start();
 
-	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr);
+	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec);
 	void receive();
-
-	MulticastDiscovery(Client& client);
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {
@@ -71,7 +56,7 @@ public:
 	MulticastDiscovery4(Client& client);
 	virtual ~MulticastDiscovery4(){}
 
-	std::string log_tag() const {return "[MulticastDiscovery4] ";}
+	void reload_config() override;
 };
 
 class MulticastDiscovery6 : public MulticastDiscovery {
@@ -79,7 +64,7 @@ public:
 	MulticastDiscovery6(Client& client);
 	virtual ~MulticastDiscovery6(){}
 
-	std::string log_tag() const {return "[MulticastDiscovery6] ";}
+	void reload_config() override;
 };
 
 } /* namespace librevault */

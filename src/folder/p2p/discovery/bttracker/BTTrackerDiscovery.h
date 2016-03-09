@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "src/pch.h"
-#include "DiscoveryService.h"
+#include "src/folder/p2p/discovery/DiscoveryService.h"
 #include "src/util/parse_url.h"
 
 namespace librevault {

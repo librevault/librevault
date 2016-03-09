@@ -15,6 +15,7 @@
  */
 #include "NATPMPService.h"
 #include "src/Client.h"
+#include "src/control/Config.h"
 #include "src/folder/p2p/P2PProvider.h"
 #include "src/folder/p2p/WSServer.h"
 #include <natpmp.h>

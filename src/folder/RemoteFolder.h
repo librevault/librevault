@@ -26,7 +26,7 @@ public:
 	RemoteFolder(Client& client);
 	virtual ~RemoteFolder();
 
-	// Choking
+	/* Message senders */
 	virtual void choke() = 0;
 	virtual void unchoke() = 0;
 	virtual void interest() = 0;
@@ -43,10 +43,13 @@ public:
 	virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
 	virtual void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
 
+	/* Getters */
 	bool am_choking() const {return am_choking_;}
 	bool am_interested() const {return am_interested_;}
 	bool peer_choking() const {return peer_choking_;}
 	bool peer_interested() const {return peer_interested_;}
+
+	virtual bool ready() const = 0;
 
 protected:
 	Client& client_;

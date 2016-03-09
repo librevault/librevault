@@ -19,7 +19,7 @@
 #include "src/folder/p2p/WSServer.h"
 #include "src/folder/fs/FSFolder.h"
 
-#include "src/folder/p2p/discovery/BTTrackerDiscovery.h"
+#include "BTTrackerDiscovery.h"
 
 namespace librevault {
 

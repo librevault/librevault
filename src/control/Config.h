@@ -16,10 +16,9 @@
 #pragma once
 #include "src/pch.h"
 #include "src/util/Loggable.h"
-#include <contrib/jsoncpp/json/json.h>
+#include <json/json.h>
 #include <librevault/Secret.h>
 #include <librevault/Meta.h>
-#include <src/util/parse_url.h>
 
 namespace librevault {
 

@@ -19,8 +19,8 @@
 #include "src/folder/FolderGroup.h"
 #include "nat/NATPMPService.h"
 #include "discovery/StaticDiscovery.h"
-#include "discovery/MulticastDiscovery.h"
-#include "discovery/BTTrackerDiscovery.h"
+#include "src/folder/p2p/discovery/multicast/MulticastDiscovery.h"
+#include "src/folder/p2p/discovery/bttracker/BTTrackerDiscovery.h"
 
 #include "WSServer.h"
 #include "WSClient.h"

@@ -54,7 +54,7 @@ ControlServer::ControlServer(Client& client) :
 ControlServer::~ControlServer() {}
 
 bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_validate()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	auto subprotocols = connection_ptr->get_requested_subprotocols();
@@ -72,7 +72,7 @@ bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
 }
 //
 void ControlServer::on_open(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_open()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	ws_server_assignment_.insert(connection_ptr);
@@ -81,7 +81,7 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 }
 
 void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr) {
-	log_->trace() << log_tag() << "on_message()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	try {
 		log_->trace() << message_ptr->get_payload();
@@ -97,7 +97,8 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 }
 
 void ControlServer::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_fail()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
 	send_control_json();
 }
@@ -136,7 +137,8 @@ Json::Value ControlServer::make_state_json() const {
 }
 
 void ControlServer::send_control_json(const boost::system::error_code& ec) {
-	log_->trace() << log_tag() << "send_control_json()";
+	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	if(send_mutex_.try_lock()) {

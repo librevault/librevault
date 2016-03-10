@@ -110,10 +110,12 @@ blob WSServer::query_to_dir_hash(const std::string& query) {
 }
 
 void WSServer::send_message(websocketpp::connection_hdl hdl, const blob& message) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	ws_server_.get_con_from_hdl(hdl)->send(message.data(), message.size());
 }
 
 void WSServer::close(websocketpp::connection_hdl hdl, const std::string& reason) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, reason);
 }
 

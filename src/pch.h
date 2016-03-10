@@ -56,9 +56,6 @@
 
 #include <boost/signals2.hpp>
 
-// docopt
-#include <docopt.h>
-
 // Standard C++ Libraries
 #include <algorithm>
 #include <array>

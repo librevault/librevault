@@ -32,10 +32,14 @@ Uploader::Uploader(Client& client, FolderGroup& exchange_group) :
 }
 
 void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	// TODO: write good choking algorithm.
 	remote->unchoke();
 }
 void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	// TODO: write good choking algorithm.
 	remote->choke();
 }

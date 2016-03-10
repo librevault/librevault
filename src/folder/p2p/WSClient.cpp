@@ -38,7 +38,7 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 }
 
 void WSClient::connect(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	log_->trace() << log_tag() << "connect(" << (std::string)node_url << ")";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " " << (std::string)node_url;
 	websocketpp::lib::error_code ec;
 	node_url.scheme = "wss";
 	node_url.query = "/";
@@ -73,14 +73,14 @@ void WSClient::connect(const tcp_endpoint& node_endpoint, const blob& pubkey, st
 }
 
 void WSClient::on_tcp_pre_init(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_tcp_pre_init()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
 	connection_ptr->add_subprotocol(subprotocol_);
 }
 
 void WSClient::on_tcp_post_init(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_tcp_post_init()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
 
@@ -113,10 +113,12 @@ std::string WSClient::dir_hash_to_query(const blob& dir_hash) {
 }
 
 void WSClient::close(websocketpp::connection_hdl hdl, const std::string& reason) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	ws_client_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, reason);
 }
 
 void WSClient::send_message(websocketpp::connection_hdl hdl, const blob& message) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	ws_client_.get_con_from_hdl(hdl)->send(message.data(), message.size());
 }
 

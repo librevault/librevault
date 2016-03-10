@@ -75,7 +75,7 @@ blob WSService::pubkey_from_cert(X509* x509) {
 }
 
 std::shared_ptr<ssl_context> WSService::on_tls_init(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_tls_init()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto ssl_ctx_ptr = make_ssl_ctx();
 	ssl_ctx_ptr->set_verify_callback(std::bind(&WSService::on_tls_verify, this, hdl, std::placeholders::_1, std::placeholders::_2));
@@ -83,14 +83,14 @@ std::shared_ptr<ssl_context> WSService::on_tls_init(websocketpp::connection_hdl 
 }
 
 bool WSService::on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx) {
-	log_->trace() << log_tag() << "on_tls_verify()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	// FIXME: Hey, just returning `true` isn't good enough, yes?
 	return true;
 }
 
 void WSService::on_open(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_open()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	log_->debug() << log_tag() << "Connection opened to: " << dir_ptr->name();
@@ -99,7 +99,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 }
 
 void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& message_raw) {
-	log_->trace() << log_tag() << "on_message()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	try {
 		blob message_blob = blob(message_raw.begin(), message_raw.end());
@@ -111,7 +111,7 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 }
 
 void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << "on_disconnect()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto dir_ptr = dir_ptr_from_hdl(hdl);
 	if(dir_ptr) {

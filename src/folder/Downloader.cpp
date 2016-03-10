@@ -30,12 +30,12 @@ Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
 		client_(client),
 		exchange_group_(exchange_group),
 		maintain_timer_(client.network_ios()) {
-	log_->trace() << log_tag() << "Downloader()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	maintain_requests();
 }
 
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
-	log_->trace() << log_tag() << "notify_local_meta()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
 	for(size_t block_idx = 0; block_idx < smeta.meta().chunks().size(); block_idx++) {
 		if(bitfield[block_idx]) {
@@ -49,17 +49,19 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 }
 
 void Downloader::notify_local_chunk(const blob& ct_hash) {
-	log_->trace() << log_tag() << "notify_local_chunk()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	needed_chunks_.erase(ct_hash);
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
 	for(size_t block_idx = 0; block_idx < blocks.size(); block_idx++)
 		if(bitfield[block_idx])
 			notify_remote_chunk(remote, blocks[block_idx].ct_hash);
 }
 void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto needed_block_it = needed_chunks_.find(ct_hash);
 	if(needed_block_it == needed_chunks_.end()) return;
 
@@ -83,18 +85,18 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 }
 
 void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << "handle_choke()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	remove_requests_to(remote);
 	maintain_requests();
 }
 
 void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << "handle_unchoke()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	maintain_requests();
 }
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
-	log_->trace() << log_tag() << "put_block()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto needed_block_it = needed_chunks_.find(ct_hash);
 	if(needed_block_it == needed_chunks_.end()) return;
 
@@ -122,7 +124,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 }
 
 void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << "erase_remote()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	interest_guards_.erase(remote);
 
@@ -133,7 +135,7 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 }
 
 void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << "remove_requests_to()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	for(auto& needed_block : needed_chunks_) {
 		needed_block.second->requests.erase(remote);
@@ -141,7 +143,7 @@ void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
 }
 
 void Downloader::add_needed_chunk(const blob& ct_hash) {
-	log_->trace() << log_tag() << "add_needed_chunk()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	uint32_t unencrypted_blocksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
 	uint32_t padded_blocksize = unencrypted_blocksize % 16 == 0 ? unencrypted_blocksize : ((unencrypted_blocksize/16)+1)*16;
@@ -150,7 +152,7 @@ void Downloader::add_needed_chunk(const blob& ct_hash) {
 }
 
 void Downloader::maintain_requests(const boost::system::error_code& ec) {
-	log_->trace() << log_tag() << "maintain_requests()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	if(maintain_timer_mtx_.try_lock()) {
@@ -180,7 +182,7 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 }
 
 bool Downloader::request_one() {
-	log_->trace() << log_tag() << "request_one()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	// Try to choose block to request
 	for(auto& needed_block : needed_chunks_) {
 		auto& ct_hash = needed_block.first;
@@ -210,7 +212,7 @@ bool Downloader::request_one() {
 }
 
 std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_hash) {
-	//log_->trace() << log_tag() << "find_node_for_request()";
+	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto needed_block_it = needed_chunks_.find(ct_hash);
 	if(needed_block_it == needed_chunks_.end()) return nullptr;

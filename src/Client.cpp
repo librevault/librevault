@@ -107,6 +107,8 @@ void Client::shutdown(){
 }
 
 void Client::add_folder(const FolderParams& params) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	auto dir_ptr = std::make_shared<FSFolder>(params, *this);
 	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
 	if(!group_ptr) {

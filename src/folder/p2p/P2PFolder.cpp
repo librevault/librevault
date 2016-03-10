@@ -212,7 +212,7 @@ void P2PFolder::handle_message(const blob& message_raw) {
 }
 
 void P2PFolder::handle_Handshake(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_Handshake()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto message_struct = parser_.parse_Handshake(message_raw);
 	log_->debug() << log_tag() << "<== HANDSHAKE";
 
@@ -234,7 +234,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_Choke()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "<== CHOKE";
 
 	if(! peer_choking_) {
@@ -243,7 +243,7 @@ void P2PFolder::handle_Choke(const blob& message_raw) {
 	}
 }
 void P2PFolder::handle_Unchoke(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_Unchoke()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "<== UNCHOKE";
 
 	if(peer_choking_) {
@@ -252,7 +252,7 @@ void P2PFolder::handle_Unchoke(const blob& message_raw) {
 	}
 }
 void P2PFolder::handle_Interested(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_Interested()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "<== INTERESTED";
 
 	if(! peer_interested_) {
@@ -261,7 +261,7 @@ void P2PFolder::handle_Interested(const blob& message_raw) {
 	}
 }
 void P2PFolder::handle_NotInterested(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_NotInterested()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "<== NOT_INTERESTED";
 
 	if(peer_interested_) {
@@ -271,7 +271,7 @@ void P2PFolder::handle_NotInterested(const blob& message_raw) {
 }
 
 void P2PFolder::handle_HaveMeta(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_HaveMeta()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_HaveMeta(message_raw);
 	log_->debug() << log_tag() << "<== HAVE_META:"
@@ -282,7 +282,7 @@ void P2PFolder::handle_HaveMeta(const blob& message_raw) {
 	folder_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
 }
 void P2PFolder::handle_HaveChunk(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_HaveChunk()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_HaveChunk(message_raw);
 	log_->debug() << log_tag() << "<== HAVE_BLOCK:"
@@ -291,7 +291,7 @@ void P2PFolder::handle_HaveChunk(const blob& message_raw) {
 }
 
 void P2PFolder::handle_MetaRequest(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_MetaRequest()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_MetaRequest(message_raw);
 	log_->debug() << log_tag() << "<== META_REQUEST:"
@@ -301,7 +301,7 @@ void P2PFolder::handle_MetaRequest(const blob& message_raw) {
 	folder_group()->request_meta(shared_from_this(), message_struct.revision);
 }
 void P2PFolder::handle_MetaReply(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_MetaReply()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_MetaReply(message_raw, folder_group()->secret());
 	log_->debug() << log_tag() << "<== META_REPLY:"
@@ -313,7 +313,7 @@ void P2PFolder::handle_MetaReply(const blob& message_raw) {
 }
 void P2PFolder::handle_MetaCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
-	log_->trace() << log_tag() << "handle_MetaCancel()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_MetaCancel(message_raw);
 	log_->debug() << log_tag() << "<== META_CANCEL:"
@@ -322,7 +322,7 @@ void P2PFolder::handle_MetaCancel(const blob& message_raw) {
 }
 
 void P2PFolder::handle_BlockRequest(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_BlockRequest()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_BlockRequest(message_raw);
 	log_->debug() << log_tag() << "<== CHUNK_REQUEST:"
@@ -333,7 +333,7 @@ void P2PFolder::handle_BlockRequest(const blob& message_raw) {
 	folder_group()->request_block(shared_from_this(), message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 void P2PFolder::handle_BlockReply(const blob& message_raw) {
-	log_->trace() << log_tag() << "handle_BlockReply()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_BlockReply(message_raw);
 	log_->debug() << log_tag() << "<== CHUNK_REPLY:"
@@ -344,7 +344,7 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 }
 void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
-	log_->trace() << log_tag() << "handle_BlockCancel()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_BlockCancel(message_raw);
 	log_->debug() << log_tag() << "<== BLOCK_CANCEL:"

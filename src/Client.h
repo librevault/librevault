@@ -17,6 +17,7 @@
 #pragma once
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
+#include <docopt.h>
 
 namespace librevault {
 

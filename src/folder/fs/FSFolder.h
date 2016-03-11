@@ -14,10 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <src/control/Config.h>
-#include <librevault/SignedMeta.h>
-#include <src/control/FolderParams.h>
 #include "src/folder/AbstractFolder.h"
+
+#include "src/control/Config.h"
+#include "src/control/FolderParams.h"
+#include "src/folder/FolderGroup.h"
+
+#include <librevault/SignedMeta.h>
 
 namespace librevault {
 
@@ -50,7 +53,7 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 	/* Constructors */
-	FSFolder(FolderParams new_params, Client& client);
+	FSFolder(FolderGroup& group, Client& client);
 	virtual ~FSFolder();
 
 	/* Actions */
@@ -69,13 +72,16 @@ public:
 	std::string make_relpath(const fs::path& abspath) const;
 
 	/* Getters */
-	const FolderParams& params() const {return folder_config_;}
+	FolderGroup& group() {return group_;}
+	const FolderGroup& group() const {return group_;}
+
+	const FolderParams& params() const {return group_.params();}
 	const Secret& secret() const {return params().secret;}
 	const fs::path& path() const {return params().path;}
 	const fs::path& system_path() const {return params().system_path;}
 
 private:
-	const FolderParams folder_config_;
+	FolderGroup& group_;
 
 	bitfield_type make_bitfield(const Meta& meta) const;
 };

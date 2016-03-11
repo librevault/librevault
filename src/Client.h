@@ -15,8 +15,11 @@
  */
 #include "pch.h"
 #pragma once
+
+#include "control/FolderParams.h"
 #include "util/Loggable.h"
 #include "util/multi_io_service.h"
+
 #include <docopt.h>
 
 namespace librevault {
@@ -47,8 +50,8 @@ public:
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
-	// FolderGroup
-	void add_folder(const FolderParams& params);
+	/* FolderGroup nanagenent */
+	void add_folder(FolderParams params);
 	void remove_folder(const Secret& secret);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);

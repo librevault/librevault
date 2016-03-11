@@ -18,7 +18,6 @@
 #include "control/ControlServer.h"
 #include "src/folder/fs/FSFolder.h"
 #include "src/folder/p2p/P2PProvider.h"
-#include "src/folder/FolderGroup.h"
 
 namespace librevault {
 
@@ -106,26 +105,24 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::add_folder(const FolderParams& params) {
+void Client::add_folder(FolderParams params) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto dir_ptr = std::make_shared<FSFolder>(params, *this);
-	auto group_ptr = get_group(dir_ptr->secret().get_Hash());
+	auto group_ptr = get_group(params.secret.get_Hash());
 	if(!group_ptr) {
-		//config().add_folder(folder_config);   // TODO: Remove from config
-		group_ptr = std::make_shared<FolderGroup>(*this);
-		group_ptr->attach(dir_ptr);
+		//config().add_folder(folder_config);   // TODO: Add to config
+		group_ptr = std::make_shared<FolderGroup>(std::move(params), *this);
 		hash_group_.insert({group_ptr->hash(), group_ptr});
 
 		folder_added_signal(group_ptr);
-	}else {
+	}else{
 		throw std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now");
 	}
 }
 
 void Client::remove_folder(const Secret& secret) {
 	hash_group_.erase(secret.get_Hash());
-	//config().remove_folder(secret);   // TODO: Add to config
+	//config().remove_folder(secret);   // TODO: Remove from config
 	folder_removed_signal(get_group(secret.get_Hash()));
 	log_->debug() << log_tag() << "Group unregistered: " << secret;
 }

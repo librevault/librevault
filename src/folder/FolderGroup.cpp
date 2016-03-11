@@ -27,11 +27,19 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(Client& client) :
-		Loggable(client),
+FolderGroup::FolderGroup(FolderParams params, Client& client) :
+		Loggable( (params_.path.empty() ? params_.system_path : params_.path).string() ),
+		params_(std::move(params)),
 		client_(client),
+		fs_dir_(std::make_shared<FSFolder>(*this, client)),
 		uploader_(std::make_shared<Uploader>(client, *this)),
 		downloader_(std::make_shared<Downloader>(client, *this)) {}
+
+FolderGroup::~FolderGroup() {
+	downloader_.reset();
+	uploader_.reset();
+	fs_dir_.reset();
+}
 
 /* Actions */
 // FSFolder actions
@@ -111,16 +119,6 @@ void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& c
 	downloader_->put_block(ct_hash, offset, chunk, origin);
 }
 
-/* Membership management */
-void FolderGroup::attach(std::shared_ptr<FSFolder> fs_dir_ptr) {
-	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
-	fs_dir_ = fs_dir_ptr;
-	fs_dir_->folder_group_ = shared_from_this();
-	name_ = crypto::Base32().to_string(hash());
-
-	log_->debug() << log_tag() << "Attached local " << fs_dir_ptr->name();
-}
-
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
 
@@ -154,9 +152,5 @@ bool FolderGroup::have_p2p_dir(const blob& pubkey) {
 	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
 	return p2p_dirs_pubkeys_.find(pubkey) != p2p_dirs_pubkeys_.end();
 }
-
-/* Getters */
-const Secret& FolderGroup::secret() const { return fs_dir_->secret(); }
-const blob& FolderGroup::hash() const { return secret().get_Hash(); }
 
 } /* namespace librevault */

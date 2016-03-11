@@ -13,13 +13,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
-#include "../util/Loggable.h"
-#include <librevault/Secret.h>
-#include <librevault/util/bitfield_convert.h>
-#include <librevault/SignedMeta.h>
+#include "src/pch.h"
+
 #include "AbstractFolder.h"
+#include "src/control/FolderParams.h"
+#include "src/util/Loggable.h"
+
+#include <librevault/Secret.h>
+#include <librevault/SignedMeta.h>
+#include <librevault/util/bitfield_convert.h>
 
 namespace librevault {
 
@@ -43,7 +46,8 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(Client& client);
+	FolderGroup(FolderParams params, Client& client);
+	virtual ~FolderGroup();
 
 	/* Actions */
 	// FSFolder actions
@@ -68,7 +72,6 @@ public:
 	void post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset);
 
 	/* Membership management */
-	void attach(std::shared_ptr<FSFolder> fs_dir_ptr);
 	void attach(std::shared_ptr<P2PFolder> remote_ptr);
 	void detach(std::shared_ptr<P2PFolder> remote_ptr);
 
@@ -76,13 +79,18 @@ public:
 	bool have_p2p_dir(const blob& pubkey);
 
 	/* Getters */
-	std::shared_ptr<FSFolder> fs_dir() const {return fs_dir_;}
-	std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_dirs_;}
+	inline std::shared_ptr<FSFolder> fs_dir() const {return fs_dir_;}
+	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_dirs_;}
 
-	const Secret& secret() const;
-	const blob& hash() const;
+	inline const FolderParams& params() const {return params_;}
+
+	inline const Secret& secret() const {return params().secret;}
+	inline const blob& hash() const {return secret().get_Hash();}
 private:
+	const FolderParams params_;
 	Client& client_;
+
+	std::shared_ptr<FSFolder> fs_dir_;
 
 	std::shared_ptr<Uploader> uploader_;
 	std::shared_ptr<Downloader> downloader_;
@@ -90,7 +98,6 @@ private:
 	/* Members */
 	mutable std::mutex dirs_mtx_;
 
-	std::shared_ptr<FSFolder> fs_dir_;
 	std::set<std::shared_ptr<P2PFolder>> p2p_dirs_;
 
 	// Member lookup optimization

@@ -30,9 +30,9 @@
 
 namespace librevault {
 
-FSFolder::FSFolder(FolderParams new_params, Client& client) :
+FSFolder::FSFolder(FolderGroup& group, Client& client) :
 	AbstractFolder(client),
-		folder_config_(std::move(new_params))  {
+	group_(group)  {
 	// Creating directories
 	bool path_created = fs::create_directories(params().path);
 	bool system_path_created = fs::create_directories(params().system_path);

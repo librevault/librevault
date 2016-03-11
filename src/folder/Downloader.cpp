@@ -159,11 +159,13 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		std::unique_lock<decltype(maintain_timer_mtx_)> maintain_timer_lk(maintain_timer_mtx_, std::adopt_lock);
 		maintain_timer_.cancel();
 
+		auto request_timeout = std::chrono::seconds(Config::get()->client()["p2p_request_timeout"].asUInt64());
+
 		// Prune old requests by timeout
 		for(auto& needed_block : needed_chunks_) {
-			auto& requests = needed_block.second->requests;
+			auto& requests = needed_block.second->requests; // We should lock a mutex on this
 			for(auto request = requests.begin(); request != requests.end(); ) {
-				if(request->second.started > std::chrono::steady_clock::now() + std::chrono::seconds(10))   // TODO: In config. Very important.
+				if(request->second.started + request_timeout > std::chrono::steady_clock::now())
 					request = requests.erase(request);
 				else
 					++request;
@@ -171,12 +173,12 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		}
 
 		// Make new requests
-		for(size_t i = requests_overall(); i <= 10; i++) {    // TODO: This HAS to be in config. 'download_slots' or something.
+		for(size_t i = requests_overall(); i < Config::get()->client()["p2p_download_slots"].asUInt(); i++) {
 			bool requested = request_one();
 			if(!requested) break;
 		}
 
-		maintain_timer_.expires_from_now(std::chrono::seconds(10));  // TODO: Replace with value from config, maybe? We don't like hardcoded values.
+		maintain_timer_.expires_from_now(request_timeout);
 		maintain_timer_.async_wait(std::bind(&Downloader::maintain_requests, this, std::placeholders::_1));
 	}
 }
@@ -200,7 +202,7 @@ bool Downloader::request_one() {
 		if(!request_map.full()) {
 			NeededChunk::BlockRequest request;
 			request.offset = request_map.begin()->first;
-			request.size = std::min(request_map.begin()->second, uint32_t(32*1024));    // TODO: Chunk size should be defined in an another place.
+			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->client()["p2p_block_size"].asUInt()));
 			request.started = std::chrono::steady_clock::now();
 
 			remote->request_block(ct_hash, request.offset, request.size);

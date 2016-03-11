@@ -63,6 +63,9 @@ void Config::make_defaults() {
 	client_defaults_["client_name"] = boost::asio::ip::host_name();
 	client_defaults_["control_listen"] = "[::]:42346";
 	client_defaults_["p2p_listen"] = "[::]:42345";
+	client_defaults_["p2p_download_slots"] = 10;
+	client_defaults_["p2p_request_timeout"] = 10;
+	client_defaults_["p2p_block_size"] = 32768;
 	client_defaults_["natpmp_enabled"] = true;
 	client_defaults_["natpmp_lifetime"] = 3600;
 	client_defaults_["predef_repeat_interval"] = 30;

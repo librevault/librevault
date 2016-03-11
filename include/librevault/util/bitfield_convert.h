@@ -22,7 +22,7 @@ namespace librevault {
 using bitfield_type = boost::dynamic_bitset<uint8_t>;
 
 inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bitfield) {
-	blob converted_bitfield;
+	std::vector<uint8_t> converted_bitfield;
 	converted_bitfield.reserve(bitfield.size()/8);
 	boost::to_block_range(bitfield, std::back_inserter(converted_bitfield));
 	for(auto byte_it = converted_bitfield.begin(); byte_it < converted_bitfield.end(); ++byte_it) {  // Reverse each bit, because boost::dynamic_bitfield has 0 as LSB, and size() as MSB.
@@ -32,7 +32,7 @@ inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bitfield) {
 	return converted_bitfield;
 }
 
-inline bitfield_type convert_bitfield(blob bitfield) {
+inline bitfield_type convert_bitfield(std::vector<uint8_t> bitfield) {
 	bitfield_type converted_bitfield(bitfield.size()*8);
 	for(auto& b : bitfield) {
 		b = BitReverseTable256[b];

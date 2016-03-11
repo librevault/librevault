@@ -15,6 +15,10 @@
  */
 #include "Config.h"
 
+#if BOOST_OS_LINUX || BOOST_OS_MACOS || BOOST_OS_BSD || BOOST_OS_UNIX
+#   include <pwd.h>
+#endif
+
 namespace librevault {
 
 Config::Config(fs::path appdata_path) {
@@ -129,7 +133,7 @@ fs::path Config::default_appdata_path() {
 #if BOOST_OS_WINDOWS
 	return fs::path(getenv("APPDATA")) / Version::current().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
 #elif BOOST_OS_MACOS
-	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: error-checking
+	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: Maybe, move to Application Support, as we are not using .plist?
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
 		return fs::path(xdg_ptr) / Version::current().name();

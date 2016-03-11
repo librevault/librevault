@@ -85,15 +85,6 @@
 #include <unordered_set>
 #include <vector>
 
-// OS-dependent
-#if BOOST_OS_LINUX
-#include <sys/types.h>
-#endif
-#if BOOST_OS_LINUX || BOOST_OS_UNIX || BOOST_OS_BSD
-#include <pwd.h>
-#include <unistd.h>
-#endif
-
 namespace librevault {
 
 namespace fs = boost::filesystem;

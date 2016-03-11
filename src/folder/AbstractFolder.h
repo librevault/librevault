@@ -23,7 +23,6 @@ class Client;
 class FolderGroup;
 
 class AbstractFolder : public Loggable {
-	friend class FolderGroup;
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -43,7 +42,6 @@ public:
 
 	// AbstractFolder properties
 	const std::string& name() const {return name_;}
-	std::shared_ptr<FolderGroup> folder_group();
 
 	// Other functions
 	static std::string path_id_readable(const blob& path_id);
@@ -51,8 +49,6 @@ public:
 
 protected:
 	Client& client_;
-
-	std::weak_ptr<FolderGroup> folder_group_;
 };
 
 } /* namespace librevault */

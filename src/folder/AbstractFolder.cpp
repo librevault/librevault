@@ -22,10 +22,6 @@ AbstractFolder::AbstractFolder(Client& client) :
 	Loggable(client), client_(client) {}
 AbstractFolder::~AbstractFolder() {}
 
-std::shared_ptr<FolderGroup> AbstractFolder::folder_group() {
-	return std::shared_ptr<FolderGroup>(folder_group_);
-}
-
 std::string AbstractFolder::path_id_readable(const blob& path_id) {
 	return crypto::Base32().to_string(path_id);
 }

@@ -49,8 +49,8 @@ void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
 	downloader_->notify_local_meta(revision, bitfield);
 
 	// Broadcast to all attached P2PDirectories
-	std::unique_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
-	for(auto p2p_dir : p2p_dirs_) {
+	std::unique_lock<decltype(p2p_folders_mtx_)> dirs_lk(p2p_folders_mtx_);
+	for(auto p2p_dir : p2p_folders_) {
 		p2p_dir->post_have_meta(revision, bitfield);
 	}
 }
@@ -58,10 +58,10 @@ void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
 void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash) {
 	downloader_->notify_local_chunk(ct_hash);
 
-	std::unique_lock<decltype(dirs_mtx_)> dirs_lk(dirs_mtx_);
+	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 
-	for(auto p2p_dir : p2p_dirs_) {
-		p2p_dir->post_have_chunk(ct_hash);
+	for(auto p2p_folder : p2p_folders_) {
+		p2p_folder->post_have_chunk(ct_hash);
 	}
 }
 
@@ -122,35 +122,35 @@ void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& c
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
 
-	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
+	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	remote_ptr->folder_group_ = shared_from_this();
 
-	p2p_dirs_.insert(remote_ptr);
-	p2p_dirs_endpoints_.insert(remote_ptr->remote_endpoint());
-	p2p_dirs_pubkeys_.insert(remote_ptr->remote_pubkey());
+	p2p_folders_.insert(remote_ptr);
+	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
+	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
 
 	log_->debug() << log_tag() << "Attached remote " << remote_ptr->name();
 }
 
 void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
-	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
+	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	downloader_->erase_remote(remote_ptr);
 
-	p2p_dirs_pubkeys_.erase(remote_ptr->remote_pubkey());
-	p2p_dirs_endpoints_.erase(remote_ptr->remote_endpoint());
-	p2p_dirs_.erase(remote_ptr);
+	p2p_folders_pubkeys_.erase(remote_ptr->remote_pubkey());
+	p2p_folders_endpoints_.erase(remote_ptr->remote_endpoint());
+	p2p_folders_.erase(remote_ptr);
 
 	log_->debug() << log_tag() << "Detached remote " << remote_ptr->name();
 }
 
 bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
-	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
-	return p2p_dirs_endpoints_.find(endpoint) != p2p_dirs_endpoints_.end();
+	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
+	return p2p_folders_endpoints_.find(endpoint) != p2p_folders_endpoints_.end();
 }
 
 bool FolderGroup::have_p2p_dir(const blob& pubkey) {
-	std::unique_lock<decltype(dirs_mtx_)> lk(dirs_mtx_);
-	return p2p_dirs_pubkeys_.find(pubkey) != p2p_dirs_pubkeys_.end();
+	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
+	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
 }
 
 } /* namespace librevault */

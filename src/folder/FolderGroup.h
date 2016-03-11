@@ -80,7 +80,7 @@ public:
 
 	/* Getters */
 	inline std::shared_ptr<FSFolder> fs_dir() const {return fs_dir_;}
-	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_dirs_;}
+	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_folders_;}
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -96,13 +96,13 @@ private:
 	std::shared_ptr<Downloader> downloader_;
 
 	/* Members */
-	mutable std::mutex dirs_mtx_;
+	mutable std::mutex p2p_folders_mtx_;
 
-	std::set<std::shared_ptr<P2PFolder>> p2p_dirs_;
+	std::set<std::shared_ptr<P2PFolder>> p2p_folders_;
 
 	// Member lookup optimization
-	std::set<blob> p2p_dirs_pubkeys_;
-	std::set<tcp_endpoint> p2p_dirs_endpoints_;
+	std::set<blob> p2p_folders_pubkeys_;
+	std::set<tcp_endpoint> p2p_folders_endpoints_;
 
 	/* Loggable override */
 	std::string name() const {return name_;}

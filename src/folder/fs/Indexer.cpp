@@ -52,7 +52,10 @@ void Indexer::index(const std::string& file_path){
 		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)" << ". Path=" << file_path << " Rev=" << smeta.meta().revision();
+		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)"
+			<< " Path=" << file_path
+			<< " Rev=" << smeta.meta().revision()
+			<< " Chk=" << smeta.meta().chunks().size();
 	}catch(abort_index& e){
 		log_->notice() << log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
 	}catch(std::runtime_error& e){
@@ -216,6 +219,8 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 
 	if(rabin_finalize(&hasher) != 0)
 		chunks.push_back(populate_chunk(new_meta, buffer));
+
+	new_meta.set_chunks(chunks);
 }
 
 Meta::Chunk Indexer::populate_chunk(const Meta& new_meta, const blob& data) {

@@ -29,8 +29,8 @@ Config::Config(fs::path appdata_path) {
 
 	fs::create_directories(paths_.appdata_path);
 
-	paths_.client_config_path = paths_.appdata_path / "client.conf";
-	paths_.folders_config_path = paths_.appdata_path / "folders.conf";
+	paths_.client_config_path = paths_.appdata_path / "client.json";
+	paths_.folders_config_path = paths_.appdata_path / "folders.json";
 	paths_.log_path = paths_.appdata_path / "librevault.log";
 	paths_.key_path = paths_.appdata_path / "key.pem";
 	paths_.cert_path = paths_.appdata_path / "cert.pem";

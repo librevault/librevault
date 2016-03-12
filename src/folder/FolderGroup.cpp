@@ -115,7 +115,7 @@ void FolderGroup::request_block(std::shared_ptr<RemoteFolder> origin, const blob
 	uploader_->request_block(origin, ct_hash, offset, size);
 }
 
-void FolderGroup::post_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset) {
+void FolderGroup::post_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset) {
 	downloader_->put_block(ct_hash, offset, chunk, origin);
 }
 

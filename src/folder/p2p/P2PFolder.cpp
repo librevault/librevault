@@ -329,7 +329,7 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " offset=" << message_struct.offset;
 
-	folder_group()->post_chunk(shared_from_this(), message_struct.ct_hash, message_struct.content, message_struct.offset);
+	folder_group()->post_block(shared_from_this(), message_struct.ct_hash, message_struct.content, message_struct.offset);
 }
 void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 #   warning "Not implemented yet"

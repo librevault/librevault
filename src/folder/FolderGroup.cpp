@@ -123,7 +123,6 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
 
 	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
-	remote_ptr->folder_group_ = shared_from_this();
 
 	p2p_folders_.insert(remote_ptr);
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());

@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "WSService.h"
+#include "WSServer.h"
+#include "WSClient.h"
 #include "P2PFolder.h"
 #include "src/Client.h"
 #include "src/control/Config.h"
@@ -41,7 +43,7 @@ std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	ssl_ctx_ptr->set_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
 	ssl_ctx_ptr->use_certificate_file(Config::get()->paths().cert_path.string(), ssl_context::pem);
 	ssl_ctx_ptr->use_private_key_file(Config::get()->paths().key_path.string(), ssl_context::pem);
-	SSL_CTX_set_cipher_list(ssl_ctx_ptr->native_handle(), "ECDH+ECDSA+AES:!SHA");
+	SSL_CTX_set_cipher_list(ssl_ctx_ptr->native_handle(), "ECDH-ECDSA-AES256-GCM-SHA384:ECDH-ECDSA-AES256-SHA384:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-ECDSA-AES128-SHA256");
 
 	return ssl_ctx_ptr;
 }
@@ -106,9 +108,17 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, conn);
 	conn.folder = new_folder;
 
-	log_->debug() << log_tag() << "Connection opened to: " << new_folder->name();
-	if(conn.role == connection::CLIENT)
-		new_folder->perform_handshake();
+	auto group_ptr = client_.get_group(conn.hash);
+	if(group_ptr) {
+		log_->debug() << log_tag() << "Connection opened to: " << new_folder->name();   // Finally!
+
+		group_ptr->attach(new_folder);
+
+		if(conn.role == connection::CLIENT)
+			new_folder->perform_handshake();
+	}else{
+		close(hdl, "Internal Server Error");    // Apparently, the group had been deleted before we opened this connection. This is very unlikely.
+	}
 }
 
 void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& message_raw) {
@@ -118,7 +128,7 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 		blob message_blob = blob(message_raw.begin(), message_raw.end());
 		std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder)->handle_message(message_blob);
 	}catch(std::exception& e) {
-		log_->trace() << log_tag() << "on_message e:" << e.what();
+		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
 		close(hdl, e.what());
 	}
 }
@@ -133,7 +143,7 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 			if(folder_group)
 				folder_group->detach(dir_ptr);
 		}catch(const std::bad_weak_ptr& e){
-			log_->debug() << log_tag() << "on_disconnect() e:" << e.what();
+			log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
 		}
 	}
 	ws_assignment_.erase(hdl);
@@ -169,7 +179,7 @@ void WSService::on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl) {
 	}
 }
 
-template void WSService::on_tcp_post_init(websocketpp::server<asio_tls>&, websocketpp::connection_hdl);
-template void WSService::on_tcp_post_init(websocketpp::client<asio_tls_client>&, websocketpp::connection_hdl);
+template void WSService::on_tcp_post_init(WSServer::server&, websocketpp::connection_hdl);
+template void WSService::on_tcp_post_init(WSClient::client&, websocketpp::connection_hdl);
 
 } /* namespace librevault */

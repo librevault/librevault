@@ -28,6 +28,7 @@ using namespace boost::asio::ip;
 
 MulticastDiscovery::MulticastDiscovery(Client& client, address bind_addr) :
 	DiscoveryService(client), socket_(client.network_ios()), bind_addr_(bind_addr) {
+	name_ = "MulticastDiscovery";
 	client.folder_added_signal.connect(std::bind(&MulticastDiscovery::register_group, this, std::placeholders::_1));
 	client.folder_removed_signal.connect(std::bind(&MulticastDiscovery::unregister_group, this, std::placeholders::_1));
 }
@@ -53,14 +54,18 @@ void MulticastDiscovery::start() {
 
 	receive();
 
-	log_->info() << log_tag() << "Started UDP Local Node Discovery on: " << group_;
+	if(enabled_) {
+		log_->info() << log_tag() << "Started Local Peer Discovery on: " << group_;
+	}else{
+		log_->info() << log_tag() << "Local Peer Discovery is disabled";
+	}
 }
 
 void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp::endpoint> endpoint_ptr, const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	protocol::MulticastDiscovery message;
-	if(message.ParseFromArray(buffer->data(), size)) {
+	if(enabled_ && message.ParseFromArray(buffer->data(), size)) {
 		uint16_t port = uint16_t(message.port());
 		blob dir_hash = blob(message.dir_hash().begin(), message.dir_hash().end());
 		blob pubkey = blob(message.pubkey().begin(), message.pubkey().end());

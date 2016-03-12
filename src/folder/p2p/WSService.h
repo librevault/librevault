@@ -66,7 +66,7 @@ protected:
 
 	/* Handlers */
 	void on_tcp_pre_init(websocketpp::connection_hdl hdl, connection::role_type role);
-	virtual void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) = 0;
+	virtual void on_tcp_post_init(websocketpp::connection_hdl hdl) = 0;
 	std::shared_ptr<ssl_context> on_tls_init(websocketpp::connection_hdl hdl);
 	bool on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx);    // Not WebSockets callback, but asio::ssl
 	void on_open(websocketpp::connection_hdl hdl);
@@ -78,6 +78,10 @@ protected:
 
 	/* Actions */
 	virtual void close(websocketpp::connection_hdl hdl, const std::string& reason) = 0;
+	template<class WSClass> void close(WSClass& c, websocketpp::connection_hdl hdl, const std::string& reason) {
+		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+		c.get_con_from_hdl(hdl)->close(websocketpp::close::status::internal_endpoint_error, reason);
+	}
 	//virtual void terminate(websocketpp::connection_hdl hdl);
 };
 

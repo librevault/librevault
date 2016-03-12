@@ -30,7 +30,7 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 	// Handlers
 	ws_client_.set_tcp_pre_init_handler(std::bind(&WSClient::on_tcp_pre_init, this, std::placeholders::_1, connection::CLIENT));
 	ws_client_.set_tls_init_handler(std::bind(&WSClient::on_tls_init, this, std::placeholders::_1));
-	ws_client_.set_tcp_post_init_handler(std::bind(&WSClient::on_tcp_post_init_internal, this, std::placeholders::_1));
+	ws_client_.set_tcp_post_init_handler(std::bind(&WSClient::on_tcp_post_init, this, std::placeholders::_1));
 	ws_client_.set_open_handler(std::bind(&WSClient::on_open, this, std::placeholders::_1));
 	ws_client_.set_message_handler(std::bind(&WSClient::on_message_internal, this, std::placeholders::_1, std::placeholders::_2));
 	ws_client_.set_fail_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
@@ -76,23 +76,12 @@ void WSClient::connect(const tcp_endpoint& node_endpoint, const blob& pubkey, st
 	}
 }
 
-void WSClient::on_tcp_post_init_internal(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	on_tcp_post_init(ws_client_, hdl);
-}
-
 void WSClient::on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr) {
 	on_message(hdl, message_ptr->get_payload());
 }
 
 std::string WSClient::dir_hash_to_query(const blob& dir_hash) {
 	return crypto::Hex().to_string(dir_hash);
-}
-
-void WSClient::close(websocketpp::connection_hdl hdl, const std::string& reason) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	ws_client_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, reason);
 }
 
 void WSClient::send_message(websocketpp::connection_hdl hdl, const blob& message) {

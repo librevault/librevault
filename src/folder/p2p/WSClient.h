@@ -23,6 +23,8 @@ class FolderGroup;
 
 class WSClient : public WSService {
 public:
+	using client = websocketpp::client<asio_tls_client>;
+
 	WSClient(Client& client, P2PProvider& provider);
 
 	void connect(url node_url, std::shared_ptr<FolderGroup> group_ptr);
@@ -33,18 +35,19 @@ public:
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
 
 private:
-	using client = websocketpp::client<asio_tls_client>;
 	client ws_client_;
 
 	/* Handlers */
-	void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) override;
+	void on_tcp_post_init(websocketpp::connection_hdl hdl) override { WSService::on_tcp_post_init(ws_client_, hdl); }
 	void on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
 
 	/* Util */
 	std::string dir_hash_to_query(const blob& dir_hash);
 
 	/* Actions */
-	void close(websocketpp::connection_hdl hdl, const std::string& reason) override;
+	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
+		WSService::close(ws_client_, hdl, reason);
+	}
 };
 
 } /* namespace librevault */

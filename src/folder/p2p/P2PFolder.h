@@ -51,6 +51,7 @@ public:
 	const blob& remote_pubkey() const {return conn_.remote_pubkey;}
 	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
 	const WSService::connection::role_type role() const {return conn_.role;}
+	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
 
 	blob local_token();
 	blob remote_token();
@@ -81,6 +82,7 @@ public:
 
 protected:
 	WSService::connection conn_;
+	std::weak_ptr<FolderGroup> group_;
 
 	void handle_message(const blob& message);
 
@@ -90,8 +92,6 @@ private:
 
 	V1Parser parser_;
 	bool is_handshaken_ = false;
-
-	websocketpp::connection_hdl connection_handle_;
 
 	/* Message handlers */
 	void handle_Handshake(const blob& message_raw);

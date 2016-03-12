@@ -37,7 +37,7 @@ WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, pr
 	// Handlers
 	ws_server_.set_tcp_pre_init_handler(std::bind(&WSServer::on_tcp_pre_init, this, std::placeholders::_1, connection::SERVER));
 	ws_server_.set_tls_init_handler(std::bind(&WSServer::on_tls_init, this, std::placeholders::_1));
-	ws_server_.set_tcp_post_init_handler(std::bind(&WSServer::on_tcp_post_init_internal, this, std::placeholders::_1));
+	ws_server_.set_tcp_post_init_handler(std::bind(&WSServer::on_tcp_post_init, this, std::placeholders::_1));
 	ws_server_.set_validate_handler(std::bind(&WSServer::on_validate, this, std::placeholders::_1));
 	ws_server_.set_open_handler(std::bind(&WSServer::on_open, this, std::placeholders::_1));
 	ws_server_.set_message_handler(std::bind(&WSServer::on_message_internal, this, std::placeholders::_1, std::placeholders::_2));
@@ -48,12 +48,6 @@ WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, pr
 	ws_server_.start_accept();
 
 	log_->info() << log_tag() << "Listening on " << local_endpoint_;
-}
-
-void WSServer::on_tcp_post_init_internal(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	on_tcp_post_init(ws_server_, hdl);
 }
 
 bool WSServer::on_validate(websocketpp::connection_hdl hdl) {
@@ -85,11 +79,6 @@ blob WSServer::query_to_dir_hash(const std::string& query) {
 void WSServer::send_message(websocketpp::connection_hdl hdl, const blob& message) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	ws_server_.get_con_from_hdl(hdl)->send(message.data(), message.size());
-}
-
-void WSServer::close(websocketpp::connection_hdl hdl, const std::string& reason) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::internal_endpoint_error, reason);
 }
 
 } /* namespace librevault */

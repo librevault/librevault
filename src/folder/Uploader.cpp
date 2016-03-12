@@ -28,7 +28,7 @@ Uploader::Uploader(Client& client, FolderGroup& exchange_group) :
 		Loggable(client, "Uploader"),
 		client_(client),
 		exchange_group_(exchange_group) {
-	log_->trace() << log_tag() << "Uploader()";
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 }
 
 void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {

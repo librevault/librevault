@@ -33,7 +33,7 @@ P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_servic
 	name_ = os.str();
 	log_->trace() << log_tag() << "Created";
 
-	folder_group_ = client.get_group(conn_.hash);
+	group_ = client.get_group(conn_.hash);
 }
 
 P2PFolder::~P2PFolder() {
@@ -41,15 +41,15 @@ P2PFolder::~P2PFolder() {
 }
 
 blob P2PFolder::local_token() {
-	return derive_token(folder_group_.lock()->secret(), provider_.node_key().public_key());
+	return derive_token(folder_group()->secret(), provider_.node_key().public_key());
 }
 
 blob P2PFolder::remote_token() {
-	return derive_token(folder_group_.lock()->secret(), remote_pubkey());
+	return derive_token(folder_group()->secret(), remote_pubkey());
 }
 
 void P2PFolder::send_message(const blob& message) {
-	ws_service_.send_message(connection_handle_, message);
+	ws_service_.send_message(conn_.connection_handle, message);
 }
 
 void P2PFolder::perform_handshake() {
@@ -211,12 +211,6 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	auto message_struct = parser_.parse_Handshake(message_raw);
 	log_->debug() << log_tag() << "<== HANDSHAKE";
 
-	// Attaching to FolderGroup
-	auto group_ptr = folder_group_.lock();
-	if(group_ptr)
-		group_ptr->attach(shared_from_this());
-	else throw FolderGroup::attach_error();
-
 	// Checking authentication using token
 	if(message_struct.auth_token != remote_token()) throw auth_error();
 
@@ -225,7 +219,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;
 
-	group_ptr->handle_handshake(shared_from_this());
+	folder_group()->handle_handshake(shared_from_this());
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {

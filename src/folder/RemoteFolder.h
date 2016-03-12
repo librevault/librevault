@@ -52,12 +52,8 @@ public:
 
 	virtual bool ready() const = 0;
 
-	std::shared_ptr<FolderGroup> folder_group() {return std::shared_ptr<FolderGroup>(folder_group_);}
-
 protected:
 	Client& client_;
-
-	std::weak_ptr<FolderGroup> folder_group_;
 
 	bool am_choking_ = true;
 	bool am_interested_ = false;

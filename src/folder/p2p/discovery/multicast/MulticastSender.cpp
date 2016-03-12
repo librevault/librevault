@@ -62,9 +62,11 @@ void MulticastSender::maintain_requests(const boost::system::error_code& ec) {
 	if(repeat_timer_mtx_.try_lock()) {
 		std::unique_lock<decltype(repeat_timer_mtx_)> repeat_timer_lk(repeat_timer_mtx_, std::adopt_lock);
 
-		MulticastDiscovery& service = dynamic_cast<MulticastDiscovery&>(service_);
-		service.socket_.async_send_to(boost::asio::buffer(get_message()), service.group_, std::bind([](){}));
-		log_->debug() << log_tag() << "==> " << service.group_;
+		MulticastDiscovery& service = static_cast<MulticastDiscovery&>(service_);
+		if(service.enabled_) {
+			service.socket_.async_send_to(boost::asio::buffer(get_message()), service.group_, std::bind([]() {}));
+			log_->debug() << log_tag() << "==> " << service.group_;
+		}
 
 		repeat_timer_.expires_from_now(service.repeat_interval_);
 		repeat_timer_.async_wait(std::bind(&MulticastSender::maintain_requests, this, std::placeholders::_1));

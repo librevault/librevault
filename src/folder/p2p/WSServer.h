@@ -21,18 +21,20 @@ namespace librevault {
 
 class WSServer : public WSService {
 public:
+	using server = websocketpp::server<asio_tls>;
+
 	WSServer(Client& client, P2PProvider& provider);
 
 	const tcp_endpoint& local_endpoint() const {return local_endpoint_;}
 
 protected:
-	using server = websocketpp::server<asio_tls>;
-
 	server ws_server_;
 	tcp_endpoint local_endpoint_;
 
 	/* Handlers */
-	void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) override;
+	void on_tcp_post_init(websocketpp::connection_hdl hdl) override {
+		WSService::on_tcp_post_init(ws_server_, hdl);
+	}
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_message_internal(websocketpp::connection_hdl hdl, server::message_ptr message_ptr);
 
@@ -41,7 +43,9 @@ protected:
 
 	/* Actions */
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
-	void close(websocketpp::connection_hdl hdl, const std::string& reason) override;
+	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
+		WSService::close(ws_server_, hdl, reason);
+	}
 };
 
 } /* namespace librevault */

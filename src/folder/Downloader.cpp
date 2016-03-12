@@ -222,7 +222,7 @@ std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_h
 	auto needed_chunk_ptr = needed_chunk_it->second;
 
 	for(auto owner_remote : needed_chunk_ptr->own_chunk)
-		if(! owner_remote.first->peer_choking()) return owner_remote.first; // TODO: implement more smart peer selection algorithm, based on peer weights.
+		if(owner_remote.first->ready() && !owner_remote.first->peer_choking()) return owner_remote.first; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;
 }

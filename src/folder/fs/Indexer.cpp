@@ -207,7 +207,9 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 	fs::ifstream fs(path, std::ios_base::binary);
 
 	while(!fs.eof()) {
-		buffer.push_back(fs.get());
+		auto byte_read = fs.get(); if(byte_read == EOF) continue;
+
+		buffer.push_back(byte_read);
 		//size_t len = fread(buf, 1, sizeof(buf), stdin);
 		uint8_t *ptr = &buffer.back();
 

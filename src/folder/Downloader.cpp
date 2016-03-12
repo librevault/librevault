@@ -116,7 +116,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 				exchange_group_.fs_dir()->put_chunk(ct_hash, needed_block_it->second->get_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
-			maintain_requests();
+			client_.network_ios().post([this](){maintain_requests();});
 		}
 
 		if(!incremented_already) ++request_it;

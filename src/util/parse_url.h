@@ -25,7 +25,7 @@ url parse_url(std::string url_str);
 
 struct url {
 	url() {}
-	url(const std::string& str) {*this = parse_url(std::move(str));}
+	url(std::string str) {*this = parse_url(std::move(str));}
 	std::string scheme;
 	std::string userinfo;
 	std::string host;

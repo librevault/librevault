@@ -48,7 +48,7 @@ void Uploader::request_block(std::shared_ptr<RemoteFolder> origin, const blob& c
 	try {
 		origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
 	}catch(AbstractFolder::no_such_chunk& e){
-		log_->warn() << log_tag() << "Requested nonexistent chunk";
+		log_->warn() << log_tag() << "Requested nonexistent block";
 	}
 }
 

@@ -212,22 +212,26 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 		uint8_t *ptr = &buffer.back();
 
 		if(rabin_next_chunk(&hasher, ptr, 1) == 1) {    // Found a chunk
-			chunks.push_back(populate_chunk(new_meta, buffer));
+			chunks.push_back(populate_chunk(new_meta, buffer, pt_hmac__iv));
 			buffer.clear();
 		}
 	}
 
 	if(rabin_finalize(&hasher) != 0)
-		chunks.push_back(populate_chunk(new_meta, buffer));
+		chunks.push_back(populate_chunk(new_meta, buffer, pt_hmac__iv));
 
 	new_meta.set_chunks(chunks);
 }
 
-Meta::Chunk Indexer::populate_chunk(const Meta& new_meta, const blob& data) {
+Meta::Chunk Indexer::populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
 	log_->debug() << log_tag() << data.size();
 	Meta::Chunk chunk;
 	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
-	chunk.iv = crypto::AES_CBC::random_iv();
+
+	// IV reuse
+	auto it = pt_hmac__iv.find(chunk.pt_hmac);
+	chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
+
 	chunk.size = data.size();
 	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta.strong_hash_type());
 	return chunk;

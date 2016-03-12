@@ -64,7 +64,7 @@ private:
 	Meta::Type get_type(const fs::path& path);
 	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path);
 	void update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path);
-	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data);
+	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv);
 };
 
 } /* namespace librevault */

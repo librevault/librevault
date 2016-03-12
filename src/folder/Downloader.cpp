@@ -216,12 +216,12 @@ bool Downloader::request_one() {
 std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_hash) {
 	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto needed_block_it = needed_chunks_.find(ct_hash);
-	if(needed_block_it == needed_chunks_.end()) return nullptr;
+	auto needed_chunk_it = needed_chunks_.find(ct_hash);
+	if(needed_chunk_it == needed_chunks_.end()) return nullptr;
 
-	auto needed_block_ptr = needed_block_it->second;
+	auto needed_chunk_ptr = needed_chunk_it->second;
 
-	for(auto owner_remote : needed_block_ptr->own_chunk)
+	for(auto owner_remote : needed_chunk_ptr->own_chunk)
 		if(! owner_remote.first->peer_choking()) return owner_remote.first; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;

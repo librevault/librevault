@@ -32,8 +32,7 @@ protected:
 	tcp_endpoint local_endpoint_;
 
 	/* Handlers */
-	void on_tcp_pre_init(websocketpp::connection_hdl hdl);
-	void on_tcp_post_init(websocketpp::connection_hdl hdl);
+	void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) override;
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_message_internal(websocketpp::connection_hdl hdl, server::message_ptr message_ptr);
 

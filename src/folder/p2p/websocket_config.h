@@ -23,7 +23,7 @@
 namespace librevault {
 
 /// Client config with asio transport and TLS enabled, but with logging disabled
-struct asio_tls_client : public websocketpp::config::core_client {
+/*struct asio_tls_client : public websocketpp::config::core_client {
 	using type = asio_tls_client;
 	using base = websocketpp::config::core_client;
 
@@ -51,10 +51,12 @@ struct asio_tls_client : public websocketpp::config::core_client {
 	};
 
 	using transport_type = websocketpp::transport::asio::endpoint<transport_config>;
-};
+};*/
+
+using asio_tls_client = websocketpp::config::asio_tls_client;
 
 /// Server config with asio transport and TLS enabled
-struct asio_tls : public websocketpp::config::core {
+/*struct asio_tls : public websocketpp::config::core {
 	using type = asio_tls;
 	using base = websocketpp::config::core;
 
@@ -82,7 +84,9 @@ struct asio_tls : public websocketpp::config::core {
 	};
 
 	using transport_type = websocketpp::transport::asio::endpoint<transport_config>;
-};
+};*/
+
+using asio_tls = websocketpp::config::asio_tls;
 
 /// Server config with asio transport and TLS disabled
 struct asio_notls : public websocketpp::config::core {

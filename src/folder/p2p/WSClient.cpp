@@ -28,9 +28,9 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 	ws_client_.set_max_message_size(10 * 1024 * 1024);
 
 	// Handlers
-	ws_client_.set_tcp_pre_init_handler(std::bind(&WSClient::on_tcp_pre_init, this, std::placeholders::_1));
+	ws_client_.set_tcp_pre_init_handler(std::bind(&WSClient::on_tcp_pre_init, this, std::placeholders::_1, connection::CLIENT));
 	ws_client_.set_tls_init_handler(std::bind(&WSClient::on_tls_init, this, std::placeholders::_1));
-	ws_client_.set_tcp_post_init_handler(std::bind(&WSClient::on_tcp_post_init, this, std::placeholders::_1));
+	ws_client_.set_tcp_post_init_handler(std::bind(&WSClient::on_tcp_post_init_internal, this, std::placeholders::_1));
 	ws_client_.set_open_handler(std::bind(&WSClient::on_open, this, std::placeholders::_1));
 	ws_client_.set_message_handler(std::bind(&WSClient::on_message_internal, this, std::placeholders::_1, std::placeholders::_2));
 	ws_client_.set_fail_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
@@ -40,20 +40,24 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 void WSClient::connect(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " " << (std::string)node_url;
 	websocketpp::lib::error_code ec;
+
+	// Building url
 	node_url.scheme = "wss";
 	node_url.query = "/";
 	node_url.query += dir_hash_to_query(group_ptr->hash());
 
 	auto connection_ptr = ws_client_.get_connection(node_url, ec);
-	if(!ec) {
-		auto p2p_directory_ptr = std::make_shared<P2PFolder>(client_, provider_, *this, node_url, connection_ptr, group_ptr);
-		ws_assignment_.insert(std::make_pair(websocketpp::connection_hdl(connection_ptr), p2p_directory_ptr));
-
-		log_->debug() << log_tag() << "Added node " << std::string(node_url);
-
-		ws_client_.connect(connection_ptr);
-	}else
+	if(ec) {
 		log_->warn() << log_tag() << "Error connecting to " << (std::string)node_url;
+		return;
+	}
+
+	connection& conn = ws_assignment_[websocketpp::connection_hdl(connection_ptr)];
+	conn.hash = group_ptr->hash();
+
+	log_->debug() << log_tag() << "Added node " << std::string(node_url);
+
+	ws_client_.connect(connection_ptr);
 }
 
 void WSClient::connect(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
@@ -72,36 +76,10 @@ void WSClient::connect(const tcp_endpoint& node_endpoint, const blob& pubkey, st
 	}
 }
 
-void WSClient::on_tcp_pre_init(websocketpp::connection_hdl hdl) {
+void WSClient::on_tcp_post_init_internal(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
-	connection_ptr->add_subprotocol(subprotocol_);
-}
-
-void WSClient::on_tcp_post_init(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	auto connection_ptr = ws_client_.get_con_from_hdl(hdl);
-
-	try {
-		auto dir_ptr = dir_ptr_from_hdl(hdl);
-
-		// Validate SSL certificate
-		X509* x509 = SSL_get_peer_certificate(connection_ptr->get_socket().native_handle());
-		if(!x509) throw connection_error();
-
-		// Detect loopback
-		dir_ptr->remote_pubkey_ = pubkey_from_cert(x509);
-		dir_ptr->remote_endpoint_ = connection_ptr->get_raw_socket().remote_endpoint();
-
-		if(provider_.is_loopback(dir_ptr->remote_pubkey()) || provider_.is_loopback(dir_ptr->remote_endpoint())) {
-			provider_.mark_loopback(dir_ptr->remote_endpoint());
-			throw connection_error();
-		}
-	}catch(connection_error& e) {
-		connection_ptr->terminate(websocketpp::lib::error_code());
-	}
+	on_tcp_post_init(ws_client_, hdl);
 }
 
 void WSClient::on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr) {

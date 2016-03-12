@@ -16,6 +16,7 @@
 #pragma once
 #include "src/folder/RemoteFolder.h"
 #include "P2PProvider.h"
+#include "WSService.h"
 #include <librevault/protocol/V1Parser.h>
 #include <websocketpp/common/connection_hdl.hpp>
 
@@ -43,20 +44,13 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role);
-	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle);
-	P2PFolder(Client& client,
-	          P2PProvider& provider,
-	          WSService& ws_service,
-	          std::string name,
-	          websocketpp::connection_hdl connection_handle,
-	          std::shared_ptr<FolderGroup> folder_group);
+	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */
-	const blob& remote_pubkey() const {return remote_pubkey_;}
-	const tcp_endpoint& remote_endpoint() const {return remote_endpoint_;}
-	const P2PProvider::role_type role() const {return role_;}
+	const blob& remote_pubkey() const {return conn_.remote_pubkey;}
+	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
+	const WSService::connection::role_type role() const {return conn_.role;}
 
 	blob local_token();
 	blob remote_token();
@@ -86,15 +80,13 @@ public:
 	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
 protected:
-	blob remote_pubkey_;
-	tcp_endpoint remote_endpoint_;
+	WSService::connection conn_;
 
 	void handle_message(const blob& message);
 
 private:
 	P2PProvider& provider_;
 	WSService& ws_service_;
-	P2PProvider::role_type role_;
 
 	V1Parser parser_;
 	bool is_handshaken_ = false;

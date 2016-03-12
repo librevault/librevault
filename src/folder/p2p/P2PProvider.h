@@ -33,8 +33,6 @@ class NATPMPService;
 
 class P2PProvider : protected Loggable {
 public:
-	enum role_type {SERVER, CLIENT};
-
 	P2PProvider(Client& client);
 	virtual ~P2PProvider();
 

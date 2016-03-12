@@ -74,6 +74,16 @@ blob WSService::pubkey_from_cert(X509* x509) {
 	return raw_public;
 }
 
+void WSService::on_tcp_pre_init(websocketpp::connection_hdl hdl, connection::role_type role) {
+	log_->trace() << log_tag() << "on_tcp_pre_init()";
+
+	connection& conn = ws_assignment_[hdl];
+	conn.connection_handle = hdl;
+	conn.role = role;
+
+	ws_assignment_.insert({hdl, conn});
+}
+
 std::shared_ptr<ssl_context> WSService::on_tls_init(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
@@ -92,10 +102,13 @@ bool WSService::on_tls_verify(websocketpp::connection_hdl hdl, bool preverified,
 void WSService::on_open(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto dir_ptr = dir_ptr_from_hdl(hdl);
-	log_->debug() << log_tag() << "Connection opened to: " << dir_ptr->name();
-	if(dir_ptr->role() == P2PProvider::CLIENT)
-		dir_ptr->perform_handshake();
+	connection& conn = ws_assignment_[hdl];
+	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, conn);
+	conn.folder = new_folder;
+
+	log_->debug() << log_tag() << "Connection opened to: " << new_folder->name();
+	if(conn.role == connection::CLIENT)
+		new_folder->perform_handshake();
 }
 
 void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& message_raw) {
@@ -103,8 +116,8 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 
 	try {
 		blob message_blob = blob(message_raw.begin(), message_raw.end());
-		dir_ptr_from_hdl(hdl)->handle_message(message_blob);
-	}catch(std::runtime_error& e) {
+		std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder)->handle_message(message_blob);
+	}catch(std::exception& e) {
 		log_->trace() << log_tag() << "on_message e:" << e.what();
 		close(hdl, e.what());
 	}
@@ -113,7 +126,7 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto dir_ptr = dir_ptr_from_hdl(hdl);
+	auto dir_ptr = ws_assignment_[hdl].folder.lock();
 	if(dir_ptr) {
 		try {
 			auto folder_group = dir_ptr->folder_group();
@@ -126,9 +139,37 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 	ws_assignment_.erase(hdl);
 }
 
-std::shared_ptr<P2PFolder> WSService::dir_ptr_from_hdl(websocketpp::connection_hdl hdl) {
-	auto it_server = ws_assignment_.find(hdl);
-	return it_server != ws_assignment_.end() ? it_server->second : nullptr;
+template<class WSClass>
+void WSService::on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
+	auto connection_ptr = c.get_con_from_hdl(hdl);
+	if(!c.is_server())
+		connection_ptr->add_subprotocol(subprotocol_);
+
+	try {
+		// Validate SSL certificate
+		X509* x509 = SSL_get_peer_certificate(connection_ptr->get_socket().native_handle());
+		if(!x509) throw connection_error("Certificate error");
+
+		// Detect loopback
+		connection& conn = ws_assignment_[hdl];
+		conn.remote_pubkey = pubkey_from_cert(x509);
+		conn.remote_endpoint = connection_ptr->get_raw_socket().remote_endpoint();
+
+		X509_free(x509);
+
+		if(provider_.is_loopback(conn.remote_pubkey) || provider_.is_loopback(conn.remote_endpoint)) {
+			provider_.mark_loopback(conn.remote_endpoint);
+			throw connection_error("Loopback detected");
+		}
+	}catch(std::exception& e) {
+		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
+		connection_ptr->terminate(websocketpp::lib::error_code());
+	}
 }
+
+template void WSService::on_tcp_post_init(websocketpp::server<asio_tls>&, websocketpp::connection_hdl);
+template void WSService::on_tcp_post_init(websocketpp::client<asio_tls_client>&, websocketpp::connection_hdl);
 
 } /* namespace librevault */

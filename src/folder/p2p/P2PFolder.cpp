@@ -23,22 +23,17 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, P2PProvider::role_type role) :
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, WSService::connection conn) :
 	RemoteFolder(client),
+	conn_(std::move(conn)),
 	provider_(provider),
-	ws_service_(ws_service),
-	connection_handle_(connection_handle) {
-	name_ = name;
-	role_ = role;
+	ws_service_(ws_service) {
+
+	std::ostringstream os; os << conn_.remote_endpoint;
+	name_ = os.str();
 	log_->trace() << log_tag() << "Created";
-}
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle) :
-	P2PFolder(client, provider, ws_service, name, connection_handle, P2PProvider::SERVER) {}
-
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, std::string name, websocketpp::connection_hdl connection_handle, std::shared_ptr<FolderGroup> folder_group) :
-	P2PFolder(client, provider, ws_service, name, connection_handle, P2PProvider::CLIENT) {
-	folder_group_ = folder_group;
+	folder_group_ = client.get_group(conn_.hash);
 }
 
 P2PFolder::~P2PFolder() {
@@ -225,7 +220,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	// Checking authentication using token
 	if(message_struct.auth_token != remote_token()) throw auth_error();
 
-	if(role_ == P2PProvider::SERVER) perform_handshake();
+	if(conn_.role == WSService::connection::SERVER) perform_handshake();
 
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;

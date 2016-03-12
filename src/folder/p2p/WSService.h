@@ -17,11 +17,11 @@
 #include "src/pch.h"
 #pragma once
 #include "websocket_config.h"
+#include "P2PProvider.h"
 
 namespace librevault {
 
 class P2PFolder;
-class P2PProvider;
 
 class Client;
 
@@ -29,16 +29,34 @@ class WSService : public Loggable {
 public:
 	WSService(Client& client, P2PProvider& provider);
 
+	struct connection {
+		// Set immediately after creation
+		websocketpp::connection_hdl connection_handle;
+		enum role_type {SERVER, CLIENT} role;
+
+		// Set on_tcp_post_init
+		blob remote_pubkey;
+		tcp_endpoint remote_endpoint;
+
+		// Needs to be set before on_validate and on_open
+		blob hash;
+
+		// Set on_open
+		std::weak_ptr<P2PFolder> folder;
+	};
+
 	/* Actions */
 	virtual void send_message(websocketpp::connection_hdl hdl, const blob& message) = 0;
 
 protected:
-	struct connection_error{};
+	struct connection_error : public std::runtime_error {
+		connection_error(const char* what) : std::runtime_error(what) {}
+	};
 
 	P2PProvider& provider_;
 	Client& client_;
 
-	std::map<websocketpp::connection_hdl, std::shared_ptr<P2PFolder>, std::owner_less<websocketpp::connection_hdl>> ws_assignment_;
+	std::map<websocketpp::connection_hdl, connection, std::owner_less<websocketpp::connection_hdl>> ws_assignment_;
 
 	static const char* subprotocol_;
 
@@ -47,14 +65,16 @@ protected:
 	blob pubkey_from_cert(X509* x509);
 
 	/* Handlers */
+	void on_tcp_pre_init(websocketpp::connection_hdl hdl, connection::role_type role);
+	virtual void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) = 0;
 	std::shared_ptr<ssl_context> on_tls_init(websocketpp::connection_hdl hdl);
 	bool on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx);    // Not WebSockets callback, but asio::ssl
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_message(websocketpp::connection_hdl hdl, const std::string& message);
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
-	/* Util */
-	std::shared_ptr<P2PFolder> dir_ptr_from_hdl(websocketpp::connection_hdl hdl);
+	/* Handler templates */
+	template<class WSClass> void on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl);
 
 	/* Actions */
 	virtual void close(websocketpp::connection_hdl hdl, const std::string& reason) = 0;

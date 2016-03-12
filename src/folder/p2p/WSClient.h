@@ -37,8 +37,7 @@ private:
 	client ws_client_;
 
 	/* Handlers */
-	void on_tcp_pre_init(websocketpp::connection_hdl hdl);
-	void on_tcp_post_init(websocketpp::connection_hdl hdl);
+	void on_tcp_post_init_internal(websocketpp::connection_hdl hdl) override;
 	void on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
 
 	/* Util */

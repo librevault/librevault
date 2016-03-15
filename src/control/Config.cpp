@@ -15,7 +15,9 @@
  */
 #include "Config.h"
 
-#if BOOST_OS_LINUX || BOOST_OS_MACOS || BOOST_OS_BSD || BOOST_OS_UNIX
+#if BOOST_OS_MACOS
+#	include <CoreServices/CoreServices.h>
+#elif BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_UNIX
 #   include <pwd.h>
 #elif BOOST_OS_WINDOWS
 #	include <shlobj.h>
@@ -143,7 +145,13 @@ fs::path Config::default_appdata_path() {
 
 	return folder_path;
 #elif BOOST_OS_MACOS
-	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: Maybe, move to Application Support, as we are not using .plist?
+	FSRef ref;
+	OSType folderType = kApplicationSupportFolderType;
+    char path[PATH_MAX];
+    FSFindFolder(kUserDomain, folderType, kCreateFolder, &ref);
+    FSRefMakePath(&ref, (UInt8*)&path, PATH_MAX);
+
+	return fs::path(path) / Version::current().name();	// TODO: Use bundle name instead (or not?)
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
 		return fs::path(xdg_ptr) / Version::current().name();

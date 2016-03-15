@@ -17,6 +17,8 @@
 
 #if BOOST_OS_LINUX || BOOST_OS_MACOS || BOOST_OS_BSD || BOOST_OS_UNIX
 #   include <pwd.h>
+#elif BOOST_OS_WINDOWS
+#	include <shlobj.h>
 #endif
 
 namespace librevault {
@@ -134,7 +136,12 @@ void Config::save() {
 
 fs::path Config::default_appdata_path() {
 #if BOOST_OS_WINDOWS
-	return fs::path(getenv("APPDATA")) / Version::current().name();	//TODO: Change to Proper(tm) WinAPI-ish SHGetKnownFolderPath
+	PWSTR appdata_path;
+	SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &appdata_path);
+	fs::path folder_path = fs::path(appdata_path) / Version::current().name();
+	CoTaskMemFree(appdata_path);
+
+	return folder_path;
 #elif BOOST_OS_MACOS
 	return fs::path(getenv("HOME")) / "Library/Preferences" / Version::current().name();	// TODO: Maybe, move to Application Support, as we are not using .plist?
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX

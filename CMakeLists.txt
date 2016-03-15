@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.2)
 project(lvcommon VERSION 0.9.4)
 
 #============================================================================
@@ -75,8 +75,8 @@ endif()
 
 ### WinSock
 if(WIN32)
-	target_link_libraries(lvcommon-static ws2_32)
-	target_link_libraries(lvcommon-shared ws2_32)
+	target_link_libraries(lvcommon-static PRIVATE ws2_32)
+	target_link_libraries(lvcommon-shared PRIVATE ws2_32)
 endif()
 
 ### Threads
@@ -114,7 +114,7 @@ target_link_libraries(lvcommon-shared PRIVATE ${PROTOBUF_LIBRARIES})
 target_link_libraries(lvcommon-static PRIVATE libprotobuf.a)
 
 ### CryptoPP
-find_package(CryptoPP 5.6.3 CONFIG)
+find_package(CryptoPP 5.6.3 CONFIG QUIET)
 if(CryptoPP_FOUND)
 	target_link_libraries(lvcommon-static PRIVATE cryptopp-static)
 	target_link_libraries(lvcommon-shared PRIVATE cryptopp-shared)

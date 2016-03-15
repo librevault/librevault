@@ -137,8 +137,8 @@ void Indexer::update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::pa
 
 	// Then, write new values of attributes (if enabled in config)
 #if BOOST_OS_WINDOWS
-	if(dir_.dir_options().get("preserve_windows_attrib", false)) {
-		meta.set_windows_attrib(GetFileAttributes(abspath.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
+	if(dir_.params().preserve_windows_attrib) {
+		new_meta.set_windows_attrib(GetFileAttributes(path.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
 	}
 #elif BOOST_OS_UNIX
 	if(dir_.params().preserve_unix_attrib) {

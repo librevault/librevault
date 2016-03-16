@@ -7,6 +7,7 @@ project(librevault VERSION 0.1.0)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(WITH_COTIRE "Use cotire for builds" ON)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 
 #============================================================================
 # CMake modules
@@ -147,7 +148,7 @@ endif()
 ## SQLite
 find_package(Sqlite3 QUIET)
 
-if(SQLITE3_FOUND)
+if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
 	target_include_directories(${PROJECT_NAME} PUBLIC ${SQLITE3_INCLUDE_DIR})
 	target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARIES})
 else()

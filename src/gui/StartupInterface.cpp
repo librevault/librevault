@@ -33,6 +33,7 @@ bool StartupInterface::isEnabled() const {
 	QFileInfo desktop_file(desktop_file_path);
 	return desktop_file.exists() && desktop_file.isFile();
 #endif
+	return false;
 }
 
 void StartupInterface::setEnabled(bool enabled) {

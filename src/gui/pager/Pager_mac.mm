@@ -14,7 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Pager.h"
-#include "OSXIconInterface.h"
+
+#include <AppKit/NSToolbar.h>
+#include <AppKit/NSToolbarItem.h>
+#include <AppKit/NSImage.h>
 
 #ifdef Q_OS_MAC
 
@@ -42,8 +45,9 @@ void Pager::set_icon(int page, const QIcon& icon) {
 }
 
 void Pager::set_theme_icon(int page, const QString& name) {
-	QByteArray ba = name.toLatin1();
-	set_named_image(buttons_[page]->nativeToolBarItem(), (void*)ba.data());
+	NSString *nsstr = [NSString stringWithUTF8String:name.toUtf8().data()];
+	NSImage* image = [NSImage imageNamed:nsstr];
+	buttons_[page]->nativeToolBarItem().image = image;
 }
 
 int Pager::page_count() const {
@@ -51,7 +55,8 @@ int Pager::page_count() const {
 }
 
 void Pager::show() {
-	select_item(toolbar->nativeToolbar(), buttons_[0]->nativeToolBarItem());
+	NSString* item_id = buttons_[0]->nativeToolBarItem().itemIdentifier;
+	[toolbar->nativeToolbar() setSelectedItemIdentifier:item_id];
 
 	parentWidget()->window()->winId();
 	toolbar->attachToWindow(parentWidget()->window()->windowHandle());

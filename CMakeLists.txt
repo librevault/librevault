@@ -104,6 +104,12 @@ else()
 	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
 endif()
 
+## CoreFoundation
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")
+	target_link_libraries(${PROJECT_NAME} "-framework AppKit")
+endif()
+
 #============================================================================
 # Install
 #============================================================================

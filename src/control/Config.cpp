@@ -145,7 +145,7 @@ fs::path Config::default_appdata_path() {
 
 	return folder_path;
 #elif BOOST_OS_MACOS
-#	ifndef MACOS_NO_DEPRECATED
+#	ifdef MACOS_USE_DEPRECATED
 	FSRef ref;
 	OSType folderType = kApplicationSupportFolderType;
     char path[PATH_MAX];
@@ -153,7 +153,7 @@ fs::path Config::default_appdata_path() {
     FSRefMakePath(&ref, (UInt8*)&path, PATH_MAX);
 
 	return fs::path(path) / Version::current().name();	// TODO: Use bundle name instead (or not?)
-#	else	//MACOS_NO_DEPRECATED
+#	else	//MACOS_USE_DEPRECATED
 	return fs::path(getenv("HOME")) / "Library/Application Support" / Version::current().name();
 #	endif
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX

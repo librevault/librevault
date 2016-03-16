@@ -28,7 +28,7 @@
 namespace librevault {
 
 FolderGroup::FolderGroup(FolderParams params, Client& client) :
-		Loggable( (params_.path.empty() ? params_.system_path : params_.path).string() ),
+		Loggable( (params.path.empty() ? params.system_path : params.path).string() ),
 		params_(std::move(params)),
 		client_(client),
 		fs_dir_(std::make_shared<FSFolder>(*this, client)),

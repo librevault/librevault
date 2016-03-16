@@ -37,7 +37,7 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 	bool path_created = fs::create_directories(params().path);
 	bool system_path_created = fs::create_directories(params().system_path);
 #if BOOST_OS_WINDOWS
-	//SetFileAttributes() // Use SetFileAttributes to set chunk_path_ as HIDDEN.
+	SetFileAttributes(params().system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
 	name_ = (!params().path.empty() ? params().path : params().system_path).string();

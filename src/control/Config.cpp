@@ -136,6 +136,8 @@ void Config::save() {
 	folders_ofs << folders_custom_.toStyledString();
 }
 
+#if BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
+
 fs::path Config::default_appdata_path() {
 #if BOOST_OS_WINDOWS
 	PWSTR appdata_path;
@@ -144,18 +146,6 @@ fs::path Config::default_appdata_path() {
 	CoTaskMemFree(appdata_path);
 
 	return folder_path;
-#elif BOOST_OS_MACOS
-#	ifdef MACOS_USE_DEPRECATED
-	FSRef ref;
-	OSType folderType = kApplicationSupportFolderType;
-    char path[PATH_MAX];
-    FSFindFolder(kUserDomain, folderType, kCreateFolder, &ref);
-    FSRefMakePath(&ref, (UInt8*)&path, PATH_MAX);
-
-	return fs::path(path) / Version::current().name();	// TODO: Use bundle name instead (or not?)
-#	else	//MACOS_USE_DEPRECATED
-	return fs::path(getenv("HOME")) / "Library/Application Support" / Version::current().name();
-#	endif
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
 		return fs::path(xdg_ptr) / Version::current().name();
@@ -169,5 +159,7 @@ fs::path Config::default_appdata_path() {
 	return fs::path(getenv("HOME")) / Version::current().name();
 #endif
 }
+
+#endif	// NOT BOOST_OS_MACOS
 
 } /* namespace librevault */

@@ -57,10 +57,15 @@ endif()
 
 list(APPEND SRCS "src/pch.h")
 # Main sources
-file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
+file(GLOB_RECURSE MAIN_CXX "src/*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "src/*.h")
-list(APPEND SRCS ${MAIN_SRCS})
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	file(GLOB_RECURSE MAIN_OBJCXX "src/*.mm")
+endif()
+
+list(APPEND SRCS ${MAIN_CXX})
 list(APPEND SRCS ${MAIN_HEADERS})
+list(APPEND SRCS ${MAIN_OBJCXX})
 
 include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
@@ -221,6 +226,7 @@ endif()
 
 ## CoreFoundation
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(${PROJECT_NAME} "-framework Foundation")
 	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")
 	target_link_libraries(${PROJECT_NAME} "-framework CoreServices")
 endif()

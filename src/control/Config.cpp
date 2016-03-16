@@ -160,6 +160,6 @@ fs::path Config::default_appdata_path() {
 #endif
 }
 
-#endif	// NOT BOOST_OS_MACOS
+#endif	// BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
 } /* namespace librevault */

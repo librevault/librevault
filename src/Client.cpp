@@ -121,6 +121,8 @@ void Client::add_folder(FolderParams params) {
 }
 
 void Client::remove_folder(const Secret& secret) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	hash_group_.erase(secret.get_Hash());
 	//config().remove_folder(secret);   // TODO: Remove from config
 	folder_removed_signal(get_group(secret.get_Hash()));

@@ -33,9 +33,13 @@ FolderGroup::FolderGroup(FolderParams params, Client& client) :
 		client_(client),
 		fs_dir_(std::make_shared<FSFolder>(*this, client)),
 		uploader_(std::make_shared<Uploader>(client, *this)),
-		downloader_(std::make_shared<Downloader>(client, *this)) {}
+		downloader_(std::make_shared<Downloader>(client, *this)) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+}
 
 FolderGroup::~FolderGroup() {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	downloader_.reset();
 	uploader_.reset();
 	fs_dir_.reset();

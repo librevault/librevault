@@ -38,8 +38,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	settings_ = std::make_unique<Settings>();
 	connect(settings_.get(), &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
-	add_folder_ = std::make_unique<AddFolder>();
-	connect(add_folder_.get(), &AddFolder::folderAdded, this, &MainWindow::folderAdded);
+	add_folder_ = new AddFolder(this);
+	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
 
 	init_actions();
 	init_tray();
@@ -128,7 +128,7 @@ void MainWindow::init_actions() {
 	new_folder_action = new QAction(this);
 	QIcon new_folder_action_icon(QIcon::fromTheme(QStringLiteral("folder-new")));
 	new_folder_action->setIcon(new_folder_action_icon);
-	connect(new_folder_action, &QAction::triggered, add_folder_.get(), &AddFolder::show);
+	connect(new_folder_action, &QAction::triggered, add_folder_, &AddFolder::show);
 
 	delete_folder_action = new QAction(this);
 	QIcon delete_folder_action_icon(QIcon::fromTheme(QStringLiteral("edit-delete")));

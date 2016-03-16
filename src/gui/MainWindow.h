@@ -62,7 +62,7 @@ protected:
 
 	/* Dialogs */
 	std::unique_ptr<Settings> settings_;
-	std::unique_ptr<AddFolder> add_folder_;
+	AddFolder* add_folder_;
 
 	/* Event handlers (overrides) */
 	void changeEvent(QEvent* e) override;

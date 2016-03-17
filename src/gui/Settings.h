@@ -34,7 +34,7 @@ public:
 	explicit Settings(QWidget* parent = 0);
 	~Settings();
 
-	enum class Page {
+	enum Page {
 		PAGE_GENERAL = 0,
 		PAGE_ACCOUNT = 1,
 		PAGE_NETWORK = 2,
@@ -61,7 +61,6 @@ protected:
 	// Selector
 	void init_selector();
 	QString page_name(Page page);
-	QIcon page_icon(Page page);
 
 	// Overrides
 	void showEvent(QShowEvent* e) override;

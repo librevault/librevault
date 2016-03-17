@@ -171,32 +171,6 @@ QString Settings::page_name(Page page) {
 	}
 }
 
-QIcon Settings::page_icon(Page page) {
-	QIcon icon;
-	if(page == Page::PAGE_GENERAL) {
-		icon.addFile(QStringLiteral(":/branding/librevault_icon.svg"), QSize(), QIcon::Normal, QIcon::Off);
-	}else if(page == Page::PAGE_ACCOUNT){
-		QString iconThemeName = QStringLiteral("user-identity");
-		if(QIcon::hasThemeIcon(iconThemeName))
-			icon = QIcon::fromTheme(iconThemeName);
-		else
-			icon.addFile(QStringLiteral(":/icons/ic_account_box_black_48px.svg"), QSize(), QIcon::Normal, QIcon::Off);
-	}else if(page == Page::PAGE_NETWORK){
-		QString iconThemeName = QStringLiteral("network-wireless");
-		if(QIcon::hasThemeIcon(iconThemeName))
-			icon = QIcon::fromTheme(iconThemeName);
-		else
-			icon.addFile(QStringLiteral(":/icons/ic_settings_ethernet_black_48px.svg"), QSize(), QIcon::Normal, QIcon::Off);
-	}else if(page == Page::PAGE_ADVANCED){
-		QString iconThemeName = QStringLiteral("document-properties");
-		if(QIcon::hasThemeIcon(iconThemeName))
-			icon = QIcon::fromTheme(iconThemeName);
-		else
-			icon.addFile(QStringLiteral(":/icons/ic_settings_black_48px.svg"), QSize(), QIcon::Normal, QIcon::Off);
-	}
-	return icon;
-}
-
 void Settings::showEvent(QShowEvent* e) {
 	QDialog::showEvent(e);
 	reset_ui_states();

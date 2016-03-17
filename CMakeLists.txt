@@ -65,6 +65,9 @@ set(Qt_COMPONENTS
 		WebSockets
 		WebKitWidgets
 		)
+if(WIN32)
+	list(APPEND Qt_COMPONENTS WinExtras)
+endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
@@ -93,6 +96,9 @@ add_executable(${PROJECT_NAME} ${SRCS})
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)
+if(WIN32)
+	target_link_libraries(${PROJECT_NAME} Qt5::WinExtras)
+endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(${PROJECT_NAME} Qt5::MacExtras)
 endif()

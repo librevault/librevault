@@ -25,5 +25,9 @@ QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 		case SETTINGS_NETWORK: return QIcon(new MacIcon("NSNetwork"));
 		case SETTINGS_ADVANCED: return QIcon(new MacIcon("NSAdvanced"));
 #endif
+		case SETTINGS_GENERAL: return QIcon(":/branding/librevault_icon.svg");
+		case SETTINGS_ACCOUNT: return get_shell_icon("imageres.dll", 1029);
+		case SETTINGS_NETWORK: return get_shell_icon("netcenter.dll", 7);
+		case SETTINGS_ADVANCED: return get_shell_icon("imageres.dll", 27);
 	}
 }

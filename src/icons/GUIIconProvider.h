@@ -16,6 +16,9 @@
 #pragma once
 #include "src/pch.h"
 #include <QtGui>
+#ifdef Q_OS_WIN
+#include <QtWin>
+#endif
 
 class GUIIconProvider {
 public:
@@ -48,5 +51,11 @@ protected:
 		QString name_;
 		virtual QString iconName() const override {return name_;}
 	};
+#endif
+
+#ifdef Q_OS_WIN
+	static QIcon get_shell_icon(LPCTSTR dll, WORD num) {
+		return QIcon(QtWin::fromHICON(LoadIcon(LoadLibrary(dll), MAKEINTRESOURCE(num))));
+	}
 #endif
 };

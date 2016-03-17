@@ -41,13 +41,11 @@ void Pager::set_text(int page, const QString& text) {
 }
 
 void Pager::set_icon(int page, const QIcon& icon) {
-	buttons_[page]->setIcon(icon);
-}
-
-void Pager::set_theme_icon(int page, const QString& name) {
-	NSString *nsstr = [NSString stringWithUTF8String:name.toUtf8().data()];
-	NSImage* image = [NSImage imageNamed:nsstr];
-	buttons_[page]->nativeToolBarItem().image = image;
+	if(!icon.name().isEmpty()) {
+		NSString *nsstr = [NSString stringWithUTF8String:icon.name().toUtf8().data()];
+		buttons_[page]->nativeToolBarItem().image = [NSImage imageNamed:nsstr];
+	}else
+		buttons_[page]->setIcon(icon);
 }
 
 int Pager::page_count() const {

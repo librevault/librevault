@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "src/pch.h"
-#include <QtGui/QIcon>
+#include <QtGui>
 
 class GUIIconProvider {
 public:
@@ -32,8 +32,21 @@ public:
 		static GUIIconProvider* provider = nullptr;
 		if(provider == nullptr)
 			provider = new GUIIconProvider();
+		return provider;
 	}
 
 protected:
 	GUIIconProvider();
+
+#ifdef Q_OS_MAC
+	class MacIcon : public QIconEngine {
+	public:
+		MacIcon(const QString& name) : QIconEngine(), name_(name) {}
+		virtual void paint(QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state) override {/* no-op */}
+		virtual QIconEngine* clone() const override {/* no-op */ return nullptr;}
+	private:
+		QString name_;
+		virtual QString iconName() const override {return name_;}
+	};
+#endif
 };

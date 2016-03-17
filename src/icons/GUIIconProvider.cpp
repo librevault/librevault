@@ -18,5 +18,12 @@
 GUIIconProvider::GUIIconProvider() {}
 
 QIcon GUIIconProvider::get_icon(ICON_ID id) const {
-	return QIcon::fromTheme("NSComputer");	// Example
+	switch(id) {
+#ifdef Q_OS_MAC
+		case SETTINGS_GENERAL: return QIcon(new MacIcon("NSPreferencesGeneral"));
+		case SETTINGS_ACCOUNT: return QIcon(new MacIcon("NSUser"));
+		case SETTINGS_NETWORK: return QIcon(new MacIcon("NSNetwork"));
+		case SETTINGS_ADVANCED: return QIcon(new MacIcon("NSAdvanced"));
+#endif
+	}
 }

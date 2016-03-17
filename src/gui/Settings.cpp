@@ -17,6 +17,7 @@
 #include "ui_Settings.h"
 #include <QCloseEvent>
 #include <QDebug>
+#include "src/icons/GUIIconProvider.h"
 
 Settings::Settings(QWidget* parent) :
 		QDialog(parent),
@@ -144,14 +145,13 @@ void Settings::init_selector() {
 	pager = new Pager(ui->controlBar, this);
 
 	page = pager->add_page();
-	//pager->set_icon(page, page_icon((Page)page));
-	//pager->set_theme_icon(page, "NSPreferencesGeneral");
+	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_GENERAL));
 	page = pager->add_page();
-	//pager->set_theme_icon(page, "NSUser");
+	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ACCOUNT));
 	page = pager->add_page();
-	//pager->set_theme_icon(page, "NSNetwork");
+	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_NETWORK));
 	page = pager->add_page();
-	//pager->set_theme_icon(page, "NSAdvanced");
+	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ADVANCED));
 
 	pager->show();
 

@@ -15,9 +15,7 @@
  */
 #include "Config.h"
 
-#if BOOST_OS_MACOS
-#	include <CoreServices/CoreServices.h>
-#elif BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_UNIX
+#if BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_UNIX
 #   include <pwd.h>
 #elif BOOST_OS_WINDOWS
 #	include <shlobj.h>

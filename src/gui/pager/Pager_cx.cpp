@@ -51,8 +51,6 @@ void Pager::set_icon(int page, const QIcon& icon) {
 	buttons_[page]->setIcon(icon);
 }
 
-void Pager::set_theme_icon(int page, const QString& name) {name.d}
-
 int Pager::page_count() const {
 	return (int)buttons_.size();
 }

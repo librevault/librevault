@@ -145,13 +145,13 @@ void Settings::init_selector() {
 
 	page = pager->add_page();
 	//pager->set_icon(page, page_icon((Page)page));
-	pager->set_theme_icon(page, "NSPreferencesGeneral");
+	//pager->set_theme_icon(page, "NSPreferencesGeneral");
 	page = pager->add_page();
-	pager->set_theme_icon(page, "NSUser");
+	//pager->set_theme_icon(page, "NSUser");
 	page = pager->add_page();
-	pager->set_theme_icon(page, "NSNetwork");
+	//pager->set_theme_icon(page, "NSNetwork");
 	page = pager->add_page();
-	pager->set_theme_icon(page, "NSAdvanced");
+	//pager->set_theme_icon(page, "NSAdvanced");
 
 	pager->show();
 

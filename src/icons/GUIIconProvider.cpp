@@ -13,42 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "GUIIconProvider.h"
 
-#pragma once
+GUIIconProvider::GUIIconProvider() {}
 
-#include <QtWidgets>
-#ifdef Q_OS_MAC
-#   include <QMacToolbar>
-#endif
-
-class Pager : public QWidget {
-Q_OBJECT
-
-public:
-	Pager(QHBoxLayout* layout, QWidget* parent = 0);
-
-signals:
-	void pageSelected(int page);
-
-public:
-	int add_page();
-	void set_text(int page, const QString& text);
-	void set_icon(int page, const QIcon& icon);
-
-	int page_count() const;
-
-	void show();
-
-private slots:
-	void buttonClicked(int page);
-
-private:
-
-#ifndef Q_OS_MAC
-	QHBoxLayout* layout_;
-	std::vector<QToolButton*> buttons_;
-#else
-	QMacToolBar *toolbar;
-	std::vector<QMacToolBarItem*> buttons_;
-#endif
-};
+QIcon GUIIconProvider::get_icon(ICON_ID id) const {
+	return QIcon::fromTheme("NSComputer");	// Example
+}

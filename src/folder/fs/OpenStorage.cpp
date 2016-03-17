@@ -149,12 +149,14 @@ void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
 	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
-	fs::ofstream ofs(assembled_file, std::ios::out | std::ios::trunc | std::ios::binary);
+	fs::ofstream ofs(assembled_file, std::ios::out | std::ios::trunc | std::ios::binary);	// Opening file
 
 	for(auto chunk : meta.chunks()) {
 		blob chunk_pt = get_chunk_pt(chunk.ct_hash);
-		ofs.write((const char*)chunk_pt.data(), chunk_pt.size());
+		ofs.write((const char*)chunk_pt.data(), chunk_pt.size());	// Writing to file
 	}
+
+	ofs.close();	// Closing file. Super!
 
 	fs::last_write_time(assembled_file, meta.mtime());
 

@@ -28,6 +28,13 @@ StartupInterface::StartupInterface(QObject* parent) :
 
 StartupInterface::~StartupInterface() {}
 
+bool StartupInterface::isSupported() {
+#if defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+	return true;
+#endif
+	return false;
+}
+
 bool StartupInterface::isEnabled() const {
 #ifdef Q_OS_LINUX
 	QFileInfo desktop_file(desktop_file_path);

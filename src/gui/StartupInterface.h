@@ -25,6 +25,7 @@ public:
 	StartupInterface(QObject* parent = 0);
 	~StartupInterface();
 
+	bool isSupported();
 	bool isEnabled() const;
 
 public slots:

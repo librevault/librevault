@@ -86,12 +86,25 @@ void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 }
 
 void MainWindow::handleRemoveFolder() {
-	auto selection_model = ui->treeView->selectionModel()->selectedRows(2);
-	for(auto model_index : selection_model) {
-		qDebug() << model_index;
-		QString secret = folder_model_->data(model_index).toString();
-		qDebug() << secret;
-		emit folderRemoved(secret);
+	QMessageBox* confirmation_box = new QMessageBox(
+		QMessageBox::Warning,
+		tr("Remove folder from Librevault?"),
+		tr("This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered."),
+		QMessageBox::Ok | QMessageBox::Cancel,
+		this
+	);
+
+	confirmation_box->setDefaultButton(QMessageBox::Cancel);
+	confirmation_box->setWindowModality(Qt::WindowModal);
+
+	if(confirmation_box->exec() == QMessageBox::Ok) {
+		auto selection_model = ui->treeView->selectionModel()->selectedRows(2);
+		for(auto model_index : selection_model) {
+			qDebug() << model_index;
+			QString secret = folder_model_->data(model_index).toString();
+			qDebug() << secret;
+			emit folderRemoved(secret);
+		}
 	}
 }
 

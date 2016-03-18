@@ -255,53 +255,62 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
 <context>
     <name>Login</name>
     <message>
-        <location filename="../gui/Login.ui" line="14"/>
         <source>Login</source>
-        <translation>Вход</translation>
+        <translation type="vanished">Вход</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <location filename="../gui/MainWindow.ui" line="17"/>
-        <location filename="../gui/MainWindow.cpp" line="160"/>
+        <location filename="../gui/MainWindow.cpp" line="182"/>
         <source>Librevault</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="53"/>
+        <location filename="../gui/MainWindow.cpp" line="58"/>
         <source>Show Librevault window</source>
         <translation>Открыть окно Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="54"/>
+        <location filename="../gui/MainWindow.cpp" line="59"/>
         <source>Open Librevault website</source>
         <translation>Открыть веб-сайт Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="55"/>
+        <location filename="../gui/MainWindow.cpp" line="60"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="56"/>
+        <location filename="../gui/MainWindow.cpp" line="61"/>
         <source>Open Librevault settings</source>
         <translation>Открыть настройки Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="57"/>
+        <location filename="../gui/MainWindow.cpp" line="62"/>
         <source>Quit Librevault</source>
         <translation>Закрыть Librevault</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="59"/>
+        <location filename="../gui/MainWindow.cpp" line="64"/>
         <source>New folder</source>
         <translation>Новая папка</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="60"/>
+        <location filename="../gui/MainWindow.cpp" line="65"/>
         <source>Add new folder for synchronization</source>
         <translation>Добавить новую папку для синхронизации</translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="91"/>
+        <source>Remove folder from Librevault</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="92"/>
+        <source>This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Add secret</source>
@@ -312,12 +321,12 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <translation type="vanished">Добавить папку по существующему ключу</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="61"/>
+        <location filename="../gui/MainWindow.cpp" line="66"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="62"/>
+        <location filename="../gui/MainWindow.cpp" line="67"/>
         <source>Delete folder</source>
         <translation>Удалить папку</translation>
     </message>
@@ -325,114 +334,114 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../gui/Settings.ui" line="14"/>
+        <location filename="../gui/Settings.ui" line="17"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="34"/>
+        <location filename="../gui/Settings.ui" line="40"/>
         <source>System</source>
         <translation>Система</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="40"/>
+        <location filename="../gui/Settings.ui" line="46"/>
         <source>Start on computer startup</source>
         <translation>Запускать при включении компьютера</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="50"/>
+        <location filename="../gui/Settings.ui" line="56"/>
         <source>Language</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="111"/>
+        <location filename="../gui/Settings.ui" line="117"/>
         <source>Create account</source>
         <translation>Регистрация</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="124"/>
+        <location filename="../gui/Settings.ui" line="130"/>
         <source>Sign in</source>
         <translation>Вход</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="173"/>
+        <location filename="../gui/Settings.ui" line="179"/>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
         <translation>Войдите с учётной записью Librevault Cloud, чтобы синхронизировать папки со всеми вашими устройствами</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="196"/>
-        <location filename="../gui/Settings.cpp" line="179"/>
+        <location filename="../gui/Settings.ui" line="202"/>
+        <location filename="../gui/Settings.cpp" line="131"/>
         <source>Account</source>
         <translatorcomment>https://rus.stackexchange.com/questions/417072/%D0%90%D0%BA%D0%BA%D0%B0%D1%83%D0%BD%D1%82-%D0%B8%D0%BB%D0%B8-%D1%83%D1%87%D0%B5%D1%82%D0%BD%D0%B0%D1%8F-%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D1%8C</translatorcomment>
         <translation>Аккаунт</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="202"/>
+        <location filename="../gui/Settings.ui" line="208"/>
         <source>%1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="222"/>
+        <location filename="../gui/Settings.ui" line="228"/>
         <source>Sign out</source>
         <translation>Выйти из аккаунта</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="232"/>
+        <location filename="../gui/Settings.ui" line="238"/>
         <source>Space usage</source>
         <translation>Занятое место</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="238"/>
+        <location filename="../gui/Settings.ui" line="244"/>
         <source>%1 GB of %2 GB used</source>
         <translation type="unfinished">%1 ГБ из %2 ГБ использовано</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="245"/>
+        <location filename="../gui/Settings.ui" line="251"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Нужно больше места?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="302"/>
+        <location filename="../gui/Settings.ui" line="308"/>
         <source>Port settings</source>
         <translation>Настройки порта</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="321"/>
+        <location filename="../gui/Settings.ui" line="327"/>
         <source>Listening port:</source>
         <translation>Слушающий порт:</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="341"/>
+        <location filename="../gui/Settings.ui" line="347"/>
         <source>Use NAT-PMP port mapping</source>
         <translation>Использовать перенаправление порта через NAT-PMP</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="351"/>
+        <location filename="../gui/Settings.ui" line="357"/>
         <source>Peer discovery settings</source>
         <translation>Настройки обнаружения участников</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="357"/>
+        <location filename="../gui/Settings.ui" line="363"/>
         <source>Enable global discovery</source>
         <translation>Включить глобальное обнаружение</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="364"/>
+        <location filename="../gui/Settings.ui" line="370"/>
         <source>Enable local discovery</source>
         <translation>Включить локальное обнаружение</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="177"/>
+        <location filename="../gui/Settings.cpp" line="129"/>
         <source>General</source>
         <translation>Общие</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="181"/>
+        <location filename="../gui/Settings.cpp" line="133"/>
         <source>Network</source>
         <translation>Сеть</translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="183"/>
+        <location filename="../gui/Settings.cpp" line="135"/>
         <source>Advanced</source>
         <translation>Дополнительно</translation>
     </message>

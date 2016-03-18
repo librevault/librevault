@@ -304,13 +304,13 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <location filename="../gui/MainWindow.cpp" line="91"/>
-        <source>Remove folder from Librevault</source>
-        <translation type="unfinished"></translation>
+        <source>Remove folder from Librevault?</source>
+        <translation>Удалить папку из Librevault?</translation>
     </message>
     <message>
         <location filename="../gui/MainWindow.cpp" line="92"/>
         <source>This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Папка будет удалена из Librevault и перестанет синхронизироваться с другими узлами. Содержимое папки изменено не будет.</translation>
     </message>
     <message>
         <source>Add secret</source>
@@ -393,6 +393,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <message>
         <location filename="../gui/Settings.ui" line="244"/>
         <source>%1 GB of %2 GB used</source>
+        <translatorcomment>Или лучше наоборот, &quot;Использовано ...&quot;?</translatorcomment>
         <translation type="unfinished">%1 ГБ из %2 ГБ использовано</translation>
     </message>
     <message>

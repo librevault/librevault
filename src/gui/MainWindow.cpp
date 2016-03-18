@@ -113,6 +113,8 @@ void MainWindow::changeEvent(QEvent* e) {
 void MainWindow::init_actions() {
 	show_main_window_action = new QAction(this);
 	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::show);
+	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::activateWindow);
+	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::raise);
 
 	open_website_action = new QAction(this);
 	connect(open_website_action, &QAction::triggered, this, &MainWindow::openWebsite);

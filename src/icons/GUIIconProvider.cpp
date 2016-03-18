@@ -19,15 +19,25 @@ GUIIconProvider::GUIIconProvider() {}
 
 QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 	switch(id) {
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC)
 		case SETTINGS_GENERAL: return QIcon(new MacIcon("NSPreferencesGeneral"));
 		case SETTINGS_ACCOUNT: return QIcon(new MacIcon("NSUser"));
 		case SETTINGS_NETWORK: return QIcon(new MacIcon("NSNetwork"));
 		case SETTINGS_ADVANCED: return QIcon(new MacIcon("NSAdvanced"));
-#endif
+#elif defined(Q_OS_WIN)
 		case SETTINGS_GENERAL: return QIcon(":/branding/librevault_icon.svg");
 		case SETTINGS_ACCOUNT: return get_shell_icon("imageres.dll", 1029);
 		case SETTINGS_NETWORK: return get_shell_icon("netcenter.dll", 7);
 		case SETTINGS_ADVANCED: return get_shell_icon("imageres.dll", 27);
+#elif defined(Q_OS_LINUX)
+		case SETTINGS_GENERAL: return QIcon(":/branding/librevault_icon.svg");
+		case SETTINGS_ACCOUNT: return /*QIcon::fromTheme("user-identity");*/QIcon(":/icons/User-96.png");
+		case SETTINGS_NETWORK: return /*QIcon::fromTheme("network-wireless");*/QIcon(":/icons/Network-96.png");
+		case SETTINGS_ADVANCED: return /*QIcon::fromTheme("document-properties");*/QIcon(":/icons/Settings-96.png");
+#endif
+		case FOLDER_ADD: return QIcon(":/icons/Add Folder-96.png"); //"folder-new"
+		case FOLDER_DELETE: return QIcon(":/icons/Delete-96.png");  //"edit-delete"
+		case SETTINGS: return QIcon(":/icons/Settings-96.png");     //"preferences-system"
+		//"application-exit"
 	}
 }

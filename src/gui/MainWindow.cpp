@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QDesktopServices>
 #include <QDebug>
+#include <src/icons/GUIIconProvider.h>
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);
@@ -115,24 +116,21 @@ void MainWindow::init_actions() {
 	connect(open_website_action, &QAction::triggered, this, &MainWindow::openWebsite);
 
 	show_settings_window_action = new QAction(this);
-	QIcon show_settings_window_action_icon(QIcon::fromTheme(QStringLiteral("preferences-system")));
-	show_settings_window_action->setIcon(show_settings_window_action_icon);
+	show_settings_window_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS));
 	show_settings_window_action->setMenuRole(QAction::PreferencesRole);
 	connect(show_settings_window_action, &QAction::triggered, settings_.get(), &QDialog::show);
 
 	exit_action = new QAction(this);
-	QIcon exit_action_icon(QIcon::fromTheme(QStringLiteral("application-exit")));
+	QIcon exit_action_icon; // TODO
 	exit_action->setIcon(exit_action_icon);
 	connect(exit_action, &QAction::triggered, this, &QCoreApplication::quit);
 
 	new_folder_action = new QAction(this);
-	QIcon new_folder_action_icon(QIcon::fromTheme(QStringLiteral("folder-new")));
-	new_folder_action->setIcon(new_folder_action_icon);
+	new_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_ADD));
 	connect(new_folder_action, &QAction::triggered, add_folder_, &AddFolder::show);
 
 	delete_folder_action = new QAction(this);
-	QIcon delete_folder_action_icon(QIcon::fromTheme(QStringLiteral("edit-delete")));
-	delete_folder_action->setIcon(delete_folder_action_icon);
+	delete_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));
 	delete_folder_action->setShortcut(Qt::Key_Delete);
 	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
 }

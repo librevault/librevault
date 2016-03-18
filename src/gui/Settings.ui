@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>Settings</class>
  <widget class="QDialog" name="Settings">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -17,6 +20,9 @@
    <iconset resource="../../resources/mainwindow.qrc">
     <normaloff>:/branding/librevault_icon.svg</normaloff>:/branding/librevault_icon.svg</iconset>
   </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="controlBar"/>
@@ -24,7 +30,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_general">
       <layout class="QVBoxLayout" name="verticalLayout10">

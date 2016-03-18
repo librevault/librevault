@@ -122,7 +122,7 @@ void MainWindow::init_actions() {
 	show_settings_window_action = new QAction(this);
 	show_settings_window_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS));
 	show_settings_window_action->setMenuRole(QAction::PreferencesRole);
-	connect(show_settings_window_action, &QAction::triggered, settings_, &QDialog::open);
+	connect(show_settings_window_action, &QAction::triggered, settings_, &QDialog::show);
 
 	exit_action = new QAction(this);
 	QIcon exit_action_icon; // TODO

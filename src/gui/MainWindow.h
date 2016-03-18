@@ -61,7 +61,7 @@ protected:
 	std::unique_ptr<FolderModel> folder_model_;
 
 	/* Dialogs */
-	std::unique_ptr<Settings> settings_;
+	Settings* settings_;
 	AddFolder* add_folder_;
 
 	/* Event handlers (overrides) */

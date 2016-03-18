@@ -36,8 +36,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	set_model(folder_model_.get());
 
 	/* Initializing dialogs */
-	settings_ = std::make_unique<Settings>();
-	connect(settings_.get(), &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
+	settings_ = new Settings(this);
+	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
@@ -120,7 +120,7 @@ void MainWindow::init_actions() {
 	show_settings_window_action = new QAction(this);
 	show_settings_window_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS));
 	show_settings_window_action->setMenuRole(QAction::PreferencesRole);
-	connect(show_settings_window_action, &QAction::triggered, settings_.get(), &QDialog::show);
+	connect(show_settings_window_action, &QAction::triggered, settings_, &QDialog::open);
 
 	exit_action = new QAction(this);
 	QIcon exit_action_icon; // TODO

@@ -136,6 +136,9 @@ void MainWindow::init_actions() {
 }
 
 void MainWindow::init_toolbar() {
+#ifdef Q_OS_MAC
+	ui->toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+#endif
 	ui->toolBar->addAction(new_folder_action);
 	ui->toolBar->addAction(delete_folder_action);
 	ui->toolBar->addSeparator();

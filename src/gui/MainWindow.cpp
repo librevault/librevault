@@ -161,7 +161,7 @@ void MainWindow::init_tray() {
 	// Icon itself
 	connect(&tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::tray_icon_activated);
 
-	tray_icon.setIcon(QIcon(":/branding/librevault_icon.svg"));   // FIXME: Temporary measure. Need to display "sync" icon here. Also, theming support.
+	tray_icon.setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::TRAYICON));   // FIXME: Temporary measure. Need to display "sync" icon here. Also, theming support.
 	tray_icon.setToolTip(tr("Librevault"));
 
 	tray_icon.show();

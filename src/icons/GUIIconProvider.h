@@ -30,7 +30,8 @@ public:
 
 		FOLDER_ADD,
 		FOLDER_DELETE,
-		SETTINGS
+		SETTINGS,
+		TRAYICON
 	};
 
 	QIcon get_icon(ICON_ID id) const;

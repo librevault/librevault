@@ -39,5 +39,13 @@ QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 		case FOLDER_DELETE: return QIcon(":/icons/Delete-96.png");  //"edit-delete"
 		case SETTINGS: return QIcon(":/icons/Settings-96.png");     //"preferences-system"
 		//"application-exit"
+
+		case TRAYICON: {
+			QIcon icon(":/branding/librevault_icon_black.svg");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+			icon.setIsMask(true);
+#endif
+			return icon;
+		}
 	}
 }

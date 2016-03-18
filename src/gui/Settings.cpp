@@ -53,90 +53,55 @@ void Settings::init_ui() {
 }
 
 void Settings::reset_ui_states() {
-	control_json_static = control_json_dynamic;
-	QJsonObject
-		config,
-		config_net,
-		config_net_natpmp,
-		config_discovery,
-		config_discovery_bttracker,
-		config_discovery_multicast4,
-		config_discovery_multicast6;
-	config = control_json_static["config"].toObject();
-	config_net = config["net"].toObject();
-	config_net_natpmp = config_net["natpmp"].toObject();
-	config_discovery = config["discovery"].toObject();
-	config_discovery_bttracker = config_discovery["bttracker"].toObject();
-	config_discovery_multicast4 = config_discovery["multicast4"].toObject();
-	config_discovery_multicast6 = config_discovery["multicast6"].toObject();
-
-	// net.listen
-	net_listen.setAuthority(config_net["listen"].toString());
-	ui->port_box->setChecked(net_listen.port(0) != 0);
-	ui->port_value->setEnabled(net_listen.port(0) != 0);
-	ui->port_value->setValue(net_listen.port(0));
-
-	// net.natpmp
-	ui->natpmp_box->setChecked(get_json_string_as_bool(config_net_natpmp["enabled"]));
-
-	// discovery.bttracker
-	ui->global_discovery_box->setChecked(get_json_string_as_bool(config_discovery_bttracker["enabled"]));
-	// discovery.multicastX
-	ui->local_discovery_box->setChecked(
-		get_json_string_as_bool(config_discovery_multicast4["enabled"])
-			|| get_json_string_as_bool(config_discovery_multicast6["enabled"])
-	);
-
-	// Non-daemon-related settings
+	/* GUI-related settings */
 	ui->box_startup->setChecked(startup_interface->isEnabled());
-}
 
-bool Settings::get_json_string_as_bool(QJsonValueRef val) const {
-	if(val.isString())
-		return val.toString() == "true";
-	else
-		return val.toBool();
+	/* Daemon-related settings */
+	control_json_static = control_json_dynamic; // "Fixing" a version of control_json
+
+	QJsonObject client = control_json_static["client"].toObject();
+
+	// p2p_listen
+	p2p_listen.setAuthority(client["p2p_listen"].toString());
+	ui->port_box->setChecked(p2p_listen.port(0) != 0);
+	ui->port_value->setEnabled(p2p_listen.port(0) != 0);
+	ui->port_value->setValue(p2p_listen.port(0));
+
+	// natpmp_enabled
+	ui->natpmp_box->setChecked(client["natpmp_enabled"].toBool());
+
+	// bttracker_enabled
+	ui->global_discovery_box->setChecked(client["bttracker_enabled"].toBool());
+
+	// multicast4_enabled || multicast6_enabled
+	ui->local_discovery_box->setChecked(
+		client["multicast4_enabled"].toBool()
+			|| client["multicast6_enabled"].toBool()
+	);
 }
 
 void Settings::process_ui_states() {
-	QJsonObject
-		config,
-		config_net,
-		config_net_natpmp,
-		config_discovery,
-		config_discovery_bttracker,
-		config_discovery_multicast4,
-		config_discovery_multicast6;
-
-	/* config.net */
-	// net.listen
-	net_listen.setPort(ui->port_box->isChecked() ? ui->port_value->value() : 0);
-	config_net["listen"] = net_listen.authority();
-	// net.natpmp
-	bool natpmp_enabled = ui->natpmp_box->isChecked();
-	config_net_natpmp["enabled"] = natpmp_enabled;
-
-	/* config.discovery */
-	// discovery.bttracker
-	bool discovery_global_enabled = ui->global_discovery_box->isChecked();
-	config_discovery_bttracker["enabled"] = discovery_global_enabled;
-
-	bool discovery_local_enabled = ui->local_discovery_box->isChecked();
-	config_discovery_multicast4["enabled"] = discovery_local_enabled;
-	config_discovery_multicast6["enabled"] = discovery_local_enabled;
-
-	// Constructing JSON (in reverse)
-	config_discovery["multicast6"] = config_discovery_multicast6;
-	config_discovery["multicast4"] = config_discovery_multicast4;
-	config_discovery["bttracker"] = config_discovery_bttracker;
-	config["discovery"] = config_discovery;
-	config_net["natpmp"] = config_net_natpmp;
-	config["net"] = config_net;
-
-	emit newConfigIssued(config);
-
-	// Non-daemon-related settings
+	/* GUI-related settings */
 	startup_interface->setEnabled(ui->box_startup->isChecked());
+
+	/* Daemon-related settings */
+	QJsonObject client;
+
+	// p2p_listen
+	p2p_listen.setPort(ui->port_box->isChecked() ? ui->port_value->value() : 0);
+	client["p2p_listen"] = p2p_listen.authority();
+
+	// natpmp_enabled
+	client["natpmp_enabled"] = ui->natpmp_box->isChecked();
+
+	// bttracker_enabled
+	client["bttracker_enabled"] = ui->global_discovery_box->isChecked();
+
+	// multicast4_enabled || multicast6_enabled
+	client["multicast4_enabled"] = ui->local_discovery_box->isChecked();
+	client["multicast6_enabled"] = ui->local_discovery_box->isChecked();
+
+	emit newConfigIssued(client);
 }
 
 void Settings::init_selector() {

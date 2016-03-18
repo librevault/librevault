@@ -56,7 +56,6 @@ protected:
 	void init_ui();
 	void reset_ui_states();
 	void process_ui_states();
-	bool get_json_string_as_bool(QJsonValueRef val) const;
 
 	// Selector
 	void init_selector();
@@ -73,5 +72,5 @@ private slots:
 protected:
 	Pager* pager;
 	std::unique_ptr<StartupInterface> startup_interface;
-	QUrl net_listen;
+	QUrl p2p_listen;
 };

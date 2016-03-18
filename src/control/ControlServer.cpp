@@ -119,21 +119,28 @@ std::string ControlServer::make_control_json() {
 }
 
 Json::Value ControlServer::make_state_json() const {
-	Json::Value state_json;
+	Json::Value state_json;                         // state_json
 	for(auto folder : client_.groups()) {
-		Json::Value folder_json;
+		Json::Value folder_json;                    /// folder_json
+
 		folder_json["path"] = folder->fs_dir()->path().string();
 		folder_json["secret"] = folder->secret().string();
 
 		// Peers
 		for(auto p2p_peer : folder->p2p_dirs()) {
+			Json::Value peer_json;                  //// peer_json
+
 			std::ostringstream os; os << p2p_peer->remote_endpoint();
-			folder_json["endpoint"].append(os.str());
+			peer_json["endpoint"] = os.str();
+			peer_json["client_name"] = p2p_peer->client_name();
+
+			folder_json["peers"].append(peer_json); //// /peer_json
 		}
-		state_json["folders"].append(folder_json);
+
+		state_json["folders"].append(folder_json);  /// /folder_json
 	}
 
-	return state_json;
+	return state_json;                              // /state_json
 }
 
 void ControlServer::send_control_json(const boost::system::error_code& ec) {

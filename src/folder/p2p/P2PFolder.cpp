@@ -216,6 +216,8 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 
 	if(conn_.role == WSService::connection::SERVER) perform_handshake();
 
+	client_name_ = message_struct.device_name;
+
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;
 

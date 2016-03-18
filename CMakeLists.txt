@@ -63,7 +63,6 @@ set(Qt_COMPONENTS
 		LinguistTools
 		Widgets
 		WebSockets
-		WebKitWidgets
 		)
 if(WIN32)
 	list(APPEND Qt_COMPONENTS WinExtras)
@@ -95,7 +94,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 #============================================================================
 
 # Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets Qt5::WebKitWidgets)
+target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets)
 if(WIN32)
 	target_link_libraries(${PROJECT_NAME} Qt5::WinExtras)
 endif()

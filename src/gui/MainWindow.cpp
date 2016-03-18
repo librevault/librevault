@@ -80,7 +80,9 @@ void MainWindow::openWebsite() {
 }
 
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
+#ifndef Q_OS_MAC
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
+#endif
 }
 
 void MainWindow::handleRemoveFolder() {

@@ -115,6 +115,37 @@
     </message>
 </context>
 <context>
+    <name>Byte size</name>
+    <message numerus="yes">
+        <location filename="../util/human_size.h" line="26"/>
+        <source>%n bytes</source>
+        <translation>
+            <numerusform>%n byte</numerusform>
+            <numerusform>%n bytes</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="30"/>
+        <source>%1 KB</source>
+        <translation>%1 KB</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="34"/>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="38"/>
+        <source>%1 GB</source>
+        <translation>%1 GB</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="41"/>
+        <source>%1 TB</source>
+        <translation>%1 TB</translation>
+    </message>
+</context>
+<context>
     <name>Client</name>
     <message>
         <location filename="../Client.cpp" line="31"/>
@@ -138,34 +169,39 @@
 <context>
     <name>FolderModel</name>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="38"/>
+        <location filename="../model/FolderModel.cpp" line="41"/>
         <source>%n peer(s)</source>
         <translation>
             <numerusform>%n peer</numerusform>
             <numerusform>%n peers</numerusform>
         </translation>
     </message>
+    <message numerus="yes">
+        <location filename="../model/FolderModel.cpp" line="42"/>
+        <source>%n file(s)</source>
+        <translation>
+            <numerusform>%n file</numerusform>
+            <numerusform>%n files</numerusform>
+        </translation>
+    </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="54"/>
+        <location filename="../model/FolderModel.cpp" line="62"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="55"/>
+        <location filename="../model/FolderModel.cpp" line="63"/>
+        <source>Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../model/FolderModel.cpp" line="64"/>
         <source>Peers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="56"/>
-        <source>Secret</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Login</name>
-    <message>
-        <location filename="../gui/Login.ui" line="14"/>
-        <source>Login</source>
+        <location filename="../model/FolderModel.cpp" line="65"/>
+        <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -173,166 +209,176 @@
     <name>MainWindow</name>
     <message>
         <location filename="../gui/MainWindow.ui" line="17"/>
-        <location filename="../gui/MainWindow.cpp" line="160"/>
+        <location filename="../gui/MainWindow.cpp" line="182"/>
         <source>Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="53"/>
+        <location filename="../gui/MainWindow.cpp" line="58"/>
         <source>Show Librevault window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="54"/>
+        <location filename="../gui/MainWindow.cpp" line="59"/>
         <source>Open Librevault website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="55"/>
+        <location filename="../gui/MainWindow.cpp" line="60"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="56"/>
+        <location filename="../gui/MainWindow.cpp" line="61"/>
         <source>Open Librevault settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="57"/>
+        <location filename="../gui/MainWindow.cpp" line="62"/>
         <source>Quit Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="59"/>
+        <location filename="../gui/MainWindow.cpp" line="64"/>
         <source>New folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="60"/>
+        <location filename="../gui/MainWindow.cpp" line="65"/>
         <source>Add new folder for synchronization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="61"/>
+        <location filename="../gui/MainWindow.cpp" line="66"/>
         <source>Delete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="62"/>
+        <location filename="../gui/MainWindow.cpp" line="67"/>
         <source>Delete folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="91"/>
+        <source>Remove folder from Librevault?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="92"/>
+        <source>This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../gui/Settings.ui" line="14"/>
+        <location filename="../gui/Settings.ui" line="17"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="34"/>
+        <location filename="../gui/Settings.ui" line="40"/>
         <source>System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="40"/>
+        <location filename="../gui/Settings.ui" line="46"/>
         <source>Start on computer startup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="50"/>
+        <location filename="../gui/Settings.ui" line="56"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="111"/>
+        <location filename="../gui/Settings.ui" line="117"/>
         <source>Create account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="124"/>
+        <location filename="../gui/Settings.ui" line="130"/>
         <source>Sign in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="173"/>
+        <location filename="../gui/Settings.ui" line="179"/>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="196"/>
-        <location filename="../gui/Settings.cpp" line="179"/>
+        <location filename="../gui/Settings.ui" line="202"/>
+        <location filename="../gui/Settings.cpp" line="131"/>
         <source>Account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="202"/>
+        <location filename="../gui/Settings.ui" line="208"/>
         <source>%1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="222"/>
+        <location filename="../gui/Settings.ui" line="228"/>
         <source>Sign out</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="232"/>
+        <location filename="../gui/Settings.ui" line="238"/>
         <source>Space usage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="238"/>
+        <location filename="../gui/Settings.ui" line="244"/>
         <source>%1 GB of %2 GB used</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="245"/>
+        <location filename="../gui/Settings.ui" line="251"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="302"/>
+        <location filename="../gui/Settings.ui" line="308"/>
         <source>Port settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="321"/>
+        <location filename="../gui/Settings.ui" line="327"/>
         <source>Listening port:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="341"/>
+        <location filename="../gui/Settings.ui" line="347"/>
         <source>Use NAT-PMP port mapping</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="351"/>
+        <location filename="../gui/Settings.ui" line="357"/>
         <source>Peer discovery settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="357"/>
+        <location filename="../gui/Settings.ui" line="363"/>
         <source>Enable global discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="364"/>
+        <location filename="../gui/Settings.ui" line="370"/>
         <source>Enable local discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="177"/>
+        <location filename="../gui/Settings.cpp" line="129"/>
         <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="181"/>
+        <location filename="../gui/Settings.cpp" line="133"/>
         <source>Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="183"/>
+        <location filename="../gui/Settings.cpp" line="135"/>
         <source>Advanced</source>
         <translation type="unfinished"></translation>
     </message>

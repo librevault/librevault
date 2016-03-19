@@ -16,6 +16,7 @@
 #include "FolderModel.h"
 #include <QFileIconProvider>
 #include <QJsonArray>
+#include <src/util/human_size.h>
 
 FolderModel::FolderModel() :
 		QAbstractListModel() {}
@@ -31,12 +32,15 @@ int FolderModel::columnCount(const QModelIndex &parent) const {
 QVariant FolderModel::data(const QModelIndex &index, int role) const {
 	auto column = (Column)index.column();
 
+	auto folder_object = state_json_["folders"].toArray().at(index.row()).toObject();
+
 	if(role == Qt::DisplayRole) {
-		auto folder_object = state_json_["folders"].toArray().at(index.row()).toObject();
 		switch(column) {
 			case Column::NAME: return folder_object["path"].toString();
+			case Column::STATUS: return "Ready";    // TODO: remove placeholder
 			case Column::PEERS: return tr("%n peer(s)", "", folder_object["peers"].toArray().size());
-			case Column::SECRET: return folder_object["secret"].toString();
+			case Column::SIZE: return tr("%n file(s)", "", folder_object["file_count"].toInt()) + " " + human_size(folder_object["byte_size"].toDouble());
+
 			default: return QVariant();
 		}
 	}
@@ -44,6 +48,9 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 		QFileIconProvider file_icon_provider;
 		return file_icon_provider.icon(QFileIconProvider::Folder);
 	}
+	if(role == SecretRole)
+		return folder_object["secret"].toString();
+
 	return QVariant();
 }
 
@@ -52,8 +59,9 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 		if(role == Qt::DisplayRole) {
 			switch((Column)section) {
 				case Column::NAME: return tr("Name");
+				case Column::STATUS: return tr("Status");
 				case Column::PEERS: return tr("Peers");
-				case Column::SECRET: return tr("Secret");
+				case Column::SIZE: return tr("Size");
 				default: return QVariant();
 			}
 		}
@@ -61,8 +69,8 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 	return QVariant();
 }
 
-void FolderModel::handleControlJson(QJsonObject state_json) {
-	state_json_ = state_json["state"].toObject();
+void FolderModel::handleControlJson(QJsonObject control_json) {
+	state_json_ = control_json["state"].toObject();
 	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
 	emit layoutChanged();
 }

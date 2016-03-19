@@ -202,6 +202,39 @@
     </message>
 </context>
 <context>
+    <name>Byte size</name>
+    <message numerus="yes">
+        <location filename="../util/human_size.h" line="26"/>
+        <source>%n bytes</source>
+        <translatorcomment>Счётная форма числа, да</translatorcomment>
+        <translation>
+            <numerusform>%n байт</numerusform>
+            <numerusform>%n байта</numerusform>
+            <numerusform>%n байт</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="30"/>
+        <source>%1 KB</source>
+        <translation>%1 Кб</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="34"/>
+        <source>%1 MB</source>
+        <translation>%1 Мб</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="38"/>
+        <source>%1 GB</source>
+        <translation>%1 Гб</translation>
+    </message>
+    <message>
+        <location filename="../util/human_size.h" line="41"/>
+        <source>%1 TB</source>
+        <translation>%1 Тб</translation>
+    </message>
+</context>
+<context>
     <name>Client</name>
     <message>
         <location filename="../Client.cpp" line="31"/>
@@ -225,7 +258,7 @@
 <context>
     <name>FolderModel</name>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="38"/>
+        <location filename="../model/FolderModel.cpp" line="41"/>
         <source>%n peer(s)</source>
         <oldsource>%1 peers</oldsource>
         <translation>
@@ -234,22 +267,41 @@
             <numerusform>%n участников</numerusform>
         </translation>
     </message>
+    <message numerus="yes">
+        <location filename="../model/FolderModel.cpp" line="42"/>
+        <source>%n file(s)</source>
+        <translation>
+            <numerusform>%n файл</numerusform>
+            <numerusform>%n файла</numerusform>
+            <numerusform>%n файлов</numerusform>
+        </translation>
+    </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="54"/>
+        <location filename="../model/FolderModel.cpp" line="62"/>
         <source>Name</source>
         <translation>Название</translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="55"/>
+        <location filename="../model/FolderModel.cpp" line="63"/>
+        <source>Status</source>
+        <translatorcomment>или Статус?</translatorcomment>
+        <translation type="unfinished">Состояние</translation>
+    </message>
+    <message>
+        <location filename="../model/FolderModel.cpp" line="64"/>
         <source>Peers</source>
         <translatorcomment>Ref: http://rus.stackexchange.com/q/420622/178445
 Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <translation>Участники</translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="56"/>
+        <location filename="../model/FolderModel.cpp" line="65"/>
+        <source>Size</source>
+        <translation>Размер</translation>
+    </message>
+    <message>
         <source>Secret</source>
-        <translation>Секрет</translation>
+        <translation type="vanished">Секрет</translation>
     </message>
 </context>
 <context>

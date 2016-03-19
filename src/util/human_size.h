@@ -14,37 +14,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include <QAbstractTableModel>
-#include <QJsonObject>
 
-class FolderModel : public QAbstractListModel {
-Q_OBJECT
+#include <QtCore>
 
-public:
-	FolderModel();
-	~FolderModel();
+QString human_size(size_t size) {
+	float num = size;
 
-	const int SecretRole = Qt::UserRole;
+	if(num < 1024.0)
+		return QCoreApplication::translate("Byte size", "%n bytes", 0, size);
+	num /= 1024.0;
 
-	int rowCount(const QModelIndex &parent = QModelIndex()) const;
-	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+	if(num < 1024.0)
+		return QCoreApplication::translate("Byte size", "%1 KB").arg(num, 0, 'f', 0);
+	num /= 1024.0;
 
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+	if(num < 1024.0)
+		return QCoreApplication::translate("Byte size", "%1 MB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
 
-public slots:
-	void handleControlJson(QJsonObject control_json);
+	if(num < 1024.0)
+		return QCoreApplication::translate("Byte size", "%1 GB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
 
-private:
-	QJsonObject state_json_;
-
-	enum class Column {
-		NAME,
-		STATUS,
-		PEERS,
-		SIZE,
-
-		COLUMN_COUNT
-	};
-};
+	return QCoreApplication::translate("Byte size", "%1 TB").arg(num, 0, 'f', 2);
+}

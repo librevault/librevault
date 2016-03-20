@@ -34,6 +34,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	/* Initializing models */
 	folder_model_ = std::make_unique<FolderModel>();
 	set_model(folder_model_.get());
+	ui->treeView->header()->setStretchLastSection(false);
+	ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
 	/* Initializing dialogs */
 	settings_ = new Settings(this);

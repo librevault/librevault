@@ -153,7 +153,7 @@ void MainWindow::init_actions() {
 }
 
 void MainWindow::init_toolbar() {
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 	ui->toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #endif
 	ui->toolBar->addAction(new_folder_action);

@@ -23,7 +23,8 @@ Daemon::Daemon() :
 		QProcess() {
 	/* Process parameters */
 	// Program
-	setProgram(QStringLiteral("librevault"));
+
+	setProgram(get_executable_path());
 	// Arguments
 	QStringList arguments;
 	//arguments << QString("--data=\"") + QCoreApplication::applicationDirPath() + "\"";
@@ -67,3 +68,31 @@ void Daemon::handleStandardOutput() {
 		}
 	}
 }
+
+QString Daemon::get_executable_path() const {
+	QString application_path;
+#if defined(Q_OS_WIN)
+	if(Is64BitWindows())
+		return QCoreApplication::applicationDirPath() + "/librevault-x64.exe";
+	else
+		return QCoreApplication::applicationDirPath() + "/librevault-x32.exe";
+#elif defined(Q_OS_MAC)
+	application_path = QCoreApplication::applicationDirPath() + "/librevault";
+#else
+	application_path = QStringLiteral("librevault");
+#endif // Q_OS_MAC
+	return application_path;
+}
+
+#ifdef Q_OS_WIN
+BOOL Daemon::Is64BitWindows() const {
+#	if defined(_WIN64)
+	return TRUE;
+#	elif defined(_WIN32)
+    BOOL f64 = FALSE;
+    return IsWow64Process(GetCurrentProcess(), &f64) && f64;
+#	else
+	return FALSE;
+#	endif
+}
+#endif

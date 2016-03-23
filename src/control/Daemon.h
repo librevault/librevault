@@ -17,6 +17,9 @@
 
 #include "src/pch.h"
 #include <QProcess>
+#ifdef Q_OS_WIN
+#	include <windows.h>
+#endif
 
 class Daemon : public QProcess {
 Q_OBJECT
@@ -36,4 +39,9 @@ private slots:
 
 protected:
 	bool listening_already = false;
+	QString get_executable_path() const;
+
+#ifdef Q_OS_WIN
+	BOOL Is64BitWindows() const;
+#endif
 };

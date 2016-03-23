@@ -13,28 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "Daemon.h"
+#include <QString>
 
-#include "src/pch.h"
-#include <QProcess>
-
-class Daemon : public QProcess {
-Q_OBJECT
-
-public:
-	Daemon();
-	~Daemon();
-
-	void launch();
-
-signals:
-	void daemonReady(const QUrl& control_url);
-
-private slots:
-	void handleError(QProcess::ProcessError error);
-	void handleStandardOutput();
-
-protected:
-	bool listening_already = false;
-	QString get_executable_path() const;
-};
+QString Daemon::get_executable_path() const {
+	return QStringLiteral("librevault");
+}

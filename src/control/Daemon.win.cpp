@@ -13,28 +13,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "Daemon.h"
+#include <QCoreApplication>
+#ifdef Q_OS_WIN
+#	include <windows.h>
+#endif
 
-#include "src/pch.h"
-#include <QProcess>
+BOOL Is64BitWindows() {
+#	if defined(_WIN64)
+	return TRUE;
+#	elif defined(_WIN32)
+	BOOL f64 = FALSE;
+    return IsWow64Process(GetCurrentProcess(), &f64) && f64;
+#	else
+	return FALSE;
+#	endif
+}
 
-class Daemon : public QProcess {
-Q_OBJECT
 
-public:
-	Daemon();
-	~Daemon();
-
-	void launch();
-
-signals:
-	void daemonReady(const QUrl& control_url);
-
-private slots:
-	void handleError(QProcess::ProcessError error);
-	void handleStandardOutput();
-
-protected:
-	bool listening_already = false;
-	QString get_executable_path() const;
-};
+QString Daemon::get_executable_path() const {
+	if(Is64BitWindows())
+		return QCoreApplication::applicationDirPath() + "/librevault-x64.exe";
+	else
+		return QCoreApplication::applicationDirPath() + "/librevault-x32.exe";
+}

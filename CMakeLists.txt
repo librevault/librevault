@@ -54,12 +54,24 @@ if(WIN32)
 	configure_file(resources/librevault.rc librevault.rc @ONLY)
 	configure_file(resources/librevault.ico librevault.ico COPYONLY)
 	list(APPEND SRCS ${CMAKE_CURRENT_BINARY_DIR}/librevault.rc)
+else()
+	file(GLOB_RECURSE WIN_SRCS "src/*.win.cpp")
+	list(REMOVE_ITEM MAIN_SRCS ${WIN_SRCS})
+endif()
+
+# Windows sources
+if(NOT LINUX)
+	file(GLOB_RECURSE LINUX_SRCS "src/*.linux.cpp")
+	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	file(GLOB_RECURSE MAIN_MMS "src/*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
+else()
+	file(GLOB_RECURSE MAC_SRCS "src/*.mac.cpp")
+	list(REMOVE_ITEM MAIN_SRCS ${MAC_SRCS})
 endif()
 
 list(APPEND SRCS ${MAIN_SRCS})

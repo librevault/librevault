@@ -16,6 +16,11 @@
 #include "src/gui/MainWindow.h"
 #include "Client.h"
 
+#ifdef Q_OS_WIN
+#include <QtPlugin>
+Q_IMPORT_PLUGIN (QWindowsIntegrationPlugin);
+#endif
+
 int main(int argc, char** argv) {
 	Client client(argc, argv);
 	return client.exec();

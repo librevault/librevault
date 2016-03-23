@@ -139,6 +139,13 @@ else()
 	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
 endif()
 
+# WinSparkle
+if(WIN32)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .dll)	# Be careful!
+	find_library(winsparkle_LIBRARIES winsparkle)
+	target_link_libraries(${PROJECT_NAME} ${winsparkle_LIBRARIES})
+endif()
+
 ## CoreFoundation
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")

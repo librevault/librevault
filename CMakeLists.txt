@@ -84,6 +84,7 @@ list(APPEND SRCS ${MAIN_QRCS})
 #============================================================================
 set(Qt_COMPONENTS
 		LinguistTools
+		Svg
 		Widgets
 		WebSockets
 		)
@@ -117,7 +118,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 #============================================================================
 
 # Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Widgets Qt5::WebSockets)
+target_link_libraries(${PROJECT_NAME} Qt5::Svg Qt5::Widgets Qt5::WebSockets)
 if(WIN32)
 	target_link_libraries(${PROJECT_NAME} Qt5::WinExtras)
 endif()

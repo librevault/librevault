@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(librevault-gui)
+project(librevault-gui VERSION 0.9.0)
 
 #============================================================================
 # Settable options
@@ -42,15 +42,26 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 list(APPEND SRCS "src/pch.h")
-# Main sources
+
+# Universal sources
 file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "src/*.h")
 file(GLOB_RECURSE MAIN_UIS "src/*.ui")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
+
+# Windows sources
+if(WIN32)
+	configure_file(resources/librevault.rc librevault.rc @ONLY)
+	configure_file(resources/librevault.ico librevault.ico COPYONLY)
+	list(APPEND SRCS ${CMAKE_CURRENT_BINARY_DIR}/librevault.rc)
+endif()
+
+# OS X sources
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	file(GLOB_RECURSE MAIN_MMS "src/*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 endif()
+
 list(APPEND SRCS ${MAIN_SRCS})
 list(APPEND SRCS ${MAIN_HEADERS})
 list(APPEND SRCS ${MAIN_UIS})

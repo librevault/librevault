@@ -16,7 +16,7 @@
 #include "Updater.h"
 #include <winsparkle.h>
 
-Updater::Updater(QObject* parent) : QObject(parent) {
+WinUpdater::WinUpdater(QObject* parent) : AbstractUpdater(parent) {
 	win_sparkle_set_appcast_url("http://127.0.0.1:8091/appcast.rss");
 	win_sparkle_init();
 }

@@ -13,36 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "src/pch.h"
-#include <QObject>
+#include "Updater.h"
 
-class AbstractUpdater : public QObject {
-Q_OBJECT
-
-public:
-	AbstractUpdater(QObject* parent);
-
-public slots:
-
-private:
-};
-
-#if defined(Q_OS_WIN)
-class WinUpdater : public AbstractUpdater {
-Q_OBJECT
-
-public:
-	WinUpdater(QObject* parent);
-};
-using Updater = WinUpdater;
-
-#elif defined(Q_OS_MAC)
-class MacUpdater : public AbstractUpdater {
-Q_OBJECT
-
-public:
-	MacUpdater(QObject* parent);
-};
-using Updater = MacUpdater;
-#endif
+AbstractUpdater::AbstractUpdater(QObject* parent) : QObject(parent) {}

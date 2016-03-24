@@ -146,6 +146,12 @@ if(WIN32)
 	target_link_libraries(${PROJECT_NAME} ${winsparkle_LIBRARIES})
 endif()
 
+# Sparkle (for Macs)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	find_library(SPARKLE_LIBRARIES Sparkle)
+	target_link_libraries(${PROJECT_NAME} ${SPARKLE_LIBRARIES})
+endif()
+
 ## CoreFoundation
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")

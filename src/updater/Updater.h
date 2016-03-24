@@ -17,32 +17,16 @@
 #include "src/pch.h"
 #include <QObject>
 
-class AbstractUpdater : public QObject {
+class Updater : public QObject {
 Q_OBJECT
 
 public:
-	AbstractUpdater(QObject* parent);
+	Updater(QObject* parent);
+	virtual ~Updater();
 
 public slots:
 
 private:
+	struct Impl;
+	Impl* impl_;
 };
-
-#if defined(Q_OS_WIN)
-class WinUpdater : public AbstractUpdater {
-Q_OBJECT
-
-public:
-	WinUpdater(QObject* parent);
-};
-using Updater = WinUpdater;
-
-#elif defined(Q_OS_MAC)
-class MacUpdater : public AbstractUpdater {
-Q_OBJECT
-
-public:
-	MacUpdater(QObject* parent);
-};
-using Updater = MacUpdater;
-#endif

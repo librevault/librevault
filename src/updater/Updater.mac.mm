@@ -14,13 +14,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Updater.h"
-#include <winsparkle.h>
+#include <Sparkle/Sparkle.h>
+#include <Sparkle/SUUpdater.h>
 
-Updater::Updater(QObject* parent) : QObject(parent) {
+struct Updater::Impl {
+	SUUpdater* updater;
+};
+
+Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
+	impl_->updater = [SUUpdater sharedUpdater];
+
 	QString appcast_url = QStringLiteral("http://127.0.0.1:8091/appcast.rss");
+	NSURL* appcast_nsurl = [NSURL URLWithString:
+	[NSString stringWithUTF8String: appcast_url.toUtf8().data()]
+	];
 
-	win_sparkle_set_appcast_url(appcast_url.toUtf8().data());
-	win_sparkle_init();
+	[impl_->updater setFeedURL: appcast_nsurl];
+	[impl_->updater setAutomaticallyChecksForUpdates:YES];
+	[impl_->updater setAutomaticallyDownloadsUpdates:NO];
+	[impl_->updater setSendsSystemProfile:NO];
+	[impl_->updater resetUpdateCycle];
+	[impl_->updater retain];
+	[impl_->updater checkForUpdates: NSApp];
 }
 
-Updater::~Updater() {}
+Updater::~Updater() {
+	[impl_->updater release];
+	delete impl_;
+}

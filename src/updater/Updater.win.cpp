@@ -23,4 +23,6 @@ Updater::Updater(QObject* parent) : QObject(parent) {
 	win_sparkle_init();
 }
 
-Updater::~Updater() {}
+Updater::~Updater() {
+	win_sparkle_cleanup();
+}

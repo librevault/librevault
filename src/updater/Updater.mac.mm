@@ -35,7 +35,6 @@ Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
 	[impl_->updater setSendsSystemProfile:NO];
 	[impl_->updater resetUpdateCycle];
 	[impl_->updater retain];
-	[impl_->updater checkForUpdates: NSApp];
 }
 
 Updater::~Updater() {
@@ -45,4 +44,12 @@ Updater::~Updater() {
 
 bool Updater::supportsUpdate() const {
 	return true;
+}
+
+void Updater::checkUpdates() {
+	[impl_->updater checkForUpdates: NSApp];
+}
+
+void Updater::checkUpdatesSilently() {
+	[impl_->updater checkForUpdatesInBackground];
 }

@@ -27,6 +27,8 @@ public:
 	bool supportsUpdate() const;
 
 public slots:
+	void checkUpdates();
+	void checkUpdatesSilently();
 
 private:
 	struct Impl;

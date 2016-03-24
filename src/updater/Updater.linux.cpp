@@ -19,6 +19,6 @@ Updater::Updater(QObject* parent) : QObject(parent) {}
 
 Updater::~Updater() {}
 
-bool Updater::supportsUpdate() const {
-	return false;
-}
+bool Updater::supportsUpdate() const {return false;}
+void Updater::checkUpdates() {}
+void Updater::checkUpdatesSilently() {}

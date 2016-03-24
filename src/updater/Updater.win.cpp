@@ -30,3 +30,11 @@ Updater::~Updater() {
 bool Updater::supportsUpdate() const {
 	return true;
 }
+
+void Updater::checkUpdates() {
+	win_sparkle_check_update_with_ui();
+}
+
+void Updater::checkUpdatesSilently() {
+	win_sparkle_check_update_without_ui();
+}

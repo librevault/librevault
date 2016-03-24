@@ -42,3 +42,7 @@ Updater::~Updater() {
 	[impl_->updater release];
 	delete impl_;
 }
+
+bool Updater::supportsUpdate() const {
+	return true;
+}

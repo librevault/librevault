@@ -14,19 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Updater.h"
-#include <winsparkle.h>
 
-Updater::Updater(QObject* parent) : QObject(parent) {
-	QString appcast_url = QStringLiteral("http://127.0.0.1:8091/appcast.rss");
+Updater::Updater(QObject* parent) : QObject(parent) {}
 
-	win_sparkle_set_appcast_url(appcast_url.toUtf8().data());
-	win_sparkle_init();
-}
-
-Updater::~Updater() {
-	win_sparkle_cleanup();
-}
+Updater::~Updater() {}
 
 bool Updater::supportsUpdate() const {
-	return true;
+	return false;
 }

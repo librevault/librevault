@@ -24,6 +24,8 @@ public:
 	Updater(QObject* parent);
 	virtual ~Updater();
 
+	bool supportsUpdate() const;
+
 public slots:
 
 private:

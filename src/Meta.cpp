@@ -202,7 +202,7 @@ void Meta::parse(const blob &serialized_data) {
 		mode_ = meta_s.generic_metadata().mode();
 		uid_ = meta_s.generic_metadata().uid();
 		gid_ = meta_s.generic_metadata().gid();
-	}else if(meta_s.type_specific_metadata_case() == 0) throw parse_error("Parse error: Type specific metadata not found");
+	}else if(meta_s.type_specific_metadata_case() != 0) throw parse_error("Parse error: Redundant type specific metadata found on DELETED");
 
 	if(meta_type_ == SYMLINK) {
 		if(meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata) throw parse_error("Parse error: Symlink metadata needed");

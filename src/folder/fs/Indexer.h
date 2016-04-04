@@ -42,7 +42,7 @@ public:
 	virtual ~Indexer() {}
 
 	// Index manipulation
-	void index(const std::string& file_path);
+	void index(const std::string& file_path) noexcept;
 
 	void async_index(const std::string& file_path);
 	void async_index(const std::set<std::string>& file_path);

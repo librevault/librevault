@@ -57,7 +57,7 @@ public:
 	virtual ~FSFolder();
 
 	/* Actions */
-	bool have_meta(const Meta::PathRevision& path_revision);
+	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
 	SignedMeta get_meta(const Meta::PathRevision& path_revision);
 	std::list<SignedMeta> get_meta_containing(const blob& ct_hash);
 	void put_meta(SignedMeta smeta, bool fully_assembled = false);

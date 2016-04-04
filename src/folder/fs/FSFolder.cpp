@@ -63,7 +63,7 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 FSFolder::~FSFolder() {}
 
 // TODO: rewrite.
-bool FSFolder::have_meta(const Meta::PathRevision& path_revision) {
+bool FSFolder::have_meta(const Meta::PathRevision& path_revision) noexcept {
 	try {
 		get_meta(path_revision);
 	}catch(AbstractFolder::no_such_meta& e){
@@ -91,7 +91,7 @@ void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 	bitfield_type bitfield;
 	if(!fully_assembled) {
 		bitfield = make_bitfield(smeta.meta());
-		if(bitfield.all()) {
+		if(open_storage && bitfield.all()) {
 			open_storage->assemble(smeta.meta(), true);
 		}
 	}else{
@@ -102,7 +102,7 @@ void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 }
 
 bool FSFolder::have_chunk(const blob& ct_hash) const {
-	return enc_storage->have_chunk(ct_hash) || open_storage->have_chunk(ct_hash);
+	return enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
 }
 
 blob FSFolder::get_chunk(const blob& ct_hash) {
@@ -115,7 +115,10 @@ blob FSFolder::get_chunk(const blob& ct_hash) {
 		try {
 			block_ptr = enc_storage->get_chunk(ct_hash);
 		}catch(AbstractFolder::no_such_chunk& e) {
-			block_ptr = open_storage->get_chunk(ct_hash);
+			if(open_storage)
+				block_ptr = open_storage->get_chunk(ct_hash);
+			else
+				throw;
 		}
 		mem_storage->put_chunk(ct_hash, block_ptr);
 		return *block_ptr;

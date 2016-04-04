@@ -37,7 +37,7 @@ public:
 	OpenStorage(FSFolder& dir);
 	virtual ~OpenStorage() {}
 
-	bool have_chunk(const blob& ct_hash) const;
+	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
 	blob get_chunk_pt(const blob& ct_hash) const;
 

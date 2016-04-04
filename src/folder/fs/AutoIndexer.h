@@ -48,6 +48,8 @@ private:
 
 	std::multiset<std::string> prepared_assemble_;
 
+	boost::asio::steady_timer reindex_timer_;
+
 	void bump_timer();
 
 	// Monitor operations

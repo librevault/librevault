@@ -20,7 +20,7 @@ namespace librevault {
 
 MemoryCachedStorage::MemoryCachedStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "MemoryCachedStorage") {}
 
-bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const {
+bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return cache_iteraror_map_.find(ct_hash) != cache_iteraror_map_.end();
 }
 
@@ -52,10 +52,12 @@ void MemoryCachedStorage::put_chunk(const blob& ct_hash, std::shared_ptr<blob> d
 	}
 }
 
-void MemoryCachedStorage::remove_chunk(const blob& ct_hash) {
+void MemoryCachedStorage::remove_chunk(const blob& ct_hash) noexcept {
 	auto iterator_to_iterator = cache_iteraror_map_.find(ct_hash);
-	cache_list_.erase(iterator_to_iterator->second);
-	cache_iteraror_map_.erase(iterator_to_iterator);
+	if(iterator_to_iterator != cache_iteraror_map_.end()) {
+		cache_list_.erase(iterator_to_iterator->second);
+		cache_iteraror_map_.erase(iterator_to_iterator);
+	}
 }
 
 bool MemoryCachedStorage::overflow() const {

@@ -28,13 +28,13 @@ Indexer::Indexer(FSFolder& dir, Client& client) :
 	Loggable(dir, "Indexer"), dir_(dir),
 	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
 
-void Indexer::index(const std::string& file_path){
+void Indexer::index(const std::string& file_path) noexcept {
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
 
 	SignedMeta smeta;
 
 	try {
-		if(dir_.ignore_list->is_ignored(file_path)) throw error("File is ignored");
+		if(dir_.ignore_list->is_ignored(file_path)) throw abort_index("File is ignored");
 
 		try {
 			smeta = index_.get_Meta(Meta::make_path_id(file_path, secret_));
@@ -91,8 +91,9 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
 		auto old_smeta = index_.get_Meta(new_meta.path_id());
 		old_meta = old_smeta.meta();
-	}catch(...){
-		if(new_meta.meta_type() == Meta::DELETED) throw abort_index("Old Meta is not in the index, new Meta is DELETED");
+	}catch(AbstractFolder::no_such_meta& e) {
+		if(new_meta.meta_type() == Meta::DELETED)
+			throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 	}
 
 	if(old_meta.meta_type() == Meta::DELETED && new_meta.meta_type() == Meta::DELETED)

@@ -26,10 +26,10 @@ public:
 	MemoryCachedStorage(FSFolder& dir);
 	virtual ~MemoryCachedStorage() {}
 
-	bool have_chunk(const blob& ct_hash) const;
+	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
 	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
-	void remove_chunk(const blob& ct_hash);
+	void remove_chunk(const blob& ct_hash) noexcept;
 
 private:
 	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;

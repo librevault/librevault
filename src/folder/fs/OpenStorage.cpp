@@ -25,7 +25,7 @@ OpenStorage::OpenStorage(FSFolder& dir) :
 	AbstractStorage(dir), Loggable(dir, "OpenStorage"),
 	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {}
 
-bool OpenStorage::have_chunk(const blob& ct_hash) const {
+bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
 										   "WHERE ct_hash=:ct_hash", {
 										   {":ct_hash", ct_hash}

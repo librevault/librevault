@@ -24,7 +24,7 @@ namespace librevault {
 AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		Loggable(dir, "AutoIndexer"),
 		dir_(dir), client_(client),
-		monitor_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
+		monitor_(client_.bulk_ios()), reindex_timer_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
 	enqueue_files(full_reindex_list());
 
 	monitor_.add_directory(dir_.path().string());

@@ -20,7 +20,7 @@ namespace librevault {
 
 EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage") {}
 
-fs::path EncStorage::make_chunk_ct_name(const blob& ct_hash) const {
+std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
 }
 

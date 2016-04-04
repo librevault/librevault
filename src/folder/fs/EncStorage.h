@@ -32,7 +32,7 @@ public:
 	void remove_chunk(const blob& ct_hash);
 
 private:
-	fs::path make_chunk_ct_name(const blob& ct_hash) const;
+	std::string make_chunk_ct_name(const blob& ct_hash) const;
 	fs::path make_chunk_ct_path(const blob& ct_hash) const;
 };
 

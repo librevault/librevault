@@ -36,6 +36,9 @@ public:
 	void prepare_dir_assemble(bool with_removal, const std::string& relpath);
 	void prepare_deleted_assemble(const std::string& relpath);
 
+	// List of files, ready to be reindexed on full reindexing
+	std::set<std::string> full_reindex_list();
+
 private:
 	FSFolder& dir_;
 	Client& client_;

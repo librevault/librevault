@@ -217,28 +217,4 @@ void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
 }
 */
 
-std::set<std::string> OpenStorage::open_files(){
-	std::set<std::string> file_list;
-
-	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		auto relpath = dir_.make_relpath(dir_entry_it->path());
-
-		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
-	}
-	return file_list;
-}
-
-std::set<std::string> OpenStorage::pending_files(){
-	std::set<std::string> file_list = open_files();
-
-	for(auto smeta : index_.get_Meta()) {
-		auto& meta = smeta.meta();
-		if(meta.meta_type() != Meta::DELETED){
-			file_list.insert(meta.path(secret_));
-		}
-	}
-
-	return file_list;
-}
-
 } /* namespace librevault */

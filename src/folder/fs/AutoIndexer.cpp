@@ -25,7 +25,7 @@ AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		Loggable(dir, "AutoIndexer"),
 		dir_(dir), client_(client),
 		monitor_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
-	enqueue_files(dir.open_storage->pending_files());
+	enqueue_files(full_reindex_list());
 
 	monitor_.add_directory(dir_.path().string());
 	monitor_operation();
@@ -65,6 +65,27 @@ void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
 
 	for(unsigned i = 0; i < skip_events; i++)
 		prepared_assemble_.insert(relpath);
+}
+
+std::set<std::string> AutoIndexer::full_reindex_list() {
+	std::set<std::string> file_list;
+
+	// Files present in the file system
+	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
+		auto relpath = dir_.make_relpath(dir_entry_it->path());
+
+		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
+	}
+
+	// Files present in index (files added from here will be marked as DELETED)
+	for(auto smeta : dir_.index->get_Meta()) {
+		auto& meta = smeta.meta();
+		if(meta.meta_type() != Meta::DELETED){
+			file_list.insert(meta.path(dir_.secret()));
+		}
+	}
+
+	return file_list;
 }
 
 void AutoIndexer::bump_timer() {

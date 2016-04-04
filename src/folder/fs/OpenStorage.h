@@ -55,9 +55,6 @@ public:
 	 */
 	//void disassemble(const std::string& file_path, bool delete_file = true);
 
-	std::set<std::string> open_files();	// Returns file names that are actually present in OpenFS.
-	std::set<std::string> pending_files();	// Files, ready to be reindexed (sum of above, except deleted)
-
 private:
 	const Secret& secret_;
 	Index& index_;

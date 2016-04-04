@@ -137,10 +137,9 @@ void OpenStorage::assemble_directory(const Meta& meta) {
 
 	bool removed = false;
 	if(fs::status(file_path).type() != fs::file_type::directory_file){
-		if(dir_.auto_indexer)
-			dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 		removed = fs::remove(file_path);
 	}
+	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 
 	fs::create_directories(file_path);
 }

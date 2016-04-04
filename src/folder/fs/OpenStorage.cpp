@@ -108,7 +108,7 @@ void OpenStorage::assemble_deleted(const Meta& meta) {
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(dir_.make_relpath(file_path));
+	if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(dir_.normalize_path(file_path));
 
 	if(file_type == fs::symlink_file || file_type == fs::directory_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
@@ -130,7 +130,7 @@ void OpenStorage::assemble_directory(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_directory()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
-	auto relpath = dir_.make_relpath(file_path);
+	auto relpath = dir_.normalize_path(file_path);
 
 	bool removed = false;
 	if(fs::status(file_path).type() != fs::file_type::directory_file){
@@ -145,7 +145,7 @@ void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
 	log_->trace() << log_tag() << "assemble_file()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
-	auto relpath = dir_.make_relpath(file_path);
+	auto relpath = dir_.normalize_path(file_path);
 	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.

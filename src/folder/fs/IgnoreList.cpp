@@ -56,7 +56,7 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 	}
 
 	// Predefined paths
-	add_ignored(regex_escape(dir_.make_relpath(dir_.system_path())) + R"((?:\/(?:.*))?)");
+	add_ignored(regex_escape(dir_.normalize_path(dir_.system_path())) + R"((?:\/(?:.*))?)");
 }
 
 std::string IgnoreList::regex_escape(std::string str_to_escape) {

@@ -72,7 +72,7 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 
 	// Files present in the file system
 	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		auto relpath = dir_.make_relpath(dir_entry_it->path());
+		auto relpath = dir_.normalize_path(dir_entry_it->path());
 
 		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
 	}
@@ -115,7 +115,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	case boost::asio::dir_monitor_event::removed:
 	case boost::asio::dir_monitor_event::null:
 	{
-		std::string relpath = dir_.make_relpath(ev.path);
+		std::string relpath = dir_.normalize_path(ev.path);
 
 		auto prepared_assemble_it = prepared_assemble_.find(relpath);
 		if(prepared_assemble_it != prepared_assemble_.end()) {

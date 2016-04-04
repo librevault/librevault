@@ -146,8 +146,12 @@ bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
 }
 
 /* Makers */
-std::string FSFolder::make_relpath(const fs::path& abspath) const {
-	return ::librevault::make_relpath(abspath, path());
+std::string FSFolder::normalize_path(const fs::path& abspath) const {
+	std::string norm_path = ::librevault::make_relpath(abspath, path());
+	if(norm_path.size() > 0 && norm_path.back() == '/')
+		norm_path.pop_back();
+	// TODO: UTF-8 normalization, maybe?
+	return norm_path;
 }
 
 bitfield_type FSFolder::make_bitfield(const Meta& meta) const {

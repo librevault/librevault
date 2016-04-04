@@ -69,7 +69,7 @@ public:
 	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
 
 	/* Makers */
-	std::string make_relpath(const fs::path& abspath) const;
+	std::string normalize_path(const fs::path& abspath) const;
 
 	/* Getters */
 	FolderGroup& group() {return group_;}

@@ -121,8 +121,6 @@ else()
 	target_link_libraries(${PROJECT_NAME} jsoncpp-bundled)
 endif()
 
-target_link_libraries(${PROJECT_NAME} jsoncpp-bundled)
-
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
 if(NOT libnatpmp_LIBRARIES)
@@ -215,8 +213,9 @@ target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
 ##### System libraries #####
 
 ## Threads
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${PROJECT_NAME} Threads::Threads)
 
 ## WinSock
 if(WIN32)

@@ -228,17 +228,6 @@ std::set<std::string> OpenStorage::open_files(){
 	return file_list;
 }
 
-std::set<std::string> OpenStorage::indexed_files() {
-	std::set<std::string> file_list;
-
-	for(auto smeta : index_.get_Meta()) {
-		std::string relpath = smeta.meta().path(secret_);
-		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
-	}
-
-	return file_list;
-}
-
 std::set<std::string> OpenStorage::pending_files(){
 	std::set<std::string> file_list = open_files();
 

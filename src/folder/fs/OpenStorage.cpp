@@ -252,13 +252,4 @@ std::set<std::string> OpenStorage::pending_files(){
 	return file_list;
 }
 
-std::set<std::string> OpenStorage::all_files(){
-	std::set<std::string> file_list1, file_list2;
-	file_list1 = open_files();
-	file_list2 = indexed_files();
-
-	file_list1.insert(file_list2.begin(), file_list2.end());
-	return file_list1;
-}
-
 } /* namespace librevault */

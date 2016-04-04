@@ -58,7 +58,6 @@ public:
 	std::set<std::string> open_files();	// Returns file names that are actually present in OpenFS.
 	std::set<std::string> indexed_files();	// Returns file names that are mentioned in index. They may be present, maybe not.
 	std::set<std::string> pending_files();	// Files, ready to be reindexed (sum of above, except deleted)
-	std::set<std::string> all_files();	// Sum of all
 
 private:
 	const Secret& secret_;

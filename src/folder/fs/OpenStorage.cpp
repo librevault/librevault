@@ -110,11 +110,14 @@ void OpenStorage::assemble_deleted(const Meta& meta) {
 	// Suppress unnecessary events on dir_monitor.
 	if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(dir_.normalize_path(file_path));
 
-	if(file_type == fs::symlink_file || file_type == fs::directory_file || file_type == fs::file_not_found)
-		fs::remove(file_path);
-	else if(fs::is_empty(file_path))
-		fs::remove_all(file_path);
-	else
+	if(file_type == fs::directory_file) {
+		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
+			fs::remove(file_path);
+		else  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
+			fs::remove_all(file_path);  // TODO: Okay, this is a horrible solution
+	}
+
+	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
 }
 
@@ -134,9 +137,10 @@ void OpenStorage::assemble_directory(const Meta& meta) {
 
 	bool removed = false;
 	if(fs::status(file_path).type() != fs::file_type::directory_file){
+		if(dir_.auto_indexer)
+			dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 		removed = fs::remove(file_path);
 	}
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 
 	fs::create_directories(file_path);
 }

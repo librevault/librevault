@@ -59,10 +59,9 @@ public:
 	/* Actions */
 	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
 	SignedMeta get_meta(const Meta::PathRevision& path_revision);
-	std::list<SignedMeta> get_meta_containing(const blob& ct_hash);
 	void put_meta(SignedMeta smeta, bool fully_assembled = false);
 
-	bool have_chunk(const blob& ct_hash) const;
+	bool have_chunk(const blob& ct_hash) const noexcept;
 	blob get_chunk(const blob& ct_hash);
 	void put_chunk(const blob& ct_hash, const blob& chunk);
 
@@ -83,7 +82,7 @@ public:
 private:
 	FolderGroup& group_;
 
-	bitfield_type make_bitfield(const Meta& meta) const;
+	bitfield_type make_bitfield(const Meta& meta) const noexcept;
 };
 
 } /* namespace librevault */

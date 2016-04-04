@@ -79,10 +79,6 @@ SignedMeta FSFolder::get_meta(const Meta::PathRevision& path_revision) {
 	else throw AbstractFolder::no_such_meta();
 }
 
-std::list<SignedMeta> FSFolder::get_meta_containing(const blob& ct_hash) {
-	return index->containing_chunk(ct_hash);
-}
-
 void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 	auto path_revision = smeta.meta().path_revision();
 
@@ -101,7 +97,7 @@ void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
 	group_.notify_meta(shared_from_this(), path_revision, bitfield);
 }
 
-bool FSFolder::have_chunk(const blob& ct_hash) const {
+bool FSFolder::have_chunk(const blob& ct_hash) const noexcept {
 	return enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
 }
 
@@ -127,17 +123,12 @@ blob FSFolder::get_chunk(const blob& ct_hash) {
 
 void FSFolder::put_chunk(const blob& ct_hash, const blob& chunk) {
 	enc_storage->put_chunk(ct_hash, chunk);
-	group_.notify_chunk(shared_from_this(), ct_hash);
-
-	if(open_storage) {
-		auto meta_list = get_meta_containing(ct_hash);
-		for(auto& smeta : meta_list) {
-			auto bitfield = make_bitfield(smeta.meta());
-			if(bitfield.all()) {
+	if(open_storage)
+		for(auto& smeta : index->containing_chunk(ct_hash))
+			if(make_bitfield(smeta.meta()).all())
 				open_storage->assemble(smeta.meta(), true);
-			}
-		}
-	}
+
+	group_.notify_chunk(shared_from_this(), ct_hash);
 }
 
 // TODO: Maybe, add some caching
@@ -154,7 +145,7 @@ std::string FSFolder::normalize_path(const fs::path& abspath) const {
 	return norm_path;
 }
 
-bitfield_type FSFolder::make_bitfield(const Meta& meta) const {
+bitfield_type FSFolder::make_bitfield(const Meta& meta) const noexcept {
 	bitfield_type bitfield(meta.chunks().size());
 
 	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)

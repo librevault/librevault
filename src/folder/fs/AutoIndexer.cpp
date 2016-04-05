@@ -67,7 +67,7 @@ void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
 		prepared_assemble_.insert(relpath);
 }
 
-std::set<std::string> AutoIndexer::full_reindex_list() {
+std::set<std::string> AutoIndexer::short_reindex_list() {
 	std::set<std::string> file_list;
 
 	// Files present in the file system
@@ -76,6 +76,12 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 
 		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
 	}
+
+	return file_list;
+}
+
+std::set<std::string> AutoIndexer::full_reindex_list() {
+	std::set<std::string> file_list = short_reindex_list();
 
 	// Files present in index (files added from here will be marked as DELETED)
 	for(auto smeta : dir_.index->get_meta()) {

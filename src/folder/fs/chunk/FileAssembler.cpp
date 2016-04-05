@@ -76,8 +76,9 @@ void FileAssembler::assemble_deleted(const Meta& meta) {
 			fs::remove_all(file_path);  // TODO: Okay, this is a horrible solution
 	}
 
-	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
+	if(file_type == fs::regular_file || file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
+	// TODO: else
 }
 
 void FileAssembler::assemble_symlink(const Meta& meta) {

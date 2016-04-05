@@ -126,7 +126,7 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	try {
 		return get_meta(path_revision.path_id_).meta().revision() < path_revision.revision_;
 	}catch(AbstractFolder::no_such_meta& e){
-		return false;
+		return true;
 	}
 }
 

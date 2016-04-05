@@ -39,6 +39,8 @@ public:
 	std::list<SignedMeta> get_meta();
 	void put_meta(const SignedMeta& signed_meta, bool fully_assembled);
 
+	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
+
 	/* Chunk getter */
 	uint32_t get_chunk_size(const blob& ct_hash);
 

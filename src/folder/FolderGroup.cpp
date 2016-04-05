@@ -102,7 +102,7 @@ void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
                               const bitfield_type& bitfield) {
 	if(fs_dir_->have_meta(revision))
 		downloader_->notify_remote_meta(origin, revision, bitfield);
-	else
+	else if(fs_dir_->index->put_allowed(revision))
 		origin->request_meta(revision);
 }
 
@@ -119,7 +119,8 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta:
 }
 
 void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	fs_dir_->put_meta(smeta);
+	if(fs_dir_->index->put_allowed(smeta.meta().path_revision()))
+		fs_dir_->put_meta(smeta);
 	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 

@@ -122,6 +122,14 @@ std::list<SignedMeta> Index::get_meta(){
 	return get_meta("SELECT meta, signature FROM meta");
 }
 
+bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
+	try {
+		return get_meta(path_revision.path_id_).meta().revision() < path_revision.revision_;
+	}catch(AbstractFolder::no_such_meta& e){
+		return false;
+	}
+}
+
 /* Block getter */
 
 uint32_t Index::get_chunk_size(const blob& ct_hash) {

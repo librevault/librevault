@@ -55,10 +55,15 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
-	for(size_t block_idx = 0; block_idx < blocks.size(); block_idx++)
-		if(bitfield[block_idx])
-			notify_remote_chunk(remote, blocks[block_idx].ct_hash);
+	try {
+		auto blocks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
+		for(size_t block_idx = 0; block_idx < blocks.size(); block_idx++)
+			if(bitfield[block_idx])
+				notify_remote_chunk(remote, blocks[block_idx].ct_hash);
+	}catch(AbstractFolder::no_such_meta){
+		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
+		// Nevertheless, ignore this notification.
+	}
 }
 void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;

@@ -139,7 +139,7 @@ uint32_t Index::get_chunk_size(const blob& ct_hash) {
 
 	if(sql_result.have_rows())
 		return (uint32_t)sql_result.begin()->at(0).as_uint();
-	return 0;
+	throw AbstractFolder::no_such_chunk();
 }
 
 std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {

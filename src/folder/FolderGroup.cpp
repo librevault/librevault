@@ -104,6 +104,8 @@ void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
 		downloader_->notify_remote_meta(origin, revision, bitfield);
 	else if(fs_dir_->index->put_allowed(revision))
 		origin->request_meta(revision);
+	else
+		log_->debug() << log_tag() << "Remote node notified us about an expired Meta";
 }
 
 void FolderGroup::notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash) {
@@ -121,6 +123,9 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta:
 void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
 	if(fs_dir_->index->put_allowed(smeta.meta().path_revision()))
 		fs_dir_->put_meta(smeta);
+	else
+		log_->debug() << log_tag() << "Remote node posted to us about an expired Meta";
+
 	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 

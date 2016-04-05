@@ -13,71 +13,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "OpenStorage.h"
+#include "FileAssembler.h"
 
-#include "FSFolder.h"
-#include "IgnoreList.h"
-#include "AutoIndexer.h"
+#include "src/folder/fs/FSFolder.h"
+#include "src/folder/fs/IgnoreList.h"
+#include "src/folder/fs/AutoIndexer.h"
+
+#include "ChunkStorage.h"
 
 namespace librevault {
 
-OpenStorage::OpenStorage(FSFolder& dir) :
-	AbstractStorage(dir), Loggable(dir, "OpenStorage"),
-	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage) {}
+FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage) :
+	Loggable(dir, "OpenStorage"), dir_(dir), chunk_storage_(chunk_storage),
+	secret_(dir_.secret()), index_(*dir_.index) {}
 
-bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
-	auto sql_result = index_.db().exec("SELECT assembled FROM openfs "
-										   "WHERE ct_hash=:ct_hash", {
-										   {":ct_hash", ct_hash}
-									   });
-	for(auto row : sql_result) {
-		if(row[0].as_int() > 0) return true;
-	}
-	return false;
-}
-
-std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> OpenStorage::get_both_chunks(const blob& ct_hash) const {
-	log_->trace() << log_tag() << "get_both_chunks(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
-
-	auto metas_containing = index_.containing_chunk(ct_hash);
-
-	for(auto smeta : metas_containing) {
-		// Search for chunk offset and index
-		uint64_t offset = 0;
-		unsigned chunk_idx = 0;
-		for(auto& chunk : smeta.meta().chunks()) {
-			if(chunk.ct_hash == ct_hash) break;
-			offset += chunk.size;
-			chunk_idx++;
-		}
-		if(chunk_idx > smeta.meta().chunks().size()) continue;
-
-		// Found chunk & offset
-		auto chunk = smeta.meta().chunks().at(chunk_idx);
-		std::shared_ptr<blob> chunk_pt = std::make_shared<blob>(chunk.size);
-
-		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
-		try {
-			ifs.open(fs::absolute(smeta.meta().path(secret_), dir_.path()), std::ios::binary);
-			ifs.seekg(offset);
-			ifs.read(reinterpret_cast<char*>(chunk_pt->data()), chunk.size);
-
-			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(*chunk_pt, secret_.get_Encryption_Key(), chunk.iv));
-			// Check
-			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return {chunk_pt, chunk_ct};
-		}catch(const std::ios::failure& e){}
-	}
-	throw AbstractFolder::no_such_chunk();
-}
-
-std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
-	log_->trace() << log_tag() << "get_chunk(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
-	return get_both_chunks(ct_hash).second;
-}
-
-blob OpenStorage::get_chunk_pt(const blob& ct_hash) const {
+blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 	log_->trace() << log_tag() << "get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
-	blob chunk = dir_.get_chunk(ct_hash);
+	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
 	for(auto row : index_.db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
 		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), secret_.get_Encryption_Key(), row[1].as_blob());
@@ -85,23 +37,30 @@ blob OpenStorage::get_chunk_pt(const blob& ct_hash) const {
 	throw AbstractFolder::no_such_chunk();
 }
 
-void OpenStorage::assemble(const Meta& meta, bool delete_chunks){
+void FileAssembler::assemble(const Meta& meta){
 	log_->trace() << log_tag() << "assemble()";
 
-	if(meta.meta_type() == Meta::DELETED) {
-		assemble_deleted(meta);
-	}else{
-		switch(meta.meta_type()) {
-			case Meta::SYMLINK:     assemble_symlink(meta); break;
-			case Meta::DIRECTORY:   assemble_directory(meta); break;
-			case Meta::FILE:        assemble_file(meta, delete_chunks); break;
-			default:                throw assemble_error();
+	try {
+		if(meta.meta_type() == Meta::DELETED)
+			assemble_deleted(meta);
+		else {
+			switch(meta.meta_type()) {
+				case Meta::SYMLINK: assemble_symlink(meta);
+					break;
+				case Meta::DIRECTORY: assemble_directory(meta);
+					break;
+				case Meta::FILE: assemble_file(meta);
+					break;
+				default: throw error(std::string("Unexpected meta type:") + std::to_string(meta.meta_type()));
+			}
+			apply_attrib(meta);
 		}
-		apply_attrib(meta);
+	}catch(std::runtime_error& e) {
+		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what(); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
-void OpenStorage::assemble_deleted(const Meta& meta) {
+void FileAssembler::assemble_deleted(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_deleted()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -121,7 +80,7 @@ void OpenStorage::assemble_deleted(const Meta& meta) {
 		fs::remove(file_path);
 }
 
-void OpenStorage::assemble_symlink(const Meta& meta) {
+void FileAssembler::assemble_symlink(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_symlink()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -129,7 +88,7 @@ void OpenStorage::assemble_symlink(const Meta& meta) {
 	fs::create_symlink(meta.symlink_path(secret_), file_path);
 }
 
-void OpenStorage::assemble_directory(const Meta& meta) {
+void FileAssembler::assemble_directory(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_directory()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -144,9 +103,14 @@ void OpenStorage::assemble_directory(const Meta& meta) {
 	fs::create_directories(file_path);
 }
 
-void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
+void FileAssembler::assemble_file(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_file()";
 
+	// Check if we have all needed chunks
+	if(!chunk_storage_.make_bitfield(meta).all())
+		return; // retreat!
+
+	//
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	auto relpath = dir_.normalize_path(file_path);
 	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
@@ -172,14 +136,10 @@ void OpenStorage::assemble_file(const Meta& meta, bool delete_chunks) {
 
 	index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 
-	if(delete_chunks){
-		for(auto chunk : meta.chunks()) {
-			enc_storage_.remove_chunk(chunk.ct_hash);
-		}
-	}
+	chunk_storage_.cleanup(meta);
 }
 
-void OpenStorage::apply_attrib(const Meta& meta) {
+void FileAssembler::apply_attrib(const Meta& meta) {
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 
 #if BOOST_OS_UNIX
@@ -198,7 +158,7 @@ void OpenStorage::apply_attrib(const Meta& meta) {
 }
 
 /*
-void OpenStorage::disassemble(const std::string& file_path, bool delete_file){
+void FileAssembler::disassemble(const std::string& file_path, bool delete_file){
 	blob path_id = make_path_id(file_path);
 
 	std::list<blob> chunk_encrypted_hashes;

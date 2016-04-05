@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,24 +14,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <librevault/Meta.h>
-#include "src/util/Loggable.h"
+#include "src/pch.h"
+#include "AbstractStorage.h"
+#include <librevault/Secret.h>
+#include "src/folder/fs/Index.h"
+#include "EncStorage.h"
 
 namespace librevault {
 
 class FSFolder;
-class AbstractStorage {
+class OpenStorage : public AbstractStorage, public Loggable {
 public:
-	AbstractStorage(FSFolder& dir);
-	virtual ~AbstractStorage() {};
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("OpenStorage error") {}
+	};
 
-	bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
-	}
-	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
+	OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage);
+	virtual ~OpenStorage() {}
 
-protected:
-	FSFolder& dir_;
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+
+private:
+	const Secret& secret_;
 };
 
 } /* namespace librevault */

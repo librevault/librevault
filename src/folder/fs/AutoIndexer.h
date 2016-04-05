@@ -16,8 +16,8 @@
 #pragma once
 #include "src/pch.h"
 #include "Index.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
+#include "src/folder/fs/chunk/EncStorage.h"
+#include "src/folder/fs/chunk/OpenStorage.h"
 
 #include <dir_monitor/dir_monitor.hpp>
 

@@ -13,11 +13,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
+#include "src/pch.h"
 #include "AbstractStorage.h"
-#include "FSFolder.h"
 
 namespace librevault {
 
-AbstractStorage::AbstractStorage(FSFolder& dir) : dir_(dir) {};
+class Client;
+class FSFolder;
+class EncStorage : public AbstractStorage, public Loggable {
+public:
+	EncStorage(FSFolder& dir, ChunkStorage& chunk_storage);
+	virtual ~EncStorage() {}
+
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, const blob& chunk_pt);	// FIXME: Check hash
+	void remove_chunk(const blob& ct_hash);
+
+private:
+	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
+	fs::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+};
 
 } /* namespace librevault */

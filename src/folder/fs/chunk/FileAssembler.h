@@ -17,55 +17,38 @@
 #include "src/pch.h"
 #include "AbstractStorage.h"
 #include <librevault/Secret.h>
-#include "Index.h"
+#include "src/folder/fs/Index.h"
 #include "EncStorage.h"
 
 namespace librevault {
 
 class FSFolder;
-class OpenStorage : public AbstractStorage, public Loggable {
+class FileAssembler : public Loggable {
 public:
 	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("OpenStorage error") {}
+		error(const std::string& what) : std::runtime_error(what) {}
+		error() : error("FileAssembler error") {}
 	};
 
-	struct assemble_error : error {
-		assemble_error() : error("Error during assembling file") {}
-	};
+	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage);
+	virtual ~FileAssembler() {}
 
-	OpenStorage(FSFolder& dir);
-	virtual ~OpenStorage() {}
-
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
 	blob get_chunk_pt(const blob& ct_hash) const;
 
 	// File assembler
-	/**
-	 * Tries to assemble files, indexed by Meta.
-	 * @param meta
-	 * @param delete_chunks
-	 */
-	void assemble(const Meta& meta, bool delete_chunks = true);
-	/**
-	 * Tries to split unencrypted file into separate encrypted chunks, pushing them into EncStorage.
-	 * @param file_path
-	 * @param delete_file
-	 */
+	void assemble(const Meta& meta);
 	//void disassemble(const std::string& file_path, bool delete_file = true);
 
 private:
+	FSFolder& dir_;
+	ChunkStorage& chunk_storage_;
 	const Secret& secret_;
 	Index& index_;
-	EncStorage& enc_storage_;
-
-	std::pair<std::shared_ptr<blob>, std::shared_ptr<blob>> get_both_chunks(const blob& ct_hash) const;	// Returns std::pair(plaintext, encrypted)
 
 	void assemble_deleted(const Meta& meta);
 	void assemble_symlink(const Meta& meta);
 	void assemble_directory(const Meta& meta);
-	void assemble_file(const Meta& meta, bool delete_chunks);
+	void assemble_file(const Meta& meta);
 
 	void apply_attrib(const Meta& meta);
 };

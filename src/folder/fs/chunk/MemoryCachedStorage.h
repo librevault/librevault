@@ -14,26 +14,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../../pch.h"
+#include "src/pch.h"
 #include "AbstractStorage.h"
 
 namespace librevault {
 
 class Client;
-class FSFolder;
-class EncStorage : public AbstractStorage, public Loggable {
+// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
+class MemoryCachedStorage : public AbstractStorage, public Loggable {
 public:
-	EncStorage(FSFolder& dir);
-	virtual ~EncStorage() {}
+	MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage);
+	virtual ~MemoryCachedStorage() {}
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const blob& chunk_pt);	// FIXME: Check hash
-	void remove_chunk(const blob& ct_hash);
+	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
+	void remove_chunk(const blob& ct_hash) noexcept;
 
 private:
-	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
-	fs::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
+	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
+
+	mutable std::list<ct_hash_data_type> cache_list_;
+	std::map<blob, list_iterator_type> cache_iteraror_map_;
+
+	bool overflow() const;
 };
 
 } /* namespace librevault */

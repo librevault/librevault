@@ -49,9 +49,25 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	ifs << hexhash_conf;
 }
 
+bool Index::have_meta(const Meta::PathRevision& path_revision) noexcept {
+	try {
+		get_meta(path_revision);
+	}catch(AbstractFolder::no_such_meta& e){
+		return false;
+	}
+	return true;
+}
+
+SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
+	auto smeta = get_meta(path_revision.path_id_);
+	if(smeta.meta().revision() == path_revision.revision_)
+		return smeta;
+	else throw AbstractFolder::no_such_meta();
+}
+
 /* Meta manipulators */
 
-void Index::put_Meta(const SignedMeta& signed_meta, bool fully_assembled) {
+void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, "put_Meta");
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
@@ -82,24 +98,28 @@ void Index::put_Meta(const SignedMeta& signed_meta, bool fully_assembled) {
 		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
 	else
 		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+
+	new_meta_signal(signed_meta);
+	if(!fully_assembled)
+		assemble_meta_signal(signed_meta.meta());
 }
 
-std::list<SignedMeta> Index::get_Meta(std::string sql, std::map<std::string, SQLValue> values){
+std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){
 	std::list<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list.push_back(SignedMeta(row[0], row[1], dir_.secret()));
 	return result_list;
 }
-SignedMeta Index::get_Meta(const blob& path_id){
-	auto meta_list = get_Meta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
-			{":path_id", path_id}
+SignedMeta Index::get_meta(const blob& path_id){
+	auto meta_list = get_meta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
+		{":path_id", path_id}
 	});
 
 	if(meta_list.empty()) throw AbstractFolder::no_such_meta();
 	return *meta_list.begin();
 }
-std::list<SignedMeta> Index::get_Meta(){
-	return get_Meta("SELECT meta, signature FROM meta");
+std::list<SignedMeta> Index::get_meta(){
+	return get_meta("SELECT meta, signature FROM meta");
 }
 
 /* Block getter */
@@ -115,7 +135,8 @@ uint32_t Index::get_chunk_size(const blob& ct_hash) {
 }
 
 std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
-	return get_Meta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash", {{":ct_hash", ct_hash}});
+	return get_meta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
+		{{":ct_hash", ct_hash}});
 }
 
 void Index::wipe() {

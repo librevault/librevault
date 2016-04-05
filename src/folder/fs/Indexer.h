@@ -16,8 +16,8 @@
 #pragma once
 #include "src/pch.h"
 #include "Index.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
+#include "src/folder/fs/chunk/EncStorage.h"
+#include "src/folder/fs/chunk/OpenStorage.h"
 #include <librevault/Meta.h>
 
 namespace librevault {
@@ -55,8 +55,6 @@ private:
 
 	const Secret& secret_;
 	Index& index_;
-	EncStorage& enc_storage_;
-	OpenStorage& open_storage_;
 
 	Client& client_;
 

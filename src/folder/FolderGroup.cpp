@@ -19,6 +19,7 @@
 #include "src/folder/p2p/P2PFolder.h"
 
 #include "fs/Index.h"
+#include "src/folder/fs/chunk/ChunkStorage.h"
 
 #include "../Client.h"
 
@@ -35,6 +36,13 @@ FolderGroup::FolderGroup(FolderParams params, Client& client) :
 		uploader_(std::make_shared<Uploader>(client, *this)),
 		downloader_(std::make_shared<Downloader>(client, *this)) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
+	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
+		notify_meta(fs_dir_, smeta.meta().path_revision(), fs_dir_->chunk_storage->make_bitfield(smeta.meta()));
+	});
+	fs_dir_->chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
+		notify_chunk(fs_dir_, ct_hash);
+	});
 }
 
 FolderGroup::~FolderGroup() {
@@ -71,7 +79,7 @@ void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_
 
 // RemoteFolder actions
 void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
-	for(auto& meta : fs_dir_->index->get_Meta()) {
+	for(auto& meta : fs_dir_->index->get_meta()) {
 		origin->post_have_meta(meta.meta().path_revision(), fs_dir_->get_bitfield(meta.meta().path_revision()));
 	}
 }

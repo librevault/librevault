@@ -28,11 +28,9 @@ class FolderGroup;
 
 class IgnoreList;
 class Index;
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
 class Indexer;
 class AutoIndexer;
+class ChunkStorage;
 
 class FSFolder : public AbstractFolder, public std::enable_shared_from_this<FSFolder> {
 public:
@@ -45,9 +43,7 @@ public:
 	std::unique_ptr<IgnoreList> ignore_list;
 	std::unique_ptr<Index> index;
 
-	std::unique_ptr<MemoryCachedStorage> mem_storage;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
+	std::unique_ptr<ChunkStorage> chunk_storage;
 
 	std::unique_ptr<Indexer> indexer;
 	std::unique_ptr<AutoIndexer> auto_indexer;
@@ -81,8 +77,6 @@ public:
 
 private:
 	FolderGroup& group_;
-
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;
 };
 
 } /* namespace librevault */

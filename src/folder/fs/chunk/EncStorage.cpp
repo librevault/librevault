@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "EncStorage.h"
-#include "FSFolder.h"
+#include "src/folder/fs/FSFolder.h"
 
 namespace librevault {
 
-EncStorage::EncStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "EncStorage") {}
+EncStorage::EncStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage), Loggable(dir, "EncStorage") {}
 
 std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);

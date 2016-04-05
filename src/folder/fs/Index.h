@@ -26,14 +26,18 @@ class FSFolder;
 
 class Index : public Loggable {
 public:
+	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
+	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
+
 	Index(FSFolder& dir);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
-	SignedMeta get_Meta(const blob& path_id);
-	std::list<SignedMeta> get_Meta();
-
-	void put_Meta(const SignedMeta& signed_meta, bool fully_assembled);
+	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
+	SignedMeta get_meta(const Meta::PathRevision& path_revision);
+	SignedMeta get_meta(const blob& path_id);
+	std::list<SignedMeta> get_meta();
+	void put_meta(const SignedMeta& signed_meta, bool fully_assembled);
 
 	/* Chunk getter */
 	uint32_t get_chunk_size(const blob& ct_hash);
@@ -47,7 +51,7 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	std::list<SignedMeta> get_Meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	std::list<SignedMeta> get_meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
 	void wipe();
 };
 

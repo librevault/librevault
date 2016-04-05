@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MemoryCachedStorage.h"
-#include "FSFolder.h"
+#include "src/folder/fs/FSFolder.h"
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(FSFolder& dir) : AbstractStorage(dir), Loggable(dir, "MemoryCachedStorage") {}
+MemoryCachedStorage::MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage), Loggable(dir, "MemoryCachedStorage") {}
 
 bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return cache_iteraror_map_.find(ct_hash) != cache_iteraror_map_.end();

@@ -26,7 +26,7 @@ namespace librevault {
 
 Indexer::Indexer(FSFolder& dir, Client& client) :
 	Loggable(dir, "Indexer"), dir_(dir),
-	secret_(dir_.secret()), index_(*dir_.index), enc_storage_(*dir_.enc_storage), open_storage_(*dir_.open_storage), client_(client) {}
+	secret_(dir_.secret()), index_(*dir_.index), client_(client) {}
 
 void Indexer::index(const std::string& file_path) noexcept {
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
@@ -37,7 +37,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 		if(dir_.ignore_list->is_ignored(file_path)) throw abort_index("File is ignored");
 
 		try {
-			smeta = index_.get_Meta(Meta::make_path_id(file_path, secret_));
+			smeta = index_.get_meta(Meta::make_path_id(file_path, secret_));
 			if(fs::last_write_time(fs::absolute(file_path, dir_.path())) == smeta.meta().mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
@@ -89,7 +89,7 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 		update_fsattrib(old_meta, new_meta, abspath);   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
 	try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
-		auto old_smeta = index_.get_Meta(new_meta.path_id());
+		auto old_smeta = index_.get_meta(new_meta.path_id());
 		old_meta = old_smeta.meta();
 	}catch(AbstractFolder::no_such_meta& e) {
 		if(new_meta.meta_type() == Meta::DELETED)

@@ -17,14 +17,11 @@
 
 #include "IgnoreList.h"
 #include "Index.h"
-#include "MemoryCachedStorage.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
+#include "src/folder/fs/chunk/ChunkStorage.h"
 #include "Indexer.h"
 #include "AutoIndexer.h"
 
 #include "src/Client.h"
-#include "src/folder/FolderGroup.h"
 
 #include "src/util/make_relpath.h"
 
@@ -49,11 +46,8 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 	ignore_list = std::make_unique<IgnoreList>(*this);
 	index = std::make_unique<Index>(*this);
 
-	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
-	enc_storage = std::make_unique<EncStorage>(*this);
-	if(params().secret.get_type() <= Secret::Type::ReadOnly){
-		open_storage = std::make_unique<OpenStorage>(*this);
-	}
+	chunk_storage = std::make_unique<ChunkStorage>(*this);
+
 	if(params().secret.get_type() <= Secret::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);
 		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
@@ -62,78 +56,32 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 
 FSFolder::~FSFolder() {}
 
-// TODO: rewrite.
 bool FSFolder::have_meta(const Meta::PathRevision& path_revision) noexcept {
-	try {
-		get_meta(path_revision);
-	}catch(AbstractFolder::no_such_meta& e){
-		return false;
-	}
-	return true;
+	return index->have_meta(path_revision);
 }
 
 SignedMeta FSFolder::get_meta(const Meta::PathRevision& path_revision) {
-	auto smeta = index->get_Meta(path_revision.path_id_);
-	if(smeta.meta().revision() == path_revision.revision_)
-		return smeta;
-	else throw AbstractFolder::no_such_meta();
+	return index->get_meta(path_revision);
 }
 
 void FSFolder::put_meta(SignedMeta smeta, bool fully_assembled) {
-	auto path_revision = smeta.meta().path_revision();
-
-	index->put_Meta(smeta, fully_assembled);
-
-	bitfield_type bitfield;
-	if(!fully_assembled) {
-		bitfield = make_bitfield(smeta.meta());
-		if(open_storage && bitfield.all()) {
-			open_storage->assemble(smeta.meta(), true);
-		}
-	}else{
-		bitfield.resize(smeta.meta().chunks().size(), true);
-	}
-
-	group_.notify_meta(shared_from_this(), path_revision, bitfield);
+	index->put_meta(smeta, fully_assembled);
 }
 
 bool FSFolder::have_chunk(const blob& ct_hash) const noexcept {
-	return enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
+	return chunk_storage->have_chunk(ct_hash);
 }
 
 blob FSFolder::get_chunk(const blob& ct_hash) {
-	try {
-		// Cache hit
-		return *mem_storage->get_chunk(ct_hash);
-	}catch(AbstractFolder::no_such_chunk& e) {
-		// Cache missed
-		std::shared_ptr<blob> block_ptr;
-		try {
-			block_ptr = enc_storage->get_chunk(ct_hash);
-		}catch(AbstractFolder::no_such_chunk& e) {
-			if(open_storage)
-				block_ptr = open_storage->get_chunk(ct_hash);
-			else
-				throw;
-		}
-		mem_storage->put_chunk(ct_hash, block_ptr);
-		return *block_ptr;
-	}
+	return chunk_storage->get_chunk(ct_hash);
 }
 
 void FSFolder::put_chunk(const blob& ct_hash, const blob& chunk) {
-	enc_storage->put_chunk(ct_hash, chunk);
-	if(open_storage)
-		for(auto& smeta : index->containing_chunk(ct_hash))
-			if(make_bitfield(smeta.meta()).all())
-				open_storage->assemble(smeta.meta(), true);
-
-	group_.notify_chunk(shared_from_this(), ct_hash);
+	chunk_storage->put_chunk(ct_hash, chunk);
 }
 
-// TODO: Maybe, add some caching
 bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
-	return make_bitfield(get_meta(path_revision).meta());
+	return chunk_storage->make_bitfield(get_meta(path_revision).meta());
 }
 
 /* Makers */
@@ -143,16 +91,6 @@ std::string FSFolder::normalize_path(const fs::path& abspath) const {
 		norm_path.pop_back();
 	// TODO: UTF-8 normalization, maybe?
 	return norm_path;
-}
-
-bitfield_type FSFolder::make_bitfield(const Meta& meta) const noexcept {
-	bitfield_type bitfield(meta.chunks().size());
-
-	for(unsigned int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
-		if(have_chunk(meta.chunks().at(bitfield_idx).ct_hash))
-			bitfield[bitfield_idx] = true;
-
-	return bitfield;
 }
 
 } /* namespace librevault */

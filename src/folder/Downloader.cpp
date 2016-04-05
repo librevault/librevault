@@ -74,7 +74,7 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 	auto existing_guard_it = interest_guards_.find(remote);
 	if(existing_guard_it != interest_guards_.end()) {
 		try {
-			guard = existing_guard_it->second.lock();
+			guard = std::shared_ptr<InterestGuard>(existing_guard_it->second);
 		}catch(std::bad_weak_ptr& e){
 			guard = std::make_shared<InterestGuard>(remote);
 			existing_guard_it->second = guard;

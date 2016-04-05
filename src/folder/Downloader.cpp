@@ -37,13 +37,13 @@ Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
-	for(size_t block_idx = 0; block_idx < smeta.meta().chunks().size(); block_idx++) {
-		if(bitfield[block_idx]) {
+	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
+		if(bitfield[chunk_idx]) {
 			// We have have block, remove from needed
-			notify_local_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
+			notify_local_chunk(smeta.meta().chunks().at(chunk_idx).ct_hash);
 		} else {
 			// We haven't this block, we need to download it
-			add_needed_chunk(smeta.meta().chunks().at(block_idx).ct_hash);
+			add_needed_chunk(smeta.meta().chunks().at(chunk_idx).ct_hash);
 		}
 	}
 }

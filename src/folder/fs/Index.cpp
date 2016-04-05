@@ -68,7 +68,7 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 /* Meta manipulators */
 
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
-	SQLiteSavepoint raii_transaction(*db_, "put_Meta");
+	SQLiteSavepoint raii_transaction(*db_, "put_Meta"); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
 			{":path_id", signed_meta.meta().path_id()},
@@ -93,6 +93,8 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 		offset += chunk.size;
 	}
+
+	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
 		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();

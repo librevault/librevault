@@ -207,6 +207,9 @@ SQLiteSavepoint::SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name)
 	db->exec(std::string("SAVEPOINT ")+name);
 }
 SQLiteSavepoint::~SQLiteSavepoint(){
+	db.exec(std::string("ROLLBACK TO ")+name);
+}
+void SQLiteSavepoint::commit() {
 	db.exec(std::string("RELEASE ")+name);
 }
 

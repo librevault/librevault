@@ -147,6 +147,8 @@ public:
 	SQLiteSavepoint(SQLiteDB& db, const std::string savepoint_name);
 	SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name);
 	~SQLiteSavepoint();
+
+	void commit();
 private:
 	SQLiteDB& db;
 	const std::string name;

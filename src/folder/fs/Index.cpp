@@ -95,9 +95,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	}
 
 	if(fully_assembled)
-		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();
 	else
-		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id());
+		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();
 
 	new_meta_signal(signed_meta);
 	if(!fully_assembled)

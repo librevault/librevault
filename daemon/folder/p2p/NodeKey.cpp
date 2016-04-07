@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeKey.h"
-#include "src/Client.h"
-#include "src/control/Config.h"
+#include "Client.h"
+#include "control/Config.h"
 #include <openssl/pem.h>
 
 namespace librevault {

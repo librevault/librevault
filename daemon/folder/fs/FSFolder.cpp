@@ -17,13 +17,13 @@
 
 #include "IgnoreList.h"
 #include "Index.h"
-#include "src/folder/fs/chunk/ChunkStorage.h"
+#include "folder/fs/chunk/ChunkStorage.h"
 #include "Indexer.h"
 #include "AutoIndexer.h"
 
-#include "src/Client.h"
+#include "Client.h"
 
-#include "src/util/make_relpath.h"
+#include "util/make_relpath.h"
 
 namespace librevault {
 

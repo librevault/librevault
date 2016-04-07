@@ -13,10 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "src/pch.h"
+#include "pch.h"
 #pragma once
 #include "NodeKey.h"
-#include "src/util/Loggable.h"
+#include "util/Loggable.h"
 
 namespace librevault {
 

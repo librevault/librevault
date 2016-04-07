@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include "src/folder/p2p/discovery/DiscoveryService.h"
-#include "src/util/parse_url.h"
+#include "pch.h"
+#include "folder/p2p/discovery/DiscoveryService.h"
+#include "util/parse_url.h"
 
 namespace librevault {
 

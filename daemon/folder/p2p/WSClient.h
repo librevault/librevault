@@ -15,7 +15,7 @@
  */
 #include "WSService.h"
 #pragma once
-#include "src/util/parse_url.h"
+#include "util/parse_url.h"
 
 namespace librevault {
 

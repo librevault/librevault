@@ -15,9 +15,9 @@
  */
 #include "FileAssembler.h"
 
-#include "src/folder/fs/FSFolder.h"
-#include "src/folder/fs/IgnoreList.h"
-#include "src/folder/fs/AutoIndexer.h"
+#include "folder/fs/FSFolder.h"
+#include "folder/fs/IgnoreList.h"
+#include "folder/fs/AutoIndexer.h"
 
 #include "ChunkStorage.h"
 

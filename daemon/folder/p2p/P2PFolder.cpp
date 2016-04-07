@@ -15,9 +15,9 @@
  */
 #include "P2PFolder.h"
 #include "WSService.h"
-#include "src/Client.h"
-#include "src/control/Config.h"
-#include "src/folder/FolderGroup.h"
+#include "Client.h"
+#include "control/Config.h"
+#include "folder/FolderGroup.h"
 
 #include <librevault/Tokens.h>
 

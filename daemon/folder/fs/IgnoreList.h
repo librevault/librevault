@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <src/control/Config.h>
+#include <control/Config.h>
 #include "../../pch.h"
 #include "../../util/Loggable.h"
 

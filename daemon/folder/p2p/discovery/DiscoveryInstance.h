@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include "src/util/parse_url.h"
-#include "src/util/Loggable.h"
+#include "pch.h"
+#include "util/parse_url.h"
+#include "util/Loggable.h"
 
 namespace librevault {
 

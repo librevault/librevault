@@ -15,34 +15,26 @@
  */
 #pragma once
 
-#include <QDialog>
-#include "src/pch.h"
+#include "pch.h"
+#include <QObject>
 
-namespace Ui {
-class AddFolder;
-}
-
-class AddFolder : public QDialog {
+class StartupInterface : public QObject {
 Q_OBJECT
 
 public:
-	explicit AddFolder(QWidget* parent = 0);
-	~AddFolder();
+	StartupInterface(QObject* parent = 0);
+	~StartupInterface();
 
-signals:
-	void folderAdded(QString secret, QString path);
+	bool isSupported();
+	bool isEnabled() const;
 
 public slots:
-	void handleAccepted();
+	void setEnabled(bool enabled);
+	void enable();
+	void disable();
 
 protected:
-	std::unique_ptr<Ui::AddFolder> ui;
-
-	// Overrides
-	void showEvent(QShowEvent* e) override;
-
-private slots:
-	void generateSecret();
-	void browseFolder();
-	//void validateSecret();
+#ifdef Q_OS_LINUX
+	QString desktop_file_path;
+#endif
 };

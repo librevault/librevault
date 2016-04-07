@@ -15,7 +15,7 @@
  */
 #pragma once
 #include <librevault/util/bitfield_convert.h>
-#include "src/util/Loggable.h"
+#include "util/Loggable.h"
 
 namespace librevault {
 

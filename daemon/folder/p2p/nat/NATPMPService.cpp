@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NATPMPService.h"
-#include "src/Client.h"
-#include "src/control/Config.h"
-#include "src/folder/p2p/P2PProvider.h"
-#include "src/folder/p2p/WSServer.h"
+#include "Client.h"
+#include "control/Config.h"
+#include "folder/p2p/P2PProvider.h"
+#include "folder/p2p/WSServer.h"
 #include <natpmp.h>
 
 namespace librevault {

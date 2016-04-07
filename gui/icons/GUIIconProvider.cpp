@@ -48,4 +48,5 @@ QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 			return icon;
 		}
 	}
+	return QIcon();
 }

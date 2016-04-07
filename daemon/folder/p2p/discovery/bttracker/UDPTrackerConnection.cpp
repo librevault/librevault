@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "UDPTrackerConnection.h"
-#include "src/Client.h"
-#include "src/folder/p2p/P2PProvider.h"
-#include "src/folder/p2p/WSServer.h"
-#include "src/folder/fs/FSFolder.h"
+#include "Client.h"
+#include "folder/p2p/P2PProvider.h"
+#include "folder/p2p/WSServer.h"
+#include "folder/fs/FSFolder.h"
 
 #include "BTTrackerDiscovery.h"
 

@@ -16,10 +16,10 @@
 #include "MulticastDiscovery.h"
 #include "MulticastSender.h"
 #include "MulticastDiscovery.pb.h"
-#include "src/Client.h"
-#include "src/folder/FolderGroup.h"
-#include "src/folder/p2p/P2PProvider.h"
-#include "src/folder/p2p/WSServer.h"
+#include "Client.h"
+#include "folder/FolderGroup.h"
+#include "folder/p2p/P2PProvider.h"
+#include "folder/p2p/WSServer.h"
 
 namespace librevault {
 

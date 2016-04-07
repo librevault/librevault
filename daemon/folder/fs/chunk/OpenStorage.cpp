@@ -15,7 +15,7 @@
  */
 #include "OpenStorage.h"
 
-#include "src/folder/fs/FSFolder.h"
+#include "folder/fs/FSFolder.h"
 
 namespace librevault {
 

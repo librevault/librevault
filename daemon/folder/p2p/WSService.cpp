@@ -17,9 +17,9 @@
 #include "WSServer.h"
 #include "WSClient.h"
 #include "P2PFolder.h"
-#include "src/Client.h"
-#include "src/control/Config.h"
-#include "src/folder/FolderGroup.h"
+#include "Client.h"
+#include "control/Config.h"
+#include "folder/FolderGroup.h"
 
 namespace librevault {
 

@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/folder/RemoteFolder.h"
+#include "folder/RemoteFolder.h"
 #include "P2PProvider.h"
 #include "WSService.h"
 #include <librevault/protocol/V1Parser.h>

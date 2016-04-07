@@ -15,26 +15,26 @@
  */
 #pragma once
 
-#include <QWebSocket>
-#include <QJsonObject>
-#include "gui/src/pch.h"
+#include "pch.h"
+#include <QProcess>
 
-class ControlClient : public QWebSocket {
+class Daemon : public QProcess {
 Q_OBJECT
 
 public:
-	ControlClient();
-	~ControlClient();
+	Daemon();
+	~Daemon();
+
+	void launch();
 
 signals:
-	void ControlJsonReceived(QJsonObject control_json);
-
-public slots:
-	void sendControlJson(QJsonObject control_json);
-	void sendConfigJson(QJsonObject config_json);
-	void sendAddFolderJson(QString secret, QString path);
-	void sendRemoveFolderJson(QString secret);
+	void daemonReady(const QUrl& control_url);
 
 private slots:
-	void handle_message(const QString& message);
+	void handleError(QProcess::ProcessError error);
+	void handleStandardOutput();
+
+protected:
+	bool listening_already = false;
+	QString get_executable_path() const;
 };

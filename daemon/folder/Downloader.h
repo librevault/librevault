@@ -16,7 +16,7 @@
 #pragma once
 #include "RemoteFolder.h"
 
-#include "src/util/AvailabilityMap.h"
+#include "util/AvailabilityMap.h"
 
 
 namespace librevault {

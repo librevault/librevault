@@ -17,7 +17,7 @@
 #include "ui_Settings.h"
 #include <QCloseEvent>
 #include <QDebug>
-#include "src/icons/GUIIconProvider.h"
+#include "icons/GUIIconProvider.h"
 
 Settings::Settings(QWidget* parent) :
 		QDialog(parent),

@@ -14,12 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include "src/util/parse_url.h"
-#include "src/util/Loggable.h"
-#include "src/folder/p2p/websocket_config.h"
-#include "src/control/Config.h"
-#include "src/control/FolderParams.h"
+#include "pch.h"
+#include "util/parse_url.h"
+#include "util/Loggable.h"
+#include "folder/p2p/websocket_config.h"
+#include "control/Config.h"
+#include "control/FolderParams.h"
 
 namespace librevault {
 

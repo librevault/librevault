@@ -16,8 +16,8 @@
 #include "Client.h"
 
 #include "control/ControlServer.h"
-#include "src/folder/fs/FSFolder.h"
-#include "src/folder/p2p/P2PProvider.h"
+#include "folder/fs/FSFolder.h"
+#include "folder/p2p/P2PProvider.h"
 
 namespace librevault {
 

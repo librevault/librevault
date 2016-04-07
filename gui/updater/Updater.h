@@ -13,15 +13,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "gui/src/gui/MainWindow.h"
-#include "Client.h"
+#pragma once
+#include "pch.h"
+#include <QObject>
 
-#ifdef Q_OS_WIN
-#include <QtPlugin>
-Q_IMPORT_PLUGIN (QWindowsIntegrationPlugin);
-#endif
+class Updater : public QObject {
+Q_OBJECT
 
-int main(int argc, char** argv) {
-	Client client(argc, argv);
-	return client.exec();
-}
+public:
+	Updater(QObject* parent);
+	virtual ~Updater();
+
+	bool supportsUpdate() const;
+
+public slots:
+	void checkUpdates();
+	void checkUpdatesSilently();
+
+private:
+	struct Impl;
+	Impl* impl_;
+};

@@ -15,10 +15,10 @@
  */
 #include "WSServer.h"
 #include "P2PFolder.h"
-#include "src/Client.h"
-#include "src/control/Config.h"
-#include "src/folder/FolderGroup.h"
-#include "src/util/parse_url.h"
+#include "Client.h"
+#include "control/Config.h"
+#include "folder/FolderGroup.h"
+#include "util/parse_url.h"
 
 namespace librevault {
 

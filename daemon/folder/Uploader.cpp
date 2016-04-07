@@ -17,8 +17,8 @@
 
 #include "FolderGroup.h"
 
-#include "src/folder/fs/FSFolder.h"
-#include "src/folder/p2p/P2PFolder.h"
+#include "folder/fs/FSFolder.h"
+#include "folder/p2p/P2PFolder.h"
 
 #include "../Client.h"
 

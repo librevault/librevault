@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
+#include "pch.h"
 #include <librevault/SignedMeta.h>
-#include "src/util/Loggable.h"
-#include "src/util/SQLiteWrapper.h"
+#include "util/Loggable.h"
+#include "util/SQLiteWrapper.h"
 
 namespace librevault {
 

@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
+#include "pch.h"
 
 #include "AbstractFolder.h"
-#include "src/control/FolderParams.h"
-#include "src/util/Loggable.h"
+#include "control/FolderParams.h"
+#include "util/Loggable.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>

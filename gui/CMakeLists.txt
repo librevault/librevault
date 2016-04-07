@@ -38,6 +38,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+include_directories(${CMAKE_BINARY_DIR})
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -46,12 +47,12 @@ set(CMAKE_AUTORCC ON)
 #============================================================================
 # Sources & headers
 #============================================================================
-list(APPEND SRCS "src/pch.h")
+list(APPEND SRCS "pch.h")
 
 # Universal sources
-file(GLOB_RECURSE MAIN_SRCS "src/*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "src/*.h")
-file(GLOB_RECURSE MAIN_UIS "src/*.ui")
+file(GLOB_RECURSE MAIN_SRCS "*.cpp")
+file(GLOB_RECURSE MAIN_HEADERS "*.h")
+file(GLOB_RECURSE MAIN_UIS "*.ui")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
 # Windows sources
@@ -61,22 +62,22 @@ if(WIN32)
 	configure_file(resources/visualstyle.manifest visualstyle.manifest COPYONLY)
 	list(APPEND SRCS ${CMAKE_CURRENT_BINARY_DIR}/librevault.rc)
 else()
-	file(GLOB_RECURSE WIN_SRCS "src/*.win.cpp")
+	file(GLOB_RECURSE WIN_SRCS "*.win.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${WIN_SRCS})
 endif()
 
-# Windows sources
-if(NOT LINUX)
-	file(GLOB_RECURSE LINUX_SRCS "src/*.linux.cpp")
+# Linux sources
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	file(GLOB_RECURSE MAIN_MMS "src/*.mm")
+	file(GLOB_RECURSE MAIN_MMS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
-	file(GLOB_RECURSE MAC_SRCS "src/*.mac.cpp")
+	file(GLOB_RECURSE MAC_SRCS "*.mac.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${MAC_SRCS})
 endif()
 
@@ -96,23 +97,20 @@ set(Qt_COMPONENTS
 		)
 if(WIN32)
 	list(APPEND Qt_COMPONENTS WinExtras)
-endif()
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
 find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-find_package(Threads REQUIRED)
 
 # Translation
-configure_file("src/lang/lang.qrc" "lang.qrc" COPYONLY)
+configure_file("lang/lang.qrc" "${CMAKE_CURRENT_BINARY_DIR}/lang.qrc" COPYONLY)
 qt5_add_translation(${PROJECT_NAME}_QM
-		"src/lang/librevault_en.ts"
-		"src/lang/librevault_ru.ts"
+		"lang/librevault_en.ts"
+		"lang/librevault_ru.ts"
 		)
-qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_BINARY_DIR}/lang.qrc)
+message(${${PROJECT_NAME}_QM})
+qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_CURRENT_BINARY_DIR}/lang.qrc)
 list(APPEND SRCS ${${PROJECT_NAME}_QM_RC})
-
-find_package(lvcommon)
 
 #============================================================================
 # Compile targets
@@ -122,6 +120,8 @@ add_executable(${PROJECT_NAME} ${SRCS})
 #============================================================================
 # Third-party libraries
 #============================================================================
+
+target_link_libraries(librevault-gui lvcommon-static)
 
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt5::Svg Qt5::Widgets Qt5::WebSockets)
@@ -141,7 +141,6 @@ endif()
 
 # WinSparkle
 if(WIN32)
-	set(CMAKE_FIND_LIBRARY_SUFFIXES .dll)	# Be careful!
 	find_library(winsparkle_LIBRARIES winsparkle)
 	target_link_libraries(${PROJECT_NAME} ${winsparkle_LIBRARIES})
 endif()

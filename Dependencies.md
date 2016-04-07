@@ -15,10 +15,14 @@ Third-party libraries
 
 - spdlog - MIT
 - jsoncpp - MIT/Public Domain (dual-licensed, using under the terms of MIT License)
+- Sparkle - MIT
+- WinSparkle - MIT
 
 - OpenSSL - OpenSSL License
 
 - SQLite - Public domain
+
+- Qt5 - LGPLv3
 
 CMake Modules
 -------------

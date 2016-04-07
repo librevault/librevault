@@ -1,3 +1,7 @@
+[submodule "common"]
+	path = common
+	url = https://bitbucket.org/librevault/lvcommon.git
+	branch = master
 [submodule "contrib/dir_monitor"]
 	path = contrib/dir_monitor
 	url = https://github.com/Librevault/dir_monitor.git

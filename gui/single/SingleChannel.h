@@ -14,27 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include "pch.h"
+#include <QUdpSocket>
 
-#include "gui/src/pch.h"
-#include <QProcess>
-
-class Daemon : public QProcess {
+class SingleChannel : public QUdpSocket {
 Q_OBJECT
 
 public:
-	Daemon();
-	~Daemon();
-
-	void launch();
+	SingleChannel();
+	~SingleChannel();
 
 signals:
-	void daemonReady(const QUrl& control_url);
+	void showMainWindow();
 
 private slots:
-	void handleError(QProcess::ProcessError error);
-	void handleStandardOutput();
-
-protected:
-	bool listening_already = false;
-	QString get_executable_path() const;
+	void datagramReceived();
 };

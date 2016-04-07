@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Client.h"
-#include "gui/src/gui/MainWindow.h"
-#include "gui/src/model/FolderModel.h"
-#include "gui/src/control/Daemon.h"
-#include "gui/src/control/ControlClient.h"
-#include "gui/src/single/SingleChannel.h"
+#include "gui/MainWindow.h"
+#include "model/FolderModel.h"
+#include "control/Daemon.h"
+#include "control/ControlClient.h"
+#include "single/SingleChannel.h"
 #include <QCommandLineParser>
 #include <QLibraryInfo>
 

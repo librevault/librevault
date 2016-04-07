@@ -14,11 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/folder/AbstractFolder.h"
+#include "folder/AbstractFolder.h"
 
-#include "src/control/Config.h"
-#include "src/control/FolderParams.h"
-#include "src/folder/FolderGroup.h"
+#include "control/Config.h"
+#include "control/FolderParams.h"
+#include "folder/FolderGroup.h"
 
 #include <librevault/SignedMeta.h>
 

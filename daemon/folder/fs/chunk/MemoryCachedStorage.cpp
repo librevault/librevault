@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MemoryCachedStorage.h"
-#include "src/folder/fs/FSFolder.h"
+#include "folder/fs/FSFolder.h"
 
 namespace librevault {
 

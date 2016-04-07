@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AbstractStorage.h"
-#include "src/folder/fs/FSFolder.h"
+#include "folder/fs/FSFolder.h"
 
 namespace librevault {
 

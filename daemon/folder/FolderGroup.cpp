@@ -15,11 +15,11 @@
  */
 #include "FolderGroup.h"
 
-#include "src/folder/fs/FSFolder.h"
-#include "src/folder/p2p/P2PFolder.h"
+#include "folder/fs/FSFolder.h"
+#include "folder/p2p/P2PFolder.h"
 
 #include "fs/Index.h"
-#include "src/folder/fs/chunk/ChunkStorage.h"
+#include "folder/fs/chunk/ChunkStorage.h"
 
 #include "../Client.h"
 

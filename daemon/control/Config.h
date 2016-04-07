@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include "src/util/Loggable.h"
+#include "pch.h"
+#include "util/Loggable.h"
 #include <json/json.h>
 #include <librevault/Secret.h>
 #include <librevault/Meta.h>

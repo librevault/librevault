@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "gui/src/pch.h"
+#include "pch.h"
 #include <QtGui>
 #ifdef Q_OS_WIN
 #include <QtWin>

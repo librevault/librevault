@@ -19,10 +19,10 @@
 #include <QJsonObject>
 #include <QSystemTrayIcon>
 #include <QMenu>
-#include "src/pch.h"
-#include "src/Client.h"
-#include "src/gui/Settings.h"
-#include "src/gui/AddFolder.h"
+#include "pch.h"
+#include "Client.h"
+#include "gui/Settings.h"
+#include "gui/AddFolder.h"
 
 namespace Ui {
 class MainWindow;

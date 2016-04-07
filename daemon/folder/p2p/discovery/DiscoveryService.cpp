@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "DiscoveryService.h"
-#include "src/folder/p2p/P2PProvider.h"
-#include "src/folder/p2p/WSClient.h"
-#include "src/Client.h"
+#include "folder/p2p/P2PProvider.h"
+#include "folder/p2p/WSClient.h"
+#include "Client.h"
 
 namespace librevault {
 

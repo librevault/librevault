@@ -18,9 +18,9 @@
 #include "FSFolder.h"
 #include "IgnoreList.h"
 
-#include "src/Client.h"
-#include "src/util/byte_convert.h"
-#include "contrib/rabin/rabin.h"
+#include "Client.h"
+#include "util/byte_convert.h"
+#include <rabin.h>
 
 namespace librevault {
 

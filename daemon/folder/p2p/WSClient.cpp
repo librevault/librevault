@@ -14,9 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "WSClient.h"
-#include "src/Client.h"
+#include "Client.h"
 #include "P2PFolder.h"
-#include "src/folder/FolderGroup.h"
+#include "folder/FolderGroup.h"
 
 namespace librevault {
 

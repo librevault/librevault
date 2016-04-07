@@ -19,8 +19,8 @@
 #include <QToolButton>
 #include <QJsonObject>
 #include <QUrl>
-#include <src/gui/pager/Pager.h>
-#include "src/pch.h"
+#include <gui/pager/Pager.h>
+#include "pch.h"
 #include "StartupInterface.h"
 
 namespace Ui {

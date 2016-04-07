@@ -1,9 +1,3 @@
-; -- Example2.iss --
-; Same as Example1.iss, but creates its icon in the Programs folder of the
-; Start Menu instead of in a subfolder, and also creates a desktop icon.
-
-; SEE THE DOCUMENTATION FOR DETAILS ON CREATING .ISS SCRIPT FILES!
-
 [Setup]
 AppName=Librevault
 AppVerName=Librevault

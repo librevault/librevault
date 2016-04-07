@@ -41,7 +41,7 @@ if(BUILD_STATIC)
 	set(CMAKE_C_FLAGS "-static-libgcc ${CMAKE_C_FLAGS}")
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
-	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a .dll .so")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .a .dll .so)
 endif()
 
 if(WIN32)

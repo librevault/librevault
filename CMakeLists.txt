@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(librevault VERSION 0.1.0)
+project(librevault)
 
 #============================================================================
 # Settable options
@@ -53,6 +53,19 @@ endif()
 include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
 configure_file("appver.in.h" "appver.h")
+string(REGEX MATCH "^v(.+)\\.(.+)\\.(.+)-(.+)-(.+)$" VVV ${LV_APPVER})
+message(${VVV})
+
+string(REGEX REPLACE "^v([0-9]+)\\.[0-9]+\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MAJOR "${LV_APPVER}")
+string(REGEX REPLACE "^v[0-9]+\\.([0-9]+)\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MINOR "${LV_APPVER}")
+string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+)-?[0-9]*-?.*" "\\1" librevault_VERSION_PATCH "${LV_APPVER}")
+string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+-?([0-9]*)-?.*" "\\1" librevault_VERSION_TWEAK "${LV_APPVER}")
+if(librevault_VERSION_TWEAK)
+	set(librevault_VERSION "${librevault_VERSION_MAJOR}.${librevault_VERSION_MINOR}.${librevault_VERSION_PATCH}.${librevault_VERSION_TWEAK}")
+else()
+	set(librevault_VERSION_TWEAK 0)
+	set(librevault_VERSION "${librevault_VERSION_MAJOR}.${librevault_VERSION_MINOR}.${librevault_VERSION_PATCH}")
+endif()
 
 #============================================================================
 # Third-party libraries
@@ -110,7 +123,7 @@ add_subdirectory("contrib/rabin")
 ## Spdlog
 find_package(spdlog QUIET)
 if(spdlog_FOUND)
-	add_library(spdlog UNKNOWN IMPORTED)
+	add_library(spdlog INTERFACE)
 	target_link_libraries(spdlog INTERFACE spdlog::spdlog)
 else()
 	add_subdirectory(contrib/spdlog)
@@ -173,3 +186,5 @@ target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
 add_subdirectory("common")
 add_subdirectory("daemon")
 add_subdirectory("gui")
+
+include(Install.cmake)

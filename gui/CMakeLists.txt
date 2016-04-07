@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.2)
-project(librevault-gui VERSION 0.9.0)
 
 #============================================================================
 # Settable options
@@ -19,23 +18,10 @@ include(GNUInstallDirs)
 # Internal compiler options
 #============================================================================
 
-if(BUILD_STATIC)
-	set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_MODULE_LINKER_FLAGS}")
-	set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-endif()
-
 if(WIN32)
 	set(CMAKE_EXE_LINKER_FLAGS "-mwindows ${CMAKE_EXE_LINKER_FLAGS}")
 	set(CMAKE_MODULE_LINKER_FLAGS "-mwindows ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
-
-# Setting compiler properties
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_BINARY_DIR})
@@ -104,18 +90,19 @@ find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 
 # Translation
 configure_file("lang/lang.qrc" "${CMAKE_CURRENT_BINARY_DIR}/lang.qrc" COPYONLY)
-qt5_add_translation(${PROJECT_NAME}_QM
+qt5_add_translation(librevault-gui_QM
 		"lang/librevault_en.ts"
 		"lang/librevault_ru.ts"
 		)
-message(${${PROJECT_NAME}_QM})
-qt5_add_resources(${PROJECT_NAME}_QM_RC ${CMAKE_CURRENT_BINARY_DIR}/lang.qrc)
-list(APPEND SRCS ${${PROJECT_NAME}_QM_RC})
+message(${librevault-gui_QM})
+qt5_add_resources(librevault-gui_QM_RC ${CMAKE_CURRENT_BINARY_DIR}/lang.qrc)
+list(APPEND SRCS ${librevault-gui_QM_RC})
 
 #============================================================================
 # Compile targets
 #============================================================================
-add_executable(${PROJECT_NAME} ${SRCS})
+
+add_executable(librevault-gui ${SRCS})
 
 #============================================================================
 # Third-party libraries
@@ -124,51 +111,51 @@ add_executable(${PROJECT_NAME} ${SRCS})
 target_link_libraries(librevault-gui lvcommon-static)
 
 # Qt
-target_link_libraries(${PROJECT_NAME} Qt5::Svg Qt5::Widgets Qt5::WebSockets)
+target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)
 if(WIN32)
-	target_link_libraries(${PROJECT_NAME} Qt5::WinExtras)
+	target_link_libraries(librevault-gui Qt5::WinExtras)
 endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_link_libraries(${PROJECT_NAME} Qt5::MacExtras)
+	target_link_libraries(librevault-gui Qt5::MacExtras)
 endif()
 
 # LVCommon
 if(BUILD_STATIC)
-	target_link_libraries(${PROJECT_NAME} lvcommon-static)
+	target_link_libraries(librevault-gui lvcommon-static)
 else()
-	target_link_libraries(${PROJECT_NAME} lvcommon-shared)
+	target_link_libraries(librevault-gui lvcommon-shared)
 endif()
 
 # WinSparkle
 if(WIN32)
 	find_library(winsparkle_LIBRARIES winsparkle)
-	target_link_libraries(${PROJECT_NAME} ${winsparkle_LIBRARIES})
+	target_link_libraries(librevault-gui ${winsparkle_LIBRARIES})
 endif()
 
 # Sparkle (for Macs)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	find_library(SPARKLE_LIBRARIES Sparkle)
-	target_link_libraries(${PROJECT_NAME} ${SPARKLE_LIBRARIES})
+	target_link_libraries(librevault-gui ${SPARKLE_LIBRARIES})
 endif()
 
 ## CoreFoundation
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	target_link_libraries(${PROJECT_NAME} "-framework CoreFoundation")
-	target_link_libraries(${PROJECT_NAME} "-framework AppKit")
+	target_link_libraries(librevault-gui "-framework CoreFoundation")
+	target_link_libraries(librevault-gui "-framework AppKit")
 endif()
 
 #============================================================================
 # Install
 #============================================================================
 if(BUILD_OPTWARE)
-	set_target_properties(${PROJECT_NAME} PROPERTIES
+	set_target_properties(librevault-gui PROPERTIES
 			INSTALL_RPATH "/opt/librevault/lib"
 			BUILD_WITH_INSTALL_RPATH TRUE
 			INSTALL_RPATH_USE_LINK_PATH TRUE
 			)
-	install(TARGETS ${PROJECT_NAME} DESTINATION "/opt/librevault")
+	install(TARGETS librevault-gui DESTINATION "/opt/librevault")
 else()
-	install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS librevault-gui DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 install(FILES "resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(FILES "resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")

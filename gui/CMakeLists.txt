@@ -128,7 +128,11 @@ endif()
 
 # WinSparkle
 if(WIN32)
+	set(SAVED_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	set(CMAKE_FIND_LIBRARY_SUFFIXES .dll)
 	find_library(winsparkle_LIBRARIES winsparkle)
+	message("WinSparkle library: ${winsparkle_LIBRARIES}")
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ${SAVED_CMAKE_FIND_LIBRARY_SUFFIXES})
 	target_link_libraries(librevault-gui ${winsparkle_LIBRARIES})
 endif()
 

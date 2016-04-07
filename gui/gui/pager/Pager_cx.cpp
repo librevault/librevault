@@ -58,7 +58,7 @@ int Pager::page_count() const {
 void Pager::show() {}
 
 void Pager::buttonClicked(int page) {
-	for(int button_idx = 0; button_idx < buttons_.size(); button_idx++) {
+	for(int button_idx = 0; button_idx < (int)buttons_.size(); button_idx++) {
 		buttons_[button_idx]->setChecked(button_idx == page);
 	}
 	emit pageSelected(page);

@@ -133,6 +133,8 @@ QString Settings::page_name(Page page) {
 			return QApplication::translate("Settings", "Network", 0);
 		case Page::PAGE_ADVANCED:
 			return QApplication::translate("Settings", "Advanced", 0);
+		default:
+			return QString();
 	}
 }
 

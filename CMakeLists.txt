@@ -54,7 +54,6 @@ include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
 configure_file("appver.in.h" "appver.h")
 string(REGEX MATCH "^v(.+)\\.(.+)\\.(.+)-(.+)-(.+)$" VVV ${LV_APPVER})
-message(${VVV})
 
 string(REGEX REPLACE "^v([0-9]+)\\.[0-9]+\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MAJOR "${LV_APPVER}")
 string(REGEX REPLACE "^v[0-9]+\\.([0-9]+)\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MINOR "${LV_APPVER}")

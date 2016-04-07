@@ -58,13 +58,17 @@ void Daemon::handleError(QProcess::ProcessError error) {
 }
 
 void Daemon::handleStandardOutput() {
-	while(!listening_already && canReadLine()) {
+	while(canReadLine()) {
 		auto stdout_line = readLine();
-		/* Regexp for getting listen address from STDOUT */
-		QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
-		if(listen_regexp.indexIn(stdout_line) > -1) {
-			listening_already = true;
-			emit daemonReady(QUrl(listen_regexp.cap(1)));
+		qDebug() << stdout_line;
+
+		if(!listening_already) {
+			/* Regexp for getting listen address from STDOUT */
+			QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
+			if(listen_regexp.indexIn(stdout_line) > -1) {
+				listening_already = true;
+				emit daemonReady(QUrl(listen_regexp.cap(1)));
+			}
 		}
 	}
 }

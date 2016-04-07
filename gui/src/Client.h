@@ -14,27 +14,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include "pch.h"
+#include <QApplication>
+#include <QTranslator>
+#include "gui/src/updater/Updater.h"
 
-#include "src/pch.h"
-#include <QProcess>
+class MainWindow;
+class Settings;
+class TrayIcon;
+class FolderModel;
+class ControlClient;
+class Daemon;
+class SingleChannel;
 
-class Daemon : public QProcess {
+class Client : public QApplication {
 Q_OBJECT
 
 public:
-	Daemon();
-	~Daemon();
+	Client(int &argc, char **argv, int appflags = ApplicationFlags);
+	~Client();
 
-	void launch();
+public slots:
+	void applyLocale(QString locale);
 
-signals:
-	void daemonReady(const QUrl& control_url);
+private:
+	// Translation
+	QTranslator translator_;
+	QTranslator qt_translator_;
 
-private slots:
-	void handleError(QProcess::ProcessError error);
-	void handleStandardOutput();
+	std::unique_ptr<SingleChannel> single_channel_;
 
-protected:
-	bool listening_already = false;
-	QString get_executable_path() const;
+	std::unique_ptr<Daemon> daemon_;
+	std::unique_ptr<ControlClient> control_client_;
+
+	Updater* updater_;
+
+	// GUI
+	std::unique_ptr<MainWindow> main_window_;
 };

@@ -15,26 +15,26 @@
  */
 #pragma once
 
-#include "src/pch.h"
-#include <QObject>
+#include "gui/src/pch.h"
+#include <QProcess>
 
-class StartupInterface : public QObject {
+class Daemon : public QProcess {
 Q_OBJECT
 
 public:
-	StartupInterface(QObject* parent = 0);
-	~StartupInterface();
+	Daemon();
+	~Daemon();
 
-	bool isSupported();
-	bool isEnabled() const;
+	void launch();
 
-public slots:
-	void setEnabled(bool enabled);
-	void enable();
-	void disable();
+signals:
+	void daemonReady(const QUrl& control_url);
+
+private slots:
+	void handleError(QProcess::ProcessError error);
+	void handleStandardOutput();
 
 protected:
-#ifdef Q_OS_LINUX
-	QString desktop_file_path;
-#endif
+	bool listening_already = false;
+	QString get_executable_path() const;
 };

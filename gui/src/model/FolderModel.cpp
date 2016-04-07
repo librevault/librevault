@@ -16,7 +16,7 @@
 #include "FolderModel.h"
 #include <QFileIconProvider>
 #include <QJsonArray>
-#include <src/util/human_size.h>
+#include <gui/src/util/human_size.h>
 
 FolderModel::FolderModel() :
 		QAbstractListModel() {}

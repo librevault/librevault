@@ -13,38 +13,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#include "src/pch.h"
-#include <QAbstractTableModel>
-#include <QJsonObject>
+#include "gui/src/gui/MainWindow.h"
+#include "Client.h"
 
-class FolderModel : public QAbstractListModel {
-Q_OBJECT
+#ifdef Q_OS_WIN
+#include <QtPlugin>
+Q_IMPORT_PLUGIN (QWindowsIntegrationPlugin);
+#endif
 
-public:
-	FolderModel();
-	~FolderModel();
-
-	const int SecretRole = Qt::UserRole;
-
-	int rowCount(const QModelIndex &parent = QModelIndex()) const;
-	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
-
-	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-
-public slots:
-	void handleControlJson(QJsonObject control_json);
-
-private:
-	QJsonObject state_json_;
-
-	enum class Column {
-		NAME,
-		STATUS,
-		PEERS,
-		SIZE,
-
-		COLUMN_COUNT
-	};
-};
+int main(int argc, char** argv) {
+	Client client(argc, argv);
+	return client.exec();
+}

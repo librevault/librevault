@@ -14,19 +14,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include <QUdpSocket>
+#include "gui/src/pch.h"
+#include <QAbstractTableModel>
+#include <QJsonObject>
 
-class SingleChannel : public QUdpSocket {
+class FolderModel : public QAbstractListModel {
 Q_OBJECT
 
 public:
-	SingleChannel();
-	~SingleChannel();
+	FolderModel();
+	~FolderModel();
 
-signals:
-	void showMainWindow();
+	const int SecretRole = Qt::UserRole;
 
-private slots:
-	void datagramReceived();
+	int rowCount(const QModelIndex &parent = QModelIndex()) const;
+	int columnCount(const QModelIndex &parent = QModelIndex()) const;
+	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+
+public slots:
+	void handleControlJson(QJsonObject control_json);
+
+private:
+	QJsonObject state_json_;
+
+	enum class Column {
+		NAME,
+		STATUS,
+		PEERS,
+		SIZE,
+
+		COLUMN_COUNT
+	};
 };

@@ -34,7 +34,7 @@ CMakeLists.txt.user
 *.app
 
 ### IntelliJ project files
-.idea
+../.idea
 *.iml
 out
 gen

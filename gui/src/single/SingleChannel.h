@@ -14,41 +14,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
-#include <QApplication>
-#include <QTranslator>
-#include "updater/Updater.h"
+#include "gui/src/pch.h"
+#include <QUdpSocket>
 
-class MainWindow;
-class Settings;
-class TrayIcon;
-class FolderModel;
-class ControlClient;
-class Daemon;
-class SingleChannel;
-
-class Client : public QApplication {
+class SingleChannel : public QUdpSocket {
 Q_OBJECT
 
 public:
-	Client(int &argc, char **argv, int appflags = ApplicationFlags);
-	~Client();
+	SingleChannel();
+	~SingleChannel();
 
-public slots:
-	void applyLocale(QString locale);
+signals:
+	void showMainWindow();
 
-private:
-	// Translation
-	QTranslator translator_;
-	QTranslator qt_translator_;
-
-	std::unique_ptr<SingleChannel> single_channel_;
-
-	std::unique_ptr<Daemon> daemon_;
-	std::unique_ptr<ControlClient> control_client_;
-
-	Updater* updater_;
-
-	// GUI
-	std::unique_ptr<MainWindow> main_window_;
+private slots:
+	void datagramReceived();
 };

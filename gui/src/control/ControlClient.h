@@ -14,23 +14,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/pch.h"
-#include <QObject>
 
-class Updater : public QObject {
+#include <QWebSocket>
+#include <QJsonObject>
+#include "gui/src/pch.h"
+
+class ControlClient : public QWebSocket {
 Q_OBJECT
 
 public:
-	Updater(QObject* parent);
-	virtual ~Updater();
+	ControlClient();
+	~ControlClient();
 
-	bool supportsUpdate() const;
+signals:
+	void ControlJsonReceived(QJsonObject control_json);
 
 public slots:
-	void checkUpdates();
-	void checkUpdatesSilently();
+	void sendControlJson(QJsonObject control_json);
+	void sendConfigJson(QJsonObject config_json);
+	void sendAddFolderJson(QString secret, QString path);
+	void sendRemoveFolderJson(QString secret);
 
-private:
-	struct Impl;
-	Impl* impl_;
+private slots:
+	void handle_message(const QString& message);
 };

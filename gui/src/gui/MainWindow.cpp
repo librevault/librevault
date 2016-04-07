@@ -14,13 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MainWindow.h"
-#include "src/model/FolderModel.h"
+#include "gui/src/model/FolderModel.h"
 #include "ui_MainWindow.h"
 #include <QCloseEvent>
 #include <QPushButton>
 #include <QDesktopServices>
 #include <QDebug>
-#include <src/icons/GUIIconProvider.h>
+#include <gui/src/icons/GUIIconProvider.h>
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);

@@ -1,0 +1,39 @@
+#include <windows.h>
+
+#define VER_FILEVERSION         @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+#define VER_FILEVERSION_STR     "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@\0"
+
+#define VER_PRODUCTVERSION      @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+#define VER_PRODUCTVERSION_STR  "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@\0"
+
+LANGUAGE 0, SUBLANG_NEUTRAL
+appicon ICON "librevault.ico"
+1 24 "visualstyle.manifest"
+
+LANGUAGE 0, SUBLANG_NEUTRAL
+1 VERSIONINFO
+    FILEVERSION     VER_FILEVERSION
+    PRODUCTVERSION  VER_PRODUCTVERSION
+    FILEOS          VOS_NT_WINDOWS32
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
+    FILEFLAGS       0
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904B0"
+        {
+            VALUE "CompanyName", "Alexander Shishenko"
+            VALUE "FileDescription", "Librevault"
+            VALUE "FileVersion", VER_FILEVERSION_STR
+            VALUE "LegalCopyright", "Alexander Shishenko"
+            VALUE "OriginalFilename", "Librevault.exe"
+            VALUE "ProductName", "Librevault"
+            VALUE "ProductVersion", VER_PRODUCTVERSION_STR
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0409, 0x04B0
+    }
+}

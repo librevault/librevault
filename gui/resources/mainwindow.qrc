@@ -1,0 +1,13 @@
+<RCC>
+  <qresource prefix="branding">
+    <file>librevault_icon.svg</file>
+    <file>librevault_icon_black.svg</file>
+  </qresource>
+  <qresource prefix="icons">
+    <file>Network-96.png</file>
+    <file>Settings-96.png</file>
+    <file>User-96.png</file>
+    <file>Add Folder-96.png</file>
+    <file>Delete-96.png</file>
+  </qresource>
+</RCC>

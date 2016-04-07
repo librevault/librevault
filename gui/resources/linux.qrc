@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="platform">
+    <file>Librevault.desktop</file>
+  </qresource>
+</RCC>

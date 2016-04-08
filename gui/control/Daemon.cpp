@@ -53,7 +53,6 @@ void Daemon::handleError(QProcess::ProcessError error) {
 		                tr("Couldn't launch Librevault application"),
 		                tr("There is a problem launching Librevault service: couldn't find \"librevault\" executable in application or system folder."));
 		msg.exec();
-		throw;
 		//throw;
 	}
 }
@@ -68,7 +67,11 @@ void Daemon::handleStandardOutput() {
 			QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
 			if(listen_regexp.indexIn(stdout_line) > -1) {
 				listening_already = true;
-				emit daemonReady(QUrl(listen_regexp.cap(1)));
+
+				QUrl daemon_url = listen_regexp.cap(1);
+				qDebug() << "Connecting to: " << daemon_url;
+
+				emit daemonReady(daemon_url);
 			}
 		}
 	}

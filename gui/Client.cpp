@@ -38,7 +38,7 @@ Client::Client(int &argc, char **argv, int appflags) :
 	daemon_ = std::make_unique<Daemon>();
 	control_client_ = std::make_unique<ControlClient>();
 	if(parser.isSet(attach_option))
-		control_client_->open(QUrl(parser.value(attach_option)));
+		control_client_->connectDaemon(QUrl(parser.value(attach_option)));
 	else {
 		connect(daemon_.get(), &Daemon::daemonReady, control_client_.get(), &ControlClient::connectDaemon);
 		daemon_->launch();

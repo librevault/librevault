@@ -171,5 +171,4 @@ if(BUILD_OPTWARE)
 else()
 	install(TARGETS librevault-gui DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
-install(FILES "resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-install(FILES "resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+

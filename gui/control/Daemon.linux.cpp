@@ -17,5 +17,5 @@
 #include <QString>
 
 QString Daemon::get_executable_path() const {
-	return QStringLiteral("librevault");
+	return QStringLiteral("librevault-daemon");
 }

@@ -17,5 +17,5 @@
 #include <QCoreApplication>
 
 QString Daemon::get_executable_path() const {
-	return QCoreApplication::applicationDirPath() + "/librevault";
+	return QCoreApplication::applicationDirPath() + "/librevault-daemon";
 }

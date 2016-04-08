@@ -2,7 +2,7 @@
 AppName=Librevault
 AppVerName=Librevault
 AppId=com.librevault.desktop
-AppVersion=1.5
+AppVersion=@librevault_VERSION@
 AppPublisher=Librevault Team
 AppPublisherURL=https://librevault.com
 

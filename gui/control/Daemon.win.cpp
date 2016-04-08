@@ -33,7 +33,7 @@ BOOL Is64BitWindows() {
 
 QString Daemon::get_executable_path() const {
 	if(Is64BitWindows())
-		return QCoreApplication::applicationDirPath() + "/x64/librevault.exe";
+		return QCoreApplication::applicationDirPath() + "/x64/librevault-daemon.exe";
 	else
-		return QCoreApplication::applicationDirPath() + "/x32/librevault.exe";
+		return QCoreApplication::applicationDirPath() + "/x32/librevault-daemon.exe";
 }

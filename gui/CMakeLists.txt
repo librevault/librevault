@@ -118,6 +118,7 @@ endif()
 #============================================================================
 
 target_link_libraries(librevault-gui lvcommon-static)
+target_link_libraries(librevault-gui openssl)
 
 # Qt
 target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)
@@ -140,7 +141,7 @@ if(WIN32)
 	set(SAVED_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .dll)
 	find_library(winsparkle_LIBRARIES winsparkle)
-	message("WinSparkle library: ${winsparkle_LIBRARIES}")
+	message(STATUS "WinSparkle library: ${winsparkle_LIBRARIES}")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ${SAVED_CMAKE_FIND_LIBRARY_SUFFIXES})
 	target_link_libraries(librevault-gui ${winsparkle_LIBRARIES})
 endif()

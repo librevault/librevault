@@ -124,9 +124,3 @@ if(BUILD_DOCUMENTATION)
 	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
 	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
 endif()
-
-#============================================================================
-# Install
-#============================================================================
-# Development package
-install(TARGETS librevault-daemon DESTINATION ${CMAKE_INSTALL_BINDIR})

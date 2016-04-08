@@ -13,6 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifdef BUILD_UPDATER
+
 #include "Updater.h"
 #include <Sparkle/Sparkle.h>
 #include <Sparkle/SUUpdater.h>
@@ -39,9 +42,9 @@ Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
 	checkUpdatesSilently();
 }
 
-Updater::~Updater() {
+Updater::~Updater() {/*
 	[impl_->updater release];
-	delete impl_;
+	delete impl_;*/
 }
 
 bool Updater::supportsUpdate() const {
@@ -55,3 +58,5 @@ void Updater::checkUpdates() {
 void Updater::checkUpdatesSilently() {
 	[impl_->updater checkForUpdatesInBackground];
 }
+
+#endif	/* BUILD_UPDATER */

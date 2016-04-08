@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.2)
 
 option(BUILD_STATIC "Build static version of binary" OFF)
 option(BUILD_OPTWARE "Build software ready to be installed into /opt" OFF)
+option(BUILD_UPDATER "Add auto-updater support" ON)
 
 #============================================================================
 # CMake modules
@@ -103,6 +104,14 @@ list(APPEND SRCS ${librevault-gui_QM_RC})
 #============================================================================
 
 add_executable(librevault-gui ${SRCS})
+
+#============================================================================
+# Target properties
+#============================================================================
+
+if(BUILD_UPDATER)
+	target_compile_definitions(librevault-gui PRIVATE "BUILD_UPDATER")
+endif()
 
 #============================================================================
 # Third-party libraries

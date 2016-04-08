@@ -13,6 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef BUILD_UPDATER
+
 #include "Updater.h"
 
 Updater::Updater(QObject* parent) : QObject(parent) {}
@@ -22,3 +25,5 @@ Updater::~Updater() {}
 bool Updater::supportsUpdate() const {return false;}
 void Updater::checkUpdates() {}
 void Updater::checkUpdatesSilently() {}
+
+#endif	/* BUILD_UPDATER */

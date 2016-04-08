@@ -30,6 +30,8 @@ signals:
 	void ControlJsonReceived(QJsonObject control_json);
 
 public slots:
+	void connectDaemon(const QUrl& daemon_address);
+
 	void sendControlJson(QJsonObject control_json);
 	void sendConfigJson(QJsonObject config_json);
 	void sendAddFolderJson(QString secret, QString path);
@@ -37,4 +39,9 @@ public slots:
 
 private slots:
 	void handle_message(const QString& message);
+	void handle_connect();
+	void handle_disconnect();
+
+private:
+	QUrl daemon_address_;
 };

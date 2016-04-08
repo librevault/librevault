@@ -19,6 +19,8 @@
 ControlClient::ControlClient() :
 		QWebSocket() {
 	connect(this, &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
+	connect(this, &QWebSocket::connected, this, &ControlClient::handle_connect);
+	connect(this, &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
 }
 
 ControlClient::~ControlClient() {}
@@ -27,6 +29,20 @@ void ControlClient::handle_message(const QString& message) {
 	QJsonDocument json_document = QJsonDocument::fromJson(message.toUtf8());
 	qDebug() << "<== " << json_document;
 	emit ControlJsonReceived(json_document.object());
+}
+
+void ControlClient::handle_connect() {
+	qDebug() << "Connected to daemon: " << daemon_address_;
+}
+
+void ControlClient::handle_disconnect() {
+	qDebug() << "Disconnected from daemon: " << daemon_address_;
+}
+
+void ControlClient::connectDaemon(const QUrl& daemon_address) {
+	daemon_address_ = daemon_address;
+	qDebug() << "Connecting to daemon: " << daemon_address;
+	open(daemon_address);
 }
 
 void ControlClient::sendControlJson(QJsonObject control_json) {

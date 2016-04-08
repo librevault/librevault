@@ -40,7 +40,7 @@ Client::Client(int &argc, char **argv, int appflags) :
 	if(parser.isSet(attach_option))
 		control_client_->open(QUrl(parser.value(attach_option)));
 	else {
-		connect(daemon_.get(), &Daemon::daemonReady, control_client_.get(), (void(QWebSocket::*)(const QUrl&))&QWebSocket::open);
+		connect(daemon_.get(), &Daemon::daemonReady, control_client_.get(), &ControlClient::connectDaemon);
 		daemon_->launch();
 	}
 

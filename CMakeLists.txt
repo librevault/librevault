@@ -176,7 +176,9 @@ find_package(OpenSSL REQUIRED)
 add_library(openssl INTERFACE)
 target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
-target_link_libraries(openssl INTERFACE ws2_32)
+if(WIN32)
+	target_link_libraries(openssl INTERFACE ws2_32)
+endif()
 
 #============================================================================
 # Subprojects

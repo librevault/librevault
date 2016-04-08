@@ -23,7 +23,6 @@ Daemon::Daemon() :
 		QProcess() {
 	/* Process parameters */
 	// Program
-
 	setProgram(get_executable_path());
 	// Arguments
 	QStringList arguments;
@@ -71,7 +70,7 @@ void Daemon::handleStandardOutput() {
 				QUrl daemon_url = listen_regexp.cap(1);
 
 				// Because, if listening on all interfaces, then we can connect to localost
-				if(daemon_url.host() == "0.0.0.0" | daemon_url.host() == "::")
+				if( (daemon_url.host() == "0.0.0.0") | (daemon_url.host() == "::") )
 					daemon_url.setHost("localhost");
 
 				qDebug() << "Connecting to: " << daemon_url;

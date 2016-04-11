@@ -109,7 +109,11 @@ add_executable(librevault-gui ${SRCS})
 # Target properties
 #============================================================================
 
-if(BUILD_UPDATER)
+if(BUILD_UPDATER AND (WIN32 OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
+	set(WILL_BUILD_UPDATER ON)
+endif()
+
+if(WILL_BUILD_UPDATER)
 	target_compile_definitions(librevault-gui PRIVATE "BUILD_UPDATER")
 endif()
 

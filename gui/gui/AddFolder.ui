@@ -3,7 +3,7 @@
  <class>AddFolder</class>
  <widget class="QDialog" name="AddFolder">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="geometry">
    <rect>

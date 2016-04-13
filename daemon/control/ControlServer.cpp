@@ -126,8 +126,8 @@ Json::Value ControlServer::make_state_json() const {
 		folder_json["path"] = folder->fs_dir()->path().string();
 		folder_json["secret"] = folder->secret().string();
 		auto folder_status = folder->fs_dir()->status();
-		folder_json["file_count"] = folder_status.file_count;
-		folder_json["byte_size"] = folder_status.byte_size;
+		folder_json["file_count"] = (Json::Value::UInt64)folder_status.file_count;
+		folder_json["byte_size"] = (Json::Value::UInt64)folder_status.byte_size;
 
 		// Peers
 		for(auto p2p_peer : folder->p2p_dirs()) {

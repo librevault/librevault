@@ -93,10 +93,7 @@ void MulticastDiscovery::receive() {
 MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 	MulticastDiscovery(client, address_v4::any()) {
 
-	socket_.open(boost::asio::ip::udp::v4());
-
 	reload_config();
-	start();
 }
 
 void MulticastDiscovery4::reload_config() {
@@ -105,16 +102,21 @@ void MulticastDiscovery4::reload_config() {
 
 	auto multicast_group_url = url(Config::get()->client()["multicast4_group"].asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);
+
+	if(enabled_ && !socket_.is_open()) {
+		try {
+			socket_.open(boost::asio::ip::udp::v4());
+			start();
+		}catch(std::exception& e){
+			log_->warn() << log_tag() << "Could not initialize IPv4 local discovery";
+		}
+	}
 }
 
 MulticastDiscovery6::MulticastDiscovery6(Client& client) :
 	MulticastDiscovery(client, address_v6::any()) {
 
-	socket_.open(boost::asio::ip::udp::v6());
-	socket_.set_option(boost::asio::ip::v6_only(true));
-
 	reload_config();
-	start();
 }
 
 void MulticastDiscovery6::reload_config() {
@@ -123,6 +125,16 @@ void MulticastDiscovery6::reload_config() {
 
 	auto multicast_group_url = url(Config::get()->client()["multicast6_group"].asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);
+
+	if(enabled_ && !socket_.is_open()) {
+		try {
+			socket_.open(boost::asio::ip::udp::v6());
+			socket_.set_option(boost::asio::ip::v6_only(true));
+			start();
+		}catch(std::exception& e){
+			log_->warn() << log_tag() << "Could not initialize IPv6 local discovery";
+		}
+	}
 }
 
 } /* namespace librevault */

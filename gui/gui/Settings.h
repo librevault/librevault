@@ -36,9 +36,9 @@ public:
 
 	enum Page {
 		PAGE_GENERAL = 0,
-		PAGE_ACCOUNT = 1,
-		PAGE_NETWORK = 2,
-		PAGE_ADVANCED = 3
+		PAGE_NETWORK = 1//,
+		//PAGE_ACCOUNT = 2,
+		//PAGE_ADVANCED = 3
 	};
 
 signals:

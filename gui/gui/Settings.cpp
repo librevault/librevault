@@ -111,12 +111,12 @@ void Settings::init_selector() {
 
 	page = pager->add_page();
 	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_GENERAL));
-	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ACCOUNT));
+	//page = pager->add_page();
+	//pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ACCOUNT));
 	page = pager->add_page();
 	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_NETWORK));
-	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ADVANCED));
+	//page = pager->add_page();
+	//pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ADVANCED));
 
 	pager->show();
 
@@ -127,12 +127,12 @@ QString Settings::page_name(Page page) {
 	switch(page) {
 		case Page::PAGE_GENERAL:
 			return QApplication::translate("Settings", "General", 0);
-		case Page::PAGE_ACCOUNT:
-			return QApplication::translate("Settings", "Account", 0);
+		//case Page::PAGE_ACCOUNT:
+		//	return QApplication::translate("Settings", "Account", 0);
 		case Page::PAGE_NETWORK:
 			return QApplication::translate("Settings", "Network", 0);
-		case Page::PAGE_ADVANCED:
-			return QApplication::translate("Settings", "Advanced", 0);
+		//case Page::PAGE_ADVANCED:
+		//	return QApplication::translate("Settings", "Advanced", 0);
 		default:
 			return QString();
 	}

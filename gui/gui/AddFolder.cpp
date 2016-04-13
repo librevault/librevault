@@ -42,12 +42,6 @@ void AddFolder::showEvent(QShowEvent* e) {
 
 	ui->line_Folder->clear();
 	ui->line_Secret->clear();
-	ui->line_AddToCloudName->clear();
-
-	ui->radio_SecretManual->toggle();
-	ui->box_AddToCloud->setChecked(false);
-	ui->group_AddToCloud->setVisible(false);
-	ui->stackedWidget->setCurrentIndex(0);
 	adjustSize();
 }
 

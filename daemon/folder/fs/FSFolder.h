@@ -38,6 +38,10 @@ public:
 		error(const char* what) : std::runtime_error(what) {}
 		error() : error("FSFolder error") {}
 	};
+	struct status_t {
+		uint64_t byte_size = 0;
+		uint64_t file_count = 0;
+	};
 
 	/* Components */
 	std::unique_ptr<IgnoreList> ignore_list;
@@ -65,6 +69,7 @@ public:
 
 	/* Makers */
 	std::string normalize_path(const fs::path& abspath) const;
+	status_t status();
 
 	/* Getters */
 	FolderGroup& group() {return group_;}

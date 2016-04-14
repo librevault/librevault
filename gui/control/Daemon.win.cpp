@@ -15,9 +15,7 @@
  */
 #include "Daemon.h"
 #include <QCoreApplication>
-#ifdef Q_OS_WIN
-#	include <windows.h>
-#endif
+#include <windows.h>
 
 BOOL Is64BitWindows() {
 #	if defined(_WIN64)

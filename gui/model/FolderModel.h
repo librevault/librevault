@@ -25,7 +25,7 @@ public:
 	FolderModel();
 	~FolderModel();
 
-	const int SecretRole = Qt::UserRole;
+	static const int SecretRole = Qt::UserRole;
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;

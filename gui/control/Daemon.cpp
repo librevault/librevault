@@ -27,7 +27,7 @@ Daemon::Daemon() :
 	// Arguments
 	QStringList arguments;
 	//arguments << QString("--data=\"") + QCoreApplication::applicationDirPath() + "\"";
-	arguments << QString("--vv");
+	arguments << QString("-vv");
 	setArguments(arguments);
 
 	setReadChannel(StandardOutput);

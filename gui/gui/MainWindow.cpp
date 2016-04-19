@@ -47,10 +47,6 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	init_actions();
 	init_tray();
 	init_toolbar();
-	//auto button = new QPushButton();
-	//button->setText(tr("My Account"));
-	//button->setFlat(true);
-	//ui->statusBar->addPermanentWidget(button);
 	retranslateUi();
 }
 

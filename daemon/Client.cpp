@@ -123,9 +123,11 @@ void Client::add_folder(FolderParams params) {
 void Client::remove_folder(const Secret& secret) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
+	auto group_ptr = get_group(secret.get_Hash());
+
 	hash_group_.erase(secret.get_Hash());
 	//config().remove_folder(secret);   // TODO: Remove from config
-	folder_removed_signal(get_group(secret.get_Hash()));
+	folder_removed_signal(group_ptr);
 	log_->debug() << log_tag() << "Group unregistered: " << secret;
 }
 

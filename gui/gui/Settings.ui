@@ -17,7 +17,7 @@
    <string>Settings</string>
   </property>
   <property name="windowIcon">
-   <iconset>
+   <iconset resource="../resources/mainwindow.qrc">
     <normaloff>:/branding/librevault_icon.svg</normaloff>:/branding/librevault_icon.svg</iconset>
   </property>
   <property name="modal">
@@ -413,7 +413,7 @@
   <tabstop>natpmp_box</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources/mainwindow.qrc"/>
+  <include location="../resources/mainwindow.qrc"/>
  </resources>
  <connections>
   <connection>

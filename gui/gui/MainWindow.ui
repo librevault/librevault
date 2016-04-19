@@ -17,7 +17,7 @@
    <string>Librevault</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../resources/mainwindow.qrc">
+   <iconset resource="../resources/mainwindow.qrc">
     <normaloff>:/branding/librevault_icon.svg</normaloff>:/branding/librevault_icon.svg</iconset>
   </property>
   <property name="toolButtonStyle">
@@ -70,7 +70,7 @@
   <tabstop>treeView</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources/mainwindow.qrc"/>
+  <include location="../resources/mainwindow.qrc"/>
  </resources>
  <connections/>
 </ui>

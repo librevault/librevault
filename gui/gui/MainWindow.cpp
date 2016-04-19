@@ -96,10 +96,10 @@ void MainWindow::handleRemoveFolder() {
 	confirmation_box->setWindowModality(Qt::WindowModal);
 
 	if(confirmation_box->exec() == QMessageBox::Ok) {
-		auto selection_model = ui->treeView->selectionModel()->selectedRows(2);
+		auto selection_model = ui->treeView->selectionModel()->selectedRows();
 		for(auto model_index : selection_model) {
 			qDebug() << model_index;
-			QString secret = folder_model_->data(model_index).toString();
+			QString secret = folder_model_->data(model_index, FolderModel::SecretRole).toString();
 			qDebug() << secret;
 			emit folderRemoved(secret);
 		}

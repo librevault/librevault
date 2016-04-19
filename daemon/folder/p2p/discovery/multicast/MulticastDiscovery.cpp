@@ -34,7 +34,8 @@ MulticastDiscovery::MulticastDiscovery(Client& client, address bind_addr) :
 }
 
 MulticastDiscovery::~MulticastDiscovery() {
-	socket_.set_option(multicast::leave_group(group_.address()));
+	if(socket_.is_open())
+		socket_.set_option(multicast::leave_group(group_.address()));
 }
 
 void MulticastDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {

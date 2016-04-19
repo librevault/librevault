@@ -39,6 +39,8 @@ Config::Config(fs::path appdata_path) {
 
 	make_defaults();
 	load();
+
+	config_changed.connect([this](){save();});
 }
 
 Config::~Config() {

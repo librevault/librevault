@@ -61,7 +61,7 @@ void ControlClient::sendConfigJson(QJsonObject config_json) {
 void ControlClient::sendAddFolderJson(QString secret, QString path) {
 	QJsonObject control_json, folder_json;
 	folder_json["secret"] = secret;
-	folder_json["open_path"] = path;
+	folder_json["path"] = path;
 
 	control_json["command"] = QStringLiteral("add_folder");
 	control_json["folder"] = folder_json;

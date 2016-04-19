@@ -36,7 +36,7 @@ void ControlClient::handle_connect() {
 }
 
 void ControlClient::handle_disconnect() {
-	qDebug() << "Disconnected from daemon: " << daemon_address_;
+	qDebug() << "Disconnected from daemon: " << daemon_address_ << " Reason: " << closeReason();
 }
 
 void ControlClient::connectDaemon(const QUrl& daemon_address) {

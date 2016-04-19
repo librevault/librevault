@@ -57,7 +57,7 @@ void P2PFolder::perform_handshake() {
 
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
-	message_struct.device_name = Config::get()->client()["client_name"].asString();
+	message_struct.device_name = Config::get()->globals()["client_name"].asString();
 
 	send_message(parser_.gen_Handshake(message_struct));
 	log_->debug() << log_tag() << "==> HANDSHAKE";

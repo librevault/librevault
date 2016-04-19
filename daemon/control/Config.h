@@ -41,9 +41,9 @@ public:
 	}
 
 	/* Getters and setters */
-	const Json::Value& client() const {return client_;}
-	void set_client(Json::Value client_conf);
-	const Json::Value& client_defaults() const {return client_defaults_;} // For main
+	const Json::Value& globals() const {return globals_;}
+	void set_globals(Json::Value globals_conf);
+	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
 
 	const Json::Value& folders() const {return folders_;}
 	void set_folders(Json::Value folders_conf);
@@ -56,13 +56,13 @@ protected:
 	static std::unique_ptr<Config> instance_;
 
 private:
-	Json::Value client_, client_custom_, client_defaults_, folders_, folders_custom_, folders_defaults_;
+	Json::Value globals_, globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
 
 	paths_type paths_;
 	fs::path default_appdata_path();
 
 	void make_defaults();
-	void make_merged_client();
+	void make_merged_globals();
 	void make_merged_folders();
 
 	void load();

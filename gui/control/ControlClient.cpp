@@ -54,7 +54,7 @@ void ControlClient::sendControlJson(QJsonObject control_json) {
 void ControlClient::sendConfigJson(QJsonObject config_json) {
 	QJsonObject control_json;
 	control_json["command"] = QStringLiteral("set_config");
-	control_json["config"] = config_json;
+	control_json["globals"] = config_json;
 	sendControlJson(control_json);
 }
 

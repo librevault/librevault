@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 	Config::init(appdata_path);
 
 	if(args["gen-config"].asBool()) {
-		std::cout << Config::get()->client_defaults().toStyledString();
+		std::cout << Config::get()->globals_defaults().toStyledString();
 		return 0;
 	}
 

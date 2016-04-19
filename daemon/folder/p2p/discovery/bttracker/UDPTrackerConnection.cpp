@@ -33,7 +33,7 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 		resolver_(client.network_ios()),
 		reconnect_timer_(client.network_ios()),
 		announce_timer_(client.network_ios()) {
-	announce_interval_ = std::chrono::seconds(Config::get()->client()["bttracker_min_interval"].asUInt64());
+	announce_interval_ = std::chrono::seconds(Config::get()->globals()["bttracker_min_interval"].asUInt64());
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
@@ -91,12 +91,12 @@ void UDPTrackerConnection::receive_loop(){
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
-	reconnect_timer_.expires_from_now(std::chrono::seconds(Config::get()->client()["bttracker_reconnect_interval"].asUInt64()));
+	reconnect_timer_.expires_from_now(std::chrono::seconds(Config::get()->globals()["bttracker_reconnect_interval"].asUInt64()));
 	reconnect_timer_.async_wait(std::bind(&UDPTrackerConnection::connect, this, std::placeholders::_1));
 }
 
 void UDPTrackerConnection::bump_announce_timer() {
-	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(Config::get()->client()["bttracker_min_interval"].asUInt64()));
+	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(Config::get()->globals()["bttracker_min_interval"].asUInt64()));
 
 	announce_timer_.expires_from_now(announce_interval_);
 	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));
@@ -136,7 +136,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 
 	request.event_ = int32_t(announced_times_++ == 0 ? Event::EVENT_STARTED : Event::EVENT_NONE);
 	request.key_ = gen_transaction_id();
-	request.num_want_ = Config::get()->client()["bttracker_num_want"].asUInt();
+	request.num_want_ = Config::get()->globals()["bttracker_num_want"].asUInt();
 
 	request.port_ = client_.p2p_provider()->public_port();
 

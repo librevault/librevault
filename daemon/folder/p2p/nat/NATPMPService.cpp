@@ -73,8 +73,8 @@ void NATPMPService::maintain_mapping(const boost::system::error_code& error) {
 }
 
 void NATPMPService::reload_config() {
-	bool new_enabled = Config::get()->client()["natpmp_enabled"].asBool();
-	seconds new_lifetime = seconds(Config::get()->client()["natpmp_lifetime"].asUInt64());
+	bool new_enabled = Config::get()->globals()["natpmp_enabled"].asBool();
+	seconds new_lifetime = seconds(Config::get()->globals()["natpmp_lifetime"].asUInt64());
 
 	if((new_lifetime != lifetime_ || new_enabled != enabled_) && new_enabled)
 		client_.ios().post(std::bind(&NATPMPService::maintain_mapping, this, boost::system::error_code()));

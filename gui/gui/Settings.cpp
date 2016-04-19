@@ -59,7 +59,7 @@ void Settings::reset_ui_states() {
 	/* Daemon-related settings */
 	control_json_static = control_json_dynamic; // "Fixing" a version of control_json
 
-	QJsonObject client = control_json_static["client"].toObject();
+	QJsonObject client = control_json_static["globals"].toObject();
 
 	// p2p_listen
 	p2p_listen.setAuthority(client["p2p_listen"].toString());

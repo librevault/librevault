@@ -23,8 +23,7 @@ namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
 		Loggable(client, "ControlServer"), client_(client), timer_(client_.ios()) {
-	//url bind_url = client_.config().getControl_listen();
-	url bind_url = parse_url(Config::get()->client()["control_listen"].asString());
+	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
@@ -89,8 +88,8 @@ void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_
 		Json::Value control_json;
 		Json::Reader r; r.parse(message_ptr->get_payload(), control_json);
 
-		handle_control_json(control_json);
-	}catch(std::runtime_error& e) { // FIXME: change to websocketpp exception
+		dispatch_control_json(control_json);
+	}catch(std::exception& e) {
 		log_->trace() << log_tag() << "on_message e:" << e.what();
 		ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, e.what());
 	}
@@ -109,7 +108,7 @@ std::string ControlServer::make_control_json() {
 	// ID
 	static int control_json_id = 0;
 	control_json["id"] = control_json_id++;
-	control_json["client"] = Config::get()->client();
+	control_json["globals"] = Config::get()->globals();
 	control_json["folders"] = Config::get()->folders();
 	control_json["state"] = make_state_json();
 
@@ -165,27 +164,27 @@ void ControlServer::send_control_json(const boost::system::error_code& ec) {
 	}
 }
 
-void ControlServer::handle_control_json(const Json::Value& control_json) {
+void ControlServer::dispatch_control_json(const Json::Value& control_json) {
 	std::string command = control_json["command"].asString();
-	if(command == "set_config") {
-		//client_.config().apply_ptree(control_json.get_child("config"));
-	}else if(command == "add_folder") {
-		handle_add_folder_json(control_json["folder"]);
-	}else if(command == "remove_folder") {
-		handle_remove_folder_json(control_json["folder"]);
-	}else
+	if(command == "set_config")
+		Config::get()->set_globals(control_json["globals"]);
+	else if(command == "add_folder")
+		handle_add_folder_json(control_json);
+	else if(command == "remove_folder")
+		handle_remove_folder_json(control_json);
+	else
 		log_->debug() << "Could not handle control JSON: Unknown command: " << command;
 }
 
-void ControlServer::handle_add_folder_json(const Json::Value& folder_json) {
-	FolderParams params(folder_json);
+void ControlServer::handle_add_folder_json(const Json::Value& control_json) {
+	FolderParams params(control_json["folder"]);
 
 	add_folder_signal(params);
 	send_control_json();
 }
 
-void ControlServer::handle_remove_folder_json(const Json::Value& folder_json) {
-	Secret secret = Secret(folder_json["secret"].asString());
+void ControlServer::handle_remove_folder_json(const Json::Value& control_json) {
+	Secret secret = Secret(control_json["secret"].asString());
 	remove_folder_signal(secret);
 	send_control_json();
 }

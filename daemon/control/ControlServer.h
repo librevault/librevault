@@ -53,9 +53,9 @@ private:
 	Json::Value make_state_json() const;
 	void send_control_json(const boost::system::error_code& ec = boost::system::error_code());
 
-	void handle_control_json(const Json::Value& control_json);
-	void handle_add_folder_json(const Json::Value& folder_json);
-	void handle_remove_folder_json(const Json::Value& folder_json);
+	void dispatch_control_json(const Json::Value& control_json);
+	void handle_add_folder_json(const Json::Value& control_json);
+	void handle_remove_folder_json(const Json::Value& control_json);
 };
 
 } /* namespace librevault */

@@ -164,7 +164,7 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		std::unique_lock<decltype(maintain_timer_mtx_)> maintain_timer_lk(maintain_timer_mtx_, std::adopt_lock);
 		maintain_timer_.cancel();
 
-		auto request_timeout = std::chrono::seconds(Config::get()->client()["p2p_request_timeout"].asUInt64());
+		auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
 
 		// Prune old requests by timeout
 		for(auto& needed_block : needed_chunks_) {
@@ -178,7 +178,7 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		}
 
 		// Make new requests
-		for(size_t i = requests_overall(); i < Config::get()->client()["p2p_download_slots"].asUInt(); i++) {
+		for(size_t i = requests_overall(); i < Config::get()->globals()["p2p_download_slots"].asUInt(); i++) {
 			bool requested = request_one();
 			if(!requested) break;
 		}
@@ -207,7 +207,7 @@ bool Downloader::request_one() {
 		if(!request_map.full()) {
 			NeededChunk::BlockRequest request;
 			request.offset = request_map.begin()->first;
-			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->client()["p2p_block_size"].asUInt()));
+			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->globals()["p2p_block_size"].asUInt()));
 			request.started = std::chrono::steady_clock::now();
 
 			remote->request_block(ct_hash, request.offset, request.size);

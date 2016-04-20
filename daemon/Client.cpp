@@ -45,7 +45,7 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	control_server_->remove_folder_signal.connect(std::bind(&Client::remove_folder, this, std::placeholders::_1));
 
 	for(auto& folder_config : Config::get()->folders()) {
-		add_folder(folder_config);
+		init_folder(folder_config);
 	}
 }
 
@@ -105,30 +105,63 @@ void Client::shutdown(){
 	main_loop_ios_.stop();
 }
 
-void Client::add_folder(FolderParams params) {
+void Client::add_folder(Json::Value json_folder) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto group_ptr = get_group(params.secret.get_Hash());
-	if(!group_ptr) {
-		//config().add_folder(folder_config);   // TODO: Add to config
-		group_ptr = std::make_shared<FolderGroup>(std::move(params), *this);
-		hash_group_.insert({group_ptr->hash(), group_ptr});
+	FolderParams params(json_folder);
 
-		folder_added_signal(group_ptr);
-	}else{
-		throw std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now");
-	}
+	auto folders_copy = Config::get()->folders();
+
+	auto it = std::find_if(folders_copy.begin(), folders_copy.end(), [&](const Json::Value& v){
+		return FolderParams(v).secret.get_Hash() == params.secret.get_Hash();
+	});
+	if(it == folders_copy.end()) {
+		folders_copy.append(json_folder);
+		Config::get()->set_folders(folders_copy);
+
+		init_folder(params);
+	}else
+		throw samekey_error();
 }
 
 void Client::remove_folder(const Secret& secret) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
+	auto folders_copy = Config::get()->folders();
+	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
+		if(FolderParams(folders_copy[i]).secret.get_Hash() == secret.get_Hash()) {
+			deinit_folder(secret);
+
+			Json::Value temp;
+			folders_copy.removeIndex(i, &temp);
+			break;
+		}
+	}
+
+	Config::get()->set_folders(folders_copy);
+}
+
+void Client::init_folder(FolderParams params) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
+	auto group_ptr = get_group(params.secret.get_Hash());
+	if(!group_ptr) {
+		group_ptr = std::make_shared<FolderGroup>(std::move(params), *this);
+		hash_group_.insert({group_ptr->hash(), group_ptr});
+
+		folder_added_signal(group_ptr);
+	}else
+		throw samekey_error();
+}
+
+void Client::deinit_folder(const Secret& secret) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	auto group_ptr = get_group(secret.get_Hash());
 
 	hash_group_.erase(secret.get_Hash());
-	//config().remove_folder(secret);   // TODO: Remove from config
 	folder_removed_signal(group_ptr);
-	log_->debug() << log_tag() << "Group unregistered: " << secret;
+	log_->debug() << log_tag() << "Group deinitialized: " << secret;
 }
 
 std::shared_ptr<FolderGroup> Client::get_group(const blob& hash) {

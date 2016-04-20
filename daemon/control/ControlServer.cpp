@@ -180,9 +180,7 @@ void ControlServer::dispatch_control_json(const Json::Value& control_json) {
 }
 
 void ControlServer::handle_add_folder_json(const Json::Value& control_json) {
-	FolderParams params(control_json["folder"]);
-
-	add_folder_signal(params);
+	add_folder_signal(control_json["folder"]);
 	send_control_json();
 }
 

@@ -36,6 +36,10 @@ class Secret;
 
 class Client : public Loggable {
 public:
+	struct samekey_error : std::runtime_error {
+		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
+	};
+
 	Client(std::map<std::string, docopt::value> args);
 	virtual ~Client();
 
@@ -51,8 +55,11 @@ public:
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
 	/* FolderGroup nanagenent */
-	void add_folder(FolderParams params);
-	void remove_folder(const Secret& secret);
+	void add_folder(Json::Value json_folder);    // Adds folder into config, so JSON. Also, invokes init_folder.
+	void remove_folder(const Secret& secret);   // Invokes deinit_folder and removes folder from config.
+
+	void init_folder(FolderParams params);
+	void deinit_folder(const Secret& secret);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 

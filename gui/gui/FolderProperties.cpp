@@ -32,6 +32,10 @@ FolderProperties::FolderProperties(const librevault::Secret& secret, QWidget* pa
 	peer_model_ = std::make_unique<PeerModel>(this);
 	ui->peers_treeView->setModel(peer_model_.get());
 
+#ifdef Q_OS_MAC
+	ui->tabWidget->setDocumentMode(false);
+#endif
+
 	setSecret(secret);
 
 	connect(ui->copy_rw, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_rw->text());});

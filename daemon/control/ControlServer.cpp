@@ -106,7 +106,7 @@ std::string ControlServer::make_control_json() {
 	Json::Value control_json;
 
 	// ID
-	static int control_json_id = 0;
+	static int control_json_id = 0; // Client-wide message id
 	control_json["id"] = control_json_id++;
 	control_json["globals"] = Config::get()->globals();
 	control_json["folders"] = Config::get()->folders();

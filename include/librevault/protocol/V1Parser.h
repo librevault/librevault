@@ -65,6 +65,7 @@ public:
 	struct Handshake {
 		blob auth_token;
 		std::string device_name;
+		std::string user_agent;
 	};
 	struct HaveMeta {
 		Meta::PathRevision revision;

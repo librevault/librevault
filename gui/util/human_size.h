@@ -17,7 +17,7 @@
 
 #include <QtCore>
 
-QString human_size(size_t size) {
+inline QString human_size(size_t size) {
 	float num = size;
 
 	if(num < 1024.0)

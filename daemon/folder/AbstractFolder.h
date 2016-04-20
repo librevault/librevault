@@ -16,6 +16,7 @@
 #pragma once
 #include <librevault/util/bitfield_convert.h>
 #include "util/Loggable.h"
+#include "pch.h"
 
 namespace librevault {
 

@@ -137,6 +137,7 @@ Json::Value ControlServer::make_state_json() const {
 			std::ostringstream os; os << p2p_peer->remote_endpoint();
 			peer_json["endpoint"] = os.str();
 			peer_json["client_name"] = p2p_peer->client_name();
+			peer_json["user_agent"] = p2p_peer->user_agent();
 
 			folder_json["peers"].append(peer_json); //// /peer_json
 		}

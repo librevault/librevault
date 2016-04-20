@@ -14,19 +14,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
+#include <string>
 
 namespace librevault {
 
 class Version {
 public:
 	Version();
-	Version(std::string name, std::string version_string);
 
 	std::string name() const {return name_;}
-	std::string lowercase_name() const {/*return boost::locale::to_lower(name_);*/return boost::algorithm::to_lower_copy(name_);}
 	std::string version_string() const {return version_string_;}
-	std::string user_agent() const {return lowercase_name() + "/" + version_string_;}
+	std::string user_agent() const {return name() + "/" + version_string_;}
 
 	static Version current() {static Version current; return current;}
 protected:

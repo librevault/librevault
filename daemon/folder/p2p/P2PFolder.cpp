@@ -58,6 +58,7 @@ void P2PFolder::perform_handshake() {
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
 	message_struct.device_name = Config::get()->globals()["client_name"].asString();
+	message_struct.user_agent = Version::current().user_agent();
 
 	send_message(parser_.gen_Handshake(message_struct));
 	log_->debug() << log_tag() << "==> HANDSHAKE";
@@ -217,6 +218,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	if(conn_.role == WSService::connection::SERVER) perform_handshake();
 
 	client_name_ = message_struct.device_name;
+	user_agent_ = message_struct.user_agent;
 
 	log_->debug() << log_tag() << "LV Handshake successful";
 	is_handshaken_ = true;

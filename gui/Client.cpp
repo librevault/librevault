@@ -24,6 +24,8 @@
 
 Client::Client(int &argc, char **argv, int appflags) :
 		QApplication(argc, argv, appflags) {
+	setAttribute(Qt::AA_UseHighDpiPixmaps);
+
 	setQuitOnLastWindowClosed(false);
 	applyLocale(QLocale::system().name());
 	// Parsing arguments

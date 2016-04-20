@@ -26,7 +26,7 @@ PeerModel::PeerModel(QWidget* parent) :
 PeerModel::~PeerModel() {}
 
 int PeerModel::rowCount(const QModelIndex &parent) const {
-	return control_json_["folders"].toArray().size();
+	return folder_state_json_["peers"].toArray().size();
 }
 int PeerModel::columnCount(const QModelIndex &parent) const {
 	return (int)Column::COLUMN_COUNT;

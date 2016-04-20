@@ -77,4 +77,6 @@ void FolderProperties::update(const QJsonObject& control_json, const QJsonObject
 
 	ui->folder_size->setText(tr("%n file(s)", "", folder_state_json["file_count"].toInt()) + " " + human_size(folder_state_json["byte_size"].toDouble()));
 	ui->connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));
+
+	peer_model_->update(control_json, folder_config_json, folder_state_json);
 }

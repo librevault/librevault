@@ -69,7 +69,7 @@ void FolderProperties::setSecret(const librevault::Secret& secret) {
 
 void FolderProperties::update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json) {
 	ui->folder_name->setText(folder_config_json["path"].toString());
-	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(QSize(32, 32)));
+	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(32, 32));
 
 	ui->folder_size->setText(tr("%n file(s)", "", folder_state_json["file_count"].toInt()) + " " + human_size(folder_state_json["byte_size"].toDouble()));
 	ui->connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));

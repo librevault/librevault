@@ -155,7 +155,7 @@ void P2PFolder::request_block(const blob& ct_hash, uint32_t offset, uint32_t len
 	message.length = length;
 	send_message(parser_.gen_BlockRequest(message));
 
-	log_->debug() << log_tag() << "==> CHUNK_REQUEST:"
+	log_->debug() << log_tag() << "==> BLOCK_REQUEST:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
 		<< " offset=" << offset
 		<< " length=" << length;
@@ -167,7 +167,7 @@ void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& chu
 	message.content = chunk;
 	send_message(parser_.gen_BlockReply(message));
 
-	log_->debug() << log_tag() << "==> CHUNK_REPLY:"
+	log_->debug() << log_tag() << "==> BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
 		<< " offset=" << offset;
 }
@@ -177,7 +177,7 @@ void P2PFolder::cancel_block(const blob& ct_hash, uint32_t offset, uint32_t leng
 	message.offset = offset;
 	message.length = length;
 	send_message(parser_.gen_BlockCancel(message));
-	log_->debug() << log_tag() << "==> CHUNK_CANCEL:"
+	log_->debug() << log_tag() << "==> BLOCK_CANCEL:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
 		<< " offset=" << offset
 		<< " length=" << length;
@@ -318,7 +318,7 @@ void P2PFolder::handle_BlockRequest(const blob& message_raw) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_BlockRequest(message_raw);
-	log_->debug() << log_tag() << "<== CHUNK_REQUEST:"
+	log_->debug() << log_tag() << "<== BLOCK_REQUEST:"
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset;
@@ -329,7 +329,7 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	auto message_struct = parser_.parse_BlockReply(message_raw);
-	log_->debug() << log_tag() << "<== CHUNK_REPLY:"
+	log_->debug() << log_tag() << "<== BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " offset=" << message_struct.offset;
 

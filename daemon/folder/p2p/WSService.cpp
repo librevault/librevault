@@ -112,7 +112,11 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 	if(group_ptr) {
 		log_->debug() << log_tag() << "Connection opened to: " << new_folder->name();   // Finally!
 
-		group_ptr->attach(new_folder);
+		try {
+			group_ptr->attach(new_folder);
+		}catch(std::exception& e){
+			close(hdl, "Couldn't attach to remote node");
+		}
 
 		if(conn.role == connection::CLIENT)
 			new_folder->perform_handshake();

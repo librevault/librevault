@@ -14,37 +14,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <QDialog>
 #include "pch.h"
-#include <librevault/Secret.h>
+#include <QAbstractTableModel>
 #include <QJsonObject>
 
-namespace Ui {
 class FolderProperties;
-}
 
-class PeerModel;
-
-class FolderProperties : public QDialog {
+class PeerModel : public QAbstractListModel {
 Q_OBJECT
 
 public:
-	explicit FolderProperties(const librevault::Secret& secret, QWidget* parent = 0);
-	~FolderProperties();
+	PeerModel(QWidget* parent);
+	~PeerModel();
+
+	int rowCount(const QModelIndex &parent = QModelIndex()) const;
+	int columnCount(const QModelIndex &parent = QModelIndex()) const;
+
+	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 public slots:
 	void update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json);
-	void setSecret(const librevault::Secret& secret);
-
-protected:
-	std::unique_ptr<Ui::FolderProperties> ui;
-
-private slots:
 
 private:
-	QByteArray hash_;
+	QWidget* parent_widget_;
+	QJsonObject control_json_, folder_config_json_, folder_state_json_;
 
-	/* Models */
-	std::unique_ptr<PeerModel> peer_model_;
+	enum class Column {
+		CLIENT_NAME,
+		ENDPOINT,
+		USER_AGENT,
+
+		COLUMN_COUNT
+	};
 };

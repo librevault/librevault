@@ -52,6 +52,7 @@ public slots:
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
 	void handleRemoveFolder();
+	void handleOpenFolderProperties(const QModelIndex &index);
 
 protected:
 	Client& client_;

@@ -18,26 +18,34 @@
 #include <QAbstractTableModel>
 #include <QJsonObject>
 
+class FolderProperties;
+
 class FolderModel : public QAbstractListModel {
 Q_OBJECT
 
 public:
-	FolderModel();
+	FolderModel(QWidget* parent);
 	~FolderModel();
 
 	static const int SecretRole = Qt::UserRole;
+	static const int HashRole = Qt::UserRole+1;
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
-	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
+	QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+
+	FolderProperties* getFolderDialog(const QByteArray& hash) {return properties_dialogs_[hash];}
 
 public slots:
 	void handleControlJson(QJsonObject control_json);
 
 private:
+	QWidget* parent_widget_;
 	QJsonObject state_json_;
+
+	QMap<QByteArray, FolderProperties*> properties_dialogs_;
 
 	enum class Column {
 		NAME,

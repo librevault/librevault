@@ -16,33 +16,61 @@
 #include "FolderProperties.h"
 #include "ui_FolderProperties.h"
 #include <QShowEvent>
+#include <QFileIconProvider>
+#include <QJsonArray>
+#include <QClipboard>
+#include <util/human_size.h>
 
-FolderProperties::FolderProperties(QWidget* parent) :
+#include "../model/PeerModel.h"
+
+FolderProperties::FolderProperties(const librevault::Secret& secret, QWidget* parent) :
 		QDialog(parent),
 		ui(std::make_unique<Ui::FolderProperties>()) {
+
 	ui->setupUi(this);
 
-	//connect(ui->button_CreateSecret, &QPushButton::clicked, this, &FolderProperties::generateSecret);
-	//connect(ui->button_Browse, &QPushButton::clicked, this, &FolderProperties::browseFolder);
-	//connect(this, &QDialog::accepted, this, &AddFolder::handleAccepted);
+	peer_model_ = std::make_unique<PeerModel>(this);
+	ui->peers_treeView->setModel(peer_model_.get());
+
+	setSecret(secret);
+
+	connect(ui->copy_rw, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_rw->text());});
+	connect(ui->copy_ro, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_ro->text());});
+	connect(ui->copy_do, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_do->text());});
+
 	this->setWindowFlags(Qt::Tool);
+	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(QSize(32, 32)));
+	setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
 }
 
 FolderProperties::~FolderProperties() {}
 
 void FolderProperties::setSecret(const librevault::Secret& secret) {
+	hash_.setRawData((const char*)secret.get_Hash().data(), secret.get_Hash().size());
+
 	if(secret.get_type() <= secret.ReadWrite)
 		ui->secret_rw->setText(QString::fromStdString(secret.string()));
-	else
-		ui->secret_rw->setText("");
+	else {
+		ui->label_rw->setVisible(false);
+		ui->secret_rw->setVisible(false);
+		ui->copy_rw->setVisible(false);
+	}
 
 	if(secret.get_type() <= secret.ReadOnly)
 		ui->secret_ro->setText(QString::fromStdString(secret.derive(secret.ReadOnly).string()));
-	else
-		ui->secret_ro->setText("");
+	else {
+		ui->label_ro->setVisible(false);
+		ui->secret_ro->setVisible(false);
+		ui->copy_ro->setVisible(false);
+	}
 
-	if(secret.get_type() <= secret.Download)
-		ui->secret_do->setText(QString::fromStdString(secret.derive(secret.Download).string()));
-	else
-		ui->secret_do->setText("");
+	ui->secret_do->setText(QString::fromStdString(secret.derive(secret.Download).string()));
+}
+
+void FolderProperties::update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json) {
+	ui->folder_name->setText(folder_config_json["path"].toString());
+	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(QSize(32, 32)));
+
+	ui->folder_size->setText(tr("%n file(s)", "", folder_state_json["file_count"].toInt()) + " " + human_size(folder_state_json["byte_size"].toDouble()));
+	ui->connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));
 }

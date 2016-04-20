@@ -103,7 +103,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="documentMode">
       <bool>true</bool>
@@ -113,6 +113,9 @@
        <string>Information</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::ExpandingFieldsGrow</enum>
+       </property>
        <item row="0" column="0" colspan="2">
         <widget class="QLabel" name="label_4">
          <property name="styleSheet">
@@ -231,9 +234,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_5">
+        <widget class="QLabel" name="connected_counter">
          <property name="text">
-          <string>%n connected</string>
+          <string notr="true">%n connected</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

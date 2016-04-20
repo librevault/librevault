@@ -17,9 +17,11 @@
 #include <QFileIconProvider>
 #include <QJsonArray>
 #include <util/human_size.h>
+#include <librevault/Secret.h>
+#include "../gui/FolderProperties.h"
 
-FolderModel::FolderModel() :
-		QAbstractListModel() {}
+FolderModel::FolderModel(QWidget* parent) :
+		QAbstractListModel(), parent_widget_(parent) {}
 
 FolderModel::~FolderModel() {}
 
@@ -44,12 +46,14 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 			default: return QVariant();
 		}
 	}
-	if(role == Qt::DecorationRole && column == Column::NAME) {
-		QFileIconProvider file_icon_provider;
-		return file_icon_provider.icon(QFileIconProvider::Folder);
-	}
+	if(role == Qt::DecorationRole && column == Column::NAME)
+		return QFileIconProvider().icon(QFileIconProvider::Folder);
 	if(role == SecretRole)
 		return folder_object["secret"].toString();
+	if(role == HashRole) {
+		auto hash_vec = librevault::Secret(folder_object["secret"].toString().toStdString()).get_Hash();
+		return QByteArray((const char*)hash_vec.data(), hash_vec.size());
+	}
 
 	return QVariant();
 }
@@ -71,6 +75,44 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 
 void FolderModel::handleControlJson(QJsonObject control_json) {
 	state_json_ = control_json["state"].toObject();
+
+	// Determining what old Secrets are not present now
+	QSet<QByteArray> existing_set = properties_dialogs_.keys().toSet();
+	QSet<QByteArray> arrived_set;
+	for(const QJsonValue& folder_json : state_json_["folders"].toArray()) {
+		auto hash_vec = librevault::Secret(folder_json.toObject().value("secret").toString().toStdString()).get_Hash();
+		arrived_set.insert(QByteArray((const char*)hash_vec.data(), hash_vec.size()));
+	}
+	QSet<QByteArray> cleanup_set = existing_set - arrived_set;
+
+	// Removing deleted dialogs;
+	for(auto& cleanup_secret : cleanup_set) {
+		delete properties_dialogs_[cleanup_secret];
+		properties_dialogs_.remove(cleanup_secret);
+	}
+
+	// Updating/creating current dialogs
+	for(const QJsonValue& folder_state_json : state_json_["folders"].toArray()) {
+		auto secret = librevault::Secret(folder_state_json.toObject().value("secret").toString().toStdString());
+		QByteArray hash((const char*)secret.get_Hash().data(), secret.get_Hash().size());
+
+		QJsonValue folder_config_json;
+
+		for(const QJsonValue& folder_config_json_tmp : control_json["folders"].toArray()) {
+			auto secret2 = librevault::Secret(folder_config_json_tmp.toObject().value("secret").toString().toStdString());
+			QByteArray hash2((const char*)secret2.get_Hash().data(), secret2.get_Hash().size());
+
+			if(hash == hash2)
+				folder_config_json = folder_config_json_tmp; break;
+		}
+
+
+		if(! properties_dialogs_.contains(hash))
+			properties_dialogs_[hash] = new FolderProperties(secret, parent_widget_);
+
+		properties_dialogs_[hash]->update(control_json, folder_config_json.toObject(), folder_state_json.toObject());
+	}
+
 	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
 	emit layoutChanged();
 }

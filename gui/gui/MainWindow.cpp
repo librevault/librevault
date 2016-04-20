@@ -16,11 +16,8 @@
 #include "MainWindow.h"
 #include "model/FolderModel.h"
 #include "ui_MainWindow.h"
-#include <QCloseEvent>
-#include <QPushButton>
-#include <QDesktopServices>
-#include <QDebug>
 #include <icons/GUIIconProvider.h>
+#include "FolderProperties.h"
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);
@@ -32,8 +29,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 		ui(std::make_unique<Ui::MainWindow>()) {
 	ui->setupUi(this);
 	/* Initializing models */
-	folder_model_ = std::make_unique<FolderModel>();
-	set_model(folder_model_.get());
+	folder_model_ = std::make_unique<FolderModel>(this);
+	ui->treeView->setModel(folder_model_.get());
 	ui->treeView->header()->setStretchLastSection(false);
 	ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
@@ -43,6 +40,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
+
+	connect(ui->treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
 	init_actions();
 	init_tray();
@@ -106,8 +105,9 @@ void MainWindow::handleRemoveFolder() {
 	}
 }
 
-void MainWindow::set_model(FolderModel* model) {
-	ui->treeView->setModel(model);
+void MainWindow::handleOpenFolderProperties(const QModelIndex &index) {
+	QByteArray hash = folder_model_->data(index, FolderModel::HashRole).toByteArray();
+	folder_model_->getFolderDialog(hash)->show();
 }
 
 void MainWindow::changeEvent(QEvent* e) {

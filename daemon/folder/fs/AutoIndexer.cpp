@@ -24,21 +24,21 @@ namespace librevault {
 AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		Loggable(dir, "AutoIndexer"),
 		dir_(dir), client_(client),
+		monitor_ios_work_(monitor_ios_),
+		monitor_(monitor_ios_),
 		reindex_timer_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
 	enqueue_files(full_reindex_list());
 
-	monitor_ios_ = std::make_unique<io_service>();
-	monitor_ios_thread_ = std::make_unique<std::thread>([&, this](){monitor_ios_->run();});
-	monitor_ = std::make_unique<boost::asio::dir_monitor>(*monitor_ios_);
+	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
 
-	monitor_->add_directory(dir_.path().string());
+	monitor_.add_directory(dir_.path().string());
 	monitor_operation();
 }
 
 AutoIndexer::~AutoIndexer() {
-	monitor_ios_->stop();
-	if(monitor_ios_thread_->joinable())
-		monitor_ios_thread_->join();
+	monitor_ios_.stop();
+	if(monitor_ios_thread_.joinable())
+		monitor_ios_thread_.join();
 }
 
 void AutoIndexer::enqueue_files(const std::string& relpath) {
@@ -115,7 +115,7 @@ void AutoIndexer::bump_timer() {
 
 void AutoIndexer::monitor_operation() {
 	log_->trace() << log_tag() << "monitor_operation";
-	monitor_->async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
+	monitor_.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
 		log_->trace() << "async_monitor callback ec:" << ec;
 		if(ec == boost::asio::error::operation_aborted) {
 			log_->debug() << log_tag() << "monitor_operation returned";

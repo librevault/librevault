@@ -36,7 +36,6 @@ public:
 	void prepare_dir_assemble(bool with_removal, const std::string& relpath);
 	void prepare_deleted_assemble(const std::string& relpath);
 
-
 	std::set<std::string> short_reindex_list();  // List of files for reindexing on start
 	std::set<std::string> full_reindex_list();  // List of files, ready to be reindexed on full reindexing
 
@@ -45,9 +44,10 @@ private:
 	Client& client_;
 
 	// Monitor
-	std::unique_ptr<io_service> monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
-	std::unique_ptr<std::thread> monitor_ios_thread_;    // https://github.com/berkus/dir_monitor/issues/42
-	std::unique_ptr<boost::asio::dir_monitor> monitor_;
+	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
+	std::thread monitor_ios_thread_;    // https://github.com/berkus/dir_monitor/issues/42
+	io_service::work monitor_ios_work_;
+	boost::asio::dir_monitor monitor_;
 
 	std::multiset<std::string> prepared_assemble_;
 

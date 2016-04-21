@@ -166,11 +166,13 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 
 		auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
 
+		log_->debug() << log_tag() << "requests_overall3=" << requests_overall();
+
 		// Prune old requests by timeout
 		for(auto& needed_block : needed_chunks_) {
 			auto& requests = needed_block.second->requests; // We should lock a mutex on this
 			for(auto request = requests.begin(); request != requests.end(); ) {
-				if(request->second.started + request_timeout > std::chrono::steady_clock::now())
+				if(request->second.started + request_timeout < std::chrono::steady_clock::now())
 					request = requests.erase(request);
 				else
 					++request;
@@ -178,10 +180,12 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 		}
 
 		// Make new requests
+		log_->debug() << log_tag() << "requests_overall1=" << requests_overall();
 		for(size_t i = requests_overall(); i < Config::get()->globals()["p2p_download_slots"].asUInt(); i++) {
 			bool requested = request_one();
 			if(!requested) break;
 		}
+		log_->debug() << log_tag() << "requests_overall2=" << requests_overall();
 
 		maintain_timer_.expires_from_now(request_timeout);
 		maintain_timer_.async_wait(std::bind(&Downloader::maintain_requests, this, std::placeholders::_1));

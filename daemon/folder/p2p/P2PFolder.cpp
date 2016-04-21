@@ -189,7 +189,7 @@ void P2PFolder::cancel_block(const blob& ct_hash, uint32_t offset, uint32_t leng
 void P2PFolder::handle_message(const blob& message_raw) {
 	V1Parser::message_type message_type = parser_.parse_MessageType(message_raw);
 
-	counter_.add_down_blocks(message_raw.size());
+	counter_.add_down(message_raw.size());
 
 	if(ready()) {
 		switch(message_type) {

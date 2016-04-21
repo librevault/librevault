@@ -41,7 +41,7 @@ inline QString human_size(size_t size) {
 
 inline QString human_bandwidth(float bandwidth) {
 	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 b/s").arg(bandwidth, 0, 'f', 0);
+		return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
 	bandwidth /= 1024.0;
 
 	if(bandwidth < 1024.0)

@@ -26,7 +26,7 @@ namespace librevault {
 class AutoIndexer : public Loggable {
 public:
 	AutoIndexer(FSFolder& dir, Client& client);
-	virtual ~AutoIndexer() {}
+	virtual ~AutoIndexer();
 
 	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);
@@ -45,7 +45,9 @@ private:
 	Client& client_;
 
 	// Monitor
-	boost::asio::dir_monitor monitor_;
+	std::unique_ptr<io_service> monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
+	std::unique_ptr<std::thread> monitor_ios_thread_;    // https://github.com/berkus/dir_monitor/issues/42
+	std::unique_ptr<boost::asio::dir_monitor> monitor_;
 
 	std::multiset<std::string> prepared_assemble_;
 

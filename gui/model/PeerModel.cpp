@@ -41,6 +41,10 @@ QVariant PeerModel::data(const QModelIndex &index, int role) const {
 			case Column::CLIENT_NAME: return peer_object["client_name"].toString();
 			case Column::ENDPOINT: return peer_object["endpoint"].toString();
 			case Column::USER_AGENT: return peer_object["user_agent"].toString();
+			case Column::DOWN_SPEED: return human_bandwidth(peer_object["down_bandwidth"].toDouble());
+			case Column::UP_SPEED: return human_bandwidth(peer_object["up_bandwidth"].toDouble());
+			case Column::DOWN_BYTES: return human_size(peer_object["down_bytes"].toDouble());
+			case Column::UP_BYTES: return human_size(peer_object["up_bytes"].toDouble());
 
 			default: return QVariant();
 		}
@@ -56,6 +60,10 @@ QVariant PeerModel::headerData(int section, Qt::Orientation orientation, int rol
 				case Column::CLIENT_NAME: return tr("Name");
 				case Column::ENDPOINT: return tr("Address");
 				case Column::USER_AGENT: return tr("Client");
+				case Column::DOWN_SPEED: return tr("Down speed");
+				case Column::UP_SPEED: return tr("Up speed");
+				case Column::DOWN_BYTES: return tr("Downloaded");
+				case Column::UP_BYTES: return tr("Uploaded");
 				default: return QVariant();
 			}
 		}

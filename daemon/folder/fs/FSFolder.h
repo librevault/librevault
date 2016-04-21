@@ -41,6 +41,7 @@ public:
 	struct status_t {
 		uint64_t byte_size = 0;
 		uint64_t file_count = 0;
+		bool is_indexing = false;
 	};
 
 	/* Components */

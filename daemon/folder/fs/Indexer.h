@@ -50,6 +50,9 @@ public:
 	// Meta functions
 	SignedMeta make_Meta(const std::string& relpath);
 
+	/* Getters */
+	bool is_indexing() const {return indexing_now_ != 0;}
+
 private:
 	FSFolder& dir_;
 
@@ -57,6 +60,9 @@ private:
 	Index& index_;
 
 	Client& client_;
+
+	/* Status */
+	std::atomic_uint indexing_now_;
 
 	/* File analyzers */
 	Meta::Type get_type(const fs::path& path);

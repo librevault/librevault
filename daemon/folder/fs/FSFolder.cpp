@@ -86,6 +86,7 @@ bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
 
 FSFolder::status_t FSFolder::status() {
 	status_t s;
+	// Sizes
 	try {
 		for (auto it = fs::recursive_directory_iterator(path()); it != fs::recursive_directory_iterator(); it++) {
 			try {
@@ -98,6 +99,10 @@ FSFolder::status_t FSFolder::status() {
 	}catch (std::exception &e) {
 		return status_t();
 	}	// TODO: Logging
+
+	// Status
+	s.is_indexing = indexer->is_indexing();
+
 	return s;
 }
 

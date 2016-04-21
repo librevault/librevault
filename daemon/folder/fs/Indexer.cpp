@@ -31,6 +31,8 @@ Indexer::Indexer(FSFolder& dir, Client& client) :
 void Indexer::index(const std::string& file_path) noexcept {
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
 
+	++indexing_now_;
+
 	SignedMeta smeta;
 
 	try {
@@ -63,6 +65,8 @@ void Indexer::index(const std::string& file_path) noexcept {
 	}catch(std::runtime_error& e){
 		log_->warn() << log_tag() << "Skipping " << file_path << ". Error: " << e.what();
 	}
+
+	--indexing_now_;
 }
 
 void Indexer::async_index(const std::string& file_path) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ru">
+<TS version="2.1" language="ru">
 <context>
     <name>AddFolder</name>
     <message>
@@ -13,55 +13,55 @@
     </message>
     <message>
         <source>&amp;Create new Secret or enter existing manually</source>
-        <translation>&amp;Создать новый Ключ или ввести существующий</translation>
+        <translation type="vanished">&amp;Создать новый Ключ или ввести существующий</translation>
     </message>
     <message>
         <source>&amp;Select folder from Librevault Cloud</source>
-        <translation>&amp;Выбрать папку из Librevault Cloud</translation>
+        <translation type="vanished">&amp;Выбрать папку из Librevault Cloud</translation>
     </message>
     <message>
         <source>Add this folder to Librevault Cloud</source>
-        <translation>Добавить эту папку в Librevault Cloud</translation>
+        <translation type="vanished">Добавить эту папку в Librevault Cloud</translation>
     </message>
     <message>
         <source>Cloud folder preferences</source>
-        <translation>Параметры облачной папки</translation>
+        <translation type="vanished">Параметры облачной папки</translation>
     </message>
     <message>
         <source>Folder name:</source>
-        <translation>Название папки:</translation>
+        <translation type="vanished">Название папки:</translation>
     </message>
     <message>
         <source>Enter the new name for the remote folder</source>
-        <translation>Введите новое название для загружаемой папки</translation>
+        <translation type="vanished">Введите новое название для загружаемой папки</translation>
     </message>
     <message>
         <source>Secret type:</source>
-        <translation>Тип Ключа:</translation>
+        <translation type="vanished">Тип Ключа:</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will have full access to your folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы получите полный доступ к папке из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы получите полный доступ к папке из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&amp;Read Only</source>
-        <translation>Только &amp;чтение</translation>
+        <translation type="vanished">Только &amp;чтение</translation>
     </message>
     <message>
         <source>&amp;Download Only</source>
-        <translation>Только з&amp;агрузка</translation>
+        <translation type="vanished">Только з&amp;агрузка</translation>
     </message>
     <message>
         <source>Read &amp;Write</source>
-        <translation>Чтение и &amp;запись</translation>
+        <translation type="vanished">Чтение и &amp;запись</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will not be able to modify files in this folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы не сможете изменять содержимое папки из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Вы не сможете изменять содержимое папки из веб-приложения&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;The private key will never leave this device. You will have to enter the Secret on your other devices.&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:8pt; font-weight:600;&quot;&gt;Note:&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; If you lose your Secret, you will lose access to your folder without an ability ro restore it&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Закрытый ключ не будет передан на сервер (даже в зашифрованном виде). Вам придётся ввести Ключ на всех остальных устройствах чтобы расшифровать данные&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:8pt; font-weight:600;&quot;&gt;Важно:&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; Если вы потеряете Ключ, то расшифровать папку будет невозможно.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Закрытый ключ не будет передан на сервер (даже в зашифрованном виде). Вам придётся ввести Ключ на всех остальных устройствах чтобы расшифровать данные&lt;br/&gt;&lt;/span&gt;&lt;span style=&quot; font-size:8pt; font-weight:600;&quot;&gt;Важно:&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt; Если вы потеряете Ключ, то расшифровать папку будет невозможно.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Secret:</source>
@@ -96,39 +96,39 @@
     <name>AddFolderDlg</name>
     <message>
         <source>Add Folder</source>
-        <translation>Добавить папку</translation>
+        <translation type="vanished">Добавить папку</translation>
     </message>
     <message>
         <source>Secret</source>
-        <translation>Ключ</translation>
+        <translation type="vanished">Ключ</translation>
     </message>
     <message>
         <source>&amp;Create new Secret or enter existing manually</source>
-        <translation>&amp;Создать новый Ключ или ввести существующий</translation>
+        <translation type="vanished">&amp;Создать новый Ключ или ввести существующий</translation>
     </message>
     <message>
         <source>&amp;Select folder from Librevault Cloud</source>
-        <translation>&amp;Выбрать папку из Librevault Cloud</translation>
+        <translation type="vanished">&amp;Выбрать папку из Librevault Cloud</translation>
     </message>
     <message>
         <source>Add this folder to Librevault Cloud</source>
-        <translation>Добавить эту папку в Librevault Cloud</translation>
+        <translation type="vanished">Добавить эту папку в Librevault Cloud</translation>
     </message>
     <message>
         <source>Cloud folder preferences</source>
-        <translation>Параметры облачной папки</translation>
+        <translation type="vanished">Параметры облачной папки</translation>
     </message>
     <message>
         <source>Folder name:</source>
-        <translation>Название папки:</translation>
+        <translation type="vanished">Название папки:</translation>
     </message>
     <message>
         <source>Enter the new name for the remote folder</source>
-        <translation>Введите новое название для загружаемой папки</translation>
+        <translation type="vanished">Введите новое название для загружаемой папки</translation>
     </message>
     <message>
         <source>Secret type:</source>
-        <translation>Тип Ключа:</translation>
+        <translation type="vanished">Тип Ключа:</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will have full access to your folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -136,15 +136,15 @@
     </message>
     <message>
         <source>&amp;Read Only</source>
-        <translation>Только &amp;чтение</translation>
+        <translation type="vanished">Только &amp;чтение</translation>
     </message>
     <message>
         <source>&amp;Download Only</source>
-        <translation>Только з&amp;агрузка</translation>
+        <translation type="vanished">Только з&amp;агрузка</translation>
     </message>
     <message>
         <source>Read &amp;Write</source>
-        <translation>Чтение и &amp;запись</translation>
+        <translation type="vanished">Чтение и &amp;запись</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;You will not be able to modify files in this folder from the web application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -156,27 +156,27 @@
     </message>
     <message>
         <source>Secret:</source>
-        <translation>Ключ:</translation>
+        <translation type="vanished">Ключ:</translation>
     </message>
     <message>
         <source>Enter the Secret here or press &quot;Create new&quot; to generate a new one</source>
-        <translation>Введите Ключ в это поле, либо нажмите &quot;Сгенерировать&quot;</translation>
+        <translation type="vanished">Введите Ключ в это поле, либо нажмите &quot;Сгенерировать&quot;</translation>
     </message>
     <message>
         <source>Create new</source>
-        <translation>Сгенерировать</translation>
+        <translation type="vanished">Сгенерировать</translation>
     </message>
     <message>
         <source>Sync folder</source>
-        <translation>Папка синхронизации</translation>
+        <translation type="vanished">Папка синхронизации</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation>Местонахождение:</translation>
+        <translation type="vanished">Местонахождение:</translation>
     </message>
     <message>
         <source>Browse...</source>
-        <translation>Выбрать папку...</translation>
+        <translation type="vanished">Выбрать папку...</translation>
     </message>
 </context>
 <context>
@@ -184,7 +184,7 @@
     <message numerus="yes">
         <source>%n bytes</source>
         <translatorcomment>Счётная форма числа, да</translatorcomment>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n байт</numerusform>
             <numerusform>%n байта</numerusform>
             <numerusform>%n байт</numerusform>
@@ -192,19 +192,19 @@
     </message>
     <message>
         <source>%1 KB</source>
-        <translation>%1 Кб</translation>
+        <translation type="vanished">%1 Кб</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation>%1 Мб</translation>
+        <translation type="vanished">%1 Мб</translation>
     </message>
     <message>
         <source>%1 GB</source>
-        <translation>%1 Гб</translation>
+        <translation type="vanished">%1 Гб</translation>
     </message>
     <message>
         <source>%1 TB</source>
-        <translation>%1 Тб</translation>
+        <translation type="vanished">%1 Тб</translation>
     </message>
 </context>
 <context>
@@ -265,7 +265,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Secret</source>
-        <translation>Секрет</translation>
+        <translation type="vanished">Секрет</translation>
     </message>
 </context>
 <context>
@@ -321,10 +321,60 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
 </context>
 <context>
+    <name>Human Bandwidth</name>
+    <message>
+        <source>%1 KB/s</source>
+        <translation>%1 КБ/с</translation>
+    </message>
+    <message>
+        <source>%1 MB/s</source>
+        <translation>%1 МБ/с</translation>
+    </message>
+    <message>
+        <source>%1 GB/s</source>
+        <translation>%1 ГБ/с</translation>
+    </message>
+    <message>
+        <source>%1 TB/s</source>
+        <translation>%1 ТБ/с</translation>
+    </message>
+    <message>
+        <source>%1 B/s</source>
+        <translation>%1 Б/с</translation>
+    </message>
+</context>
+<context>
+    <name>Human Size</name>
+    <message numerus="yes">
+        <source>%n bytes</source>
+        <translation>
+            <numerusform>%n байт</numerusform>
+            <numerusform>%n байта</numerusform>
+            <numerusform>%n байт</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation>%1 КБ</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation>%1 МБ</translation>
+    </message>
+    <message>
+        <source>%1 GB</source>
+        <translation>%1 ГБ</translation>
+    </message>
+    <message>
+        <source>%1 TB</source>
+        <translation>%1 ТБ</translation>
+    </message>
+</context>
+<context>
     <name>Login</name>
     <message>
         <source>Login</source>
-        <translation>Вход</translation>
+        <translation type="vanished">Вход</translation>
     </message>
 </context>
 <context>
@@ -367,11 +417,11 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Add secret</source>
-        <translation>Новый ключ</translation>
+        <translation type="vanished">Новый ключ</translation>
     </message>
     <message>
         <source>Add folder by secret</source>
-        <translation>Добавить папку по существующему ключу</translation>
+        <translation type="vanished">Добавить папку по существующему ключу</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -400,6 +450,22 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <source>Client</source>
         <translation>Клиент</translation>
     </message>
+    <message>
+        <source>Down speed</source>
+        <translation type="unfinished">Скачивание</translation>
+    </message>
+    <message>
+        <source>Up speed</source>
+        <translation type="unfinished">Отдача</translation>
+    </message>
+    <message>
+        <source>Downloaded</source>
+        <translation>Скачано</translation>
+    </message>
+    <message>
+        <source>Uploaded</source>
+        <translation>Отдано</translation>
+    </message>
 </context>
 <context>
     <name>Settings</name>
@@ -417,7 +483,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Language</source>
-        <translation>Язык</translation>
+        <translation type="vanished">Язык</translation>
     </message>
     <message>
         <source>Create account</source>
@@ -487,7 +553,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Advanced</source>
-        <translation>Дополнительно</translation>
+        <translation type="vanished">Дополнительно</translation>
     </message>
     <message>
         <source>%1 (%2)</source>
@@ -498,7 +564,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <name>TrayIcon</name>
     <message>
         <source>Show Librevault window</source>
-        <translation>Открыть окно Librevault</translation>
+        <translation type="vanished">Открыть окно Librevault</translation>
     </message>
     <message>
         <source>Open Librevault website</source>
@@ -506,11 +572,11 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Settings...</source>
-        <translation>Настройки...</translation>
+        <translation type="vanished">Настройки...</translation>
     </message>
     <message>
         <source>Exit Librevault</source>
-        <translation>Закрыть Librevault</translation>
+        <translation type="vanished">Закрыть Librevault</translation>
     </message>
 </context>
 </TS>

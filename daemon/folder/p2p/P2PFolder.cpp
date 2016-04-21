@@ -49,6 +49,7 @@ blob P2PFolder::remote_token() {
 }
 
 void P2PFolder::send_message(const blob& message) {
+	counter_.add_up(message.size());
 	ws_service_.send_message(conn_.connection_handle, message);
 }
 
@@ -160,12 +161,14 @@ void P2PFolder::request_block(const blob& ct_hash, uint32_t offset, uint32_t len
 		<< " offset=" << offset
 		<< " length=" << length;
 }
-void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) {
+void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& block) {
 	V1Parser::BlockReply message;
 	message.ct_hash = ct_hash;
 	message.offset = offset;
-	message.content = chunk;
+	message.content = block;
 	send_message(parser_.gen_BlockReply(message));
+
+	counter_.add_up_blocks(block.size());
 
 	log_->debug() << log_tag() << "==> BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
@@ -185,6 +188,8 @@ void P2PFolder::cancel_block(const blob& ct_hash, uint32_t offset, uint32_t leng
 
 void P2PFolder::handle_message(const blob& message_raw) {
 	V1Parser::message_type message_type = parser_.parse_MessageType(message_raw);
+
+	counter_.add_down_blocks(message_raw.size());
 
 	if(ready()) {
 		switch(message_type) {
@@ -332,6 +337,8 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 	log_->debug() << log_tag() << "<== BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " offset=" << message_struct.offset;
+
+	counter_.add_down_blocks(message_struct.content.size());
 
 	folder_group()->post_block(shared_from_this(), message_struct.ct_hash, message_struct.content, message_struct.offset);
 }

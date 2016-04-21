@@ -139,6 +139,18 @@ Json::Value ControlServer::make_state_json() const {
 			peer_json["client_name"] = p2p_peer->client_name();
 			peer_json["user_agent"] = p2p_peer->user_agent();
 
+			// Bandwidth
+			auto bandwidth_stats = p2p_peer->heartbeat_stats();
+			peer_json["up_bandwidth"] = bandwidth_stats.up_bandwidth_;
+			peer_json["up_bandwidth_blocks"] = bandwidth_stats.up_bandwidth_;
+			peer_json["down_bandwidth"] = bandwidth_stats.down_bandwidth_;
+			peer_json["down_bandwidth_blocks"] = bandwidth_stats.down_bandwidth_;
+			// Transferred
+			peer_json["up_bytes"] = (Json::Value::UInt64)bandwidth_stats.up_bytes_;
+			peer_json["up_bytes_blocks"] = (Json::Value::UInt64)bandwidth_stats.up_bytes_blocks_;
+			peer_json["down_bytes"] = (Json::Value::UInt64)bandwidth_stats.down_bytes_;
+			peer_json["down_bytes_blocks"] = (Json::Value::UInt64)bandwidth_stats.down_bytes_blocks_;
+
 			folder_json["peers"].append(peer_json); //// /peer_json
 		}
 

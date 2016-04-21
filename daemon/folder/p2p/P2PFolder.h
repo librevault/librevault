@@ -17,6 +17,7 @@
 #include "folder/RemoteFolder.h"
 #include "P2PProvider.h"
 #include "WSService.h"
+#include "BandwidthCounter.h"
 #include <librevault/protocol/V1Parser.h>
 #include <websocketpp/common/connection_hdl.hpp>
 
@@ -54,6 +55,7 @@ public:
 	const std::string& client_name() const {return client_name_;}
 	const std::string& user_agent() const {return user_agent_;}
 	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
+	BandwidthCounter::Stats heartbeat_stats() {return counter_.heartbeat();}
 
 	blob local_token();
 	blob remote_token();
@@ -79,7 +81,7 @@ public:
 	void cancel_meta(const Meta::PathRevision& revision);
 
 	void request_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-	void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk);
+	void post_block(const blob& ct_hash, uint32_t offset, const blob& block);
 	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
 protected:
@@ -92,9 +94,12 @@ private:
 	P2PProvider& provider_;
 	WSService& ws_service_;
 
-	V1Parser parser_;
+	V1Parser parser_;   // Protocol parser
 	bool is_handshaken_ = false;
 
+	BandwidthCounter counter_;
+
+	// These needed primarily for UI
 	std::string client_name_;
 	std::string user_agent_;
 

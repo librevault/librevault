@@ -98,8 +98,13 @@
 </context>
 <context>
     <name>FolderModel</name>
+    <message>
+        <location filename="../model/FolderModel.cpp" line="44"/>
+        <source>Indexing</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="43"/>
+        <location filename="../model/FolderModel.cpp" line="47"/>
         <source>%n peer(s)</source>
         <translation>
             <numerusform>%n peer</numerusform>
@@ -107,7 +112,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="44"/>
+        <location filename="../model/FolderModel.cpp" line="48"/>
         <source>%n file(s)</source>
         <translation>
             <numerusform>%n file</numerusform>
@@ -115,22 +120,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="65"/>
+        <location filename="../model/FolderModel.cpp" line="69"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="66"/>
+        <location filename="../model/FolderModel.cpp" line="70"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="67"/>
+        <location filename="../model/FolderModel.cpp" line="71"/>
         <source>Peers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="68"/>
+        <location filename="../model/FolderModel.cpp" line="72"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>

@@ -267,6 +267,10 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <source>Secret</source>
         <translation type="vanished">Секрет</translation>
     </message>
+    <message>
+        <source>Indexing</source>
+        <translation type="unfinished">Индексирование</translation>
+    </message>
 </context>
 <context>
     <name>FolderProperties</name>

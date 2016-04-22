@@ -39,7 +39,11 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 	if(role == Qt::DisplayRole) {
 		switch(column) {
 			case Column::NAME: return folder_object["path"].toString();
-			case Column::STATUS: return "Ready";    // TODO: remove placeholder
+			case Column::STATUS: return [&, this](){
+					if(folder_object["is_indexing"].toBool())
+						return tr("Indexing");
+					return QString();
+				}();
 			case Column::PEERS: return tr("%n peer(s)", "", folder_object["peers"].toArray().size());
 			case Column::SIZE: return tr("%n file(s)", "", folder_object["file_count"].toInt()) + " " + human_size(folder_object["byte_size"].toDouble());
 

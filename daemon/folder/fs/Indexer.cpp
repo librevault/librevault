@@ -26,7 +26,7 @@ namespace librevault {
 
 Indexer::Indexer(FSFolder& dir, Client& client) :
 	Loggable(dir, "Indexer"), dir_(dir),
-	secret_(dir_.secret()), index_(*dir_.index), client_(client) {}
+	secret_(dir_.secret()), index_(*dir_.index), client_(client), indexing_now_(0) {}
 
 void Indexer::index(const std::string& file_path) noexcept {
 	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
@@ -67,6 +67,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 	}
 
 	--indexing_now_;
+	log_->trace() << log_tag() << "indexing_now_ " << indexing_now_.load();
 }
 
 void Indexer::async_index(const std::string& file_path) {

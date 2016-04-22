@@ -18,6 +18,7 @@
 #include <QCloseEvent>
 #include <QDebug>
 #include "icons/GUIIconProvider.h"
+#include "appver.h"
 
 Settings::Settings(QWidget* parent) :
 		QDialog(parent),
@@ -41,6 +42,7 @@ void Settings::retranslateUi() {
 		pager->set_text(page, page_name((Page)page));
 	}
 	ui->retranslateUi(this);
+	ui->version_label->setText(ui->version_label->text().arg(LV_APPVER));
 }
 
 void Settings::handleControlJson(QJsonObject control_json) {
@@ -60,6 +62,9 @@ void Settings::reset_ui_states() {
 	control_json_static = control_json_dynamic; // "Fixing" a version of control_json
 
 	QJsonObject client = control_json_static["globals"].toObject();
+
+	// client_name
+	ui->line_device_name->setText(client["client_name"].toString());
 
 	// p2p_listen
 	p2p_listen.setAuthority(client["p2p_listen"].toString());
@@ -86,6 +91,9 @@ void Settings::process_ui_states() {
 
 	/* Daemon-related settings */
 	QJsonObject client;
+
+	// client_name
+	client["client_name"] = ui->line_device_name->text();
 
 	// p2p_listen
 	p2p_listen.setPort(ui->port_box->isChecked() ? ui->port_value->value() : 0);

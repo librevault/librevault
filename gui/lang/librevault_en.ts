@@ -370,97 +370,112 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="40"/>
-        <source>System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="46"/>
+        <location filename="../gui/Settings.ui" line="53"/>
         <source>Start on computer startup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="194"/>
+        <location filename="../gui/Settings.ui" line="82"/>
+        <source>Version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings.ui" line="89"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Icons by &lt;a href=&quot;https://icons8.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Icons8&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings.ui" line="227"/>
         <source>Create account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="207"/>
+        <location filename="../gui/Settings.ui" line="240"/>
         <source>Sign in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="256"/>
+        <location filename="../gui/Settings.ui" line="289"/>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="279"/>
+        <location filename="../gui/Settings.ui" line="312"/>
         <source>Account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="285"/>
+        <location filename="../gui/Settings.ui" line="318"/>
         <source>%1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="305"/>
+        <location filename="../gui/Settings.ui" line="338"/>
         <source>Sign out</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="315"/>
+        <location filename="../gui/Settings.ui" line="348"/>
         <source>Space usage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="321"/>
+        <location filename="../gui/Settings.ui" line="354"/>
         <source>%1 GB of %2 GB used</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="328"/>
+        <location filename="../gui/Settings.ui" line="361"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="73"/>
+        <location filename="../gui/Settings.ui" line="106"/>
         <source>Port settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="92"/>
+        <location filename="../gui/Settings.ui" line="40"/>
+        <source>S&amp;ystem</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings.ui" line="46"/>
+        <source>Device name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings.ui" line="125"/>
         <source>Listening port:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="112"/>
+        <location filename="../gui/Settings.ui" line="145"/>
         <source>Use NAT-PMP port mapping</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="122"/>
+        <location filename="../gui/Settings.ui" line="155"/>
         <source>Peer discovery settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="128"/>
+        <location filename="../gui/Settings.ui" line="161"/>
         <source>Enable global discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="135"/>
+        <location filename="../gui/Settings.ui" line="168"/>
         <source>Enable local discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="129"/>
+        <location filename="../gui/Settings.cpp" line="137"/>
         <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="133"/>
+        <location filename="../gui/Settings.cpp" line="141"/>
         <source>Network</source>
         <translation type="unfinished"></translation>
     </message>

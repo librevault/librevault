@@ -479,7 +479,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>System</source>
-        <translation>Система</translation>
+        <translation type="vanished">Система</translation>
     </message>
     <message>
         <source>Start on computer startup</source>
@@ -561,6 +561,22 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>%1 (%2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;ystem</source>
+        <translation type="unfinished">Систе&amp;ма</translation>
+    </message>
+    <message>
+        <source>Device name:</source>
+        <translation>Имя устройства:</translation>
+    </message>
+    <message>
+        <source>Version: %1</source>
+        <translation type="unfinished">Версия: %1</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Icons by &lt;a href=&quot;https://icons8.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Icons8&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

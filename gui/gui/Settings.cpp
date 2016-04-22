@@ -52,6 +52,7 @@ void Settings::handleControlJson(QJsonObject control_json) {
 void Settings::init_ui() {
 	ui->setupUi(this);
 	init_selector();
+	ui->box_startup->setVisible(startup_interface->isSupported());
 }
 
 void Settings::reset_ui_states() {

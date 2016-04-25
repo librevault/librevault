@@ -51,17 +51,20 @@ private:
 
 	std::multiset<std::string> prepared_assemble_;
 
-	boost::asio::steady_timer reindex_timer_;
-
-	void bump_timer();
+	// Full rescan operations
+	boost::asio::steady_timer rescan_timer_;
+	void rescan_operation();
 
 	// Monitor operations
 	void monitor_operation();
 	void monitor_handle(const boost::asio::dir_monitor_event& ev);
+
+	// Index queue
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
+	void bump_timer();
 	boost::asio::steady_timer index_timer_;
-	void monitor_index(const boost::system::error_code& ec);
+	void perform_index(const boost::system::error_code& ec);
 };
 
 } /* namespace librevault */

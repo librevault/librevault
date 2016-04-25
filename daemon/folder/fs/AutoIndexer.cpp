@@ -26,8 +26,8 @@ AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		dir_(dir), client_(client),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
-		reindex_timer_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
-	enqueue_files(full_reindex_list());
+		rescan_timer_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
+	rescan_operation();
 
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
 
@@ -101,12 +101,29 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 	return file_list;
 }
 
+void AutoIndexer::rescan_operation() {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	log_->debug() << log_tag() << "Performing full directory rescan";
+
+	if(!dir_.indexer->is_indexing())
+		enqueue_files(full_reindex_list());
+
+	rescan_timer_.expires_from_now(dir_.params().full_rescan_interval);
+	rescan_timer_.async_wait([this](boost::system::error_code ec){
+		if(ec == boost::asio::error::operation_aborted) {
+			log_->debug() << log_tag() << "rescan_operation returned";
+			return;
+		}
+		rescan_operation();
+	});
+}
+
 void AutoIndexer::bump_timer() {
 	if(index_timer_.expires_from_now() <= std::chrono::seconds(0)){
 		auto exp_timeout = std::chrono::milliseconds(dir_.params().index_event_timeout);
 
 		index_timer_.expires_from_now(exp_timeout);
-		index_timer_.async_wait(std::bind(&AutoIndexer::monitor_index, this, std::placeholders::_1));
+		index_timer_.async_wait(std::bind(&AutoIndexer::perform_index, this, std::placeholders::_1));
 	}
 }
 
@@ -151,7 +168,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	}
 }
 
-void AutoIndexer::monitor_index(const boost::system::error_code& ec) {
+void AutoIndexer::perform_index(const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	std::set<std::string> index_queue;

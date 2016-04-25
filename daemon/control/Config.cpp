@@ -100,6 +100,7 @@ void Config::make_defaults() {
 	folders_defaults_["preserve_windows_attrib"] = false;
 	folders_defaults_["preserve_symlinks"] = false;
 	folders_defaults_["chunk_strong_hash_type"] = 0;
+	folders_defaults_["full_rescan_interval"] = 60;
 }
 
 void Config::make_merged_globals() {

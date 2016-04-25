@@ -32,7 +32,8 @@ struct FolderParams {
 		preserve_unix_attrib(json_params["preserve_unix_attrib"].asBool()),
 		preserve_windows_attrib(json_params["preserve_windows_attrib"].asBool()),
 		preserve_symlinks(json_params["preserve_symlinks"].asBool()),
-		chunk_strong_hash_type(Meta::StrongHashType(json_params["chunk_strong_hash_type"].asInt())) {
+		chunk_strong_hash_type(Meta::StrongHashType(json_params["chunk_strong_hash_type"].asInt())),
+		full_rescan_interval(json_params["full_rescan_interval"].asUInt64()) {
 
 		if(system_path.empty()) system_path = path / ".librevault";
 
@@ -51,6 +52,7 @@ struct FolderParams {
 	bool preserve_windows_attrib = false;
 	bool preserve_symlinks = true;
 	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
+	std::chrono::seconds full_rescan_interval = std::chrono::seconds(60);
 	std::vector<std::string> ignore_paths;
 	std::vector<url> nodes;
 };

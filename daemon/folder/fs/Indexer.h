@@ -63,6 +63,8 @@ private:
 
 	/* Status */
 	std::atomic_uint indexing_now_;
+	std::set<std::string> index_queue_;
+	std::mutex index_queue_mtx_;
 
 	/* File analyzers */
 	Meta::Type get_type(const fs::path& path);

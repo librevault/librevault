@@ -72,7 +72,20 @@ void Indexer::index(const std::string& file_path) noexcept {
 
 void Indexer::async_index(const std::string& file_path) {
 	client_.bulk_ios().post(std::bind([this](const std::string& file_path){
-		index(file_path);
+		bool perform_index = true;
+		index_queue_mtx_.lock();
+		if(index_queue_.find(file_path) != index_queue_.end())
+			perform_index = false;
+		else
+			index_queue_.insert(file_path);
+		index_queue_mtx_.unlock();
+
+		if(perform_index)
+			index(file_path);
+
+		index_queue_mtx_.lock();
+		index_queue_.erase(file_path);
+		index_queue_mtx_.unlock();
 	}, file_path));
 }
 

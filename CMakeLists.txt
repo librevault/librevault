@@ -134,13 +134,15 @@ else()
 endif()
 
 ## SQLite
-find_package(Sqlite3 QUIET)
+find_package(Sqlite3 3.9 QUIET)
 
 if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
+	message(STATUS "Using system SQLite ${SQLITE3_VERSION}")
 	add_library(sqlite3 INTERFACE)
 	target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
-	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARIES})
+	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
 else()
+	message(STATUS "Using bundled SQLite")
 	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
 	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
 endif()

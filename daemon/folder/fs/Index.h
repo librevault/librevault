@@ -44,6 +44,7 @@ public:
 	SignedMeta get_meta(const Meta::PathRevision& path_revision);
 	SignedMeta get_meta(const blob& path_id);
 	std::list<SignedMeta> get_meta();
+	std::list<SignedMeta> get_existing_meta();
 	void put_meta(const SignedMeta& signed_meta, bool fully_assembled);
 
 	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;

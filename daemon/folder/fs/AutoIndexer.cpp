@@ -94,11 +94,8 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 	std::set<std::string> file_list = short_reindex_list();
 
 	// Files present in index (files added from here will be marked as DELETED)
-	for(auto smeta : dir_.index->get_meta()) {
-		auto& meta = smeta.meta();
-		if(meta.meta_type() != Meta::DELETED){
-			file_list.insert(meta.path(dir_.secret()));
-		}
+	for(auto& smeta : dir_.index->get_existing_meta()) {
+		file_list.insert(smeta.meta().path(dir_.secret()));
 	}
 
 	return file_list;

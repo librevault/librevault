@@ -30,7 +30,8 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 
 	/* TABLE meta */
 	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL, type INTEGER NOT NULL);");
-	db_->exec("CREATE INDEX IF NOT EXISTS type_idx ON meta (type);");   // For making "COUNT(*) ... WHERE type=x" way faster.
+	db_->exec("CREATE INDEX IF NOT EXISTS meta_type_idx ON meta (type);");   // For making "COUNT(*) ... WHERE type=x" way faster
+	db_->exec("CREATE INDEX IF NOT EXISTS meta_not_deleted_idx ON meta(type<>255);");   // For faster Index::get_existing_meta
 
 	/* TABLE chunk */
 	db_->exec("CREATE TABLE IF NOT EXISTS chunk (ct_hash BLOB NOT NULL PRIMARY KEY, size INTEGER NOT NULL, iv BLOB NOT NULL);");
@@ -133,6 +134,10 @@ std::list<SignedMeta> Index::get_meta(){
 	return get_meta("SELECT meta, signature FROM meta");
 }
 
+std::list<SignedMeta> Index::get_existing_meta() {
+	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1;");
+}
+
 bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	try {
 		return get_meta(path_revision.path_id_).meta().revision() < path_revision.revision_;
@@ -159,9 +164,12 @@ std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
 }
 
 void Index::wipe() {
+	SQLiteSavepoint savepoint(*db_, "Index::wipe");
 	db_->exec("DELETE FROM meta");
 	db_->exec("DELETE FROM chunk");
 	db_->exec("DELETE FROM openfs");
+	savepoint.commit();
+	db_->exec("VACUUM");
 }
 
 Index::status_t Index::get_status() {

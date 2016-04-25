@@ -20,6 +20,7 @@ message Handshake {
 	bytes auth_token = 1;
 	string device_name = 2;
 	string user_agent = 3;
+	repeated string extensions = 4;
 }
 
 message HaveMeta {

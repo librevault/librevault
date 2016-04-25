@@ -66,6 +66,7 @@ public:
 		blob auth_token;
 		std::string device_name;
 		std::string user_agent;
+		std::vector<std::string> extensions;
 	};
 	struct HaveMeta {
 		Meta::PathRevision revision;

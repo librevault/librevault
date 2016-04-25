@@ -24,6 +24,9 @@ blob V1Parser::gen_Handshake(const Handshake& message_struct) {
 	message_protobuf.set_device_name(message_struct.device_name.data(), message_struct.device_name.size());
 	message_protobuf.set_user_agent(message_struct.user_agent.data(), message_struct.user_agent.size());
 
+	for(auto& extension : message_struct.extensions)
+		message_protobuf.add_extensions(extension);
+
 	return prepare_proto_message(message_protobuf, HANDSHAKE);
 }
 V1Parser::Handshake V1Parser::parse_Handshake(const blob& message_raw) {
@@ -34,6 +37,10 @@ V1Parser::Handshake V1Parser::parse_Handshake(const blob& message_raw) {
 	message_struct.auth_token.assign(message_protobuf.auth_token().begin(), message_protobuf.auth_token().end());
 	message_struct.device_name.assign(message_protobuf.device_name().begin(), message_protobuf.device_name().end());
 	message_struct.user_agent.assign(message_protobuf.user_agent().begin(), message_protobuf.user_agent().end());
+
+	message_struct.extensions.reserve(message_protobuf.extensions().size());
+	for(auto& extension : message_protobuf.extensions())
+		message_struct.extensions.push_back(extension);
 
 	return message_struct;
 }

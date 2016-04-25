@@ -29,7 +29,7 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_->exec("PRAGMA foreign_keys = ON;");
 
 	/* TABLE meta */
-	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL, type INTEGER NOT NULL);");
+	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL, type INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 	db_->exec("CREATE INDEX IF NOT EXISTS meta_type_idx ON meta (type);");   // For making "COUNT(*) ... WHERE type=x" way faster
 	db_->exec("CREATE INDEX IF NOT EXISTS meta_not_deleted_idx ON meta(type<>255);");   // For faster Index::get_existing_meta
 
@@ -79,11 +79,12 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	std::ostringstream transaction_name; transaction_name << "put_Meta_" << std::this_thread::get_id();
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.str()); // Begin transaction
 
-	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type) VALUES (:path_id, :meta, :signature, :type);", {
+	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
 			{":path_id", signed_meta.meta().path_id()},
 			{":meta", signed_meta.raw_meta()},
 			{":signature", signed_meta.signature()},
-			{":type", (uint64_t)signed_meta.meta().meta_type()}
+			{":type", (uint64_t)signed_meta.meta().meta_type()},
+			{":assembled", (uint64_t)fully_assembled}
 	});
 
 	uint64_t offset = 0;
@@ -135,7 +136,11 @@ std::list<SignedMeta> Index::get_meta(){
 }
 
 std::list<SignedMeta> Index::get_existing_meta() {
-	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1;");
+	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
+}
+
+std::list<SignedMeta> Index::get_incomplete_meta() {
+	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
 }
 
 bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {

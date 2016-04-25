@@ -54,6 +54,8 @@ void FileAssembler::assemble(const Meta& meta){
 		}
 		if(meta.meta_type() != Meta::DELETED)
 			apply_attrib(meta);
+
+		index_.db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 	}catch(std::runtime_error& e) {
 		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what(); // FIXME: Plaintext path in logs may violate user's privacy.
 	}

@@ -87,6 +87,12 @@ std::set<std::string> AutoIndexer::short_reindex_list() {
 		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
 	}
 
+	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
+	// They can still be indexed by monitor, though.
+	for(auto& smeta : dir_.index->get_incomplete_meta()) {
+		file_list.erase(smeta.meta().path(dir_.secret()));
+	}
+
 	return file_list;
 }
 

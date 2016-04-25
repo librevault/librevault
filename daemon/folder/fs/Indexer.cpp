@@ -49,9 +49,9 @@ void Indexer::index(const std::string& file_path) noexcept {
 			log_->warn() << log_tag() << "Meta in DB is inconsistent, trying to reindex: " << e.what();
 		}
 
-		std::chrono::steady_clock::time_point before_index = std::chrono::steady_clock::now();  // Starting timer
+		std::chrono::high_resolution_clock::time_point before_index = std::chrono::high_resolution_clock::now();  // Starting timer
 		smeta = make_Meta(file_path);   // Actual indexing
-		std::chrono::steady_clock::time_point after_index = std::chrono::steady_clock::now();   // Stopping timer
+		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
 		dir_.put_meta(smeta, true);

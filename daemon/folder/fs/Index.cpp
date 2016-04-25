@@ -75,7 +75,8 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 /* Meta manipulators */
 
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
-	SQLiteSavepoint raii_transaction(*db_, "put_Meta"); // Begin transaction
+	std::ostringstream transaction_name; transaction_name << "put_Meta_" << std::this_thread::get_id();
+	SQLiteSavepoint raii_transaction(*db_, transaction_name.str()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type) VALUES (:path_id, :meta, :signature, :type);", {
 			{":path_id", signed_meta.meta().path_id()},

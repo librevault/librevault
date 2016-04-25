@@ -24,7 +24,7 @@
 namespace librevault {
 
 FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage) :
-	Loggable(dir, "OpenStorage"), dir_(dir), chunk_storage_(chunk_storage),
+	Loggable(dir, "FileAssembler"), dir_(dir), chunk_storage_(chunk_storage),
 	secret_(dir_.secret()), index_(*dir_.index) {}
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {

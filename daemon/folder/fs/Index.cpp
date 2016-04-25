@@ -28,10 +28,16 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_ = std::make_unique<SQLiteDB>(db_filepath);
 	db_->exec("PRAGMA foreign_keys = ON;");
 
-	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS chunk (ct_hash BLOB NOT NULL PRIMARY KEY, size INTEGER NOT NULL, iv BLOB NOT NULL);");
-	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
+	/* TABLE meta */
+	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL, type INTEGER NOT NULL);");
+	db_->exec("CREATE INDEX IF NOT EXISTS type_idx ON meta (type);");   // For making "COUNT(*) ... WHERE type=x" way faster.
 
+	/* TABLE chunk */
+	db_->exec("CREATE TABLE IF NOT EXISTS chunk (ct_hash BLOB NOT NULL PRIMARY KEY, size INTEGER NOT NULL, iv BLOB NOT NULL);");
+
+	/* TABLE openfs */
+	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
+	db_->exec("CREATE INDEX assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
 	db_->exec("CREATE TRIGGER IF NOT EXISTS block_deleter DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");
 
 	/* Create a special hash-file */
@@ -70,10 +76,11 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, "put_Meta"); // Begin transaction
 
-	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature) VALUES (:path_id, :meta, :signature);", {
+	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type) VALUES (:path_id, :meta, :signature, :type);", {
 			{":path_id", signed_meta.meta().path_id()},
 			{":meta", signed_meta.raw_meta()},
-			{":signature", signed_meta.signature()}
+			{":signature", signed_meta.signature()},
+			{":type", (uint64_t)signed_meta.meta().meta_type()}
 	});
 
 	uint64_t offset = 0;
@@ -136,8 +143,8 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 
 uint32_t Index::get_chunk_size(const blob& ct_hash) {
 	auto sql_result = db_->exec("SELECT size FROM chunk WHERE ct_hash=:ct_hash", {
-		                                   {":ct_hash", ct_hash}
-	                                   });
+			{":ct_hash", ct_hash}
+	});
 
 	if(sql_result.have_rows())
 		return (uint32_t)sql_result.begin()->at(0).as_uint();
@@ -153,6 +160,28 @@ void Index::wipe() {
 	db_->exec("DELETE FROM meta");
 	db_->exec("DELETE FROM chunk");
 	db_->exec("DELETE FROM openfs");
+}
+
+Index::status_t Index::get_status() {
+	auto sql_result = db_->exec("SELECT COUNT(*) FROM meta WHERE type=0 "
+		"UNION ALL "
+		"SELECT COUNT(*) FROM meta WHERE type=1 "
+		"UNION ALL "
+		"SELECT COUNT(*) FROM meta WHERE type=2 "
+		"UNION ALL "
+		"SELECT COUNT(*) FROM meta WHERE type=255");
+
+	auto it = sql_result.begin();
+
+	status_t s;
+	s.file_entries = it[0].as_uint();
+	++it;
+	s.directory_entries = it[0].as_uint();
+	++it;
+	s.symlink_entries = it[0].as_uint();
+	++it;
+	s.deleted_entries = it[0].as_uint();
+	return s;
 }
 
 } /* namespace librevault */

@@ -26,6 +26,13 @@ class FSFolder;
 
 class Index : public Loggable {
 public:
+	struct status_t {
+		uint64_t file_entries = 0;
+		uint64_t directory_entries = 0;
+		uint64_t symlink_entries = 0;
+		uint64_t deleted_entries = 0;
+	};
+
 	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
@@ -47,6 +54,8 @@ public:
 	/* Properties */
 	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
 	SQLiteDB& db() {return *db_;}
+
+	status_t get_status();
 
 private:
 	FSFolder& dir_;

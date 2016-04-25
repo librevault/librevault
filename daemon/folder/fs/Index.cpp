@@ -37,7 +37,8 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 
 	/* TABLE openfs */
 	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
-	db_->exec("CREATE INDEX assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
+	db_->exec("CREATE INDEX openfs_assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
+	db_->exec("CREATE INDEX openfs_path_id_fki ON openfs (path_id);");    // For faster FileAssembler::assemble_file
 	db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");
 
 	/* Create a special hash-file */

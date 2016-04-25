@@ -52,19 +52,24 @@ endif()
 ## Calculating version
 include(GetGitRevisionDescription)
 git_describe(LV_APPVER)
+
 if(LV_APPVER)
-	message(STATUS "Building Librevault ${LV_APPVER} from Git")
+	set(LV_SOURCE "Git")
 else()
+	set(LV_SOURCE "Tar")
 	file(READ "VERSION" LV_APPVER)
-	message(STATUS "Building Librevault ${LV_APPVER} from Tar")
 endif()
 
+# Strip "v" before tag
+string(SUBSTRING "${LV_APPVER}" 1 -1 LV_APPVER)
+
+message(STATUS "Building Librevault ${LV_APPVER} from ${LV_SOURCE}")
 configure_file("appver.in.h" "appver.h")
 
-string(REGEX REPLACE "^v([0-9]+)\\.[0-9]+\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MAJOR "${LV_APPVER}")
-string(REGEX REPLACE "^v[0-9]+\\.([0-9]+)\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MINOR "${LV_APPVER}")
-string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+)-?[0-9]*-?.*" "\\1" librevault_VERSION_PATCH "${LV_APPVER}")
-string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+-?([0-9]*)-?.*" "\\1" librevault_VERSION_TWEAK "${LV_APPVER}")
+string(REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MAJOR "${LV_APPVER}")
+string(REGEX REPLACE "^[0-9]+\\.([0-9]+)\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MINOR "${LV_APPVER}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)-?[0-9]*-?.*" "\\1" librevault_VERSION_PATCH "${LV_APPVER}")
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+-?([0-9]*)-?.*" "\\1" librevault_VERSION_TWEAK "${LV_APPVER}")
 if(librevault_VERSION_TWEAK)
 	set(librevault_VERSION "${librevault_VERSION_MAJOR}.${librevault_VERSION_MINOR}.${librevault_VERSION_PATCH}.${librevault_VERSION_TWEAK}")
 else()

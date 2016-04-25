@@ -41,20 +41,19 @@ void FileAssembler::assemble(const Meta& meta){
 	log_->trace() << log_tag() << "assemble()";
 
 	try {
-		if(meta.meta_type() == Meta::DELETED)
-			assemble_deleted(meta);
-		else {
-			switch(meta.meta_type()) {
-				case Meta::SYMLINK: assemble_symlink(meta);
-					break;
-				case Meta::DIRECTORY: assemble_directory(meta);
-					break;
-				case Meta::FILE: assemble_file(meta);
-					break;
-				default: throw error(std::string("Unexpected meta type:") + std::to_string(meta.meta_type()));
-			}
-			apply_attrib(meta);
+		switch(meta.meta_type()) {
+			case Meta::FILE: assemble_file(meta);
+				break;
+			case Meta::DIRECTORY: assemble_directory(meta);
+				break;
+			case Meta::SYMLINK: assemble_symlink(meta);
+				break;
+			case Meta::DELETED: assemble_deleted(meta);
+				break;
+			default: throw error(std::string("Unexpected meta type:") + std::to_string(meta.meta_type()));
 		}
+		if(meta.meta_type() != Meta::DELETED)
+			apply_attrib(meta);
 	}catch(std::runtime_error& e) {
 		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what(); // FIXME: Plaintext path in logs may violate user's privacy.
 	}

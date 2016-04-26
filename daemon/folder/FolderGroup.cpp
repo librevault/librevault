@@ -121,12 +121,11 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta:
 }
 
 void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	if(fs_dir_->index->put_allowed(smeta.meta().path_revision()))
+	if(fs_dir_->index->put_allowed(smeta.meta().path_revision())) {
 		fs_dir_->put_meta(smeta);
-	else
+		downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
+	}else
 		log_->debug() << log_tag() << "Remote node posted to us about an expired Meta";
-
-	downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 }
 
 void FolderGroup::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {

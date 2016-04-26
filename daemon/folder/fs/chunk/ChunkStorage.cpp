@@ -14,9 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ChunkStorage.h"
-#include "../FSFolder.h"
+#include "folder/fs/FSFolder.h"
+#include "Client.h"
 
-#include "../Index.h"
+#include "folder/fs/Index.h"
 #include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
@@ -25,17 +26,17 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(FSFolder& dir) : dir_(dir) {
+ChunkStorage::ChunkStorage(FSFolder& dir, Client& client) : dir_(dir), client_(client) {
 	mem_storage = std::make_unique<MemoryCachedStorage>(dir, *this);
 	enc_storage = std::make_unique<EncStorage>(dir, *this);
 	if(dir_.params().secret.get_type() <= Secret::Type::ReadOnly) {
 		open_storage = std::make_unique<OpenStorage>(dir, *this);
-		file_assembler = std::make_unique<FileAssembler>(dir, *this);
+		file_assembler = std::make_unique<FileAssembler>(dir, *this, client_);
 	}
 
 	dir_.index->assemble_meta_signal.connect([this](const Meta& meta){
 		if(open_storage && file_assembler)
-			file_assembler->assemble(meta);
+			file_assembler->queue_assemble(meta);
 	});
 };
 
@@ -69,7 +70,7 @@ void ChunkStorage::put_chunk(const blob& ct_hash, const blob& chunk) {
 	enc_storage->put_chunk(ct_hash, chunk);
 	if(open_storage && file_assembler)
 		for(auto& smeta : dir_.index->containing_chunk(ct_hash))
-			file_assembler->assemble(smeta.meta());
+			file_assembler->queue_assemble(smeta.meta());
 
 	new_chunk_signal(ct_hash);
 }

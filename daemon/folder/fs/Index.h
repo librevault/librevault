@@ -36,7 +36,7 @@ public:
 	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	Index(FSFolder& dir);
+	Index(FSFolder& dir, Client& client);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -61,6 +61,7 @@ public:
 
 private:
 	FSFolder& dir_;
+	Client& client_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 

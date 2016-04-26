@@ -54,10 +54,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		client_.network_ios().dispatch([=](){
-			dir_.put_meta(smeta, true);
-		});
-
+		dir_.put_meta(smeta, true);
 
 		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)"
 			<< " Path=" << file_path

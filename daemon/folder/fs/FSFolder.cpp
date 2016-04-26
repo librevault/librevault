@@ -44,9 +44,9 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path;
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
-	index = std::make_unique<Index>(*this);
+	index = std::make_unique<Index>(*this, client_);
 
-	chunk_storage = std::make_unique<ChunkStorage>(*this);
+	chunk_storage = std::make_unique<ChunkStorage>(*this, client_);
 
 	if(params().secret.get_type() <= Secret::Type::ReadWrite){
 		indexer = std::make_unique<Indexer>(*this, client_);

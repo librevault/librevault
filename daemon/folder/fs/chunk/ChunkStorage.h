@@ -21,6 +21,7 @@
 
 namespace librevault {
 
+class Client;
 class FSFolder;
 
 class MemoryCachedStorage;
@@ -33,7 +34,7 @@ class ChunkStorage {
 public:
 	boost::signals2::signal<void(const blob&)> new_chunk_signal;
 
-	ChunkStorage(FSFolder& dir);
+	ChunkStorage(FSFolder& dir, Client& client);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -46,6 +47,7 @@ public:
 
 protected:
 	FSFolder& dir_;
+	Client& client_;
 
 	std::unique_ptr<MemoryCachedStorage> mem_storage;
 	std::unique_ptr<EncStorage> enc_storage;

@@ -15,6 +15,8 @@
  */
 #include "FileAssembler.h"
 
+#include "Client.h"
+
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/IgnoreList.h"
 #include "folder/fs/AutoIndexer.h"
@@ -23,8 +25,8 @@
 
 namespace librevault {
 
-FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage) :
-	Loggable(dir, "FileAssembler"), dir_(dir), chunk_storage_(chunk_storage),
+FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
+	Loggable(dir, "FileAssembler"), dir_(dir), chunk_storage_(chunk_storage), client_(client),
 	secret_(dir_.secret()), index_(*dir_.index) {}
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
@@ -35,6 +37,12 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), secret_.get_Encryption_Key(), row[1].as_blob());
 	}
 	throw AbstractFolder::no_such_chunk();
+}
+
+void FileAssembler::queue_assemble(const Meta& meta) {
+	client_.bulk_ios().dispatch([this, meta](){
+		assemble(meta);
+	});
 }
 
 void FileAssembler::assemble(const Meta& meta){

@@ -15,10 +15,11 @@
  */
 #include "Index.h"
 #include "FSFolder.h"
+#include "Client.h"
 
 namespace librevault {
 
-Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
+Index::Index(FSFolder& dir, Client& client) : Loggable(dir, "Index"), dir_(dir), client_(client) {
 	auto db_filepath = dir_.system_path() / "librevault.db";
 
 	if(fs::exists(db_filepath))
@@ -40,6 +41,7 @@ Index::Index(FSFolder& dir) : Loggable(dir, "Index"), dir_(dir) {
 	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 	db_->exec("CREATE INDEX IF NOT EXISTS openfs_assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
 	db_->exec("CREATE INDEX IF NOT EXISTS openfs_path_id_fki ON openfs (path_id);");    // For faster FileAssembler::assemble_file
+	db_->exec("CREATE IF NOT EXISTS INDEX openfs_ct_hash_fki ON openfs (ct_hash);");    // For faster Index::containing_chunk
 	db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");
 
 	/* Create a special hash-file */
@@ -112,9 +114,11 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	else
 		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();
 
-	new_meta_signal(signed_meta);
-	if(!fully_assembled)
-		assemble_meta_signal(signed_meta.meta());
+	client_.network_ios().dispatch([=](){
+		new_meta_signal(signed_meta);
+		if(!fully_assembled)
+			assemble_meta_signal(signed_meta.meta());
+	});
 }
 
 std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){

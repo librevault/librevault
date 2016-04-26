@@ -30,20 +30,24 @@ public:
 		error() : error("FileAssembler error") {}
 	};
 
-	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage);
+	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client);
 	virtual ~FileAssembler() {}
 
 	blob get_chunk_pt(const blob& ct_hash) const;
 
 	// File assembler
-	void assemble(const Meta& meta);
+	void queue_assemble(const Meta& meta);
 	//void disassemble(const std::string& file_path, bool delete_file = true);
 
 private:
 	FSFolder& dir_;
 	ChunkStorage& chunk_storage_;
+	Client& client_;
+
 	const Secret& secret_;
 	Index& index_;
+
+	void assemble(const Meta& meta);
 
 	void assemble_deleted(const Meta& meta);
 	void assemble_symlink(const Meta& meta);

@@ -111,12 +111,12 @@ bool FileAssembler::assemble_directory(const Meta& meta) {
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	auto relpath = dir_.normalize_path(file_path);
 
-	bool removed = false;
+	bool create_new = true;
 	if(fs::status(file_path).type() != fs::file_type::directory_file)
-		removed = fs::remove(file_path);
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
+		create_new = !fs::remove(file_path);
+	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(create_new, relpath);
 
-	if(removed) fs::create_directories(file_path);
+	if(create_new) fs::create_directories(file_path);
 
 	return true;    // Maybe, something else?
 }

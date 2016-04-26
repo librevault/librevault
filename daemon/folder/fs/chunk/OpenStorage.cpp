@@ -24,7 +24,7 @@ OpenStorage::OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage) :
 	secret_(dir_.secret()) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
-	auto sql_result = dir_.index->db().exec("SELECT DISTINCT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1", {
+	auto sql_result = dir_.index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
 			{":ct_hash", ct_hash}
 	});
 	return sql_result.have_rows();

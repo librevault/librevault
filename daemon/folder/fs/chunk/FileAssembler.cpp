@@ -27,7 +27,10 @@ namespace librevault {
 
 FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
 	Loggable(dir, "FileAssembler"), dir_(dir), chunk_storage_(chunk_storage), client_(client),
-	secret_(dir_.secret()), index_(*dir_.index) {}
+	secret_(dir_.secret()), index_(*dir_.index), periodic_assemble_timer_(client_.bulk_ios()) {
+
+	periodic_assemble_operation();
+}
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 	log_->trace() << log_tag() << "get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
@@ -40,8 +43,36 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 }
 
 void FileAssembler::queue_assemble(const Meta& meta) {
-	client_.bulk_ios().dispatch([this, meta](){
+	assemble_queue_mtx_.lock();
+	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end())
+		assemble_queue_.insert(meta.path_id());
+
+	client_.bulk_ios().post([this, meta](){
 		assemble(meta);
+
+		assemble_queue_mtx_.lock();
+		assemble_queue_.erase(meta.path_id());
+		assemble_queue_mtx_.unlock();
+	});
+
+	assemble_queue_mtx_.unlock();
+}
+
+void FileAssembler::periodic_assemble_operation() {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	log_->debug() << log_tag() << "Performing periodic assemble";
+
+	for(auto smeta : dir_.index->get_incomplete_meta()) {
+		queue_assemble(smeta.meta());
+	}
+
+	periodic_assemble_timer_.expires_from_now(std::chrono::seconds(30));
+	periodic_assemble_timer_.async_wait([this](boost::system::error_code ec){
+		if(ec == boost::asio::error::operation_aborted) {
+			log_->debug() << log_tag() << "periodic_assemble_operation returned";
+			return;
+		}
+		periodic_assemble_operation();
 	});
 }
 

@@ -112,12 +112,11 @@ bool FileAssembler::assemble_directory(const Meta& meta) {
 	auto relpath = dir_.normalize_path(file_path);
 
 	bool removed = false;
-	if(fs::status(file_path).type() != fs::file_type::directory_file){
+	if(fs::status(file_path).type() != fs::file_type::directory_file)
 		removed = fs::remove(file_path);
-	}
 	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 
-	fs::create_directories(file_path);
+	if(removed) fs::create_directories(file_path);
 
 	return true;    // Maybe, something else?
 }

@@ -103,8 +103,6 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	new_meta.set_path(relpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
 	new_meta.set_meta_type(get_type(abspath));  // Type
-	if(new_meta.meta_type() != Meta::DELETED)
-		update_fsattrib(old_meta, new_meta, abspath);   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
 	try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
 		auto old_smeta = index_.get_meta(new_meta.path_id());
@@ -114,6 +112,9 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 			throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 	}
 
+	if(old_meta.meta_type() == Meta::DIRECTORY && new_meta.meta_type() == Meta::DIRECTORY)
+		throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
+
 	if(old_meta.meta_type() == Meta::DELETED && new_meta.meta_type() == Meta::DELETED)
 		throw abort_index("Old Meta is DELETED, new Meta is DELETED");
 
@@ -122,6 +123,10 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 
 	if(new_meta.meta_type() == Meta::SYMLINK)
 		new_meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), secret_); // Symlink path = encrypted symlink destination.
+
+	// FSAttrib
+	if(new_meta.meta_type() != Meta::DELETED)
+		update_fsattrib(old_meta, new_meta, abspath);   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
 	// Revision
 	new_meta.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.

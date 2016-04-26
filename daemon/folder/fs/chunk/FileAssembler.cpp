@@ -49,27 +49,30 @@ void FileAssembler::assemble(const Meta& meta){
 	log_->trace() << log_tag() << "assemble()";
 
 	try {
+		bool assembled = false;
 		switch(meta.meta_type()) {
-			case Meta::FILE: assemble_file(meta);
+			case Meta::FILE: assembled = assemble_file(meta);
 				break;
-			case Meta::DIRECTORY: assemble_directory(meta);
+			case Meta::DIRECTORY: assembled = assemble_directory(meta);
 				break;
-			case Meta::SYMLINK: assemble_symlink(meta);
+			case Meta::SYMLINK: assembled = assemble_symlink(meta);
 				break;
-			case Meta::DELETED: assemble_deleted(meta);
+			case Meta::DELETED: assembled = assemble_deleted(meta);
 				break;
 			default: throw error(std::string("Unexpected meta type:") + std::to_string(meta.meta_type()));
 		}
-		if(meta.meta_type() != Meta::DELETED)
-			apply_attrib(meta);
+		if(assembled) {
+			if(meta.meta_type() != Meta::DELETED)
+				apply_attrib(meta);
 
-		index_.db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+			index_.db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+		}
 	}catch(std::runtime_error& e) {
 		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what(); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
-void FileAssembler::assemble_deleted(const Meta& meta) {
+bool FileAssembler::assemble_deleted(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_deleted()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -88,17 +91,21 @@ void FileAssembler::assemble_deleted(const Meta& meta) {
 	if(file_type == fs::regular_file || file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
 	// TODO: else
+
+	return true;    // Maybe, something else?
 }
 
-void FileAssembler::assemble_symlink(const Meta& meta) {
+bool FileAssembler::assemble_symlink(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_symlink()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
 	fs::remove_all(file_path);
 	fs::create_symlink(meta.symlink_path(secret_), file_path);
+
+	return true;    // Maybe, something else?
 }
 
-void FileAssembler::assemble_directory(const Meta& meta) {
+bool FileAssembler::assemble_directory(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_directory()";
 
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -111,14 +118,16 @@ void FileAssembler::assemble_directory(const Meta& meta) {
 	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(removed, relpath);
 
 	fs::create_directories(file_path);
+
+	return true;    // Maybe, something else?
 }
 
-void FileAssembler::assemble_file(const Meta& meta) {
+bool FileAssembler::assemble_file(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_file()";
 
 	// Check if we have all needed chunks
 	if(!chunk_storage_.make_bitfield(meta).all())
-		return; // retreat!
+		return false; // retreat!
 
 	//
 	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
@@ -147,6 +156,8 @@ void FileAssembler::assemble_file(const Meta& meta) {
 	index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 
 	chunk_storage_.cleanup(meta);
+
+	return true;
 }
 
 void FileAssembler::apply_attrib(const Meta& meta) {

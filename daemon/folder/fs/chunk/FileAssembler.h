@@ -49,10 +49,10 @@ private:
 
 	void assemble(const Meta& meta);
 
-	void assemble_deleted(const Meta& meta);
-	void assemble_symlink(const Meta& meta);
-	void assemble_directory(const Meta& meta);
-	void assemble_file(const Meta& meta);
+	bool assemble_deleted(const Meta& meta);
+	bool assemble_symlink(const Meta& meta);
+	bool assemble_directory(const Meta& meta);
+	bool assemble_file(const Meta& meta);
 
 	void apply_attrib(const Meta& meta);
 };

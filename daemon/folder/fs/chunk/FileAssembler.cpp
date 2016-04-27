@@ -44,16 +44,17 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 
 void FileAssembler::queue_assemble(const Meta& meta) {
 	assemble_queue_mtx_.lock();
-	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end())
+	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end()) {
 		assemble_queue_.insert(meta.path_id());
 
-	client_.bulk_ios().post([this, meta](){
-		assemble(meta);
+		client_.bulk_ios().post([this, meta]() {
+			assemble(meta);
 
-		assemble_queue_mtx_.lock();
-		assemble_queue_.erase(meta.path_id());
-		assemble_queue_mtx_.unlock();
-	});
+			assemble_queue_mtx_.lock();
+			assemble_queue_.erase(meta.path_id());
+			assemble_queue_mtx_.unlock();
+		});
+	}
 
 	assemble_queue_mtx_.unlock();
 }

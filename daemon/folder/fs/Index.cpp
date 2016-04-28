@@ -78,6 +78,7 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 /* Meta manipulators */
 
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	std::ostringstream transaction_name; transaction_name << "put_Meta_" << std::this_thread::get_id();
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.str()); // Begin transaction
 

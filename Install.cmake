@@ -57,4 +57,22 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 	install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	include(CPack)
+	set(CPACK_GENERATOR "Bundle")
+	set(CPACK_PACKAGE_FILE_NAME "Librevault")
+	# DragNDrop
+	set(CPACK_DMG_FORMAT "UDBZ")
+	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
+	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
+	# Bundle
+	set(CPACK_BUNDLE_NAME "Librevault")
+	set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist")
+	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
+
+	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+
+	install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+	install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
 endif()

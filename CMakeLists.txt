@@ -150,6 +150,10 @@ else()
 	message(STATUS "Using bundled SQLite")
 	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
 	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
+
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		target_link_libraries(sqlite3 PUBLIC dl)
+	endif()
 endif()
 
 ## WebSocket++

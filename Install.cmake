@@ -58,11 +58,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 	install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	include(CPack)
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")
 	# DragNDrop
-	set(CPACK_DMG_FORMAT "UDBZ")
+	set(CPACK_DMG_FORMAT "UDZO")
 	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
 	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
 	# Bundle
@@ -70,9 +69,32 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist")
 	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
 
-	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
-	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS COMPONENT librevault-package)
+	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS COMPONENT librevault-package)
+	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../ COMPONENT librevault-package)
 
-	install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-	install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+	install(FILES "packaging/osx/qt.conf" DESTINATION ../Resources COMPONENT librevault-package)
+
+	# Bundle plugin path
+	set(BUNDLE_PLUGINS_PATH "../../Contents/PlugIns")
+
+	# Qt5 plugins
+	include(InstallQt5Plugin)
+	install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+
+	install(CODE "
+	include(BundleUtilities)
+	set(BU_CHMOD_BUNDLE_ITEMS ON)
+	set(QT_PLUGIN_IN_BUNDLE \"\")
+	foreach(f ${QT_PLUGIN})
+		get_filename_component(QT_PLUGIN_ABSOLUTE \"\${CMAKE_INSTALL_PREFIX}/\${f}\" ABSOLUTE)
+		list(APPEND QT_PLUGIN_IN_BUNDLE \"\${QT_PLUGIN_ABSOLUTE}\")
+	endforeach(f)
+	get_filename_component(BUNDLE_PATH \"\${CMAKE_INSTALL_PREFIX}/../..\" ABSOLUTE)
+	fixup_bundle(\"\${BUNDLE_PATH}\" \"\${QT_PLUGIN_IN_BUNDLE}\" \"\")
+	" COMPONENT librevault-package)
+
+	include(CPack)
 endif()

@@ -77,18 +77,6 @@ list(APPEND SRCS ${MAIN_QRCS})
 #============================================================================
 # Third-party packages
 #============================================================================
-set(Qt_COMPONENTS
-		LinguistTools
-		Svg
-		Widgets
-		WebSockets
-		)
-if(WIN32)
-	list(APPEND Qt_COMPONENTS WinExtras)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	list(APPEND Qt_COMPONENTS MacExtras)
-endif()
-find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 
 # Translation
 configure_file("lang/lang.qrc" "${CMAKE_CURRENT_BINARY_DIR}/lang.qrc" COPYONLY)

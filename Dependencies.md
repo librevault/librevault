@@ -29,6 +29,7 @@ CMake Modules
 - FindSqlite3 - New BSD License
 - FindCryptoPP - MIT
 - GetGitRevisionDescription - Boost Software License
+- InstallQt5Plugin - New BSD License
 
 Own libraries
 -------------

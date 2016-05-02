@@ -23,19 +23,22 @@
 namespace librevault {
 
 struct FolderParams {
-	// The constructor accepts only *merged* json values, without null values
-	FolderParams(const Json::Value& json_params) :
-		secret(json_params["secret"].asString()),
-		path(json_params["path"].asString()),
-		system_path(json_params["system_path"].asString()),
-		index_event_timeout(json_params["index_event_timeout"].asUInt64()),
-		preserve_unix_attrib(json_params["preserve_unix_attrib"].asBool()),
-		preserve_windows_attrib(json_params["preserve_windows_attrib"].asBool()),
-		preserve_symlinks(json_params["preserve_symlinks"].asBool()),
-		chunk_strong_hash_type(Meta::StrongHashType(json_params["chunk_strong_hash_type"].asInt())),
-		full_rescan_interval(json_params["full_rescan_interval"].asUInt64()) {
+	FolderParams(){}
+	FolderParams(const Json::Value& json_params) {
+		FolderParams defaults;
 
-		if(system_path.empty()) system_path = path / ".librevault";
+		// Necessary
+		secret = json_params["secret"].asString();
+		path = json_params["path"].asString();
+
+		// Optional
+		system_path = json_params.get("system_path", (path / ".librevault").string()).asString();
+		index_event_timeout = std::chrono::milliseconds(json_params.get("index_event_timeout", defaults.index_event_timeout.count()).asUInt64());
+		preserve_unix_attrib = json_params.get("preserve_unix_attrib", defaults.preserve_unix_attrib).asBool();
+		preserve_windows_attrib = json_params.get("preserve_windows_attrib", defaults.preserve_windows_attrib).asBool();
+		preserve_symlinks = json_params.get("preserve_symlinks", defaults.preserve_symlinks).asBool();
+		chunk_strong_hash_type = Meta::StrongHashType(json_params.get("chunk_strong_hash_type", defaults.chunk_strong_hash_type).asUInt());
+		full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", defaults.full_rescan_interval.count()).asUInt64());
 
 		for(auto ignore_path : json_params["ignore_paths"])
 			ignore_paths.push_back(ignore_path.asString());

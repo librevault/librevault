@@ -11,7 +11,7 @@ DisableProgramGroupPage=yes
 
 WizardSmallImageFile=smallimage.bmp
 
-DefaultDirName={userappdata}\Librevault
+DefaultDirName={userpf}\Librevault
 
 SetupIconFile=librevault.ico
 UninstallDisplayIcon={app}\librevault-gui.exe

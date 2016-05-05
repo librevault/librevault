@@ -63,6 +63,9 @@ void WSClient::connect(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
 void WSClient::connect(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
 	if(!group_ptr->have_p2p_dir(node_endpoint) && !provider_.is_loopback(node_endpoint)) {
 		url node_url;
+
+		if(node_endpoint.address().is_v6()) node_url.is_ipv6 = true;
+
 		node_url.host = node_endpoint.address().to_string();
 		node_url.port = node_endpoint.port();
 

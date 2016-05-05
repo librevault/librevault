@@ -80,9 +80,10 @@ url::operator std::string() const {
 	result += userinfo;
 
 	boost::asio::ip::address_v6 addr;
-	if(is_ipv6)
+	if(is_ipv6) {
+		addr = boost::asio::ip::address_v6::from_string(host);
 		result += std::string("[") + addr.to_string() + "]";
-	else
+	}else
 		result += host;
 	if(port != 0){
 		result += ":";

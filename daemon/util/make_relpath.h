@@ -18,21 +18,21 @@
 
 namespace librevault {
 
-std::string make_relpath(const fs::path& path, const fs::path& rel_to) {
+fs::path make_relpath(const fs::path& path, const fs::path& rel_to) {
 	auto abspath = fs::absolute(path);
 
 	fs::path relpath;
 	auto path_elem_it = abspath.begin();
 	for(auto dir_elem : rel_to){
 		if(dir_elem != *(path_elem_it++))
-			return std::string();
+			return fs::path();
 	}
 	for(; path_elem_it != abspath.end(); path_elem_it++){
 		if(*path_elem_it == "." || *path_elem_it == "..")
-			return std::string();
+			return fs::path();
 		relpath /= *path_elem_it;
 	}
-	return relpath.generic_string();
+	return relpath;
 }
 
 } /* namespace librevault */

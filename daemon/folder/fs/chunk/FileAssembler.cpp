@@ -107,7 +107,7 @@ void FileAssembler::assemble(const Meta& meta){
 bool FileAssembler::assemble_deleted(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_deleted()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
+	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
@@ -130,7 +130,7 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 bool FileAssembler::assemble_symlink(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_symlink()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
+	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	fs::remove_all(file_path);
 	fs::create_symlink(meta.symlink_path(secret_), file_path);
 
@@ -140,7 +140,7 @@ bool FileAssembler::assemble_symlink(const Meta& meta) {
 bool FileAssembler::assemble_directory(const Meta& meta) {
 	log_->trace() << log_tag() << "assemble_directory()";
 
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
+	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	auto relpath = dir_.normalize_path(file_path);
 
 	bool create_new = true;
@@ -161,7 +161,7 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 		return false; // retreat!
 
 	//
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
+	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	auto relpath = dir_.normalize_path(file_path);
 	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
@@ -192,7 +192,7 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 }
 
 void FileAssembler::apply_attrib(const Meta& meta) {
-	fs::path file_path = fs::absolute(meta.path(secret_), dir_.path());
+	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 
 #if BOOST_OS_UNIX
 	if(dir_.params().preserve_unix_attrib) {

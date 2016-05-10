@@ -53,6 +53,11 @@ Options:
 )";
 
 int main(int argc, char** argv) {
+	// Global initialization
+	std::locale::global(boost::locale::generator().generate(""));
+	fs::path::imbue(std::locale());
+
+	// Argument parsing
 	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
 
 	if(args["gen-secret"].asBool()) {

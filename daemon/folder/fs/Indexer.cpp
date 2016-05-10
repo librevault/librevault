@@ -40,7 +40,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 
 		try {
 			smeta = index_.get_meta(Meta::make_path_id(file_path, secret_));
-			if(fs::last_write_time(fs::absolute(file_path, dir_.path())) == smeta.meta().mtime()) {
+			if(fs::last_write_time(dir_.absolute_path(file_path)) == smeta.meta().mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(fs::filesystem_error& e){
@@ -98,7 +98,7 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	log_->debug() << log_tag() << "make_Meta(" << relpath << ")";
 	Meta old_meta, new_meta;
-	auto abspath = fs::absolute(relpath, dir_.path());
+	auto abspath = dir_.absolute_path(relpath);
 
 	new_meta.set_path(relpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 

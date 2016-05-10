@@ -70,6 +70,8 @@ public:
 
 	/* Makers */
 	std::string normalize_path(const fs::path& abspath) const;
+	fs::path absolute_path(const std::string& normpath) const;
+
 	status_t status();
 
 	/* Getters */

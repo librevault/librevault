@@ -37,6 +37,7 @@ struct FolderParams {
 		preserve_unix_attrib = json_params.get("preserve_unix_attrib", defaults.preserve_unix_attrib).asBool();
 		preserve_windows_attrib = json_params.get("preserve_windows_attrib", defaults.preserve_windows_attrib).asBool();
 		preserve_symlinks = json_params.get("preserve_symlinks", defaults.preserve_symlinks).asBool();
+		normalize_unicode = json_params.get("normalize_unicode", defaults.normalize_unicode).asBool();
 		chunk_strong_hash_type = Meta::StrongHashType(json_params.get("chunk_strong_hash_type", defaults.chunk_strong_hash_type).asUInt());
 		full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", defaults.full_rescan_interval.count()).asUInt64());
 
@@ -54,6 +55,7 @@ struct FolderParams {
 	bool preserve_unix_attrib = false;
 	bool preserve_windows_attrib = false;
 	bool preserve_symlinks = true;
+	bool normalize_unicode = true;
 	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
 	std::chrono::seconds full_rescan_interval = std::chrono::seconds(60);
 	std::vector<std::string> ignore_paths;

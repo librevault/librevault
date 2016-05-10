@@ -52,7 +52,7 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 
 		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
 		try {
-			ifs.open(fs::absolute(smeta.meta().path(secret_), dir_.path()), std::ios::binary);
+			ifs.open(dir_.absolute_path(smeta.meta().path(secret_)), std::ios::binary);
 			ifs.seekg(offset);
 			ifs.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size);
 

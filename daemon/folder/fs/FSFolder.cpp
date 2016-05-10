@@ -25,6 +25,8 @@
 
 #include "util/make_relpath.h"
 
+#include <codecvt>
+
 namespace librevault {
 
 FSFolder::FSFolder(FolderGroup& group, Client& client) :
@@ -108,11 +110,30 @@ FSFolder::status_t FSFolder::status() {
 
 /* Makers */
 std::string FSFolder::normalize_path(const fs::path& abspath) const {
-	std::string norm_path = ::librevault::make_relpath(abspath, path());
+	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+	// Relative path in platform-independent format
+	fs::path rel_path = ::librevault::make_relpath(abspath, path());
+
+	std::string norm_path = rel_path.generic_string(std::codecvt_utf8_utf16<wchar_t>());
+	if(params().normalize_unicode)	// Unicode normalization NFC (for compatibility)
+		norm_path = boost::locale::normalize(norm_path, boost::locale::norm_nfc);
+
+	// Removing last '/' in directories
 	if(norm_path.size() > 0 && norm_path.back() == '/')
 		norm_path.pop_back();
-	// TODO: UTF-8 normalization, maybe?
+
+	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << norm_path;
 	return norm_path;
+}
+
+fs::path FSFolder::absolute_path(const std::string& normpath) const {
+	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << normpath;
+
+	std::wstring wnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
+	fs::path abspath = path() / wnormpath;
+
+	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+	return abspath;
 }
 
 } /* namespace librevault */

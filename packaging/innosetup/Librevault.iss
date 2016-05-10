@@ -37,7 +37,7 @@ Name: "{commondesktop}\Librevault"; Filename: "{app}\librevault-gui.exe"
 [Registry]
 Root: HKCU; Subkey: "Software\Librevault"; Flags: uninsdeletekey
 ; Autostart
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Librevault"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Librevault"; ValueData: "{app}\librevault-gui.exe"; Flags: uninsdeletekey
 
 [Run]
 Filename: {app}\librevault-gui.exe; Flags: nowait postinstall

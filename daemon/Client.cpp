@@ -54,7 +54,7 @@ void Client::init_log(spdlog::level::level_enum level) {
 	std::unique_lock<decltype(log_mtx)> log_lk(log_mtx);
 	log_ = spdlog::get(Version::current().name());
 	if(!log_){
-		spdlog::set_async_mode(1024*1024);
+		//spdlog::set_async_mode(1024);
 
 		std::vector<spdlog::sink_ptr> sinks;
 		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());

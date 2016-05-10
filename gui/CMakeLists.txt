@@ -1,20 +1,3 @@
-cmake_minimum_required(VERSION 3.2)
-
-#============================================================================
-# Settable options
-#============================================================================
-
-option(BUILD_STATIC "Build static version of binary" OFF)
-option(BUILD_OPTWARE "Build software ready to be installed into /opt" OFF)
-option(BUILD_UPDATER "Add auto-updater support" ON)
-
-#============================================================================
-# CMake modules
-#============================================================================
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-include(GNUInstallDirs)
-
 #============================================================================
 # Internal compiler options
 #============================================================================
@@ -110,7 +93,7 @@ endif()
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-gui lvcommon-static)
+target_link_libraries(librevault-gui lvcommon)
 target_link_libraries(librevault-gui openssl)
 
 # Qt
@@ -120,13 +103,6 @@ if(WIN32)
 endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-gui Qt5::MacExtras)
-endif()
-
-# LVCommon
-if(BUILD_STATIC)
-	target_link_libraries(librevault-gui lvcommon-static)
-else()
-	target_link_libraries(librevault-gui lvcommon-shared)
 endif()
 
 # WinSparkle
@@ -150,18 +126,3 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-gui "-framework CoreFoundation")
 	target_link_libraries(librevault-gui "-framework AppKit")
 endif()
-
-#============================================================================
-# Install
-#============================================================================
-if(BUILD_OPTWARE)
-	set_target_properties(librevault-gui PROPERTIES
-			INSTALL_RPATH "/opt/librevault/lib"
-			BUILD_WITH_INSTALL_RPATH TRUE
-			INSTALL_RPATH_USE_LINK_PATH TRUE
-			)
-	install(TARGETS librevault-gui DESTINATION "/opt/librevault")
-else()
-	install(TARGETS librevault-gui DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif()
-

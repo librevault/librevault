@@ -4,6 +4,8 @@ project(librevault)
 #============================================================================
 # Settable options
 #============================================================================
+option(BUILD_STATIC "Build static version of executable" OFF)
+option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 
 #============================================================================
@@ -165,6 +167,18 @@ if(NOT websocketpp_FOUND)
 	target_include_directories(websocketpp INTERFACE "contrib/websocketpp")
 endif()
 
+##### External libraries #####
+
+## Boost
+if(BUILD_STATIC)
+	set(Boost_USE_STATIC_LIBS ON)
+endif()
+find_package(Boost REQUIRED COMPONENTS system filesystem iostreams locale thread)
+
+add_library(boost INTERFACE)
+target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
+target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
+
 ## Qt5
 set(Qt_COMPONENTS
 		LinguistTools
@@ -179,8 +193,6 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 
-##### External libraries #####
-
 ## Protobuf
 find_package(Protobuf REQUIRED)
 add_library(protobuf INTERFACE)
@@ -188,20 +200,10 @@ target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
 
 # CryptoPP
-find_package(CryptoPP 5.6.3 QUIET CONFIG)
+find_package(CryptoPP 5.6.2 REQUIRED MODULE)
 add_library(cryptopp INTERFACE)
-if(CryptoPP_FOUND)
-	if(BUILD_STATIC)
-		target_link_libraries(cryptopp INTERFACE cryptopp-static)
-	else()
-		target_link_libraries(cryptopp INTERFACE cryptopp-shared)
-	endif()
-else()
-	find_package(CryptoPP 5.6.2 REQUIRED MODULE)
-
-	target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
-	target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
-endif()
+target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
+target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
 
 ## OpenSSL
 find_package(OpenSSL REQUIRED)

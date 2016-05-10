@@ -1,19 +1,3 @@
-cmake_minimum_required(VERSION 3.2)
-
-#============================================================================
-# Settable options
-#============================================================================
-option(BUILD_STATIC "Build static version of executable" OFF)
-option(WITH_COTIRE "Use cotire for builds" ON)
-option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
-
-#============================================================================
-# CMake modules
-#============================================================================
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-include(GNUInstallDirs)
-
 #============================================================================
 # Internal compiler options
 #============================================================================
@@ -48,7 +32,7 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
-target_link_libraries(librevault-daemon lvcommon-static)
+target_link_libraries(librevault-daemon lvcommon)
 target_link_libraries(librevault-daemon dir_monitor)
 target_link_libraries(librevault-daemon spdlog)
 target_link_libraries(librevault-daemon docopt_s)
@@ -59,20 +43,6 @@ target_link_libraries(librevault-daemon sqlite3)
 target_link_libraries(librevault-daemon websocketpp)
 
 ##### External libraries #####
-
-# Boost
-set(Boost_COMPONENTS
-		system
-		filesystem
-		iostreams
-		thread)
-if(BUILD_STATIC)
-	set(Boost_USE_STATIC_LIBS ON)
-endif()
-
-find_package(Boost REQUIRED COMPONENTS ${Boost_COMPONENTS})
-target_include_directories(librevault-daemon PRIVATE ${Boost_INCLUDE_DIRS})
-target_link_libraries(librevault-daemon ${Boost_LIBRARIES})
 
 ## Protobuf
 file(GLOB_RECURSE PROTO_LIST "*.proto")
@@ -113,14 +83,4 @@ if(BUILD_STATIC)
 		target_link_libraries(librevault-daemon dl)
 #		target_link_libraries(librevault-daemon c.a)
 	endif()
-endif()
-
-#============================================================================
-# Documentation generation
-#============================================================================
-
-if(BUILD_DOCUMENTATION)
-	find_package(Doxygen REQUIRED)
-	configure_file(Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile @ONLY IMMEDIATE)
-	add_custom_target(docs ALL COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
 endif()

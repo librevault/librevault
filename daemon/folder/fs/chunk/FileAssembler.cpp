@@ -209,27 +209,4 @@ void FileAssembler::apply_attrib(const Meta& meta) {
 #endif
 }
 
-/*
-void FileAssembler::disassemble(const std::string& file_path, bool delete_file){
-	blob path_id = make_path_id(file_path);
-
-	std::list<blob> chunk_encrypted_hashes;
-	auto chunks_data = index_.db().exec("SELECT chunk_encrypted_hash "
-			"FROM openfs WHERE path_id=:path_id", {
-					{":path_id", path_id}
-			});
-	for(auto row : chunks_data)
-		chunk_encrypted_hashes.push_back(row[0]);
-	for(auto chunk_encrypted_hash : chunk_encrypted_hashes)
-		enc_storage_.put_encchunk(chunk_encrypted_hash, get_encchunk(chunk_encrypted_hash));
-
-	if(delete_file){
-		index_.db().exec("UPDATE openfs SET assembled=0 WHERE file_path_hmac=:path_hmac", {
-				{":path_hmac", path_id}
-		});
-		fs::remove(fs::absolute(file_path, dir_.path()));
-	}
-}
-*/
-
 } /* namespace librevault */

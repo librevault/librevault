@@ -21,7 +21,7 @@
 #include <QUrl>
 #include <gui/pager/Pager.h>
 #include "pch.h"
-#include "StartupInterface.h"
+#include "gui/startup/StartupInterface.h"
 
 namespace Ui {
 class Settings;

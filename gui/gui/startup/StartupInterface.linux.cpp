@@ -16,50 +16,39 @@
 #include "StartupInterface.h"
 #include <QFileInfo>
 
+struct LinuxStartupInterface {
+	QString desktop_file_path;
+};
+
 StartupInterface::StartupInterface(QObject* parent) :
 		QObject(parent) {
-#ifdef Q_OS_LINUX
+	interface_impl_ = new LinuxStartupInterface();
+
 	if(qEnvironmentVariableIsSet("HOME")) {
-		desktop_file_path = qgetenv("HOME");
-		desktop_file_path.append(QStringLiteral("/.config/autostart/Librevault.desktop"));
+		static_cast<LinuxStartupInterface*>(interface_impl_)->desktop_file_path = qgetenv("HOME");
+		static_cast<LinuxStartupInterface*>(interface_impl_)->desktop_file_path.append(QStringLiteral("/.config/autostart/Librevault.desktop"));
 	}
-#endif
 }
 
-StartupInterface::~StartupInterface() {}
+StartupInterface::~StartupInterface() {
+	delete static_cast<LinuxStartupInterface*>(interface_impl_);
+}
 
 bool StartupInterface::isSupported() {
-#if defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MAC)
 	return true;
-#endif
-	return false;
 }
 
 bool StartupInterface::isEnabled() const {
-#ifdef Q_OS_LINUX
-	QFileInfo desktop_file(desktop_file_path);
+	QFileInfo desktop_file(static_cast<LinuxStartupInterface*>(interface_impl_)->desktop_file_path);
 	return desktop_file.exists() && desktop_file.isFile();
-#endif
-	return false;
-}
-
-void StartupInterface::setEnabled(bool enabled) {
-	if(enabled)
-		enable();
-	else
-		disable();
 }
 
 void StartupInterface::enable() {
-#ifdef Q_OS_LINUX
 	if(!isEnabled())
-		QFile::copy(QStringLiteral(":/platform/Librevault.desktop"), desktop_file_path);
-#endif
+		QFile::copy(QStringLiteral(":/platform/Librevault.desktop"), static_cast<LinuxStartupInterface*>(interface_impl_)->desktop_file_path);
 }
 
 void StartupInterface::disable() {
-#ifdef Q_OS_LINUX
 	if(isEnabled())
-		QFile::remove(desktop_file_path);
-#endif
+		QFile::remove(static_cast<LinuxStartupInterface*>(interface_impl_)->desktop_file_path);
 }

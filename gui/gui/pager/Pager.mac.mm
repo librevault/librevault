@@ -19,8 +19,6 @@
 #include <AppKit/NSToolbarItem.h>
 #include <AppKit/NSImage.h>
 
-#ifdef Q_OS_MAC
-
 Pager::Pager(QHBoxLayout* layout, QWidget* parent) : QWidget(parent) {
 	toolbar = new QMacToolBar(parent);
 }
@@ -63,5 +61,3 @@ void Pager::show() {
 void Pager::buttonClicked(int page) {
 	emit pageSelected(page);
 }
-
-#endif

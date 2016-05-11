@@ -61,7 +61,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")
 	# DragNDrop
-	set(CPACK_DMG_FORMAT "UDZO")
+	set(CPACK_DMG_FORMAT "ULFO")
 	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
 	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
 	# Bundle

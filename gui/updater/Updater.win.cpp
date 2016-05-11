@@ -20,9 +20,10 @@
 #include <winsparkle.h>
 
 Updater::Updater(QObject* parent) : QObject(parent) {
-	QString appcast_url = QStringLiteral("http://127.0.0.1:8091/appcast.rss");
+	QString appcast_url = QStringLiteral("https://releases.librevault.com/appcast_win.rss");
 
 	win_sparkle_set_appcast_url(appcast_url.toUtf8().data());
+	win_sparkle_set_registry_path("Software\\Librevault\\Updates");
 	win_sparkle_init();
 }
 

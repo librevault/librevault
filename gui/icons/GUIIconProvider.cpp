@@ -40,13 +40,17 @@ QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 		case SETTINGS: return QIcon(":/icons/Settings-96.png");     //"preferences-system"
 		//"application-exit"
 
+#if defined(Q_OS_MAC)
 		case TRAYICON: {
 			QIcon icon(":/branding/librevault_icon_black.svg");
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+#	if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
 			icon.setIsMask(true);
-#endif
+#	endif
 			return icon;
 		}
+#else
+		case TRAYICON: return QIcon(":/branding/librevault_icon.svg");
+#endif
 	}
 	return QIcon();
 }

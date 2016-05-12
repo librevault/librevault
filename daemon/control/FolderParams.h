@@ -33,13 +33,13 @@ struct FolderParams {
 
 		// Optional
 		system_path = json_params.get("system_path", (path / ".librevault").string()).asString();
-		index_event_timeout = std::chrono::milliseconds(json_params.get("index_event_timeout", defaults.index_event_timeout.count()).asUInt64());
+		index_event_timeout = std::chrono::milliseconds(json_params.get("index_event_timeout", Json::Value::UInt64(defaults.index_event_timeout.count())).asUInt64());
 		preserve_unix_attrib = json_params.get("preserve_unix_attrib", defaults.preserve_unix_attrib).asBool();
 		preserve_windows_attrib = json_params.get("preserve_windows_attrib", defaults.preserve_windows_attrib).asBool();
 		preserve_symlinks = json_params.get("preserve_symlinks", defaults.preserve_symlinks).asBool();
 		normalize_unicode = json_params.get("normalize_unicode", defaults.normalize_unicode).asBool();
 		chunk_strong_hash_type = Meta::StrongHashType(json_params.get("chunk_strong_hash_type", defaults.chunk_strong_hash_type).asUInt());
-		full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", defaults.full_rescan_interval.count()).asUInt64());
+		full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", Json::Value::UInt64(defaults.full_rescan_interval.count())).asUInt64());
 
 		for(auto ignore_path : json_params["ignore_paths"])
 			ignore_paths.push_back(ignore_path.asString());

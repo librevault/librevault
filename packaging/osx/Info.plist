@@ -10,8 +10,10 @@
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleVersion</key>
+	<string>@librevault_VERSION@</string>
 	<key>CFBundleShortVersionString</key>
-	<string>3.3.3</string>
+	<string>@librevault_VERSION@</string>
 	<key>CFBundleSignature</key>
 	<string>LVLT</string>
 	<key>CFBundleExecutable</key>
@@ -41,5 +43,9 @@
 	</dict>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
+	<key>SUPublicDSAKeyFile</key>
+	<string>dsa_pub.pem</string>
+	<key>SUScheduledCheckInterval</key>
+	<string>86400</string>
 </dict>
 </plist>

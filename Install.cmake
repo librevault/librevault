@@ -66,14 +66,18 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
 	# Bundle
 	set(CPACK_BUNDLE_NAME "Librevault")
-	set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist")
+	set(CPACK_BUNDLE_PLIST_SOURCE "${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist")
+	set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
 	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
+
+	configure_file("${CPACK_BUNDLE_PLIST_SOURCE}" "${CPACK_BUNDLE_PLIST}" @ONLY)
 
 	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS COMPONENT librevault-package)
 	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS COMPONENT librevault-package)
 	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../ COMPONENT librevault-package)
 
 	install(FILES "packaging/osx/qt.conf" DESTINATION ../Resources COMPONENT librevault-package)
+	install(FILES "packaging/osx/dsa_pub.pem" DESTINATION ../Resources COMPONENT librevault-package)
 
 	# Bundle plugin path
 	set(BUNDLE_PLUGINS_PATH "../../Contents/PlugIns")

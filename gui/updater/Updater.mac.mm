@@ -27,7 +27,7 @@ struct Updater::Impl {
 Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
 	impl_->updater = [SUUpdater sharedUpdater];
 
-	QString appcast_url = QStringLiteral("http://127.0.0.1:8091/appcast.rss");
+	QString appcast_url = QStringLiteral("http://192.168.0.100:8000/appcast_mac.rss");
 	NSURL* appcast_nsurl = [NSURL URLWithString:
 	[NSString stringWithUTF8String: appcast_url.toUtf8().data()]
 	];

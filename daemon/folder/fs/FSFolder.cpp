@@ -129,8 +129,12 @@ std::string FSFolder::normalize_path(const fs::path& abspath) const {
 fs::path FSFolder::absolute_path(const std::string& normpath) const {
 	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << normpath;
 
-	std::wstring wnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
-	fs::path abspath = path() / wnormpath;
+#if BOOST_OS_WINDOWS
+	std::wstring osnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
+#else
+	const std::string& osnormpath(normpath);
+#endif
+	fs::path abspath = path() / osnormpath;
 
 	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
 	return abspath;

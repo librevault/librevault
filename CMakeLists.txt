@@ -7,6 +7,7 @@ project(librevault)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
+option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 
 #============================================================================
 # CMake modules
@@ -50,6 +51,10 @@ if(WIN32)
 	add_definitions(-D_WIN32_WINNT=0x600)
 	add_definitions(-DUNICODE)
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
+endif()
+
+if(DEBUG_NORMALIZATION)
+	add_definitions(-DDEBUG_NORMALIZATION)
 endif()
 
 ## Calculating version

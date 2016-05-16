@@ -110,7 +110,10 @@ FSFolder::status_t FSFolder::status() {
 
 /* Makers */
 std::string FSFolder::normalize_path(const fs::path& abspath) const {
-	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+#ifdef DEBUG_NORMALIZATION
+	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+#endif
+
 	// Relative path in platform-independent format
 	fs::path rel_path = ::librevault::make_relpath(abspath, path());
 
@@ -122,12 +125,16 @@ std::string FSFolder::normalize_path(const fs::path& abspath) const {
 	if(norm_path.size() > 0 && norm_path.back() == '/')
 		norm_path.pop_back();
 
-	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << norm_path;
+#ifdef DEBUG_NORMALIZATION
+	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << norm_path;
+#endif
 	return norm_path;
 }
 
 fs::path FSFolder::absolute_path(const std::string& normpath) const {
-	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << normpath;
+#ifdef DEBUG_NORMALIZATION
+	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << normpath;
+#endif
 
 #if BOOST_OS_WINDOWS
 	std::wstring osnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
@@ -136,7 +143,9 @@ fs::path FSFolder::absolute_path(const std::string& normpath) const {
 #endif
 	fs::path abspath = path() / osnormpath;
 
-	log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+#ifdef DEBUG_NORMALIZATION
+	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
+#endif
 	return abspath;
 }
 

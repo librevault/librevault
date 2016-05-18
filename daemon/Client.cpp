@@ -63,8 +63,8 @@ void Client::init_log(spdlog::level::level_enum level) {
 #endif
 		auto& log_path = Config::get()->paths().log_path;
 		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-			(log_path.parent_path() / log_path.stem()).generic_string(), // TODO: support filenames with multiple dots
-			log_path.extension().generic_string().substr(1), 10 * 1024 * 1024, 9));
+			(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
+			log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
 
 		log_ = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
 		spdlog::register_logger(log_);

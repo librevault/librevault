@@ -17,6 +17,7 @@
 #include "Client.h"
 #include "control/Config.h"
 #include <openssl/pem.h>
+#include "util/file_util.h"
 
 namespace librevault {
 
@@ -52,9 +53,8 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 }
 
 void NodeKey::write_key() {
-	fs::ofstream ofs(Config::get()->paths().key_path, std::ios_base::binary);
-
-	ofs << "-----BEGIN EC PRIVATE KEY-----" << std::endl;
+	FILE * f = native_fopen(Config::get()->paths().key_path.c_str(), "w");
+	fputs("-----BEGIN EC PRIVATE KEY-----\n", f);
 	auto& group_params = private_key_.GetGroupParameters();
 
 	bool old = group_params.GetEncodeAsOID();
@@ -100,19 +100,17 @@ void NodeKey::write_key() {
     s = crypto::Base64().to_string(s);
 
     for (unsigned i = 0; i < s.length(); i += 64) {
-    	ofs << s.substr(i, 64) << std::endl;
+		fputs(s.substr(i, 64).c_str(), f);
+		fputc('\n', f);
     }
 
 	const_cast<CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>&>(group_params).SetEncodeAsOID(old);
-	ofs << "-----END EC PRIVATE KEY-----" << std::endl;
+	fputs("-----END EC PRIVATE KEY-----", f);
+	fclose(f);
 }
 
 void NodeKey::gen_certificate() {
-#if BOOST_OS_WINDOWS
-	FILE * f = _wfopen(Config::get()->paths().key_path.c_str(), L"r");
-#else
-	FILE * f = fopen(Config::get()->paths().key_path.c_str(), "r");
-#endif
+	FILE * f = native_fopen(Config::get()->paths().key_path.c_str(), "r");
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
@@ -145,11 +143,7 @@ void NodeKey::gen_certificate() {
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-#if BOOST_OS_WINDOWS
-	FILE * x509_file = _wfopen(Config::get()->paths().cert_path.c_str(), L"wb");
-#else
-	FILE * x509_file = fopen(Config::get()->paths().cert_path.c_str(), "wb");
-#endif
+	FILE * x509_file = native_fopen(Config::get()->paths().cert_path.c_str(), "wb");
 	if (!x509_file) {
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}

@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Config.h"
+#include <codecvt>
+#include "util/file_util.h"
 
 #if BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_UNIX
 #   include <pwd.h>
@@ -119,23 +121,23 @@ void Config::make_merged_folders() {
 }
 
 void Config::load() {
-	fs::ifstream globals_ifs(paths_.client_config_path, std::ifstream::binary);
-	fs::ifstream folders_ifs(paths_.folders_config_path, std::ifstream::binary);
+	file_wrapper globals_f(paths_.client_config_path.c_str(), "rb");
+	file_wrapper folders_f(paths_.folders_config_path.c_str(), "rb");
 
 	Json::Reader r;
-	r.parse(globals_ifs, globals_custom_);
-	r.parse(folders_ifs, folders_custom_);
+	r.parse(globals_f.ios(), globals_custom_);
+	r.parse(folders_f.ios(), folders_custom_);
 
 	set_globals(globals_custom_);
 	set_folders(folders_custom_);
 }
 
 void Config::save() {
-	fs::ofstream globals_ofs(paths_.client_config_path, std::ios_base::trunc | std::ifstream::binary);
-	fs::ofstream folders_ofs(paths_.folders_config_path, std::ios_base::trunc | std::ifstream::binary);
+	file_wrapper globals_f(paths_.client_config_path.c_str(), "wb");
+	file_wrapper folders_f(paths_.folders_config_path.c_str(), "wb");
 
-	globals_ofs << globals_custom_.toStyledString();
-	folders_ofs << folders_custom_.toStyledString();
+	globals_f.ios() << globals_custom_.toStyledString();
+	folders_f.ios() << folders_custom_.toStyledString();
 }
 
 #if BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE

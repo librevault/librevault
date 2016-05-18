@@ -139,6 +139,7 @@ add_subdirectory("contrib/rabin")
 
 ## Spdlog
 find_package(spdlog QUIET)
+add_definitions(-DSPDLOG_WCHAR_FILENAMES)
 if(spdlog_FOUND)
 	add_library(spdlog INTERFACE)
 	target_link_libraries(spdlog INTERFACE spdlog::spdlog)

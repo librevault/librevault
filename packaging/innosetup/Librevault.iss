@@ -5,6 +5,7 @@ AppId=com.librevault.desktop
 AppVersion=@librevault_VERSION@
 AppPublisher=Librevault Team
 AppPublisherURL=https://librevault.com
+VersionInfoVersion=@librevault_VERSION@
 
 DisableWelcomePage=no
 DisableProgramGroupPage=yes

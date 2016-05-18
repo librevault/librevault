@@ -31,7 +31,7 @@ namespace librevault {
 	using native_char_t = char;
 #endif
 
-inline FILE* native_fopen(const wchar_t* filepath, const char* mode) {
+inline FILE* native_fopen(const native_char_t* filepath, const char* mode) {
 #if BOOST_OS_WINDOWS
 	return _wfopen(filepath, boost::locale::conv::utf_to_utf<wchar_t>(mode).c_str());
 #else

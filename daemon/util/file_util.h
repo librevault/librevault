@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <boost/filesystem.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 
@@ -50,26 +51,41 @@ using fdstreambuf = boost::iostreams::stream_buffer<boost::iostreams::file_descr
 
 class file_wrapper {
 private:
-	FILE* handle_;
+	FILE* handle_ = nullptr;
 	std::unique_ptr<fdstreambuf> buf_;
 	std::unique_ptr<std::iostream> ios_;
 
 public:
 	inline file_wrapper(const native_char_t* path, const char* mode) {
+		open(path, mode);
+	}
+	inline file_wrapper(const boost::filesystem::path& path, const char* mode) {
+		open(path, mode);
+	}
+	inline ~file_wrapper() {
+		close();
+	}
+
+	inline std::iostream& ios() {
+		return *ios_;
+	}
+
+	inline void open(const native_char_t* path, const char* mode) {
 		handle_ = native_fopen(path, mode);
 		buf_ = std::make_unique<fdstreambuf>(cx_fileno(handle_), boost::iostreams::never_close_handle);
 		ios_ = std::make_unique<std::iostream>(buf_.get());
 	}
-	inline ~file_wrapper() {
+
+	inline void open(const boost::filesystem::path& path, const char* mode) {
+		open(path.native().c_str(), mode);
+	}
+
+	inline void close() {
 		ios_.reset();
 		buf_->close();
 		buf_.reset();
 		fclose(handle_);
 		handle_ = nullptr;
-	}
-
-	inline std::iostream& ios() {
-		return *ios_;
 	}
 };
 

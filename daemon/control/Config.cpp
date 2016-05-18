@@ -121,8 +121,8 @@ void Config::make_merged_folders() {
 }
 
 void Config::load() {
-	file_wrapper globals_f(paths_.client_config_path.c_str(), "rb");
-	file_wrapper folders_f(paths_.folders_config_path.c_str(), "rb");
+	file_wrapper globals_f(paths_.client_config_path, "rb");
+	file_wrapper folders_f(paths_.folders_config_path, "rb");
 
 	Json::Reader r;
 	r.parse(globals_f.ios(), globals_custom_);
@@ -133,8 +133,8 @@ void Config::load() {
 }
 
 void Config::save() {
-	file_wrapper globals_f(paths_.client_config_path.c_str(), "wb");
-	file_wrapper folders_f(paths_.folders_config_path.c_str(), "wb");
+	file_wrapper globals_f(paths_.client_config_path, "wb");
+	file_wrapper folders_f(paths_.folders_config_path, "wb");
 
 	globals_f.ios() << globals_custom_.toStyledString();
 	folders_f.ios() << folders_custom_.toStyledString();

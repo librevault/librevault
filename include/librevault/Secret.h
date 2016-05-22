@@ -54,6 +54,7 @@ public:
 	operator std::string() const {return string();}
 
 	Type get_type() const {return (Type)secret_s.front();}
+	char get_param() const {return secret_s[1];}
 	char get_check_char() const {return secret_s.back();}
 
 	// Secret derivers
@@ -84,6 +85,7 @@ private:
 
 	mutable std::vector<uint8_t> cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
 
+	std::string get_encoded_payload() const;
 	std::vector<uint8_t> get_payload() const;
 };
 

@@ -34,25 +34,31 @@ Secret::Secret() {
 	private_key.GetPrivateExponent().Encode(cached_private_key.data(), private_key_size);
 
 	secret_s.append(1, (char)Owner);
+	secret_s.append(1, '1');
 	secret_s.append(crypto::Base58().to_string(cached_private_key));
-	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
+	secret_s.append(1, crypto::LuhnMod58(&secret_s[2], &*secret_s.end()));
 }
 
 Secret::Secret(Type type, const std::vector<uint8_t>& binary_part) {
 	secret_s.append(1, type);
+	secret_s.append(1, '1');
 	secret_s.append(crypto::Base58().to_string(binary_part));
-	secret_s.append(1, crypto::LuhnMod58(&secret_s[1], &*secret_s.end()));
+	secret_s.append(1, crypto::LuhnMod58(&secret_s[2], &*secret_s.end()));
 }
 
 Secret::Secret(std::string string_secret) : secret_s(std::move(string_secret)) {
-	auto base58_payload = secret_s.substr(1, this->secret_s.size()-2);
+	auto base58_payload = get_encoded_payload();
 	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
 
 	// TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
 
+std::string Secret::get_encoded_payload() const {  // TODO: Caching
+	return secret_s.substr(2, this->secret_s.size()-3);
+}
+
 std::vector<uint8_t> Secret::get_payload() const {	// TODO: Caching
-	return secret_s.substr(1, this->secret_s.size()-2) | crypto::De<crypto::Base58>();
+	return get_encoded_payload() | crypto::De<crypto::Base58>();
 }
 
 Secret Secret::derive(Type key_type) const {
@@ -65,10 +71,10 @@ Secret Secret::derive(Type key_type) const {
 	case ReadOnly: {
 		std::vector<uint8_t> new_payload(public_key_size+encryption_key_size);
 
-		auto public_key_s = get_Public_Key();
+		auto& public_key_s = get_Public_Key();
 		std::copy(public_key_s.begin(), public_key_s.end(), new_payload.begin());
 
-		auto encryption_key_s = get_Encryption_Key();
+		auto& encryption_key_s = get_Encryption_Key();
 		std::copy(encryption_key_s.begin(), encryption_key_s.end(), &new_payload[public_key_size]);
 
 		return Secret(key_type, new_payload);

@@ -142,7 +142,7 @@ void Config::save() {
 
 #if BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
-fs::path Config::default_appdata_path() {
+fs::path Config::default_appdata_path() {   // TODO: separate to multiple files
 #if BOOST_OS_WINDOWS
 	PWSTR appdata_path;
 	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);

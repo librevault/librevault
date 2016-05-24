@@ -17,7 +17,9 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/device/null.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 
 #include <stdio.h>
@@ -72,8 +74,12 @@ public:
 
 	inline void open(const native_char_t* path, const char* mode) {
 		handle_ = native_fopen(path, mode);
-		buf_ = std::make_unique<fdstreambuf>(cx_fileno(handle_), boost::iostreams::never_close_handle);
-		ios_ = std::make_unique<std::iostream>(buf_.get());
+		if(handle_) {
+			buf_ = std::make_unique<fdstreambuf>(cx_fileno(handle_), boost::iostreams::never_close_handle);
+			ios_ = std::make_unique<std::iostream>(buf_.get());
+		}else{
+			ios_ = std::make_unique<std::fstream>();
+		}
 	}
 
 	inline void open(const boost::filesystem::path& path, const char* mode) {
@@ -82,9 +88,9 @@ public:
 
 	inline void close() {
 		ios_.reset();
-		buf_->close();
 		buf_.reset();
-		fclose(handle_);
+		if(handle_)
+			fclose(handle_);
 		handle_ = nullptr;
 	}
 };

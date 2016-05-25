@@ -57,7 +57,7 @@ struct FolderParams {
 	bool preserve_symlinks = true;
 	bool normalize_unicode = true;
 	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
-	std::chrono::seconds full_rescan_interval = std::chrono::seconds(60);
+	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
 	std::vector<std::string> ignore_paths;
 	std::vector<url> nodes;
 };

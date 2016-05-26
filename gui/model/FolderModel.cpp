@@ -45,7 +45,7 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 					return QString();
 				}();
 			case Column::PEERS: return tr("%n peer(s)", "", folder_object["peers"].toArray().size());
-			case Column::SIZE: return tr("%n file(s)", "", folder_object["file_count"].toInt()) + " " + human_size(folder_object["byte_size"].toDouble());
+			case Column::SIZE: return tr("%n file(s)", "", folder_object["file_entries"].toInt()) + " " + tr("%n directory(s)", "", folder_object["directory_entries"].toInt());
 
 			default: return QVariant();
 		}

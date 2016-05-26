@@ -89,6 +89,10 @@
     </message>
     <message>
         <source>Choose directory to sync</source>
+        <translation type="vanished">Выберите папку для синхронизации</translation>
+    </message>
+    <message>
+        <source>Choose the directory to sync</source>
         <translation>Выберите папку для синхронизации</translation>
     </message>
 </context>
@@ -269,7 +273,15 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Indexing</source>
-        <translation type="unfinished">Индексирование</translation>
+        <translation>Индексирование</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n directory(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n папка</numerusform>
+            <numerusform>%n папки</numerusform>
+            <numerusform>%n папок</numerusform>
+        </translation>
     </message>
 </context>
 <context>
@@ -321,6 +333,15 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
             <numerusform>%n подключён</numerusform>
             <numerusform>%n подключено</numerusform>
             <numerusform>%n подключено</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n directory(s)</source>
+        <translatorcomment>Или лучше &quot;директория&quot;?</translatorcomment>
+        <translation>
+            <numerusform>%n папка</numerusform>
+            <numerusform>%n папки</numerusform>
+            <numerusform>%n папок</numerusform>
         </translation>
     </message>
 </context>

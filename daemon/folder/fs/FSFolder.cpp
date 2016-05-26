@@ -86,28 +86,6 @@ bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
 	return chunk_storage->make_bitfield(get_meta(path_revision).meta());
 }
 
-FSFolder::status_t FSFolder::status() {
-	status_t s;
-	// Sizes
-	try {
-		for (auto it = fs::recursive_directory_iterator(path()); it != fs::recursive_directory_iterator(); it++) {
-			try {
-				if (!ignore_list->is_ignored(normalize_path(*it)) && fs::is_regular_file(*it)) {
-					s.byte_size += fs::file_size(*it);
-					s.file_count++;
-				}
-			} catch (std::exception &e) { }    // TODO: Logging
-		}
-	}catch (std::exception &e) {
-		return status_t();
-	}	// TODO: Logging
-
-	// Status
-	s.is_indexing = indexer->is_indexing();
-
-	return s;
-}
-
 /* Makers */
 std::string FSFolder::normalize_path(const fs::path& abspath) const {
 #ifdef DEBUG_NORMALIZATION

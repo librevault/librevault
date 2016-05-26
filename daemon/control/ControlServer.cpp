@@ -18,6 +18,7 @@
 #include "folder/FolderGroup.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/Index.h"
+#include "folder/fs/Indexer.h"
 #include "folder/p2p/P2PFolder.h"
 
 namespace librevault {
@@ -126,13 +127,8 @@ Json::Value ControlServer::make_state_json() const {
 		folder_json["path"] = folder->fs_dir()->path().string();
 		folder_json["secret"] = folder->secret().string();
 
-		// Sizes
-		auto folder_status = folder->fs_dir()->status();
-		folder_json["file_count"] = (Json::Value::UInt64)folder_status.file_count;
-		folder_json["byte_size"] = (Json::Value::UInt64)folder_status.byte_size;
-
 		// Indexer
-		folder_json["is_indexing"] = folder_status.is_indexing;
+		folder_json["is_indexing"] = folder->fs_dir()->indexer->is_indexing();
 
 		// Index
 		auto index_status = folder->fs_dir()->index->get_status();

@@ -52,7 +52,7 @@ void AddFolder::generateSecret() {
 
 void AddFolder::browseFolder() {
 	QString dir = QFileDialog::getExistingDirectory(this,
-		tr("Choose directory to sync"),
+		tr("Choose the directory to sync"),
 		QString(),
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);

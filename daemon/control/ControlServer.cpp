@@ -128,7 +128,7 @@ Json::Value ControlServer::make_state_json() const {
 		folder_json["secret"] = folder->secret().string();
 
 		// Indexer
-		folder_json["is_indexing"] = folder->fs_dir()->indexer->is_indexing();
+		folder_json["is_indexing"] = folder->fs_dir()->indexer ? folder->fs_dir()->indexer->is_indexing() : false;
 
 		// Index
 		auto index_status = folder->fs_dir()->index->get_status();

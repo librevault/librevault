@@ -83,6 +83,7 @@ protected:
 		c.get_con_from_hdl(hdl)->close(websocketpp::close::status::internal_endpoint_error, reason);
 	}
 	//virtual void terminate(websocketpp::connection_hdl hdl);
+	virtual std::string errmsg(websocketpp::connection_hdl hdl) = 0;
 };
 
 } /* namespace librevault */

@@ -81,4 +81,8 @@ void WSServer::send_message(websocketpp::connection_hdl hdl, const blob& message
 	ws_server_.get_con_from_hdl(hdl)->send(message.data(), message.size());
 }
 
+std::string WSServer::errmsg(websocketpp::connection_hdl hdl) {
+	return ws_server_.get_con_from_hdl(hdl)->get_transport_ec().message();
+}
+
 } /* namespace librevault */

@@ -139,7 +139,7 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 }
 
 void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << errmsg(hdl);
 
 	auto dir_ptr = ws_assignment_[hdl].folder.lock();
 	if(dir_ptr) {

@@ -33,5 +33,5 @@ CMake Modules
 
 Own libraries
 -------------
-- LVCommon - Not decided yet
+- LVCommon - GPLv3
 - LVSQLite (aka SQLiteWrapper) - CC0 (public domain)

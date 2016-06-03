@@ -29,6 +29,12 @@ mkdir build && cd build
 cmake .. && cmake --build .
 ```
 
+###Installing
+You can perform installation using this command: 
+```
+sudo make install (or sudo checkinstall)
+```
+
 Dependency build instructions: Ubuntu & Debian
 ----------------------------------------------
 

@@ -104,6 +104,9 @@ void Config::make_defaults() {
 	folders_defaults_["normalize_unicode"] = true;
 	folders_defaults_["chunk_strong_hash_type"] = 0;
 	folders_defaults_["full_rescan_interval"] = 600;
+	folders_defaults_["archive_type"] = "trash";
+	folders_defaults_["archive_trash_ttl"] = 30;
+	folders_defaults_["archive_timestamp_count"] = 5;
 }
 
 void Config::make_merged_globals() {

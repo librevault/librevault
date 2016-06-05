@@ -26,8 +26,14 @@
 namespace librevault {
 
 FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
-	Loggable(dir, "FileAssembler"), dir_(dir), chunk_storage_(chunk_storage), client_(client),
-	secret_(dir_.secret()), index_(*dir_.index), periodic_assemble_timer_(client_.bulk_ios()) {
+	Loggable(dir, "FileAssembler"),
+	dir_(dir),
+	chunk_storage_(chunk_storage),
+	client_(client),
+	archive_(dir_, client_),
+	secret_(dir_.secret()),
+	index_(*dir_.index),
+	periodic_assemble_timer_(client_.bulk_ios()) {
 
 	periodic_assemble_operation();
 }
@@ -120,8 +126,10 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 			fs::remove_all(file_path);  // TODO: Okay, this is a horrible solution
 	}
 
-	if(file_type == fs::regular_file || file_type == fs::symlink_file || file_type == fs::file_not_found)
+	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
+	else if(file_type == fs::regular_file)
+		archive_.archive(file_path);
 	// TODO: else
 
 	return true;    // Maybe, something else?
@@ -180,7 +188,7 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 	//dir_.ignore_list->add_ignored(relpath);
 	if(dir_.auto_indexer) dir_.auto_indexer->prepare_file_assemble(fs::exists(file_path), relpath);
 
-	fs::remove(file_path);
+	archive_.archive(file_path);
 	fs::rename(assembled_file, file_path);
 	//dir_.ignore_list->remove_ignored(relpath);
 

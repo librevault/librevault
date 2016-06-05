@@ -37,8 +37,6 @@ public:
 private:
 	FSFolder& dir_;
 
-	static std::string regex_escape(std::string str_to_escape);
-
 	mutable std::mutex ignored_paths_mtx_;
 	std::map<std::string, std::regex> ignored_paths_;
 };

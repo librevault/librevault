@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <locale>
+#include <fstream>
 
 namespace librevault {
 

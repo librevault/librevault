@@ -15,6 +15,7 @@
  */
 #include "IgnoreList.h"
 #include "FSFolder.h"
+#include <util/regex_escape.h>
 
 namespace librevault {
 
@@ -57,24 +58,6 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 
 	// Predefined paths
 	add_ignored(regex_escape(dir_.normalize_path(dir_.system_path())) + R"((?:\/(?:.*))?)");
-}
-
-std::string IgnoreList::regex_escape(std::string str_to_escape) {
-	boost::replace_all(str_to_escape, "\\", "\\\\");
-	boost::replace_all(str_to_escape, "^", "\\^");
-	boost::replace_all(str_to_escape, ".", "\\.");
-	boost::replace_all(str_to_escape, "$", "\\$");
-	boost::replace_all(str_to_escape, "|", "\\|");
-	boost::replace_all(str_to_escape, "(", "\\(");
-	boost::replace_all(str_to_escape, ")", "\\)");
-	boost::replace_all(str_to_escape, "[", "\\[");
-	boost::replace_all(str_to_escape, "]", "\\]");
-	boost::replace_all(str_to_escape, "*", "\\*");
-	boost::replace_all(str_to_escape, "+", "\\+");
-	boost::replace_all(str_to_escape, "?", "\\?");
-	boost::replace_all(str_to_escape, "/", "\\/");
-
-	return str_to_escape;
 }
 
 } /* namespace librevault */

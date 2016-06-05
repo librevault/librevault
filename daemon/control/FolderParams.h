@@ -23,6 +23,13 @@
 namespace librevault {
 
 struct FolderParams {
+	enum class ArchiveType : unsigned {
+		NO_ARCHIVE = 0,
+		TRASH_ARCHIVE,
+		TIMESTAMP_ARCHIVE,
+		BLOCK_ARCHIVE
+	};
+
 	FolderParams(){}
 	FolderParams(const Json::Value& json_params) {
 		FolderParams defaults;
@@ -45,6 +52,19 @@ struct FolderParams {
 			ignore_paths.push_back(ignore_path.asString());
 		for(auto node : json_params["nodes"])
 			nodes.push_back(node.asString());
+
+		auto archive_type_str = json_params.get("archive_type", "trash").asString();
+		if(archive_type_str == "none")
+			archive_type = ArchiveType::NO_ARCHIVE;
+		if(archive_type_str == "trash")
+			archive_type = ArchiveType::TRASH_ARCHIVE;
+		if(archive_type_str == "timestamp")
+			archive_type = ArchiveType::TIMESTAMP_ARCHIVE;
+		if(archive_type_str == "block")
+			archive_type = ArchiveType::BLOCK_ARCHIVE;
+
+		archive_trash_ttl = json_params.get("archive_trash_ttl", defaults.archive_trash_ttl).asUInt();
+		archive_timestamp_count = json_params.get("archive_timestamp_count", defaults.archive_timestamp_count).asUInt();
 	}
 
 	/* Parameters */
@@ -60,6 +80,9 @@ struct FolderParams {
 	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
 	std::vector<std::string> ignore_paths;
 	std::vector<url> nodes;
+	ArchiveType archive_type = ArchiveType::TIMESTAMP_ARCHIVE;
+	unsigned archive_trash_ttl = 30;
+	unsigned archive_timestamp_count = 5;
 };
 
 } /* namespace librevault */

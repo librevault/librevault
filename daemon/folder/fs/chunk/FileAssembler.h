@@ -19,6 +19,7 @@
 #include <librevault/Secret.h>
 #include "folder/fs/Index.h"
 #include "EncStorage.h"
+#include "Archive.h"
 
 namespace librevault {
 
@@ -43,6 +44,8 @@ private:
 	FSFolder& dir_;
 	ChunkStorage& chunk_storage_;
 	Client& client_;
+
+	Archive archive_;
 
 	const Secret& secret_;
 	Index& index_;

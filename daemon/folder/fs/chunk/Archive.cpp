@@ -93,7 +93,7 @@ void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec
 
 	for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
 		time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
-		if(time_since_archivation / 60*60*24) {
+		if(time_since_archivation / 60*60*24 >= parent_->dir_.params().archive_trash_ttl) {
 			fs::remove(it->path());
 		}
 	}
@@ -127,11 +127,7 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 	std::string suffix = std::string("~")+strftime_buf.data();
 
 	auto timestamped_path = archived_path.stem();
-#if BOOST_OS_WINDOWS
-	timestamped_path += std::wstring_convert<wchar_t>(suffix);
-#else
-	timestamped_path += suffix;
-#endif
+	timestamped_path += boost::locale::conv::utf_to_utf<native_char_t>(suffix);
 	timestamped_path += archived_path.extension();
 	parent_->move(from, timestamped_path);
 
@@ -145,7 +141,7 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 			paths.insert({match[1].str(), from});
 		}
 	}
-	if(paths.size() > 5) {
+	if(paths.size() > parent_->dir_.params().archive_timestamp_count && parent_->dir_.params().archive_timestamp_count != 0) {
 		fs::remove(paths.begin()->second);
 	}
 }

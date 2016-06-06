@@ -57,6 +57,13 @@
           <item row="0" column="1">
            <widget class="QLineEdit" name="line_device_name"/>
           </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QCheckBox" name="box_update">
+            <property name="text">
+             <string>Check for updates on startup</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

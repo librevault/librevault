@@ -19,6 +19,7 @@
 #include <QDebug>
 #include "icons/GUIIconProvider.h"
 #include "appver.h"
+#include "MainWindow.h"
 
 Settings::Settings(QWidget* parent) :
 		QDialog(parent),
@@ -53,11 +54,13 @@ void Settings::init_ui() {
 	ui->setupUi(this);
 	init_selector();
 	ui->box_startup->setVisible(startup_interface->isSupported());
+	ui->box_update->setVisible(dynamic_cast<MainWindow*>(parent())->client_.updater_->supportsUpdate());
 }
 
 void Settings::reset_ui_states() {
 	/* GUI-related settings */
 	ui->box_startup->setChecked(startup_interface->isEnabled());
+	ui->box_update->setChecked(dynamic_cast<MainWindow*>(parent())->client_.updater_->enabled());
 
 	/* Daemon-related settings */
 	control_json_static = control_json_dynamic; // "Fixing" a version of control_json
@@ -89,6 +92,7 @@ void Settings::reset_ui_states() {
 void Settings::process_ui_states() {
 	/* GUI-related settings */
 	startup_interface->setEnabled(ui->box_startup->isChecked());
+	dynamic_cast<MainWindow*>(parent())->client_.updater_->setEnabled(ui->box_update->isChecked());
 
 	/* Daemon-related settings */
 	QJsonObject client;

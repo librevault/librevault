@@ -47,8 +47,10 @@ private:
 	std::unique_ptr<Daemon> daemon_;
 	std::unique_ptr<ControlClient> control_client_;
 
+public:
 	Updater* updater_;
 
+private:
 	// GUI
 	std::unique_ptr<MainWindow> main_window_;
 };

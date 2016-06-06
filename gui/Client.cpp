@@ -46,9 +46,9 @@ Client::Client(int &argc, char **argv, int appflags) :
 		daemon_->launch();
 	}
 
-	main_window_ = std::make_unique<MainWindow>(*this);
-
 	updater_ = new Updater(this);
+
+	main_window_ = std::make_unique<MainWindow>(*this);
 
 	// Connecting signals & slots
 	connect(single_channel_.get(), &SingleChannel::showMainWindow, main_window_.get(), &QMainWindow::show);

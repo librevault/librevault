@@ -54,8 +54,9 @@ protected slots:
 	void handleRemoveFolder();
 	void handleOpenFolderProperties(const QModelIndex &index);
 
-protected:
+public:
 	Client& client_;
+protected:
 	std::unique_ptr<Ui::MainWindow> ui;
 
 	/* Models */

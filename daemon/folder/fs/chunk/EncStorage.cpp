@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <util/file_util.h>
 #include "EncStorage.h"
 #include "folder/fs/FSFolder.h"
 
@@ -36,28 +37,28 @@ std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 	try {
 		auto chunk_path = make_chunk_ct_path(ct_hash);
 
-		uint64_t blocksize = fs::file_size(chunk_path);
-		if(blocksize == static_cast<uintmax_t>(-1)) throw AbstractFolder::no_such_chunk();
+		uint64_t chunksize = fs::file_size(chunk_path);
+		if(chunksize == static_cast<uintmax_t>(-1)) throw AbstractFolder::no_such_chunk();
 
-		std::shared_ptr<blob> chunk = std::make_shared<blob>(blocksize);
+		std::shared_ptr<blob> chunk = std::make_shared<blob>(chunksize);
 
-		fs::ifstream block_fstream;
-		block_fstream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		block_fstream.open(chunk_path, std::ios_base::in | std::ios_base::binary);
-		block_fstream.read(reinterpret_cast<char*>(chunk->data()), blocksize);
+		file_wrapper chunk_file(chunk_path, "rb");
+		chunk_file.ios().exceptions(std::ios_base::failbit | std::ios_base::badbit);
+		chunk_file.ios().read(reinterpret_cast<char*>(chunk->data()), chunksize);
 
 		return chunk;
 	}catch(fs::filesystem_error& e) {
 		throw AbstractFolder::no_such_chunk();
-	}catch(std::ifstream::failure& e) {
+	}catch(std::ios_base::failure& e) {
 		throw AbstractFolder::no_such_chunk();
 	}
 }
 
 void EncStorage::put_chunk(const blob& ct_hash, const blob& data) {
-	auto block_path = make_chunk_ct_path(ct_hash);
-	fs::ofstream block_fstream(block_path, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary);
-	block_fstream.write(reinterpret_cast<const char*>(data.data()), data.size());
+	auto chunk_path = make_chunk_ct_path(ct_hash);
+	file_wrapper chunk_file(chunk_path, "wb");
+	chunk_file.ios().exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	chunk_file.ios().write(reinterpret_cast<const char*>(data.data()), data.size());
 
 	log_->debug() << log_tag() << "Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage";
 }

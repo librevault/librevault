@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <util/file_util.h>
 #include "FileAssembler.h"
 
 #include "Client.h"
@@ -174,14 +175,14 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
-	fs::ofstream ofs(assembled_file, std::ios::out | std::ios::trunc | std::ios::binary);	// Opening file
+	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
 
 	for(auto chunk : meta.chunks()) {
 		blob chunk_pt = get_chunk_pt(chunk.ct_hash);
-		ofs.write((const char*)chunk_pt.data(), chunk_pt.size());	// Writing to file
+		assembling_file.ios().write((const char*)chunk_pt.data(), chunk_pt.size());	// Writing to file
 	}
 
-	ofs.close();	// Closing file. Super!
+	assembling_file.close();	// Closing file. Super!
 
 	fs::last_write_time(assembled_file, meta.mtime());
 

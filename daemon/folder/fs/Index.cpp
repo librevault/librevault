@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <util/file_util.h>
 #include "Index.h"
 #include "FSFolder.h"
 #include "Client.h"
@@ -46,17 +47,15 @@ Index::Index(FSFolder& dir, Client& client) : Loggable(dir, "Index"), dir_(dir),
 
 	/* Create a special hash-file */
 	auto hash_txt = dir_.system_path() / "hash.txt";
-	fs::fstream ifs;
 	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
 	if(fs::exists(hash_txt)) {
-		ifs.open(hash_txt, std::ios_base::in);
+		file_wrapper hexhash_f(hash_txt, "r");
 		std::string hexhash_file;
-		ifs >> hexhash_file;
+		hexhash_f.ios() >> hexhash_file;
 		if(hexhash_file != hexhash_conf) wipe();
-		ifs.close();
 	}
-	ifs.open(hash_txt, std::ios_base::out | std::ios_base::trunc);
-	ifs << hexhash_conf;
+	file_wrapper hexhash_f(hash_txt, "w");
+	hexhash_f.ios() << hexhash_conf;
 }
 
 bool Index::have_meta(const Meta::PathRevision& path_revision) noexcept {

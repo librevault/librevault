@@ -16,6 +16,7 @@
 #include "OpenStorage.h"
 
 #include "folder/fs/FSFolder.h"
+#include <util/file_util.h>
 
 namespace librevault {
 
@@ -50,11 +51,11 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		fs::ifstream ifs; ifs.exceptions(std::ios::failbit | std::ios::badbit);
+		file_wrapper f(dir_.absolute_path(smeta.meta().path(secret_)), "rb");
+		f.ios().exceptions(std::ios::failbit | std::ios::badbit);
 		try {
-			ifs.open(dir_.absolute_path(smeta.meta().path(secret_)), std::ios::binary);
-			ifs.seekg(offset);
-			ifs.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size);
+			f.ios().seekg(offset);
+			f.ios().read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size);
 
 			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(chunk_pt, secret_.get_Encryption_Key(), chunk.iv));
 			// Check

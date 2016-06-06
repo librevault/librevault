@@ -21,6 +21,7 @@
 #include "Client.h"
 #include "util/byte_convert.h"
 #include <rabin.h>
+#include <util/file_util.h>
 
 namespace librevault {
 
@@ -228,10 +229,10 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 	blob buffer;
 	buffer.reserve(hasher.maxsize);
 
-	fs::ifstream fs(path, std::ios_base::binary);
+	file_wrapper f(path, "rb");
 
-	while(!fs.eof()) {
-		auto byte_read = fs.get(); if(byte_read == EOF) continue;
+	while(!f.ios().eof()) {
+		auto byte_read = f.ios().get(); if(byte_read == EOF) continue;
 
 		buffer.push_back(byte_read);
 		//size_t len = fread(buf, 1, sizeof(buf), stdin);

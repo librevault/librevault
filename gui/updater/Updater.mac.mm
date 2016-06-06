@@ -33,7 +33,6 @@ Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
 	];
 
 	[impl_->updater setFeedURL: appcast_nsurl];
-	[impl_->updater setAutomaticallyChecksForUpdates:YES];
 	[impl_->updater setAutomaticallyDownloadsUpdates:NO];
 	[impl_->updater setSendsSystemProfile:NO];
 	[impl_->updater resetUpdateCycle];

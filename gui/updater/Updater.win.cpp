@@ -35,12 +35,20 @@ bool Updater::supportsUpdate() const {
 	return true;
 }
 
+bool Updater::enabled() const {
+	return win_sparkle_get_automatic_check_for_updates();
+}
+
 void Updater::checkUpdates() {
 	win_sparkle_check_update_with_ui();
 }
 
 void Updater::checkUpdatesSilently() {
 	win_sparkle_check_update_without_ui();
+}
+
+void Updater::setEnabled(bool enable) {
+	win_sparkle_set_automatic_check_for_updates(enable)
 }
 
 #endif	/* BUILD_UPDATER */

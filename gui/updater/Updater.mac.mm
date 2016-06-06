@@ -51,12 +51,20 @@ bool Updater::supportsUpdate() const {
 	return true;
 }
 
+bool Updater::enabled() const {
+	return [impl_->updater automaticallyChecksForUpdates];
+}
+
 void Updater::checkUpdates() {
 	[impl_->updater checkForUpdates: NSApp];
 }
 
 void Updater::checkUpdatesSilently() {
 	[impl_->updater checkForUpdatesInBackground];
+}
+
+void Updater::setEnabled(bool enable) {
+	[impl_->updater setAutomaticallyChecksForUpdates: enable];
 }
 
 #endif	/* BUILD_UPDATER */

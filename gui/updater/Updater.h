@@ -25,10 +25,12 @@ public:
 	virtual ~Updater();
 
 	bool supportsUpdate() const;
+	bool enabled() const;
 
 public slots:
 	void checkUpdates();
 	void checkUpdatesSilently();
+	void setEnabled(bool enable);
 
 private:
 	struct Impl;

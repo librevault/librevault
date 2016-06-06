@@ -48,7 +48,7 @@ private:
 	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
 		WSService::close(ws_client_, hdl, reason);
 	}
-	std::string errmsg(websocketpp::connection_hdl hdl);
+	std::string errmsg(websocketpp::connection_hdl hdl) override;
 };
 
 } /* namespace librevault */

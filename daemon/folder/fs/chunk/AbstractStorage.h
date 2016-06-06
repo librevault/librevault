@@ -26,7 +26,7 @@ public:
 	AbstractStorage(FSFolder& dir, ChunkStorage& chunk_storage);
 	virtual ~AbstractStorage() {};
 
-	bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
 		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
 	}
 	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;

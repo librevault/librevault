@@ -29,7 +29,7 @@ Name: "{app}\x32"
 Name: "{app}\x64"
 
 [Files]
-Source: "release\*"; DestDir: "{app}"; Flags: recursesubdirs
+Source: "release\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
 Name: "{commonprograms}\Librevault"; Filename: "{app}\librevault-gui.exe"

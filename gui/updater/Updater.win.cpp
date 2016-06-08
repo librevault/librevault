@@ -36,7 +36,7 @@ bool Updater::supportsUpdate() const {
 }
 
 bool Updater::enabled() const {
-	return win_sparkle_get_automatic_check_for_updates();
+	return (bool)win_sparkle_get_automatic_check_for_updates();
 }
 
 void Updater::checkUpdates() {
@@ -48,7 +48,7 @@ void Updater::checkUpdatesSilently() {
 }
 
 void Updater::setEnabled(bool enable) {
-	win_sparkle_set_automatic_check_for_updates(enable)
+	win_sparkle_set_automatic_check_for_updates(enable);
 }
 
 #endif	/* BUILD_UPDATER */

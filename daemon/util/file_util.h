@@ -21,6 +21,7 @@
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/iostreams/device/null.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
+#include <boost/locale.hpp>
 
 #include <stdio.h>
 #include <locale>

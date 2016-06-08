@@ -93,7 +93,7 @@ void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec
 
 	for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
 		time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
-		if(time_since_archivation / 60*60*24 >= parent_->dir_.params().archive_trash_ttl) {
+		if((unsigned)time_since_archivation / 60*60*24 >= parent_->dir_.params().archive_trash_ttl && parent_->dir_.params().archive_trash_ttl != 0) {
 			fs::remove(it->path());
 		}
 	}
@@ -136,7 +136,8 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 	std::regex timestamp_regex(regex_escape(from.stem().generic_string()) + R"((~\d{8}-\d{6}))" + regex_escape(from.extension().generic_string()));
 	for(auto it = fs::directory_iterator(from.parent_path()); it != fs::directory_iterator(); it++) {
 		std::smatch match;
-		std::regex_match(it->path().generic_string(), match, timestamp_regex);
+		std::string generic_path = it->path().generic_string();	// To resolve stackoverflow.com/q/32164501
+		std::regex_match(generic_path, match, timestamp_regex);
 		if(!match.empty()) {
 			paths.insert({match[1].str(), from});
 		}

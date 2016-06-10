@@ -95,9 +95,9 @@ void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec
 
 	try {
 		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
-			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
-			const unsigned sec_per_day = 60 * 60 * 24;
-			if((unsigned)time_since_archivation >= parent_->dir_.params().archive_trash_ttl * sec_per_day && parent_->dir_.params().archive_trash_ttl != 0)
+			unsigned time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
+			constexpr unsigned sec_per_day = 60 * 60 * 24;
+			if(time_since_archivation >= parent_->dir_.params().archive_trash_ttl * sec_per_day && parent_->dir_.params().archive_trash_ttl != 0)
 				removed_paths.push_back(it->path());
 		}
 

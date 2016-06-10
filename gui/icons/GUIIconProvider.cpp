@@ -37,6 +37,7 @@ QIcon GUIIconProvider::get_icon(ICON_ID id) const {
 #endif
 		case FOLDER_ADD: return QIcon(":/icons/Add Folder-96.png"); //"folder-new"
 		case FOLDER_DELETE: return QIcon(":/icons/Delete-96.png");  //"edit-delete"
+		case LINK_OPEN: return QIcon(":/icons/Add Link-96.png");
 		case SETTINGS: return QIcon(":/icons/Settings-96.png");     //"preferences-system"
 		//"application-exit"
 

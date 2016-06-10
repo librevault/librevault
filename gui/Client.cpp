@@ -30,12 +30,22 @@ Client::Client(int &argc, char **argv, int appflags) :
 	applyLocale(QLocale::system().name());
 	// Parsing arguments
 	QCommandLineParser parser;
-	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one"), "url");
+	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one."), "url");
 	parser.addOption(attach_option);
+	parser.addPositionalArgument("url", tr("The \"lvlt:\" URL to open."));
 	parser.process(*this);
 
+	QString link;
+
+	if(parser.positionalArguments().size() > 0){
+		QRegularExpression link_regex("lvlt:.*");
+		auto link_index = parser.positionalArguments().indexOf(link_regex);
+		if(link_index != -1)
+			link = parser.positionalArguments().at(link_index);
+	}
+
 	// Creating components
-	single_channel_ = std::make_unique<SingleChannel>();
+	single_channel_ = std::make_unique<SingleChannel>(link);
 
 	daemon_ = std::make_unique<Daemon>();
 	control_client_ = std::make_unique<ControlClient>();
@@ -52,12 +62,17 @@ Client::Client(int &argc, char **argv, int appflags) :
 
 	// Connecting signals & slots
 	connect(single_channel_.get(), &SingleChannel::showMainWindow, main_window_.get(), &QMainWindow::show);
+	connect(single_channel_.get(), &SingleChannel::openLink, this, &Client::openLink);
 
 	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
 
 	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);
 	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
 	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
+
+	// Initialization complete!
+	if(!link.isEmpty())
+		openLink(link);
 }
 
 void Client::applyLocale(QString locale) {
@@ -66,6 +81,11 @@ void Client::applyLocale(QString locale) {
 	translator_.load(QStringLiteral(":/lang/librevault_") + locale);
 	this->installTranslator(&translator_);
 	//settings_->retranslateUi();
+}
+
+void Client::openLink(QString link) {
+	main_window_->show();   // Cause, this dialog looks ugly without a visible main window
+	main_window_->open_link_->handleLink(link);
 }
 
 Client::~Client() {}

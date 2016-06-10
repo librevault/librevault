@@ -16,13 +16,17 @@
 #include "SingleChannel.h"
 #include <QCoreApplication>
 
-SingleChannel::SingleChannel() :
+SingleChannel::SingleChannel(QString arg) :
 		QUdpSocket() {
 	bool bound = bind(QHostAddress::LocalHost, 42343);
 	if(bound) {
 		connect(this, &SingleChannel::readyRead, this, &SingleChannel::datagramReceived);
 	}else{
-		writeDatagram("show", QHostAddress::LocalHost, 42343);
+
+		if(arg.isEmpty())
+			writeDatagram("show", QHostAddress::LocalHost, 42343);
+		else
+			writeDatagram(QString("arg ").toLatin1()+arg.toUtf8(), QHostAddress::LocalHost, 42343);
 		exit(1);
 	}
 }
@@ -39,5 +43,7 @@ void SingleChannel::datagramReceived() {
 
 		if(datagram == "show")
 			emit showMainWindow();
+		if(datagram.startsWith("arg "))
+			emit openLink(QString::fromUtf8(datagram).mid(4));
 	}
 }

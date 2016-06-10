@@ -21,11 +21,12 @@ class SingleChannel : public QUdpSocket {
 Q_OBJECT
 
 public:
-	SingleChannel();
+	SingleChannel(QString arg);
 	~SingleChannel();
 
 signals:
 	void showMainWindow();
+	void openLink(QString link);
 
 private slots:
 	void datagramReceived();

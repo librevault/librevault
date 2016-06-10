@@ -19,32 +19,26 @@
 #include "pch.h"
 
 namespace Ui {
-class AddFolder;
+class OpenLink;
 }
 
-class AddFolder : public QDialog {
+class OpenLink : public QDialog {
 Q_OBJECT
 
 public:
-	explicit AddFolder(QWidget* parent = 0);
-	~AddFolder();
-
-signals:
-	void folderAdded(QString secret, QString path);
+	explicit OpenLink(QWidget* parent = 0);
+	~OpenLink();
 
 public slots:
-	void showWithSecret(QString secret);
-	void handleAccepted();
-	void handleRejected();
+	bool handleLink(QString link);
+	void accept() override;
 
 protected:
-	std::unique_ptr<Ui::AddFolder> ui;
+	std::unique_ptr<Ui::OpenLink> ui;
 
 	// Overrides
 	void showEvent(QShowEvent* e) override;
 
 private slots:
-	void generateSecret();
-	void browseFolder();
-	//void validateSecret();
+
 };

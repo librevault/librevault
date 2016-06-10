@@ -41,6 +41,8 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
 
+	open_link_ = new OpenLink(this);
+
 	connect(ui->treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
 	init_actions();
@@ -56,10 +58,12 @@ void MainWindow::retranslateUi() {
 	open_website_action->setText(tr("Open Librevault website"));
 	show_settings_window_action->setText(tr("Settings"));
 	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
-	exit_action->setText(tr("Quit Librevault"));    // TODO: Apply: https://ux.stackexchange.com/questions/50893/do-we-exit-quit-or-close-an-application
+	exit_action->setText(tr("Quit Librevault"));    // TODO: Apply: ux.stackexchange.com/q/50893
 	exit_action->setToolTip("Stop synchronization and exit Librevault application");
-	new_folder_action->setText(tr("New folder"));
+	new_folder_action->setText(tr("Add folder"));
 	new_folder_action->setToolTip(tr("Add new folder for synchronization"));
+	open_link_action->setText(tr("Open URL"));
+	open_link_action->setToolTip(tr("Open shared link"));
 	delete_folder_action->setText(tr("Delete"));
 	delete_folder_action->setToolTip(tr("Delete folder"));
 
@@ -83,7 +87,7 @@ void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 }
 
 void MainWindow::handleRemoveFolder() {
-	QMessageBox* confirmation_box = new QMessageBox(
+	QMessageBox confirmation_box(
 		QMessageBox::Warning,
 		tr("Remove folder from Librevault?"),
 		tr("This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered."),
@@ -91,10 +95,9 @@ void MainWindow::handleRemoveFolder() {
 		this
 	);
 
-	confirmation_box->setDefaultButton(QMessageBox::Cancel);
-	confirmation_box->setWindowModality(Qt::WindowModal);
+	confirmation_box.setWindowModality(Qt::WindowModal);
 
-	if(confirmation_box->exec() == QMessageBox::Ok) {
+	if(confirmation_box.exec() == QMessageBox::Ok) {
 		auto selection_model = ui->treeView->selectionModel()->selectedRows();
 		for(auto model_index : selection_model) {
 			qDebug() << model_index;
@@ -144,6 +147,10 @@ void MainWindow::init_actions() {
 	new_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_ADD));
 	connect(new_folder_action, &QAction::triggered, add_folder_, &AddFolder::show);
 
+	open_link_action = new QAction(this);
+	open_link_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::LINK_OPEN));
+	connect(open_link_action, &QAction::triggered, open_link_, &AddFolder::show);
+
 	delete_folder_action = new QAction(this);
 	delete_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));
 	delete_folder_action->setShortcut(Qt::Key_Delete);
@@ -155,6 +162,7 @@ void MainWindow::init_toolbar() {
 	ui->toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #endif
 	ui->toolBar->addAction(new_folder_action);
+	ui->toolBar->addAction(open_link_action);
 	ui->toolBar->addAction(delete_folder_action);
 	ui->toolBar->addSeparator();
 	ui->toolBar->addAction(show_settings_window_action);

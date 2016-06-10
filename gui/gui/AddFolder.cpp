@@ -27,22 +27,32 @@ AddFolder::AddFolder(QWidget* parent) :
 	connect(ui->button_CreateSecret, &QPushButton::clicked, this, &AddFolder::generateSecret);
 	connect(ui->button_Browse, &QPushButton::clicked, this, &AddFolder::browseFolder);
 	connect(this, &QDialog::accepted, this, &AddFolder::handleAccepted);
+	connect(this, &QDialog::rejected, this, &AddFolder::handleRejected);
 }
 
 AddFolder::~AddFolder() {}
 
+void AddFolder::showWithSecret(QString secret) {
+	ui->line_Secret->setText(secret);
+	show();
+}
+
 void AddFolder::handleAccepted() {
 	auto secret = ui->line_Secret->text();
 	auto path = ui->line_Folder->text();
+	ui->line_Folder->clear();
+	ui->line_Secret->clear();
 	emit folderAdded(secret, path);
 }
 
-void AddFolder::showEvent(QShowEvent* e) {
-	QDialog::showEvent(e);
-
+void AddFolder::handleRejected() {
 	ui->line_Folder->clear();
 	ui->line_Secret->clear();
+}
+
+void AddFolder::showEvent(QShowEvent* e) {
 	adjustSize();
+	QDialog::showEvent(e);
 }
 
 void AddFolder::generateSecret() {

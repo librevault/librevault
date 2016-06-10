@@ -30,6 +30,7 @@ public:
 
 		FOLDER_ADD,
 		FOLDER_DELETE,
+		LINK_OPEN,
 		SETTINGS,
 		TRAYICON
 	};

@@ -23,6 +23,7 @@
 #include "Client.h"
 #include "gui/Settings.h"
 #include "gui/AddFolder.h"
+#include "gui/OpenLink.h"
 
 namespace Ui {
 class MainWindow;
@@ -64,8 +65,11 @@ protected:
 
 	/* Dialogs */
 	Settings* settings_;
+public:
 	AddFolder* add_folder_;
+	OpenLink* open_link_;
 
+protected:
 	/* Event handlers (overrides) */
 	void changeEvent(QEvent* e) override;
 	//void closeEvent(QCloseEvent* e) override;
@@ -76,6 +80,7 @@ protected:
 	QAction* show_settings_window_action;
 	QAction* exit_action;
 	QAction* new_folder_action;
+	QAction* open_link_action;
 	QAction* delete_folder_action;
 
 	void init_actions();

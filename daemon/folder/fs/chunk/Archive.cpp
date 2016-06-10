@@ -91,14 +91,24 @@ void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec
 	parent_->log_->trace() << parent_->log_tag() << BOOST_CURRENT_FUNCTION;
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
-		time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
-		if((unsigned)time_since_archivation / 60*60*24 >= parent_->dir_.params().archive_trash_ttl && parent_->dir_.params().archive_trash_ttl != 0) {
-			fs::remove(it->path());
+	std::list<fs::path> removed_paths;
+
+	try {
+		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
+			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
+			const unsigned sec_per_day = 60 * 60 * 24;
+			if((unsigned)time_since_archivation >= parent_->dir_.params().archive_trash_ttl * sec_per_day && parent_->dir_.params().archive_trash_ttl != 0)
+				removed_paths.push_back(it->path());
 		}
+
+		for(const fs::path& path : removed_paths)
+			fs::remove(path);
+
+		daily_timer_.expires_from_now(std::chrono::hours(24));
+	}catch(std::exception& e) {
+		daily_timer_.expires_from_now(std::chrono::minutes(10));    // An error occured, retry in 10 min
 	}
 
-	daily_timer_.expires_from_now(std::chrono::hours(24));
 	daily_timer_.async_wait(std::bind(&Archive::TrashArchive::maintain_cleanup, this, std::placeholders::_1));
 }
 
@@ -106,6 +116,7 @@ void Archive::TrashArchive::archive(const fs::path& from) {
 	auto archived_path = archive_path_ / fs::path(parent_->dir_.normalize_path(from));
 	parent_->log_->trace() << parent_->log_tag() << "Adding an archive item: " << archived_path;
 	parent_->move(from, archived_path);
+	fs::last_write_time(archived_path, time(nullptr));
 }
 
 // TimestampArchive

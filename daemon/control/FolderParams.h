@@ -80,7 +80,7 @@ struct FolderParams {
 	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
 	std::vector<std::string> ignore_paths;
 	std::vector<url> nodes;
-	ArchiveType archive_type = ArchiveType::TIMESTAMP_ARCHIVE;
+	ArchiveType archive_type = ArchiveType::TRASH_ARCHIVE;
 	unsigned archive_trash_ttl = 30;
 	unsigned archive_timestamp_count = 5;
 };

@@ -83,7 +83,7 @@ Archive::TrashArchive::TrashArchive(Archive* parent) :
 	archive_path_(parent->dir_.system_path() / "archive") {
 
 	fs::create_directory(archive_path_);
-	daily_timer_.expires_from_now(std::chrono::minutes(10));
+	daily_timer_.expires_from_now(std::chrono::minutes(10));    // Start after a small delay.
 	daily_timer_.async_wait(std::bind(&Archive::TrashArchive::maintain_cleanup, this, std::placeholders::_1));
 }
 

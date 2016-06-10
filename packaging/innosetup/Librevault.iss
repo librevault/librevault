@@ -1,3 +1,5 @@
+; Librevault Inno Setup script. Requires Inno Setup 5.5.9.
+
 [Setup]
 AppName=Librevault
 AppVerName=Librevault
@@ -20,6 +22,10 @@ OutputDir=.
 PrivilegesRequired=lowest
 ShowLanguageDialog=no
 
+SignTool=signtool
+; librevault-daemon is used to stuck sometimes on Windows
+CloseApplications=force
+
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -29,7 +35,8 @@ Name: "{app}\x32"
 Name: "{app}\x64"
 
 [Files]
-Source: "release\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+Source: "release\*"; Excludes: "*.exe"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+Source: "release\*.exe"; DestDir: "{app}"; Flags: signonce recursesubdirs ignoreversion
 
 [Icons]
 Name: "{commonprograms}\Librevault"; Filename: "{app}\librevault-gui.exe"
@@ -41,4 +48,4 @@ Root: HKCU; Subkey: "Software\Librevault"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Librevault"; ValueData: "{app}\librevault-gui.exe"; Flags: uninsdeletekey
 
 [Run]
-Filename: {app}\librevault-gui.exe; Flags: nowait postinstall
+Filename: {app}\librevault-gui.exe; Description: "Librevault"; Flags: nowait postinstall

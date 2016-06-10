@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>114</height>
+    <height>119</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -39,12 +39,16 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Please, enter the link you received in the field below. The link must start from &quot;lvlt://&quot;</string>
+      <string>Please, enter the link you received in the field below. The link must start from &quot;lvlt:&quot;</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="line_url"/>
+    <widget class="QLineEdit" name="line_url">
+     <property name="placeholderText">
+      <string notr="true">lvlt:</string>
+     </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">

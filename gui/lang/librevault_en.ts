@@ -44,7 +44,7 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.cpp" line="55"/>
+        <location filename="../gui/AddFolder.cpp" line="65"/>
         <source>Choose the directory to sync</source>
         <translation></translation>
     </message>
@@ -79,7 +79,12 @@
     <name>Client</name>
     <message>
         <location filename="../Client.cpp" line="33"/>
-        <source>Attach to running daemon instead of creating a new one</source>
+        <source>Attach to running daemon instead of creating a new one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../Client.cpp" line="35"/>
+        <source>The &quot;lvlt:&quot; URL to open.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -280,63 +285,96 @@
     <name>MainWindow</name>
     <message>
         <location filename="../gui/MainWindow.ui" line="17"/>
-        <location filename="../gui/MainWindow.cpp" line="180"/>
+        <location filename="../gui/MainWindow.cpp" line="188"/>
         <source>Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="55"/>
+        <location filename="../gui/MainWindow.cpp" line="57"/>
         <source>Show Librevault window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="56"/>
+        <location filename="../gui/MainWindow.cpp" line="58"/>
         <source>Open Librevault website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="57"/>
+        <location filename="../gui/MainWindow.cpp" line="59"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="58"/>
+        <location filename="../gui/MainWindow.cpp" line="60"/>
         <source>Open Librevault settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="59"/>
+        <location filename="../gui/MainWindow.cpp" line="61"/>
         <source>Quit Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="61"/>
-        <source>New folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/MainWindow.cpp" line="62"/>
-        <source>Add new folder for synchronization</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../gui/MainWindow.cpp" line="63"/>
-        <source>Delete</source>
+        <source>Add folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../gui/MainWindow.cpp" line="64"/>
+        <source>Add new folder for synchronization</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="65"/>
+        <source>Open URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="66"/>
+        <source>Open shared link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="67"/>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="68"/>
         <source>Delete folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="88"/>
+        <location filename="../gui/MainWindow.cpp" line="92"/>
         <source>Remove folder from Librevault?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="89"/>
+        <location filename="../gui/MainWindow.cpp" line="93"/>
         <source>This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OpenLink</name>
+    <message>
+        <location filename="../gui/OpenLink.ui" line="29"/>
+        <source>Open Link</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/OpenLink.ui" line="42"/>
+        <source>Please, enter the link you received in the field below. The link must start from &quot;lvlt:&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/OpenLink.cpp" line="35"/>
+        <source>Wrong link format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/OpenLink.cpp" line="36"/>
+        <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

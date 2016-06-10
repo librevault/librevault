@@ -214,7 +214,11 @@
 <context>
     <name>Client</name>
     <message>
-        <source>Attach to running daemon instead of creating a new one</source>
+        <source>Attach to running daemon instead of creating a new one.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The &quot;lvlt:&quot; URL to open.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -426,7 +430,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>New folder</source>
-        <translation>Новая папка</translation>
+        <translation type="vanished">Новая папка</translation>
     </message>
     <message>
         <source>Add new folder for synchronization</source>
@@ -459,6 +463,41 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <message>
         <source>Librevault</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Add folder</source>
+        <translation>Добавить папку</translation>
+    </message>
+    <message>
+        <source>Open URL</source>
+        <translation>Открыть ссылку</translation>
+    </message>
+    <message>
+        <source>Open shared link</source>
+        <translation>Добавить папку по ссылке</translation>
+    </message>
+</context>
+<context>
+    <name>OpenLink</name>
+    <message>
+        <source>Open Link</source>
+        <translation>Открыть ссылку</translation>
+    </message>
+    <message>
+        <source>Please, enter the link you received in the field below. The link must start from &quot;lvlt://&quot;</source>
+        <translation type="obsolete">Введите полученную </translation>
+    </message>
+    <message>
+        <source>Wrong link format</source>
+        <translation>Некорретный формат ссылки</translation>
+    </message>
+    <message>
+        <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
+        <translation>Ссылка введена некорректно. Правильная ссылка должна начинаться с &quot;lvlt:&quot; и содержать действительный Секрет.</translation>
+    </message>
+    <message>
+        <source>Please, enter the link you received in the field below. The link must start from &quot;lvlt:&quot;</source>
+        <translation>Введите полученную ссылку в поле ниже. Ссылка должна начинаться с &quot;lvlt:&quot;</translation>
     </message>
 </context>
 <context>
@@ -602,7 +641,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Check for updates on startup</source>
-        <translation type="unfinished">Проверять обновления программы</translation>
+        <translation>Проверять обновления программы</translation>
     </message>
 </context>
 <context>

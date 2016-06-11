@@ -45,7 +45,12 @@ Name: "{commondesktop}\Librevault"; Filename: "{app}\librevault-gui.exe"
 [Registry]
 Root: HKCU; Subkey: "Software\Librevault"; Flags: uninsdeletekey
 ; Autostart
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Librevault"; ValueData: "{app}\librevault-gui.exe"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Librevault"; ValueData: "{app}\librevault-gui.exe"; Flags: uninsdeletevalue
+; "lvlt:" protocol association
+Root: HKCU; Subkey: "Software\Classes\lvlt"; ValueType: string; ValueName: ""; ValueData: "URL:Librevault Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\lvlt"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\lvlt\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "librevault-gui.exe"
+Root: HKCU; Subkey: "Software\Classes\lvlt\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\librevault-gui.exe"" ""%1"""
 
 [Run]
-Filename: {app}\librevault-gui.exe; Description: "Librevault"; Flags: nowait postinstall
+Filename: {app}\librevault-gui.exe; Description: "Start Librevault"; Flags: nowait postinstall

@@ -75,6 +75,16 @@ Client::Client(int &argc, char **argv, int appflags) :
 		openLink(link);
 }
 
+Client::~Client() {}
+
+bool Client::event(QEvent* event) {
+	if(event->type() == QEvent::FileOpen) {
+		QFileOpenEvent* open_event = static_cast<QFileOpenEvent*>(event);
+		openLink(open_event->url().toString());
+	}
+	return QApplication::event(event);
+}
+
 void Client::applyLocale(QString locale) {
 	qt_translator_.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
 	this->installTranslator(&qt_translator_);
@@ -87,5 +97,3 @@ void Client::openLink(QString link) {
 	main_window_->show();   // Cause, this dialog looks ugly without a visible main window
 	main_window_->open_link_->handleLink(link);
 }
-
-Client::~Client() {}

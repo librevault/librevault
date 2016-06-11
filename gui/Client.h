@@ -33,6 +33,8 @@ Q_OBJECT
 public:
 	Client(int &argc, char **argv, int appflags = ApplicationFlags);
 	~Client();
+	
+	bool event(QEvent* event);
 
 public slots:
 	void applyLocale(QString locale);

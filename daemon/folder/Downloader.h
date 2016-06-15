@@ -14,10 +14,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <util/file_util.h>
 #include "RemoteFolder.h"
-
 #include "util/AvailabilityMap.h"
-
 
 namespace librevault {
 
@@ -83,7 +82,11 @@ private:
 	private:
 		AvailabilityMap<uint32_t> file_map_;
 		fs::path this_block_path_;
+#ifndef FOPEN_BACKEND
 		boost::iostreams::mapped_file mapped_file_;
+#else
+		file_wrapper wrapped_file_;
+#endif
 	};
 
 	std::map<blob, std::shared_ptr<NeededChunk>> needed_chunks_;

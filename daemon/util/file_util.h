@@ -60,6 +60,7 @@ private:
 	std::unique_ptr<std::iostream> ios_;
 
 public:
+	inline file_wrapper() {}
 	inline file_wrapper(const native_char_t* path, const char* mode) {
 		open(path, mode);
 	}

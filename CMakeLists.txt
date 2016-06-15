@@ -10,6 +10,13 @@ option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(DEFAULT_FILE_BACKEND "mmap")
+else()
+	set(DEFAULT_FILE_BACKEND "fopen")
+endif()
+set(FILE_BACKEND ${DEFAULT_FILE_BACKEND} CACHE STRING "File backend. Use mmap for 64-bit and fopen for 32-bit")
+
 #============================================================================
 # CMake modules
 #============================================================================

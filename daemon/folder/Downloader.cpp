@@ -191,16 +191,16 @@ void Downloader::maintain_requests(const boost::system::error_code& ec) {
 bool Downloader::request_one() {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	// Try to choose block to request
-	for(auto& needed_block : needed_chunks_) {
-		auto& ct_hash = needed_block.first;
+	for(auto& needed_chunk : needed_chunks_) {
+		auto& ct_hash = needed_chunk.first;
 
 		// Try to choose a remote to request this block from
 		auto remote = find_node_for_request(ct_hash);
 		if(remote == nullptr) continue;
 
-		// Rebuild request map to determine, which chunk to download now.
-		AvailabilityMap<uint32_t> request_map = needed_block.second->file_map();
-		for(auto& request : needed_block.second->requests)
+		// Rebuild request map to determine, which block to download now.
+		AvailabilityMap<uint32_t> request_map = needed_chunk.second->file_map();
+		for(auto& request : needed_chunk.second->requests)
 			request_map.insert({request.second.offset, request.second.size});
 
 		// Request, actually
@@ -211,7 +211,7 @@ bool Downloader::request_one() {
 			request.started = std::chrono::steady_clock::now();
 
 			remote->request_block(ct_hash, request.offset, request.size);
-			needed_block.second->requests.insert({remote, request});
+			needed_chunk.second->requests.insert({remote, request});
 			return true;
 		}
 	}
@@ -239,6 +239,8 @@ size_t Downloader::requests_overall() const {
 	return requests_overall_result;
 }
 
+/* Downloader::NeededChunk */
+
 Downloader::NeededChunk::NeededChunk(uint32_t size) : file_map_(size) {
 	if(BOOST_OS_WINDOWS)
 		this_block_path_ = getenv("TEMP");
@@ -247,28 +249,50 @@ Downloader::NeededChunk::NeededChunk(uint32_t size) : file_map_(size) {
 
 	this_block_path_ /= fs::unique_path("librevault-%%%%-%%%%-%%%%-%%%%");
 
-	fs::ofstream os(this_block_path_, std::ios_base::trunc);
-	os.close();
+	file_wrapper f(this_block_path_, "w");
+	f.close();
 	fs::resize_file(this_block_path_, size);
+
+#ifndef FOPEN_BACKEND
 	mapped_file_.open(this_block_path_);
+#else
+	wrapped_file_.open(this_block_path_, "w+");
+#endif
 }
 
 Downloader::NeededChunk::~NeededChunk() {
+#ifndef FOPEN_BACKEND
 	mapped_file_.close();
+#else
+	wrapped_file_.close();
+#endif
 	fs::remove(this_block_path_);
 }
 
 blob Downloader::NeededChunk::get_chunk() {
-	if(file_map_.size_left() == 0) {
+	if(full()) {
 		blob content(size());
+#ifndef FOPEN_BACKEND
 		std::copy(mapped_file_.data(), mapped_file_.data() + size(), content.data());
+#else
+		wrapped_file_.ios().seekg(0);
+		wrapped_file_.ios().read((char*)content.data(), size());
+#endif
 		return content;
 	}else throw AbstractFolder::no_such_chunk();
 }
 
 void Downloader::NeededChunk::put_block(uint32_t offset, const blob& content) {
 	auto inserted = file_map_.insert({offset, content.size()}).second;
-	if(inserted) std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
+	if(inserted) {
+#ifndef FOPEN_BACKEND
+		std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
+#else
+		if(wrapped_file_.ios().tellp() != offset)
+			wrapped_file_.ios().seekp(offset);
+		wrapped_file_.ios().write((char*)content.data(), content.size());
+#endif
+	}
 }
 
 } /* namespace librevault */

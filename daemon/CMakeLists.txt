@@ -27,6 +27,10 @@ list(APPEND SRCS ${MAIN_OBJCXX})
 
 add_executable(librevault-daemon ${SRCS})
 
+if(FILE_BACKEND STREQUAL "fopen")
+	target_compile_definitions(librevault-daemon PRIVATE "-DFOPEN_BACKEND")
+endif()
+
 #============================================================================
 # Third-party libraries
 #============================================================================

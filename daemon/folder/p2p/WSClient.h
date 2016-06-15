@@ -25,11 +25,15 @@ class WSClient : public WSService {
 public:
 	using client = websocketpp::client<asio_tls_client>;
 
+	struct ConnectCredentials {
+		librevault::url url;
+		tcp_endpoint endpoint;
+		blob pubkey;
+	};
+
 	WSClient(Client& client, P2PProvider& provider);
 
-	void connect(url node_url, std::shared_ptr<FolderGroup> group_ptr);
-	void connect(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
-	void connect(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
+	void connect(ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
 
 	/* Actions */
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
@@ -49,6 +53,9 @@ private:
 		WSService::close(ws_client_, hdl, reason);
 	}
 	std::string errmsg(websocketpp::connection_hdl hdl) override;
+
+	bool is_loopback(const ConnectCredentials& node_credentials);
+	bool already_have(const ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr);
 };
 
 } /* namespace librevault */

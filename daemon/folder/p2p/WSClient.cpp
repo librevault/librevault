@@ -37,46 +37,65 @@ WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, pr
 	ws_client_.set_close_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
 }
 
-void WSClient::connect(url node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " " << (std::string)node_url;
-	websocketpp::lib::error_code ec;
+void WSClient::connect(ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	// Building url
-	node_url.scheme = "wss";
-	node_url.query = "/";
-	node_url.query += dir_hash_to_query(group_ptr->hash());
+	if(node_credentials.url.empty()) {
+		assert(node_credentials.endpoint != tcp_endpoint());    // We have no credentials at all, no way to connect
 
-	auto connection_ptr = ws_client_.get_connection(node_url, ec);
-	if(ec) {
-		log_->warn() << log_tag() << "Error connecting to " << (std::string)node_url;
+		if(node_credentials.endpoint.address().is_v6()) node_credentials.url.is_ipv6 = true;
+		node_credentials.url.host = node_credentials.endpoint.address().to_string();
+		node_credentials.url.port = node_credentials.endpoint.port();
+	}
+	// Assure, that scheme and query are right
+	node_credentials.url.scheme = "wss";
+	node_credentials.url.query = "/";
+	node_credentials.url.query += dir_hash_to_query(group_ptr->hash());
+
+	// URL is ready
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " " << (std::string)node_credentials.url;
+
+	if(is_loopback(node_credentials)) { // Check for loopback
+		log_->debug() << log_tag() << "Refusing to connect to loopback node: " << (std::string)node_credentials.url;
+		return;
+	}
+	if(already_have(node_credentials, group_ptr)) { // Check if already have this node
+		log_->debug() << log_tag() << "Refusing to connect to existing node: " << (std::string)node_credentials.url;
 		return;
 	}
 
+	// Get connection pointer
+	websocketpp::lib::error_code ec;
+	auto connection_ptr = ws_client_.get_connection(node_credentials.url, ec);
+	if(ec) {
+		log_->warn() << log_tag() << "Error connecting to " << (std::string)node_credentials.url;
+		return;
+	}
+
+	// Assign websocketpp connection_hdl to internal P2PFolder connection
 	connection& conn = ws_assignment_[websocketpp::connection_hdl(connection_ptr)];
 	conn.hash = group_ptr->hash();
 
-	log_->debug() << log_tag() << "Added node " << std::string(node_url);
+	log_->debug() << log_tag() << "Added node " << std::string(node_credentials.url);
 
+	// Actually connect
 	ws_client_.connect(connection_ptr);
 }
 
-void WSClient::connect(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	if(!group_ptr->have_p2p_dir(node_endpoint) && !provider_.is_loopback(node_endpoint)) {
-		url node_url;
-
-		if(node_endpoint.address().is_v6()) node_url.is_ipv6 = true;
-
-		node_url.host = node_endpoint.address().to_string();
-		node_url.port = node_endpoint.port();
-
-		connect(node_url, group_ptr);
-	}
+bool WSClient::is_loopback(const ConnectCredentials& node_credentials) {
+	if(!node_credentials.pubkey.empty() && provider_.is_loopback(node_credentials.pubkey))  // Public key based loopback (no false negatives!)
+		return true;
+	if(node_credentials.endpoint != tcp_endpoint() && provider_.is_loopback(node_credentials.endpoint))    // Endpoint-based loopback (may be false negative)
+		return true;
+	return false;
 }
 
-void WSClient::connect(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	if(!group_ptr->have_p2p_dir(pubkey) && !provider_.is_loopback(pubkey)){
-		connect(node_endpoint, group_ptr);
-	}
+bool WSClient::already_have(const ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+	if(!node_credentials.pubkey.empty() && group_ptr->have_p2p_dir(node_credentials.pubkey))
+		return true;
+	if(node_credentials.endpoint != tcp_endpoint() && group_ptr->have_p2p_dir(node_credentials.endpoint))
+		return true;
+	return false;
 }
 
 void WSClient::on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr) {

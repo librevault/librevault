@@ -35,6 +35,10 @@ struct url {
 	bool is_ipv6 = false;
 
 	operator std::string() const;
+	bool operator==(const url& u) const {
+		return (scheme == u.scheme) && (userinfo == u.userinfo) && (host == u.host) && (port == u.port) && (query == u.query);
+	}
+	bool empty() {return *this == url();}   // Not optimal, but simple
 };
 
 } /* namespace librevault */

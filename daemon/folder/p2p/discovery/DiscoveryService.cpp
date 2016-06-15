@@ -23,15 +23,22 @@ namespace librevault {
 DiscoveryService::DiscoveryService(Client& client) : Loggable(client), client_(client) {}
 
 void DiscoveryService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->ws_client()->connect(node_url, group_ptr);
+	WSClient::ConnectCredentials credentials;
+	credentials.url = node_url;
+	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->ws_client()->connect(node_endpoint, group_ptr);
+	WSClient::ConnectCredentials credentials;
+	credentials.endpoint = node_endpoint;
+	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	client_.p2p_provider()->ws_client()->connect(node_endpoint, pubkey, group_ptr);
+	WSClient::ConnectCredentials credentials;
+	credentials.endpoint = node_endpoint;
+	credentials.pubkey = pubkey;
+	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
 }
 
 } /* namespace librevault */

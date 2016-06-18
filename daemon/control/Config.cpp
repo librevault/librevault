@@ -117,6 +117,7 @@ void Config::make_defaults() {
 	folders_defaults_["archive_type"] = "trash";
 	folders_defaults_["archive_trash_ttl"] = 30;
 	folders_defaults_["archive_timestamp_count"] = 5;
+	folders_defaults_["mainline_dht_enabled"] = true;
 }
 
 void Config::make_merged_globals() {

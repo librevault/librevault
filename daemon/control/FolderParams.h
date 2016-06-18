@@ -65,6 +65,7 @@ struct FolderParams {
 
 		archive_trash_ttl = json_params.get("archive_trash_ttl", defaults.archive_trash_ttl).asUInt();
 		archive_timestamp_count = json_params.get("archive_timestamp_count", defaults.archive_timestamp_count).asUInt();
+		mainline_dht_enabled = json_params.get("mainline_dht_enabled", defaults.mainline_dht_enabled).asBool();
 	}
 
 	/* Parameters */
@@ -83,6 +84,7 @@ struct FolderParams {
 	ArchiveType archive_type = ArchiveType::TRASH_ARCHIVE;
 	unsigned archive_trash_ttl = 30;
 	unsigned archive_timestamp_count = 5;
+	bool mainline_dht_enabled = true;
 };
 
 } /* namespace librevault */

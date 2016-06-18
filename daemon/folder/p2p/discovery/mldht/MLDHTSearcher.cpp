@@ -29,6 +29,9 @@ using namespace boost::asio::ip;
 MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service) :
 	DiscoveryInstance(group, service), Loggable("MLDHTSearcher") {
 	info_hash_ = btcompat::get_info_hash(std::shared_ptr<FolderGroup>(group)->hash());
+
+	set_enabled(std::shared_ptr<FolderGroup>(group)->params().mainline_dht_enabled);
+
 	attached_connection_ = std::shared_ptr<FolderGroup>(group)->attached_signal.connect([&, this](std::shared_ptr<P2PFolder> p2p_folder){
 		if(enabled_) {
 			dht_ping_node(p2p_folder->remote_endpoint().data(), p2p_folder->remote_endpoint().size());
@@ -46,6 +49,7 @@ void MLDHTSearcher::set_enabled(bool enable) {
 
 void MLDHTSearcher::start_search(bool start_v4, bool start_v6) {
 	if(enabled_ && start_v4 && ((MLDHTDiscovery&)service_).active_v4()) {
+		log_->debug() << log_tag() << "Starting search for: " << crypto::Hex().to_string(info_hash_);
 		lv_dht_closure* closure = new lv_dht_closure();
 		closure->discovery_ptr = (MLDHTDiscovery*)&service_;
 

@@ -70,6 +70,7 @@ void MLDHTDiscovery::init() {
 
 		try {
 			socket6_.open(boost::asio::ip::udp::v6());
+			socket6_.set_option(boost::asio::ip::v6_only(true));
 			socket6_.bind(udp_endpoint(address_v6::any(), (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt()));
 			v6_ready = true;
 		}catch(std::exception& e) {
@@ -115,6 +116,8 @@ void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
 }
 
 void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
 	std::unique_ptr<lv_dht_closure> closure_ptr((lv_dht_closure*)closure);
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
@@ -132,7 +135,7 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 			add_node(btcompat::parse_compact_endpoint6(data_cur), folder_ptr);
 		}
 	}else if(event == DHT_EVENT_SEARCH_DONE || event == DHT_EVENT_SEARCH_DONE6) {
-		searchers_[btcompat::get_info_hash(folder_ptr->hash())]->start_search(event == DHT_EVENT_SEARCH_DONE, event == DHT_EVENT_SEARCH_DONE6);
+		searchers_[btcompat::get_info_hash(folder_ptr->hash())]->search_completed(event == DHT_EVENT_SEARCH_DONE, event == DHT_EVENT_SEARCH_DONE6);
 	}
 }
 
@@ -157,11 +160,14 @@ void MLDHTDiscovery::receive(udp_socket& socket) {
 }
 
 void MLDHTDiscovery::init_id() {
-	file_wrapper file(Config::get()->paths().dht_id_path, "w+");
-	file.ios().exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
 	try {
+		file_wrapper file(Config::get()->paths().dht_id_path, "r");
+		file.ios().exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
 		file.ios().read((char*)own_id.data(), own_id.size());
-	}catch(const std::ios_base::failure& e) {
+	}catch(std::ios_base::failure e) {
+		file_wrapper file(Config::get()->paths().dht_id_path, "w");
+		file.ios().exceptions(std::ios::failbit | std::ios::badbit);
+
 		CryptoPP::AutoSeededRandomPool rng;
 		rng.GenerateBlock(own_id.data(), own_id.size());
 		file.ios().write((char*)own_id.data(), own_id.size());

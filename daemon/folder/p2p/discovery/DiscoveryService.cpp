@@ -20,25 +20,30 @@
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(Client& client) : Loggable(client), client_(client) {}
+DiscoveryService::DiscoveryService(Client& client, std::string id) : Loggable(client), client_(client), id_(id) {}
+
+void DiscoveryService::add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+	node_cred.source = id_;
+	client_.p2p_provider()->ws_client()->connect(node_cred, group_ptr);
+}
 
 void DiscoveryService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
 	WSClient::ConnectCredentials credentials;
 	credentials.url = node_url;
-	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
+	add_node(std::move(credentials), group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
 	WSClient::ConnectCredentials credentials;
 	credentials.endpoint = node_endpoint;
-	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
+	add_node(std::move(credentials), group_ptr);
 }
 
 void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
 	WSClient::ConnectCredentials credentials;
 	credentials.endpoint = node_endpoint;
 	credentials.pubkey = pubkey;
-	client_.p2p_provider()->ws_client()->connect(credentials, group_ptr);
+	add_node(std::move(credentials), group_ptr);
 }
 
 } /* namespace librevault */

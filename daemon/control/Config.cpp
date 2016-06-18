@@ -38,6 +38,7 @@ Config::Config(fs::path appdata_path) {
 	paths_.log_path = paths_.appdata_path / "librevault.log";
 	paths_.key_path = paths_.appdata_path / "key.pem";
 	paths_.cert_path = paths_.appdata_path / "cert.pem";
+	paths_.dht_id_path = paths_.appdata_path / "mldht_id.bin";
 
 	make_defaults();
 	load();
@@ -87,8 +88,17 @@ void Config::make_defaults() {
 	globals_defaults_["bttracker_azureus_id"] = "-LV0001-";
 	globals_defaults_["bttracker_reconnect_interval"] = 30;
 	globals_defaults_["bttracker_packet_timeout"] = 10;
+	globals_defaults_["mainline_dht_enabled"] = true;
+	globals_defaults_["mainline_dht_port"] = 42347;
 
-	//globals_defaults_["bttracker_discovery_trackers"].append("udp://discovery.librevault.com:42340");  // TODO: Soon, guys!
+	//globals_defaults_["mainline_dht_routers"].append("discovery-mldht.librevault.com:6881");    // TODO: Soon, guys!
+	globals_defaults_["mainline_dht_routers"].append("router.utorrent.com:6881");
+	globals_defaults_["mainline_dht_routers"].append("router.bittorrent.com:6881");
+	globals_defaults_["mainline_dht_routers"].append("dht.transmissionbt.com:6881");
+	globals_defaults_["mainline_dht_routers"].append("router.bitcomet.com:6881");
+	globals_defaults_["mainline_dht_routers"].append("dht.aelitis.com:6881");
+
+	//globals_defaults_["bttracker_discovery_trackers"].append("udp://discovery-bt.librevault.com:42340");  // TODO: Really soon, guys!
 	globals_defaults_["bttracker_trackers"].append("udp://tracker.openbittorrent.com:80");
 	globals_defaults_["bttracker_trackers"].append("udp://open.demonii.com:1337");
 	globals_defaults_["bttracker_trackers"].append("udp://tracker.coppersurfer.tk:6969");

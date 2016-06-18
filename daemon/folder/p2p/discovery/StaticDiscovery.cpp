@@ -24,7 +24,7 @@ namespace librevault {
 using namespace boost::asio::ip;
 
 StaticDiscovery::StaticDiscovery(Client& client) :
-	DiscoveryService(client) {
+	DiscoveryService(client, "Static") {
 	client.folder_added_signal.connect(std::bind(&StaticDiscovery::register_group, this, std::placeholders::_1));
 	client.folder_removed_signal.connect(std::bind(&StaticDiscovery::unregister_group, this, std::placeholders::_1));
 }

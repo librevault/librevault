@@ -14,31 +14,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <string>
-#include <cstdint>
+#include "pch.h"
+#include "folder/p2p/discovery/DiscoveryInstance.h"
+#include "../btcompat.h"
 
 namespace librevault {
 
-struct url;
+class MLDHTDiscovery;
 
-url parse_url(std::string url_str);
+class MLDHTSearcher : public DiscoveryInstance, public Loggable {
+public:
+	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service);
 
-struct url {
-	url() {}
-	url(std::string str) {*this = parse_url(std::move(str));}
-	std::string scheme;
-	std::string userinfo;
-	std::string host;
-	uint16_t port = 0;
-	std::string query;
+	void set_enabled(bool enable);
+	void start_search(bool start_v4, bool start_v6);
 
-	bool is_ipv6 = false;
+private:
+	btcompat::info_hash info_hash_;
+	boost::signals2::scoped_connection attached_connection_;
 
-	operator std::string() const;
-	bool operator==(const url& u) const {
-		return (scheme == u.scheme) && (userinfo == u.userinfo) && (host == u.host) && (port == u.port) && (query == u.query);
-	}
-	bool empty() const {return *this == url();}   // Not optimal, but simple
+	bool enabled_ = false;
 };
 
 } /* namespace librevault */

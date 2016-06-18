@@ -53,7 +53,7 @@ void WSClient::connect(ConnectCredentials node_credentials, std::shared_ptr<Fold
 	node_credentials.url.query += dir_hash_to_query(group_ptr->hash());
 
 	// URL is ready
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " " << (std::string)node_credentials.url;
+	log_->debug() << log_tag() << "Discovered node: " << (std::string)node_credentials.url << " from " << node_credentials.source;
 
 	if(is_loopback(node_credentials)) { // Check for loopback
 		log_->debug() << log_tag() << "Refusing to connect to loopback node: " << (std::string)node_credentials.url;

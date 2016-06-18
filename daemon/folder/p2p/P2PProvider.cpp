@@ -18,9 +18,10 @@
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
 #include "nat/NATPMPService.h"
-#include "discovery/StaticDiscovery.h"
+#include "folder/p2p/discovery/StaticDiscovery.h"
 #include "folder/p2p/discovery/multicast/MulticastDiscovery.h"
 #include "folder/p2p/discovery/bttracker/BTTrackerDiscovery.h"
+#include "folder/p2p/discovery/mldht/MLDHTDiscovery.h"
 
 #include "WSServer.h"
 #include "WSClient.h"
@@ -38,6 +39,7 @@ P2PProvider::P2PProvider(Client& client) :
 	multicast4_ = std::make_unique<MulticastDiscovery4>(client_);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(client_);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_);
+	mldht_ = std::make_unique<MLDHTDiscovery>(client_);
 
 	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
 	natpmp_->port_signal.connect(std::bind(&P2PProvider::set_public_port, this, std::placeholders::_1));

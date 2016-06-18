@@ -26,6 +26,8 @@ public:
 	using client = websocketpp::client<asio_tls_client>;
 
 	struct ConnectCredentials {
+		std::string source;
+
 		librevault::url url;
 		tcp_endpoint endpoint;
 		blob pubkey;

@@ -17,6 +17,7 @@
 #include "pch.h"
 #include "util/parse_url.h"
 #include "util/Loggable.h"
+#include "folder/p2p/WSClient.h"
 
 namespace librevault {
 
@@ -25,12 +26,13 @@ class Client;
 
 class DiscoveryService : public Loggable {
 public:
-	DiscoveryService(Client& client);
+	DiscoveryService(Client& client, std::string id);
 	virtual ~DiscoveryService(){}
 
 	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 	virtual void unregister_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 
+	void add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
@@ -39,6 +41,7 @@ public:
 
 protected:
 	Client& client_;
+	std::string id_;
 };
 
 } /* namespace librevault */

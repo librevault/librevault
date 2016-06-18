@@ -17,6 +17,7 @@
 #include "pch.h"
 #include "util/Loggable.h"
 #include "util/parse_url.h"
+#include "../btcompat.h"
 
 namespace librevault {
 
@@ -35,9 +36,6 @@ protected:
 		EVENT_NONE=0, EVENT_COMPLETED=1, EVENT_STARTED=2, EVENT_STOPPED=3
 	};
 
-	using info_hash = std::array<uint8_t, 20>;
-	using peer_id = std::array<uint8_t, 20>;
-
 	Client& client_;
 	BTTrackerDiscovery& tracker_discovery_;
 
@@ -48,8 +46,8 @@ protected:
 
 	std::string log_tag() const {return std::string("[bttracker: ") + std::string(tracker_address_) + "] ";}
 
-	info_hash get_info_hash() const;
-	peer_id get_peer_id() const;
+	btcompat::info_hash get_info_hash() const;
+	btcompat::peer_id get_peer_id() const;
 };
 
 } /* namespace librevault */

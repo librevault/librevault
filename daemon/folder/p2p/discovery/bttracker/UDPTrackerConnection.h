@@ -63,8 +63,8 @@ private:
 
 	struct announce_req {
 		req_header header_;
-		info_hash info_hash_;
-		peer_id peer_id_;
+		btcompat::info_hash info_hash_;
+		btcompat::peer_id peer_id_;
 		boost::endian::big_int64_t downloaded_;
 		boost::endian::big_int64_t left_;
 		boost::endian::big_int64_t uploaded_;
@@ -80,14 +80,6 @@ private:
 		boost::endian::big_int32_t interval_;
 		boost::endian::big_int32_t leechers_;
 		boost::endian::big_int32_t seeders_;
-	};
-	struct announce_rep_ext4 {
-		std::array<uint8_t, 4> ip4_;
-		boost::endian::big_uint16_t port_;
-	};
-	struct announce_rep_ext6 {
-		std::array<uint8_t, 16> ip6_;
-		boost::endian::big_uint16_t port_;
 	};
 #pragma pack(pop)
 

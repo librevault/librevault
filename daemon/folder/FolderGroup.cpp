@@ -146,6 +146,8 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
 
 	log_->debug() << log_tag() << "Attached remote " << remote_ptr->name();
+
+	attached_signal(remote_ptr);
 }
 
 void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
@@ -157,6 +159,8 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_.erase(remote_ptr);
 
 	log_->debug() << log_tag() << "Detached remote " << remote_ptr->name();
+
+	detached_signal(remote_ptr);
 }
 
 bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {

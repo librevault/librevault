@@ -75,6 +75,9 @@ public:
 	void attach(std::shared_ptr<P2PFolder> remote_ptr);
 	void detach(std::shared_ptr<P2PFolder> remote_ptr);
 
+	boost::signals2::signal<void(std::shared_ptr<P2PFolder>)> attached_signal;
+	boost::signals2::signal<void(std::shared_ptr<P2PFolder>)> detached_signal;
+
 	bool have_p2p_dir(const tcp_endpoint& endpoint);
 	bool have_p2p_dir(const blob& pubkey);
 

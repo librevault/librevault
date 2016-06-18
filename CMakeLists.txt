@@ -152,6 +152,9 @@ endif()
 ## rabin
 add_subdirectory("contrib/rabin")
 
+## dht
+add_subdirectory("contrib/dht")
+
 ## Spdlog
 find_package(spdlog QUIET)
 add_definitions(-DSPDLOG_WCHAR_FILENAMES)

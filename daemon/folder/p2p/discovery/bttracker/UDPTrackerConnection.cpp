@@ -181,15 +181,8 @@ void UDPTrackerConnection::handle_announce() {
 	announce_rep* reply = reinterpret_cast<announce_rep*>(buffer_.data());
 
 	if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE){
-		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(announce_rep_ext4) <= buffer_.data()+buffer_.size(); i+=sizeof(announce_rep_ext4)){
-			announce_rep_ext4* rep_ext = reinterpret_cast<announce_rep_ext4*>(i);
-
-			boost::asio::ip::address_v4 address(rep_ext->ip4_);
-			tcp_endpoint endpoint(address, rep_ext->port_);
-
-			log_->debug() << log_tag() << "Discovered node: " << endpoint;
-
-			tracker_discovery_.add_node(endpoint, group_ptr_);
+		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(btcompat::compact_endpoint4) <= buffer_.data()+buffer_.size(); i+=sizeof(btcompat::compact_endpoint4)){
+			tracker_discovery_.add_node(btcompat::parse_compact_endpoint4((const uint8_t*)i), group_ptr_);
 		}
 	}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6){
 		// TODO: Implement IPv6 tracker discovery

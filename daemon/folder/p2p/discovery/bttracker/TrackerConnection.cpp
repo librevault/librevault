@@ -37,24 +37,12 @@ TrackerConnection::TrackerConnection(url tracker_address,
 
 TrackerConnection::~TrackerConnection() {}
 
-TrackerConnection::info_hash TrackerConnection::get_info_hash() const {
-	info_hash ih; std::copy(group_ptr_->hash().begin(), group_ptr_->hash().begin()+std::min(ih.size(), group_ptr_->hash().size()), ih.begin());
-	return ih;
+btcompat::info_hash TrackerConnection::get_info_hash() const {
+	return btcompat::get_info_hash(group_ptr_->hash());
 }
 
-TrackerConnection::peer_id TrackerConnection::get_peer_id() const {
-	TrackerConnection::peer_id pid;
-
-	std::string az_id = Config::get()->globals()["bttracker_azureus_id"].asString();
-	az_id.resize(8);
-
-	auto pubkey_bytes_left = pid.size() - az_id.size();
-
-	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(client_.p2p_provider()->node_key().public_key().begin(),
-		client_.p2p_provider()->node_key().public_key().begin() + pubkey_bytes_left, pid.begin() + az_id.size());
-
-	return pid;
+btcompat::peer_id TrackerConnection::get_peer_id() const {
+	return btcompat::get_peer_id(client_.p2p_provider()->node_key().public_key());
 }
 
 } /* namespace librevault */

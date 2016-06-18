@@ -25,7 +25,7 @@ namespace librevault {
 using namespace boost::asio::ip;
 
 BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
-	DiscoveryService(client) {
+	DiscoveryService(client, "BT") {
 	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
 		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
 			trackers_.push_back(tracker.asString());

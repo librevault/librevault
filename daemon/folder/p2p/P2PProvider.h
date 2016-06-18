@@ -27,6 +27,7 @@ class WSClient;
 class StaticDiscovery;
 class MulticastDiscovery;
 class BTTrackerDiscovery;
+class MLDHTDiscovery;
 
 /* Port mapping services */
 class NATPMPService;
@@ -69,6 +70,7 @@ private:
 	std::unique_ptr<StaticDiscovery> static_discovery_;
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
 	std::unique_ptr<BTTrackerDiscovery> bttracker_;
+	std::unique_ptr<MLDHTDiscovery> mldht_;
 
 	/* Loopback detection */
 	std::set<tcp_endpoint> loopback_blacklist_;

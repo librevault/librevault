@@ -27,7 +27,7 @@ namespace librevault {
 using namespace boost::asio::ip;
 
 MulticastDiscovery::MulticastDiscovery(Client& client, address bind_addr) :
-	DiscoveryService(client), socket_(client.network_ios()), bind_addr_(bind_addr) {
+	DiscoveryService(client, "Multicast"), socket_(client.network_ios()), bind_addr_(bind_addr) {
 	name_ = "MulticastDiscovery";
 	client.folder_added_signal.connect(std::bind(&MulticastDiscovery::register_group, this, std::placeholders::_1));
 	client.folder_removed_signal.connect(std::bind(&MulticastDiscovery::unregister_group, this, std::placeholders::_1));

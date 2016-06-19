@@ -121,7 +121,7 @@ void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
 }
 
 void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " event: " << event;
 
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 

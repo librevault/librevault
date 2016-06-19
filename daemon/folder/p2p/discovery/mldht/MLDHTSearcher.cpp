@@ -70,7 +70,11 @@ void MLDHTSearcher::start_search(int af, bool announce) {
 		bool ready4 = (af == AF_INET && ((MLDHTDiscovery&)service_).active_v4());
 
 		if(ready6 || ready4) {
-			log_->debug() << log_tag() << "Starting " << (ready6 ? "IPv6" : (ready4 ? "IPv4" : "")) << " search for: " << crypto::Hex().to_string(info_hash_);
+			log_->debug() << log_tag() << "Starting "
+				<< (ready6 ? "IPv6" : "IPv4")
+				<< " "
+				<< (announce ? "announce" : "search")
+				<< " for: " << crypto::Hex().to_string(info_hash_);
 
 			dht_search(info_hash_.data(), announce ? service_.client().p2p_provider()->public_port() : 0, af, lv_dht_callback_glue, (MLDHTDiscovery*)&service_);
 		}

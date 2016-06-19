@@ -123,7 +123,6 @@ void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
 void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	std::unique_ptr<lv_dht_closure> closure_ptr((lv_dht_closure*)closure);
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
 	auto folder_it = groups_.find(ih);
@@ -149,11 +148,8 @@ void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buf
 
 	log_->trace() << log_tag() << "DHT message received";
 
-	lv_dht_closure* closure = new lv_dht_closure();
-	closure->discovery_ptr = this;
-
 	std::unique_lock<std::mutex> lk(dht_mutex);
-	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, closure);
+	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, this);
 	lk.unlock();
 
 	maintain_periodic_requests();
@@ -193,11 +189,8 @@ void MLDHTDiscovery::maintain_periodic_requests() {
 		dht_nodes(AF_INET, &good, &dubious, &cached, &incoming);
 		log_->trace() << log_tag() << "g:" << good << " d:" << dubious << " c:" << cached << " i:" << incoming;
 
-		lv_dht_closure* closure = new lv_dht_closure();
-		closure->discovery_ptr = this;
-
 		std::unique_lock<std::mutex> lk(dht_mutex);
-		dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, closure);
+		dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
 		lk.unlock();
 
 		maintain_periodic_requests();

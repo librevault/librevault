@@ -91,7 +91,7 @@ void MLDHTDiscovery::init() {
 	if(routers.isArray()) {
 		for(auto& router_value : routers) {
 			url router_url(router_value.asString());
-			std::shared_ptr<udp_resolver::query> query = std::make_shared<udp_resolver::query>(router_url.host, boost::lexical_cast<std::string>(router_url.port));
+			std::shared_ptr<udp_resolver::query> query = std::make_shared<udp_resolver::query>(router_url.host, std::to_string(router_url.port));
 			resolver_.async_resolve(*query, std::bind([&, this](const boost::system::error_code& error, udp_resolver::iterator it, std::shared_ptr<udp_resolver::query>){
 				for(; it != udp_resolver::iterator(); it++) {
 					auto endpoint = it->endpoint();

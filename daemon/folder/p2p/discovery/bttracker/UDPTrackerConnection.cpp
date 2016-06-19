@@ -43,7 +43,7 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 
 	log_->debug() << log_tag() << "Resolving IP address";
 
-	udp_resolver::query resolver_query = udp_resolver::query(tracker_address.host, boost::lexical_cast<std::string>(tracker_address.port));
+	udp_resolver::query resolver_query = udp_resolver::query(tracker_address.host, std::to_string(tracker_address.port));
 	resolver_.async_resolve(resolver_query, std::bind(&UDPTrackerConnection::handle_resolve, this, std::placeholders::_1, std::placeholders::_2));
 }
 

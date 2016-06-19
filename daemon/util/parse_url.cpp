@@ -87,7 +87,7 @@ url::operator std::string() const {
 		result += host;
 	if(port != 0){
 		result += ":";
-		result += boost::lexical_cast<std::string>(port);
+		result += std::to_string(port);
 	}
 	result += query;
 	return result;

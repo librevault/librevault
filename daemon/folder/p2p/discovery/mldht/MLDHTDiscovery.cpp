@@ -103,6 +103,11 @@ void MLDHTDiscovery::init() {
 	}
 
 	maintain_periodic_requests();
+
+	if(active_v6())
+		receive(socket6_);
+	if(active_v4())
+		receive(socket4_);
 }
 
 void MLDHTDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
@@ -142,12 +147,16 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
+	log_->trace() << log_tag() << "DHT message received";
+
 	lv_dht_closure* closure = new lv_dht_closure();
 	closure->discovery_ptr = this;
 
 	std::unique_lock<std::mutex> lk(dht_mutex);
 	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, closure);
 	lk.unlock();
+
+	maintain_periodic_requests();
 
 	receive(*socket);    // We received message, continue receiving others
 }
@@ -177,7 +186,12 @@ void MLDHTDiscovery::init_id() {
 void MLDHTDiscovery::maintain_periodic_requests() {
 	tosleep_timer_.expires_from_now(std::chrono::seconds(tosleep));
 	tosleep_timer_.async_wait([this](const boost::system::error_code& error){
+		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 		if(error == boost::asio::error::operation_aborted) return;
+
+		int good, dubious, cached, incoming;
+		dht_nodes(AF_INET, &good, &dubious, &cached, &incoming);
+		log_->trace() << log_tag() << "g:" << good << " d:" << dubious << " c:" << cached << " i:" << incoming;
 
 		lv_dht_closure* closure = new lv_dht_closure();
 		closure->discovery_ptr = this;

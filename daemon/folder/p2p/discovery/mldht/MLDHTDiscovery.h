@@ -30,8 +30,8 @@ public:
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
 
-	bool active_v4() {return socket4_.is_open();}
-	bool active_v6() {return socket6_.is_open();}
+	bool active_v4() const {return socket4_.is_open();}
+	bool active_v6() const {return socket6_.is_open();}
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);

@@ -27,7 +27,7 @@ public:
 	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service);
 
 	void set_enabled(bool enable);
-	void start_search(int af, bool announce);
+	void start_search(int af);
 	void search_completed(bool start_v4, bool start_v6);
 
 private:
@@ -37,7 +37,7 @@ private:
 	bool enabled_ = false;
 
 
-	boost::asio::steady_timer announce_timer6_, search_timer6_, announce_timer4_, search_timer4_;
+	boost::asio::steady_timer search_timer6_, search_timer4_;
 };
 
 } /* namespace librevault */

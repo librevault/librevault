@@ -29,9 +29,7 @@ using namespace boost::asio::ip;
 MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service) :
 		DiscoveryInstance(group, service),
 		Loggable("MLDHTSearcher"),
-		announce_timer6_(service.client().network_ios()),
 		search_timer6_(service.client().network_ios()),
-		announce_timer4_(service.client().network_ios()),
 		search_timer4_(service.client().network_ios()) {
 	info_hash_ = btcompat::get_info_hash(std::shared_ptr<FolderGroup>(group)->hash());
 
@@ -49,22 +47,20 @@ void MLDHTSearcher::set_enabled(bool enable) {
 	if(enable && !enabled_) {
 		enabled_ = true;
 		service_.client().network_ios().post([&, this]() {
-			start_search(AF_INET, true);
-			start_search(AF_INET6, true);
-			start_search(AF_INET, false);
-			start_search(AF_INET6, false);
+			start_search(AF_INET);
+			start_search(AF_INET6);
 		});
 	}else if(!enable && enabled_) {
 		enabled_ = false;
 
-		announce_timer6_.cancel();
 		search_timer6_.cancel();
-		announce_timer4_.cancel();
 		search_timer4_.cancel();
 	}
 }
 
-void MLDHTSearcher::start_search(int af, bool announce) {
+void MLDHTSearcher::start_search(int af) {
+	bool announce = true;
+
 	if(enabled_) {
 		bool ready6 = (af == AF_INET6 && ((MLDHTDiscovery&)service_).active_v6());
 		bool ready4 = (af == AF_INET && ((MLDHTDiscovery&)service_).active_v4());
@@ -84,25 +80,16 @@ void MLDHTSearcher::start_search(int af, bool announce) {
 
 	boost::asio::steady_timer* timer;
 
-	if(announce) {
-		if(af == AF_INET6)
-			timer = &announce_timer6_;
-		else
-			timer = &announce_timer4_;
+	if(af == AF_INET6)
+		timer = &search_timer6_;
+	else
+		timer = &search_timer4_;
 
-		timer->expires_from_now(std::chrono::minutes(5));
-	}else{
-		if(af == AF_INET6)
-			timer = &search_timer6_;
-		else
-			timer = &search_timer4_;
-
-		timer->expires_from_now(std::chrono::minutes(1));
-	}
+	timer->expires_from_now(std::chrono::minutes(1));
 
 	timer->async_wait(std::bind([this](int af, bool announce, const boost::system::error_code& error){
 		if(error == boost::asio::error::operation_aborted) return;
-		start_search(af, announce);
+		start_search(af);
 	}, af, announce, std::placeholders::_1));
 }
 

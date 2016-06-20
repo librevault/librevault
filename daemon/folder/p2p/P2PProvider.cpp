@@ -41,6 +41,8 @@ P2PProvider::P2PProvider(Client& client) :
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_);
 	mldht_ = std::make_unique<MLDHTDiscovery>(client_);
 
+	set_public_port(0);
+
 	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
 	natpmp_->port_signal.connect(std::bind(&P2PProvider::set_public_port, this, std::placeholders::_1));
 }

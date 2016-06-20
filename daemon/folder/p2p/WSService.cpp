@@ -54,25 +54,27 @@ blob WSService::pubkey_from_cert(X509* x509) {
 
 	EC_GROUP* ec_group = EC_GROUP_new_by_curve_name(OBJ_sn2nid("prime256v1"));
 	BN_CTX* bn_ctx = BN_CTX_new();
+	EVP_PKEY* remote_pkey = nullptr;
+	EC_KEY* remote_eckey = nullptr;
 
 	std::vector<uint8_t> raw_public(33);
 
 	try {
-		if(ec_group == NULL || bn_ctx == NULL) throw e;
+		if(ec_group == nullptr || bn_ctx == nullptr) throw e;
 
-		EVP_PKEY* remote_pkey = X509_get_pubkey(x509);	if(remote_pkey == NULL) throw e;
-		EC_KEY* remote_eckey = EVP_PKEY_get1_EC_KEY(remote_pkey);	if(remote_eckey == NULL) throw e;
-		const EC_POINT* remote_pubkey = EC_KEY_get0_public_key(remote_eckey);	if(remote_pubkey == NULL) throw e;
+		remote_pkey = X509_get_pubkey(x509);	if(remote_pkey == nullptr) throw e;
+		remote_eckey = EVP_PKEY_get1_EC_KEY(remote_pkey);	if(remote_eckey == nullptr) throw e;
+		const EC_POINT* remote_pubkey = EC_KEY_get0_public_key(remote_eckey);	if(remote_pubkey == nullptr) throw e;
 
 		EC_POINT_point2oct(ec_group, remote_pubkey, POINT_CONVERSION_COMPRESSED, raw_public.data(), raw_public.size(), bn_ctx);
 	}catch(...){
-		BN_CTX_free(bn_ctx); EC_GROUP_free(ec_group);
-		bn_ctx = NULL; ec_group = NULL;
+		EC_GROUP_free(ec_group); BN_CTX_free(bn_ctx); EVP_PKEY_free(remote_pkey); EC_KEY_free(remote_eckey);
+		ec_group = nullptr; bn_ctx = nullptr; remote_pkey = nullptr; remote_eckey = nullptr;
 
 		throw;
 	}
 
-	BN_CTX_free(bn_ctx); EC_GROUP_free(ec_group);
+	EC_GROUP_free(ec_group); BN_CTX_free(bn_ctx); EVP_PKEY_free(remote_pkey); EC_KEY_free(remote_eckey);
 
 	return raw_public;
 }

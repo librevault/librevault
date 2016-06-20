@@ -62,6 +62,9 @@ private:
 	fs::path default_appdata_path();
 
 	void make_defaults();
+
+	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value);
+
 	void make_merged_globals();
 	void make_merged_folders();
 

@@ -53,7 +53,7 @@ Config::~Config() {
 std::unique_ptr<Config> Config::instance_ = nullptr;
 
 void Config::set_globals(Json::Value globals_conf) {
-	globals_custom_ = std::move(globals_conf);
+	globals_custom_ = make_merged(globals_conf, globals_custom_);
 	make_merged_globals();
 	config_changed();
 }
@@ -120,18 +120,24 @@ void Config::make_defaults() {
 	folders_defaults_["mainline_dht_enabled"] = true;
 }
 
+Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) {
+	Json::Value merged;
+	for(auto& name : default_value.getMemberNames())
+		merged[name] = custom_value.get(name, default_value[name]);
+	for(auto& name : custom_value.getMemberNames())
+		if(!merged.isMember(name))
+			merged[name] = custom_value[name];
+	return merged;
+}
+
 void Config::make_merged_globals() {
-	globals_.clear();
-	for(auto name : globals_defaults_.getMemberNames())
-		globals_[name] = globals_custom_.get(name, globals_defaults_[name]);
+	globals_ = make_merged(globals_custom_, globals_defaults_);
 }
 
 void Config::make_merged_folders() {
-	folders_ = folders_custom_;
-	for(auto& folder_item : folders_)
-		for(auto name : folders_defaults_.getMemberNames())
-			if(!folder_item.isMember(name))
-				folder_item[name] = folders_defaults_[name];
+	folders_.clear();
+	for(auto& folder : folders_custom_)
+		folders_.append(make_merged(folder, folders_defaults_));
 }
 
 void Config::load() {

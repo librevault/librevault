@@ -78,7 +78,7 @@ void MLDHTSearcher::start_search(int af, bool announce) {
 				<< " for: " << crypto::Hex().to_string(info_hash_)
 				<< (announce ? " on port: " : "") << (announce ? std::to_string(public_port) : std::string());
 
-			dht_search(info_hash_.data(), announce ?  : 0, af, lv_dht_callback_glue, (MLDHTDiscovery*)&service_);
+			dht_search(info_hash_.data(), announce ? public_port : 0, af, lv_dht_callback_glue, (MLDHTDiscovery*)&service_);
 		}
 	}
 

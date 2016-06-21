@@ -37,6 +37,11 @@ struct compact_endpoint6 {
 };
 #pragma pack(pop)
 
+// Check sizes
+static_assert(sizeof(compact_endpoint4) == 6, "compact_endpoint4 size is incorrect");
+static_assert(sizeof(compact_endpoint6) == 18, "compact_endpoint6 size is incorrect");
+
+// Function declaration
 inline info_hash get_info_hash(const blob& dir_hash) {
 	info_hash ih; std::copy(dir_hash.begin(), dir_hash.begin()+std::min(ih.size(), dir_hash.size()), ih.begin());
 	return ih;
@@ -63,11 +68,25 @@ inline tcp_endpoint parse_compact_endpoint(const compact_endpoint4& compact_endp
 inline tcp_endpoint parse_compact_endpoint(const compact_endpoint6& compact_endpoint) {
 	return tcp_endpoint(address_v6(compact_endpoint.ip6), compact_endpoint.port);
 };
-inline tcp_endpoint parse_compact_endpoint4(const uint8_t* data) {
+inline tcp_endpoint parse_compact_endpoint4(const void* data) {
 	return btcompat::parse_compact_endpoint(*(reinterpret_cast<const btcompat::compact_endpoint4*>(data)));
 };
-inline tcp_endpoint parse_compact_endpoint6(const uint8_t* data) {
+inline tcp_endpoint parse_compact_endpoint6(const void* data) {
 	return btcompat::parse_compact_endpoint(*(reinterpret_cast<const btcompat::compact_endpoint6*>(data)));
+};
+inline blob make_compact_endpoint(const tcp_endpoint& endpoint) {
+	blob compact_endpoint(18);
+
+	if(endpoint.address().is_v6()) {
+		((compact_endpoint6*)(compact_endpoint.data()))->ip6 = endpoint.address().to_v6().to_bytes();
+		((compact_endpoint6*)(compact_endpoint.data()))->port = endpoint.port();
+	}else if(endpoint.address().is_v4()) {
+		compact_endpoint.resize(6);
+		((compact_endpoint4*)(compact_endpoint.data()))->ip4 = endpoint.address().to_v4().to_bytes();
+		((compact_endpoint4*)(compact_endpoint.data()))->port = endpoint.port();
+	}
+
+	return compact_endpoint;
 };
 
 } /* namespace btcompat */

@@ -52,11 +52,11 @@ protected:
 	udp_resolver resolver_;
 
 	// Initialization
-	void deinit();
 	void init();
-	void init_id();
-	bool initialized = false;
+	bool dht_initialized = false;
 
+	void deinit();
+	void deinit_session_file();
 
 	using udp_buffer = std::array<char, 65536>;
 	void process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec);

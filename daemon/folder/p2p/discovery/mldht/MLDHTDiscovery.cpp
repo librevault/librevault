@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <util/file_util.h>
+#include <MLDHTSessionFile.pb.h>
 #include "MLDHTDiscovery.h"
 #include "MLDHTSearcher.h"
 #include "Client.h"
@@ -40,24 +41,24 @@ MLDHTDiscovery::~MLDHTDiscovery() {
 	deinit();
 }
 
-void MLDHTDiscovery::deinit() {
-	tosleep_timer_.cancel();
-
-	if(socket4_.is_open())
-		socket4_.close();
-	if(socket6_.is_open())
-		socket6_.close();
-
-	if(initialized)
-		dht_uninit();
-}
-
 void MLDHTDiscovery::init() {
 	deinit();
 
-	try {
-		init_id();
+	// We will restore our session from here
+	MLDHTSessionFile session_pb;
+	file_wrapper session_file(Config::get()->paths().dht_id_path, "r");
+	if(!session_pb.ParseFromIstream(&session_file.ios())) throw;
 
+	// Init id
+	if(session_pb.id().size() == own_id.size()) {
+		std::copy(session_pb.id().begin(), session_pb.id().end(), own_id.begin());
+	}else{  // Invalid data
+		CryptoPP::AutoSeededRandomPool rng;
+		rng.GenerateBlock(own_id.data(), own_id.size());
+	}
+
+	// Init sockets
+	try {
 		bool v4_ready = false;
 		bool v6_ready = false;
 		try {
@@ -82,11 +83,13 @@ void MLDHTDiscovery::init() {
 		int rc = dht_init(socket4_.native_handle(), socket6_.native_handle(), own_id.data(), nullptr);
 		if(rc < 0) throw std::runtime_error("Internal DHT error");
 
-		initialized = true;
+		dht_initialized = true;
 	}catch(std::exception& e){
 		log_->warn() << log_tag() << "Could not initialize DHT: " << e.what();
+		return;
 	}
 
+	// Init routers
 	auto routers = Config::get()->globals()["mainline_dht_routers"];
 	if(routers.isArray()) {
 		for(auto& router_value : routers) {
@@ -102,12 +105,82 @@ void MLDHTDiscovery::init() {
 		}
 	}
 
+	// Init nodes from file
+	log_->notice() << "Loading " << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << " nodes from session file";
+	if(active_v6()) {
+		for(auto& compact_node6 : session_pb.compact_endpoints6()) {
+			if(compact_node6.size() != sizeof(btcompat::compact_endpoint6)) continue;
+			auto endpoint = btcompat::parse_compact_endpoint6(compact_node6.data());
+			client_.network_ios().post([endpoint] {
+				dht_ping_node(endpoint.data(), endpoint.size());
+			});
+		}
+	}
+	if(active_v4()) {
+		for(auto& compact_node4 : session_pb.compact_endpoints4()) {
+			if(compact_node4.size() != sizeof(btcompat::compact_endpoint4)) continue;
+			auto endpoint = btcompat::parse_compact_endpoint4(compact_node4.data());
+			client_.network_ios().post([endpoint] {
+				dht_ping_node(endpoint.data(), endpoint.size());
+			});
+		}
+	}
+
+	// Start loops
 	maintain_periodic_requests();
 
 	if(active_v6())
 		receive(socket6_);
 	if(active_v4())
 		receive(socket4_);
+}
+
+void MLDHTDiscovery::deinit() {
+	tosleep_timer_.cancel();
+
+	if(socket4_.is_open())
+		socket4_.close();
+	if(socket6_.is_open())
+		socket6_.close();
+
+	if(dht_initialized)
+		deinit_session_file();
+
+	if(dht_initialized)
+		dht_uninit();
+}
+
+void MLDHTDiscovery::deinit_session_file() {
+	MLDHTSessionFile session_pb;
+	std::copy(own_id.begin(), own_id.end(), std::back_inserter(*session_pb.mutable_id()));
+
+	struct sockaddr_in6 sa6[300];
+	struct sockaddr_in sa4[300];
+
+	int sa6_count = 300;
+	int sa4_count = 300;
+
+	dht_get_nodes(sa4, &sa4_count, sa6, &sa6_count);
+
+	log_->notice() << log_tag() << "Saving " << sa4_count + sa6_count << " nodes to session file";
+
+	for(auto i=0; i < sa6_count; i++) {
+		btcompat::compact_endpoint6 endpoint6;
+		std::copy((uint8_t*)&sa6[i].sin6_addr, (uint8_t*)&(sa6[i].sin6_addr)+16, endpoint6.ip6.data());
+		endpoint6.port = boost::endian::big_to_native(sa6[i].sin6_port);
+		std::string* endpoint_str = session_pb.add_compact_endpoints6();
+		std::copy((const char*)&endpoint6, ((const char*)&endpoint6)+sizeof(btcompat::compact_endpoint6), std::back_inserter(*endpoint_str));
+	}
+	for(auto i=0; i < sa4_count; i++) {
+		btcompat::compact_endpoint4 endpoint4;
+		std::copy((uint8_t*)&sa4[i].sin_addr, (uint8_t*)&(sa4[i].sin_addr)+4, endpoint4.ip4.data());
+		endpoint4.port = boost::endian::big_to_native(sa4[i].sin_port);
+		std::string* endpoint_str = session_pb.add_compact_endpoints4();
+		std::copy((const char*)&endpoint4, ((const char*)&endpoint4)+sizeof(btcompat::compact_endpoint4), std::back_inserter(*endpoint_str));
+	}
+
+	file_wrapper session_file(Config::get()->paths().dht_id_path, "w");
+	session_pb.SerializeToOstream(&session_file.ios());
 }
 
 void MLDHTDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
@@ -180,21 +253,6 @@ void MLDHTDiscovery::receive(udp_socket& socket) {
 	auto buffer = std::make_shared<udp_buffer>();
 	socket.async_receive_from(boost::asio::buffer(buffer->data(), buffer->size()), *endpoint,
 		std::bind(&MLDHTDiscovery::process, this, &socket, buffer, std::placeholders::_2, endpoint, std::placeholders::_1));
-}
-
-void MLDHTDiscovery::init_id() {
-	try {
-		file_wrapper file(Config::get()->paths().dht_id_path, "r");
-		file.ios().exceptions(std::ios::failbit | std::ios::badbit | std::ios::eofbit);
-		file.ios().read((char*)own_id.data(), own_id.size());
-	}catch(std::ios_base::failure e) {
-		file_wrapper file(Config::get()->paths().dht_id_path, "w");
-		file.ios().exceptions(std::ios::failbit | std::ios::badbit);
-
-		CryptoPP::AutoSeededRandomPool rng;
-		rng.GenerateBlock(own_id.data(), own_id.size());
-		file.ios().write((char*)own_id.data(), own_id.size());
-	}
 }
 
 void MLDHTDiscovery::maintain_periodic_requests() {

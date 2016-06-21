@@ -87,6 +87,9 @@ void Settings::reset_ui_states() {
 		client["multicast4_enabled"].toBool()
 			|| client["multicast6_enabled"].toBool()
 	);
+
+	// mainline_dht_enabled
+	ui->dht_discovery_box->setChecked(client["mainline_dht_enabled"].toBool());
 }
 
 void Settings::process_ui_states() {
@@ -113,6 +116,9 @@ void Settings::process_ui_states() {
 	// multicast4_enabled || multicast6_enabled
 	client["multicast4_enabled"] = ui->local_discovery_box->isChecked();
 	client["multicast6_enabled"] = ui->local_discovery_box->isChecked();
+
+	// mainline_dht_enabled
+	client["mainline_dht_enabled"] = ui->dht_discovery_box->isChecked();
 
 	emit newConfigIssued(client);
 }

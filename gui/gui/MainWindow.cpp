@@ -18,6 +18,7 @@
 #include "ui_MainWindow.h"
 #include <icons/GUIIconProvider.h>
 #include "FolderProperties.h"
+#include "StatusBar.h"
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);
@@ -27,7 +28,10 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 		QMainWindow(parent),
 		client_(client),
 		ui(std::make_unique<Ui::MainWindow>()) {
+	/* Initializing UI */
 	ui->setupUi(this);
+	status_bar_ = std::make_unique<StatusBar>(ui->statusBar);
+
 	/* Initializing models */
 	folder_model_ = std::make_unique<FolderModel>(this);
 	ui->treeView->setModel(folder_model_.get());
@@ -74,6 +78,7 @@ void MainWindow::retranslateUi() {
 void MainWindow::handleControlJson(QJsonObject state_json) {
 	settings_->handleControlJson(state_json);
 	folder_model_->handleControlJson(state_json);
+	status_bar_->handleControlJson(state_json);
 }
 
 void MainWindow::openWebsite() {

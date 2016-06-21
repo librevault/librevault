@@ -33,6 +33,7 @@ class MLDHTDiscovery;
 class NATPMPService;
 
 class P2PProvider : protected Loggable {
+	friend class ControlServer;
 public:
 	P2PProvider(Client& client);
 	virtual ~P2PProvider();

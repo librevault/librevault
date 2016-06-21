@@ -120,6 +120,24 @@ void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
 	groups_.erase(btcompat::get_info_hash(group_ptr->hash()));
 }
 
+uint_least32_t MLDHTDiscovery::node_count() const {
+	int good6 = 0;
+	int dubious6 = 0;
+	int cached6 = 0;
+	int incoming6 = 0;
+	int good4 = 0;
+	int dubious4 = 0;
+	int cached4 = 0;
+	int incoming4 = 0;
+
+	if(active_v6())
+		dht_nodes(AF_INET6, &good6, &dubious6, &cached6, &incoming6);
+	if(active_v4())
+		dht_nodes(AF_INET, &good4, &dubious4, &cached4, &incoming4);
+
+	return good6+good4;
+}
+
 void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " event: " << event;
 
@@ -184,10 +202,6 @@ void MLDHTDiscovery::maintain_periodic_requests() {
 	tosleep_timer_.async_wait([this](const boost::system::error_code& error){
 		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 		if(error == boost::asio::error::operation_aborted) return;
-
-		int good, dubious, cached, incoming;
-		dht_nodes(AF_INET, &good, &dubious, &cached, &incoming);
-		log_->trace() << log_tag() << "g:" << good << " d:" << dubious << " c:" << cached << " i:" << incoming;
 
 		std::unique_lock<std::mutex> lk(dht_mutex);
 		dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);

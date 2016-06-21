@@ -30,6 +30,7 @@ class MainWindow;
 }
 
 class FolderModel;
+class StatusBar;
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
@@ -37,8 +38,6 @@ Q_OBJECT
 public:
 	MainWindow(Client& client, QWidget* parent = 0);
 	~MainWindow();
-
-	void set_model(FolderModel* model);
 
 signals:
 	void newConfigIssued(QJsonObject config_json);
@@ -58,7 +57,9 @@ protected slots:
 public:
 	Client& client_;
 protected:
+	/* UI elements */
 	std::unique_ptr<Ui::MainWindow> ui;
+	std::unique_ptr<StatusBar> status_bar_;
 
 	/* Models */
 	std::unique_ptr<FolderModel> folder_model_;

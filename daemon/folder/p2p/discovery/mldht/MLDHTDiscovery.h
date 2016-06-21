@@ -30,6 +30,8 @@ public:
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
 
+	uint_least32_t node_count() const;
+
 	bool active_v4() const {return socket4_.is_open();}
 	bool active_v6() const {return socket6_.is_open();}
 

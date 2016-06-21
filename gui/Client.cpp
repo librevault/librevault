@@ -75,7 +75,11 @@ Client::Client(int &argc, char **argv, int appflags) :
 		openLink(link);
 }
 
-Client::~Client() {}
+Client::~Client() {
+	main_window_.reset();
+	control_client_.reset();
+	daemon_.reset();
+}
 
 bool Client::event(QEvent* event) {
 	if(event->type() == QEvent::FileOpen) {

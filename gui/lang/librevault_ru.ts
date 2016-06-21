@@ -281,7 +281,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message numerus="yes">
         <source>%n directory(s)</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>%n папка</numerusform>
             <numerusform>%n папки</numerusform>
             <numerusform>%n папок</numerusform>
@@ -633,7 +633,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Version: %1</source>
-        <translation type="unfinished">Версия: %1</translation>
+        <translation>Версия: %1</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Icons by &lt;a href=&quot;https://icons8.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Icons8&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -642,6 +642,26 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <message>
         <source>Check for updates on startup</source>
         <translation>Проверять обновления программы</translation>
+    </message>
+    <message>
+        <source>Enable DHT</source>
+        <translation>Включить DHT</translation>
+    </message>
+    <message>
+        <source>All these settings currently require a restart.</source>
+        <translation>Для корректного применения настроек требуется перезапуск.</translation>
+    </message>
+</context>
+<context>
+    <name>StatusBar</name>
+    <message numerus="yes">
+        <source>%n nodes</source>
+        <comment>DHT</comment>
+        <translation>
+            <numerusform>%n узел</numerusform>
+            <numerusform>%n узла</numerusform>
+            <numerusform>%n узлов</numerusform>
+        </translation>
     </message>
 </context>
 <context>

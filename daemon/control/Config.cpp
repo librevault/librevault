@@ -38,7 +38,7 @@ Config::Config(fs::path appdata_path) {
 	paths_.log_path = paths_.appdata_path / "librevault.log";
 	paths_.key_path = paths_.appdata_path / "key.pem";
 	paths_.cert_path = paths_.appdata_path / "cert.pem";
-	paths_.dht_id_path = paths_.appdata_path / "mldht_id.bin";
+	paths_.dht_session_path = paths_.appdata_path / "mldht_session.bin";
 
 	make_defaults();
 	load();

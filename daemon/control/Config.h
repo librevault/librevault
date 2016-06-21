@@ -27,7 +27,7 @@ public:
 	~Config();
 
 	struct paths_type {
-		fs::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_id_path;
+		fs::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
 	};
 
 	boost::signals2::signal<void()> config_changed;

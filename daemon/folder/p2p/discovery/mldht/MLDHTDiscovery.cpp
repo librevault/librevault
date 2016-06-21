@@ -46,7 +46,7 @@ void MLDHTDiscovery::init() {
 
 	// We will restore our session from here
 	MLDHTSessionFile session_pb;
-	file_wrapper session_file(Config::get()->paths().dht_id_path, "r");
+	file_wrapper session_file(Config::get()->paths().dht_session_path, "r");
 	if(!session_pb.ParseFromIstream(&session_file.ios())) throw;
 
 	// Init id
@@ -179,7 +179,7 @@ void MLDHTDiscovery::deinit_session_file() {
 		std::copy((const char*)&endpoint4, ((const char*)&endpoint4)+sizeof(btcompat::compact_endpoint4), std::back_inserter(*endpoint_str));
 	}
 
-	file_wrapper session_file(Config::get()->paths().dht_id_path, "w");
+	file_wrapper session_file(Config::get()->paths().dht_session_path, "w");
 	session_pb.SerializeToOstream(&session_file.ios());
 }
 

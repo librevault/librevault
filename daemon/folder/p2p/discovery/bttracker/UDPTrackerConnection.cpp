@@ -17,6 +17,7 @@
 #include "Client.h"
 #include "folder/p2p/P2PProvider.h"
 #include "folder/p2p/WSServer.h"
+#include "folder/p2p/nat/PortManager.h"
 #include "folder/fs/FSFolder.h"
 
 #include "BTTrackerDiscovery.h"
@@ -138,7 +139,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	request.key_ = gen_transaction_id();
 	request.num_want_ = Config::get()->globals()["bttracker_num_want"].asUInt();
 
-	request.port_ = client_.p2p_provider()->public_port();
+	request.port_ = client_.p2p_provider()->portmanager()->get_port_mapping("main");
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
 		log_->debug() << log_tag() << "Announce sent. tID=" << transaction_id;

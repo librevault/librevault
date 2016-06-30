@@ -11,6 +11,7 @@ Third-party libraries
 - Protocol Buffers - New BSD License
 - libnatpmp - New BSD License
 - WebSocket++ - New BSD License
+- miniupnpc - New BSD License
 - rabin-cdc - Simplified BSD License
 
 - spdlog - MIT

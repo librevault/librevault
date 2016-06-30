@@ -17,7 +17,7 @@
 #include "../../Client.h"
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
-#include "nat/NATPMPService.h"
+#include "nat/PortManager.h"
 #include "folder/p2p/discovery/StaticDiscovery.h"
 #include "folder/p2p/discovery/multicast/MulticastDiscovery.h"
 #include "folder/p2p/discovery/bttracker/BTTrackerDiscovery.h"
@@ -32,6 +32,7 @@ P2PProvider::P2PProvider(Client& client) :
 		Loggable(client, "P2PProvider"),
 		client_(client),
 		node_key_(client) {
+	portmanager_ = std::make_unique<PortManager>(client_, *this);
 	ws_server_ = std::make_unique<WSServer>(client, *this);
 	ws_client_ = std::make_unique<WSClient>(client, *this);
 
@@ -39,12 +40,7 @@ P2PProvider::P2PProvider(Client& client) :
 	multicast4_ = std::make_unique<MulticastDiscovery4>(client_);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(client_);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_);
-	mldht_ = std::make_unique<MLDHTDiscovery>(client_);
-
-	set_public_port(0);
-
-	natpmp_ = std::make_unique<NATPMPService>(client_, *this);
-	natpmp_->port_signal.connect(std::bind(&P2PProvider::set_public_port, this, std::placeholders::_1));
+	mldht_ = std::make_unique<MLDHTDiscovery>(client_, *this);
 }
 
 P2PProvider::~P2PProvider() {}
@@ -62,10 +58,6 @@ bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
 
 bool P2PProvider::is_loopback(const blob& pubkey) {
 	return node_key().public_key() == pubkey;
-}
-
-void P2PProvider::set_public_port(uint16_t port) {
-	public_port_ = port ? port : ws_server_->local_endpoint().port();
 }
 
 } /* namespace librevault */

@@ -25,11 +25,10 @@ public:
 
 	WSServer(Client& client, P2PProvider& provider);
 
-	const tcp_endpoint& local_endpoint() const {return local_endpoint_;}
+	tcp_endpoint local_endpoint() const;
 
 protected:
-	server ws_server_;
-	tcp_endpoint local_endpoint_;
+	mutable server ws_server_;
 
 	/* Handlers */
 	void on_tcp_post_init(websocketpp::connection_hdl hdl) override {

@@ -149,6 +149,17 @@ else()
 	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
 endif()
 
+## libminiupnpc
+add_library(libminiupnpc INTERFACE)
+find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
+#if(NOT libminiupnpc_LIBRARIES)
+	add_subdirectory(contrib/miniupnp/miniupnpc)
+	target_link_libraries(libminiupnpc INTERFACE upnpc-static)
+	target_include_directories(libminiupnpc INTERFACE contrib/miniupnp)
+#else()
+#	target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
+#endif()
+
 ## rabin
 add_subdirectory("contrib/rabin")
 

@@ -14,52 +14,45 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "PortMappingService.h"
-#include "util/Loggable.h"
-#include <natpmp.h>
+#include "pch.h"
+#include <util/Loggable.h>
 
 namespace librevault {
 
 class Client;
-
 class P2PProvider;
 
-class NATPMPService : public PortMappingService, public Loggable {
-public:
-	NATPMPService(Client& client);
-	virtual ~NATPMPService();
+class NATPMPService;
+class UPnPService;
 
-	void reload_config();
+class PortManager : public Loggable {
+public:
+	struct MappingDescriptor {
+		enum Protocol {
+			TCP = SOCK_STREAM,
+			UDP = SOCK_DGRAM
+		} protocol;
+		uint16_t port;
+
+		MappingDescriptor() {}
+		MappingDescriptor(Protocol new_protocol, uint16_t new_port) : protocol(new_protocol), port(new_port) {}
+	};
+
+	PortManager(Client& client, P2PProvider& provider);
+	virtual ~PortManager();
 
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
+	uint16_t get_port_mapping(const std::string& id);
 
+private:
 	Client& client_;
-	std::mutex natpmp_lock_;
+	P2PProvider& provider_;
 
-protected:
-	natpmp_t natpmp;
+	std::map<std::string, std::pair<MappingDescriptor, uint16_t>> mappings_;
 
-	class PortMapping {
-	public:
-		PortMapping(NATPMPService& parent, MappingDescriptor descriptor);
-		~PortMapping();
-
-		void reload_config();
-
-	private:
-		NATPMPService& parent_;
-		MappingDescriptor descriptor_;
-
-		boost::asio::system_timer maintain_timer_;
-
-		bool active = false;
-
-		void send_request(bool unmap, const boost::system::error_code& error = boost::system::error_code());
-	};
-	friend class PortMapping;
-
-	std::map<std::string, std::unique_ptr<PortMapping>> mappings_;
+	std::unique_ptr<NATPMPService> natpmp_service_;
+	std::unique_ptr<UPnPService> upnp_service_;
 };
 
 } /* namespace librevault */

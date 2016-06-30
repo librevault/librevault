@@ -19,13 +19,14 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "util/parse_url.h"
+#include "nat/PortManager.h"
 
 namespace librevault {
 
 WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, provider) {
 	// Acceptor initialization
 	url bind_url = url(Config::get()->globals()["p2p_listen"].asString());
-	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
+	auto endpoint = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
 	// General parameters
@@ -44,10 +45,22 @@ WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, pr
 	ws_server_.set_fail_handler(std::bind(&WSServer::on_disconnect, this, std::placeholders::_1));
 	ws_server_.set_close_handler(std::bind(&WSServer::on_disconnect, this, std::placeholders::_1));
 
-	ws_server_.listen(local_endpoint_);
+	ws_server_.listen(endpoint);
 	ws_server_.start_accept();
 
-	log_->info() << log_tag() << "Listening on " << local_endpoint_;
+	log_->info() << log_tag() << "Listening on " << local_endpoint();
+
+	// Port mapping
+	provider.portmanager()->add_port_mapping("main", PortManager::MappingDescriptor(PortManager::MappingDescriptor::TCP, local_endpoint().port()), "Librevault");
+}
+
+tcp_endpoint WSServer::local_endpoint() const {
+	boost::system::error_code ec;
+	auto local_endpoint = ws_server_.get_local_endpoint(ec);
+	if(!ec)
+		return local_endpoint;
+	else
+		throw ec;
 }
 
 bool WSServer::on_validate(websocketpp::connection_hdl hdl) {

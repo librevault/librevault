@@ -25,7 +25,7 @@ class MLDHTSearcher;
 
 class MLDHTDiscovery : public DiscoveryService {
 public:
-	MLDHTDiscovery(Client& client);
+	MLDHTDiscovery(Client& client, P2PProvider& provider);
 	virtual ~MLDHTDiscovery();
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
@@ -38,6 +38,7 @@ public:
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 protected:
+	P2PProvider& provider_;
 
 	std::map<btcompat::info_hash, std::shared_ptr<FolderGroup>> groups_;
 	std::map<btcompat::info_hash, std::unique_ptr<MLDHTSearcher>> searchers_;

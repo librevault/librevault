@@ -14,52 +14,58 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <miniupnpc/miniupnpc.h>
 #include "PortMappingService.h"
 #include "util/Loggable.h"
-#include <natpmp.h>
 
 namespace librevault {
 
 class Client;
-
 class P2PProvider;
 
-class NATPMPService : public PortMappingService, public Loggable {
+class UPnPService : public PortMappingService, public Loggable {
 public:
-	NATPMPService(Client& client);
-	virtual ~NATPMPService();
+	UPnPService(Client& client);
+	~UPnPService();
 
 	void reload_config();
 
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
 
-	Client& client_;
-	std::mutex natpmp_lock_;
-
 protected:
-	natpmp_t natpmp;
+	Client& client_;
+
+	// RAII wrappers
+	struct DevListWrapper : boost::noncopyable {
+		DevListWrapper();
+		~DevListWrapper();
+
+		UPNPDev* devlist;
+	};
 
 	class PortMapping {
 	public:
-		PortMapping(NATPMPService& parent, MappingDescriptor descriptor);
-		~PortMapping();
-
-		void reload_config();
+		PortMapping(UPnPService& parent, MappingDescriptor descriptor, const std::string description);
+		virtual ~PortMapping();
 
 	private:
-		NATPMPService& parent_;
+		UPnPService& parent_;
 		MappingDescriptor descriptor_;
 
-		boost::asio::system_timer maintain_timer_;
-
-		bool active = false;
-
-		void send_request(bool unmap, const boost::system::error_code& error = boost::system::error_code());
+		const char* get_literal_protocol(MappingDescriptor::Protocol protocol) const {return protocol == MappingDescriptor::TCP ? "TCP" : "UDP";}
 	};
 	friend class PortMapping;
+	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
 
-	std::map<std::string, std::unique_ptr<PortMapping>> mappings_;
+	// Config values
+	bool enabled_;
+
+	UPNPUrls upnp_urls;
+	IGDdatas upnp_data;
+	std::array<char, 16> lanaddr;
+
+	void discover_igd();
 };
 
 } /* namespace librevault */

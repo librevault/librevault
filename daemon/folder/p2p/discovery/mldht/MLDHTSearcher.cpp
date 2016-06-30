@@ -20,6 +20,7 @@
 #include "folder/p2p/P2PProvider.h"
 #include "folder/p2p/P2PFolder.h"
 #include "folder/p2p/WSServer.h"
+#include "folder/p2p/nat/PortManager.h"
 #include <dht.h>
 
 namespace librevault {
@@ -66,7 +67,7 @@ void MLDHTSearcher::start_search(int af) {
 		bool ready4 = (af == AF_INET && ((MLDHTDiscovery&)service_).active_v4());
 
 		if(ready6 || ready4) {
-			uint16_t public_port = service_.client().p2p_provider()->public_port();
+			uint16_t public_port = service_.client().p2p_provider()->portmanager()->get_port_mapping("main");
 
 			log_->debug() << log_tag() << "Starting "
 				<< (ready6 ? "IPv6" : "IPv4") << " "

@@ -15,12 +15,17 @@
  */
 #pragma once
 #include "pch.h"
+#include "PortManager.h"
 
 namespace librevault {
 
 class PortMappingService {
 public:
-	boost::signals2::signal<void(uint16_t)> port_signal;
+	using MappingDescriptor = PortManager::MappingDescriptor;
+	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
+
+	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
+	virtual void remove_port_mapping(const std::string& id) = 0;
 };
 
 } /* namespace librevault */

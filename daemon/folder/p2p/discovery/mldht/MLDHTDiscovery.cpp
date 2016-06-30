@@ -22,13 +22,19 @@
 #include "folder/p2p/P2PProvider.h"
 #include "folder/fs/FSFolder.h"
 #include "dht.h"
+#include "folder/p2p/nat/PortManager.h"
 
 namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(Client& client) :
-	DiscoveryService(client, "DHT"), socket4_(client_.network_ios()), socket6_(client_.network_ios()), resolver_(client_.network_ios()), tosleep_timer_(client_.network_ios()) {
+MLDHTDiscovery::MLDHTDiscovery(Client& client, P2PProvider& provider) :
+	DiscoveryService(client, "DHT"),
+	provider_(provider),
+	socket4_(client_.network_ios()),
+	socket6_(client_.network_ios()),
+	resolver_(client_.network_ios()),
+	tosleep_timer_(client_.network_ios()) {
 	name_ = "MLDHTDiscovery";
 
 	client.folder_added_signal.connect(std::bind(&MLDHTDiscovery::register_group, this, std::placeholders::_1));
@@ -57,13 +63,15 @@ void MLDHTDiscovery::init() {
 		rng.GenerateBlock(own_id.data(), own_id.size());
 	}
 
+	uint16_t dht_port = (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt();
+
 	// Init sockets
 	try {
 		bool v4_ready = false;
 		bool v6_ready = false;
 		try {
 			socket4_.open(boost::asio::ip::udp::v4());
-			socket4_.bind(udp_endpoint(address_v4::any(), (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt()));
+			socket4_.bind(udp_endpoint(address_v4::any(), dht_port));
 			v4_ready = true;
 		}catch(std::exception& e) {
 			log_->warn() << log_tag() << "DHT IPv4 error: " << e.what();
@@ -72,7 +80,7 @@ void MLDHTDiscovery::init() {
 		try {
 			socket6_.open(boost::asio::ip::udp::v6());
 			socket6_.set_option(boost::asio::ip::v6_only(true));
-			socket6_.bind(udp_endpoint(address_v6::any(), (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt()));
+			socket6_.bind(udp_endpoint(address_v6::any(), dht_port));
 			v6_ready = true;
 		}catch(std::exception& e) {
 			log_->warn() << log_tag() << "DHT IPv6 error: " << e.what();
@@ -88,6 +96,9 @@ void MLDHTDiscovery::init() {
 		log_->warn() << log_tag() << "Could not initialize DHT: " << e.what();
 		return;
 	}
+
+	// Map port
+	provider_.portmanager()->add_port_mapping("mldht", PortManager::MappingDescriptor(PortManager::MappingDescriptor::UDP, dht_port), "Librevault DHT");
 
 	// Init routers
 	auto routers = Config::get()->globals()["mainline_dht_routers"];
@@ -148,6 +159,8 @@ void MLDHTDiscovery::deinit() {
 
 	if(dht_initialized)
 		dht_uninit();
+
+	provider_.portmanager()->remove_port_mapping("mldht");
 }
 
 void MLDHTDiscovery::deinit_session_file() {

@@ -75,6 +75,7 @@ void Config::make_defaults() {
 	globals_defaults_["p2p_block_size"] = 32768;
 	globals_defaults_["natpmp_enabled"] = true;
 	globals_defaults_["natpmp_lifetime"] = 3600;
+	globals_defaults_["upnp_enabled"] = true;
 	globals_defaults_["predef_repeat_interval"] = 30;
 	globals_defaults_["multicast4_enabled"] = true;
 	globals_defaults_["multicast4_group"] = "239.192.152.144:28914";

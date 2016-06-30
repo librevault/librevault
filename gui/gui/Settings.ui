@@ -159,6 +159,13 @@
             </property>
            </widget>
           </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QCheckBox" name="upnp_box">
+            <property name="text">
+             <string>Use UPnP port mapping</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

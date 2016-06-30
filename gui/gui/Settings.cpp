@@ -79,6 +79,9 @@ void Settings::reset_ui_states() {
 	// natpmp_enabled
 	ui->natpmp_box->setChecked(client["natpmp_enabled"].toBool());
 
+	// upnp_enabled
+	ui->upnp_box->setChecked(client["upnp_enabled"].toBool());
+
 	// bttracker_enabled
 	ui->global_discovery_box->setChecked(client["bttracker_enabled"].toBool());
 
@@ -109,6 +112,9 @@ void Settings::process_ui_states() {
 
 	// natpmp_enabled
 	client["natpmp_enabled"] = ui->natpmp_box->isChecked();
+
+	// upnp_enabled
+	client["upnp_enabled"] = ui->upnp_box->isChecked();
 
 	// bttracker_enabled
 	client["bttracker_enabled"] = ui->global_discovery_box->isChecked();

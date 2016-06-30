@@ -22,6 +22,7 @@
 #include "folder/p2p/P2PFolder.h"
 
 #include "../Client.h"
+#include <util/periodic_process.h>
 
 namespace librevault {
 
@@ -29,9 +30,13 @@ Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
 		Loggable(client, "Downloader"),
 		client_(client),
 		exchange_group_(exchange_group),
-		maintain_timer_(client.network_ios()) {
+		periodic_maintain_(client.network_ios(), [this](PeriodicProcess& process){maintain_requests(process);}) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	maintain_requests();
+	periodic_maintain_.invoke();
+}
+
+Downloader::~Downloader() {
+	periodic_maintain_.wait();
 }
 
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
@@ -86,18 +91,18 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 
 	needed_block_it->second->own_chunk.insert({remote, guard});
 
-	maintain_requests();
+	periodic_maintain_.invoke_post();
 }
 
 void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	remove_requests_to(remote);
-	maintain_requests();
+	periodic_maintain_.invoke_post();
 }
 
 void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	maintain_requests();
+	periodic_maintain_.invoke_post();
 }
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
@@ -121,7 +126,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 				exchange_group_.fs_dir()->put_chunk(ct_hash, needed_block_it->second->get_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
-			client_.network_ios().post([this](){maintain_requests();});
+			periodic_maintain_.invoke_post();
 		}
 
 		if(!incremented_already) ++request_it;
@@ -152,40 +157,33 @@ void Downloader::add_needed_chunk(const blob& ct_hash) {
 
 	uint32_t unencrypted_blocksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
 	uint32_t padded_blocksize = unencrypted_blocksize % 16 == 0 ? unencrypted_blocksize : ((unencrypted_blocksize/16)+1)*16;
-	auto needed_block = std::make_shared<NeededChunk>(padded_blocksize);   // FIXME: This will crash in x32 with OOM because of many mmaped files. Solution: replace mmap with fopen/fwrite/fclose
+	auto needed_block = std::make_shared<NeededChunk>(padded_blocksize);
 	needed_chunks_.insert({ct_hash, needed_block});
 }
 
-void Downloader::maintain_requests(const boost::system::error_code& ec) {
+void Downloader::maintain_requests(PeriodicProcess& process) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	if(ec == boost::asio::error::operation_aborted) return;
 
-	if(maintain_timer_mtx_.try_lock()) {
-		std::unique_lock<decltype(maintain_timer_mtx_)> maintain_timer_lk(maintain_timer_mtx_, std::adopt_lock);
-		maintain_timer_.cancel();
+	auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
 
-		auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
-
-		// Prune old requests by timeout
-		for(auto& needed_block : needed_chunks_) {
-			auto& requests = needed_block.second->requests; // We should lock a mutex on this
-			for(auto request = requests.begin(); request != requests.end(); ) {
-				if(request->second.started + request_timeout < std::chrono::steady_clock::now())
-					request = requests.erase(request);
-				else
-					++request;
-			}
+	// Prune old requests by timeout
+	for(auto& needed_block : needed_chunks_) {
+		auto& requests = needed_block.second->requests; // We should lock a mutex on this
+		for(auto request = requests.begin(); request != requests.end(); ) {
+			if(request->second.started + request_timeout < std::chrono::steady_clock::now())
+				request = requests.erase(request);
+			else
+				++request;
 		}
-
-		// Make new requests
-		for(size_t i = requests_overall(); i < Config::get()->globals()["p2p_download_slots"].asUInt(); i++) {
-			bool requested = request_one();
-			if(!requested) break;
-		}
-
-		maintain_timer_.expires_from_now(request_timeout);
-		maintain_timer_.async_wait(std::bind(&Downloader::maintain_requests, this, std::placeholders::_1));
 	}
+
+	// Make new requests
+	for(size_t i = requests_overall(); i < Config::get()->globals()["p2p_download_slots"].asUInt(); i++) {
+		bool requested = request_one();
+		if(!requested) break;
+	}
+
+	process.invoke_after(request_timeout);
 }
 
 bool Downloader::request_one() {

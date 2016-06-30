@@ -15,6 +15,7 @@
  */
 #pragma once
 #include <util/file_util.h>
+#include <util/periodic_process.h>
 #include "RemoteFolder.h"
 #include "util/AvailabilityMap.h"
 
@@ -26,6 +27,7 @@ class FolderGroup;
 class Downloader : public std::enable_shared_from_this<Downloader>, protected Loggable {
 public:
 	Downloader(Client& client, FolderGroup& exchange_group);
+	~Downloader();
 
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
 	void notify_local_chunk(const blob& ct_hash);
@@ -92,9 +94,9 @@ private:
 	std::map<blob, std::shared_ptr<NeededChunk>> needed_chunks_;
 	size_t requests_overall() const;
 
-	boost::asio::steady_timer maintain_timer_;
-	std::mutex maintain_timer_mtx_;
-	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
+	PeriodicProcess periodic_maintain_;
+	void maintain_requests(PeriodicProcess& process);
+
 	bool request_one();
 	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
 

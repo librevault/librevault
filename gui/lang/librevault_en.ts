@@ -444,57 +444,62 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="174"/>
+        <location filename="../gui/Settings.ui" line="165"/>
+        <source>Use UPnP port mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings.ui" line="181"/>
         <source>Enable DHT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="201"/>
+        <location filename="../gui/Settings.ui" line="208"/>
         <source>All these settings currently require a restart.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="260"/>
+        <location filename="../gui/Settings.ui" line="267"/>
         <source>Create account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="273"/>
+        <location filename="../gui/Settings.ui" line="280"/>
         <source>Sign in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="322"/>
+        <location filename="../gui/Settings.ui" line="329"/>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="345"/>
+        <location filename="../gui/Settings.ui" line="352"/>
         <source>Account</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="351"/>
+        <location filename="../gui/Settings.ui" line="358"/>
         <source>%1 (%2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="371"/>
+        <location filename="../gui/Settings.ui" line="378"/>
         <source>Sign out</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="381"/>
+        <location filename="../gui/Settings.ui" line="388"/>
         <source>Space usage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="387"/>
+        <location filename="../gui/Settings.ui" line="394"/>
         <source>%1 GB of %2 GB used</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="394"/>
+        <location filename="../gui/Settings.ui" line="401"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -524,27 +529,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="168"/>
+        <location filename="../gui/Settings.ui" line="175"/>
         <source>Peer discovery settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="181"/>
+        <location filename="../gui/Settings.ui" line="188"/>
         <source>Enable global discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="188"/>
+        <location filename="../gui/Settings.ui" line="195"/>
         <source>Enable local discovery</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="148"/>
+        <location filename="../gui/Settings.cpp" line="154"/>
         <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="152"/>
+        <location filename="../gui/Settings.cpp" line="158"/>
         <source>Network</source>
         <translation type="unfinished"></translation>
     </message>

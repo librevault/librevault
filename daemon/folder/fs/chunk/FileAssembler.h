@@ -53,9 +53,8 @@ private:
 	std::set<blob> assemble_queue_;
 	std::mutex assemble_queue_mtx_;
 
-	boost::asio::system_timer periodic_assemble_timer_;
-
-	void periodic_assemble_operation();
+	void periodic_assemble_operation(PeriodicProcess& process);
+	PeriodicProcess assemble_process_;
 
 	void assemble(const Meta& meta);
 

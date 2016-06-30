@@ -651,6 +651,10 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <source>All these settings currently require a restart.</source>
         <translation>Для корректного применения настроек требуется перезапуск.</translation>
     </message>
+    <message>
+        <source>Use UPnP port mapping</source>
+        <translation>Использовать перенаправление порта через UPnP</translation>
+    </message>
 </context>
 <context>
     <name>StatusBar</name>

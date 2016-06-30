@@ -20,6 +20,7 @@
 #include "folder/fs/chunk/OpenStorage.h"
 
 #include <dir_monitor/dir_monitor.hpp>
+#include <util/periodic_process.h>
 
 namespace librevault {
 
@@ -52,8 +53,8 @@ private:
 	std::multiset<std::string> prepared_assemble_;
 
 	// Full rescan operations
-	boost::asio::steady_timer rescan_timer_;
-	void rescan_operation();
+	void rescan_operation(PeriodicProcess& process);
+	PeriodicProcess rescan_process_;
 
 	// Monitor operations
 	void monitor_operation();
@@ -62,9 +63,9 @@ private:
 	// Index queue
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
-	void bump_timer();
-	boost::asio::steady_timer index_timer_;
-	void perform_index(const boost::system::error_code& ec);
+
+	void perform_index();
+	PeriodicProcess index_process_;
 };
 
 } /* namespace librevault */

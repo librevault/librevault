@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <util/periodic_process.h>
 #include "pch.h"
 #include "AbstractStorage.h"
 
@@ -50,14 +51,14 @@ private:
 	class TrashArchive : public ArchiveStrategy {
 	public:
 		TrashArchive(Archive* parent);
-		virtual ~TrashArchive(){}
+		virtual ~TrashArchive();
 		void archive(const fs::path& from);
 
 	private:
-		void maintain_cleanup(const boost::system::error_code& ec = boost::system::error_code());
+		void maintain_cleanup(PeriodicProcess& process);
 
-		boost::asio::system_timer daily_timer_;
 		const fs::path archive_path_;
+		PeriodicProcess cleanup_process_;
 	};
 	class TimestampArchive : public ArchiveStrategy {
 	public:

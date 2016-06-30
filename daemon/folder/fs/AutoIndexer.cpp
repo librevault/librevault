@@ -26,8 +26,9 @@ AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 		dir_(dir), client_(client),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
-		rescan_timer_(client_.bulk_ios()), index_timer_(client_.bulk_ios()) {
-	rescan_operation();
+		rescan_process_(client_.bulk_ios(), [this](PeriodicProcess& process){rescan_operation(process);}),
+		index_process_(client_.bulk_ios(), [this](PeriodicProcess& process){perform_index();}) {
+	rescan_process_.invoke_post();
 
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
 
@@ -36,6 +37,8 @@ AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
 }
 
 AutoIndexer::~AutoIndexer() {
+	rescan_process_.wait();
+	index_process_.wait();
 	monitor_ios_.stop();
 	if(monitor_ios_thread_.joinable())
 		monitor_ios_thread_.join();
@@ -44,13 +47,15 @@ AutoIndexer::~AutoIndexer() {
 void AutoIndexer::enqueue_files(const std::string& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath);
-	bump_timer();
+
+	index_process_.invoke_after(dir_.params().index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
 }
 
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
-	bump_timer();
+
+	index_process_.invoke_after(dir_.params().index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
 }
 
 void AutoIndexer::prepare_file_assemble(bool with_removal, const std::string& relpath) {
@@ -107,30 +112,14 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 	return file_list;
 }
 
-void AutoIndexer::rescan_operation() {
+void AutoIndexer::rescan_operation(PeriodicProcess& process) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "Performing full directory rescan";
 
 	if(!dir_.indexer->is_indexing())
 		enqueue_files(full_reindex_list());
 
-	rescan_timer_.expires_from_now(dir_.params().full_rescan_interval);
-	rescan_timer_.async_wait([this](boost::system::error_code ec){
-		if(ec == boost::asio::error::operation_aborted) {
-			log_->debug() << log_tag() << "rescan_operation returned";
-			return;
-		}
-		rescan_operation();
-	});
-}
-
-void AutoIndexer::bump_timer() {
-	if(index_timer_.expires_from_now() <= std::chrono::seconds(0)){
-		auto exp_timeout = std::chrono::milliseconds(dir_.params().index_event_timeout);
-
-		index_timer_.expires_from_now(exp_timeout);
-		index_timer_.async_wait(std::bind(&AutoIndexer::perform_index, this, std::placeholders::_1));
-	}
+	process.invoke_after(dir_.params().full_rescan_interval);
 }
 
 void AutoIndexer::monitor_operation() {
@@ -174,9 +163,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	}
 }
 
-void AutoIndexer::perform_index(const boost::system::error_code& ec) {
-	if(ec == boost::asio::error::operation_aborted) return;
-
+void AutoIndexer::perform_index() {
 	std::set<std::string> index_queue;
 	index_queue_mtx_.lock();
 	index_queue.swap(index_queue_);

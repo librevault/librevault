@@ -79,20 +79,23 @@ void Archive::NoArchive::archive(const fs::path& from) {
 // TrashArchive
 Archive::TrashArchive::TrashArchive(Archive* parent) :
 	ArchiveStrategy(parent),
-	daily_timer_(parent->client_.ios()),
-	archive_path_(parent->dir_.system_path() / "archive") {
+	archive_path_(parent->dir_.system_path() / "archive"),
+	cleanup_process_(parent->client_.ios(), [this](PeriodicProcess& process){
+		maintain_cleanup(process);
+	}) {
 
 	fs::create_directory(archive_path_);
-	daily_timer_.expires_from_now(std::chrono::minutes(10));    // Start after a small delay.
-	daily_timer_.async_wait(std::bind(&Archive::TrashArchive::maintain_cleanup, this, std::placeholders::_1));
+	cleanup_process_.invoke_after(std::chrono::minutes(10));    // Start after a small delay.
 }
 
-void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec) {
+Archive::TrashArchive::~TrashArchive() {
+	cleanup_process_.wait();
+}
+
+void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 	parent_->log_->trace() << parent_->log_tag() << BOOST_CURRENT_FUNCTION;
-	if(ec == boost::asio::error::operation_aborted) return;
 
 	std::list<fs::path> removed_paths;
-
 	try {
 		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
 			unsigned time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
@@ -104,12 +107,10 @@ void Archive::TrashArchive::maintain_cleanup(const boost::system::error_code& ec
 		for(const fs::path& path : removed_paths)
 			fs::remove(path);
 
-		daily_timer_.expires_from_now(std::chrono::hours(24));
+		cleanup_process_.invoke_after(std::chrono::hours(24));
 	}catch(std::exception& e) {
-		daily_timer_.expires_from_now(std::chrono::minutes(10));    // An error occured, retry in 10 min
+		cleanup_process_.invoke_after(std::chrono::minutes(10));    // An error occured, retry in 10 min
 	}
-
-	daily_timer_.async_wait(std::bind(&Archive::TrashArchive::maintain_cleanup, this, std::placeholders::_1));
 }
 
 void Archive::TrashArchive::archive(const fs::path& from) {

@@ -34,9 +34,9 @@ FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client&
 	archive_(dir_, client_),
 	secret_(dir_.secret()),
 	index_(*dir_.index),
-	periodic_assemble_timer_(client_.bulk_ios()) {
+	assemble_process_(client_.bulk_ios(), [this](PeriodicProcess& process){periodic_assemble_operation(process);}) {
 
-	periodic_assemble_operation();
+	assemble_process_.invoke();
 }
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
@@ -66,22 +66,14 @@ void FileAssembler::queue_assemble(const Meta& meta) {
 	assemble_queue_mtx_.unlock();
 }
 
-void FileAssembler::periodic_assemble_operation() {
+void FileAssembler::periodic_assemble_operation(PeriodicProcess& process) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	log_->debug() << log_tag() << "Performing periodic assemble";
 
-	for(auto smeta : dir_.index->get_incomplete_meta()) {
+	for(auto smeta : dir_.index->get_incomplete_meta())
 		queue_assemble(smeta.meta());
-	}
 
-	periodic_assemble_timer_.expires_from_now(std::chrono::seconds(30));
-	periodic_assemble_timer_.async_wait([this](boost::system::error_code ec){
-		if(ec == boost::asio::error::operation_aborted) {
-			log_->debug() << log_tag() << "periodic_assemble_operation returned";
-			return;
-		}
-		periodic_assemble_operation();
-	});
+	assemble_process_.invoke_after(std::chrono::seconds(30));   // TODO: move to config
 }
 
 void FileAssembler::assemble(const Meta& meta){

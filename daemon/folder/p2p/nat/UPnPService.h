@@ -14,9 +14,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <miniupnpc/miniupnpc.h>
+//#include <miniupnpc/miniupnpc.h>
 #include "PortMappingService.h"
 #include "util/Loggable.h"
+
+struct UPNPUrls;
+struct IGDdatas;
+struct UPNPDev;
 
 namespace librevault {
 
@@ -61,8 +65,8 @@ protected:
 	// Config values
 	bool enabled_;
 
-	UPNPUrls upnp_urls;
-	IGDdatas upnp_data;
+	std::unique_ptr<UPNPUrls> upnp_urls;
+	std::unique_ptr<IGDdatas> upnp_data;
 	std::array<char, 16> lanaddr;
 
 	void discover_igd();

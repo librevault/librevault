@@ -24,6 +24,9 @@ namespace librevault {
 UPnPService::UPnPService(Client& client) :
 	Loggable(client, "UPnPService"), client_(client) {
 
+	upnp_urls = std::make_unique<UPNPUrls>();
+	upnp_data = std::make_unique<IGDdatas>();
+
 	reload_config();
 	Config::get()->config_changed.connect([this]{UPnPService::reload_config();});
 	discover_igd();
@@ -31,16 +34,16 @@ UPnPService::UPnPService(Client& client) :
 
 UPnPService::~UPnPService() {
 	mappings_.clear();
-	FreeUPNPUrls(&upnp_urls);
+	FreeUPNPUrls(upnp_urls.get());
 }
 
 void UPnPService::discover_igd() {
 	DevListWrapper devlist;
 
-	if(!UPNP_GetValidIGD(devlist.devlist, &upnp_urls, &upnp_data, lanaddr.data(), lanaddr.size()))
+	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size()))
 		throw std::runtime_error(strerror(errno));
 
-	log_->debug() << log_tag() << "Found IGD: " << upnp_urls.controlURL;
+	log_->debug() << log_tag() << "Found IGD: " << upnp_urls->controlURL;
 }
 
 void UPnPService::reload_config() {
@@ -74,8 +77,8 @@ UPnPService::DevListWrapper::~DevListWrapper() {
 
 /* UPnPService::PortMapping */
 UPnPService::PortMapping::PortMapping(UPnPService& parent, MappingDescriptor descriptor, const std::string description) : parent_(parent), descriptor_(descriptor) {
-	int err = UPNP_AddPortMapping(parent_.upnp_urls.controlURL,
-		parent_.upnp_data.first.servicetype,
+	int err = UPNP_AddPortMapping(parent_.upnp_urls->controlURL,
+		parent_.upnp_data->first.servicetype,
 		std::to_string(descriptor.port).c_str(),
 		std::to_string(descriptor.port).c_str(),
 		parent_.lanaddr.data(),
@@ -89,8 +92,8 @@ UPnPService::PortMapping::PortMapping(UPnPService& parent, MappingDescriptor des
 
 UPnPService::PortMapping::~PortMapping() {
 	auto err = UPNP_DeletePortMapping(
-		parent_.upnp_urls.controlURL,
-		parent_.upnp_data.first.servicetype,
+		parent_.upnp_urls->controlURL,
+		parent_.upnp_data->first.servicetype,
 		std::to_string(descriptor_.port).c_str(),
 		get_literal_protocol(descriptor_.protocol),
 		nullptr

@@ -110,7 +110,7 @@ void Client::add_folder(Json::Value json_folder) {
 
 	FolderParams params(json_folder);
 
-	auto folders_copy = Config::get()->folders();
+	auto folders_copy = Config::get()->folders_custom();
 
 	auto it = std::find_if(folders_copy.begin(), folders_copy.end(), [&](const Json::Value& v){
 		return FolderParams(v).secret.get_Hash() == params.secret.get_Hash();
@@ -127,7 +127,7 @@ void Client::add_folder(Json::Value json_folder) {
 void Client::remove_folder(const Secret& secret) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	auto folders_copy = Config::get()->folders();
+	auto folders_copy = Config::get()->folders_custom();
 	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
 		if(FolderParams(folders_copy[i]).secret.get_Hash() == secret.get_Hash()) {
 			deinit_folder(secret);

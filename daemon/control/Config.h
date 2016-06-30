@@ -45,6 +45,7 @@ public:
 	void set_globals(Json::Value globals_conf);
 	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
 
+	const Json::Value& folders_custom() const {return folders_custom_;}
 	const Json::Value& folders() const {return folders_;}
 	void set_folders(Json::Value folders_conf);
 

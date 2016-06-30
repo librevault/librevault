@@ -15,6 +15,7 @@
  */
 #pragma once
 #include <boost/asio/steady_timer.hpp>
+#include <atomic>
 #include <chrono>
 
 class PeriodicProcess { // TODO: make exception handling

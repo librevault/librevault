@@ -17,6 +17,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <atomic>
 #include <chrono>
+#include <thread>
 
 class PeriodicProcess { // TODO: make exception handling
 public:
@@ -65,7 +66,9 @@ public:
 				io_service_.poll();
 			});
 		}
-		while(started_handlers_ != 0 && !io_service_.stopped()) {}
+		while(started_handlers_ != 0 && !io_service_.stopped()) {
+			std::this_thread::yield();
+		}
 	}
 
 protected:

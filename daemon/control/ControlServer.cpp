@@ -63,8 +63,12 @@ bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
 	auto origin = connection_ptr->get_origin();
 
 	log_->debug() << log_tag() << "Incoming connection from " << connection_ptr->get_remote_endpoint() << " Origin: " << origin;
-	if(!origin.empty() && origin != "http://127.0.0.1" && origin != "https://127.0.0.1") {  // TODO: Maybe, substitute these with WebUI location?
-		return false;
+
+	// Restrict access by "Origin" header
+	if(!origin.empty()) {   // TODO: Add a way to relax this restriction
+		url origin_url(origin);
+		if(origin_url.host != "127.0.0.1" && origin_url.host != "::1" && origin_url.host != "localhost")
+			return false;
 	}
 
 	// Detect loopback

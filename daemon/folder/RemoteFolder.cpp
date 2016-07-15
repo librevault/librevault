@@ -22,4 +22,25 @@ RemoteFolder::RemoteFolder(Client& client) :
 	AbstractFolder(client), client_(client) {}
 RemoteFolder::~RemoteFolder() {}
 
+/* InterestGuard */
+RemoteFolder::InterestGuard::InterestGuard(std::shared_ptr<RemoteFolder> remote) : remote_(remote) {
+	remote->interest();
+}
+
+RemoteFolder::InterestGuard::~InterestGuard() {
+	auto folder_ptr = remote_.lock();
+	if(folder_ptr)
+		folder_ptr->uninterest();
+}
+
+std::shared_ptr<RemoteFolder::InterestGuard> RemoteFolder::get_interest_guard() {
+	try {
+		return std::shared_ptr<InterestGuard>(interest_guard_);
+	}catch(std::bad_weak_ptr& e){
+		auto guard = std::make_shared<InterestGuard>(shared_from_this());
+		interest_guard_ = guard;
+		return guard;
+	}
+}
+
 } /* namespace librevault */

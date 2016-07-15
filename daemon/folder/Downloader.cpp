@@ -75,21 +75,7 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 	auto needed_block_it = needed_chunks_.find(ct_hash);
 	if(needed_block_it == needed_chunks_.end()) return;
 
-	std::shared_ptr<InterestGuard> guard;
-	auto existing_guard_it = interest_guards_.find(remote);
-	if(existing_guard_it != interest_guards_.end()) {
-		try {
-			guard = std::shared_ptr<InterestGuard>(existing_guard_it->second);
-		}catch(std::bad_weak_ptr& e){
-			guard = std::make_shared<InterestGuard>(remote);
-			existing_guard_it->second = guard;
-		}
-	}else{
-		guard = std::make_shared<InterestGuard>(remote);
-		interest_guards_.insert({remote, guard});
-	}
-
-	needed_block_it->second->own_chunk.insert({remote, guard});
+	needed_block_it->second->own_chunk.insert({remote, remote->get_interest_guard()});
 
 	periodic_maintain_.invoke_post();
 }
@@ -135,8 +121,6 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	interest_guards_.erase(remote);
 
 	for(auto& needed_block : needed_chunks_) {
 		needed_block.second->requests.erase(remote);

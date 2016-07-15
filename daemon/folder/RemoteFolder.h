@@ -21,7 +21,7 @@
 
 namespace librevault {
 
-class RemoteFolder : public AbstractFolder {
+class RemoteFolder : public AbstractFolder, public std::enable_shared_from_this<RemoteFolder> {
 	friend class FolderGroup;
 public:
 	RemoteFolder(Client& client);
@@ -44,6 +44,15 @@ public:
 	virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
 	virtual void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
 
+	/* High-level RAII wrappers */
+	struct InterestGuard {
+		InterestGuard(std::shared_ptr<RemoteFolder> remote);
+		~InterestGuard();
+	private:
+		std::weak_ptr<RemoteFolder> remote_;
+	};
+	std::shared_ptr<InterestGuard> get_interest_guard();
+
 	/* Getters */
 	bool am_choking() const {return am_choking_;}
 	bool am_interested() const {return am_interested_;}
@@ -59,6 +68,8 @@ protected:
 	bool am_interested_ = false;
 	bool peer_choking_ = true;
 	bool peer_interested_ = false;
+
+	std::weak_ptr<InterestGuard> interest_guard_;
 };
 
 } /* namespace librevault */

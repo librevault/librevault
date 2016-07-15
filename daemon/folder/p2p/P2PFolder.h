@@ -28,7 +28,7 @@ class FolderGroup;
 class P2PProvider;
 class WSService;
 
-class P2PFolder : public RemoteFolder, public std::enable_shared_from_this<P2PFolder> {
+class P2PFolder : public RemoteFolder {
 	friend class P2PProvider;
 	friend class WSService;
 	friend class WSServer;

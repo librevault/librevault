@@ -46,15 +46,6 @@ private:
 	Client& client_;
 	FolderGroup& exchange_group_;
 
-	/* RAII wrapper for sending INTERESTED/NOT_INTERESTED messages. Should be used with reference counter */
-	struct InterestGuard {
-		InterestGuard(std::shared_ptr<RemoteFolder> remote) : remote_(remote) {remote_->interest();}
-		~InterestGuard() {remote_->uninterest();}
-	private:
-		std::shared_ptr<RemoteFolder> remote_;
-	};
-	std::map<std::shared_ptr<RemoteFolder>, std::weak_ptr<InterestGuard>> interest_guards_;
-
 	/* Needed blocks+request management */
 	struct NeededChunk {
 		NeededChunk(uint32_t size);
@@ -79,7 +70,7 @@ private:
 			std::chrono::steady_clock::time_point started;
 		};
 		std::multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
-		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<InterestGuard>> own_chunk;
+		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> own_chunk;
 
 	private:
 		AvailabilityMap<uint32_t> file_map_;

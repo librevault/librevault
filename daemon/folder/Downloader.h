@@ -46,17 +46,17 @@ private:
 	Client& client_;
 	FolderGroup& exchange_group_;
 
-	/* Needed blocks+request management */
-	struct NeededChunk {
-		NeededChunk(uint32_t size);
-		~NeededChunk();
+	/* Missing chunk+request management */
+	struct MissingChunk {
+		MissingChunk(uint32_t size);
+		~MissingChunk();
 
 		blob get_chunk();
 		void put_block(uint32_t offset, const blob& content);
 
 		// size-related functions
 		uint64_t size() const {return file_map_.size_original();}
-		bool full() const {return file_map_.full();}
+		bool complete() const {return file_map_.full();}
 
 		// AvailabilityMap accessors
 		AvailabilityMap<uint32_t>::const_iterator begin() {return file_map_.begin();}
@@ -70,11 +70,11 @@ private:
 			std::chrono::steady_clock::time_point started;
 		};
 		std::multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
-		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> own_chunk;
+		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
 	private:
 		AvailabilityMap<uint32_t> file_map_;
-		fs::path this_block_path_;
+		fs::path this_chunk_path_;
 #ifndef FOPEN_BACKEND
 		boost::iostreams::mapped_file mapped_file_;
 #else
@@ -82,7 +82,7 @@ private:
 #endif
 	};
 
-	std::map<blob, std::shared_ptr<NeededChunk>> needed_chunks_;
+	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
 	size_t requests_overall() const;
 
 	PeriodicProcess periodic_maintain_;
@@ -91,7 +91,7 @@ private:
 	bool request_one();
 	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
 
-	void add_needed_chunk(const blob& ct_hash);
+	void add_missing_chunk(const blob& ct_hash);
 	void remove_requests_to(std::shared_ptr<RemoteFolder> remote);
 };
 

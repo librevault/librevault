@@ -182,7 +182,7 @@ void UDPTrackerConnection::handle_announce() {
 	announce_rep* reply = reinterpret_cast<announce_rep*>(buffer_.data());
 
 	if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE){
-		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(btcompat::compact_endpoint4) <= buffer_.data()+buffer_.size(); i+=sizeof(btcompat::compact_endpoint4)){
+		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(btcompat::compact_endpoint4) < buffer_.data()+buffer_.size(); i+=sizeof(btcompat::compact_endpoint4)){
 			tracker_discovery_.add_node(btcompat::parse_compact_endpoint4((const uint8_t*)i), group_ptr_);
 		}
 	}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6){

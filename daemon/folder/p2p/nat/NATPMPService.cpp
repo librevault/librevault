@@ -99,8 +99,8 @@ void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
 		&parent_.natpmp,
 		descriptor_.protocol == PortManager::MappingDescriptor::TCP ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
-		active ? descriptor_.port : 0,
-		Config::get()->globals()["natpmp_lifetime"].asUInt()
+		descriptor_.port,
+		active ? Config::get()->globals()["natpmp_lifetime"].asUInt() : 0
 	);
 	parent_.log_->trace() << parent_.log_tag() << "sendnewportmappingrequest() = " << natpmp_ec;
 

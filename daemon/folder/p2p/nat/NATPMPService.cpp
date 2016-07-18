@@ -91,7 +91,7 @@ NATPMPService::PortMapping::PortMapping(NATPMPService& parent, std::string id, M
 NATPMPService::PortMapping::~PortMapping() {
 	active = false;
 	maintain_mapping_.wait();
-	maintain_mapping_.invoke_post();
+	maintain_mapping_.invoke();
 }
 
 void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {

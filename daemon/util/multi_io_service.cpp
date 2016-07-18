@@ -30,7 +30,7 @@ void multi_io_service::start(unsigned thread_count) {
 	log_->info() << log_tag() << "Threads: " << thread_count;
 
 	for(unsigned i = 1; i <= thread_count; i++){
-		worker_threads_.emplace_back(std::bind(&multi_io_service::run_thread, this, i));	// Running io_service in threads
+		worker_threads_.emplace_back([this, i]{run_thread(i);});	// Running io_service in threads
 	}
 }
 

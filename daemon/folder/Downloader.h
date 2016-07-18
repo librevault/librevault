@@ -16,8 +16,13 @@
 #pragma once
 #include <util/file_util.h>
 #include <util/periodic_process.h>
+#include <boost/bimap.hpp>
 #include "RemoteFolder.h"
 #include "util/AvailabilityMap.h"
+
+#define CLUSTERED_COEFFICIENT 10
+#define IMMEDIATE_COEFFICIENT 20
+#define RARITY_COEFFICIENT 25
 
 namespace librevault {
 
@@ -48,7 +53,7 @@ private:
 
 	/* Missing chunk+request management */
 	struct MissingChunk {
-		MissingChunk(uint32_t size);
+		MissingChunk(blob ct_hash, uint32_t size);
 		~MissingChunk();
 
 		blob get_chunk();
@@ -72,6 +77,11 @@ private:
 		std::multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
 		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
+		using weight_t = float;
+		weight_t weight_;
+
+		const blob ct_hash_;
+
 	private:
 		AvailabilityMap<uint32_t> file_map_;
 		fs::path this_chunk_path_;
@@ -83,6 +93,18 @@ private:
 	};
 
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
+	struct weight_less {
+		inline bool operator() (std::shared_ptr<MissingChunk> a, std::shared_ptr<MissingChunk> b) const {
+			return a->weight_ < b->weight_;
+		}
+	};
+	using weight_ordered_chunks_t = boost::bimap<
+		std::shared_ptr<MissingChunk>,
+		std::shared_ptr<MissingChunk>
+	>;
+	weight_ordered_chunks_t weight_ordered_chunks_;
+	void reweight_chunk(const blob& ct_hash);
+
 	size_t requests_overall() const;
 
 	PeriodicProcess periodic_maintain_;
@@ -93,6 +115,9 @@ private:
 
 	void add_missing_chunk(const blob& ct_hash);
 	void remove_requests_to(std::shared_ptr<RemoteFolder> remote);
+
+	/* Node management */
+	std::set<std::shared_ptr<RemoteFolder>> remotes_;
 };
 
 } /* namespace librevault */

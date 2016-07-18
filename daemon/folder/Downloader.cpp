@@ -55,6 +55,10 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 void Downloader::notify_local_chunk(const blob& ct_hash) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	missing_chunks_.erase(ct_hash);
+
+	for(auto& smeta : exchange_group_.fs_dir()->index->containing_chunk(ct_hash))
+		for(auto& chunk : smeta.meta().chunks())
+			reweight_chunk(chunk.ct_hash);
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
@@ -64,6 +68,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield[chunk_idx])
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
+		remotes_.insert(remote);
 	}catch(AbstractFolder::no_such_meta){
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
@@ -125,6 +130,36 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 		missing_chunk.second->requests.erase(remote);
 		missing_chunk.second->owned_by.erase(remote);
 	}
+	remotes_.erase(remote);
+}
+
+void Downloader::reweight_chunk(const blob& ct_hash) {
+	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
+	auto missing_chunk_it = missing_chunks_.find(ct_hash);
+	if(missing_chunk_it == missing_chunks_.end()) return;
+
+	auto missing_chunk = missing_chunk_it->second;
+	weight_ordered_chunks_.left.erase(missing_chunk);
+
+	MissingChunk::weight_t new_weight = 0;
+
+	auto smeta_containing_chunk = exchange_group_.fs_dir()->index->containing_chunk(ct_hash);
+	for(auto& smeta : smeta_containing_chunk) {
+		for(auto& chunk : smeta.meta().chunks()) {
+			if(exchange_group_.fs_dir()->have_chunk(chunk.ct_hash)) {
+				new_weight += CLUSTERED_COEFFICIENT;
+				break;
+			}
+		}
+	}
+	float rarity = (float)missing_chunk->owned_by.size() / (float)remotes_.size();
+	new_weight += rarity * RARITY_COEFFICIENT;
+
+	missing_chunk->weight_ = new_weight;
+	weight_ordered_chunks_.left.insert(weight_ordered_chunks_t::left_value_type(missing_chunk, missing_chunk));
+
+	log_->trace() << log_tag() << "Reweighted chunk " << crypto::Base32().to_string(ct_hash) << " to " << new_weight;
 }
 
 void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
@@ -140,8 +175,9 @@ void Downloader::add_missing_chunk(const blob& ct_hash) {
 
 	uint32_t pt_chunksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
 	uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize/16)+1)*16;
-	auto missing_chunk = std::make_shared<MissingChunk>(padded_chunksize);
+	auto missing_chunk = std::make_shared<MissingChunk>(ct_hash, padded_chunksize);
 	missing_chunks_.insert({ct_hash, missing_chunk});
+	reweight_chunk(ct_hash);
 }
 
 void Downloader::maintain_requests(PeriodicProcess& process) {
@@ -172,9 +208,9 @@ void Downloader::maintain_requests(PeriodicProcess& process) {
 bool Downloader::request_one() {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	// Try to choose chunk to request
-	for(auto& missing_chunk_it : missing_chunks_) {
-		auto missing_chunk = missing_chunk_it.second;
-		auto& ct_hash = missing_chunk_it.first;
+	for(auto& missing_chunk_it : weight_ordered_chunks_.right) {
+		auto missing_chunk = missing_chunk_it.first;
+		auto& ct_hash = missing_chunk_it.first->ct_hash_;
 
 		// Try to choose a remote to request this block from
 		auto remote = find_node_for_request(ct_hash);
@@ -223,7 +259,7 @@ size_t Downloader::requests_overall() const {
 
 /* Downloader::MissingChunk */
 
-Downloader::MissingChunk::MissingChunk(uint32_t size) : file_map_(size) {
+Downloader::MissingChunk::MissingChunk(blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
 	if(BOOST_OS_WINDOWS)
 		this_chunk_path_ = getenv("TEMP");
 	else

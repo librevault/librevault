@@ -22,15 +22,18 @@ namespace librevault {
 
 PortManager::PortManager(Client& client, P2PProvider& provider) :
 	Loggable(client, "PortManager"), client_(client), provider_(provider) {
-	natpmp_service_ = std::make_unique<NATPMPService>(client_);
-	upnp_service_ = std::make_unique<UPnPService>(client_);
+	natpmp_service_ = std::make_unique<NATPMPService>(client_, *this);
+	upnp_service_ = std::make_unique<UPnPService>(client_, *this);
 
-	natpmp_service_->port_signal.connect([this](std::string id, uint16_t port){
-		mappings_[id].second = port;
-	});
-	upnp_service_->port_signal.connect([this](std::string id, uint16_t port){
-		mappings_[id].second = port;
-	});
+	auto port_callback = [this](std::string id, uint16_t port) {
+		log_->debug() << log_tag() << "Port mapped: " << mappings_[id].descriptor.port << " -> " << port;
+		mappings_[id].port = port;
+	};
+	natpmp_service_->port_signal.connect(port_callback);
+	upnp_service_->port_signal.connect(port_callback);
+
+	client.ios().post([this]{natpmp_service_->start();});
+	client.ios().post([this]{upnp_service_->start();});
 }
 
 PortManager::~PortManager() {
@@ -39,20 +42,25 @@ PortManager::~PortManager() {
 }
 
 void PortManager::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
-	mappings_[id] = {descriptor, 0};
-	upnp_service_->add_port_mapping(id, descriptor, description);
-	natpmp_service_->add_port_mapping(id, descriptor, description);
+	std::unique_lock<std::shared_timed_mutex> lk(mappings_mutex_);
+	Mapping m;
+	m.descriptor = descriptor;
+	m.description = description;
+	m.port = descriptor.port;
+	mappings_[id] = std::move(m);
+	added_mapping_signal(id, descriptor, description);
 }
 
 void PortManager::remove_port_mapping(const std::string& id) {
-	natpmp_service_->remove_port_mapping(id);
-	upnp_service_->remove_port_mapping(id);
+	std::unique_lock<std::shared_timed_mutex> lk(mappings_mutex_);
+	mappings_.erase(id);
+	removed_mapping_signal(id);
 }
 
 uint16_t PortManager::get_port_mapping(const std::string& id) {
 	auto it = mappings_.find(id);
 	if(it != mappings_.end())
-		return it->second.second;
+		return it->second.port;
 	else
 		return 0;
 }

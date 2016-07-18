@@ -16,6 +16,7 @@
 #pragma once
 #include "pch.h"
 #include <util/Loggable.h>
+#include <shared_mutex>
 
 namespace librevault {
 
@@ -26,6 +27,7 @@ class NATPMPService;
 class UPnPService;
 
 class PortManager : public Loggable {
+	friend class PortMappingService;
 public:
 	struct MappingDescriptor {
 		enum Protocol {
@@ -45,11 +47,22 @@ public:
 	void remove_port_mapping(const std::string& id);
 	uint16_t get_port_mapping(const std::string& id);
 
+	/**/
+	boost::signals2::signal<void(const std::string&, MappingDescriptor, std::string)> added_mapping_signal;
+	boost::signals2::signal<void(const std::string&)> removed_mapping_signal;
+
 private:
 	Client& client_;
 	P2PProvider& provider_;
 
-	std::map<std::string, std::pair<MappingDescriptor, uint16_t>> mappings_;
+	std::shared_timed_mutex mappings_mutex_;
+
+	struct Mapping {
+		MappingDescriptor descriptor;
+		std::string description;
+		uint16_t port;
+	};
+	std::map<std::string, Mapping> mappings_;
 
 	std::unique_ptr<NATPMPService> natpmp_service_;
 	std::unique_ptr<UPnPService> upnp_service_;

@@ -21,41 +21,70 @@
 
 namespace librevault {
 
-UPnPService::UPnPService(Client& client) :
-	Loggable(client, "UPnPService"), client_(client) {
+UPnPService::UPnPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable(client, "UPnPService"), client_(client) {
+	Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
+}
+UPnPService::~UPnPService() {stop();}
+
+bool UPnPService::is_config_enabled() {
+	return Config::get()->globals()["upnp_enabled"].asBool();
+}
+
+void UPnPService::start() {
+	if(!is_config_enabled()) return;
+
+	active = true;
 
 	upnp_urls = std::make_unique<UPNPUrls>();
 	upnp_data = std::make_unique<IGDdatas>();
 
-	reload_config();
-	Config::get()->config_changed.connect([this]{UPnPService::reload_config();});
-	discover_igd();
+	/* Discovering IGD */
+	DevListWrapper devlist;
+
+	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
+		log_->debug() << log_tag() << "IGD not found. e: " << strerror(errno);
+		return;
+	}
+
+	log_->debug() << log_tag() << "Found IGD: " << upnp_urls->controlURL;
+
+	/* Adding all present mappings */
+	{
+		std::shared_lock<std::shared_timed_mutex> lk(get_mappings_mutex());
+		for(auto& mapping : get_mappings()) {
+			add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
+		}
+		added_mapping_signal_conn = parent_.added_mapping_signal.connect([this](const std::string& id, MappingDescriptor descriptor, std::string description){
+			add_port_mapping(id, descriptor, description);
+		});
+		removed_mapping_signal_conn = parent_.removed_mapping_signal.connect([this](const std::string& id){
+			remove_port_mapping(id);
+		});
+	}
 }
 
-UPnPService::~UPnPService() {
+void UPnPService::stop() {
+	active = false;
+
+	added_mapping_signal_conn.disconnect();
+	removed_mapping_signal_conn.disconnect();
+
 	mappings_.clear();
 	FreeUPNPUrls(upnp_urls.get());
 }
 
-void UPnPService::discover_igd() {
-	DevListWrapper devlist;
-
-	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size()))
-		throw std::runtime_error(strerror(errno));
-
-	log_->debug() << log_tag() << "Found IGD: " << upnp_urls->controlURL;
-}
-
 void UPnPService::reload_config() {
-	bool new_enabled = Config::get()->globals()["natpmp_enabled"].asBool();
-	seconds new_lifetime = seconds(Config::get()->globals()["natpmp_lifetime"].asUInt64());
+	bool config_enabled = is_config_enabled();
 
-	enabled_ = new_enabled;
+	if(config_enabled && !active)
+		start();
+	else if(!config_enabled && active)
+		stop();
 }
 
 void UPnPService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
 	mappings_.erase(id);
-	mappings_[id] = std::make_shared<PortMapping>(*this, descriptor, description);
+	mappings_[id] = std::make_shared<PortMapping>(*this, id, descriptor, description);
 }
 
 void UPnPService::remove_port_mapping(const std::string& id) {
@@ -76,7 +105,7 @@ UPnPService::DevListWrapper::~DevListWrapper() {
 }
 
 /* UPnPService::PortMapping */
-UPnPService::PortMapping::PortMapping(UPnPService& parent, MappingDescriptor descriptor, const std::string description) : parent_(parent), descriptor_(descriptor) {
+UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description) : parent_(parent), id_(id), descriptor_(descriptor) {
 	int err = UPNP_AddPortMapping(parent_.upnp_urls->controlURL,
 		parent_.upnp_data->first.servicetype,
 		std::to_string(descriptor.port).c_str(),
@@ -86,7 +115,9 @@ UPnPService::PortMapping::PortMapping(UPnPService& parent, MappingDescriptor des
 		get_literal_protocol(descriptor.protocol),
 		nullptr,
 		nullptr);
-	if(err)
+	if(!err)
+		parent_.port_signal(id, descriptor.port);
+	else
 		parent_.log_->debug() << parent_.log_tag() << "UPnP port forwarding failed: Error " << err;
 }
 

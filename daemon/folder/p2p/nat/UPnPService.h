@@ -29,10 +29,13 @@ class P2PProvider;
 
 class UPnPService : public PortMappingService, public Loggable {
 public:
-	UPnPService(Client& client);
+	UPnPService(Client& client, PortManager& parent);
 	~UPnPService();
 
 	void reload_config();
+
+	void start();
+	void stop();
 
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
@@ -50,11 +53,12 @@ protected:
 
 	class PortMapping {
 	public:
-		PortMapping(UPnPService& parent, MappingDescriptor descriptor, const std::string description);
+		PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description);
 		virtual ~PortMapping();
 
 	private:
 		UPnPService& parent_;
+		std::string id_;
 		MappingDescriptor descriptor_;
 
 		const char* get_literal_protocol(MappingDescriptor::Protocol protocol) const {return protocol == MappingDescriptor::TCP ? "TCP" : "UDP";}
@@ -63,13 +67,12 @@ protected:
 	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
 
 	// Config values
-	bool enabled_;
-
 	std::unique_ptr<UPNPUrls> upnp_urls;
 	std::unique_ptr<IGDdatas> upnp_data;
 	std::array<char, 16> lanaddr;
 
-	void discover_igd();
+	bool active = false;
+	bool is_config_enabled();
 };
 
 } /* namespace librevault */

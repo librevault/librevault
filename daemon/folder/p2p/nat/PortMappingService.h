@@ -21,11 +21,22 @@ namespace librevault {
 
 class PortMappingService {
 public:
+	PortMappingService(PortManager& parent) : parent_(parent) {}
+
 	using MappingDescriptor = PortManager::MappingDescriptor;
 	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
 
-	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
-	virtual void remove_port_mapping(const std::string& id) = 0;
+protected:
+	PortManager& parent_;
+	const decltype(PortManager::mappings_)& get_mappings() {
+		return parent_.mappings_;
+	}
+	decltype(PortManager::mappings_mutex_)& get_mappings_mutex() {
+		return parent_.mappings_mutex_;
+	}
+
+	boost::signals2::scoped_connection added_mapping_signal_conn;
+	boost::signals2::scoped_connection removed_mapping_signal_conn;
 };
 
 } /* namespace librevault */

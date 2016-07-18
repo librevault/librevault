@@ -140,7 +140,6 @@ void Downloader::reweight_chunk(const blob& ct_hash) {
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
 	auto missing_chunk = missing_chunk_it->second;
-	weight_ordered_chunks_.left.erase(missing_chunk);
 
 	MissingChunk::weight_t new_weight = 0;
 
@@ -153,13 +152,18 @@ void Downloader::reweight_chunk(const blob& ct_hash) {
 			}
 		}
 	}
-	float rarity = (float)missing_chunk->owned_by.size() / (float)remotes_.size();
+	float rarity = ((float)remotes_.size() - (float)missing_chunk->owned_by.size()) / (float)remotes_.size();
 	new_weight += rarity * RARITY_COEFFICIENT;
 
-	missing_chunk->weight_ = new_weight;
-	weight_ordered_chunks_.left.insert(weight_ordered_chunks_t::left_value_type(missing_chunk, missing_chunk));
+	if(missing_chunk->weight_ != new_weight) {
+		weight_ordered_chunks_.left.erase(missing_chunk);
+		missing_chunk->weight_ = new_weight;
+		weight_ordered_chunks_.left.insert(weight_ordered_chunks_t::left_value_type(missing_chunk, missing_chunk));
 
-	log_->trace() << log_tag() << "Reweighted chunk " << crypto::Base32().to_string(ct_hash) << " to " << new_weight;
+		log_->trace() << log_tag() << "Reweighted chunk " << crypto::Base32().to_string(ct_hash) << " to " << new_weight;
+	}else{
+		log_->trace() << log_tag() << "Left chunk " << crypto::Base32().to_string(ct_hash) << " with weight " << new_weight;
+	}
 }
 
 void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {

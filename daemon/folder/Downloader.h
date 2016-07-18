@@ -20,9 +20,9 @@
 #include "RemoteFolder.h"
 #include "util/AvailabilityMap.h"
 
-#define CLUSTERED_COEFFICIENT 10
-#define IMMEDIATE_COEFFICIENT 20
-#define RARITY_COEFFICIENT 25
+#define CLUSTERED_COEFFICIENT 10.0
+#define IMMEDIATE_COEFFICIENT 20.0
+#define RARITY_COEFFICIENT 25.0
 
 namespace librevault {
 

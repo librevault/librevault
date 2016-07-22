@@ -17,17 +17,93 @@
 #include <util/file_util.h>
 #include <util/periodic_process.h>
 #include <boost/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 #include "RemoteFolder.h"
 #include "util/AvailabilityMap.h"
 
-#define CLUSTERED_COEFFICIENT 10.0
-#define IMMEDIATE_COEFFICIENT 20.0
-#define RARITY_COEFFICIENT 25.0
+#define CLUSTERED_COEFFICIENT 10.0f
+#define IMMEDIATE_COEFFICIENT 20.0f
+#define RARITY_COEFFICIENT 25.0f
 
 namespace librevault {
 
 class Client;
 class FolderGroup;
+
+struct MissingChunk {
+	MissingChunk(blob ct_hash, uint32_t size);
+	~MissingChunk();
+
+	blob get_chunk();
+	void put_block(uint32_t offset, const blob& content);
+
+	// Size-related functions
+	uint64_t size() const {return file_map_.size_original();}
+	bool complete() const {return file_map_.full();}
+
+	// AvailabilityMap accessors
+	AvailabilityMap<uint32_t>::const_iterator begin() {return file_map_.begin();}
+	AvailabilityMap<uint32_t>::const_iterator end() {return file_map_.end();}
+	const AvailabilityMap<uint32_t>& file_map() const {return file_map_;}
+
+	/* Request-oriented functions */
+	struct BlockRequest {
+		uint32_t offset;
+		uint32_t size;
+		std::chrono::steady_clock::time_point started;
+	};
+	std::unordered_multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
+	std::unordered_map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
+
+	const blob ct_hash_;
+
+private:
+	AvailabilityMap<uint32_t> file_map_;
+	fs::path this_chunk_path_;
+#ifndef FOPEN_BACKEND
+	boost::iostreams::mapped_file mapped_file_;
+#else
+	file_wrapper wrapped_file_;
+#endif
+};
+
+class WeightedDownloadQueue {
+	struct Weight {
+		bool clustered = false;
+		bool immediate = false;
+
+		size_t owned_by = 0;
+		size_t remotes_count = 0;
+
+		float value() const;
+		bool operator<(const Weight& b) const {return value() > b.value();}
+		bool operator==(const Weight& b) const {return value() == b.value();}
+		bool operator!=(const Weight& b) const {return !(*this == b);}
+	};
+	using weight_ordered_chunks_t = boost::bimap<
+		boost::bimaps::unordered_set_of<std::shared_ptr<MissingChunk>>,
+		boost::bimaps::multiset_of<Weight>
+	>;
+	using queue_left_value = weight_ordered_chunks_t::left_value_type;
+	using queue_right_value = weight_ordered_chunks_t::right_value_type;
+	weight_ordered_chunks_t weight_ordered_chunks_;
+
+	Weight get_current_weight(std::shared_ptr<MissingChunk> chunk);
+	void reweight_chunk(std::shared_ptr<MissingChunk> chunk, Weight new_weight);
+
+public:
+	void add_chunk(std::shared_ptr<MissingChunk> chunk);
+	void remove_chunk(std::shared_ptr<MissingChunk> chunk);
+
+	void set_overall_remotes_count(size_t count);
+	void set_chunk_remotes_count(std::shared_ptr<MissingChunk> chunk, size_t count);
+
+	void mark_clustered(std::shared_ptr<MissingChunk> chunk);
+	void mark_immediate(std::shared_ptr<MissingChunk> chunk);
+
+	std::list<std::shared_ptr<MissingChunk>> chunks() const;
+};
 
 class Downloader : public std::enable_shared_from_this<Downloader>, protected Loggable {
 public:
@@ -51,70 +127,16 @@ private:
 	Client& client_;
 	FolderGroup& exchange_group_;
 
-	/* Missing chunk+request management */
-	struct MissingChunk {
-		MissingChunk(blob ct_hash, uint32_t size);
-		~MissingChunk();
-
-		blob get_chunk();
-		void put_block(uint32_t offset, const blob& content);
-
-		// size-related functions
-		uint64_t size() const {return file_map_.size_original();}
-		bool complete() const {return file_map_.full();}
-
-		// AvailabilityMap accessors
-		AvailabilityMap<uint32_t>::const_iterator begin() {return file_map_.begin();}
-		AvailabilityMap<uint32_t>::const_iterator end() {return file_map_.end();}
-		const AvailabilityMap<uint32_t>& file_map() const {return file_map_;}
-
-		/* Request-oriented functions */
-		struct BlockRequest {
-			uint32_t offset;
-			uint32_t size;
-			std::chrono::steady_clock::time_point started;
-		};
-		std::multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
-		std::map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
-
-		using weight_t = float;
-		weight_t weight_;
-
-		const blob ct_hash_;
-
-	private:
-		AvailabilityMap<uint32_t> file_map_;
-		fs::path this_chunk_path_;
-#ifndef FOPEN_BACKEND
-		boost::iostreams::mapped_file mapped_file_;
-#else
-		file_wrapper wrapped_file_;
-#endif
-	};
-
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
-	struct weight_less {
-		inline bool operator() (std::shared_ptr<MissingChunk> a, std::shared_ptr<MissingChunk> b) const {
-			return a->weight_ < b->weight_;
-		}
-	};
-	using weight_ordered_chunks_t = boost::bimap<
-		std::shared_ptr<MissingChunk>,
-		std::shared_ptr<MissingChunk>
-	>;
-	weight_ordered_chunks_t weight_ordered_chunks_;
-	void reweight_chunk(const blob& ct_hash);
+	WeightedDownloadQueue download_queue_;
 
 	size_t requests_overall() const;
 
+	/* Request process */
 	PeriodicProcess periodic_maintain_;
 	void maintain_requests(PeriodicProcess& process);
-
 	bool request_one();
 	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
-
-	void add_missing_chunk(const blob& ct_hash);
-	void remove_requests_to(std::shared_ptr<RemoteFolder> remote);
 
 	/* Node management */
 	std::set<std::shared_ptr<RemoteFolder>> remotes_;

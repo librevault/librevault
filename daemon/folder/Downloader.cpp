@@ -25,6 +25,139 @@
 
 namespace librevault {
 
+/* MissingChunk */
+MissingChunk::MissingChunk(blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
+	if(BOOST_OS_WINDOWS)
+		this_chunk_path_ = getenv("TEMP");
+	else
+		this_chunk_path_ = "/tmp";
+
+	this_chunk_path_ /= fs::unique_path("librevault-%%%%-%%%%-%%%%-%%%%");
+
+	file_wrapper f(this_chunk_path_, "w");
+	f.close();
+	fs::resize_file(this_chunk_path_, size);
+
+#ifndef FOPEN_BACKEND
+	mapped_file_.open(this_chunk_path_);
+#else
+	wrapped_file_.open(this_chunk_path_, "w+");
+#endif
+}
+
+MissingChunk::~MissingChunk() {
+#ifndef FOPEN_BACKEND
+	mapped_file_.close();
+#else
+	wrapped_file_.close();
+#endif
+	fs::remove(this_chunk_path_);
+}
+
+blob MissingChunk::get_chunk() {
+	if(complete()) {
+		blob content(size());
+#ifndef FOPEN_BACKEND
+		std::copy(mapped_file_.data(), mapped_file_.data() + size(), content.data());
+#else
+		wrapped_file_.ios().seekg(0);
+		wrapped_file_.ios().read((char*)content.data(), size());
+#endif
+		return content;
+	}else throw AbstractFolder::no_such_chunk();
+}
+
+void MissingChunk::put_block(uint32_t offset, const blob& content) {
+	auto inserted = file_map_.insert({offset, content.size()}).second;
+	if(inserted) {
+#ifndef FOPEN_BACKEND
+		std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
+#else
+		if(wrapped_file_.ios().tellp() != offset)
+			wrapped_file_.ios().seekp(offset);
+		wrapped_file_.ios().write((char*)content.data(), content.size());
+#endif
+	}
+}
+
+/* WeightedDownloadQueue */
+float WeightedDownloadQueue::Weight::value() const {
+	float weight_value = 0;
+
+	weight_value += CLUSTERED_COEFFICIENT * (clustered ? 1 : 0);
+	weight_value += IMMEDIATE_COEFFICIENT * (immediate ? 1 : 0);
+	float rarity = (float)(remotes_count - owned_by) / (float)remotes_count;
+	weight_value += rarity * RARITY_COEFFICIENT;
+
+	return weight_value;
+}
+
+WeightedDownloadQueue::Weight WeightedDownloadQueue::get_current_weight(std::shared_ptr<MissingChunk> chunk) {
+	auto it = weight_ordered_chunks_.left.find(chunk);
+	if(it != weight_ordered_chunks_.left.end())
+		return it->second;
+	else
+		return Weight();
+}
+
+void WeightedDownloadQueue::reweight_chunk(std::shared_ptr<MissingChunk> chunk, Weight new_weight) {
+	auto chunk_it = weight_ordered_chunks_.left.find(chunk);
+
+	if(chunk_it != weight_ordered_chunks_.left.end() && chunk_it->second != new_weight) {
+		weight_ordered_chunks_.left.erase(chunk_it);
+		weight_ordered_chunks_.left.insert(queue_left_value(chunk, new_weight));
+	}
+}
+
+void WeightedDownloadQueue::add_chunk(std::shared_ptr<MissingChunk> chunk) {
+	weight_ordered_chunks_.left.insert(queue_left_value(chunk, Weight()));
+}
+
+void WeightedDownloadQueue::remove_chunk(std::shared_ptr<MissingChunk> chunk) {
+	weight_ordered_chunks_.left.erase(chunk);
+}
+
+void WeightedDownloadQueue::set_overall_remotes_count(size_t count) {
+	weight_ordered_chunks_t new_queue;
+	for(auto& entry : weight_ordered_chunks_.left) {
+		std::shared_ptr<MissingChunk> chunk = entry.first;
+		Weight weight = entry.second;
+
+		weight.remotes_count = count;
+		new_queue.left.insert(queue_left_value(chunk, weight));
+	}
+	weight_ordered_chunks_ = new_queue;
+}
+
+void WeightedDownloadQueue::set_chunk_remotes_count(std::shared_ptr<MissingChunk> chunk, size_t count) {
+	Weight weight = get_current_weight(chunk);
+	weight.remotes_count = count;
+
+	reweight_chunk(chunk, weight);
+}
+
+void WeightedDownloadQueue::mark_clustered(std::shared_ptr<MissingChunk> chunk) {
+	Weight weight = get_current_weight(chunk);
+	weight.clustered = true;
+
+	reweight_chunk(chunk, weight);
+}
+
+void WeightedDownloadQueue::mark_immediate(std::shared_ptr<MissingChunk> chunk) {
+	Weight weight = get_current_weight(chunk);
+	weight.immediate = true;
+
+	reweight_chunk(chunk, weight);
+}
+
+std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
+	std::list<std::shared_ptr<MissingChunk>> chunk_list;
+	for(auto& chunk_ptr : boost::adaptors::values(weight_ordered_chunks_.right))
+		chunk_list.push_back(chunk_ptr);
+	return chunk_list;
+}
+
+/* Downloader */
 Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
 		Loggable(client, "Downloader"),
 		client_(client),
@@ -40,25 +173,52 @@ Downloader::~Downloader() {
 
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+
+	std::set<blob> missing_ct_hashes;
+
+	bool incomplete_meta = false;
+
 	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
 	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
+		auto& ct_hash = smeta.meta().chunks().at(chunk_idx).ct_hash;
 		if(bitfield[chunk_idx]) {
 			// We have chunk, remove from missing
-			notify_local_chunk(smeta.meta().chunks().at(chunk_idx).ct_hash);
+			notify_local_chunk(ct_hash);
+			incomplete_meta = true;
 		} else {
 			// We haven't this chunk, we need to download it
-			add_missing_chunk(smeta.meta().chunks().at(chunk_idx).ct_hash);
+			missing_ct_hashes.insert(ct_hash);
 		}
+	}
+
+	for(auto& ct_hash : missing_ct_hashes) {
+		/* Compute encrypted chunk size */
+		uint32_t pt_chunksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
+		uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize / 16) + 1) * 16;
+
+		auto missing_chunk = std::make_shared<MissingChunk>(ct_hash, padded_chunksize);
+		missing_chunks_.insert({ct_hash, missing_chunk});
+
+		/* Add to download queue */
+		download_queue_.add_chunk(missing_chunk);
+		if(incomplete_meta)
+			download_queue_.mark_clustered(missing_chunk);
 	}
 }
 
 void Downloader::notify_local_chunk(const blob& ct_hash) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	missing_chunks_.erase(ct_hash);
+
+	auto missing_chunk_it = missing_chunks_.find(ct_hash);
+	if(missing_chunk_it != missing_chunks_.end())
+		download_queue_.remove_chunk(missing_chunk_it->second);
 
 	for(auto& smeta : exchange_group_.fs_dir()->index->containing_chunk(ct_hash))
-		for(auto& chunk : smeta.meta().chunks())
-			reweight_chunk(chunk.ct_hash);
+		for(auto& chunk : smeta.meta().chunks()) {
+			auto it = missing_chunks_.find(chunk.ct_hash);
+			if(it != missing_chunks_.end())
+				download_queue_.mark_clustered(it->second);
+		}
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
@@ -69,6 +229,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 			if(bitfield[chunk_idx])
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
 		remotes_.insert(remote);
+		download_queue_.set_overall_remotes_count(remotes_.size());
 	}catch(AbstractFolder::no_such_meta){
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
@@ -79,14 +240,20 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
-	missing_chunk_it->second->owned_by.insert({remote, remote->get_interest_guard()});
+	auto missing_chunk = missing_chunk_it->second;
+	missing_chunk->owned_by.insert({remote, remote->get_interest_guard()});
+	download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
 
 	periodic_maintain_.invoke_post();
 }
 
 void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	remove_requests_to(remote);
+
+	/* Remove requests to this node */
+	for(auto& missing_chunk : missing_chunks_)
+		missing_chunk.second->requests.erase(remote);
+
 	periodic_maintain_.invoke_post();
 }
 
@@ -126,62 +293,13 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
-	for(auto& missing_chunk : missing_chunks_) {
-		missing_chunk.second->requests.erase(remote);
-		missing_chunk.second->owned_by.erase(remote);
+	for(auto& missing_chunk : missing_chunks_ | boost::adaptors::map_values) {
+		missing_chunk->requests.erase(remote);
+		missing_chunk->owned_by.erase(remote);
+		download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
 	}
 	remotes_.erase(remote);
-}
-
-void Downloader::reweight_chunk(const blob& ct_hash) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	auto missing_chunk_it = missing_chunks_.find(ct_hash);
-	if(missing_chunk_it == missing_chunks_.end()) return;
-
-	auto missing_chunk = missing_chunk_it->second;
-
-	MissingChunk::weight_t new_weight = 0;
-
-	auto smeta_containing_chunk = exchange_group_.fs_dir()->index->containing_chunk(ct_hash);
-	for(auto& smeta : smeta_containing_chunk) {
-		for(auto& chunk : smeta.meta().chunks()) {
-			if(exchange_group_.fs_dir()->have_chunk(chunk.ct_hash)) {
-				new_weight += CLUSTERED_COEFFICIENT;
-				break;
-			}
-		}
-	}
-	float rarity = ((float)remotes_.size() - (float)missing_chunk->owned_by.size()) / (float)remotes_.size();
-	new_weight += rarity * RARITY_COEFFICIENT;
-
-	if(missing_chunk->weight_ != new_weight) {
-		weight_ordered_chunks_.left.erase(missing_chunk);
-		missing_chunk->weight_ = new_weight;
-		weight_ordered_chunks_.left.insert(weight_ordered_chunks_t::left_value_type(missing_chunk, missing_chunk));
-
-		log_->trace() << log_tag() << "Reweighted chunk " << crypto::Base32().to_string(ct_hash) << " to " << new_weight;
-	}else{
-		log_->trace() << log_tag() << "Left chunk " << crypto::Base32().to_string(ct_hash) << " with weight " << new_weight;
-	}
-}
-
-void Downloader::remove_requests_to(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	for(auto& missing_chunk : missing_chunks_) {
-		missing_chunk.second->requests.erase(remote);
-	}
-}
-
-void Downloader::add_missing_chunk(const blob& ct_hash) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-
-	uint32_t pt_chunksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
-	uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize/16)+1)*16;
-	auto missing_chunk = std::make_shared<MissingChunk>(ct_hash, padded_chunksize);
-	missing_chunks_.insert({ct_hash, missing_chunk});
-	reweight_chunk(ct_hash);
+	download_queue_.set_overall_remotes_count(remotes_.size());
 }
 
 void Downloader::maintain_requests(PeriodicProcess& process) {
@@ -212,9 +330,8 @@ void Downloader::maintain_requests(PeriodicProcess& process) {
 bool Downloader::request_one() {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	// Try to choose chunk to request
-	for(auto& missing_chunk_it : weight_ordered_chunks_.right) {
-		auto missing_chunk = missing_chunk_it.first;
-		auto& ct_hash = missing_chunk_it.first->ct_hash_;
+	for(auto missing_chunk : download_queue_.chunks()) {
+		auto& ct_hash = missing_chunk->ct_hash_;
 
 		// Try to choose a remote to request this block from
 		auto remote = find_node_for_request(ct_hash);
@@ -259,62 +376,6 @@ size_t Downloader::requests_overall() const {
 	for(auto& missing_chunk : missing_chunks_)
 		requests_overall_result += missing_chunk.second->requests.size();
 	return requests_overall_result;
-}
-
-/* Downloader::MissingChunk */
-
-Downloader::MissingChunk::MissingChunk(blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
-	if(BOOST_OS_WINDOWS)
-		this_chunk_path_ = getenv("TEMP");
-	else
-		this_chunk_path_ = "/tmp";
-
-	this_chunk_path_ /= fs::unique_path("librevault-%%%%-%%%%-%%%%-%%%%");
-
-	file_wrapper f(this_chunk_path_, "w");
-	f.close();
-	fs::resize_file(this_chunk_path_, size);
-
-#ifndef FOPEN_BACKEND
-	mapped_file_.open(this_chunk_path_);
-#else
-	wrapped_file_.open(this_chunk_path_, "w+");
-#endif
-}
-
-Downloader::MissingChunk::~MissingChunk() {
-#ifndef FOPEN_BACKEND
-	mapped_file_.close();
-#else
-	wrapped_file_.close();
-#endif
-	fs::remove(this_chunk_path_);
-}
-
-blob Downloader::MissingChunk::get_chunk() {
-	if(complete()) {
-		blob content(size());
-#ifndef FOPEN_BACKEND
-		std::copy(mapped_file_.data(), mapped_file_.data() + size(), content.data());
-#else
-		wrapped_file_.ios().seekg(0);
-		wrapped_file_.ios().read((char*)content.data(), size());
-#endif
-		return content;
-	}else throw AbstractFolder::no_such_chunk();
-}
-
-void Downloader::MissingChunk::put_block(uint32_t offset, const blob& content) {
-	auto inserted = file_map_.insert({offset, content.size()}).second;
-	if(inserted) {
-#ifndef FOPEN_BACKEND
-		std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
-#else
-		if(wrapped_file_.ios().tellp() != offset)
-			wrapped_file_.ios().seekp(offset);
-		wrapped_file_.ios().write((char*)content.data(), content.size());
-#endif
-	}
 }
 
 } /* namespace librevault */

@@ -43,6 +43,8 @@ FolderGroup::FolderGroup(FolderParams params, Client& client) :
 	fs_dir_->chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
 		notify_chunk(fs_dir_, ct_hash);
 	});
+
+	fs_dir_->index->notify_all();
 }
 
 FolderGroup::~FolderGroup() {

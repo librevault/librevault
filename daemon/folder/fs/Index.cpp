@@ -155,6 +155,13 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	}
 }
 
+void Index::notify_all() {
+	client_.network_ios().dispatch([=]() {
+		for(auto& smeta : get_meta())
+			new_meta_signal(smeta);
+	});
+}
+
 /* Block getter */
 
 uint32_t Index::get_chunk_size(const blob& ct_hash) {

@@ -193,9 +193,10 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 
 	// Remove from missing
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
-	if(missing_chunk_it != missing_chunks_.end())
+	if(missing_chunk_it != missing_chunks_.end()) {
 		download_queue_.remove_chunk(missing_chunk_it->second);
-	missing_chunks_.erase(missing_chunk_it);
+		missing_chunks_.erase(missing_chunk_it);
+	}
 
 	// Mark all other chunks "clustered"
 	for(auto& smeta : exchange_group_.fs_dir()->index->containing_chunk(ct_hash))

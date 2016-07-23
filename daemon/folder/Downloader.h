@@ -31,11 +31,14 @@ namespace librevault {
 class Client;
 class FolderGroup;
 
+/* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
-	MissingChunk(blob ct_hash, uint32_t size);
-	~MissingChunk();
+	MissingChunk(const fs::path& system_path, blob ct_hash, uint32_t size);
 
-	blob get_chunk();
+	// File-related accessors
+	fs::path release_chunk();
+
+	// Content-related accessors
 	void put_block(uint32_t offset, const blob& content);
 
 	// Size-related functions

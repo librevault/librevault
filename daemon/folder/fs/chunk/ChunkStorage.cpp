@@ -66,8 +66,8 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 	}
 }
 
-void ChunkStorage::put_chunk(const blob& ct_hash, const blob& chunk) {
-	enc_storage->put_chunk(ct_hash, chunk);
+void ChunkStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
+	enc_storage->put_chunk(ct_hash, chunk_location);
 	if(open_storage && file_assembler)
 		for(auto& smeta : dir_.index->containing_chunk(ct_hash))
 			file_assembler->queue_assemble(smeta.meta());

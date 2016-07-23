@@ -54,11 +54,8 @@ std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 	}
 }
 
-void EncStorage::put_chunk(const blob& ct_hash, const blob& data) {
-	auto chunk_path = make_chunk_ct_path(ct_hash);
-	file_wrapper chunk_file(chunk_path, "wb");
-	chunk_file.ios().exceptions(std::ios_base::failbit | std::ios_base::badbit);
-	chunk_file.ios().write(reinterpret_cast<const char*>(data.data()), data.size());
+void EncStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
+	file_move(chunk_location, make_chunk_ct_path(ct_hash));
 
 	log_->debug() << log_tag() << "Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage";
 }

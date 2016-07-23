@@ -26,45 +26,27 @@
 namespace librevault {
 
 /* MissingChunk */
-MissingChunk::MissingChunk(blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
-	if(BOOST_OS_WINDOWS)
-		this_chunk_path_ = getenv("TEMP");
-	else
-		this_chunk_path_ = "/tmp";
+MissingChunk::MissingChunk(const fs::path& system_path, blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
+	this_chunk_path_ = system_path / (std::string("incomplete-") + crypto::Base32().to_string(ct_hash_));
 
-	this_chunk_path_ /= fs::unique_path("librevault-%%%%-%%%%-%%%%-%%%%");
-
-	file_wrapper f(this_chunk_path_, "w");
+	file_wrapper f(this_chunk_path_, "wb");
 	f.close();
 	fs::resize_file(this_chunk_path_, size);
 
 #ifndef FOPEN_BACKEND
 	mapped_file_.open(this_chunk_path_);
 #else
-	wrapped_file_.open(this_chunk_path_, "w+");
+	wrapped_file_.open(this_chunk_path_, "r+b");
 #endif
 }
 
-MissingChunk::~MissingChunk() {
+fs::path MissingChunk::release_chunk() {
 #ifndef FOPEN_BACKEND
 	mapped_file_.close();
 #else
 	wrapped_file_.close();
 #endif
-	fs::remove(this_chunk_path_);
-}
-
-blob MissingChunk::get_chunk() {
-	if(complete()) {
-		blob content(size());
-#ifndef FOPEN_BACKEND
-		std::copy(mapped_file_.data(), mapped_file_.data() + size(), content.data());
-#else
-		wrapped_file_.ios().seekg(0);
-		wrapped_file_.ios().read((char*)content.data(), size());
-#endif
-		return content;
-	}else throw AbstractFolder::no_such_chunk();
+	return this_chunk_path_;
 }
 
 void MissingChunk::put_block(uint32_t offset, const blob& content) {
@@ -196,7 +178,7 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 		uint32_t pt_chunksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
 		uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize / 16) + 1) * 16;
 
-		auto missing_chunk = std::make_shared<MissingChunk>(ct_hash, padded_chunksize);
+		auto missing_chunk = std::make_shared<MissingChunk>(exchange_group_.params().system_path, ct_hash, padded_chunksize);
 		missing_chunks_.insert({ct_hash, missing_chunk});
 
 		/* Add to download queue */
@@ -209,10 +191,13 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 void Downloader::notify_local_chunk(const blob& ct_hash) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
+	// Remove from missing
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it != missing_chunks_.end())
 		download_queue_.remove_chunk(missing_chunk_it->second);
+	missing_chunks_.erase(missing_chunk_it);
 
+	// Mark all other chunks "clustered"
 	for(auto& smeta : exchange_group_.fs_dir()->index->containing_chunk(ct_hash))
 		for(auto& chunk : smeta.meta().chunks()) {
 			auto it = missing_chunks_.find(chunk.ct_hash);
@@ -280,7 +265,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 			missing_chunk_it->second->put_block(offset, data);
 			if(missing_chunk_it->second->complete()) {
-				exchange_group_.fs_dir()->put_chunk(ct_hash, missing_chunk_it->second->get_chunk());
+				exchange_group_.fs_dir()->put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
 			periodic_maintain_.invoke_post();

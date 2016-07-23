@@ -70,8 +70,6 @@ private:
 		const fs::path archive_path_;
 	};
 	std::unique_ptr<ArchiveStrategy> archive_strategy_;
-
-	void move(const fs::path& from, const fs::path& to);
 };
 
 } /* namespace librevault */

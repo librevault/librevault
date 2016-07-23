@@ -98,4 +98,15 @@ public:
 	}
 };
 
+static void file_move(const boost::filesystem::path& from, const boost::filesystem::path& to) {
+	boost::filesystem::remove(to);
+	try {
+		boost::filesystem::create_directories(to.parent_path());
+		boost::filesystem::rename(from, to);
+	}catch(boost::filesystem::filesystem_error& e){
+		boost::filesystem::copy(from, to);
+		boost::filesystem::remove(from);
+	}
+}
+
 } /* namespace librevault */

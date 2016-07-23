@@ -60,17 +60,6 @@ void Archive::archive(const fs::path& from) {
 	// TODO: else
 }
 
-void Archive::move(const fs::path& from, const fs::path& to) {
-	fs::remove(to);
-	try {
-		fs::create_directories(to.parent_path());
-		fs::rename(from, to);
-	}catch(boost::filesystem::filesystem_error& e){
-		fs::copy(from, to);
-		fs::remove(from);
-	}
-}
-
 // NoArchive
 void Archive::NoArchive::archive(const fs::path& from) {
 	fs::remove(from);
@@ -116,7 +105,7 @@ void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 void Archive::TrashArchive::archive(const fs::path& from) {
 	auto archived_path = archive_path_ / fs::path(parent_->dir_.normalize_path(from));
 	parent_->log_->trace() << parent_->log_tag() << "Adding an archive item: " << archived_path;
-	parent_->move(from, archived_path);
+	file_move(from, archived_path);
 	fs::last_write_time(archived_path, time(nullptr));
 }
 
@@ -141,7 +130,7 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 	auto timestamped_path = archived_path.stem();
 	timestamped_path += boost::locale::conv::utf_to_utf<native_char_t>(suffix);
 	timestamped_path += archived_path.extension();
-	parent_->move(from, timestamped_path);
+	file_move(from, timestamped_path);
 
 	// Remove
 	std::map<std::string, fs::path> paths;

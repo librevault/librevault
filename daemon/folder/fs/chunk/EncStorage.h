@@ -28,7 +28,7 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const blob& chunk_pt);	// FIXME: Check hash
+	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
 	void remove_chunk(const blob& ct_hash);
 
 private:

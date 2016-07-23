@@ -39,7 +39,7 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
 	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(const blob& ct_hash, const blob& chunk);
+	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
 
 	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
 

@@ -78,8 +78,8 @@ blob FSFolder::get_chunk(const blob& ct_hash) {
 	return chunk_storage->get_chunk(ct_hash);
 }
 
-void FSFolder::put_chunk(const blob& ct_hash, const blob& chunk) {
-	chunk_storage->put_chunk(ct_hash, chunk);
+void FSFolder::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
+	chunk_storage->put_chunk(ct_hash, chunk_location);
 }
 
 bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {

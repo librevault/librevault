@@ -42,7 +42,7 @@ PortManager::~PortManager() {
 }
 
 void PortManager::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
-	std::unique_lock<std::shared_timed_mutex> lk(mappings_mutex_);
+	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	Mapping m;
 	m.descriptor = descriptor;
 	m.description = description;
@@ -52,7 +52,7 @@ void PortManager::add_port_mapping(const std::string& id, MappingDescriptor desc
 }
 
 void PortManager::remove_port_mapping(const std::string& id) {
-	std::unique_lock<std::shared_timed_mutex> lk(mappings_mutex_);
+	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	mappings_.erase(id);
 	removed_mapping_signal(id);
 }

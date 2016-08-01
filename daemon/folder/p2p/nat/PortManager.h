@@ -16,7 +16,6 @@
 #pragma once
 #include "pch.h"
 #include <util/Loggable.h>
-#include <shared_mutex>
 
 namespace librevault {
 
@@ -55,7 +54,7 @@ private:
 	Client& client_;
 	P2PProvider& provider_;
 
-	std::shared_timed_mutex mappings_mutex_;
+	std::mutex mappings_mutex_;
 
 	struct Mapping {
 		MappingDescriptor descriptor;

@@ -38,7 +38,7 @@ void NATPMPService::start() {
 
 	/* Adding all present mappings */
 	{
-		std::shared_lock<std::shared_timed_mutex> lk(get_mappings_mutex());
+		std::unique_lock<std::mutex> lk(get_mappings_mutex());
 		for(auto& mapping : get_mappings()) {
 			add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
 		}

@@ -94,7 +94,11 @@ void UPnPService::remove_port_mapping(const std::string& id) {
 /* UPnPService::DevListWrapper */
 UPnPService::DevListWrapper::DevListWrapper() {
 	int error = UPNPDISCOVER_SUCCESS;
+#if MINIUPNPC_API_VERSION >= 14
+	devlist = upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error);
+#else
 	devlist = upnpDiscover(2000, nullptr, nullptr, 0, 0, &error);
+#endif
 	if(error != UPNPDISCOVER_SUCCESS) {
 		throw std::runtime_error(strerror(errno));
 	}

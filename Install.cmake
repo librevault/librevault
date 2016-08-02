@@ -70,6 +70,11 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
 	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
 
+	# Apple Code Signing. Change if trying to build anywhere else!
+	if(NOT LV_NO_SIGN)
+		set(CPACK_BUNDLE_APPLE_CERT_APP "814C24AEF04E33147793E6E2C55454F4062A2535")
+	endif()
+
 	configure_file("${CPACK_BUNDLE_PLIST_SOURCE}" "${CPACK_BUNDLE_PLIST}" @ONLY)
 
 	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS COMPONENT librevault-package)

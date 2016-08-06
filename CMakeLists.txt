@@ -152,7 +152,11 @@ endif()
 
 ## libminiupnpc
 add_library(libminiupnpc INTERFACE)
-find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
+
+if(NOT USE_BUNDLED_MINIUPNP)
+	find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
+endif()
+
 if(libminiupnpc_LIBRARIES AND NOT USE_BUNDLED_MINIUPNP)
 	message(STATUS "Using system Miniupnp ${SQLITE3_VERSION}")
 	target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
@@ -181,7 +185,9 @@ else()
 endif()
 
 ## SQLite
-find_package(Sqlite3 3.9 QUIET)
+if(NOT USE_BUNDLED_SQLITE3)
+	find_package(Sqlite3 3.9 QUIET)
+endif()
 
 if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
 	message(STATUS "Using system SQLite ${SQLITE3_VERSION}")

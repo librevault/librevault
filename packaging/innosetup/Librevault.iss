@@ -22,7 +22,7 @@ OutputDir=.
 PrivilegesRequired=lowest
 ShowLanguageDialog=no
 
-SignTool=signtool
+SignTool=signtool_sdk10 sign /a /n $qShishenko$q /as /fd sha256 /td sha256 /tr http://time.certum.pl /d $qLibrevault$q $f
 ; librevault-daemon is used to stuck sometimes on Windows
 CloseApplications=force
 

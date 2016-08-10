@@ -25,18 +25,18 @@ inline QString human_size(uintmax_t size) {
 	num /= 1024.0;
 
 	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
+		return QCoreApplication::translate("Human Size", "%1 KiB").arg(num, 0, 'f', 0);
 	num /= 1024.0;
 
 	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
+		return QCoreApplication::translate("Human Size", "%1 MiB").arg(num, 0, 'f', 2);
 	num /= 1024.0;
 
 	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
+		return QCoreApplication::translate("Human Size", "%1 GiB").arg(num, 0, 'f', 2);
 	num /= 1024.0;
 
-	return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
+	return QCoreApplication::translate("Human Size", "%1 TiB").arg(num, 0, 'f', 2);
 }
 
 inline QString human_bandwidth(float bandwidth) {
@@ -45,16 +45,16 @@ inline QString human_bandwidth(float bandwidth) {
 	bandwidth /= 1024.0;
 
 	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
+		return QCoreApplication::translate("Human Bandwidth", "%1 KiB/s").arg(bandwidth, 0, 'f', 1);
 	bandwidth /= 1024.0;
 
 	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
+		return QCoreApplication::translate("Human Bandwidth", "%1 MiB/s").arg(bandwidth, 0, 'f', 1);
 	bandwidth /= 1024.0;
 
 	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
+		return QCoreApplication::translate("Human Bandwidth", "%1 GiB/s").arg(bandwidth, 0, 'f', 1);
 	bandwidth /= 1024.0;
 
-	return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
+	return QCoreApplication::translate("Human Bandwidth", "%1 TiB/s").arg(bandwidth, 0, 'f', 1);
 }

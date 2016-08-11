@@ -97,7 +97,7 @@
     </message>
     <message>
         <location filename="../control/Daemon.cpp" line="54"/>
-        <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault&quot; executable in application or system folder.</source>
+        <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault-daemon&quot; executable in application or PATH folder.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

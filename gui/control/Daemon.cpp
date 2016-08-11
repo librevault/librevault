@@ -51,7 +51,7 @@ void Daemon::handleError(QProcess::ProcessError error) {
 	if(error == FailedToStart) {
 		QMessageBox msg(QMessageBox::Critical,
 		                tr("Couldn't launch Librevault application"),
-		                tr("There is a problem launching Librevault service: couldn't find \"librevault\" executable in application or system folder."));
+		                tr("There is a problem launching Librevault service: couldn't find \"librevault-daemon\" executable in application or PATH folder."));
 		msg.exec();
 		//throw;
 	}

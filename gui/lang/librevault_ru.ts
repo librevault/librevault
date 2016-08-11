@@ -230,7 +230,11 @@
     </message>
     <message>
         <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault&quot; executable in application or system folder.</source>
-        <translation>Возникла проблема во время запуска службы Librevault: не удалось найти исполняемый файл &quot;librevault&quot; в директории приложения и системной директории.</translation>
+        <translation type="vanished">Возникла проблема во время запуска службы Librevault: не удалось найти исполняемый файл &quot;librevault&quot; в директории приложения и системной директории.</translation>
+    </message>
+    <message>
+        <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault-daemon&quot; executable in application or PATH folder.</source>
+        <translation>Возникла проблема во время запуска службы Librevault: не удалось найти исполняемый файл &quot;librevault-daemon&quot; в директории приложения и директориях PATH.</translation>
     </message>
 </context>
 <context>
@@ -259,7 +263,7 @@
     <message>
         <source>Status</source>
         <translatorcomment>или Статус?</translatorcomment>
-        <translation type="unfinished">Состояние</translation>
+        <translation>Состояние</translation>
     </message>
     <message>
         <source>Peers</source>

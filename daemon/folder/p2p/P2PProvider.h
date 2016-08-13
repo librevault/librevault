@@ -64,7 +64,6 @@ private:
 
 	/* Port mapping services */
 	std::unique_ptr<PortManager> portmanager_;
-	uint16_t public_port_ = 0;
 
 	/* Discovery services */
 	std::unique_ptr<StaticDiscovery> static_discovery_;

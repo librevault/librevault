@@ -1,5 +1,13 @@
 install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
+if(BUILD_DAEMON)
+	set(INSTALLING_DAEMON ON)
+endif()
+
+if(BUILD_GUI)
+	set(INSTALLING_GUI ON)
+endif()
+
 if(WIN32)
 	set(LV_PACKAGING_PATH NO CACHE PATH "Base path for packaging purposes")
 	if(NOT LV_PACKAGING_PATH)
@@ -15,7 +23,9 @@ if(WIN32)
 		set(LV_DAEMON_PATH "${LV_INTALLER_SOURCE}/x32")
 	endif()
 
-	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${LV_DAEMON_PATH} COMPONENT librevault-package)
+	if(INSTALLING_DAEMON)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${LV_DAEMON_PATH} COMPONENT librevault-package)
+	endif()
 
 	# GUI
 	option(BUILD_64BIT_GUI "Build only 64-bit GUI instead of only 32-bit" OFF)
@@ -28,13 +38,16 @@ if(WIN32)
 
 	# Prerequisites
 	install(CODE "include(GetPrerequisites)" COMPONENT librevault-package)
-	install(CODE "
-	get_prerequisites(\"${LV_DAEMON_PATH}/librevault-daemon.exe\" DAEMON_DEPENDENCIES 1 1 \"\" \"\")
-	foreach(DEPENDENCY_FILE \${DAEMON_DEPENDENCIES})
-		gp_resolve_item(\"${LV_DAEMON_PATH}/librevault-daemon.exe\" \"\${DEPENDENCY_FILE}\" \"\" \"\" resolved_file)
-		file(INSTALL \${resolved_file} DESTINATION ${LV_DAEMON_PATH})
-	endforeach()
-	" COMPONENT librevault-package)
+
+	if(INSTALLING_DAEMON)
+		install(CODE "
+		get_prerequisites(\"${LV_DAEMON_PATH}/librevault-daemon.exe\" DAEMON_DEPENDENCIES 1 1 \"\" \"\")
+		foreach(DEPENDENCY_FILE \${DAEMON_DEPENDENCIES})
+			gp_resolve_item(\"${LV_DAEMON_PATH}/librevault-daemon.exe\" \"\${DEPENDENCY_FILE}\" \"\" \"\" resolved_file)
+			file(INSTALL \${resolved_file} DESTINATION ${LV_DAEMON_PATH})
+		endforeach()
+		" COMPONENT librevault-package)
+	endif()
 	if(INSTALLING_GUI)
 		install(CODE "
 		get_prerequisites(\"${LV_INTALLER_SOURCE}/librevault-gui.exe\" DAEMON_DEPENDENCIES 1 1 \"\" \"\")
@@ -52,11 +65,15 @@ if(WIN32)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Librevault.iss DESTINATION ${LV_PACKAGING_PATH} COMPONENT librevault-installscripts)
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
-	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	if(INSTALLING_DAEMON)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	endif()
 
-	install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-	install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+	if(INSTALLING_GUI)
+		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+		install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+		install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+	endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")
@@ -77,7 +94,9 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	configure_file("${CPACK_BUNDLE_PLIST_SOURCE}" "${CPACK_BUNDLE_PLIST}" @ONLY)
 
-	install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS COMPONENT librevault-package)
+	if(INSTALLING_DAEMON)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS COMPONENT librevault-package)
+	endif()
 	install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS COMPONENT librevault-package)
 	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../ COMPONENT librevault-package)
 

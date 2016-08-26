@@ -4,6 +4,8 @@ project(librevault)
 #============================================================================
 # Settable options
 #============================================================================
+option(BUILD_GUI "Build gui" ON)
+option(BUILD_DAEMON "Build daemon" ON)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
@@ -105,111 +107,113 @@ endif()
 # Third-party libraries
 #============================================================================
 
-##### System libraries #####
+if(BUILD_DAEMON)
+	##### System libraries #####
 
-## Threads
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads)
+	## Threads
+	set(THREADS_PREFER_PTHREAD_FLAG ON)
+	find_package(Threads)
 
-##### Bundled libraries #####
+	##### Bundled libraries #####
 
-## Dir_monitor
-#find_package(dir_monitor QUIET)
-#if(NOT dir_monitor_FOUND)
-#	add_subdirectory("contrib/dir_monitor")
-#endif()
-add_library(dir_monitor INTERFACE)
-target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
+	## Dir_monitor
+	#find_package(dir_monitor QUIET)
+	#if(NOT dir_monitor_FOUND)
+	#	add_subdirectory("contrib/dir_monitor")
+	#endif()
+	add_library(dir_monitor INTERFACE)
+	target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
-## Docopt
-find_package(docopt QUIET)
-if(NOT docopt_FOUND)
-	add_subdirectory(contrib/docopt)
-endif()
+	## Docopt
+	find_package(docopt QUIET)
+	if(NOT docopt_FOUND)
+		add_subdirectory(contrib/docopt)
+	endif()
 
-## JsonCpp
-find_package(jsoncpp QUIET)
-if(JSONCPP_FOUND)
-	add_library(jsoncpp UNKNOWN IMPORTED)
-	if(BUILD_STATIC)
-		target_link_libraries(jsoncpp jsoncpp_lib_static)
+	## JsonCpp
+	find_package(jsoncpp QUIET)
+	if(JSONCPP_FOUND)
+		add_library(jsoncpp UNKNOWN IMPORTED)
+		if(BUILD_STATIC)
+			target_link_libraries(jsoncpp jsoncpp_lib_static)
+		else()
+			target_link_libraries(jsoncpp jsoncpp_lib)
+		endif()
 	else()
-		target_link_libraries(jsoncpp jsoncpp_lib)
+		add_library(jsoncpp STATIC contrib/jsoncpp/jsoncpp.cpp)
+		target_include_directories(jsoncpp PUBLIC "contrib/jsoncpp")
 	endif()
-else()
-	add_library(jsoncpp STATIC contrib/jsoncpp/jsoncpp.cpp)
-	target_include_directories(jsoncpp PUBLIC "contrib/jsoncpp")
-endif()
 
-## libnatpmp
-find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
-if(NOT libnatpmp_LIBRARIES)
-	add_subdirectory(contrib/libnatpmp)
-else()
-	add_library(natpmp INTERFACE)
-	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
-endif()
-
-## libminiupnpc
-add_library(libminiupnpc INTERFACE)
-
-if(NOT USE_BUNDLED_MINIUPNP)
-	find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
-endif()
-
-if(libminiupnpc_LIBRARIES AND NOT USE_BUNDLED_MINIUPNP)
-	message(STATUS "Using system Miniupnp ${SQLITE3_VERSION}")
-	target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
-else()
-	message(STATUS "Using bundled Miniupnp")
-	set(UPNPC_BUILD_SHARED FALSE)
-	add_subdirectory(contrib/miniupnp/miniupnpc)
-	target_link_libraries(libminiupnpc INTERFACE upnpc-static)
-	target_include_directories(libminiupnpc INTERFACE contrib/miniupnp)
-endif()
-
-## rabin
-add_subdirectory("contrib/rabin")
-
-## dht
-add_subdirectory("contrib/dht")
-
-## Spdlog
-find_package(spdlog QUIET)
-add_definitions(-DSPDLOG_WCHAR_FILENAMES)
-if(spdlog_FOUND)
-	add_library(spdlog INTERFACE)
-	target_link_libraries(spdlog INTERFACE spdlog::spdlog)
-else()
-	add_subdirectory(contrib/spdlog)
-endif()
-
-## SQLite
-if(NOT USE_BUNDLED_SQLITE3)
-	find_package(Sqlite3 3.9 QUIET)
-endif()
-
-if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
-	message(STATUS "Using system SQLite ${SQLITE3_VERSION}")
-	add_library(sqlite3 INTERFACE)
-	target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
-	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
-else()
-	message(STATUS "Using bundled SQLite")
-	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
-	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
-
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-		target_link_libraries(sqlite3 PUBLIC dl)
+	## libnatpmp
+	find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
+	if(NOT libnatpmp_LIBRARIES)
+		add_subdirectory(contrib/libnatpmp)
+	else()
+		add_library(natpmp INTERFACE)
+		target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
 	endif()
-endif()
 
-## WebSocket++
-find_package(websocketpp QUIET)
-add_library(websocketpp INTERFACE)
-if(NOT websocketpp_FOUND)
-	add_subdirectory("contrib/websocketpp")
-	target_include_directories(websocketpp INTERFACE "contrib/websocketpp")
+	## libminiupnpc
+	add_library(libminiupnpc INTERFACE)
+
+	if(NOT USE_BUNDLED_MINIUPNP)
+		find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
+	endif()
+
+	if(libminiupnpc_LIBRARIES AND NOT USE_BUNDLED_MINIUPNP)
+		message(STATUS "Using system Miniupnp ${SQLITE3_VERSION}")
+		target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
+	else()
+		message(STATUS "Using bundled Miniupnp")
+		set(UPNPC_BUILD_SHARED FALSE)
+		add_subdirectory(contrib/miniupnp/miniupnpc)
+		target_link_libraries(libminiupnpc INTERFACE upnpc-static)
+		target_include_directories(libminiupnpc INTERFACE contrib/miniupnp)
+	endif()
+
+	## rabin
+	add_subdirectory("contrib/rabin")
+
+	## dht
+	add_subdirectory("contrib/dht")
+
+	## Spdlog
+	find_package(spdlog QUIET)
+	add_definitions(-DSPDLOG_WCHAR_FILENAMES)
+	if(spdlog_FOUND)
+		add_library(spdlog INTERFACE)
+		target_link_libraries(spdlog INTERFACE spdlog::spdlog)
+	else()
+		add_subdirectory(contrib/spdlog)
+	endif()
+
+	## SQLite
+	if(NOT USE_BUNDLED_SQLITE3)
+		find_package(Sqlite3 3.9 QUIET)
+	endif()
+
+	if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
+		message(STATUS "Using system SQLite ${SQLITE3_VERSION}")
+		add_library(sqlite3 INTERFACE)
+		target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
+		target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
+	else()
+		message(STATUS "Using bundled SQLite")
+		add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
+		target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
+
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			target_link_libraries(sqlite3 PUBLIC dl)
+		endif()
+	endif()
+
+	## WebSocket++
+	find_package(websocketpp QUIET)
+	add_library(websocketpp INTERFACE)
+	if(NOT websocketpp_FOUND)
+		add_subdirectory("contrib/websocketpp")
+		target_include_directories(websocketpp INTERFACE "contrib/websocketpp")
+	endif()
 endif()
 
 ##### External libraries #####
@@ -224,19 +228,21 @@ add_library(boost INTERFACE)
 target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
 target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 
-## Qt5
-set(Qt_COMPONENTS
+if(BUILD_GUI)
+	## Qt5
+	set(Qt_COMPONENTS
 		LinguistTools
 		Svg
 		Widgets
 		WebSockets
-		)
-if(WIN32)
-	list(APPEND Qt_COMPONENTS WinExtras)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	list(APPEND Qt_COMPONENTS MacExtras)
+	)
+	if(WIN32)
+		list(APPEND Qt_COMPONENTS WinExtras)
+	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		list(APPEND Qt_COMPONENTS MacExtras)
+	endif()
+	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 endif()
-find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 
 ## Protobuf
 find_package(Protobuf REQUIRED)
@@ -264,7 +270,13 @@ endif()
 #============================================================================
 
 add_subdirectory("common")
-add_subdirectory("daemon")
-add_subdirectory("gui")
+
+if(BUILD_DAEMON)
+	add_subdirectory("daemon")
+endif()
+
+if(BUILD_GUI)
+	add_subdirectory("gui")
+endif()
 
 include(Install.cmake)

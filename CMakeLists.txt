@@ -4,6 +4,17 @@ project(librevault)
 #============================================================================
 # Settable options
 #============================================================================
+
+# Components
+option(BUILD_DAEMON "Build sync daemon" ON)
+if((WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 4) OR NOT WIN32)
+	set(DEFAULT_BUILD_GUI ON)
+else()
+	set(DEFAULT_BUILD_GUI OFF)
+endif()
+option(BUILD_GUI "Build GUI" ${DEFAULT_BUILD_GUI})
+
+# Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
@@ -225,18 +236,20 @@ target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
 target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 
 ## Qt5
-set(Qt_COMPONENTS
-		LinguistTools
-		Svg
-		Widgets
-		WebSockets
-		)
-if(WIN32)
-	list(APPEND Qt_COMPONENTS WinExtras)
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	list(APPEND Qt_COMPONENTS MacExtras)
+if(BUILD_GUI)
+	set(Qt_COMPONENTS
+			LinguistTools
+			Svg
+			Widgets
+			WebSockets
+			)
+	if(WIN32)
+		list(APPEND Qt_COMPONENTS WinExtras)
+	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+		list(APPEND Qt_COMPONENTS MacExtras)
+	endif()
+	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 endif()
-find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 
 ## Protobuf
 find_package(Protobuf REQUIRED)
@@ -264,7 +277,11 @@ endif()
 #============================================================================
 
 add_subdirectory("common")
-add_subdirectory("daemon")
-add_subdirectory("gui")
+if(BUILD_DAEMON)
+	add_subdirectory("daemon")
+endif()
+if(BUILD_GUI)
+	add_subdirectory("gui")
+endif()
 
 include(Install.cmake)

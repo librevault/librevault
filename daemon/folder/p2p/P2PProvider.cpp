@@ -31,7 +31,7 @@ namespace librevault {
 P2PProvider::P2PProvider(Client& client) :
 		Loggable(client, "P2PProvider"),
 		client_(client),
-		node_key_(client) {
+		node_key_() {
 	portmanager_ = std::make_unique<PortManager>(client_, *this);
 	ws_server_ = std::make_unique<WSServer>(client, *this);
 	ws_client_ = std::make_unique<WSClient>(client, *this);

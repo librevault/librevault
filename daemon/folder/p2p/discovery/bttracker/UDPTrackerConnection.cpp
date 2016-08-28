@@ -22,6 +22,8 @@
 
 #include "BTTrackerDiscovery.h"
 
+#include <cryptopp/osrng.h>
+
 namespace librevault {
 
 UDPTrackerConnection::UDPTrackerConnection(url tracker_address,

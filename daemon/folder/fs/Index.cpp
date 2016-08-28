@@ -18,12 +18,14 @@
 #include "FSFolder.h"
 #include "Client.h"
 
+#include <librevault/crypto/Hex.h>
+
 namespace librevault {
 
 Index::Index(FSFolder& dir, Client& client) : Loggable(dir, "Index"), dir_(dir), client_(client) {
 	auto db_filepath = dir_.system_path() / "librevault.db";
 
-	if(fs::exists(db_filepath))
+	if(boost::filesystem::exists(db_filepath))
 		log_->debug() << log_tag() << "Opening SQLite3 DB: " << db_filepath;
 	else
 		log_->debug() << log_tag() << "Creating new SQLite3 DB: " << db_filepath;
@@ -48,7 +50,7 @@ Index::Index(FSFolder& dir, Client& client) : Loggable(dir, "Index"), dir_(dir),
 	/* Create a special hash-file */
 	auto hash_txt = dir_.system_path() / "hash.txt";
 	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
-	if(fs::exists(hash_txt)) {
+	if(boost::filesystem::exists(hash_txt)) {
 		file_wrapper hexhash_f(hash_txt, "r");
 		std::string hexhash_file;
 		hexhash_f.ios() >> hexhash_file;

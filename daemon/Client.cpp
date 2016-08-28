@@ -19,6 +19,8 @@
 #include "folder/fs/FSFolder.h"
 #include "folder/p2p/P2PProvider.h"
 
+#include <boost/range/adaptor/map.hpp>
+
 namespace librevault {
 
 Client::Client(std::map<std::string, docopt::value> args) {

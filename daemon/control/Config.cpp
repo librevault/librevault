@@ -22,16 +22,17 @@
 #elif BOOST_OS_WINDOWS
 #	include <shlobj.h>
 #endif
+#include <boost/asio/ip/host_name.hpp>
 
 namespace librevault {
 
-Config::Config(fs::path appdata_path) {
+Config::Config(boost::filesystem::path appdata_path) {
 	if(appdata_path.empty())
 		paths_.appdata_path = default_appdata_path();
 	else
 		paths_.appdata_path = std::move(appdata_path);
 
-	fs::create_directories(paths_.appdata_path);
+	boost::filesystem::create_directories(paths_.appdata_path);
 
 	paths_.client_config_path = paths_.appdata_path / "globals.json";
 	paths_.folders_config_path = paths_.appdata_path / "folders.json";
@@ -163,7 +164,7 @@ void Config::save() {
 
 #if BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
-fs::path Config::default_appdata_path() {   // TODO: separate to multiple files
+boost::filesystem::path Config::default_appdata_path() {   // TODO: separate to multiple files
 #if BOOST_OS_WINDOWS
 	PWSTR appdata_path;
 	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
@@ -173,12 +174,12 @@ fs::path Config::default_appdata_path() {   // TODO: separate to multiple files
 	return folder_path;
 #elif BOOST_OS_LINUX || BOOST_OS_UNIX
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return fs::path(xdg_ptr) / Version::current().name();
+		return boost::filesystem::path(xdg_ptr) / Version::current().name();
 	if(char* home_ptr = getenv("HOME"))
-		return fs::path(home_ptr) / ".config" / Version::current().name();
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
 	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return fs::path(home_ptr) / ".config" / Version::current().name();
-	return fs::path("/etc/xdg") / Version::current().name();
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
+	return boost::filesystem::path("/etc/xdg") / Version::current().name();
 #else
 	// Well, we will add some Android values here. And, maybe, others.
 	return fs::path(getenv("HOME")) / Version::current().name();

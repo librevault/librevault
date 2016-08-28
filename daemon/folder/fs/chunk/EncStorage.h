@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
 #include "AbstractStorage.h"
 
 namespace librevault {
@@ -28,12 +27,12 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
+	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
 	void remove_chunk(const blob& ct_hash);
 
 private:
 	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
-	fs::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
 };
 
 } /* namespace librevault */

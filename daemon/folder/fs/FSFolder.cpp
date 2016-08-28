@@ -25,6 +25,7 @@
 
 #include "util/make_relpath.h"
 
+#include <boost/locale.hpp>
 #include <codecvt>
 
 namespace librevault {

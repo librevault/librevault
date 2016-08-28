@@ -18,6 +18,7 @@
 #include <librevault/SignedMeta.h>
 #include "util/Loggable.h"
 #include "util/SQLiteWrapper.h"
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 

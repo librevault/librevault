@@ -13,9 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "../pch.h"
 #pragma once
 #include "Loggable.h"
+#include <boost/asio/io_service.hpp>
 
 namespace librevault {
 
@@ -27,11 +27,11 @@ public:
 	void start(unsigned thread_count);
 	void stop();
 
-	io_service& ios() {return ios_;}
+	boost::asio::io_service& ios() {return ios_;}
 
 protected:
-	io_service ios_;
-	std::unique_ptr<io_service::work> ios_work_;
+	boost::asio::io_service ios_;
+	std::unique_ptr<boost::asio::io_service::work> ios_work_;
 
 	std::vector<std::thread> worker_threads_;
 

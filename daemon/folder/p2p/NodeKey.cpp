@@ -14,16 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "NodeKey.h"
-#include "Client.h"
 #include "control/Config.h"
+#include <cryptopp/oids.h>
+#include <cryptopp/osrng.h>
 #include <openssl/pem.h>
+#include <librevault/crypto/Hex.h>
+#include <librevault/crypto/Base64.h>
 #include "util/file_util.h"
 
 namespace librevault {
 
-NodeKey::NodeKey(Client& client) :
-		Loggable(client),
-		client_(client),
+NodeKey::NodeKey() :
+		Loggable("NodeKey"),
 		openssl_pkey_(EVP_PKEY_new()),
 		x509_(X509_new()) {
 	gen_private_key();

@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "pch.h"
 #include "Client.h"
 #include "Version.h"
 #include "control/Config.h"
 #include <librevault/Secret.h>
+#include <boost/locale.hpp>
 #include <docopt.h>
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
@@ -55,7 +55,7 @@ Options:
 int main(int argc, char** argv) {
 	// Global initialization
 	std::locale::global(boost::locale::generator().generate(""));
-	fs::path::imbue(std::locale());
+	boost::filesystem::path::imbue(std::locale());
 
 	// Argument parsing
 	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 	}
 
 	// Initializing config
-	fs::path appdata_path;
+	boost::filesystem::path appdata_path;
 	if(args["--data"].isString())
 		appdata_path = args["--data"].asString();
 	Config::init(appdata_path);

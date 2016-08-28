@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2015 Alexander Shishenko <GamePad64@gmail.com>
+/* Copyright (C) 2016 Alexander Shishenko <GamePad64@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,41 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-// Standard C++ Libraries
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <cmath>
-#include <csignal>
 #include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <functional>
-#include <future>
-#include <iomanip>
-#include <iostream>
-#include <list>
-#include <map>
-#include <memory>
-#include <queue>
-#include <regex>
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
-
-namespace boost{namespace filesystem{}}
 
 namespace librevault {
 
-namespace fs = boost::filesystem;
-using seconds = std::chrono::seconds;
+using blob = std::vector<uint8_t>;
 
 } /* namespace librevault */

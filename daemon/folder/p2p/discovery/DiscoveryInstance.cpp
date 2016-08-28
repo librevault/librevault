@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "DiscoveryInstance.h"
-#include "folder/FolderGroup.h"
 
 namespace librevault {
 

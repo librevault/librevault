@@ -14,11 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
 #include "util/parse_url.h"
 #include <json/json.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
+#include <boost/filesystem/path.hpp>
+#include <chrono>
 
 namespace librevault {
 
@@ -70,8 +71,8 @@ struct FolderParams {
 
 	/* Parameters */
 	Secret secret;
-	fs::path path;
-	fs::path system_path;
+	boost::filesystem::path path;
+	boost::filesystem::path system_path;
 	std::chrono::milliseconds index_event_timeout = std::chrono::milliseconds(1000);
 	bool preserve_unix_attrib = false;
 	bool preserve_windows_attrib = false;

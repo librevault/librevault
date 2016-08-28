@@ -21,6 +21,7 @@
 #include "folder/FolderGroup.h"
 
 #include <librevault/SignedMeta.h>
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
@@ -59,13 +60,13 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	blob get_chunk(const blob& ct_hash);
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
+	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
 
 	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
 
 	/* Makers */
-	std::string normalize_path(const fs::path& abspath) const;
-	fs::path absolute_path(const std::string& normpath) const;
+	std::string normalize_path(const boost::filesystem::path& abspath) const;
+	boost::filesystem::path absolute_path(const std::string& normpath) const;
 
 	/* Getters */
 	FolderGroup& group() {return group_;}
@@ -73,8 +74,8 @@ public:
 
 	const FolderParams& params() const {return group_.params();}
 	const Secret& secret() const {return params().secret;}
-	const fs::path& path() const {return params().path;}
-	const fs::path& system_path() const {return params().system_path;}
+	const boost::filesystem::path& path() const {return params().path;}
+	const boost::filesystem::path& system_path() const {return params().system_path;}
 
 private:
 	FolderGroup& group_;

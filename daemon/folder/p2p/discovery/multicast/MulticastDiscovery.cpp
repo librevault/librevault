@@ -99,7 +99,7 @@ MulticastDiscovery4::MulticastDiscovery4(Client& client) :
 
 void MulticastDiscovery4::reload_config() {
 	enabled_ = Config::get()->globals()["multicast4_enabled"].asBool();
-	repeat_interval_ = seconds(Config::get()->globals()["multicast4_repeat_interval"].asUInt64());
+	repeat_interval_ = std::chrono::seconds(Config::get()->globals()["multicast4_repeat_interval"].asUInt64());
 
 	auto multicast_group_url = url(Config::get()->globals()["multicast4_group"].asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);
@@ -122,7 +122,7 @@ MulticastDiscovery6::MulticastDiscovery6(Client& client) :
 
 void MulticastDiscovery6::reload_config() {
 	enabled_ = Config::get()->globals()["multicast6_enabled"].asBool();
-	repeat_interval_ = seconds(Config::get()->globals()["multicast6_repeat_interval"].asUInt64());
+	repeat_interval_ = std::chrono::seconds(Config::get()->globals()["multicast6_repeat_interval"].asUInt64());
 
 	auto multicast_group_url = url(Config::get()->globals()["multicast6_group"].asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);

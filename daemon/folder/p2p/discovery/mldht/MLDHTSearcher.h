@@ -18,6 +18,8 @@
 #include "folder/p2p/discovery/DiscoveryInstance.h"
 #include "../btcompat.h"
 
+#include <boost/asio/steady_timer.hpp>
+
 namespace librevault {
 
 class MLDHTDiscovery;

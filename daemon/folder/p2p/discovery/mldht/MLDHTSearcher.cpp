@@ -22,6 +22,7 @@
 #include "folder/p2p/WSServer.h"
 #include "folder/p2p/nat/PortManager.h"
 #include <dht.h>
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 

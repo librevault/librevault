@@ -22,6 +22,8 @@
 #include "util/byte_convert.h"
 #include <rabin.h>
 #include <util/file_util.h>
+#include <librevault/crypto/HMAC-SHA3.h>
+#include <librevault/crypto/AES_CBC.h>
 
 namespace librevault {
 
@@ -123,7 +125,7 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 		update_chunks(old_meta, new_meta, abspath);
 
 	if(new_meta.meta_type() == Meta::SYMLINK)
-		new_meta.set_symlink_path(fs::read_symlink(abspath).generic_string(), secret_); // Symlink path = encrypted symlink destination.
+		new_meta.set_symlink_path(boost::filesystem::read_symlink(abspath).generic_string(), secret_); // Symlink path = encrypted symlink destination.
 
 	// FSAttrib
 	if(new_meta.meta_type() != Meta::DELETED)
@@ -135,14 +137,14 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	return SignedMeta(new_meta, secret_);
 }
 
-Meta::Type Indexer::get_type(const fs::path& path) {
-	fs::file_status file_status = dir_.params().preserve_symlinks ? fs::symlink_status(path) : fs::status(path);	// Preserves symlinks if such option is set.
+Meta::Type Indexer::get_type(const boost::filesystem::path& path) {
+	boost::filesystem::file_status file_status = dir_.params().preserve_symlinks ? boost::filesystem::symlink_status(path) : boost::filesystem::status(path);	// Preserves symlinks if such option is set.
 
 	switch(file_status.type()){
-		case fs::regular_file: return Meta::FILE;
-		case fs::directory_file: return Meta::DIRECTORY;
-		case fs::symlink_file: return Meta::SYMLINK;
-		case fs::file_not_found: return Meta::DELETED;
+		case boost::filesystem::regular_file: return Meta::FILE;
+		case boost::filesystem::directory_file: return Meta::DIRECTORY;
+		case boost::filesystem::symlink_file: return Meta::SYMLINK;
+		case boost::filesystem::file_not_found: return Meta::DELETED;
 		default: throw unsupported_filetype();
 	}
 }
@@ -155,7 +157,7 @@ void Indexer::update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::pa
 	new_meta.set_gid(old_meta.gid());
 
 	if(new_meta.meta_type() != Meta::SYMLINK)
-		new_meta.set_mtime(fs::last_write_time(path));   // File/directory modification time
+		new_meta.set_mtime(boost::filesystem::last_write_time(path));   // File/directory modification time
 	else {
 		// TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for Unix and GetFileAttributesEx for Windows.
 	}

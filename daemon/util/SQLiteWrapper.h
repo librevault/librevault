@@ -10,7 +10,7 @@
  */
 #pragma once
 #include <sqlite3.h>
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
 #include <memory>
 #include <map>
 

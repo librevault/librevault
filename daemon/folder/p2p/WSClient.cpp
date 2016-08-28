@@ -17,6 +17,7 @@
 #include "Client.h"
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 

@@ -14,9 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "pch.h"
 #include "util/Loggable.h"
 #include <json/json.h>
+#include <boost/filesystem/path.hpp>
+#include <boost/signals2/signal.hpp>
 #include <librevault/Secret.h>
 #include <librevault/Meta.h>
 
@@ -27,12 +28,12 @@ public:
 	~Config();
 
 	struct paths_type {
-		fs::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
+		boost::filesystem::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
 	};
 
 	boost::signals2::signal<void()> config_changed;
 
-	static void init(fs::path appdata_path = fs::path()) {
+	static void init(boost::filesystem::path appdata_path = boost::filesystem::path()) {
 		instance_ = std::unique_ptr<Config>(new Config(std::move(appdata_path)));
 	}
 	static Config* get() {
@@ -52,7 +53,7 @@ public:
 	const paths_type& paths() const {return paths_;}
 
 protected:
-	Config(fs::path appdata_path);
+	Config(boost::filesystem::path appdata_path);
 
 	static std::unique_ptr<Config> instance_;
 
@@ -60,7 +61,7 @@ private:
 	Json::Value globals_, globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
 
 	paths_type paths_;
-	fs::path default_appdata_path();
+	boost::filesystem::path default_appdata_path();
 
 	void make_defaults();
 

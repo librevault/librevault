@@ -13,8 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "Client.h"
 #include "AbstractFolder.h"
+#include "Client.h"
+#include <librevault/crypto/Base32.h>
 
 namespace librevault {
 

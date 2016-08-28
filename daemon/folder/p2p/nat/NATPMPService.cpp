@@ -113,10 +113,10 @@ void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
 	std::chrono::seconds next_request;
 	if(natpmp_ec >= 0) {
 		parent_.port_signal(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
-		next_request = seconds(natpmp_resp.pnu.newportmapping.lifetime);
+		next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
 	}else{
 		parent_.log_->debug() << parent_.log_tag() << "Could not set up port mapping";
-		next_request = seconds(Config::get()->globals()["natpmp_lifetime"].asUInt());
+		next_request = std::chrono::seconds(Config::get()->globals()["natpmp_lifetime"].asUInt());
 	}
 
 	if(active)

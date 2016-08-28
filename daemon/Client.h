@@ -13,7 +13,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "pch.h"
 #pragma once
 
 #include "control/FolderParams.h"
@@ -21,6 +20,7 @@
 #include "util/multi_io_service.h"
 
 #include <docopt.h>
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
@@ -46,9 +46,9 @@ public:
 	void run();
 	void shutdown();
 
-	io_service& ios() {return etc_ios_->ios();}
-	io_service& network_ios() {return network_ios_->ios();}
-	io_service& bulk_ios() {return bulk_ios_->ios();}
+	boost::asio::io_service& ios() {return etc_ios_->ios();}
+	boost::asio::io_service& network_ios() {return network_ios_->ios();}
+	boost::asio::io_service& bulk_ios() {return bulk_ios_->ios();}
 
 	/* Signals */
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
@@ -72,12 +72,11 @@ private:
 
 	// Remote
 	std::unique_ptr<P2PProvider> p2p_provider_;
-	//std::unique_ptr<CloudProvider> cloud_provider_;
 
 	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
 
 	/* Asynchronous/multithreaded operation */
-	io_service main_loop_ios_;
+	boost::asio::io_service main_loop_ios_;
 	std::unique_ptr<multi_io_service> network_ios_;
 	std::unique_ptr<multi_io_service> bulk_ios_;
 	std::unique_ptr<multi_io_service> etc_ios_;

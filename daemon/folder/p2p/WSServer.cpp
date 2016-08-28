@@ -20,6 +20,7 @@
 #include "folder/FolderGroup.h"
 #include "util/parse_url.h"
 #include "nat/PortManager.h"
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 

@@ -17,6 +17,8 @@
 #include "pch.h"
 #include "TrackerConnection.h"
 
+#include <boost/asio/steady_timer.hpp>
+
 namespace librevault {
 
 class FolderGroup;

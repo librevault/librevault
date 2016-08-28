@@ -19,6 +19,7 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
 #include "RemoteFolder.h"
 #include "util/AvailabilityMap.h"
 
@@ -33,10 +34,10 @@ class FolderGroup;
 
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
-	MissingChunk(const fs::path& system_path, blob ct_hash, uint32_t size);
+	MissingChunk(const boost::filesystem::path& system_path, blob ct_hash, uint32_t size);
 
 	// File-related accessors
-	fs::path release_chunk();
+	boost::filesystem::path release_chunk();
 
 	// Content-related accessors
 	void put_block(uint32_t offset, const blob& content);
@@ -63,7 +64,7 @@ struct MissingChunk {
 
 private:
 	AvailabilityMap<uint32_t> file_map_;
-	fs::path this_chunk_path_;
+	boost::filesystem::path this_chunk_path_;
 #ifndef FOPEN_BACKEND
 	boost::iostreams::mapped_file mapped_file_;
 #else

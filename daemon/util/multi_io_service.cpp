@@ -25,7 +25,7 @@ multi_io_service::~multi_io_service() {
 }
 
 void multi_io_service::start(unsigned thread_count) {
-	ios_work_ = std::make_unique<io_service::work>(ios_);
+	ios_work_ = std::make_unique<boost::asio::io_service::work>(ios_);
 
 	log_->info() << log_tag() << "Threads: " << thread_count;
 

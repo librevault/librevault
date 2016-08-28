@@ -15,7 +15,9 @@
  */
 #include "pch.h"
 #pragma once
+#include "Client.h"
 #include "NodeKey.h"
+#include "util/network.h"
 #include "util/Loggable.h"
 
 namespace librevault {

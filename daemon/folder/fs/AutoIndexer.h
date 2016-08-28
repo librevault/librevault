@@ -20,6 +20,7 @@
 #include "folder/fs/chunk/OpenStorage.h"
 
 #include <dir_monitor/dir_monitor.hpp>
+#include <util/network.h>
 #include <util/periodic_process.h>
 
 namespace librevault {

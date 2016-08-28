@@ -18,11 +18,14 @@
 
 #include "AbstractFolder.h"
 #include "control/FolderParams.h"
+#include "util/network.h"
 #include "util/Loggable.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
+
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 

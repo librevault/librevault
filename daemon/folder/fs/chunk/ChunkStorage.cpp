@@ -66,7 +66,7 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 	}
 }
 
-void ChunkStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
+void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location) {
 	enc_storage->put_chunk(ct_hash, chunk_location);
 	if(open_storage && file_assembler)
 		for(auto& smeta : dir_.index->containing_chunk(ct_hash))

@@ -70,6 +70,7 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 
 MainWindow::~MainWindow() {}
 
+/* public slots */
 void MainWindow::retranslateUi() {
 	show_main_window_action->setText(tr("Show Librevault window"));
 	open_website_action->setText(tr("Open Librevault website"));
@@ -98,6 +99,18 @@ void MainWindow::openWebsite() {
 	QDesktopServices::openUrl(QUrl("https://librevault.com"));
 }
 
+void MainWindow::handle_disconnected(QString message) {
+	QMessageBox msg(QMessageBox::Critical,
+		tr("Problem running Librevault application"),
+		tr("Problem running Librevault service: %1").arg(message));
+	msg.exec();
+}
+
+void MainWindow::handle_connected() {
+	//
+}
+
+/* protected slots */
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 #ifndef Q_OS_MAC
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();

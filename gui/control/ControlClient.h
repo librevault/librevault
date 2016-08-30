@@ -60,6 +60,7 @@ private slots:
 	void handle_message(const QString& message);
 	void handle_connect();
 	void handle_disconnect();
+	void handle_daemonfail(QString reason);
 
 private:
 	std::unique_ptr<QWebSocket> socket_;

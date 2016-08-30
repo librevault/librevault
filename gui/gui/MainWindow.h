@@ -62,6 +62,9 @@ public slots:
 	void handleControlJson(QJsonObject state_json);
 	void openWebsite();
 
+	void handle_disconnected(QString message);
+	void handle_connected();
+
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
 	void handleRemoveFolder();

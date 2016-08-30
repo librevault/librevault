@@ -32,6 +32,7 @@
 
 ControlClient::ControlClient(QString control_url) :	QObject(), socket_(std::make_unique<QWebSocket>()), control_url_(control_url) {
 	connect(socket_.get(), &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
+
 	connect(socket_.get(), &QWebSocket::connected, this, &ControlClient::handle_connect);
 	connect(socket_.get(), &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
 }
@@ -43,6 +44,7 @@ void ControlClient::start() {
 	if(control_url_.isEmpty()) {
 		daemon_ = std::make_unique<Daemon>();
 		connect(daemon_.get(), &Daemon::daemonReady, this, &ControlClient::connectDaemon);
+		connect(daemon_.get(), &Daemon::daemonFailed, this, &ControlClient::handle_daemonfail);
 		daemon_->launch();
 	}else{
 		connectDaemon(QUrl(control_url_));
@@ -67,8 +69,15 @@ void ControlClient::handle_connect() {
 }
 
 void ControlClient::handle_disconnect() {
-	qDebug() << "Disconnected from daemon: " << control_url_ << " Reason: " << socket_->closeReason();
-	emit disconnected(socket_->closeReason());
+	QString error_string = socket_->closeReason().isEmpty() ? socket_->errorString() : socket_->closeReason();
+
+	qDebug() << "Disconnected from daemon: " << control_url_ << " Reason: " << error_string;
+	emit disconnected(error_string);
+}
+
+void ControlClient::handle_daemonfail(QString reason) {
+	qDebug() << "Error running the service: " << reason;
+	emit disconnected(reason);
 }
 
 void ControlClient::sendControlJson(QJsonObject control_json) {

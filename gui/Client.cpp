@@ -75,6 +75,9 @@ Client::Client(int &argc, char **argv, int appflags) :
 	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
 	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
 
+	connect(control_client_.get(), &ControlClient::connected, main_window_.get(), &MainWindow::handle_connected);
+	connect(control_client_.get(), &ControlClient::disconnected, main_window_.get(), &MainWindow::handle_disconnected);
+
 	// Initialization complete!
 	control_client_->start();
 

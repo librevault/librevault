@@ -58,7 +58,6 @@ private:
 	QTranslator qt_translator_;
 
 	std::unique_ptr<SingleChannel> single_channel_;
-
 	std::unique_ptr<ControlClient> control_client_;
 
 public:

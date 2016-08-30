@@ -37,7 +37,6 @@ class Settings;
 class TrayIcon;
 class FolderModel;
 class ControlClient;
-class Daemon;
 class SingleChannel;
 
 class Client : public QApplication {
@@ -60,7 +59,6 @@ private:
 
 	std::unique_ptr<SingleChannel> single_channel_;
 
-	std::unique_ptr<Daemon> daemon_;
 	std::unique_ptr<ControlClient> control_client_;
 
 public:

@@ -42,6 +42,7 @@ public:
 
 signals:
 	void daemonReady(const QUrl& control_url);
+	void daemonFailed();
 
 private slots:
 	void handleError(QProcess::ProcessError error);

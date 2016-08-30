@@ -29,7 +29,6 @@
 #include "Client.h"
 #include "gui/MainWindow.h"
 #include "model/FolderModel.h"
-#include "control/Daemon.h"
 #include "control/ControlClient.h"
 #include "single/SingleChannel.h"
 #include <QCommandLineParser>
@@ -60,14 +59,7 @@ Client::Client(int &argc, char **argv, int appflags) :
 	// Creating components
 	single_channel_ = std::make_unique<SingleChannel>(link);
 
-	daemon_ = std::make_unique<Daemon>();
-	control_client_ = std::make_unique<ControlClient>();
-	if(parser.isSet(attach_option))
-		control_client_->connectDaemon(QUrl(parser.value(attach_option)));
-	else {
-		connect(daemon_.get(), &Daemon::daemonReady, control_client_.get(), &ControlClient::connectDaemon);
-		daemon_->launch();
-	}
+	control_client_ = std::make_unique<ControlClient>(parser.value(attach_option));
 
 	updater_ = new Updater(this);
 
@@ -84,6 +76,8 @@ Client::Client(int &argc, char **argv, int appflags) :
 	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
 
 	// Initialization complete!
+	control_client_->start();
+
 	if(!link.isEmpty())
 		openLink(link);
 }
@@ -91,7 +85,6 @@ Client::Client(int &argc, char **argv, int appflags) :
 Client::~Client() {
 	main_window_.reset();
 	control_client_.reset();
-	daemon_.reset();
 }
 
 bool Client::event(QEvent* event) {

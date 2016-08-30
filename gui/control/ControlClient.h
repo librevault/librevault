@@ -32,18 +32,23 @@
 #include <QJsonObject>
 #include "pch.h"
 
-class ControlClient : public QWebSocket {
+class Daemon;
+class ControlClient : public QObject {
 Q_OBJECT
 
 public:
-	ControlClient();
+	ControlClient(QString control_url = QString());
 	~ControlClient();
 
 signals:
 	void ControlJsonReceived(QJsonObject control_json);
 
+	void connecting();
+	void connected();
+	void disconnected(QString message);
+
 public slots:
-	void connectDaemon(const QUrl& daemon_address);
+	void start();
 
 	void sendControlJson(QJsonObject control_json);
 	void sendConfigJson(QJsonObject config_json);
@@ -51,10 +56,13 @@ public slots:
 	void sendRemoveFolderJson(QString secret);
 
 private slots:
+	void connectDaemon(const QUrl& daemon_address);
 	void handle_message(const QString& message);
 	void handle_connect();
 	void handle_disconnect();
 
 private:
-	QUrl daemon_address_;
+	std::unique_ptr<QWebSocket> socket_;
+	std::unique_ptr<Daemon> daemon_;
+	QUrl control_url_;
 };

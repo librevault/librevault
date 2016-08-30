@@ -32,8 +32,7 @@
 #include <QMessageBox>
 #include <QDebug>
 
-Daemon::Daemon() :
-		QProcess() {
+Daemon::Daemon() : QProcess() {
 	/* Process parameters */
 	// Program
 	setProgram(get_executable_path());
@@ -71,26 +70,22 @@ void Daemon::handleError(QProcess::ProcessError error) {
 }
 
 void Daemon::handleStandardOutput() {
-	while(canReadLine()) {
+	while(canReadLine() && !listening_already) {
 		auto stdout_line = readLine();
-		qDebug() << stdout_line;
+		/* Regexp for getting listen address from STDOUT */
+		QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
+		if(listen_regexp.indexIn(stdout_line) > -1) {
+			listening_already = true;
 
-		if(!listening_already) {
-			/* Regexp for getting listen address from STDOUT */
-			QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
-			if(listen_regexp.indexIn(stdout_line) > -1) {
-				listening_already = true;
+			QUrl daemon_url = listen_regexp.cap(1);
 
-				QUrl daemon_url = listen_regexp.cap(1);
+			// Because, if listening on all interfaces, then we can connect to localhost
+			if( (daemon_url.host() == "0.0.0.0") | (daemon_url.host() == "::") )
+				daemon_url.setHost("localhost");
 
-				// Because, if listening on all interfaces, then we can connect to localost
-				if( (daemon_url.host() == "0.0.0.0") | (daemon_url.host() == "::") )
-					daemon_url.setHost("localhost");
+			qDebug() << "Connecting to: " << daemon_url;
 
-				qDebug() << "Connecting to: " << daemon_url;
-
-				emit daemonReady(daemon_url);
-			}
+			emit daemonReady(daemon_url);
 		}
 	}
 }

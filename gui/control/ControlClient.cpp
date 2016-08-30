@@ -28,15 +28,32 @@
  */
 #include <QJsonDocument>
 #include "ControlClient.h"
+#include "Daemon.h"
 
-ControlClient::ControlClient() :
-		QWebSocket() {
-	connect(this, &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
-	connect(this, &QWebSocket::connected, this, &ControlClient::handle_connect);
-	connect(this, &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
+ControlClient::ControlClient(QString control_url) :	QObject(), socket_(std::make_unique<QWebSocket>()), control_url_(control_url) {
+	connect(socket_.get(), &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
+	connect(socket_.get(), &QWebSocket::connected, this, &ControlClient::handle_connect);
+	connect(socket_.get(), &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
 }
 
 ControlClient::~ControlClient() {}
+
+void ControlClient::start() {
+	emit connecting();
+	if(control_url_.isEmpty()) {
+		daemon_ = std::make_unique<Daemon>();
+		connect(daemon_.get(), &Daemon::daemonReady, this, &ControlClient::connectDaemon);
+		daemon_->launch();
+	}else{
+		connectDaemon(QUrl(control_url_));
+	}
+}
+
+void ControlClient::connectDaemon(const QUrl& daemon_address) {
+	control_url_ = daemon_address;
+	qDebug() << "Connecting to daemon: " << daemon_address;
+	socket_->open(daemon_address);
+}
 
 void ControlClient::handle_message(const QString& message) {
 	QJsonDocument json_document = QJsonDocument::fromJson(message.toUtf8());
@@ -45,23 +62,19 @@ void ControlClient::handle_message(const QString& message) {
 }
 
 void ControlClient::handle_connect() {
-	qDebug() << "Connected to daemon: " << daemon_address_;
+	qDebug() << "Connected to daemon: " << control_url_;
+	emit connected();
 }
 
 void ControlClient::handle_disconnect() {
-	qDebug() << "Disconnected from daemon: " << daemon_address_ << " Reason: " << closeReason();
-}
-
-void ControlClient::connectDaemon(const QUrl& daemon_address) {
-	daemon_address_ = daemon_address;
-	qDebug() << "Connecting to daemon: " << daemon_address;
-	open(daemon_address);
+	qDebug() << "Disconnected from daemon: " << control_url_ << " Reason: " << socket_->closeReason();
+	emit disconnected(socket_->closeReason());
 }
 
 void ControlClient::sendControlJson(QJsonObject control_json) {
 	QJsonDocument json_document(control_json);
 	qDebug() << "==> " << json_document;
-	this->sendTextMessage(json_document.toJson());
+	socket_->sendTextMessage(json_document.toJson());
 }
 
 void ControlClient::sendConfigJson(QJsonObject config_json) {

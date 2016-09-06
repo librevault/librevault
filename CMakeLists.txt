@@ -47,6 +47,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# OS detection flags
+if(WIN32)
+	set(OS_WIN TRUE)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	set(OS_LINUX TRUE)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	set(OS_MAC TRUE)
+endif()
+
+# Error management
 if(MSVC)
 	# Force to always compile with W4
 	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -59,6 +73,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long")
 endif()
 
+# Sanitizer builds
 if(NOT SANITIZE STREQUAL "false")
 	set(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_CXX_FLAGS}")
 	set(CMAKE_C_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_C_FLAGS}")
@@ -66,6 +81,7 @@ if(NOT SANITIZE STREQUAL "false")
 	set(CMAKE_MODULE_LINKER_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 
+# Static builds
 if(BUILD_STATIC)
 	set(CMAKE_CXX_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
 	set(CMAKE_C_FLAGS "-static-libgcc ${CMAKE_C_FLAGS}")
@@ -119,8 +135,16 @@ endif()
 ##### System libraries #####
 
 ## Threads
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads)
+add_library(threads INTERFACE)
+if(OS_LINUX AND BUILD_STATIC)
+	target_link_libraries(threads INTERFACE pthread)
+	#target_compile_definitions(threads INTERFACE "-D_REENTRANT")
+else()
+	set(THREADS_PREFER_PTHREAD_FLAG ON)
+	find_package(Threads)
+
+	target_link_libraries(threads INTERFACE Threads::Threads)
+endif()
 
 ##### Bundled libraries #####
 
@@ -205,12 +229,16 @@ if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
 	add_library(sqlite3 INTERFACE)
 	target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
 	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
+
+	if(OS_LINUX)
+		target_link_libraries(sqlite3 INTERFACE dl)
+	endif()
 else()
 	message(STATUS "Using bundled SQLite")
 	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
 	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
 
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	if(OS_LINUX)
 		target_link_libraries(sqlite3 PUBLIC dl)
 	endif()
 endif()
@@ -257,7 +285,7 @@ add_library(protobuf INTERFACE)
 target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
 
-# CryptoPP
+## CryptoPP
 find_package(CryptoPP 5.6.2 REQUIRED MODULE)
 add_library(cryptopp INTERFACE)
 target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
@@ -270,6 +298,17 @@ target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
 if(WIN32)
 	target_link_libraries(openssl INTERFACE ws2_32)
+endif()
+if(OS_LINUX)
+	target_link_libraries(openssl INTERFACE dl)
+endif()
+
+## ICU (needed for boost::locale and Qt)
+find_package(ICU REQUIRED COMPONENTS i18n io le lx uc data)
+add_library(icu INTERFACE)
+target_link_libraries(openssl INTERFACE ICU::ICU)
+if(OS_LINUX)
+	target_link_libraries(icu INTERFACE dl)
 endif()
 
 #============================================================================

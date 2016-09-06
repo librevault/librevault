@@ -59,16 +59,19 @@ target_link_libraries(librevault-protobuf PUBLIC protobuf)
 
 target_link_libraries(librevault-daemon librevault-protobuf)
 
-# CryptoPP
+## CryptoPP
 target_link_libraries(librevault-daemon cryptopp)
 
 ## OpenSSL
 target_link_libraries(librevault-daemon openssl)
 
+## ICU
+target_link_libraries(librevault-daemon icu)
+
 ##### System libraries #####
 
 ## Threads
-target_link_libraries(librevault-daemon Threads::Threads)
+target_link_libraries(librevault-daemon threads)
 
 ## WinSock
 if(WIN32)

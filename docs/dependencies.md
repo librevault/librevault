@@ -20,6 +20,8 @@ Third-party libraries
 - WinSparkle - MIT
 - dht - MIT
 
+- ICU - ICU License/Unicode License
+
 - OpenSSL - OpenSSL License
 
 - SQLite - Public domain
@@ -28,10 +30,13 @@ Third-party libraries
 
 CMake Modules
 -------------
-- FindSqlite3 - New BSD License
-- FindCryptoPP - MIT
 - GetGitRevisionDescription - Boost Software License
-- InstallQt5Plugin - New BSD License
+
+- FindSqlite3 - New BSD License
+- InstallQt5Plugin - Simplified BSD License
+- FindICU - Simplified BSD License
+
+- FindCryptoPP - MIT
 
 Own libraries
 -------------

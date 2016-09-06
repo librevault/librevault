@@ -49,7 +49,7 @@ if(WIN32)
 endif()
 
 ### Threads
-target_link_libraries(lvcommon PUBLIC Threads::Threads)
+target_link_libraries(lvcommon PUBLIC threads)
 
 ### Boost
 target_link_libraries(lvcommon PUBLIC boost)

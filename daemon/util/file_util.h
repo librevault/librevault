@@ -110,7 +110,7 @@ public:
 	}
 };
 
-static void file_move(const boost::filesystem::path& from, const boost::filesystem::path& to) {
+inline void file_move(const boost::filesystem::path& from, const boost::filesystem::path& to) {
 	boost::filesystem::remove(to);
 	try {
 		boost::filesystem::create_directories(to.parent_path());

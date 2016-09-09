@@ -13,20 +13,18 @@
 # See the License for more information.
 #=============================================================================
 
-if(APPLE)
-  macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var _qt_new_plugins_root)
-    get_target_property(_qt_plugin_path "${_qt_plugin_name}" LOCATION)
-    if(EXISTS "${_qt_plugin_path}")
-      get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
-      get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
-      get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
-      set(_qt_plugin_dest "${_qt_new_plugins_root}/${_qt_plugin_type}")
-      install(FILES "${_qt_plugin_path}"
-        DESTINATION "${_qt_plugin_dest}")
-      set(${_qt_plugins_var}
-        "${${_qt_plugins_var}};${_qt_plugin_dest}/${_qt_plugin_file}")
-    else()
-      message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
-    endif()
-  endmacro()
-endif()
+macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var _qt_new_plugins_root)
+  get_target_property(_qt_plugin_path "${_qt_plugin_name}" LOCATION)
+  if(EXISTS "${_qt_plugin_path}")
+    get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
+    get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
+    get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
+    set(_qt_plugin_dest "${_qt_new_plugins_root}/${_qt_plugin_type}")
+    install(FILES "${_qt_plugin_path}"
+      DESTINATION "${_qt_plugin_dest}")
+    set(${_qt_plugins_var}
+      "${${_qt_plugins_var}};${_qt_plugin_dest}/${_qt_plugin_file}")
+  else()
+    message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
+  endif()
+endmacro()

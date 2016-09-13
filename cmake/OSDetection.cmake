@@ -29,6 +29,7 @@
 # OS detection flags
 if(WIN32)
   set(OS_WIN TRUE)
+  set(OS_WINDOWS TRUE)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(OS_LINUX TRUE)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

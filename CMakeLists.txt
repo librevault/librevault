@@ -2,12 +2,20 @@ cmake_minimum_required(VERSION 3.2)
 project(librevault)
 
 #============================================================================
+# CMake modules
+#============================================================================
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GNUInstallDirs)
+include(OSDetection)
+
+#============================================================================
 # Settable options
 #============================================================================
 
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
-if((WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 4) OR NOT WIN32)
+if((OS_WIN AND OS_32bit) OR NOT OS_WIN)
 	set(DEFAULT_BUILD_GUI ON)
 else()
 	set(DEFAULT_BUILD_GUI OFF)
@@ -22,19 +30,12 @@ option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(OS_64bit)
 	set(DEFAULT_FILE_BACKEND "mmap")
 else()
 	set(DEFAULT_FILE_BACKEND "fopen")
 endif()
 set(FILE_BACKEND ${DEFAULT_FILE_BACKEND} CACHE STRING "File backend. Use mmap for 64-bit and fopen for 32-bit")
-
-#============================================================================
-# CMake modules
-#============================================================================
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-include(GNUInstallDirs)
 
 #============================================================================
 # Internal compiler options
@@ -46,19 +47,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# OS detection flags
-if(WIN32)
-	set(OS_WIN TRUE)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(OS_LINUX TRUE)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	set(OS_MAC TRUE)
-endif()
 
 # Error management
 if(MSVC)
@@ -90,7 +78,7 @@ if(BUILD_STATIC)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .a .dll .so)
 endif()
 
-if(WIN32)
+if(OS_WIN)
 	add_definitions(-D_WIN32_WINNT=0x600)
 	add_definitions(-DUNICODE)
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
@@ -271,9 +259,9 @@ if(BUILD_GUI)
 			Widgets
 			WebSockets
 			)
-	if(WIN32)
+	if(OS_WIN)
 		list(APPEND Qt_COMPONENTS WinExtras)
-	elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	elseif(OS_MAC)
 		list(APPEND Qt_COMPONENTS MacExtras)
 	endif()
 	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
@@ -296,7 +284,7 @@ find_package(OpenSSL REQUIRED)
 add_library(openssl INTERFACE)
 target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
-if(WIN32)
+if(OS_WIN)
 	target_link_libraries(openssl INTERFACE ws2_32)
 endif()
 if(OS_LINUX)

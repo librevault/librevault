@@ -304,10 +304,10 @@ if(OS_LINUX)
 endif()
 
 ## ICU (needed for boost::locale and Qt)
-find_package(ICU REQUIRED COMPONENTS i18n io le lx uc data)
 add_library(icu INTERFACE)
-target_link_libraries(openssl INTERFACE ICU::ICU)
 if(OS_LINUX)
+	find_package(ICU REQUIRED COMPONENTS i18n io le lx uc data)
+	target_link_libraries(icu INTERFACE ICU::ICU)
 	target_link_libraries(icu INTERFACE dl)
 endif()
 

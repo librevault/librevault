@@ -27,47 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/Meta.h>
-#include <librevault/util/bitfield_convert.h>
-#include <boost/filesystem/path.hpp>
-#include <boost/signals2/signal.hpp>
-#include <util/fs.h>
+
+namespace boost{namespace filesystem{}}
 
 namespace librevault {
 
-class Client;
-class FSFolder;
-
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
-
-class FileAssembler;
-
-class ChunkStorage {
-public:
-	boost::signals2::signal<void(const blob&)> new_chunk_signal;
-
-	ChunkStorage(FSFolder& dir, Client& client);
-	virtual ~ChunkStorage();
-
-	bool have_chunk(const blob& ct_hash) const noexcept ;
-	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
-
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
-
-	void cleanup(const Meta& meta);
-
-protected:
-	FSFolder& dir_;
-	Client& client_;
-
-	std::unique_ptr<MemoryCachedStorage> mem_storage;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
-
-	std::unique_ptr<FileAssembler>(file_assembler);
-};
+namespace fs = boost::filesystem;
 
 } /* namespace librevault */

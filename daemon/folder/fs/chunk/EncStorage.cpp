@@ -30,6 +30,8 @@
 #include <librevault/crypto/Base32.h>
 #include "EncStorage.h"
 #include "folder/fs/FSFolder.h"
+#include <util/fs.h>
+
 
 namespace librevault {
 

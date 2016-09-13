@@ -26,7 +26,6 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "../pch.h"
 #pragma once
 #include "../util/Loggable.h"
 #include "AbstractFolder.h"

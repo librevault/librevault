@@ -26,12 +26,12 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "pch.h"
 #pragma once
 #include "Client.h"
 #include "NodeKey.h"
 #include "util/network.h"
 #include "util/Loggable.h"
+#include <set>
 
 namespace librevault {
 

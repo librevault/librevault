@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include "util/parse_url.h"
 #include "util/Loggable.h"
 #include "folder/p2p/WSClient.h"

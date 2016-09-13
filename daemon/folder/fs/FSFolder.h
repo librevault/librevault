@@ -29,7 +29,6 @@
 #pragma once
 #include "folder/AbstractFolder.h"
 
-#include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/FolderGroup.h"
 
@@ -82,9 +81,6 @@ public:
 	boost::filesystem::path absolute_path(const std::string& normpath) const;
 
 	/* Getters */
-	FolderGroup& group() {return group_;}
-	const FolderGroup& group() const {return group_;}
-
 	const FolderParams& params() const {return group_.params();}
 	const Secret& secret() const {return params().secret;}
 	const boost::filesystem::path& path() const {return params().path;}

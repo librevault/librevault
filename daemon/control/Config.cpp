@@ -181,7 +181,7 @@ boost::filesystem::path Config::default_appdata_path() {   // TODO: separate to 
 #if BOOST_OS_WINDOWS
 	PWSTR appdata_path;
 	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
-	fs::path folder_path = fs::path(appdata_path) / Version::current().name();
+	boost::filesystem::path folder_path = fs::path(appdata_path) / Version::current().name();
 	CoTaskMemFree(appdata_path);
 
 	return folder_path;

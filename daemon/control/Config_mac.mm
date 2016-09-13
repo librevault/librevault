@@ -32,7 +32,7 @@
 
 namespace librevault {
 
-fs::path Config::default_appdata_path() {
+boost::filesystem::path Config::default_appdata_path() {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
 	NSString *applicationSupportDirectory = [paths firstObject];
 

@@ -46,9 +46,9 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	}
 
 	// Initializing io_service
-	bulk_ios_ = std::make_unique<multi_io_service>(*this, "bulk_ios");
-	network_ios_ = std::make_unique<multi_io_service>(*this, "network_ios");
-	etc_ios_ = std::make_unique<multi_io_service>(*this, "etc_ios");
+	bulk_ios_ = std::make_unique<multi_io_service>("bulk_ios");
+	network_ios_ = std::make_unique<multi_io_service>("network_ios");
+	etc_ios_ = std::make_unique<multi_io_service>("etc_ios");
 
 	// Initializing components
 	p2p_provider_ = std::make_unique<P2PProvider>(*this);

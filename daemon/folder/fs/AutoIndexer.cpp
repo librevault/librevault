@@ -35,7 +35,7 @@
 namespace librevault {
 
 AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
-		Loggable(dir, "AutoIndexer"),
+		Loggable("AutoIndexer"),
 		dir_(dir), client_(client),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),

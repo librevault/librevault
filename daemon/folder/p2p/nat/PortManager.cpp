@@ -34,7 +34,7 @@
 namespace librevault {
 
 PortManager::PortManager(Client& client, P2PProvider& provider) :
-	Loggable(client, "PortManager"), client_(client), provider_(provider) {
+	Loggable("PortManager"), client_(client), provider_(provider) {
 	natpmp_service_ = std::make_unique<NATPMPService>(client_, *this);
 	upnp_service_ = std::make_unique<UPnPService>(client_, *this);
 

@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-Index::Index(FSFolder& dir, Client& client) : Loggable(dir, "Index"), dir_(dir), client_(client) {
+Index::Index(FSFolder& dir, Client& client) : Loggable("Index"), dir_(dir), client_(client) {
 	auto db_filepath = dir_.system_path() / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))

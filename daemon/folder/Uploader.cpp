@@ -38,7 +38,7 @@
 namespace librevault {
 
 Uploader::Uploader(Client& client, FolderGroup& exchange_group) :
-		Loggable(client, "Uploader"),
+		Loggable("Uploader"),
 		client_(client),
 		exchange_group_(exchange_group) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;

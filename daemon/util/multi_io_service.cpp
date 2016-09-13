@@ -30,8 +30,8 @@
 
 namespace librevault {
 
-multi_io_service::multi_io_service(Loggable& parent_loggable, const std::string& name) :
-		Loggable(parent_loggable, name) {}
+multi_io_service::multi_io_service(const std::string& name) :
+		Loggable(name) {}
 
 multi_io_service::~multi_io_service() {
 	stop();

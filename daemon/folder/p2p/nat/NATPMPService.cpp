@@ -32,7 +32,7 @@
 
 namespace librevault {
 
-NATPMPService::NATPMPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable(client, "NATPMPService"), client_(client) {
+NATPMPService::NATPMPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable("NATPMPService"), client_(client) {
 	Config::get()->config_changed.connect(std::bind(&NATPMPService::reload_config, this));
 }
 NATPMPService::~NATPMPService() {stop();}

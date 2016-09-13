@@ -39,7 +39,7 @@ namespace librevault {
 
 const char* WSService::subprotocol_ = "librevault";
 
-WSService::WSService(Client& client, P2PProvider& provider) : Loggable(client, "WSService"), provider_(provider), client_(client) {}
+WSService::WSService(Client& client, P2PProvider& provider) : Loggable("WSService"), provider_(provider), client_(client) {}
 
 std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	auto ssl_ctx_ptr = std::make_shared<ssl_context>(ssl_context::tlsv12);

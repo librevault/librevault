@@ -40,7 +40,7 @@
 namespace librevault {
 
 FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
-	Loggable(dir, "FileAssembler"),
+	Loggable("FileAssembler"),
 	dir_(dir),
 	chunk_storage_(chunk_storage),
 	client_(client),

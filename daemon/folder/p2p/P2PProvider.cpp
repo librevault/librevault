@@ -42,7 +42,7 @@
 namespace librevault {
 
 P2PProvider::P2PProvider(Client& client) :
-		Loggable(client, "P2PProvider"),
+		Loggable("P2PProvider"),
 		client_(client),
 		node_key_() {
 	portmanager_ = std::make_unique<PortManager>(client_, *this);

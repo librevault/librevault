@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-UPnPService::UPnPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable(client, "UPnPService"), client_(client) {
+UPnPService::UPnPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable("UPnPService"), client_(client) {
 	Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
 }
 UPnPService::~UPnPService() {stop();}

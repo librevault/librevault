@@ -34,7 +34,7 @@
 namespace librevault {
 
 OpenStorage::OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage) :
-	AbstractStorage(dir, chunk_storage), Loggable(dir, "OpenStorage"),
+	AbstractStorage(dir, chunk_storage), Loggable("OpenStorage"),
 	secret_(dir_.secret()) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {

@@ -38,7 +38,7 @@
 namespace librevault {
 
 Archive::Archive(FSFolder& dir, Client& client) :
-	Loggable(dir, "Archive"),
+	Loggable("Archive"),
 	dir_(dir),
 	client_(client) {
 

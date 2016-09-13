@@ -38,7 +38,7 @@
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
-		Loggable(client, "ControlServer"), client_(client), timer_(client_.ios()) {
+		Loggable("ControlServer"), client_(client), timer_(client_.ios()) {
 	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 

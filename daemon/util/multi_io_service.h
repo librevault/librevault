@@ -27,14 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Loggable.h"
 #include <boost/asio/io_service.hpp>
+#include <thread>
 
 namespace librevault {
 
-class multi_io_service : protected Loggable {
+class multi_io_service {
 public:
-	multi_io_service(const std::string& name);
+	multi_io_service(std::string name);
 	~multi_io_service();
 
 	void start(unsigned thread_count);
@@ -43,6 +43,7 @@ public:
 	boost::asio::io_service& ios() {return ios_;}
 
 protected:
+	std::string name_;
 	boost::asio::io_service ios_;
 	std::unique_ptr<boost::asio::io_service::work> ios_work_;
 

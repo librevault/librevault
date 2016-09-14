@@ -27,55 +27,52 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortMappingService.h"
-#include <util/Loggable.h>
-#include <util/periodic_process.h>
-#include <natpmp.h>
+#include <util/log_scope.h>
+#include <util/network.h>
+#include <util/multi_io_service.h>
+
+#include <boost/signals2.hpp>
+#include <mutex>
 
 namespace librevault {
 
 class Client;
 
-class P2PProvider;
+class NATPMPService;
+class UPnPService;
+class PortMappingSubService;
 
-class NATPMPService : public PortMappingService, public Loggable {
+class PortMappingService {
+	LOG_SCOPE("PortMappingService");
+	friend class PortMappingSubService;
 public:
-	NATPMPService(Client& client, PortManager& parent);
-	virtual ~NATPMPService();
+	struct MappingDescriptor {
+		uint16_t port;
+		int protocol;
+	};
 
-	void reload_config();
-
-	void start();
-	void stop();
+	PortMappingService();
+	virtual ~PortMappingService();
 
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
+	uint16_t get_port_mapping(const std::string& id);
 
-	Client& client_;
+private:
+	multi_io_service io_service_;
 
-protected:
-	bool is_config_enabled();
-	bool active = false;
-	natpmp_t natpmp;
-
-	class PortMapping {
-	public:
-		PortMapping(NATPMPService& parent, std::string id, MappingDescriptor descriptor);
-		~PortMapping();
-
-	private:
-		NATPMPService& parent_;
-		std::string id_;
-		MappingDescriptor descriptor_;
-
-		PeriodicProcess maintain_mapping_;
-
-		bool active = true;
-		void send_request(PeriodicProcess& process);
+	std::mutex mappings_mutex_;
+	struct Mapping {
+		MappingDescriptor descriptor;
+		std::string description;
+		uint16_t port;
 	};
-	friend class PortMapping;
+	std::map<std::string, Mapping> mappings_;
 
-	std::map<std::string, std::unique_ptr<PortMapping>> mappings_;
+	std::unique_ptr<NATPMPService> natpmp_service_;
+	std::unique_ptr<UPnPService> upnp_service_;
+
+	void add_existing_mappings(PortMappingSubService* subservice);
 };
 
 } /* namespace librevault */

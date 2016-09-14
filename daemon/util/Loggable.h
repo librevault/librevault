@@ -27,8 +27,18 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "log_scope.h"
 #include "Version.h"
 #include <spdlog/spdlog.h>
+
+#define LOGT(ARGS) \
+spdlog::get(Version::current().name())->trace() << log_tag() << ARGS;
+
+#define LOGD(ARGS) \
+spdlog::get(Version::current().name())->debug() << log_tag() << ARGS;
+
+#define LOGI(ARGS) \
+spdlog::get(Version::current().name())->info() << log_tag() << ARGS;
 
 namespace librevault {
 

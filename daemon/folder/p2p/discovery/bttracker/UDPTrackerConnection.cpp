@@ -30,7 +30,7 @@
 #include "Client.h"
 #include "folder/p2p/P2PProvider.h"
 #include "folder/p2p/WSServer.h"
-#include "folder/p2p/nat/PortManager.h"
+#include "nat/PortMappingService.h"
 #include "folder/fs/FSFolder.h"
 
 #include "BTTrackerDiscovery.h"

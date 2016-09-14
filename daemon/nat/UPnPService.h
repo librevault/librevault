@@ -27,28 +27,64 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortManager.h"
+//#include <miniupnpc/miniupnpc.h>
+#include "PortMappingSubService.h"
+#include <util/log_scope.h>
+
+struct UPNPUrls;
+struct IGDdatas;
+struct UPNPDev;
 
 namespace librevault {
 
-class PortMappingService {
+class UPnPService : public PortMappingSubService {
+	LOG_SCOPE("UPnPService");
 public:
-	PortMappingService(PortManager& parent) : parent_(parent) {}
+	UPnPService(PortMappingService& parent, io_service& ios);
+	~UPnPService();
 
-	using MappingDescriptor = PortManager::MappingDescriptor;
-	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
+	void reload_config();
+
+	void start();
+	void stop();
+
+	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
+	void remove_port_mapping(const std::string& id);
 
 protected:
-	PortManager& parent_;
-	const decltype(PortManager::mappings_)& get_mappings() {
-		return parent_.mappings_;
-	}
-	decltype(PortManager::mappings_mutex_)& get_mappings_mutex() {
-		return parent_.mappings_mutex_;
-	}
+	io_service& ios_;
 
-	boost::signals2::scoped_connection added_mapping_signal_conn;
-	boost::signals2::scoped_connection removed_mapping_signal_conn;
+	// RAII wrappers
+	struct DevListWrapper : boost::noncopyable {
+		DevListWrapper();
+		~DevListWrapper();
+
+		UPNPDev* devlist;
+	};
+
+	class PortMapping {
+		LOG_SCOPE("UPnPService");
+	public:
+		PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description);
+		virtual ~PortMapping();
+
+	private:
+		UPnPService& parent_;
+		std::string id_;
+		MappingDescriptor descriptor_;
+
+		const char* get_literal_protocol(int protocol) const {return protocol == SOCK_STREAM ? "TCP" : "UDP";}
+	};
+	friend class PortMapping;
+	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
+
+	// Config values
+	std::unique_ptr<UPNPUrls> upnp_urls;
+	std::unique_ptr<IGDdatas> upnp_data;
+	std::array<char, 16> lanaddr;
+
+	bool active = false;
+	bool is_config_enabled();
 };
 
 } /* namespace librevault */

@@ -28,13 +28,13 @@
  */
 #include "UPnPService.h"
 #include <control/Config.h>
-#include <Client.h>
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
+#include <util/Loggable.h>
 
 namespace librevault {
 
-UPnPService::UPnPService(Client& client, PortManager& parent) : PortMappingService(parent), Loggable("UPnPService"), client_(client) {
+UPnPService::UPnPService(PortMappingService& parent, io_service& ios) : PortMappingSubService(parent), ios_(ios) {
 	Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
 }
 UPnPService::~UPnPService() {stop();}
@@ -44,46 +44,36 @@ bool UPnPService::is_config_enabled() {
 }
 
 void UPnPService::start() {
-	if(!is_config_enabled()) return;
-
-	active = true;
-
 	upnp_urls = std::make_unique<UPNPUrls>();
 	upnp_data = std::make_unique<IGDdatas>();
 
-	/* Discovering IGD */
-	DevListWrapper devlist;
+	ios_.post([this]{
+		if(!is_config_enabled()) return;
 
-	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
-		log_->debug() << log_tag() << "IGD not found. e: " << strerror(errno);
-		return;
-	}
+		active = true;
 
-	log_->debug() << log_tag() << "Found IGD: " << upnp_urls->controlURL;
+		/* Discovering IGD */
+		DevListWrapper devlist;
 
-	/* Adding all present mappings */
-	{
-		std::unique_lock<std::mutex> lk(get_mappings_mutex());
-		for(auto& mapping : get_mappings()) {
-			add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
+		if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
+			LOGD("IGD not found. e: " << strerror(errno));
+			return;
 		}
-		added_mapping_signal_conn = parent_.added_mapping_signal.connect([this](const std::string& id, MappingDescriptor descriptor, std::string description){
-			add_port_mapping(id, descriptor, description);
-		});
-		removed_mapping_signal_conn = parent_.removed_mapping_signal.connect([this](const std::string& id){
-			remove_port_mapping(id);
-		});
-	}
+
+		LOGD("Found IGD: " << upnp_urls->controlURL);
+
+		add_existing_mappings();
+	});
 }
 
 void UPnPService::stop() {
 	active = false;
 
-	added_mapping_signal_conn.disconnect();
-	removed_mapping_signal_conn.disconnect();
-
 	mappings_.clear();
+
 	FreeUPNPUrls(upnp_urls.get());
+	upnp_urls.reset();
+	upnp_data.reset();
 }
 
 void UPnPService::reload_config() {
@@ -135,7 +125,7 @@ UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id, Mappi
 	if(!err)
 		parent_.port_signal(id, descriptor.port);
 	else
-		parent_.log_->debug() << parent_.log_tag() << "UPnP port forwarding failed: Error " << err;
+		LOGD("UPnP port forwarding failed: Error " << err);
 }
 
 UPnPService::PortMapping::~PortMapping() {
@@ -147,7 +137,7 @@ UPnPService::PortMapping::~PortMapping() {
 		nullptr
 	);
 	if(err)
-		parent_.log_->debug() << parent_.log_tag() << get_literal_protocol(descriptor_.protocol) << " port " << descriptor_.port << " de-forwarding failed: Error " << err;
+		LOGD(get_literal_protocol(descriptor_.protocol) << " port " << descriptor_.port << " de-forwarding failed: Error " << err);
 }
 
 } /* namespace librevault */

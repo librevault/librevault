@@ -27,7 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
+#include <cstdint>
+#include <atomic>
+#include <chrono>
 
 namespace librevault {
 

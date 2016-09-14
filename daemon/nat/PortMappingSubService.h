@@ -27,65 +27,24 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-//#include <miniupnpc/miniupnpc.h>
 #include "PortMappingService.h"
-#include "util/Loggable.h"
-
-struct UPNPUrls;
-struct IGDdatas;
-struct UPNPDev;
 
 namespace librevault {
 
-class Client;
-class P2PProvider;
-
-class UPnPService : public PortMappingService, public Loggable {
+class PortMappingSubService {
 public:
-	UPnPService(Client& client, PortManager& parent);
-	~UPnPService();
+	PortMappingSubService(PortMappingService& parent) : parent_(parent) {}
 
-	void reload_config();
+	using MappingDescriptor = PortMappingService::MappingDescriptor;
+	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
 
-	void start();
-	void stop();
-
-	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(const std::string& id);
+	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
+	virtual void remove_port_mapping(const std::string& id) = 0;
 
 protected:
-	Client& client_;
+	PortMappingService& parent_;
 
-	// RAII wrappers
-	struct DevListWrapper : boost::noncopyable {
-		DevListWrapper();
-		~DevListWrapper();
-
-		UPNPDev* devlist;
-	};
-
-	class PortMapping {
-	public:
-		PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description);
-		virtual ~PortMapping();
-
-	private:
-		UPnPService& parent_;
-		std::string id_;
-		MappingDescriptor descriptor_;
-
-		const char* get_literal_protocol(MappingDescriptor::Protocol protocol) const {return protocol == MappingDescriptor::TCP ? "TCP" : "UDP";}
-	};
-	friend class PortMapping;
-	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
-
-	// Config values
-	std::unique_ptr<UPNPUrls> upnp_urls;
-	std::unique_ptr<IGDdatas> upnp_data;
-	std::array<char, 16> lanaddr;
-
-	bool active = false;
-	bool is_config_enabled();
+	inline void add_existing_mappings() {parent_.add_existing_mappings(this);}
 };
 
 } /* namespace librevault */

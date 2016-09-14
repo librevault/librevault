@@ -26,40 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "multi_io_service.h"
-#include "Loggable.h"
+#pragma once
 
-namespace librevault {
-
-multi_io_service::multi_io_service(std::string name) : name_(name) {}
-
-multi_io_service::~multi_io_service() {
-	stop();
-}
-
-void multi_io_service::start(unsigned thread_count) {
-	ios_work_ = std::make_unique<boost::asio::io_service::work>(ios_);
-
-	LOGI("Threads: " << thread_count);
-
-	for(unsigned i = 1; i <= thread_count; i++){
-		worker_threads_.emplace_back([this, i]{run_thread(i);});	// Running io_service in threads
-	}
-}
-
-void multi_io_service::stop() {
-	ios_work_.reset();
-	ios_.stop();
-
-	for(auto& thread : worker_threads_){
-		if(thread.joinable()) thread.join();
-	}
-}
-
-void multi_io_service::run_thread(unsigned worker_number) {
-	LOGD("Thread #" << worker_number << " started");
-	ios_.run();
-	LOGD("Thread #" << worker_number << " stopped");
-}
-
-} /* namespace librevault */
+#define LOG_SCOPE(SCOPE) \
+inline const char* log_tag() {return "[" SCOPE "] ";}

@@ -45,7 +45,7 @@ class BTTrackerDiscovery;
 class MLDHTDiscovery;
 
 /* Port mapping services */
-class PortManager;
+class PortMappingService;
 
 class P2PProvider : protected Loggable {
 	friend class ControlServer;
@@ -54,7 +54,7 @@ public:
 	virtual ~P2PProvider();
 
 	/* Port mapping services */
-	PortManager* portmanager() {return portmanager_.get();}
+	PortMappingService* portmanager() {return portmanager_.get();}
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
@@ -78,7 +78,7 @@ private:
 	std::unique_ptr<WSClient> ws_client_;
 
 	/* Port mapping services */
-	std::unique_ptr<PortManager> portmanager_;
+	std::unique_ptr<PortMappingService> portmanager_;
 
 	/* Discovery services */
 	std::unique_ptr<StaticDiscovery> static_discovery_;

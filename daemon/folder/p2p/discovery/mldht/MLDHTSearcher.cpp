@@ -33,7 +33,7 @@
 #include "folder/p2p/P2PProvider.h"
 #include "folder/p2p/P2PFolder.h"
 #include "folder/p2p/WSServer.h"
-#include "folder/p2p/nat/PortManager.h"
+#include "nat/PortMappingService.h"
 #include <dht.h>
 #include <librevault/crypto/Hex.h>
 

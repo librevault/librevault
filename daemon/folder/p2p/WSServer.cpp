@@ -32,7 +32,7 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "util/parse_url.h"
-#include "nat/PortManager.h"
+#include "nat/PortMappingService.h"
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {
@@ -65,7 +65,7 @@ WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, pr
 	log_->info() << log_tag() << "Listening on " << local_endpoint();
 
 	// Port mapping
-	provider.portmanager()->add_port_mapping("main", PortManager::MappingDescriptor(PortManager::MappingDescriptor::TCP, local_endpoint().port()), "Librevault");
+	provider.portmanager()->add_port_mapping("main", {local_endpoint().port(), SOCK_STREAM}, "Librevault");
 }
 
 tcp_endpoint WSServer::local_endpoint() const {

@@ -34,7 +34,7 @@
 #include "folder/FolderGroup.h"
 #include "folder/p2p/P2PProvider.h"
 #include "folder/fs/FSFolder.h"
-#include "folder/p2p/nat/PortManager.h"
+#include "nat/PortMappingService.h"
 
 #include <dht.h>
 #include <cryptopp/osrng.h>
@@ -113,7 +113,7 @@ void MLDHTDiscovery::init() {
 	}
 
 	// Map port
-	provider_.portmanager()->add_port_mapping("mldht", PortManager::MappingDescriptor(PortManager::MappingDescriptor::UDP, dht_port), "Librevault DHT");
+	provider_.portmanager()->add_port_mapping("mldht", {dht_port, SOCK_DGRAM}, "Librevault DHT");
 
 	// Init routers
 	auto routers = Config::get()->globals()["mainline_dht_routers"];

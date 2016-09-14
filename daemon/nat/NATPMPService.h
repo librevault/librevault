@@ -27,59 +27,57 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/Loggable.h>
-#include <util/network.h>
-
-#include <boost/signals2.hpp>
+#include "PortMappingSubService.h"
+#include <util/log_scope.h>
+#include <util/periodic_process.h>
+#include <natpmp.h>
 
 namespace librevault {
 
 class Client;
+
 class P2PProvider;
 
-class NATPMPService;
-class UPnPService;
-
-class PortManager : public Loggable {
-	friend class PortMappingService;
+class NATPMPService : public PortMappingSubService {
+	LOG_SCOPE("NATPMPService");
 public:
-	struct MappingDescriptor {
-		enum Protocol {
-			TCP = SOCK_STREAM,
-			UDP = SOCK_DGRAM
-		} protocol;
-		uint16_t port;
+	NATPMPService(PortMappingService& parent, io_service& ios);
+	virtual ~NATPMPService();
 
-		MappingDescriptor() {}
-		MappingDescriptor(Protocol new_protocol, uint16_t new_port) : protocol(new_protocol), port(new_port) {}
-	};
+	void reload_config();
 
-	PortManager(Client& client, P2PProvider& provider);
-	virtual ~PortManager();
+	void start();
+	void stop();
 
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
-	uint16_t get_port_mapping(const std::string& id);
 
-	/**/
-	boost::signals2::signal<void(const std::string&, MappingDescriptor, std::string)> added_mapping_signal;
-	boost::signals2::signal<void(const std::string&)> removed_mapping_signal;
+	io_service& ios_;
 
-private:
-	Client& client_;
-	P2PProvider& provider_;
+protected:
+	bool is_config_enabled();
+	bool active = false;
+	natpmp_t natpmp;
 
-	std::mutex mappings_mutex_;
+	class PortMapping {
+		LOG_SCOPE("NATPMPService")
+	public:
+		PortMapping(NATPMPService& parent, std::string id, MappingDescriptor descriptor);
+		~PortMapping();
 
-	struct Mapping {
-		MappingDescriptor descriptor;
-		std::string description;
-		uint16_t port;
+	private:
+		NATPMPService& parent_;
+		std::string id_;
+		MappingDescriptor descriptor_;
+
+		PeriodicProcess maintain_mapping_;
+
+		bool active = true;
+		void send_request(PeriodicProcess& process);
 	};
-	std::map<std::string, Mapping> mappings_;
+	friend class PortMapping;
 
-	std::unique_ptr<NATPMPService> natpmp_service_;
-	std::unique_ptr<UPnPService> upnp_service_;
+	std::map<std::string, std::unique_ptr<PortMapping>> mappings_;
 };
 
 } /* namespace librevault */

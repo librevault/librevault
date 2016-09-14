@@ -26,56 +26,69 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "PortManager.h"
-#include "Client.h"
+#include "PortMappingService.h"
 #include "NATPMPService.h"
 #include "UPnPService.h"
+#include <util/Loggable.h>
 
 namespace librevault {
 
-PortManager::PortManager(Client& client, P2PProvider& provider) :
-	Loggable("PortManager"), client_(client), provider_(provider) {
-	natpmp_service_ = std::make_unique<NATPMPService>(client_, *this);
-	upnp_service_ = std::make_unique<UPnPService>(client_, *this);
+PortMappingService::PortMappingService() :
+	io_service_("PortMappingService") {
+	natpmp_service_ = std::make_unique<NATPMPService>(*this, io_service_.ios());
+	upnp_service_ = std::make_unique<UPnPService>(*this, io_service_.ios());
 
 	auto port_callback = [this](std::string id, uint16_t port) {
-		log_->debug() << log_tag() << "Port mapped: " << mappings_[id].descriptor.port << " -> " << port;
+		LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
 		mappings_[id].port = port;
 	};
 	natpmp_service_->port_signal.connect(port_callback);
 	upnp_service_->port_signal.connect(port_callback);
 
-	client.ios().post([this]{natpmp_service_->start();});
-	client.ios().post([this]{upnp_service_->start();});
+	natpmp_service_->start();
+	upnp_service_->start();
+
+	io_service_.start(1);
 }
 
-PortManager::~PortManager() {
+PortMappingService::~PortMappingService() {
 	upnp_service_.reset();
 	natpmp_service_.reset();
 }
 
-void PortManager::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
+void PortMappingService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
 	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	Mapping m;
 	m.descriptor = descriptor;
 	m.description = description;
 	m.port = descriptor.port;
 	mappings_[id] = std::move(m);
-	added_mapping_signal(id, descriptor, description);
+
+	natpmp_service_->add_port_mapping(id, descriptor, description);
+	upnp_service_->add_port_mapping(id, descriptor, description);
 }
 
-void PortManager::remove_port_mapping(const std::string& id) {
+void PortMappingService::remove_port_mapping(const std::string& id) {
 	std::unique_lock<std::mutex> lk(mappings_mutex_);
+
+	upnp_service_->remove_port_mapping(id);
+	natpmp_service_->remove_port_mapping(id);
+
 	mappings_.erase(id);
-	removed_mapping_signal(id);
 }
 
-uint16_t PortManager::get_port_mapping(const std::string& id) {
+uint16_t PortMappingService::get_port_mapping(const std::string& id) {
 	auto it = mappings_.find(id);
 	if(it != mappings_.end())
 		return it->second.port;
 	else
 		return 0;
+}
+
+void PortMappingService::add_existing_mappings(PortMappingSubService* subservice) {
+	std::unique_lock<std::mutex> lk(mappings_mutex_);
+	for(auto& mapping : mappings_)
+		subservice->add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
 }
 
 } /* namespace librevault */

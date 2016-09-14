@@ -30,7 +30,7 @@
 #include "../../Client.h"
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
-#include "nat/PortManager.h"
+#include "nat/PortMappingService.h"
 #include "folder/p2p/discovery/StaticDiscovery.h"
 #include "folder/p2p/discovery/multicast/MulticastDiscovery.h"
 #include "folder/p2p/discovery/bttracker/BTTrackerDiscovery.h"
@@ -45,7 +45,7 @@ P2PProvider::P2PProvider(Client& client) :
 		Loggable("P2PProvider"),
 		client_(client),
 		node_key_() {
-	portmanager_ = std::make_unique<PortManager>(client_, *this);
+	portmanager_ = std::make_unique<PortMappingService>();
 	ws_server_ = std::make_unique<WSServer>(client, *this);
 	ws_client_ = std::make_unique<WSClient>(client, *this);
 

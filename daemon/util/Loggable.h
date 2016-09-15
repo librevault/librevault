@@ -40,6 +40,12 @@ spdlog::get(Version::current().name())->debug() << log_tag() << ARGS;
 #define LOGI(ARGS) \
 spdlog::get(Version::current().name())->info() << log_tag() << ARGS;
 
+#define LOGW(ARGS) \
+spdlog::get(Version::current().name())->warn() << log_tag() << ARGS;
+
+#define LOGFUNC() \
+LOGT(BOOST_CURRENT_FUNCTION);
+
 namespace librevault {
 
 class Loggable {

@@ -42,13 +42,11 @@
 namespace librevault {
 
 FolderGroup::FolderGroup(FolderParams params, Client& client) :
-		Loggable( (params.path.empty() ? params.system_path : params.path).string() ),
 		params_(std::move(params)),
-		client_(client),
 		fs_dir_(std::make_shared<FSFolder>(*this, client)),
-		uploader_(std::make_shared<Uploader>(client, *this)),
+		uploader_(std::make_shared<Uploader>(*this)),
 		downloader_(std::make_shared<Downloader>(client, *this)) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
 		notify_meta(fs_dir_, smeta.meta().path_revision(), fs_dir_->chunk_storage->make_bitfield(smeta.meta()));
@@ -61,7 +59,7 @@ FolderGroup::FolderGroup(FolderParams params, Client& client) :
 }
 
 FolderGroup::~FolderGroup() {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	downloader_.reset();
 	uploader_.reset();
@@ -120,7 +118,7 @@ void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
 	else if(fs_dir_->index->put_allowed(revision))
 		origin->request_meta(revision);
 	else
-		log_->debug() << log_tag() << "Remote node notified us about an expired Meta";
+		LOGD("Remote node notified us about an expired Meta");
 }
 
 void FolderGroup::notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash) {
@@ -131,7 +129,7 @@ void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta:
 	try {
 		origin->post_meta(fs_dir_->get_meta(revision), fs_dir_->get_bitfield(revision));
 	}catch(AbstractFolder::no_such_meta& e){
-		log_->warn() << log_tag() << "Requested nonexistent Meta";
+		LOGW("Requested nonexistent Meta");
 	}
 }
 
@@ -140,7 +138,7 @@ void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMe
 		fs_dir_->put_meta(smeta);
 		downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 	}else
-		log_->debug() << log_tag() << "Remote node posted to us about an expired Meta";
+		LOGD("Remote node posted to us about an expired Meta");
 }
 
 void FolderGroup::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
@@ -160,7 +158,7 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
 	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
 
-	log_->debug() << log_tag() << "Attached remote " << remote_ptr->name();
+	LOGD("Attached remote " << remote_ptr->name());
 
 	attached_signal(remote_ptr);
 }
@@ -173,7 +171,7 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_endpoints_.erase(remote_ptr->remote_endpoint());
 	p2p_folders_.erase(remote_ptr);
 
-	log_->debug() << log_tag() << "Detached remote " << remote_ptr->name();
+	LOGD("Detached remote " << remote_ptr->name());
 
 	detached_signal(remote_ptr);
 }
@@ -186,6 +184,10 @@ bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
 bool FolderGroup::have_p2p_dir(const blob& pubkey) {
 	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
+}
+
+std::string FolderGroup::log_tag() const {
+	return (params_.path.empty() ? params_.system_path : params_.path).string();
 }
 
 } /* namespace librevault */

@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../util/Loggable.h"
 #include "AbstractFolder.h"
-#include "../util/AvailabilityMap.h"
+#include <util/AvailabilityMap.h>
+#include <util/log_scope.h>
 
 namespace librevault {
 
@@ -37,9 +37,10 @@ class Client;
 class RemoteFolder;
 class FolderGroup;
 
-class Uploader : public std::enable_shared_from_this<Uploader>, protected Loggable {
+class Uploader {
+	LOG_SCOPE("Uploader");
 public:
-	Uploader(Client& client, FolderGroup& exchange_group);
+	Uploader(FolderGroup& exchange_group);
 
 	void handle_interested(std::shared_ptr<RemoteFolder> remote);
 	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
@@ -47,7 +48,6 @@ public:
 	void request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
-	Client& client_;
 	FolderGroup& exchange_group_;
 
 	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);

@@ -32,7 +32,6 @@
 #include "AbstractFolder.h"
 #include "control/FolderParams.h"
 #include "util/network.h"
-#include "util/Loggable.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
@@ -51,7 +50,7 @@ class P2PFolder;
 class Uploader;
 class Downloader;
 
-class FolderGroup : public std::enable_shared_from_this<FolderGroup>, protected Loggable {
+class FolderGroup : public std::enable_shared_from_this<FolderGroup> {
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -105,9 +104,10 @@ public:
 
 	inline const Secret& secret() const {return params().secret;}
 	inline const blob& hash() const {return secret().get_Hash();}
+
+	std::string log_tag() const;
 private:
 	const FolderParams params_;
-	Client& client_;
 
 	std::shared_ptr<FSFolder> fs_dir_;
 
@@ -122,9 +122,6 @@ private:
 	// Member lookup optimization
 	std::set<blob> p2p_folders_pubkeys_;
 	std::set<tcp_endpoint> p2p_folders_endpoints_;
-
-	/* Loggable override */
-	std::string name() const {return name_;}
 };
 
 } /* namespace librevault */

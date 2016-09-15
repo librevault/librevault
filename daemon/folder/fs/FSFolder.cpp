@@ -44,7 +44,6 @@
 namespace librevault {
 
 FSFolder::FSFolder(FolderGroup& group, Client& client) :
-	AbstractFolder(client),
 	group_(group)  {
 	// Creating directories
 	bool path_created = fs::create_directories(params().path);
@@ -54,19 +53,19 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 #endif
 
 	name_ = (!params().path.empty() ? params().path : params().system_path).string();
-	log_->debug() << log_tag() << "New FSFolder:"
+	LOGD("New FSFolder:"
 		<< " Key type=" << (char)params().secret.get_type()
 		<< " Path" << (path_created ? " created" : "") << "=" << params().path
-		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path;
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path;)
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
-	index = std::make_unique<Index>(*this, client_);
+	index = std::make_unique<Index>(*this, client);
 
-	chunk_storage = std::make_unique<ChunkStorage>(*this, client_);
+	chunk_storage = std::make_unique<ChunkStorage>(*this, client);
 
 	if(params().secret.get_type() <= Secret::Type::ReadWrite){
-		indexer = std::make_unique<Indexer>(*this, client_);
-		auto_indexer = std::make_unique<AutoIndexer>(*this, client_);
+		indexer = std::make_unique<Indexer>(*this, client);
+		auto_indexer = std::make_unique<AutoIndexer>(*this, client);
 	}
 }
 

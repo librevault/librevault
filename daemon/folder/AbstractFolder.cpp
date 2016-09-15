@@ -32,8 +32,7 @@
 
 namespace librevault {
 
-AbstractFolder::AbstractFolder(Client& client) :
-	Loggable(client), client_(client) {}
+AbstractFolder::AbstractFolder() {}
 AbstractFolder::~AbstractFolder() {}
 
 std::string AbstractFolder::path_id_readable(const blob& path_id) {

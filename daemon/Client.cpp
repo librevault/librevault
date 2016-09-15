@@ -33,18 +33,11 @@
 #include "folder/p2p/P2PProvider.h"
 
 #include <boost/range/adaptor/map.hpp>
+#include <util/Loggable.h>
 
 namespace librevault {
 
-Client::Client(std::map<std::string, docopt::value> args) {
-	// Initializing log
-	name_ = "Client";
-	switch(args["-v"].asLong()) {
-		case 2:     init_log(spdlog::level::trace); break;
-		case 1:     init_log(spdlog::level::debug); break;
-		default:    init_log(spdlog::level::info);
-	}
-
+Client::Client() {
 	// Initializing io_service
 	bulk_ios_ = std::make_unique<multi_io_service>("bulk_ios");
 	network_ios_ = std::make_unique<multi_io_service>("network_ios");
@@ -62,33 +55,6 @@ Client::Client(std::map<std::string, docopt::value> args) {
 	for(auto& folder_config : Config::get()->folders()) {
 		init_folder(folder_config);
 	}
-}
-
-void Client::init_log(spdlog::level::level_enum level) {
-	static std::mutex log_mtx;
-	std::unique_lock<decltype(log_mtx)> log_lk(log_mtx);
-	log_ = spdlog::get(Version::current().name());
-	if(!log_){
-		//spdlog::set_async_mode(1024);
-
-		std::vector<spdlog::sink_ptr> sinks;
-		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
-#if(BOOST_OS_LINUX)
-		sinks.push_back(std::make_shared<spdlog::sinks::syslog_sink>(Version::current().name()));
-#endif
-		auto& log_path = Config::get()->paths().log_path;
-		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-			(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
-			log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
-
-		log_ = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
-		spdlog::register_logger(log_);
-
-		log_->set_level(level);
-		log_->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
-	}
-
-	log_->info() << Version::current().name() << " " << Version::current().version_string();
 }
 
 Client::~Client() {
@@ -110,7 +76,7 @@ void Client::run() {
 }
 
 void Client::shutdown(){
-	log_->info() << "Exiting...";
+	LOGI("Exiting...");
 
 	hash_group_.clear();
 
@@ -121,7 +87,7 @@ void Client::shutdown(){
 }
 
 void Client::add_folder(Json::Value json_folder) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	FolderParams params(json_folder);
 
@@ -140,7 +106,7 @@ void Client::add_folder(Json::Value json_folder) {
 }
 
 void Client::remove_folder(const Secret& secret) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto folders_copy = Config::get()->folders_custom();
 	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
@@ -157,7 +123,7 @@ void Client::remove_folder(const Secret& secret) {
 }
 
 void Client::init_folder(FolderParams params) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto group_ptr = get_group(params.secret.get_Hash());
 	if(!group_ptr) {
@@ -170,13 +136,13 @@ void Client::init_folder(FolderParams params) {
 }
 
 void Client::deinit_folder(const Secret& secret) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto group_ptr = get_group(secret.get_Hash());
 
 	hash_group_.erase(secret.get_Hash());
 	folder_removed_signal(group_ptr);
-	log_->debug() << log_tag() << "Group deinitialized: " << secret;
+	LOGD("Group deinitialized: " << secret);
 }
 
 std::shared_ptr<FolderGroup> Client::get_group(const blob& hash) {

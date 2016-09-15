@@ -33,25 +33,23 @@
 #include "folder/fs/FSFolder.h"
 #include "folder/p2p/P2PFolder.h"
 
-#include "../Client.h"
+#include <util/Loggable.h>
 
 namespace librevault {
 
-Uploader::Uploader(Client& client, FolderGroup& exchange_group) :
-		Loggable("Uploader"),
-		client_(client),
+Uploader::Uploader(FolderGroup& exchange_group) :
 		exchange_group_(exchange_group) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 }
 
 void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->unchoke();
 }
 void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->choke();
@@ -61,7 +59,7 @@ void Uploader::request_block(std::shared_ptr<RemoteFolder> origin, const blob& c
 	try {
 		origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
 	}catch(AbstractFolder::no_such_chunk& e){
-		log_->warn() << log_tag() << "Requested nonexistent block";
+		LOGW("Requested nonexistent block");
 	}
 }
 

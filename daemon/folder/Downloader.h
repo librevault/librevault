@@ -122,7 +122,8 @@ public:
 	std::list<std::shared_ptr<MissingChunk>> chunks() const;
 };
 
-class Downloader : public std::enable_shared_from_this<Downloader>, protected Loggable {
+class Downloader {
+	LOG_SCOPE("Downloader");
 public:
 	Downloader(Client& client, FolderGroup& exchange_group);
 	~Downloader();
@@ -141,7 +142,6 @@ public:
 	void erase_remote(std::shared_ptr<RemoteFolder> remote);
 
 private:
-	Client& client_;
 	FolderGroup& exchange_group_;
 
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;

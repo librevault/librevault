@@ -37,7 +37,7 @@ namespace librevault {
 class RemoteFolder : public AbstractFolder, public std::enable_shared_from_this<RemoteFolder> {
 	friend class FolderGroup;
 public:
-	RemoteFolder(Client& client);
+	RemoteFolder();
 	virtual ~RemoteFolder();
 
 	/* Message senders */
@@ -75,8 +75,6 @@ public:
 	virtual bool ready() const = 0;
 
 protected:
-	Client& client_;
-
 	bool am_choking_ = true;
 	bool am_interested_ = false;
 	bool peer_choking_ = true;

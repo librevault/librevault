@@ -33,10 +33,9 @@
 
 namespace librevault {
 
-class Client;
 class FolderGroup;
 
-class AbstractFolder : public Loggable {
+class AbstractFolder {
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -51,7 +50,7 @@ public:
 		no_such_chunk() : error("Requested Chunk not found"){}
 	};
 
-	AbstractFolder(Client& client);
+	AbstractFolder();
 	virtual ~AbstractFolder();
 
 	// AbstractFolder properties
@@ -61,8 +60,10 @@ public:
 	static std::string path_id_readable(const blob& path_id);
 	static std::string ct_hash_readable(const blob& ct_hash);
 
+	inline std::string log_tag() {return std::string("[") + name_ + "] ";}
+
 protected:
-	Client& client_;
+	std::string name_;
 };
 
 } /* namespace librevault */

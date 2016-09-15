@@ -29,10 +29,9 @@
 #pragma once
 
 #include "control/FolderParams.h"
-#include "util/Loggable.h"
+#include "util/log_scope.h"
 #include "util/multi_io_service.h"
 
-#include <docopt.h>
 #include <boost/signals2/signal.hpp>
 
 namespace librevault {
@@ -47,13 +46,13 @@ class FolderGroup;
 class FolderParams;
 class Secret;
 
-class Client : public Loggable {
+class Client {
 public:
 	struct samekey_error : std::runtime_error {
 		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
 	};
 
-	Client(std::map<std::string, docopt::value> args);
+	Client();
 	virtual ~Client();
 
 	void run();
@@ -95,7 +94,7 @@ private:
 	std::unique_ptr<multi_io_service> etc_ios_;
 
 	/* Initialization */
-	void init_log(spdlog::level::level_enum level);
+	inline const char* log_tag() {return "";}
 };
 
 } /* namespace librevault */

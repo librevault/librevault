@@ -32,10 +32,10 @@
 
 namespace librevault {
 
-IgnoreList::IgnoreList(FSFolder& dir) : Loggable(dir), dir_(dir) {
+IgnoreList::IgnoreList(FSFolder& dir) : dir_(dir) {
 	set_ignored(dir_.params().ignore_paths);
 
-	log_->debug() << log_tag() << "IgnoreList initialized";
+	LOGD("IgnoreList initialized");
 }
 
 bool IgnoreList::is_ignored(const std::string& relpath) const {
@@ -51,14 +51,14 @@ void IgnoreList::add_ignored(const std::string& relpath) {
 	if(!relpath.empty()) {
 		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
 		ignored_paths_.insert({relpath, std::move(relpath_regex)});
-		log_->debug() << log_tag() << "Added to IgnoreList: " << relpath;
+		LOGD("Added to IgnoreList: " << relpath);
 	}
 }
 
 void IgnoreList::remove_ignored(const std::string& relpath) {
 	std::lock_guard<std::mutex> lk(ignored_paths_mtx_);
 	ignored_paths_.erase(relpath);
-	log_->debug() << log_tag() << "Removed from IgnoreList: " << relpath;
+	LOGD("Removed from IgnoreList: " << relpath);
 }
 
 void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
@@ -71,6 +71,10 @@ void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
 
 	// Predefined paths
 	add_ignored(regex_escape(dir_.normalize_path(dir_.system_path())) + R"((?:\/(?:.*))?)");
+}
+
+std::string IgnoreList::log_tag() const {
+	return dir_.log_tag();
 }
 
 } /* namespace librevault */

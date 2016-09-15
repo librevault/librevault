@@ -57,14 +57,14 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 
-	log_->debug() << log_tag() << "Resolving IP address";
+	LOGD("Resolving IP address");
 
 	udp_resolver::query resolver_query = udp_resolver::query(tracker_address.host, std::to_string(tracker_address.port));
 	resolver_.async_resolve(resolver_query, std::bind(&UDPTrackerConnection::handle_resolve, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 UDPTrackerConnection::~UDPTrackerConnection() {
-	log_->debug() << log_tag() << "UDPTrackerConnection Removed";
+	LOGD("UDPTrackerConnection Removed");
 }
 
 void UDPTrackerConnection::reset_buffer() {
@@ -99,7 +99,7 @@ void UDPTrackerConnection::receive_loop(){
 				default: throw invalid_msg_error();
 			}
 		}catch(invalid_msg_error& e){
-			log_->warn() << log_tag() << "Invalid message received from tracker.";
+			LOGW("Invalid message received from tracker.");
 		}
 
 		receive_loop();
@@ -129,7 +129,7 @@ void UDPTrackerConnection::connect(const boost::system::error_code& ec) {
 	request.header_ = req_header{connection_id_, (int32_t)action_, transaction_id_};
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
-		log_->debug() << log_tag() << "Establishing connection. tID=" << transaction_id;
+		LOGD("Establishing connection. tID=" << transaction_id);
 	}, transaction_id_));
 
 	bump_reconnect_timer();
@@ -157,7 +157,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	request.port_ = client_.p2p_provider()->portmanager()->get_port_mapping("main");
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
-		log_->debug() << log_tag() << "Announce sent. tID=" << transaction_id;
+		LOGD("Announce sent. tID=" << transaction_id);
 	}, transaction_id_));
 
 	bump_announce_timer();
@@ -171,7 +171,7 @@ void UDPTrackerConnection::handle_resolve(const boost::system::error_code& ec, u
 			target_ = iterator->endpoint();
 	if(target_ == udp_endpoint()) throw error("Unable to resolve tracker");
 
-	log_->debug() << log_tag() << "Resolved IP: " << target_.address();
+	LOGD("Resolved IP: " << target_.address());
 
 	receive_loop();
 	connect();
@@ -186,7 +186,7 @@ void UDPTrackerConnection::handle_connect() {
 		action_ = Action::ACTION_NONE;
 		fail_count_ = 0;
 
-		log_->debug() << log_tag() << "Connection established. cID=" << connection_id_;
+		LOGD("Connection established. cID=" << connection_id_);
 
 		announce();
 	}else

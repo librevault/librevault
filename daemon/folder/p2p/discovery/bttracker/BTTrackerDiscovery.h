@@ -36,6 +36,8 @@ namespace librevault {
 class TrackerConnection;
 
 class BTTrackerDiscovery : public DiscoveryService {
+protected:
+	LOG_SCOPE("BTTrackerDiscovery");
 public:
 	BTTrackerDiscovery(Client& client);
 	virtual ~BTTrackerDiscovery();
@@ -46,7 +48,6 @@ protected:
 	std::unordered_multimap<std::shared_ptr<FolderGroup>, std::unique_ptr<TrackerConnection>> groups_;
 
 	std::list<url> trackers_;
-	std::string log_tag() const {return "[BTTrackerDiscovery] ";}
 };
 
 } /* namespace librevault */

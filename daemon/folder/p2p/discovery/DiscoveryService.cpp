@@ -33,7 +33,7 @@
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(Client& client, std::string id) : Loggable(client), client_(client), id_(id) {}
+DiscoveryService::DiscoveryService(Client& client, std::string id) : Loggable("DiscoveryService"), client_(client), id_(id) {}
 
 void DiscoveryService::add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
 	node_cred.source = id_;

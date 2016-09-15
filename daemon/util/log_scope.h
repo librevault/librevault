@@ -27,6 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <string>
 
 #define LOG_SCOPE(SCOPE) \
-inline const char* log_tag() {return "[" SCOPE "] ";}
+inline std::string log_tag() {return "[" SCOPE "] ";}
+
+#define LOG_PARENT_SCOPE(PARENT) \
+inline std::string log_tag() {return PARENT.log_tag();}

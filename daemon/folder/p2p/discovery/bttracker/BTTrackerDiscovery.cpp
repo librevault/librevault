@@ -42,12 +42,12 @@ BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
 	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
 		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
 			trackers_.push_back(tracker.asString());
-			log_->debug() << "Added BitTorrent tracker: " << tracker.asString();
+			LOGD("Added BitTorrent tracker: " << tracker.asString());
 		}
 		client.folder_added_signal.connect(std::bind(&BTTrackerDiscovery::register_group, this, std::placeholders::_1));
 		client.folder_removed_signal.connect(std::bind(&BTTrackerDiscovery::unregister_group, this, std::placeholders::_1));
 	}else
-		log_->info() << "BitTorrent tracker discovery is disabled";
+		LOGI("BitTorrent tracker discovery is disabled");
 }
 
 BTTrackerDiscovery::~BTTrackerDiscovery() {}

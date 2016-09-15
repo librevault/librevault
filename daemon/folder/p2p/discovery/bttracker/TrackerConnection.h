@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "pch.h"
-#include "util/Loggable.h"
 #include "util/parse_url.h"
 #include "../btcompat.h"
 
@@ -40,7 +39,7 @@ class Client;
 class BTTrackerDiscovery;
 
 // BEP-0015 partial implementation (without scrape mechanism)
-class TrackerConnection : protected Loggable {
+class TrackerConnection {
 public:
 	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client);
 	virtual ~TrackerConnection();

@@ -38,7 +38,6 @@ TrackerConnection::TrackerConnection(url tracker_address,
                                      std::shared_ptr<FolderGroup> group_ptr,
                                      BTTrackerDiscovery& tracker_discovery,
                                      Client& client) :
-		Loggable(client),
 		client_(client),
 		tracker_discovery_(tracker_discovery),
 		tracker_address_(tracker_address),

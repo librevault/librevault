@@ -31,8 +31,7 @@
 
 namespace librevault {
 
-RemoteFolder::RemoteFolder(Client& client) :
-	AbstractFolder(client), client_(client) {}
+RemoteFolder::RemoteFolder() {}
 RemoteFolder::~RemoteFolder() {}
 
 /* InterestGuard */

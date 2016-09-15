@@ -34,8 +34,6 @@
 #include "fs/Index.h"
 #include "folder/p2p/P2PFolder.h"
 
-#include "../Client.h"
-
 #include "control/Config.h"
 
 #include <boost/range/adaptor/map.hpp>
@@ -159,11 +157,9 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 
 /* Downloader */
 Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
-		Loggable("Downloader"),
-		client_(client),
 		exchange_group_(exchange_group),
 		periodic_maintain_(client.network_ios(), [this](PeriodicProcess& process){maintain_requests(process);}) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	periodic_maintain_.invoke();
 }
 
@@ -172,7 +168,7 @@ Downloader::~Downloader() {
 }
 
 void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	std::set<blob> missing_ct_hashes;
 
@@ -207,7 +203,7 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 }
 
 void Downloader::notify_local_chunk(const blob& ct_hash) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	// Remove from missing
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
@@ -226,7 +222,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	try {
 		auto chunks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
@@ -240,7 +236,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 	}
 }
 void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
@@ -252,7 +248,7 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 }
 
 void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	/* Remove requests to this node */
 	for(auto& missing_chunk : missing_chunks_)
@@ -262,12 +258,12 @@ void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 }
 
 void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	periodic_maintain_.invoke_post();
 }
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
@@ -295,7 +291,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 }
 
 void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	for(auto& missing_chunk : missing_chunks_ | boost::adaptors::map_values) {
 		missing_chunk->requests.erase(remote);
@@ -307,7 +303,7 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 }
 
 void Downloader::maintain_requests(PeriodicProcess& process) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
 
@@ -332,7 +328,7 @@ void Downloader::maintain_requests(PeriodicProcess& process) {
 }
 
 bool Downloader::request_one() {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	// Try to choose chunk to request
 	for(auto missing_chunk : download_queue_.chunks()) {
 		auto& ct_hash = missing_chunk->ct_hash_;
@@ -362,7 +358,7 @@ bool Downloader::request_one() {
 }
 
 std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_hash) {
-	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	//LOGFUNC();
 
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return nullptr;

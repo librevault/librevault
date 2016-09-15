@@ -98,6 +98,30 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+	// Initializing log
+	spdlog::level::level_enum log_level;
+	switch(args["-v"].asLong()) {
+		case 2:     log_level = spdlog::level::trace; break;
+		case 1:     log_level = spdlog::level::debug; break;
+		default:    log_level = spdlog::level::info;
+	}
+
+	auto log = spdlog::get(Version::current().name());
+	if(!log){
+		std::vector<spdlog::sink_ptr> sinks;
+		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+
+		auto& log_path = Config::get()->paths().log_path;
+		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+			(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
+			log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
+
+		log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
+		spdlog::register_logger(log);
+
+		log->set_level(log_level);
+		log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
+	}
 
 	// Okay, that's a bit of fun, actually.
 	std::cout
@@ -106,8 +130,10 @@ int main(int argc, char** argv) {
 		<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
 		<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
 		<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
+	log->info() << Version::current().name() << " " << Version::current().version_string();
 
-	Client client(args);
+	// And, run!
+	Client client;
 	client.run();
 
 	return 0;

@@ -35,7 +35,7 @@ namespace librevault {
 
 class Client;
 class FSFolder;
-class IgnoreList : protected Loggable {
+class IgnoreList {
 public:
 	IgnoreList(FSFolder& dir);
 	virtual ~IgnoreList() {}
@@ -52,6 +52,8 @@ private:
 
 	mutable std::mutex ignored_paths_mtx_;
 	std::map<std::string, std::regex> ignored_paths_;
+
+	std::string log_tag() const;
 };
 
 } /* namespace librevault */

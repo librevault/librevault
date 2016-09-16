@@ -40,7 +40,8 @@ class Client;
 
 class WSService : public Loggable {
 public:
-	WSService(Client& client, P2PProvider& provider);
+	WSService(Client& client, P2PProvider& provider, NodeKey& node_key);
+	virtual ~WSService() {}
 
 	struct connection {
 		// Set immediately after creation
@@ -68,6 +69,8 @@ protected:
 
 	P2PProvider& provider_;
 	Client& client_;
+
+	NodeKey& node_key_;
 
 	std::map<websocketpp::connection_hdl, connection, std::owner_less<websocketpp::connection_hdl>> ws_assignment_;
 

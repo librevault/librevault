@@ -32,6 +32,9 @@
 #include "folder/fs/FSFolder.h"
 #include "folder/p2p/P2PProvider.h"
 
+#include <nat/PortMappingService.h>
+#include <discovery/DiscoveryService.h>
+
 #include <boost/range/adaptor/map.hpp>
 #include <util/Loggable.h>
 
@@ -44,8 +47,10 @@ Client::Client() {
 	etc_ios_ = std::make_unique<multi_io_service>("etc_ios");
 
 	// Initializing components
-	p2p_provider_ = std::make_unique<P2PProvider>(*this);
-	//cloud_provider_ = std::make_unique<CloudProvider>(*this);
+	node_key_ = std::make_unique<NodeKey>();
+	portmanager_ = std::make_unique<PortMappingService>();
+	discovery_ = std::make_unique<DiscoveryService>(*this, *node_key_, *portmanager_);
+	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_);
 
 	/* Control Server */
 	control_server_ = std::make_unique<ControlServer>(*this);

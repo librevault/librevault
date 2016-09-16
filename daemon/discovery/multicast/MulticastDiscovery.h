@@ -27,32 +27,58 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "folder/p2p/discovery/DiscoveryInstance.h"
-#include "../btcompat.h"
-
-#include <boost/asio/steady_timer.hpp>
+#include <discovery/DiscoverySubService.h>
 
 namespace librevault {
 
-class MLDHTDiscovery;
-
-class MLDHTSearcher : public DiscoveryInstance, public Loggable {
+class MulticastSender;
+class MulticastDiscovery : public DiscoverySubService, public std::enable_shared_from_this<MulticastDiscovery> {
+	friend class MulticastSender;
 public:
-	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service);
+	virtual ~MulticastDiscovery();
 
-	void set_enabled(bool enable);
-	void start_search(int af);
-	void search_completed(bool start_v4, bool start_v6);
+	void register_group(std::shared_ptr<FolderGroup> group_ptr);
+	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 
-private:
-	btcompat::info_hash info_hash_;
-	boost::signals2::scoped_connection attached_connection_;
+	virtual void reload_config() = 0;
 
-	bool enabled_ = false;
+protected:
+	NodeKey& node_key_;
 
+	using udp_buffer = std::array<char, 65536>;
 
-	boost::asio::steady_timer search_timer6_, search_timer4_;
+	/* Config parameters */
+	bool enabled_;
+	udp_endpoint group_;
+	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
+
+	/* Other members */
+	std::map<blob, std::shared_ptr<MulticastSender>> senders_;
+	udp_socket socket_;
+	address bind_addr_;
+
+	MulticastDiscovery(Client& client, NodeKey& node_key, address bind_addr);
+
+	void start();
+
+	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec);
+	void receive();
+};
+
+class MulticastDiscovery4 : public MulticastDiscovery {
+public:
+	MulticastDiscovery4(Client& client, NodeKey& node_key);
+	virtual ~MulticastDiscovery4(){}
+
+	void reload_config() override;
+};
+
+class MulticastDiscovery6 : public MulticastDiscovery {
+public:
+	MulticastDiscovery6(Client& client, NodeKey& node_key);
+	virtual ~MulticastDiscovery6(){}
+
+	void reload_config() override;
 };
 
 } /* namespace librevault */

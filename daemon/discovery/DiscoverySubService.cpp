@@ -26,32 +26,37 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StaticDiscovery.h"
-#include "Client.h"
-#include "folder/FolderGroup.h"
+#include "DiscoverySubService.h"
 #include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
+#include "folder/p2p/WSClient.h"
+#include "Client.h"
 
 namespace librevault {
 
-using namespace boost::asio::ip;
+DiscoverySubService::DiscoverySubService(Client& client, std::string id) : Loggable("DiscoverySubService"), client_(client), id_(id) {}
 
-StaticDiscovery::StaticDiscovery(Client& client) :
-	DiscoveryService(client, "Static") {
-	client.folder_added_signal.connect(std::bind(&StaticDiscovery::register_group, this, std::placeholders::_1));
-	client.folder_removed_signal.connect(std::bind(&StaticDiscovery::unregister_group, this, std::placeholders::_1));
+void DiscoverySubService::add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+	node_cred.source = id_;
+	client_.p2p_provider()->ws_client()->connect(node_cred, group_ptr);
 }
 
-StaticDiscovery::~StaticDiscovery() {}
-
-void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& node : group_ptr->fs_dir()->params().nodes){  // TODO: remove fs_dir
-		add_node(node, group_ptr);
-	}
+void DiscoverySubService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
+	WSClient::ConnectCredentials credentials;
+	credentials.url = node_url;
+	add_node(std::move(credentials), group_ptr);
 }
 
-void StaticDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	groups_.erase(group_ptr);
+void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
+	WSClient::ConnectCredentials credentials;
+	credentials.endpoint = node_endpoint;
+	add_node(std::move(credentials), group_ptr);
+}
+
+void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
+	WSClient::ConnectCredentials credentials;
+	credentials.endpoint = node_endpoint;
+	credentials.pubkey = pubkey;
+	add_node(std::move(credentials), group_ptr);
 }
 
 } /* namespace librevault */

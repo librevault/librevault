@@ -39,7 +39,10 @@ namespace librevault {
 /* Components */
 class ControlServer;
 class P2PProvider;
-class CloudProvider;
+
+class NodeKey;
+class PortMappingService;
+class DiscoveryService;
 
 /* Folder info */
 class FolderGroup;
@@ -47,6 +50,7 @@ class FolderParams;
 class Secret;
 
 class Client {
+	friend class ControlServer;
 public:
 	struct samekey_error : std::runtime_error {
 		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
@@ -79,6 +83,10 @@ public:
 
 	P2PProvider* p2p_provider();
 private:
+	std::unique_ptr<NodeKey> node_key_;
+	std::unique_ptr<PortMappingService> portmanager_;
+	std::unique_ptr<DiscoveryService> discovery_;
+
 	/* Components */
 	std::unique_ptr<ControlServer> control_server_;
 

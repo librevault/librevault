@@ -41,9 +41,10 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service) :
+MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping) :
 		DiscoveryInstance(group, service),
 		Loggable("MLDHTSearcher"),
+		port_mapping_(port_mapping),
 		search_timer6_(service.client().network_ios()),
 		search_timer4_(service.client().network_ios()) {
 	info_hash_ = btcompat::get_info_hash(std::shared_ptr<FolderGroup>(group)->hash());
@@ -81,7 +82,7 @@ void MLDHTSearcher::start_search(int af) {
 		bool ready4 = (af == AF_INET && ((MLDHTDiscovery&)service_).active_v4());
 
 		if(ready6 || ready4) {
-			uint16_t public_port = service_.client().p2p_provider()->portmanager()->get_port_mapping("main");
+			uint16_t public_port = port_mapping_.get_port_mapping("main");
 
 			log_->debug() << log_tag() << "Starting "
 				<< (ready6 ? "IPv6" : "IPv4") << " "

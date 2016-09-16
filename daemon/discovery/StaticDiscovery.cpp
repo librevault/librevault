@@ -26,20 +26,30 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <memory>
+#include "StaticDiscovery.h"
+#include "Client.h"
+#include "folder/FolderGroup.h"
+#include "folder/p2p/P2PProvider.h"
+#include "folder/fs/FSFolder.h"
 
 namespace librevault {
 
-class FolderGroup;
-class DiscoveryService;
+using namespace boost::asio::ip;
 
-class DiscoveryInstance {
-protected:
-	std::weak_ptr<FolderGroup> group_;
-	DiscoveryService& service_;
+StaticDiscovery::StaticDiscovery(Client& client) :
+	DiscoverySubService(client, "Static") {
+}
 
-	DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoveryService& service);
-};
+StaticDiscovery::~StaticDiscovery() {}
+
+void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
+	for(auto& node : group_ptr->fs_dir()->params().nodes){  // TODO: remove fs_dir
+		add_node(node, group_ptr);
+	}
+}
+
+void StaticDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
+	groups_.erase(group_ptr);
+}
 
 } /* namespace librevault */

@@ -36,11 +36,14 @@ class WSServer : public WSService {
 public:
 	using server = websocketpp::server<asio_tls>;
 
-	WSServer(Client& client, P2PProvider& provider);
+	WSServer(Client& client, P2PProvider& provider, PortMappingService& port_mapping, NodeKey& node_key);
+	virtual ~WSServer();
 
 	tcp_endpoint local_endpoint() const;
 
 protected:
+	PortMappingService& port_mapping_;
+
 	mutable server ws_server_;
 
 	/* Handlers */

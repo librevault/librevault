@@ -26,37 +26,42 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "DiscoveryService.h"
-#include "folder/p2p/P2PProvider.h"
+#pragma once
+#include <boost/signals2/signal.hpp>
+#include "util/parse_url.h"
+#include "util/Loggable.h"
 #include "folder/p2p/WSClient.h"
-#include "Client.h"
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(Client& client, std::string id) : Loggable("DiscoveryService"), client_(client), id_(id) {}
+class FolderGroup;
+class Client;
 
-void DiscoveryService::add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
-	node_cred.source = id_;
-	client_.p2p_provider()->ws_client()->connect(node_cred, group_ptr);
-}
+class StaticDiscovery;
+class MulticastDiscovery;
+class BTTrackerDiscovery;
+class MLDHTDiscovery;
 
-void DiscoveryService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
-	credentials.url = node_url;
-	add_node(std::move(credentials), group_ptr);
-}
+class DiscoveryService {
+	friend class ControlServer;
+public:
+	DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	virtual ~DiscoveryService();
 
-void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
-	credentials.endpoint = node_endpoint;
-	add_node(std::move(credentials), group_ptr);
-}
+	void register_group(std::shared_ptr<FolderGroup> group_ptr);
+	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 
-void DiscoveryService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
-	credentials.endpoint = node_endpoint;
-	credentials.pubkey = pubkey;
-	add_node(std::move(credentials), group_ptr);
-}
+	boost::signals2::signal<void(WSClient::ConnectCredentials)> discovered_node_signal;
+
+	Client& client() {return client_;}
+
+protected:
+	Client& client_;
+
+	std::unique_ptr<StaticDiscovery> static_discovery_;
+	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+	std::unique_ptr<BTTrackerDiscovery> bttracker_;
+	std::unique_ptr<MLDHTDiscovery> mldht_;
+};
 
 } /* namespace librevault */

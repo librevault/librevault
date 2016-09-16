@@ -27,51 +27,29 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "WSService.h"
-#include "util/parse_url.h"
+#include "pch.h"
+#include <discovery/DiscoveryInstance.h>
 
 namespace librevault {
 
-class FolderGroup;
+class MulticastDiscovery;
 
-class WSClient : public WSService {
+class MulticastSender : public DiscoveryInstance, public Loggable {
 public:
-	using client = websocketpp::client<asio_tls_client>;
+	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, NodeKey& node_key);
 
-	struct ConnectCredentials {
-		std::string source;
-
-		librevault::url url;
-		tcp_endpoint endpoint;
-		blob pubkey;
-	};
-
-	WSClient(Client& client, P2PProvider& provider, NodeKey& node_key);
-	virtual ~WSClient() {}
-
-	void connect(ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
-
-	/* Actions */
-	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
+	void consume(const tcp_endpoint& node_endpoint, const blob& pubkey);
 
 private:
-	client ws_client_;
+	NodeKey& node_key_;
 
-	/* Handlers */
-	void on_tcp_post_init(websocketpp::connection_hdl hdl) override { WSService::on_tcp_post_init(ws_client_, hdl); }
-	void on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
+	boost::asio::steady_timer repeat_timer_;
+	std::mutex repeat_timer_mtx_;
 
-	/* Util */
-	std::string dir_hash_to_query(const blob& dir_hash);
+	mutable std::string message_;
+	std::string get_message() const;
 
-	/* Actions */
-	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
-		WSService::close(ws_client_, hdl, reason);
-	}
-	std::string errmsg(websocketpp::connection_hdl hdl) override;
-
-	bool is_loopback(const ConnectCredentials& node_credentials);
-	bool already_have(const ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
 };
 
 } /* namespace librevault */

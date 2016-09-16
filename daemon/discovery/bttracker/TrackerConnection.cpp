@@ -26,46 +26,37 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "BTTrackerDiscovery.h"
+#include "UDPTrackerConnection.h"
 #include "Client.h"
 #include "folder/FolderGroup.h"
 #include "folder/p2p/P2PProvider.h"
 #include "folder/fs/FSFolder.h"
-#include "folder/p2p/discovery/bttracker/UDPTrackerConnection.h"
 
 namespace librevault {
 
-using namespace boost::asio::ip;
-
-BTTrackerDiscovery::BTTrackerDiscovery(Client& client) :
-	DiscoveryService(client, "BT") {
-	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
-		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
-			trackers_.push_back(tracker.asString());
-			LOGD("Added BitTorrent tracker: " << tracker.asString());
-		}
-		client.folder_added_signal.connect(std::bind(&BTTrackerDiscovery::register_group, this, std::placeholders::_1));
-		client.folder_removed_signal.connect(std::bind(&BTTrackerDiscovery::unregister_group, this, std::placeholders::_1));
-	}else
-		LOGI("BitTorrent tracker discovery is disabled");
+TrackerConnection::TrackerConnection(url tracker_address,
+                                     std::shared_ptr<FolderGroup> group_ptr,
+                                     BTTrackerDiscovery& tracker_discovery,
+                                     Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
+		client_(client),
+		tracker_discovery_(tracker_discovery),
+		node_key_(node_key),
+		port_mapping_(port_mapping),
+		tracker_address_(tracker_address),
+		group_ptr_(group_ptr) {
+	assert(tracker_address_.scheme == "udp");
+	if(tracker_address_.port == 0)
+		tracker_address_.port = 80;
 }
 
-BTTrackerDiscovery::~BTTrackerDiscovery() {}
+TrackerConnection::~TrackerConnection() {}
 
-void BTTrackerDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& tracker_url : trackers_) {
-		std::unique_ptr<TrackerConnection> tracker_connection;
-
-		if(tracker_url.scheme == "udp") {
-			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, client_);
-		}
-
-		groups_.emplace(group_ptr, std::move(tracker_connection));
-	}
+btcompat::info_hash TrackerConnection::get_info_hash() const {
+	return btcompat::get_info_hash(group_ptr_->hash());
 }
 
-void BTTrackerDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	groups_.erase(group_ptr);
+btcompat::peer_id TrackerConnection::get_peer_id() const {
+	return btcompat::get_peer_id(node_key_.public_key());
 }
 
 } /* namespace librevault */

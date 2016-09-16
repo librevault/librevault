@@ -36,10 +36,11 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, WSService::connection conn) :
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, WSService::connection conn) :
 	conn_(std::move(conn)),
 	provider_(provider),
-	ws_service_(ws_service) {
+	ws_service_(ws_service),
+	node_key_(node_key) {
 
 	std::ostringstream os; os << conn_.remote_endpoint;
 	name_ = os.str();
@@ -53,7 +54,7 @@ P2PFolder::~P2PFolder() {
 }
 
 blob P2PFolder::local_token() {
-	return derive_token(folder_group()->secret(), provider_.node_key().public_key());
+	return derive_token(folder_group()->secret(), node_key_.public_key());
 }
 
 blob P2PFolder::remote_token() {

@@ -42,8 +42,8 @@ namespace librevault {
 UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
                                            std::shared_ptr<FolderGroup> group_ptr,
                                            BTTrackerDiscovery& tracker_discovery,
-                                           Client& client) :
-	TrackerConnection(tracker_address, group_ptr, tracker_discovery, client),
+                                           Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
+	TrackerConnection(tracker_address, group_ptr, tracker_discovery, client, node_key, port_mapping),
 
 		socket_(client.network_ios()),
 		resolver_(client.network_ios()),
@@ -154,7 +154,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 	request.key_ = gen_transaction_id();
 	request.num_want_ = Config::get()->globals()["bttracker_num_want"].asUInt();
 
-	request.port_ = client_.p2p_provider()->portmanager()->get_port_mapping("main");
+	request.port_ = port_mapping_.get_port_mapping("main");
 
 	socket_.async_send_to(boost::asio::buffer((char*)&request, sizeof(request)), target_, std::bind([this](int32_t transaction_id){
 		LOGD("Announce sent. tID=" << transaction_id);

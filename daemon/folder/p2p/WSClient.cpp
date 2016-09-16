@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-WSClient::WSClient(Client& client, P2PProvider& provider) : WSService(client, provider) {
+WSClient::WSClient(Client& client, P2PProvider& provider, NodeKey& node_key) : WSService(client, provider, node_key) {
 	/* WebSockets client initialization */
 	// General parameters
 	ws_client_.init_asio(&client_.network_ios());

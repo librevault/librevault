@@ -29,6 +29,7 @@
 #pragma once
 #include "pch.h"
 #include "TrackerConnection.h"
+#include <nat/PortMappingService.h>
 
 #include <boost/asio/steady_timer.hpp>
 
@@ -41,7 +42,7 @@ class Client;
 // BEP-0015 partial implementation (without scrape mechanism)
 class UDPTrackerConnection : public TrackerConnection {
 public:
-	UDPTrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client);
+	UDPTrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~UDPTrackerConnection();
 private:
 	enum class Action : int32_t {

@@ -38,8 +38,9 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service) :
+MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, NodeKey& node_key) :
 	DiscoveryInstance(group, service), Loggable("MulticastSender"),
+	node_key_(node_key),
 	repeat_timer_(service.client().network_ios()) {
 
 	maintain_requests();
@@ -61,8 +62,7 @@ std::string MulticastSender::get_message() const {
 		protocol::MulticastDiscovery message;
 		message.set_port(service_.client().p2p_provider()->ws_server()->local_endpoint().port());   // Damn, this is painful
 		message.set_dir_hash(group_ptr->secret().get_Hash().data(), group_ptr->secret().get_Hash().size());
-		message.set_pubkey(service_.client().p2p_provider()->node_key().public_key().data(),
-			service_.client().p2p_provider()->node_key().public_key().size());
+		message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
 
 		message_ = message.SerializeAsString();
 	}

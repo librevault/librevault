@@ -33,7 +33,8 @@
 #include "folder/fs/Index.h"
 #include "folder/fs/Indexer.h"
 #include "folder/p2p/P2PFolder.h"
-#include "folder/p2p/discovery/mldht/MLDHTDiscovery.h"
+#include <discovery/DiscoveryService.h>
+#include <discovery/mldht/MLDHTDiscovery.h>
 
 namespace librevault {
 
@@ -183,7 +184,7 @@ Json::Value ControlServer::make_state_json() const {
 		state_json["folders"].append(folder_json);  /// /folder_json
 	}
 
-	state_json["dht_nodes_count"] = client_.p2p_provider()->mldht_->node_count();
+	state_json["dht_nodes_count"] = client_.discovery_->mldht_->node_count();
 
 	return state_json;                              // /state_json
 }

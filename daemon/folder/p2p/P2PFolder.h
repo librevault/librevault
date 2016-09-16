@@ -58,7 +58,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, WSService::connection conn);
+	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */
@@ -106,6 +106,7 @@ protected:
 private:
 	P2PProvider& provider_;
 	WSService& ws_service_;
+	NodeKey& node_key_;
 
 	V1Parser parser_;   // Protocol parser
 	bool is_handshaken_ = false;

@@ -39,7 +39,7 @@ namespace librevault {
 
 const char* WSService::subprotocol_ = "librevault";
 
-WSService::WSService(Client& client, P2PProvider& provider) : Loggable("WSService"), provider_(provider), client_(client) {}
+WSService::WSService(Client& client, P2PProvider& provider, NodeKey& node_key) : Loggable("WSService"), provider_(provider), client_(client), node_key_(node_key) {}
 
 std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	auto ssl_ctx_ptr = std::make_shared<ssl_context>(ssl_context::tlsv12);
@@ -121,7 +121,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	connection& conn = ws_assignment_[hdl];
-	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, conn);
+	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, node_key_, conn);
 	conn.folder = new_folder;
 
 	auto group_ptr = client_.get_group(conn.hash);

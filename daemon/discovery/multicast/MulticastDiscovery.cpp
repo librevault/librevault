@@ -39,11 +39,9 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MulticastDiscovery::MulticastDiscovery(Client& client, address bind_addr) :
-	DiscoveryService(client, "Multicast"), socket_(client.network_ios()), bind_addr_(bind_addr) {
+MulticastDiscovery::MulticastDiscovery(Client& client, NodeKey& node_key, address bind_addr) :
+	DiscoverySubService(client, "Multicast"), node_key_(node_key), socket_(client.network_ios()), bind_addr_(bind_addr) {
 	name_ = "MulticastDiscovery";
-	client.folder_added_signal.connect(std::bind(&MulticastDiscovery::register_group, this, std::placeholders::_1));
-	client.folder_removed_signal.connect(std::bind(&MulticastDiscovery::unregister_group, this, std::placeholders::_1));
 }
 
 MulticastDiscovery::~MulticastDiscovery() {
@@ -52,7 +50,7 @@ MulticastDiscovery::~MulticastDiscovery() {
 }
 
 void MulticastDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	senders_.insert({group_ptr->secret().get_Hash(), std::make_shared<MulticastSender>(group_ptr, *this)});
+	senders_.insert({group_ptr->secret().get_Hash(), std::make_shared<MulticastSender>(group_ptr, *this, node_key_)});
 }
 
 void MulticastDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
@@ -104,8 +102,8 @@ void MulticastDiscovery::receive() {
 	                           std::bind(&MulticastDiscovery::process, this, buffer, std::placeholders::_2, endpoint, std::placeholders::_1));
 }
 
-MulticastDiscovery4::MulticastDiscovery4(Client& client) :
-	MulticastDiscovery(client, address_v4::any()) {
+MulticastDiscovery4::MulticastDiscovery4(Client& client, NodeKey& node_key) :
+	MulticastDiscovery(client, node_key, address_v4::any()) {
 
 	reload_config();
 }
@@ -127,8 +125,8 @@ void MulticastDiscovery4::reload_config() {
 	}
 }
 
-MulticastDiscovery6::MulticastDiscovery6(Client& client) :
-	MulticastDiscovery(client, address_v6::any()) {
+MulticastDiscovery6::MulticastDiscovery6(Client& client, NodeKey& node_key) :
+	MulticastDiscovery(client, node_key, address_v6::any()) {
 
 	reload_config();
 }

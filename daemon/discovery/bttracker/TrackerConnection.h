@@ -30,6 +30,7 @@
 #include "pch.h"
 #include "util/parse_url.h"
 #include "../btcompat.h"
+#include <nat/PortMappingService.h>
 
 namespace librevault {
 
@@ -37,11 +38,12 @@ class FolderGroup;
 class P2PProvider;
 class Client;
 class BTTrackerDiscovery;
+class NodeKey;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class TrackerConnection {
 public:
-	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client);
+	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~TrackerConnection();
 protected:
 	enum class Event : int32_t {
@@ -50,6 +52,8 @@ protected:
 
 	Client& client_;
 	BTTrackerDiscovery& tracker_discovery_;
+	NodeKey& node_key_;
+	PortMappingService& port_mapping_;
 
 	url tracker_address_;
 	std::shared_ptr<FolderGroup> group_ptr_;

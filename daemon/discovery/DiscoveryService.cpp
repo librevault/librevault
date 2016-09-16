@@ -26,24 +26,42 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "pch.h"
 #include "DiscoveryService.h"
+
+#include "StaticDiscovery.h"
+#include "bttracker/BTTrackerDiscovery.h"
+#include "multicast/MulticastDiscovery.h"
+#include "mldht/MLDHTDiscovery.h"
 
 namespace librevault {
 
-class StaticDiscovery : public DiscoveryService {
-public:
-	StaticDiscovery(Client& client);
-	virtual ~StaticDiscovery();
+DiscoveryService::DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping) : client_(client) {
+	static_discovery_ = std::make_unique<StaticDiscovery>(client_);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, node_key);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(client_, node_key);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_, node_key, port_mapping);
+	mldht_ = std::make_unique<MLDHTDiscovery>(client_, port_mapping);
 
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
-protected:
-	std::set<std::shared_ptr<FolderGroup>> groups_;
-	//std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
+	client.folder_added_signal.connect(std::bind(&DiscoveryService::register_group, this, std::placeholders::_1));
+	client.folder_removed_signal.connect(std::bind(&DiscoveryService::unregister_group, this, std::placeholders::_1));
+}
 
-	std::string log_tag() const {return "[StaticDiscovery] ";}
-};
+DiscoveryService::~DiscoveryService() {}
+
+void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
+	static_discovery_->register_group(group_ptr);
+	bttracker_->register_group(group_ptr);
+	multicast4_->register_group(group_ptr);
+	multicast6_->register_group(group_ptr);
+	mldht_->register_group(group_ptr);
+}
+
+void DiscoveryService::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
+	mldht_->register_group(group_ptr);
+	multicast6_->register_group(group_ptr);
+	multicast4_->register_group(group_ptr);
+	bttracker_->register_group(group_ptr);
+	static_discovery_->register_group(group_ptr);
+}
 
 } /* namespace librevault */

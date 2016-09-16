@@ -43,17 +43,14 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(Client& client, P2PProvider& provider) :
-	DiscoveryService(client, "DHT"),
-	provider_(provider),
+MLDHTDiscovery::MLDHTDiscovery(Client& client, PortMappingService& port_mapping) :
+	DiscoverySubService(client, "DHT"),
+	port_mapping_(port_mapping),
 	socket4_(client_.network_ios()),
 	socket6_(client_.network_ios()),
 	resolver_(client_.network_ios()),
 	tosleep_timer_(client_.network_ios()) {
 	name_ = "MLDHTDiscovery";
-
-	client.folder_added_signal.connect(std::bind(&MLDHTDiscovery::register_group, this, std::placeholders::_1));
-	client.folder_removed_signal.connect(std::bind(&MLDHTDiscovery::unregister_group, this, std::placeholders::_1));
 
 	init();
 }
@@ -113,7 +110,7 @@ void MLDHTDiscovery::init() {
 	}
 
 	// Map port
-	provider_.portmanager()->add_port_mapping("mldht", {dht_port, SOCK_DGRAM}, "Librevault DHT");
+	port_mapping_.add_port_mapping("mldht", {dht_port, SOCK_DGRAM}, "Librevault DHT");
 
 	// Init routers
 	auto routers = Config::get()->globals()["mainline_dht_routers"];
@@ -175,7 +172,7 @@ void MLDHTDiscovery::deinit() {
 	if(dht_initialized)
 		dht_uninit();
 
-	provider_.portmanager()->remove_port_mapping("mldht");
+	port_mapping_.remove_port_mapping("mldht");
 }
 
 void MLDHTDiscovery::deinit_session_file() {
@@ -213,7 +210,7 @@ void MLDHTDiscovery::deinit_session_file() {
 
 void MLDHTDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	groups_.insert({btcompat::get_info_hash(group_ptr->hash()), group_ptr});
-	searchers_[btcompat::get_info_hash(group_ptr->hash())] = std::move(std::make_unique<MLDHTSearcher>(group_ptr, *this));
+	searchers_[btcompat::get_info_hash(group_ptr->hash())] = std::move(std::make_unique<MLDHTSearcher>(group_ptr, *this, port_mapping_));
 }
 
 void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {

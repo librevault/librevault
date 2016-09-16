@@ -28,26 +28,34 @@
  */
 #pragma once
 #include "pch.h"
-#include "folder/p2p/discovery/DiscoveryInstance.h"
+#include <discovery/DiscoveryInstance.h>
+#include "../btcompat.h"
+
+#include <boost/asio/steady_timer.hpp>
 
 namespace librevault {
 
-class MulticastDiscovery;
+class MLDHTDiscovery;
+class PortMappingService;
 
-class MulticastSender : public DiscoveryInstance, public Loggable {
+class MLDHTSearcher : public DiscoveryInstance, public Loggable {
 public:
-	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service);
+	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping);
 
-	void consume(const tcp_endpoint& node_endpoint, const blob& pubkey);
+	void set_enabled(bool enable);
+	void start_search(int af);
+	void search_completed(bool start_v4, bool start_v6);
 
 private:
-	boost::asio::steady_timer repeat_timer_;
-	std::mutex repeat_timer_mtx_;
+	PortMappingService& port_mapping_;
 
-	mutable std::string message_;
-	std::string get_message() const;
+	btcompat::info_hash info_hash_;
+	boost::signals2::scoped_connection attached_connection_;
 
-	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
+	bool enabled_ = false;
+
+
+	boost::asio::steady_timer search_timer6_, search_timer4_;
 };
 
 } /* namespace librevault */

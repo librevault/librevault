@@ -28,67 +28,28 @@
  */
 #pragma once
 #include "pch.h"
-#include "../DiscoveryService.h"
-#include "../btcompat.h"
-#include <boost/bimap.hpp>
+#include <discovery/DiscoverySubService.h>
+#include "util/parse_url.h"
 
 namespace librevault {
 
-class MLDHTSearcher;
+class TrackerConnection;
 
-class MLDHTDiscovery : public DiscoveryService {
+class BTTrackerDiscovery : public DiscoverySubService {
+protected:
+	LOG_SCOPE("BTTrackerDiscovery");
 public:
-	MLDHTDiscovery(Client& client, P2PProvider& provider);
-	virtual ~MLDHTDiscovery();
-
-	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
-
-	uint_least32_t node_count() const;
-
-	bool active_v4() const {return socket4_.is_open();}
-	bool active_v6() const {return socket6_.is_open();}
+	BTTrackerDiscovery(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	virtual ~BTTrackerDiscovery();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 protected:
-	P2PProvider& provider_;
+	NodeKey& node_key_;
+	PortMappingService& port_mapping_;
+	std::unordered_multimap<std::shared_ptr<FolderGroup>, std::unique_ptr<TrackerConnection>> groups_;
 
-	std::map<btcompat::info_hash, std::shared_ptr<FolderGroup>> groups_;
-	std::map<btcompat::info_hash, std::unique_ptr<MLDHTSearcher>> searchers_;
-	//std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
-
-	using dht_id = btcompat::info_hash;
-	dht_id own_id;
-
-	// Sockets
-	udp_socket socket4_;
-	udp_socket socket6_;
-	udp_resolver resolver_;
-
-	// Initialization
-	void init();
-	bool dht_initialized = false;
-
-	void deinit();
-	void deinit_session_file();
-
-	using udp_buffer = std::array<char, 65536>;
-	void process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec);
-	void receive(udp_socket& socket);
-
-	std::mutex dht_mutex;
-
-	time_t tosleep = 0;
-	boost::asio::steady_timer tosleep_timer_;
-	void maintain_periodic_requests();
+	std::list<url> trackers_;
 };
 
 } /* namespace librevault */
-
-extern "C" {
-
-static void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
-	((librevault::MLDHTDiscovery*)closure)->pass_callback(closure, event, info_hash, (const uint8_t*)data, data_len);
-}
-
-} /* extern "C" */

@@ -38,23 +38,15 @@ namespace librevault {
 class WSServer;
 class WSClient;
 
-/* Discovery services */
-class StaticDiscovery;
-class MulticastDiscovery;
-class BTTrackerDiscovery;
-class MLDHTDiscovery;
-
 /* Port mapping services */
 class PortMappingService;
+class DiscoveryService;
 
 class P2PProvider : protected Loggable {
 	friend class ControlServer;
 public:
-	P2PProvider(Client& client);
+	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~P2PProvider();
-
-	/* Port mapping services */
-	PortMappingService* portmanager() {return portmanager_.get();}
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
@@ -62,8 +54,6 @@ public:
 	bool is_loopback(const blob& pubkey);
 
 	/* Getters */
-	const NodeKey& node_key() const {return node_key_;}
-
 	WSServer* ws_server() {return ws_server_.get();}
 	WSClient* ws_client() {return ws_client_.get();}
 
@@ -71,20 +61,11 @@ protected:
 
 private:
 	Client& client_;
-	NodeKey node_key_;
+	NodeKey& node_key_;
 
 	/* WebSocket sockets */
 	std::unique_ptr<WSServer> ws_server_;
 	std::unique_ptr<WSClient> ws_client_;
-
-	/* Port mapping services */
-	std::unique_ptr<PortMappingService> portmanager_;
-
-	/* Discovery services */
-	std::unique_ptr<StaticDiscovery> static_discovery_;
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
-	std::unique_ptr<BTTrackerDiscovery> bttracker_;
-	std::unique_ptr<MLDHTDiscovery> mldht_;
 
 	/* Loopback detection */
 	std::set<tcp_endpoint> loopback_blacklist_;

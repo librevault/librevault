@@ -27,56 +27,33 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "folder/p2p/discovery/DiscoveryService.h"
+#include "util/parse_url.h"
+#include "util/Loggable.h"
+#include "folder/p2p/WSClient.h"
 
 namespace librevault {
 
-class MulticastSender;
-class MulticastDiscovery : public DiscoveryService, public std::enable_shared_from_this<MulticastDiscovery> {
-	friend class MulticastSender;
+class FolderGroup;
+class Client;
+
+class DiscoverySubService : public Loggable {
 public:
-	virtual ~MulticastDiscovery();
+	DiscoverySubService(Client& client, std::string id);
+	virtual ~DiscoverySubService(){}
 
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
+	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
+	virtual void unregister_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 
-	virtual void reload_config() = 0;
+	void add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
+	void add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr);
+	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
+	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
+
+	Client& client() {return client_;}
 
 protected:
-	using udp_buffer = std::array<char, 65536>;
-
-	/* Config parameters */
-	bool enabled_;
-	udp_endpoint group_;
-	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
-
-	/* Other members */
-	std::map<blob, std::shared_ptr<MulticastSender>> senders_;
-	udp_socket socket_;
-	address bind_addr_;
-
-	MulticastDiscovery(Client& client, address bind_addr);
-
-	void start();
-
-	void process(std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec);
-	void receive();
-};
-
-class MulticastDiscovery4 : public MulticastDiscovery {
-public:
-	MulticastDiscovery4(Client& client);
-	virtual ~MulticastDiscovery4(){}
-
-	void reload_config() override;
-};
-
-class MulticastDiscovery6 : public MulticastDiscovery {
-public:
-	MulticastDiscovery6(Client& client);
-	virtual ~MulticastDiscovery6(){}
-
-	void reload_config() override;
+	Client& client_;
+	std::string id_;
 };
 
 } /* namespace librevault */

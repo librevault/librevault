@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, provider) {
+WSServer::WSServer(Client& client, P2PProvider& provider, PortMappingService& port_mapping, NodeKey& node_key) : WSService(client, provider, node_key), port_mapping_(port_mapping) {
 	// Acceptor initialization
 	url bind_url = url(Config::get()->globals()["p2p_listen"].asString());
 	auto endpoint = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
@@ -65,7 +65,11 @@ WSServer::WSServer(Client& client, P2PProvider& provider) : WSService(client, pr
 	log_->info() << log_tag() << "Listening on " << local_endpoint();
 
 	// Port mapping
-	provider.portmanager()->add_port_mapping("main", {local_endpoint().port(), SOCK_STREAM}, "Librevault");
+	port_mapping_.add_port_mapping("main", {local_endpoint().port(), SOCK_STREAM}, "Librevault");
+}
+
+WSServer::~WSServer() {
+	port_mapping_.remove_port_mapping("main");
 }
 
 tcp_endpoint WSServer::local_endpoint() const {

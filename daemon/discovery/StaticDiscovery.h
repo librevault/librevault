@@ -26,35 +26,24 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "UDPTrackerConnection.h"
-#include "Client.h"
-#include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
+#pragma once
+#include "pch.h"
+#include "DiscoverySubService.h"
 
 namespace librevault {
 
-TrackerConnection::TrackerConnection(url tracker_address,
-                                     std::shared_ptr<FolderGroup> group_ptr,
-                                     BTTrackerDiscovery& tracker_discovery,
-                                     Client& client) :
-		client_(client),
-		tracker_discovery_(tracker_discovery),
-		tracker_address_(tracker_address),
-		group_ptr_(group_ptr) {
-	assert(tracker_address_.scheme == "udp");
-	if(tracker_address_.port == 0)
-		tracker_address_.port = 80;
-}
+class StaticDiscovery : public DiscoverySubService {
+public:
+	StaticDiscovery(Client& client);
+	virtual ~StaticDiscovery();
 
-TrackerConnection::~TrackerConnection() {}
+	void register_group(std::shared_ptr<FolderGroup> group_ptr);
+	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
+protected:
+	std::set<std::shared_ptr<FolderGroup>> groups_;
+	//std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 
-btcompat::info_hash TrackerConnection::get_info_hash() const {
-	return btcompat::get_info_hash(group_ptr_->hash());
-}
-
-btcompat::peer_id TrackerConnection::get_peer_id() const {
-	return btcompat::get_peer_id(client_.p2p_provider()->node_key().public_key());
-}
+	std::string log_tag() const {return "[StaticDiscovery] ";}
+};
 
 } /* namespace librevault */

@@ -31,29 +31,21 @@
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
-#include "folder/p2p/discovery/StaticDiscovery.h"
-#include "folder/p2p/discovery/multicast/MulticastDiscovery.h"
-#include "folder/p2p/discovery/bttracker/BTTrackerDiscovery.h"
-#include "folder/p2p/discovery/mldht/MLDHTDiscovery.h"
+#include <discovery/StaticDiscovery.h>
+#include <discovery/multicast/MulticastDiscovery.h>
+#include <discovery/bttracker/BTTrackerDiscovery.h>
+#include <discovery/mldht/MLDHTDiscovery.h>
 
 #include "WSServer.h"
 #include "WSClient.h"
 
 namespace librevault {
 
-P2PProvider::P2PProvider(Client& client) :
+P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
 		Loggable("P2PProvider"),
-		client_(client),
-		node_key_() {
-	portmanager_ = std::make_unique<PortMappingService>();
-	ws_server_ = std::make_unique<WSServer>(client, *this);
-	ws_client_ = std::make_unique<WSClient>(client, *this);
-
-	static_discovery_ = std::make_unique<StaticDiscovery>(client_);
-	multicast4_ = std::make_unique<MulticastDiscovery4>(client_);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(client_);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_);
-	mldht_ = std::make_unique<MLDHTDiscovery>(client_, *this);
+		client_(client), node_key_(node_key) {
+	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key);
+	ws_client_ = std::make_unique<WSClient>(client, *this, node_key);
 }
 
 P2PProvider::~P2PProvider() {}
@@ -70,7 +62,7 @@ bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
 }
 
 bool P2PProvider::is_loopback(const blob& pubkey) {
-	return node_key().public_key() == pubkey;
+	return node_key_.public_key() == pubkey;
 }
 
 } /* namespace librevault */

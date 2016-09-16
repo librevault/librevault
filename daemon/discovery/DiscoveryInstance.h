@@ -27,27 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "folder/p2p/discovery/DiscoveryService.h"
-#include "util/parse_url.h"
+#include <memory>
 
 namespace librevault {
 
-class TrackerConnection;
+class FolderGroup;
+class DiscoverySubService;
 
-class BTTrackerDiscovery : public DiscoveryService {
+class DiscoveryInstance {
 protected:
-	LOG_SCOPE("BTTrackerDiscovery");
-public:
-	BTTrackerDiscovery(Client& client);
-	virtual ~BTTrackerDiscovery();
+	std::weak_ptr<FolderGroup> group_;
+	DiscoverySubService& service_;
 
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
-protected:
-	std::unordered_multimap<std::shared_ptr<FolderGroup>, std::unique_ptr<TrackerConnection>> groups_;
-
-	std::list<url> trackers_;
+	DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoverySubService& service);
 };
 
 } /* namespace librevault */

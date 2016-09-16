@@ -27,9 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/parse_url.h"
-#include "util/Loggable.h"
-#include "folder/p2p/WSClient.h"
+#include <util/parse_url.h>
+#include <util/log_scope.h>
 #include "DiscoveryService.h"
 
 namespace librevault {
@@ -37,7 +36,8 @@ namespace librevault {
 class FolderGroup;
 class Client;
 
-class DiscoverySubService : public Loggable {
+class DiscoverySubService {
+	LOG_SCOPE("DiscoverySubService");
 public:
 	DiscoverySubService(DiscoveryService& parent, Client& client, std::string id);
 	virtual ~DiscoverySubService(){}

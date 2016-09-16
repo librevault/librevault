@@ -33,6 +33,8 @@
 #include "multicast/MulticastDiscovery.h"
 #include "mldht/MLDHTDiscovery.h"
 
+#include <Client.h>
+
 namespace librevault {
 
 DiscoveryService::DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping) : client_(client) {

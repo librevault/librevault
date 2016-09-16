@@ -43,6 +43,12 @@ spdlog::get(Version::current().name())->info() << log_tag() << ARGS;
 #define LOGW(ARGS) \
 spdlog::get(Version::current().name())->warn() << log_tag() << ARGS;
 
+#define LOGE(ARGS) \
+spdlog::get(Version::current().name())->error() << log_tag() << ARGS;
+
+#define LOGF(ARGS) \
+spdlog::get(Version::current().name())->fatal() << log_tag() << ARGS;
+
 #define LOGFUNC() \
 LOGT(BOOST_CURRENT_FUNCTION);
 

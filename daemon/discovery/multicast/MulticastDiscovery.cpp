@@ -30,19 +30,17 @@
 #include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/p2p/WSServer.h"
 #include "MulticastDiscovery.pb.h"
 #include "MulticastSender.h"
+#include <boost/asio/ip/multicast.hpp>
+#include <boost/asio/ip/v6_only.hpp>
 
 namespace librevault {
 
 using namespace boost::asio::ip;
 
 MulticastDiscovery::MulticastDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, address bind_addr) :
-	DiscoverySubService(parent, client, "Multicast"), node_key_(node_key), socket_(client.network_ios()), bind_addr_(bind_addr) {
-	name_ = "MulticastDiscovery";
-}
+	DiscoverySubService(parent, client, "Multicast"), node_key_(node_key), socket_(client.network_ios()), bind_addr_(bind_addr) {}
 
 MulticastDiscovery::~MulticastDiscovery() {
 	if(socket_.is_open())
@@ -67,9 +65,9 @@ void MulticastDiscovery::start() {
 	receive();
 
 	if(enabled_) {
-		log_->info() << log_tag() << "Started Local Peer Discovery on: " << group_;
+		LOGI("Started Local Peer Discovery on: " << group_);
 	}else{
-		log_->info() << log_tag() << "Local Peer Discovery is disabled";
+		LOGI("Local Peer Discovery is disabled");
 	}
 }
 
@@ -83,13 +81,13 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 		blob pubkey = blob(message.pubkey().begin(), message.pubkey().end());
 
 		tcp_endpoint node_endpoint(endpoint_ptr->address(), port);
-		log_->debug() << log_tag() << "<== " << node_endpoint;
+		LOGD("<== " << node_endpoint);
 
 		std::shared_ptr<MulticastSender> sender;
 		auto it = senders_.find(dir_hash);
 		if(it != senders_.end()) it->second->consume(node_endpoint, pubkey);
 	}else{
-		log_->debug() << log_tag() << "Message from " << endpoint_ptr->address() << ": Malformed Protobuf data";
+		LOGD("Message from " << endpoint_ptr->address() << ": Malformed Protobuf data");
 	}
 
 	receive();    // We received message, continue receiving others
@@ -120,7 +118,7 @@ void MulticastDiscovery4::reload_config() {
 			socket_.open(boost::asio::ip::udp::v4());
 			start();
 		}catch(std::exception& e){
-			log_->warn() << log_tag() << "Could not initialize IPv4 local discovery";
+			LOGE("Could not initialize IPv4 local discovery");
 		}
 	}
 }
@@ -144,7 +142,7 @@ void MulticastDiscovery6::reload_config() {
 			socket_.set_option(boost::asio::ip::v6_only(true));
 			start();
 		}catch(std::exception& e){
-			log_->warn() << log_tag() << "Could not initialize IPv6 local discovery";
+			LOGE("Could not initialize IPv6 local discovery");
 		}
 	}
 }

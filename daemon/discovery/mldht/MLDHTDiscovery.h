@@ -31,12 +31,14 @@
 #include "discovery/DiscoverySubService.h"
 #include "../btcompat.h"
 #include <boost/bimap.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 namespace librevault {
 
 class MLDHTSearcher;
 
 class MLDHTDiscovery : public DiscoverySubService {
+	LOG_SCOPE("MLDHTDiscovery");
 public:
 	MLDHTDiscovery(DiscoveryService& parent, Client& client, PortMappingService& port_mapping);
 	virtual ~MLDHTDiscovery();

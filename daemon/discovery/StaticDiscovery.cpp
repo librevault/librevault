@@ -27,10 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "StaticDiscovery.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
 
 namespace librevault {
 
@@ -43,9 +40,8 @@ StaticDiscovery::StaticDiscovery(DiscoveryService& parent, Client& client) :
 StaticDiscovery::~StaticDiscovery() {}
 
 void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& node : group_ptr->fs_dir()->params().nodes){  // TODO: remove fs_dir
+	for(auto& node : group_ptr->params().nodes)
 		add_node(node, group_ptr);
-	}
 }
 
 void StaticDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {

@@ -27,14 +27,16 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include <discovery/DiscoveryInstance.h>
+#include <boost/asio/steady_timer.hpp>
+#include <mutex>
 
 namespace librevault {
 
 class MulticastDiscovery;
 
-class MulticastSender : public DiscoveryInstance, public Loggable {
+class MulticastSender : public DiscoveryInstance {
+	LOG_SCOPE("MulticastSender");
 public:
 	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, NodeKey& node_key);
 

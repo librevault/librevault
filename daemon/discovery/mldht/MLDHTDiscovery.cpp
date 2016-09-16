@@ -38,6 +38,7 @@
 
 #include <dht.h>
 #include <cryptopp/osrng.h>
+#include <boost/asio/ip/v6_only.hpp>
 
 namespace librevault {
 
@@ -50,7 +51,6 @@ MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, Client& client, PortMap
 	socket6_(client_.network_ios()),
 	resolver_(client_.network_ios()),
 	tosleep_timer_(client_.network_ios()) {
-	name_ = "MLDHTDiscovery";
 
 	init();
 }
@@ -86,7 +86,7 @@ void MLDHTDiscovery::init() {
 			socket4_.bind(udp_endpoint(address_v4::any(), dht_port));
 			v4_ready = true;
 		}catch(std::exception& e) {
-			log_->warn() << log_tag() << "DHT IPv4 error: " << e.what();
+			LOGE("DHT IPv4 error: " << e.what());
 		}
 
 		try {
@@ -95,7 +95,7 @@ void MLDHTDiscovery::init() {
 			socket6_.bind(udp_endpoint(address_v6::any(), dht_port));
 			v6_ready = true;
 		}catch(std::exception& e) {
-			log_->warn() << log_tag() << "DHT IPv6 error: " << e.what();
+			LOGE("DHT IPv6 error: " << e.what());
 		}
 
 		if(!v4_ready && !v6_ready) throw std::runtime_error("Both sockets are failed");
@@ -105,7 +105,7 @@ void MLDHTDiscovery::init() {
 
 		dht_initialized = true;
 	}catch(std::exception& e){
-		log_->warn() << log_tag() << "Could not initialize DHT: " << e.what();
+		LOGE("Could not initialize DHT: " << e.what());
 		return;
 	}
 
@@ -122,14 +122,14 @@ void MLDHTDiscovery::init() {
 				for(; it != udp_resolver::iterator(); it++) {
 					auto endpoint = it->endpoint();
 					dht_ping_node(endpoint.data(), endpoint.size());
-					log_->debug() << log_tag() << "Added a DHT router: " << it->host_name() << " Resolved: " << endpoint;
+					LOGD("Added a DHT router: " << it->host_name() << " Resolved: " << endpoint);
 				}
 			}, std::placeholders::_1, std::placeholders::_2, query));
 		}
 	}
 
 	// Init nodes from file
-	log_->notice() << "Loading " << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << " nodes from session file";
+	LOGI("Loading " << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << " nodes from session file");
 	if(active_v6()) {
 		for(auto& compact_node6 : session_pb.compact_endpoints6()) {
 			if(compact_node6.size() != sizeof(btcompat::compact_endpoint6)) continue;
@@ -187,7 +187,7 @@ void MLDHTDiscovery::deinit_session_file() {
 
 	dht_get_nodes(sa4, &sa4_count, sa6, &sa6_count);
 
-	log_->notice() << log_tag() << "Saving " << sa4_count + sa6_count << " nodes to session file";
+	LOGI("Saving " << sa4_count + sa6_count << " nodes to session file");
 
 	for(auto i=0; i < sa6_count; i++) {
 		btcompat::compact_endpoint6 endpoint6;
@@ -237,7 +237,7 @@ uint_least32_t MLDHTDiscovery::node_count() const {
 }
 
 void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " event: " << event;
+	LOGT(BOOST_CURRENT_FUNCTION << " event: " << event);
 
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
@@ -262,7 +262,7 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	log_->trace() << log_tag() << "DHT message received";
+	LOGT("DHT message received");
 
 	std::unique_lock<std::mutex> lk(dht_mutex);
 	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, this);
@@ -283,7 +283,7 @@ void MLDHTDiscovery::receive(udp_socket& socket) {
 void MLDHTDiscovery::maintain_periodic_requests() {
 	tosleep_timer_.expires_from_now(std::chrono::seconds(tosleep));
 	tosleep_timer_.async_wait([this](const boost::system::error_code& error){
-		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+		LOGFUNC();
 		if(error == boost::asio::error::operation_aborted) return;
 
 		std::unique_lock<std::mutex> lk(dht_mutex);

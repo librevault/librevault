@@ -28,12 +28,14 @@
  */
 #pragma once
 #include <discovery/DiscoverySubService.h>
+#include <chrono>
 
 namespace librevault {
 
 class MulticastSender;
 class MulticastDiscovery : public DiscoverySubService, public std::enable_shared_from_this<MulticastDiscovery> {
 	friend class MulticastSender;
+	LOG_SCOPE("MulticastDiscovery");
 public:
 	virtual ~MulticastDiscovery();
 
@@ -66,6 +68,7 @@ protected:
 };
 
 class MulticastDiscovery4 : public MulticastDiscovery {
+	LOG_SCOPE("MulticastDiscovery4");
 public:
 	MulticastDiscovery4(DiscoveryService& parent, Client& client, NodeKey& node_key);
 	virtual ~MulticastDiscovery4(){}
@@ -74,6 +77,7 @@ public:
 };
 
 class MulticastDiscovery6 : public MulticastDiscovery {
+	LOG_SCOPE("MulticastDiscovery6");
 public:
 	MulticastDiscovery6(DiscoveryService& parent, Client& client, NodeKey& node_key);
 	virtual ~MulticastDiscovery6(){}

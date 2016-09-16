@@ -43,8 +43,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(Client& client, PortMappingService& port_mapping) :
-	DiscoverySubService(client, "DHT"),
+MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, Client& client, PortMappingService& port_mapping) :
+	DiscoverySubService(parent, client, "DHT"),
 	port_mapping_(port_mapping),
 	socket4_(client_.network_ios()),
 	socket6_(client_.network_ios()),

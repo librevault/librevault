@@ -36,8 +36,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-StaticDiscovery::StaticDiscovery(Client& client) :
-	DiscoverySubService(client, "Static") {
+StaticDiscovery::StaticDiscovery(DiscoveryService& parent, Client& client) :
+	DiscoverySubService(parent, client, "Static") {
 }
 
 StaticDiscovery::~StaticDiscovery() {}

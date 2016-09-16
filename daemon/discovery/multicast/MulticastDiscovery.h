@@ -57,7 +57,7 @@ protected:
 	udp_socket socket_;
 	address bind_addr_;
 
-	MulticastDiscovery(Client& client, NodeKey& node_key, address bind_addr);
+	MulticastDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, address bind_addr);
 
 	void start();
 
@@ -67,7 +67,7 @@ protected:
 
 class MulticastDiscovery4 : public MulticastDiscovery {
 public:
-	MulticastDiscovery4(Client& client, NodeKey& node_key);
+	MulticastDiscovery4(DiscoveryService& parent, Client& client, NodeKey& node_key);
 	virtual ~MulticastDiscovery4(){}
 
 	void reload_config() override;
@@ -75,7 +75,7 @@ public:
 
 class MulticastDiscovery6 : public MulticastDiscovery {
 public:
-	MulticastDiscovery6(Client& client, NodeKey& node_key);
+	MulticastDiscovery6(DiscoveryService& parent, Client& client, NodeKey& node_key);
 	virtual ~MulticastDiscovery6(){}
 
 	void reload_config() override;

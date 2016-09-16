@@ -30,6 +30,7 @@
 #include "util/parse_url.h"
 #include "util/Loggable.h"
 #include "folder/p2p/WSClient.h"
+#include "DiscoveryService.h"
 
 namespace librevault {
 
@@ -38,13 +39,13 @@ class Client;
 
 class DiscoverySubService : public Loggable {
 public:
-	DiscoverySubService(Client& client, std::string id);
+	DiscoverySubService(DiscoveryService& parent, Client& client, std::string id);
 	virtual ~DiscoverySubService(){}
 
 	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 	virtual void unregister_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 
-	void add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
+	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
@@ -52,6 +53,7 @@ public:
 	Client& client() {return client_;}
 
 protected:
+	DiscoveryService& parent_;
 	Client& client_;
 	std::string id_;
 };

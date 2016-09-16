@@ -28,7 +28,8 @@
  */
 #pragma once
 #include "WSService.h"
-#include "util/parse_url.h"
+#include <discovery/DiscoveryService.h>
+#include <util/parse_url.h>
 
 namespace librevault {
 
@@ -38,18 +39,10 @@ class WSClient : public WSService {
 public:
 	using client = websocketpp::client<asio_tls_client>;
 
-	struct ConnectCredentials {
-		std::string source;
-
-		librevault::url url;
-		tcp_endpoint endpoint;
-		blob pubkey;
-	};
-
 	WSClient(Client& client, P2PProvider& provider, NodeKey& node_key);
 	virtual ~WSClient() {}
 
-	void connect(ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	void connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
 
 	/* Actions */
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
@@ -70,8 +63,8 @@ private:
 	}
 	std::string errmsg(websocketpp::connection_hdl hdl) override;
 
-	bool is_loopback(const ConnectCredentials& node_credentials);
-	bool already_have(const ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	bool is_loopback(const DiscoveryService::ConnectCredentials& node_credentials);
+	bool already_have(const DiscoveryService::ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr);
 };
 
 } /* namespace librevault */

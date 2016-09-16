@@ -37,8 +37,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-BTTrackerDiscovery::BTTrackerDiscovery(Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
-	DiscoverySubService(client, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
+BTTrackerDiscovery::BTTrackerDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
+	DiscoverySubService(parent, client, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
 	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
 		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
 			trackers_.push_back(tracker.asString());

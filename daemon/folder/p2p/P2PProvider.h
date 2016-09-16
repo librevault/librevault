@@ -32,6 +32,7 @@
 #include "util/network.h"
 #include "util/Loggable.h"
 #include <set>
+#include <discovery/DiscoveryService.h>
 
 namespace librevault {
 
@@ -40,13 +41,14 @@ class WSClient;
 
 /* Port mapping services */
 class PortMappingService;
-class DiscoveryService;
 
 class P2PProvider : protected Loggable {
 	friend class ControlServer;
 public:
 	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~P2PProvider();
+
+	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);

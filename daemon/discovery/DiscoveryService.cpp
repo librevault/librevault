@@ -36,11 +36,11 @@
 namespace librevault {
 
 DiscoveryService::DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping) : client_(client) {
-	static_discovery_ = std::make_unique<StaticDiscovery>(client_);
-	multicast4_ = std::make_unique<MulticastDiscovery4>(client_, node_key);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(client_, node_key);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(client_, node_key, port_mapping);
-	mldht_ = std::make_unique<MLDHTDiscovery>(client_, port_mapping);
+	static_discovery_ = std::make_unique<StaticDiscovery>(*this, client_);
+	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, client_, node_key);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(*this, client_, node_key);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, client_, node_key, port_mapping);
+	mldht_ = std::make_unique<MLDHTDiscovery>(*this, client_, port_mapping);
 
 	client.folder_added_signal.connect(std::bind(&DiscoveryService::register_group, this, std::placeholders::_1));
 	client.folder_removed_signal.connect(std::bind(&DiscoveryService::unregister_group, this, std::placeholders::_1));

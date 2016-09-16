@@ -60,6 +60,9 @@ Client::Client() {
 	for(auto& folder_config : Config::get()->folders()) {
 		init_folder(folder_config);
 	}
+
+	/* Connecting signals */
+	discovery_->discovered_node_signal.connect(std::bind(&P2PProvider::add_node, p2p_provider_.get(), std::placeholders::_1, std::placeholders::_2));
 }
 
 Client::~Client() {

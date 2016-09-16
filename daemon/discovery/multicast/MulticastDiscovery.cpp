@@ -39,8 +39,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MulticastDiscovery::MulticastDiscovery(Client& client, NodeKey& node_key, address bind_addr) :
-	DiscoverySubService(client, "Multicast"), node_key_(node_key), socket_(client.network_ios()), bind_addr_(bind_addr) {
+MulticastDiscovery::MulticastDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, address bind_addr) :
+	DiscoverySubService(parent, client, "Multicast"), node_key_(node_key), socket_(client.network_ios()), bind_addr_(bind_addr) {
 	name_ = "MulticastDiscovery";
 }
 
@@ -102,8 +102,8 @@ void MulticastDiscovery::receive() {
 	                           std::bind(&MulticastDiscovery::process, this, buffer, std::placeholders::_2, endpoint, std::placeholders::_1));
 }
 
-MulticastDiscovery4::MulticastDiscovery4(Client& client, NodeKey& node_key) :
-	MulticastDiscovery(client, node_key, address_v4::any()) {
+MulticastDiscovery4::MulticastDiscovery4(DiscoveryService& parent, Client& client, NodeKey& node_key) :
+	MulticastDiscovery(parent, client, node_key, address_v4::any()) {
 
 	reload_config();
 }
@@ -125,8 +125,8 @@ void MulticastDiscovery4::reload_config() {
 	}
 }
 
-MulticastDiscovery6::MulticastDiscovery6(Client& client, NodeKey& node_key) :
-	MulticastDiscovery(client, node_key, address_v6::any()) {
+MulticastDiscovery6::MulticastDiscovery6(DiscoveryService& parent, Client& client, NodeKey& node_key) :
+	MulticastDiscovery(parent, client, node_key, address_v6::any()) {
 
 	reload_config();
 }

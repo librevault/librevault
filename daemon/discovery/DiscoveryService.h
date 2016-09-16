@@ -28,9 +28,9 @@
  */
 #pragma once
 #include <boost/signals2/signal.hpp>
-#include "util/parse_url.h"
-#include "util/Loggable.h"
-#include "folder/p2p/WSClient.h"
+#include <util/parse_url.h>
+#include <util/network.h>
+#include <util/blob.h>
 
 namespace librevault {
 
@@ -42,16 +42,27 @@ class MulticastDiscovery;
 class BTTrackerDiscovery;
 class MLDHTDiscovery;
 
+class NodeKey;
+class PortMappingService;
+
 class DiscoveryService {
 	friend class ControlServer;
 public:
+	struct ConnectCredentials {
+		std::string source;
+
+		librevault::url url;
+		tcp_endpoint endpoint;
+		blob pubkey;
+	};
+
 	DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~DiscoveryService();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 
-	boost::signals2::signal<void(WSClient::ConnectCredentials)> discovered_node_signal;
+	boost::signals2::signal<void(ConnectCredentials, std::shared_ptr<FolderGroup>)> discovered_node_signal;
 
 	Client& client() {return client_;}
 

@@ -51,7 +51,7 @@ WSClient::WSClient(Client& client, P2PProvider& provider, NodeKey& node_key) : W
 	ws_client_.set_close_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
 }
 
-void WSClient::connect(ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
 	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 
 	if(node_credentials.url.empty()) {
@@ -96,7 +96,7 @@ void WSClient::connect(ConnectCredentials node_credentials, std::shared_ptr<Fold
 	ws_client_.connect(connection_ptr);
 }
 
-bool WSClient::is_loopback(const ConnectCredentials& node_credentials) {
+bool WSClient::is_loopback(const DiscoveryService::ConnectCredentials& node_credentials) {
 	if(!node_credentials.pubkey.empty() && provider_.is_loopback(node_credentials.pubkey))  // Public key based loopback (no false negatives!)
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && provider_.is_loopback(node_credentials.endpoint))    // Endpoint-based loopback (may be false negative)
@@ -104,7 +104,7 @@ bool WSClient::is_loopback(const ConnectCredentials& node_credentials) {
 	return false;
 }
 
-bool WSClient::already_have(const ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+bool WSClient::already_have(const DiscoveryService::ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
 	if(!node_credentials.pubkey.empty() && group_ptr->have_p2p_dir(node_credentials.pubkey))
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && group_ptr->have_p2p_dir(node_credentials.endpoint))

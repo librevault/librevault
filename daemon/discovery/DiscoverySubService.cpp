@@ -33,27 +33,27 @@
 
 namespace librevault {
 
-DiscoverySubService::DiscoverySubService(Client& client, std::string id) : Loggable("DiscoverySubService"), client_(client), id_(id) {}
+DiscoverySubService::DiscoverySubService(DiscoveryService& parent, Client& client, std::string id) : Loggable("DiscoverySubService"), parent_(parent), client_(client), id_(id) {}
 
-void DiscoverySubService::add_node(WSClient::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+void DiscoverySubService::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
 	node_cred.source = id_;
-	client_.p2p_provider()->ws_client()->connect(node_cred, group_ptr);
+	parent_.discovered_node_signal(node_cred, group_ptr);
 }
 
 void DiscoverySubService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
+	DiscoveryService::ConnectCredentials credentials;
 	credentials.url = node_url;
 	add_node(std::move(credentials), group_ptr);
 }
 
 void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
+	DiscoveryService::ConnectCredentials credentials;
 	credentials.endpoint = node_endpoint;
 	add_node(std::move(credentials), group_ptr);
 }
 
 void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	WSClient::ConnectCredentials credentials;
+	DiscoveryService::ConnectCredentials credentials;
 	credentials.endpoint = node_endpoint;
 	credentials.pubkey = pubkey;
 	add_node(std::move(credentials), group_ptr);

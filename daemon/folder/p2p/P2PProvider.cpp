@@ -50,6 +50,10 @@ P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& 
 
 P2PProvider::~P2PProvider() {}
 
+void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+	ws_client_->connect(node_cred, group_ptr);
+}
+
 void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
 	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
 	loopback_blacklist_.emplace(endpoint);

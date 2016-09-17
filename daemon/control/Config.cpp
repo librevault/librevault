@@ -29,12 +29,6 @@
 #include "Config.h"
 #include <codecvt>
 #include "util/file_util.h"
-
-#if BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_UNIX
-#   include <pwd.h>
-#elif BOOST_OS_WINDOWS
-#	include <shlobj.h>
-#endif
 #include <boost/asio/ip/host_name.hpp>
 
 namespace librevault {
@@ -174,28 +168,5 @@ void Config::save() {
 	globals_f.ios() << globals_custom_.toStyledString();
 	folders_f.ios() << folders_custom_.toStyledString();
 }
-
-#if BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
-
-boost::filesystem::path Config::default_appdata_path() {   // TODO: separate to multiple files
-#if BOOST_OS_WINDOWS
-	PWSTR appdata_path;
-	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
-	boost::filesystem::path folder_path = boost::filesystem::path(appdata_path) / Version::current().name();
-	CoTaskMemFree(appdata_path);
-
-	return folder_path;
-#elif BOOST_OS_LINUX || BOOST_OS_UNIX
-	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return boost::filesystem::path(xdg_ptr) / Version::current().name();
-	if(char* home_ptr = getenv("HOME"))
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
-	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
-	return boost::filesystem::path("/etc/xdg") / Version::current().name();
-#endif
-}
-
-#endif	// BOOST_OS_MACOS == BOOST_VERSION_NUMBER_NOT_AVAILABLE
 
 } /* namespace librevault */

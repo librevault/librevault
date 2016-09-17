@@ -34,7 +34,7 @@ namespace librevault {
 
 class Client;
 // Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
-class MemoryCachedStorage : public AbstractStorage, public Loggable {
+class MemoryCachedStorage : public AbstractStorage {
 public:
 	MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage);
 	virtual ~MemoryCachedStorage() {}

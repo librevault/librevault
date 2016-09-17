@@ -38,7 +38,6 @@
 namespace librevault {
 
 NodeKey::NodeKey() :
-		Loggable("NodeKey"),
 		openssl_pkey_(EVP_PKEY_new()),
 		x509_(X509_new()) {
 	gen_private_key();
@@ -62,7 +61,7 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 	public_key_.resize(33);
 	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_.data());
 
-	log_->debug() << "Public key: " << crypto::Hex().to_string(public_key_);
+	LOGD("Public key: " << crypto::Hex().to_string(public_key_));
 
 	return private_key_;
 }

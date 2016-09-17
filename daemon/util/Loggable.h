@@ -31,37 +31,28 @@
 #include "Version.h"
 #include <spdlog/spdlog.h>
 
+#define LOGGER spdlog::get(Version::current().name())
+
 #define LOGT(ARGS) \
-spdlog::get(Version::current().name())->trace() << log_tag() << ARGS;
+LOGGER->trace() << log_tag() << ARGS
 
 #define LOGD(ARGS) \
-spdlog::get(Version::current().name())->debug() << log_tag() << ARGS;
+LOGGER->debug() << log_tag() << ARGS
 
 #define LOGI(ARGS) \
-spdlog::get(Version::current().name())->info() << log_tag() << ARGS;
+LOGGER->info() << log_tag() << ARGS
+
+#define LOGN(ARGS) \
+LOGGER->notice() << log_tag() << ARGS
 
 #define LOGW(ARGS) \
-spdlog::get(Version::current().name())->warn() << log_tag() << ARGS;
+LOGGER->warn() << log_tag() << ARGS
 
 #define LOGE(ARGS) \
-spdlog::get(Version::current().name())->error() << log_tag() << ARGS;
+LOGGER->error() << log_tag() << ARGS
 
-#define LOGF(ARGS) \
-spdlog::get(Version::current().name())->fatal() << log_tag() << ARGS;
+#define LOGC(ARGS) \
+LOGGER->critical() << log_tag() << ARGS
 
 #define LOGFUNC() \
-LOGT(BOOST_CURRENT_FUNCTION);
-
-namespace librevault {
-
-class Loggable {
-protected:
-	std::shared_ptr<spdlog::logger> log_;
-	mutable std::string name_;
-
-	Loggable() {}
-	Loggable(const std::string& name) : log_(spdlog::get(Version::current().name())), name_(name) {}
-	virtual std::string log_tag() const {return name_.empty() ? "" : std::string("[") + name_ + "] ";}
-};
-
-} /* namespace librevault */
+LOGT(BOOST_CURRENT_FUNCTION)

@@ -27,10 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "util/parse_url.h"
 #include "../btcompat.h"
 #include <nat/PortMappingService.h>
+#include <util/parse_url.h>
 
 namespace librevault {
 

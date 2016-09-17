@@ -43,7 +43,6 @@ using namespace boost::asio::ip;
 
 MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping) :
 		DiscoveryInstance(group, service),
-		Loggable("MLDHTSearcher"),
 		port_mapping_(port_mapping),
 		search_timer6_(service.client().network_ios()),
 		search_timer4_(service.client().network_ios()) {
@@ -54,7 +53,7 @@ MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& s
 	attached_connection_ = std::shared_ptr<FolderGroup>(group)->attached_signal.connect([&, this](std::shared_ptr<P2PFolder> p2p_folder){
 		if(enabled_) {
 			dht_ping_node(p2p_folder->remote_endpoint().data(), p2p_folder->remote_endpoint().size());
-			log_->debug() << log_tag() << "Added a new DHT node: " << p2p_folder->remote_endpoint();
+			LOGD("Added a new DHT node: " << p2p_folder->remote_endpoint());
 		}
 	});
 }
@@ -84,11 +83,11 @@ void MLDHTSearcher::start_search(int af) {
 		if(ready6 || ready4) {
 			uint16_t public_port = port_mapping_.get_port_mapping("main");
 
-			log_->debug() << log_tag() << "Starting "
+			LOGD("Starting "
 				<< (ready6 ? "IPv6" : "IPv4") << " "
 				<< (announce ? "announce" : "search")
 				<< " for: " << crypto::Hex().to_string(info_hash_)
-				<< (announce ? " on port: " : "") << (announce ? std::to_string(public_port) : std::string());
+				<< (announce ? " on port: " : "") << (announce ? std::to_string(public_port) : std::string()));
 
 			dht_search(info_hash_.data(), announce ? public_port : 0, af, lv_dht_callback_glue, (MLDHTDiscovery*)&service_);
 		}

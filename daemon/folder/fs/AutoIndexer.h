@@ -38,7 +38,8 @@
 
 namespace librevault {
 
-class AutoIndexer : public Loggable {
+class AutoIndexer {
+	LOG_SCOPE("AutoIndexer");
 public:
 	AutoIndexer(FSFolder& dir, Client& client);
 	virtual ~AutoIndexer();

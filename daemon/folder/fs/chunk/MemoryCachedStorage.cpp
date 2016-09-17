@@ -31,7 +31,7 @@
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage), Loggable("MemoryCachedStorage") {}
+MemoryCachedStorage::MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage) {}
 
 bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return cache_iteraror_map_.find(ct_hash) != cache_iteraror_map_.end();

@@ -38,7 +38,8 @@ namespace librevault {
 class Client;
 class FSFolder;
 
-class Index : public Loggable {
+class Index {
+	LOG_SCOPE("Index");
 public:
 	struct status_t {
 		uint64_t file_entries = 0;

@@ -38,14 +38,13 @@
 namespace librevault {
 
 Archive::Archive(FSFolder& dir, Client& client) :
-	Loggable("Archive"),
 	dir_(dir),
 	client_(client) {
 
 	switch(dir_.params().archive_type) {
-		case FolderParams::ArchiveType::NO_ARCHIVE: archive_strategy_ = std::make_unique<NoArchive>(this); break;
-		case FolderParams::ArchiveType::TRASH_ARCHIVE: archive_strategy_ = std::make_unique<TrashArchive>(this); break;
-		case FolderParams::ArchiveType::TIMESTAMP_ARCHIVE: archive_strategy_ = std::make_unique<TimestampArchive>(this); break;
+		case FolderParams::ArchiveType::NO_ARCHIVE: archive_strategy_ = std::make_unique<NoArchive>(*this); break;
+		case FolderParams::ArchiveType::TRASH_ARCHIVE: archive_strategy_ = std::make_unique<TrashArchive>(*this); break;
+		case FolderParams::ArchiveType::TIMESTAMP_ARCHIVE: archive_strategy_ = std::make_unique<TimestampArchive>(*this); break;
 		//case FolderParams::ArchiveType::BLOCK_ARCHIVE: archive_strategy_ = std::make_unique<NoArchive>(this); break;
 		default: throw std::runtime_error("Wrong Archive type");
 	}
@@ -79,10 +78,10 @@ void Archive::NoArchive::archive(const fs::path& from) {
 }
 
 // TrashArchive
-Archive::TrashArchive::TrashArchive(Archive* parent) :
+Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent->dir_.system_path() / "archive"),
-	cleanup_process_(parent->client_.ios(), [this](PeriodicProcess& process){
+	archive_path_(parent.dir_.system_path() / "archive"),
+	cleanup_process_(parent.client_.ios(), [this](PeriodicProcess& process){
 		maintain_cleanup(process);
 	}) {
 
@@ -95,14 +94,14 @@ Archive::TrashArchive::~TrashArchive() {
 }
 
 void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
-	parent_->log_->trace() << parent_->log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	std::list<fs::path> removed_paths;
 	try {
 		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
 			unsigned time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
 			constexpr unsigned sec_per_day = 60 * 60 * 24;
-			if(time_since_archivation >= parent_->dir_.params().archive_trash_ttl * sec_per_day && parent_->dir_.params().archive_trash_ttl != 0)
+			if(time_since_archivation >= parent_.dir_.params().archive_trash_ttl * sec_per_day && parent_.dir_.params().archive_trash_ttl != 0)
 				removed_paths.push_back(it->path());
 		}
 
@@ -116,23 +115,23 @@ void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 }
 
 void Archive::TrashArchive::archive(const fs::path& from) {
-	auto archived_path = archive_path_ / fs::path(parent_->dir_.normalize_path(from));
-	parent_->log_->trace() << parent_->log_tag() << "Adding an archive item: " << archived_path;
+	auto archived_path = archive_path_ / fs::path(parent_.dir_.normalize_path(from));
+	LOGD("Adding an archive item: " << archived_path);
 	file_move(from, archived_path);
 	fs::last_write_time(archived_path, time(nullptr));
 }
 
 // TimestampArchive
-Archive::TimestampArchive::TimestampArchive(Archive* parent) :
+Archive::TimestampArchive::TimestampArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent->dir_.system_path() / "archive") {
+	archive_path_(parent.dir_.system_path() / "archive") {
 
 	fs::create_directory(archive_path_);
 }
 
 void Archive::TimestampArchive::archive(const fs::path& from) {
 	// Add a new entry
-	auto archived_path = archive_path_ / fs::path(parent_->dir_.normalize_path(from));
+	auto archived_path = archive_path_ / fs::path(parent_.dir_.normalize_path(from));
 
 	time_t mtime = fs::last_write_time(from);
 	std::vector<char> strftime_buf(16);
@@ -156,7 +155,7 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 			paths.insert({match[1].str(), from});
 		}
 	}
-	if(paths.size() > parent_->dir_.params().archive_timestamp_count && parent_->dir_.params().archive_timestamp_count != 0) {
+	if(paths.size() > parent_.dir_.params().archive_timestamp_count && parent_.dir_.params().archive_timestamp_count != 0) {
 		fs::remove(paths.begin()->second);
 	}
 }

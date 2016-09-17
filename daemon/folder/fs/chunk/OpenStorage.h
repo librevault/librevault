@@ -36,7 +36,8 @@
 namespace librevault {
 
 class FSFolder;
-class OpenStorage : public AbstractStorage, public Loggable {
+class OpenStorage : public AbstractStorage {
+	LOG_SCOPE("OpenStorage");
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}

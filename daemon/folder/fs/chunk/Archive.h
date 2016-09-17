@@ -27,15 +27,18 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "AbstractStorage.h"
 #include <util/periodic_process.h>
 #include <util/fs.h>
-#include "AbstractStorage.h"
+#include <util/log_scope.h>
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
 class Client;
-class Archive : public Loggable {
+class Archive {
 	friend class ArchiveStrategy;
+	LOG_SCOPE("Archive");
 public:
 	Archive(FSFolder& dir, Client& client);
 	virtual ~Archive() {}
@@ -52,18 +55,19 @@ private:
 		virtual ~ArchiveStrategy(){}
 
 	protected:
-		ArchiveStrategy(Archive* parent) : parent_(parent) {}
-		Archive* parent_;
+		LOG_SCOPE_PARENT(parent_);
+		ArchiveStrategy(Archive& parent) : parent_(parent) {}
+		Archive& parent_;
 	};
 	class NoArchive : public ArchiveStrategy {
 	public:
-		NoArchive(Archive* parent) : ArchiveStrategy(parent) {}
+		NoArchive(Archive& parent) : ArchiveStrategy(parent) {}
 		virtual ~NoArchive(){}
 		void archive(const fs::path& from);
 	};
 	class TrashArchive : public ArchiveStrategy {
 	public:
-		TrashArchive(Archive* parent);
+		TrashArchive(Archive& parent);
 		virtual ~TrashArchive();
 		void archive(const fs::path& from);
 
@@ -75,7 +79,7 @@ private:
 	};
 	class TimestampArchive : public ArchiveStrategy {
 	public:
-		TimestampArchive(Archive* parent);
+		TimestampArchive(Archive& parent);
 		virtual ~TimestampArchive(){}
 		void archive(const fs::path& from);
 

@@ -28,12 +28,14 @@
  */
 #pragma once
 #include "AbstractStorage.h"
+#include <util/log_scope.h>
 
 namespace librevault {
 
 class Client;
 class FSFolder;
-class EncStorage : public AbstractStorage, public Loggable {
+class EncStorage : public AbstractStorage {
+	LOG_SCOPE("EncStorage");
 public:
 	EncStorage(FSFolder& dir, ChunkStorage& chunk_storage);
 	virtual ~EncStorage() {}

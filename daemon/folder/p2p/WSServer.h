@@ -33,6 +33,7 @@
 namespace librevault {
 
 class WSServer : public WSService {
+	LOG_SCOPE("WSServer");
 public:
 	using server = websocketpp::server<asio_tls>;
 

@@ -41,11 +41,11 @@
 namespace librevault {
 
 Indexer::Indexer(FSFolder& dir, Client& client) :
-	Loggable("Indexer"), dir_(dir),
+	dir_(dir),
 	secret_(dir_.secret()), index_(*dir_.index), client_(client), indexing_now_(0) {}
 
 void Indexer::index(const std::string& file_path) noexcept {
-	log_->trace() << log_tag() << "Indexer::index(" << file_path << ")";
+	LOGT("Indexer::index(" << file_path << ")");
 
 	++indexing_now_;
 
@@ -62,7 +62,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 		}catch(fs::filesystem_error& e){
 		}catch(AbstractFolder::no_such_meta& e){
 		}catch(Meta::error& e){
-			log_->warn() << log_tag() << "Meta in DB is inconsistent, trying to reindex: " << e.what();
+			LOGW("Meta in DB is inconsistent, trying to reindex: " << e.what());
 		}
 
 		std::chrono::high_resolution_clock::time_point before_index = std::chrono::high_resolution_clock::now();  // Starting timer
@@ -72,18 +72,18 @@ void Indexer::index(const std::string& file_path) noexcept {
 
 		dir_.put_meta(smeta, true);
 
-		log_->debug() << log_tag() << "Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)"
+		LOGD("Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)"
 			<< " Path=" << file_path
 			<< " Rev=" << smeta.meta().revision()
-			<< " Chk=" << smeta.meta().chunks().size();
+			<< " Chk=" << smeta.meta().chunks().size());
 	}catch(abort_index& e){
-		log_->notice() << log_tag() << "Skipping " << file_path << ". Reason: " << e.what();
+		LOGN("Skipping " << file_path << ". Reason: " << e.what());
 	}catch(std::runtime_error& e){
-		log_->warn() << log_tag() << "Skipping " << file_path << ". Error: " << e.what();
+		LOGW("Skipping " << file_path << ". Error: " << e.what());
 	}
 
 	--indexing_now_;
-	log_->trace() << log_tag() << "indexing_now_ " << indexing_now_.load();
+	LOGT("indexing_now_ " << indexing_now_.load());
 }
 
 void Indexer::async_index(const std::string& file_path) {
@@ -106,13 +106,13 @@ void Indexer::async_index(const std::string& file_path) {
 }
 
 void Indexer::async_index(const std::set<std::string>& file_path) {
-	log_->debug() << log_tag() << "Preparing to index " << file_path.size() << " entries.";
+	LOGD("Preparing to index " << file_path.size() << " entries.");
 	for(auto file_path1 : file_path)
 		async_index(file_path1);
 }
 
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
-	log_->debug() << log_tag() << "make_Meta(" << relpath << ")";
+	LOGD("make_Meta(" << relpath << ")");
 	Meta old_meta, new_meta;
 	auto abspath = dir_.absolute_path(relpath);
 
@@ -266,7 +266,7 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 }
 
 Meta::Chunk Indexer::populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
-	log_->debug() << log_tag() << data.size();
+	LOGD("New chunk size: " << data.size());
 	Meta::Chunk chunk;
 	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 

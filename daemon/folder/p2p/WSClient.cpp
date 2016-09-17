@@ -52,7 +52,7 @@ WSClient::WSClient(Client& client, P2PProvider& provider, NodeKey& node_key) : W
 }
 
 void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	if(node_credentials.url.empty()) {
 		assert(node_credentials.endpoint != tcp_endpoint());    // We have no credentials at all, no way to connect
@@ -67,14 +67,14 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 	node_credentials.url.query += dir_hash_to_query(group_ptr->hash());
 
 	// URL is ready
-	log_->debug() << log_tag() << "Discovered node: " << (std::string)node_credentials.url << " from " << node_credentials.source;
+	LOGD("Discovered node: " << (std::string)node_credentials.url << " from " << node_credentials.source);
 
 	if(is_loopback(node_credentials)) { // Check for loopback
-		log_->debug() << log_tag() << "Refusing to connect to loopback node: " << (std::string)node_credentials.url;
+		LOGD("Refusing to connect to loopback node: " << (std::string)node_credentials.url);
 		return;
 	}
 	if(already_have(node_credentials, group_ptr)) { // Check if already have this node
-		log_->debug() << log_tag() << "Refusing to connect to existing node: " << (std::string)node_credentials.url;
+		LOGD("Refusing to connect to existing node: " << (std::string)node_credentials.url);
 		return;
 	}
 
@@ -82,7 +82,7 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 	websocketpp::lib::error_code ec;
 	auto connection_ptr = ws_client_.get_connection(node_credentials.url, ec);
 	if(ec) {
-		log_->warn() << log_tag() << "Error connecting to " << (std::string)node_credentials.url;
+		LOGW("Error connecting to " << (std::string)node_credentials.url);
 		return;
 	}
 
@@ -90,7 +90,7 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 	connection& conn = ws_assignment_[websocketpp::connection_hdl(connection_ptr)];
 	conn.hash = group_ptr->hash();
 
-	log_->debug() << log_tag() << "Added node " << std::string(node_credentials.url);
+	LOGD("Added node " << std::string(node_credentials.url));
 
 	// Actually connect
 	ws_client_.connect(connection_ptr);
@@ -121,7 +121,7 @@ std::string WSClient::dir_hash_to_query(const blob& dir_hash) {
 }
 
 void WSClient::send_message(websocketpp::connection_hdl hdl, const blob& message) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	ws_client_.get_con_from_hdl(hdl)->send(message.data(), message.size());
 }
 

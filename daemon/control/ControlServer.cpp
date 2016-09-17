@@ -39,7 +39,7 @@
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
-		Loggable("ControlServer"), client_(client), timer_(client_.ios()) {
+		client_(client), timer_(client_.ios()) {
 	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
@@ -70,13 +70,13 @@ ControlServer::ControlServer(Client& client) :
 ControlServer::~ControlServer() {}
 
 bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	auto subprotocols = connection_ptr->get_requested_subprotocols();
 	auto origin = connection_ptr->get_origin();
 
-	log_->debug() << log_tag() << "Incoming connection from " << connection_ptr->get_remote_endpoint() << " Origin: " << origin;
+	LOGD("Incoming connection from " << connection_ptr->get_remote_endpoint() << " Origin: " << origin);
 
 	// Restrict access by "Origin" header
 	if(!origin.empty()) {   // TODO: Add a way to relax this restriction
@@ -92,7 +92,7 @@ bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
 }
 //
 void ControlServer::on_open(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	ws_server_assignment_.insert(connection_ptr);
@@ -101,23 +101,23 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 }
 
 void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	try {
-		log_->trace() << message_ptr->get_payload();
+		LOGT(message_ptr->get_payload());
 		// Read as control_json;
 		Json::Value control_json;
 		Json::Reader r; r.parse(message_ptr->get_payload(), control_json);
 
 		dispatch_control_json(control_json);
 	}catch(std::exception& e) {
-		log_->trace() << log_tag() << "on_message e:" << e.what();
+		LOGT("on_message e:" << e.what());
 		ws_server_.get_con_from_hdl(hdl)->close(websocketpp::close::status::protocol_error, e.what());
 	}
 }
 
 void ControlServer::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
 	send_control_json();
@@ -217,7 +217,7 @@ void ControlServer::dispatch_control_json(const Json::Value& control_json) {
 	else if(command == "remove_folder")
 		handle_remove_folder_json(control_json);
 	else
-		log_->debug() << "Could not handle control JSON: Unknown command: " << command;
+		LOGD("Could not handle control JSON: Unknown command: " << command);
 }
 
 void ControlServer::handle_add_folder_json(const Json::Value& control_json) {

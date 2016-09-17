@@ -39,7 +39,7 @@ namespace librevault {
 
 const char* WSService::subprotocol_ = "librevault";
 
-WSService::WSService(Client& client, P2PProvider& provider, NodeKey& node_key) : Loggable("WSService"), provider_(provider), client_(client), node_key_(node_key) {}
+WSService::WSService(Client& client, P2PProvider& provider, NodeKey& node_key) : provider_(provider), client_(client), node_key_(node_key) {}
 
 std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	auto ssl_ctx_ptr = std::make_shared<ssl_context>(ssl_context::tlsv12);
@@ -93,7 +93,7 @@ blob WSService::pubkey_from_cert(X509* x509) {
 }
 
 void WSService::on_tcp_pre_init(websocketpp::connection_hdl hdl, connection::role_type role) {
-	log_->trace() << log_tag() << "on_tcp_pre_init()";
+	LOGFUNC();
 
 	connection& conn = ws_assignment_[hdl];
 	conn.connection_handle = hdl;
@@ -103,7 +103,7 @@ void WSService::on_tcp_pre_init(websocketpp::connection_hdl hdl, connection::rol
 }
 
 std::shared_ptr<ssl_context> WSService::on_tls_init(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto ssl_ctx_ptr = make_ssl_ctx();
 	ssl_ctx_ptr->set_verify_callback(std::bind(&WSService::on_tls_verify, this, hdl, std::placeholders::_1, std::placeholders::_2));
@@ -111,14 +111,14 @@ std::shared_ptr<ssl_context> WSService::on_tls_init(websocketpp::connection_hdl 
 }
 
 bool WSService::on_tls_verify(websocketpp::connection_hdl hdl, bool preverified, boost::asio::ssl::verify_context& ctx) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	// FIXME: Hey, just returning `true` isn't good enough, yes?
 	return true;
 }
 
 void WSService::on_open(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	connection& conn = ws_assignment_[hdl];
 	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, node_key_, conn);
@@ -126,7 +126,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 
 	auto group_ptr = client_.get_group(conn.hash);
 	if(group_ptr) {
-		log_->debug() << log_tag() << "Connection opened to: " << new_folder->name();   // Finally!
+		LOGD("Connection opened to: " << new_folder->name());   // Finally!
 
 		try {
 			group_ptr->attach(new_folder);
@@ -142,19 +142,19 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 }
 
 void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& message_raw) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	try {
 		blob message_blob = blob(message_raw.begin(), message_raw.end());
 		std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder)->handle_message(message_blob);
 	}catch(std::exception& e) {
-		log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
+		LOGFUNC() << " e:" << e.what();
 		close(hdl, e.what());
 	}
 }
 
 void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << errmsg(hdl);
+	LOGFUNC() << " e:" << errmsg(hdl);
 
 	auto dir_ptr = ws_assignment_[hdl].folder.lock();
 	if(dir_ptr) {
@@ -163,7 +163,7 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 			if(folder_group)
 				folder_group->detach(dir_ptr);
 		}catch(const std::bad_weak_ptr& e){
-			log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
+			LOGFUNC() << " e:" << e.what();
 		}
 	}
 	ws_assignment_.erase(hdl);
@@ -171,7 +171,7 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 
 template<class WSClass>
 void WSService::on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto connection_ptr = c.get_con_from_hdl(hdl);
 	if(!c.is_server())
@@ -194,7 +194,7 @@ void WSService::on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl) {
 			throw connection_error("Loopback detected");
 		}
 	}catch(std::exception& e) {
-		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " e:" << e.what();
+		LOGFUNC() << " e:" << e.what();
 		connection_ptr->terminate(websocketpp::lib::error_code());
 	}
 }

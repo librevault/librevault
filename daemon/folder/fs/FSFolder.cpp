@@ -56,7 +56,7 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 	LOGD("New FSFolder:"
 		<< " Key type=" << (char)params().secret.get_type()
 		<< " Path" << (path_created ? " created" : "") << "=" << params().path
-		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path;)
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path);
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
 	index = std::make_unique<Index>(*this, client);

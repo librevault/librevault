@@ -27,14 +27,9 @@
  * files in the program, then also delete it here.
  */
 #include "P2PProvider.h"
-#include "../../Client.h"
 #include "P2PFolder.h"
-#include "folder/FolderGroup.h"
-#include "nat/PortMappingService.h"
-#include <discovery/StaticDiscovery.h>
-#include <discovery/multicast/MulticastDiscovery.h>
-#include <discovery/bttracker/BTTrackerDiscovery.h>
-#include <discovery/mldht/MLDHTDiscovery.h>
+#include <folder/FolderGroup.h>
+#include <nat/PortMappingService.h>
 
 #include "WSServer.h"
 #include "WSClient.h"
@@ -42,7 +37,6 @@
 namespace librevault {
 
 P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
-		Loggable("P2PProvider"),
 		client_(client), node_key_(node_key) {
 	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key);
 	ws_client_ = std::make_unique<WSClient>(client, *this, node_key);
@@ -57,7 +51,7 @@ void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::
 void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
 	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
 	loopback_blacklist_.emplace(endpoint);
-	log_->notice() << "Marked " << endpoint << " as loopback";
+	LOGN("Marked " << endpoint << " as loopback");
 }
 
 bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {

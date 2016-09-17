@@ -64,8 +64,6 @@ public:
 
 	boost::signals2::signal<void(ConnectCredentials, std::shared_ptr<FolderGroup>)> discovered_node_signal;
 
-	Client& client() {return client_;}
-
 protected:
 	Client& client_;
 

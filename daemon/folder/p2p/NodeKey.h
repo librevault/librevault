@@ -35,7 +35,8 @@
 
 namespace librevault {
 
-class NodeKey : protected Loggable {
+class NodeKey {
+	LOG_SCOPE("NodeKey");
 public:
 	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
 

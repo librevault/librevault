@@ -29,7 +29,6 @@
 #pragma once
 #include <control/Config.h>
 #include "../../pch.h"
-#include "../../util/Loggable.h"
 
 namespace librevault {
 

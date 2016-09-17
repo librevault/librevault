@@ -40,7 +40,6 @@
 namespace librevault {
 
 FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
-	Loggable("FileAssembler"),
 	dir_(dir),
 	chunk_storage_(chunk_storage),
 	client_(client),
@@ -53,7 +52,7 @@ FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client&
 }
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
-	log_->trace() << log_tag() << "get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
+	LOGT("get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
 	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
 	for(auto row : index_.db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
@@ -80,8 +79,8 @@ void FileAssembler::queue_assemble(const Meta& meta) {
 }
 
 void FileAssembler::periodic_assemble_operation(PeriodicProcess& process) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	log_->debug() << log_tag() << "Performing periodic assemble";
+	LOGFUNC();
+	LOGT("Performing periodic assemble");
 
 	for(auto smeta : dir_.index->get_incomplete_meta())
 		queue_assemble(smeta.meta());
@@ -90,7 +89,7 @@ void FileAssembler::periodic_assemble_operation(PeriodicProcess& process) {
 }
 
 void FileAssembler::assemble(const Meta& meta){
-	log_->trace() << log_tag() << "assemble()";
+	LOGFUNC();
 
 	try {
 		bool assembled = false;
@@ -112,12 +111,12 @@ void FileAssembler::assemble(const Meta& meta){
 			index_.db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 		}
 	}catch(std::runtime_error& e) {
-		log_->warn() << log_tag() << BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what(); // FIXME: Plaintext path in logs may violate user's privacy.
+		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
 bool FileAssembler::assemble_deleted(const Meta& meta) {
-	log_->trace() << log_tag() << "assemble_deleted()";
+	LOGFUNC();
 
 	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	auto file_type = fs::symlink_status(file_path).type();
@@ -142,7 +141,7 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 }
 
 bool FileAssembler::assemble_symlink(const Meta& meta) {
-	log_->trace() << log_tag() << "assemble_symlink()";
+	LOGFUNC();
 
 	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	fs::remove_all(file_path);
@@ -152,7 +151,7 @@ bool FileAssembler::assemble_symlink(const Meta& meta) {
 }
 
 bool FileAssembler::assemble_directory(const Meta& meta) {
-	log_->trace() << log_tag() << "assemble_directory()";
+	LOGFUNC();
 
 	fs::path file_path = dir_.absolute_path(meta.path(secret_));
 	auto relpath = dir_.normalize_path(file_path);
@@ -168,7 +167,7 @@ bool FileAssembler::assemble_directory(const Meta& meta) {
 }
 
 bool FileAssembler::assemble_file(const Meta& meta) {
-	log_->trace() << log_tag() << "assemble_file()";
+	LOGFUNC();
 
 	// Check if we have all needed chunks
 	if(!chunk_storage_.make_bitfield(meta).all())
@@ -213,9 +212,9 @@ void FileAssembler::apply_attrib(const Meta& meta) {
 		if(meta.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
 			ec = chmod(file_path.c_str(), meta.mode());
-			if(ec) log_->warn() << log_tag() << "Error applying mode to " << file_path;  // FIXME: full_path in logs may violate user's privacy.
+			if(ec) LOGW("Error applying mode to " << file_path);    // FIXME: full_path in logs may violate user's privacy.
 			ec = chown(file_path.c_str(), meta.uid(), meta.gid());
-			if(ec) log_->warn() << log_tag() << "Error applying uid/gid to " << file_path;  // FIXME: full_path in logs may violate user's privacy.
+			if(ec) LOGW("Error applying uid/gid to " << file_path); // FIXME: full_path in logs may violate user's privacy.
 		}
 	}
 #elif BOOST_OS_WINDOWS

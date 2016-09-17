@@ -27,9 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoverySubService.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/p2p/WSClient.h"
-#include "Client.h"
 
 namespace librevault {
 

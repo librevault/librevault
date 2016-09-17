@@ -38,7 +38,8 @@ namespace librevault {
 class MLDHTDiscovery;
 class PortMappingService;
 
-class MLDHTSearcher : public DiscoveryInstance, public Loggable {
+class MLDHTSearcher : public DiscoveryInstance {
+	LOG_SCOPE("MLDHTSearcher");
 public:
 	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping);
 

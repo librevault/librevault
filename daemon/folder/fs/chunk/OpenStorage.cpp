@@ -34,7 +34,7 @@
 namespace librevault {
 
 OpenStorage::OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage) :
-	AbstractStorage(dir, chunk_storage), Loggable("OpenStorage"),
+	AbstractStorage(dir, chunk_storage),
 	secret_(dir_.secret()) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
@@ -45,7 +45,7 @@ bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 }
 
 std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
-	log_->trace() << log_tag() << "get_chunk(" << AbstractFolder::ct_hash_readable(ct_hash) << ")";
+	LOGT("get_chunk(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
 
 	auto metas_containing = dir_.index->containing_chunk(ct_hash);
 

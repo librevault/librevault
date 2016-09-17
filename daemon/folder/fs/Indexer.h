@@ -36,7 +36,8 @@
 namespace librevault {
 
 class FSFolder;
-class Indexer : public Loggable {
+class Indexer {
+	LOG_SCOPE("Indexer");
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}

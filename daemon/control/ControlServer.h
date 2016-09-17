@@ -39,7 +39,8 @@ namespace librevault {
 
 class Client;
 
-class ControlServer : public Loggable {
+class ControlServer {
+	LOG_SCOPE("ControlServer");
 public:
 	ControlServer(Client& client);
 	virtual ~ControlServer();

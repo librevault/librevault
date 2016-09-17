@@ -37,7 +37,8 @@
 namespace librevault {
 
 class FSFolder;
-class FileAssembler : public Loggable {
+class FileAssembler {
+	LOG_SCOPE("FileAssembler");
 public:
 	struct error : std::runtime_error {
 		error(const std::string& what) : std::runtime_error(what) {}

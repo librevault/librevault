@@ -62,7 +62,7 @@ WSServer::WSServer(Client& client, P2PProvider& provider, PortMappingService& po
 	ws_server_.listen(endpoint);
 	ws_server_.start_accept();
 
-	log_->info() << log_tag() << "Listening on " << local_endpoint();
+	LOGI("Listening on " << local_endpoint());
 
 	// Port mapping
 	port_mapping_.add_port_mapping("main", {local_endpoint().port(), SOCK_STREAM}, "Librevault");
@@ -82,12 +82,12 @@ tcp_endpoint WSServer::local_endpoint() const {
 }
 
 bool WSServer::on_validate(websocketpp::connection_hdl hdl) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 
 	// Query validation
-	log_->debug() << log_tag() << "Query: " << connection_ptr->get_uri()->get_resource();
+	LOGD("Query: " << connection_ptr->get_uri()->get_resource());
 	ws_assignment_[hdl].hash = query_to_dir_hash(connection_ptr->get_uri()->get_resource());
 
 	// Subprotocol management
@@ -108,7 +108,7 @@ blob WSServer::query_to_dir_hash(const std::string& query) {
 }
 
 void WSServer::send_message(websocketpp::connection_hdl hdl, const blob& message) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	ws_server_.get_con_from_hdl(hdl)->send(message.data(), message.size());
 }
 

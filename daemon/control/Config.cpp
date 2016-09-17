@@ -193,9 +193,6 @@ boost::filesystem::path Config::default_appdata_path() {   // TODO: separate to 
 	if(char* home_ptr = getpwuid(getuid())->pw_dir)
 		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
 	return boost::filesystem::path("/etc/xdg") / Version::current().name();
-#else
-	// Well, we will add some Android values here. And, maybe, others.
-	return fs::path(getenv("HOME")) / Version::current().name();
 #endif
 }
 

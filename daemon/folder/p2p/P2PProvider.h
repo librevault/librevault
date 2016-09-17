@@ -29,10 +29,10 @@
 #pragma once
 #include "Client.h"
 #include "NodeKey.h"
-#include "util/network.h"
-#include "util/Loggable.h"
-#include <set>
 #include <discovery/DiscoveryService.h>
+#include <util/network.h>
+#include <util/log_scope.h>
+#include <set>
 
 namespace librevault {
 
@@ -42,8 +42,9 @@ class WSClient;
 /* Port mapping services */
 class PortMappingService;
 
-class P2PProvider : protected Loggable {
+class P2PProvider {
 	friend class ControlServer;
+	LOG_SCOPE("P2PProvider");
 public:
 	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~P2PProvider();
@@ -58,8 +59,6 @@ public:
 	/* Getters */
 	WSServer* ws_server() {return ws_server_.get();}
 	WSClient* ws_client() {return ws_client_.get();}
-
-protected:
 
 private:
 	Client& client_;

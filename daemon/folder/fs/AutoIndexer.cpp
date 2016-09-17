@@ -35,7 +35,6 @@
 namespace librevault {
 
 AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
-		Loggable("AutoIndexer"),
 		dir_(dir), client_(client),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
@@ -126,8 +125,8 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 }
 
 void AutoIndexer::rescan_operation(PeriodicProcess& process) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	log_->debug() << log_tag() << "Performing full directory rescan";
+	LOGFUNC();
+	LOGD("Performing full directory rescan");
 
 	if(!dir_.indexer->is_indexing())
 		enqueue_files(full_reindex_list());
@@ -136,11 +135,11 @@ void AutoIndexer::rescan_operation(PeriodicProcess& process) {
 }
 
 void AutoIndexer::monitor_operation() {
-	log_->trace() << log_tag() << "monitor_operation";
+	LOGFUNC();
 	monitor_.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
-		log_->trace() << "async_monitor callback ec:" << ec;
+		LOGT("async_monitor callback ec:" << ec);
 		if(ec == boost::asio::error::operation_aborted) {
-			log_->debug() << log_tag() << "monitor_operation returned";
+			LOGD("monitor_operation returned");
 			return;
 		}
 
@@ -168,7 +167,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 		}
 
 		if(!dir_.ignore_list->is_ignored(relpath)){
-			log_->debug() << "[dir_monitor] " << ev;
+			LOGD("[dir_monitor] " << ev);
 			enqueue_files(relpath);
 		}
 	}

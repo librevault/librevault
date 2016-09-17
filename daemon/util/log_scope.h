@@ -30,7 +30,7 @@
 #include <string>
 
 #define LOG_SCOPE(SCOPE) \
-inline std::string log_tag() {return "[" SCOPE "] ";}
+inline std::string log_tag() const {return "[" SCOPE "] ";}
 
-#define LOG_PARENT_SCOPE(PARENT) \
-inline std::string log_tag() {return PARENT.log_tag();}
+#define LOG_SCOPE_PARENT(PARENT) \
+inline std::string log_tag() const {return PARENT.log_tag();}

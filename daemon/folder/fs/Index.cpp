@@ -35,13 +35,13 @@
 
 namespace librevault {
 
-Index::Index(FSFolder& dir, Client& client) : Loggable("Index"), dir_(dir), client_(client) {
+Index::Index(FSFolder& dir, Client& client) : dir_(dir), client_(client) {
 	auto db_filepath = dir_.system_path() / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
-		log_->debug() << log_tag() << "Opening SQLite3 DB: " << db_filepath;
+		LOGD("Opening SQLite3 DB: " << db_filepath);
 	else
-		log_->debug() << log_tag() << "Creating new SQLite3 DB: " << db_filepath;
+		LOGD("Creating new SQLite3 DB: " << db_filepath);
 	db_ = std::make_unique<SQLiteDB>(db_filepath);
 	db_->exec("PRAGMA foreign_keys = ON;");
 
@@ -92,7 +92,7 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 /* Meta manipulators */
 
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
-	log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	LOGFUNC();
 	std::ostringstream transaction_name; transaction_name << "put_Meta_" << std::this_thread::get_id();
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.str()); // Begin transaction
 
@@ -125,9 +125,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		log_->debug() << log_tag() << "Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();
+		LOGD("Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 	else
-		log_->debug() << log_tag() << "Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type();
+		LOGD("Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
 	client_.network_ios().dispatch([=](){
 		new_meta_signal(signed_meta);

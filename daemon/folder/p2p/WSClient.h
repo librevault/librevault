@@ -36,6 +36,7 @@ namespace librevault {
 class FolderGroup;
 
 class WSClient : public WSService {
+	LOG_SCOPE("WSClient");
 public:
 	using client = websocketpp::client<asio_tls_client>;
 

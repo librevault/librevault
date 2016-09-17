@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage), Loggable("EncStorage") {}
+EncStorage::EncStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage) {}
 
 std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
@@ -73,13 +73,13 @@ std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 void EncStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
 	file_move(chunk_location, make_chunk_ct_path(ct_hash));
 
-	log_->debug() << log_tag() << "Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage";
+	LOGD("Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage");
 }
 
 void EncStorage::remove_chunk(const blob& ct_hash) {
 	fs::remove(make_chunk_ct_path(ct_hash));
 
-	log_->debug() << log_tag() << "Block " << make_chunk_ct_name(ct_hash) << " removed from EncStorage";
+	LOGD("Block " << make_chunk_ct_name(ct_hash) << " removed from EncStorage");
 }
 
 } /* namespace librevault */

@@ -36,7 +36,7 @@
 
 namespace librevault {
 
-class Config : protected Loggable {
+class Config {
 public:
 	~Config();
 

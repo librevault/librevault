@@ -32,6 +32,7 @@
 #include "folder/FolderGroup.h"
 #include "MulticastDiscovery.pb.h"
 #include "MulticastSender.h"
+#include <util/log.h>
 #include <boost/asio/ip/multicast.hpp>
 #include <boost/asio/ip/v6_only.hpp>
 

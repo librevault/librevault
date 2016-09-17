@@ -29,7 +29,7 @@
 #include "PortMappingService.h"
 #include "NATPMPService.h"
 #include "UPnPService.h"
-#include <util/Loggable.h>
+#include <util/log.h>
 
 namespace librevault {
 

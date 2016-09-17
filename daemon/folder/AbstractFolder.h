@@ -29,7 +29,6 @@
 #pragma once
 #include <librevault/util/bitfield_convert.h>
 #include "util/blob.h"
-#include "util/Loggable.h"
 
 namespace librevault {
 

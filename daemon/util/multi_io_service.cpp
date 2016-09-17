@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "multi_io_service.h"
-#include "Loggable.h"
+#include "log.h"
 
 namespace librevault {
 

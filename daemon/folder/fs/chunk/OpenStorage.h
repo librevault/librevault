@@ -27,15 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include "AbstractStorage.h"
-#include <librevault/Secret.h>
-#include "folder/fs/Index.h"
-#include "EncStorage.h"
+#include <util/log.h>
 
 namespace librevault {
 
 class FSFolder;
+class Secret;
+
 class OpenStorage : public AbstractStorage {
 	LOG_SCOPE("OpenStorage");
 public:

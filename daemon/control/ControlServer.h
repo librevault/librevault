@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/Loggable.h"
+#include "util/log_scope.h"
 #include "util/network.h"
 #include "util/parse_url.h"
 #include "folder/p2p/websocket_config.h"

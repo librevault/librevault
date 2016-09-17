@@ -28,6 +28,7 @@
  */
 #include "NATPMPService.h"
 #include "control/Config.h"
+#include <util/log.h>
 
 namespace librevault {
 

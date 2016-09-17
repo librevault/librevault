@@ -27,14 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "Index.h"
-#include "folder/fs/chunk/EncStorage.h"
-#include "folder/fs/chunk/OpenStorage.h"
-#include <librevault/Meta.h>
+#include "util/log_scope.h"
+#include "util/fs.h"
+#include <librevault/SignedMeta.h>
+#include <boost/filesystem/path.hpp>
+#include <set>
+#include <atomic>
+#include <mutex>
+#include <map>
 
 namespace librevault {
 
+class Client;
+class Index;
 class FSFolder;
 class Indexer {
 	LOG_SCOPE("Indexer");
@@ -81,9 +86,9 @@ private:
 	std::mutex index_queue_mtx_;
 
 	/* File analyzers */
-	Meta::Type get_type(const boost::filesystem::path& path);
-	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const boost::filesystem::path& path);
-	void update_chunks(const Meta& old_meta, Meta& new_meta, const boost::filesystem::path& path);
+	Meta::Type get_type(const fs::path& path);
+	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path);
+	void update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path);
 	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv);
 };
 

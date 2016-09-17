@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "MemoryCachedStorage.h"
-#include "folder/fs/FSFolder.h"
+#include "folder/AbstractFolder.h"
 
 namespace librevault {
 

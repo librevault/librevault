@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
 #include <util/periodic_process.h>
 #include <util/fs.h>
 #include <util/log_scope.h>
@@ -36,6 +35,7 @@
 namespace librevault {
 
 class Client;
+class FSFolder;
 class Archive {
 	friend class ArchiveStrategy;
 	LOG_SCOPE("Archive");

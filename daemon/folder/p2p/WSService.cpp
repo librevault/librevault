@@ -33,6 +33,7 @@
 #include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
+#include <util/log.h>
 #include <codecvt>
 
 namespace librevault {

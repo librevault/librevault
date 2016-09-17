@@ -36,7 +36,7 @@
 #include <discovery/DiscoveryService.h>
 
 #include <boost/range/adaptor/map.hpp>
-#include <util/Loggable.h>
+#include <util/log.h>
 
 namespace librevault {
 

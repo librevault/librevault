@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/Loggable.h"
 #include <json/json.h>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2/signal.hpp>

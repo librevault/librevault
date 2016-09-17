@@ -28,12 +28,13 @@
  */
 #include "NodeKey.h"
 #include "control/Config.h"
+#include <util/file_util.h>
+#include <util/log.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
 #include <openssl/pem.h>
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/Base64.h>
-#include "util/file_util.h"
 
 namespace librevault {
 

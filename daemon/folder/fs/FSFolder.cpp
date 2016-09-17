@@ -37,6 +37,7 @@
 #include "Client.h"
 
 #include "util/make_relpath.h"
+#include "util/log.h"
 
 #include <boost/locale.hpp>
 #include <codecvt>

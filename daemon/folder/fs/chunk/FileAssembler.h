@@ -27,16 +27,18 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "AbstractStorage.h"
-#include <librevault/Secret.h>
-#include "folder/fs/Index.h"
-#include "EncStorage.h"
 #include "Archive.h"
+#include "util/blob.h"
+#include <mutex>
 
 namespace librevault {
 
+class Index;
 class FSFolder;
+class ChunkStorage;
+class Meta;
+class Secret;
+
 class FileAssembler {
 	LOG_SCOPE("FileAssembler");
 public:

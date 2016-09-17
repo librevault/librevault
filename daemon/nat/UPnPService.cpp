@@ -30,7 +30,7 @@
 #include <control/Config.h>
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
-#include <util/Loggable.h>
+#include <util/log.h>
 
 namespace librevault {
 

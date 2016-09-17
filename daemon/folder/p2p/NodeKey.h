@@ -27,11 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/blob.h>
+#include <util/log_scope.h>
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
 #include <openssl/x509.h>
-#include "util/blob.h"
-#include "util/Loggable.h"
 
 namespace librevault {
 

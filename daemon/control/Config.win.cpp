@@ -28,6 +28,7 @@
  */
 #include "Config.h"
 #include <shlobj.h>
+#include "Version.h"
 
 namespace librevault {
 

@@ -32,6 +32,7 @@
 #include "folder/p2p/P2PProvider.h"
 #include "folder/fs/FSFolder.h"
 #include "UDPTrackerConnection.h"
+#include <util/log.h>
 
 namespace librevault {
 

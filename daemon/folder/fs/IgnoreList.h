@@ -28,7 +28,8 @@
  */
 #pragma once
 #include <control/Config.h>
-#include "../../pch.h"
+#include <mutex>
+#include <regex>
 
 namespace librevault {
 

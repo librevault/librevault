@@ -29,6 +29,7 @@
 #include "IgnoreList.h"
 #include "FSFolder.h"
 #include <util/regex_escape.h>
+#include <util/log.h>
 
 namespace librevault {
 

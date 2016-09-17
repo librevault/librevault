@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include "AbstractStorage.h"
+#include <map>
+#include <list>
 
 namespace librevault {
 

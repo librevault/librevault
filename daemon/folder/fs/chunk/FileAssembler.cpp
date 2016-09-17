@@ -30,12 +30,14 @@
 #include "FileAssembler.h"
 
 #include "Client.h"
+#include "ChunkStorage.h"
 
+#include "folder/fs/Index.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/IgnoreList.h"
 #include "folder/fs/AutoIndexer.h"
 
-#include "ChunkStorage.h"
+#include <util/log.h>
 
 namespace librevault {
 

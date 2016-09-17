@@ -35,6 +35,7 @@
 #include "folder/p2p/P2PFolder.h"
 #include <discovery/DiscoveryService.h>
 #include <discovery/mldht/MLDHTDiscovery.h>
+#include <util/log.h>
 
 namespace librevault {
 

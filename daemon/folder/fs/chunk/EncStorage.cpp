@@ -31,7 +31,7 @@
 #include "EncStorage.h"
 #include "folder/fs/FSFolder.h"
 #include <util/fs.h>
-
+#include <util/log.h>
 
 namespace librevault {
 

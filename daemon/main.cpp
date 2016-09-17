@@ -32,6 +32,7 @@
 #include <librevault/Secret.h>
 #include <boost/locale.hpp>
 #include <docopt.h>
+#include <spdlog/spdlog.h>
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 

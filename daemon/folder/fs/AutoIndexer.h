@@ -27,16 +27,16 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-#include "Index.h"
-#include "folder/fs/chunk/EncStorage.h"
-#include "folder/fs/chunk/OpenStorage.h"
 
 #include <dir_monitor/dir_monitor.hpp>
 #include <util/network.h>
 #include <util/periodic_process.h>
+#include <util/log_scope.h>
 
 namespace librevault {
+
+class FSFolder;
+class Client;
 
 class AutoIndexer {
 	LOG_SCOPE("AutoIndexer");

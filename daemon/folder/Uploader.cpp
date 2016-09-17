@@ -33,7 +33,7 @@
 #include "folder/fs/FSFolder.h"
 #include "folder/p2p/P2PFolder.h"
 
-#include <util/Loggable.h>
+#include <util/log.h>
 
 namespace librevault {
 

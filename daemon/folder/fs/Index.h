@@ -27,10 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
+#include <util/log_scope.h>
+#include <util/SQLiteWrapper.h>
 #include <librevault/SignedMeta.h>
-#include "util/Loggable.h"
-#include "util/SQLiteWrapper.h"
 #include <boost/signals2/signal.hpp>
 
 namespace librevault {

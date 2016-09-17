@@ -30,11 +30,13 @@
 
 #include "FSFolder.h"
 #include "IgnoreList.h"
+#include "Index.h"
 
 #include "Client.h"
-#include "util/byte_convert.h"
 #include <rabin.h>
+#include <util/byte_convert.h>
 #include <util/file_util.h>
+#include <util/log.h>
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/AES_CBC.h>
 

@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include <discovery/DiscoveryInstance.h>
 #include "../btcompat.h"
+#include <util/log_scope.h>
 
 #include <boost/asio/steady_timer.hpp>
 

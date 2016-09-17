@@ -26,11 +26,11 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <util/file_util.h>
 #include "Index.h"
 #include "FSFolder.h"
 #include "Client.h"
-
+#include <util/file_util.h>
+#include <util/log.h>
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {

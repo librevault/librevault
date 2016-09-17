@@ -27,14 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/log.h>
 #include <util/file_util.h>
+#include <util/AvailabilityMap.h>
 #include <util/periodic_process.h>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include "RemoteFolder.h"
-#include "util/AvailabilityMap.h"
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f

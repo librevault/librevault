@@ -29,8 +29,8 @@
 #pragma once
 #include "websocket_config.h"
 #include "P2PProvider.h"
-#include "util/network.h"
-#include "util/Loggable.h"
+#include <util/network.h>
+#include <util/log.h>
 
 namespace librevault {
 

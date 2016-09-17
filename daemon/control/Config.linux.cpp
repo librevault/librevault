@@ -28,6 +28,7 @@
  */
 #include "Config.h"
 #include <pwd.h>
+#include "Version.h"
 
 namespace librevault {
 

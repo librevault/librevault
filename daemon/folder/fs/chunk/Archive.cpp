@@ -26,14 +26,16 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <util/file_util.h>
-#include <util/regex_escape.h>
 #include "Archive.h"
 
 #include "Client.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/AutoIndexer.h"
 #include "ChunkStorage.h"
+
+#include <util/file_util.h>
+#include <util/regex_escape.h>
+#include <util/log.h>
 
 namespace librevault {
 

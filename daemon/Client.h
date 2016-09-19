@@ -80,8 +80,6 @@ public:
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 
 	std::vector<std::shared_ptr<FolderGroup>> groups() const;
-
-	P2PProvider* p2p_provider();
 private:
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;

@@ -30,7 +30,7 @@
 
 namespace librevault {
 
-DiscoverySubService::DiscoverySubService(DiscoveryService& parent, Client& client, std::string id) : parent_(parent), client_(client), id_(id) {}
+DiscoverySubService::DiscoverySubService(DiscoveryService& parent, io_service& io_service, std::string id) : parent_(parent), io_service_(io_service), id_(id) {}
 
 void DiscoverySubService::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
 	node_cred.source = id_;

@@ -28,28 +28,27 @@
  */
 #pragma once
 #include "../btcompat.h"
-#include <nat/PortMappingService.h>
 #include <util/parse_url.h>
 
 namespace librevault {
 
 class FolderGroup;
 class P2PProvider;
-class Client;
 class BTTrackerDiscovery;
 class NodeKey;
+class PortMappingService;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class TrackerConnection {
 public:
-	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service);
 	virtual ~TrackerConnection();
 protected:
 	enum class Event : int32_t {
 		EVENT_NONE=0, EVENT_COMPLETED=1, EVENT_STARTED=2, EVENT_STOPPED=3
 	};
 
-	Client& client_;
+	io_service& io_service_;
 	BTTrackerDiscovery& tracker_discovery_;
 	NodeKey& node_key_;
 	PortMappingService& port_mapping_;

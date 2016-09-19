@@ -49,8 +49,8 @@ Client::Client() {
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
-	discovery_ = std::make_unique<DiscoveryService>(*this, *node_key_, *portmanager_);
 	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_);
+	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
 
 	/* Control Server */
 	control_server_ = std::make_unique<ControlServer>(*this);
@@ -62,6 +62,8 @@ Client::Client() {
 	}
 
 	/* Connecting signals */
+	folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->register_group(group);});
+	folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->unregister_group(group);});
 	discovery_->discovered_node_signal.connect(std::bind(&P2PProvider::add_node, p2p_provider_.get(), std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -165,10 +167,6 @@ std::vector<std::shared_ptr<FolderGroup>> Client::groups() const {
 	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
 		groups_list.push_back(group_ptr);
 	return groups_list;
-}
-
-P2PProvider* Client::p2p_provider() {
-	return p2p_provider_.get();
 }
 
 } /* namespace librevault */

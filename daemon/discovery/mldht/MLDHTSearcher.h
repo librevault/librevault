@@ -41,7 +41,7 @@ class PortMappingService;
 class MLDHTSearcher : public DiscoveryInstance {
 	LOG_SCOPE("MLDHTSearcher");
 public:
-	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping);
+	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping, io_service& io_service);
 
 	void set_enabled(bool enable);
 	void start_search(int af);

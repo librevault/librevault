@@ -30,8 +30,9 @@
 
 namespace librevault {
 
-DiscoveryInstance::DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoverySubService& service) :
+DiscoveryInstance::DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoverySubService& service, io_service& io_service) :
 	group_(group),
-	service_(service) {}
+	service_(service),
+	io_service_(io_service) {}
 
 } /* namespace librevault */

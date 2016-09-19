@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <memory>
+#include <util/network.h>
 
 namespace librevault {
 
@@ -38,8 +39,9 @@ class DiscoveryInstance {
 protected:
 	std::weak_ptr<FolderGroup> group_;
 	DiscoverySubService& service_;
+	io_service& io_service_;
 
-	DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoverySubService& service);
+	DiscoveryInstance(std::weak_ptr<FolderGroup> group, DiscoverySubService& service, io_service& io_service);
 };
 
 } /* namespace librevault */

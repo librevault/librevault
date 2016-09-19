@@ -31,11 +31,11 @@
 #include <util/parse_url.h>
 #include <util/network.h>
 #include <util/blob.h>
+#include <util/multi_io_service.h>
 
 namespace librevault {
 
 class FolderGroup;
-class Client;
 
 class StaticDiscovery;
 class MulticastDiscovery;
@@ -56,7 +56,7 @@ public:
 		blob pubkey;
 	};
 
-	DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~DiscoveryService();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
@@ -65,7 +65,7 @@ public:
 	boost::signals2::signal<void(ConnectCredentials, std::shared_ptr<FolderGroup>)> discovered_node_signal;
 
 protected:
-	Client& client_;
+	multi_io_service io_service_;
 
 	std::unique_ptr<StaticDiscovery> static_discovery_;
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;

@@ -28,20 +28,18 @@
  */
 #pragma once
 #include "TrackerConnection.h"
-#include <nat/PortMappingService.h>
-
 #include <boost/asio/steady_timer.hpp>
 
 namespace librevault {
 
 class FolderGroup;
 class P2PProvider;
-class Client;
+class PortMappingService;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class UDPTrackerConnection : public TrackerConnection {
 public:
-	UDPTrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	UDPTrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service);
 	virtual ~UDPTrackerConnection();
 private:
 	enum class Action : int32_t {

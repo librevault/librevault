@@ -29,20 +29,19 @@
 #include "MulticastDiscovery.h"
 #include "MulticastSender.h"
 #include "MulticastDiscovery.pb.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/p2p/WSServer.h"
-#include <chrono>
+#include <control/Config.h>
+#include <folder/p2p/NodeKey.h>
+#include <util/log.h>
 
 namespace librevault {
 
 using namespace boost::asio::ip;
 
-MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, NodeKey& node_key) :
-	DiscoveryInstance(group, service),
+MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, io_service& io_service, NodeKey& node_key) :
+	DiscoveryInstance(group, service, io_service),
 	node_key_(node_key),
-	repeat_timer_(service.client().network_ios()) {
+	repeat_timer_(io_service) {
 
 	maintain_requests();
 }
@@ -61,7 +60,7 @@ std::string MulticastSender::get_message() const {
 		if(!group_ptr) return std::string();
 
 		protocol::MulticastDiscovery message;
-		message.set_port(service_.client().p2p_provider()->ws_server()->local_endpoint().port());   // Damn, this is painful
+		message.set_port(url(Config::get()->globals()["p2p_listen"].asString()).port);
 		message.set_dir_hash(group_ptr->secret().get_Hash().data(), group_ptr->secret().get_Hash().size());
 		message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
 

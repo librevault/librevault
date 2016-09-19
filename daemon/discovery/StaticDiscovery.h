@@ -34,7 +34,7 @@ namespace librevault {
 
 class StaticDiscovery : public DiscoverySubService {
 public:
-	StaticDiscovery(DiscoveryService& parent, Client& client);
+	StaticDiscovery(DiscoveryService& parent, io_service& io_service);
 	virtual ~StaticDiscovery();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);

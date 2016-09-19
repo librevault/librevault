@@ -33,19 +33,14 @@
 #include "multicast/MulticastDiscovery.h"
 #include "mldht/MLDHTDiscovery.h"
 
-#include <Client.h>
-
 namespace librevault {
 
-DiscoveryService::DiscoveryService(Client& client, NodeKey& node_key, PortMappingService& port_mapping) : client_(client) {
-	static_discovery_ = std::make_unique<StaticDiscovery>(*this, client_);
-	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, client_, node_key);
-	multicast6_ = std::make_unique<MulticastDiscovery6>(*this, client_, node_key);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, client_, node_key, port_mapping);
-	mldht_ = std::make_unique<MLDHTDiscovery>(*this, client_, port_mapping);
-
-	client.folder_added_signal.connect(std::bind(&DiscoveryService::register_group, this, std::placeholders::_1));
-	client.folder_removed_signal.connect(std::bind(&DiscoveryService::unregister_group, this, std::placeholders::_1));
+DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping) : io_service_("DiscoveryService") {
+	static_discovery_ = std::make_unique<StaticDiscovery>(*this, io_service_.ios());
+	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, io_service_.ios(), node_key);
+	multicast6_ = std::make_unique<MulticastDiscovery6>(*this, io_service_.ios(), node_key);
+	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, io_service_.ios(), node_key, port_mapping);
+	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping);
 }
 
 DiscoveryService::~DiscoveryService() {}

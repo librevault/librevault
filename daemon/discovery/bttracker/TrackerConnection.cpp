@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "UDPTrackerConnection.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
 #include "folder/p2p/P2PProvider.h"
 #include "folder/fs/FSFolder.h"
@@ -37,8 +36,8 @@ namespace librevault {
 TrackerConnection::TrackerConnection(url tracker_address,
                                      std::shared_ptr<FolderGroup> group_ptr,
                                      BTTrackerDiscovery& tracker_discovery,
-                                     Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
-		client_(client),
+                                     NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service) :
+		io_service_(io_service),
 		tracker_discovery_(tracker_discovery),
 		node_key_(node_key),
 		port_mapping_(port_mapping),

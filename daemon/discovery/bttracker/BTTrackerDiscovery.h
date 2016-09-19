@@ -39,7 +39,7 @@ class BTTrackerDiscovery : public DiscoverySubService {
 protected:
 	LOG_SCOPE("BTTrackerDiscovery");
 public:
-	BTTrackerDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	BTTrackerDiscovery(DiscoveryService& parent, io_service& io_service, NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~BTTrackerDiscovery();
 
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);

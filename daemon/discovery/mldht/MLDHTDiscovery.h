@@ -40,7 +40,7 @@ class MLDHTSearcher;
 class MLDHTDiscovery : public DiscoverySubService {
 	LOG_SCOPE("MLDHTDiscovery");
 public:
-	MLDHTDiscovery(DiscoveryService& parent, Client& client, PortMappingService& port_mapping);
+	MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping);
 	virtual ~MLDHTDiscovery();
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);

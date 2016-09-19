@@ -34,12 +34,11 @@
 namespace librevault {
 
 class FolderGroup;
-class Client;
 
 class DiscoverySubService {
 	LOG_SCOPE("DiscoverySubService");
 public:
-	DiscoverySubService(DiscoveryService& parent, Client& client, std::string id);
+	DiscoverySubService(DiscoveryService& parent, io_service& io_service, std::string id);
 	virtual ~DiscoverySubService(){}
 
 	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
@@ -50,11 +49,10 @@ public:
 	void add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr);
 	void add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr);
 
-	Client& client() {return client_;}
-
 protected:
 	DiscoveryService& parent_;
-	Client& client_;
+
+	io_service& io_service_;
 	std::string id_;
 };
 

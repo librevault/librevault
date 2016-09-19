@@ -27,10 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "BTTrackerDiscovery.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
 #include "UDPTrackerConnection.h"
 #include <util/log.h>
 
@@ -38,8 +35,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-BTTrackerDiscovery::BTTrackerDiscovery(DiscoveryService& parent, Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
-	DiscoverySubService(parent, client, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
+BTTrackerDiscovery::BTTrackerDiscovery(DiscoveryService& parent, io_service& io_service, NodeKey& node_key, PortMappingService& port_mapping) :
+	DiscoverySubService(parent, io_service, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
 	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
 		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
 			trackers_.push_back(tracker.asString());
@@ -56,7 +53,7 @@ void BTTrackerDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) 
 		std::unique_ptr<TrackerConnection> tracker_connection;
 
 		if(tracker_url.scheme == "udp") {
-			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, client_, node_key_, port_mapping_);
+			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, node_key_, port_mapping_, io_service_);
 		}
 
 		groups_.emplace(group_ptr, std::move(tracker_connection));

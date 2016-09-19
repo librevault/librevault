@@ -41,18 +41,18 @@ namespace librevault {
 UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
                                            std::shared_ptr<FolderGroup> group_ptr,
                                            BTTrackerDiscovery& tracker_discovery,
-                                           Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
-	TrackerConnection(tracker_address, group_ptr, tracker_discovery, client, node_key, port_mapping),
+                                           NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service) :
+	TrackerConnection(tracker_address, group_ptr, tracker_discovery, node_key, port_mapping, io_service),
 
-		socket_(client.network_ios()),
-		resolver_(client.network_ios()),
-		reconnect_timer_(client.network_ios()),
-		announce_timer_(client.network_ios()) {
+		socket_(io_service),
+		resolver_(io_service),
+		reconnect_timer_(io_service),
+		announce_timer_(io_service) {
 	announce_interval_ = std::chrono::seconds(Config::get()->globals()["bttracker_min_interval"].asUInt64());
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = client_.p2p_provider()->ws_server()->local_endpoint().address();
+	bind_address_ = address::from_string(url(Config::get()->globals()["p2p_listen"].asString()).host);
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 

@@ -38,7 +38,7 @@ class MulticastDiscovery;
 class MulticastSender : public DiscoveryInstance {
 	LOG_SCOPE("MulticastSender");
 public:
-	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, NodeKey& node_key);
+	MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, io_service& io_service, NodeKey& node_key);
 
 	void consume(const tcp_endpoint& node_endpoint, const blob& pubkey);
 

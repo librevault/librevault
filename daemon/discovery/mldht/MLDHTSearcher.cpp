@@ -28,11 +28,8 @@
  */
 #include "MLDHTSearcher.h"
 #include "MLDHTDiscovery.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
 #include "folder/p2p/P2PFolder.h"
-#include "folder/p2p/WSServer.h"
 #include "nat/PortMappingService.h"
 #include <dht.h>
 #include <librevault/crypto/Hex.h>
@@ -41,11 +38,11 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping) :
-		DiscoveryInstance(group, service),
+MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping, io_service& io_service) :
+		DiscoveryInstance(group, service, io_service),
 		port_mapping_(port_mapping),
-		search_timer6_(service.client().network_ios()),
-		search_timer4_(service.client().network_ios()) {
+		search_timer6_(io_service_),
+		search_timer4_(io_service_) {
 	info_hash_ = btcompat::get_info_hash(std::shared_ptr<FolderGroup>(group)->hash());
 
 	set_enabled(std::shared_ptr<FolderGroup>(group)->params().mainline_dht_enabled);
@@ -61,7 +58,7 @@ MLDHTSearcher::MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& s
 void MLDHTSearcher::set_enabled(bool enable) {
 	if(enable && !enabled_) {
 		enabled_ = true;
-		service_.client().network_ios().post([&, this]() {
+		io_service_.post([&, this]() {
 			start_search(AF_INET);
 			start_search(AF_INET6);
 		});

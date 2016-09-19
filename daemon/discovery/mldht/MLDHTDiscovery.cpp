@@ -30,10 +30,7 @@
 #include <MLDHTSessionFile.pb.h>
 #include "MLDHTDiscovery.h"
 #include "MLDHTSearcher.h"
-#include "Client.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
 #include "nat/PortMappingService.h"
 #include "util/log.h"
 
@@ -45,13 +42,13 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, Client& client, PortMappingService& port_mapping) :
-	DiscoverySubService(parent, client, "DHT"),
+MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping) :
+	DiscoverySubService(parent, io_service, "DHT"),
 	port_mapping_(port_mapping),
-	socket4_(client_.network_ios()),
-	socket6_(client_.network_ios()),
-	resolver_(client_.network_ios()),
-	tosleep_timer_(client_.network_ios()) {
+	socket4_(io_service_),
+	socket6_(io_service_),
+	resolver_(io_service_),
+	tosleep_timer_(io_service_) {
 
 	init();
 }
@@ -135,7 +132,7 @@ void MLDHTDiscovery::init() {
 		for(auto& compact_node6 : session_pb.compact_endpoints6()) {
 			if(compact_node6.size() != sizeof(btcompat::compact_endpoint6)) continue;
 			auto endpoint = btcompat::parse_compact_endpoint6(compact_node6.data());
-			client_.network_ios().post([endpoint] {
+			io_service_.post([endpoint] {
 				dht_ping_node(endpoint.data(), endpoint.size());
 			});
 		}
@@ -144,7 +141,7 @@ void MLDHTDiscovery::init() {
 		for(auto& compact_node4 : session_pb.compact_endpoints4()) {
 			if(compact_node4.size() != sizeof(btcompat::compact_endpoint4)) continue;
 			auto endpoint = btcompat::parse_compact_endpoint4(compact_node4.data());
-			client_.network_ios().post([endpoint] {
+			io_service_.post([endpoint] {
 				dht_ping_node(endpoint.data(), endpoint.size());
 			});
 		}
@@ -211,7 +208,7 @@ void MLDHTDiscovery::deinit_session_file() {
 
 void MLDHTDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	groups_.insert({btcompat::get_info_hash(group_ptr->hash()), group_ptr});
-	searchers_[btcompat::get_info_hash(group_ptr->hash())] = std::move(std::make_unique<MLDHTSearcher>(group_ptr, *this, port_mapping_));
+	searchers_[btcompat::get_info_hash(group_ptr->hash())] = std::move(std::make_unique<MLDHTSearcher>(group_ptr, *this, port_mapping_, io_service_));
 }
 
 void MLDHTDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {

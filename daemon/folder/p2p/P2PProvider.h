@@ -47,7 +47,7 @@ class P2PProvider {
 	friend class ControlServer;
 	LOG_SCOPE("P2PProvider");
 public:
-	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping);
+	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
 	virtual ~P2PProvider();
 
 	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);

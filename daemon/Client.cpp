@@ -31,11 +31,11 @@
 #include "control/ControlServer.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/p2p/P2PProvider.h"
+#include "folder/FolderService.h"
 
 #include <nat/PortMappingService.h>
 #include <discovery/DiscoveryService.h>
 
-#include <boost/range/adaptor/map.hpp>
 #include <util/log.h>
 
 namespace librevault {
@@ -49,21 +49,18 @@ Client::Client() {
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
-	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_);
+	folder_service_ = std::make_unique<FolderService>(*this);
+	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_, *folder_service_);
 	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
 
 	/* Control Server */
 	control_server_ = std::make_unique<ControlServer>(*this);
-	control_server_->add_folder_signal.connect(std::bind(&Client::add_folder, this, std::placeholders::_1));
-	control_server_->remove_folder_signal.connect(std::bind(&Client::remove_folder, this, std::placeholders::_1));
-
-	for(auto& folder_config : Config::get()->folders()) {
-		init_folder(folder_config);
-	}
+	control_server_->add_folder_signal.connect(std::bind(&FolderService::add_folder, folder_service_.get(), std::placeholders::_1));
+	control_server_->remove_folder_signal.connect(std::bind(&FolderService::remove_folder, folder_service_.get(), std::placeholders::_1));
 
 	/* Connecting signals */
-	folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->register_group(group);});
-	folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->unregister_group(group);});
+	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->register_group(group);});
+	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->unregister_group(group);});
 	discovery_->discovered_node_signal.connect(std::bind(&P2PProvider::add_node, p2p_provider_.get(), std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -88,85 +85,10 @@ void Client::run() {
 void Client::shutdown(){
 	LOGI("Exiting...");
 
-	hash_group_.clear();
-
 	bulk_ios_->stop();
 	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();
-}
-
-void Client::add_folder(Json::Value json_folder) {
-	LOGFUNC();
-
-	FolderParams params(json_folder);
-
-	auto folders_copy = Config::get()->folders_custom();
-
-	auto it = std::find_if(folders_copy.begin(), folders_copy.end(), [&](const Json::Value& v){
-		return FolderParams(v).secret.get_Hash() == params.secret.get_Hash();
-	});
-	if(it == folders_copy.end()) {
-		folders_copy.append(json_folder);
-		Config::get()->set_folders(folders_copy);
-
-		init_folder(params);
-	}else
-		throw samekey_error();
-}
-
-void Client::remove_folder(const Secret& secret) {
-	LOGFUNC();
-
-	auto folders_copy = Config::get()->folders_custom();
-	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
-		if(FolderParams(folders_copy[i]).secret.get_Hash() == secret.get_Hash()) {
-			deinit_folder(secret);
-
-			Json::Value temp;
-			folders_copy.removeIndex(i, &temp);
-			break;
-		}
-	}
-
-	Config::get()->set_folders(folders_copy);
-}
-
-void Client::init_folder(FolderParams params) {
-	LOGFUNC();
-
-	auto group_ptr = get_group(params.secret.get_Hash());
-	if(!group_ptr) {
-		group_ptr = std::make_shared<FolderGroup>(std::move(params), *this);
-		hash_group_.insert({group_ptr->hash(), group_ptr});
-
-		folder_added_signal(group_ptr);
-	}else
-		throw samekey_error();
-}
-
-void Client::deinit_folder(const Secret& secret) {
-	LOGFUNC();
-
-	auto group_ptr = get_group(secret.get_Hash());
-
-	hash_group_.erase(secret.get_Hash());
-	folder_removed_signal(group_ptr);
-	LOGD("Group deinitialized: " << secret);
-}
-
-std::shared_ptr<FolderGroup> Client::get_group(const blob& hash) {
-	auto it = hash_group_.find(hash);
-	if(it != hash_group_.end())
-		return it->second;
-	return nullptr;
-}
-
-std::vector<std::shared_ptr<FolderGroup>> Client::groups() const {
-	std::vector<std::shared_ptr<FolderGroup>> groups_list;
-	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
-		groups_list.push_back(group_ptr);
-	return groups_list;
 }
 
 } /* namespace librevault */

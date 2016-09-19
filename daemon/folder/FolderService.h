@@ -27,45 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "WSService.h"
-#include <discovery/DiscoveryService.h>
-#include <util/parse_url.h>
+#include "util/blob.h"
+#include "util/log_scope.h"
+#include <boost/signals2/signal.hpp>
+#include <json/json.h>
 
 namespace librevault {
 
+/* Folder info */
+class Client;
 class FolderGroup;
+class FolderParams;
+class Secret;
 
-class WSClient : public WSService {
-	LOG_SCOPE("WSClient");
+class FolderService {
+	LOG_SCOPE("FolderService");
 public:
-	using client = websocketpp::client<asio_tls_client>;
+	struct samekey_error : std::runtime_error {
+		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
+	};
 
-	WSClient(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
-	virtual ~WSClient() {}
+	FolderService(Client& client);
+	virtual ~FolderService();
 
-	void connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	/* Signals */
+	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
+	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
-	/* Actions */
-	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
+	/* FolderGroup nanagenent */
+	void add_folder(Json::Value json_folder);    // Adds folder into config, so JSON. Also, invokes init_folder.
+	void remove_folder(const Secret& secret);   // Invokes deinit_folder and removes folder from config.
+
+	void init_folder(const FolderParams& params);
+	void deinit_folder(const Secret& secret);
+
+	std::shared_ptr<FolderGroup> get_group(const blob& hash);
+
+	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 
 private:
-	client ws_client_;
-
-	/* Handlers */
-	void on_tcp_post_init(websocketpp::connection_hdl hdl) override { WSService::on_tcp_post_init(ws_client_, hdl); }
-	void on_message_internal(websocketpp::connection_hdl hdl, client::message_ptr message_ptr);
-
-	/* Util */
-	std::string dir_hash_to_query(const blob& dir_hash);
-
-	/* Actions */
-	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
-		WSService::close(ws_client_, hdl, reason);
-	}
-	std::string errmsg(websocketpp::connection_hdl hdl) override;
-
-	bool is_loopback(const DiscoveryService::ConnectCredentials& node_credentials);
-	bool already_have(const DiscoveryService::ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	Client& client_;
+	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
 };
 
 } /* namespace librevault */

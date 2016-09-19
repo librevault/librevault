@@ -41,7 +41,7 @@ class Client;
 class WSService {
 	LOG_SCOPE("WSService");
 public:
-	WSService(Client& client, P2PProvider& provider, NodeKey& node_key);
+	WSService(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
 	virtual ~WSService() {}
 
 	struct connection {
@@ -70,6 +70,7 @@ protected:
 
 	P2PProvider& provider_;
 	Client& client_;
+	FolderService& folder_service_;
 
 	NodeKey& node_key_;
 

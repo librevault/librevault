@@ -31,12 +31,13 @@
 #include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
+#include "folder/FolderService.h"
 
 #include <librevault/Tokens.h>
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, WSService::connection conn) :
+P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
 	conn_(std::move(conn)),
 	provider_(provider),
 	ws_service_(ws_service),
@@ -46,7 +47,7 @@ P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_servic
 	name_ = os.str();
 	LOGD("Created");
 
-	group_ = client.get_group(conn_.hash);
+	group_ = folder_service.get_group(conn_.hash);
 }
 
 P2PFolder::~P2PFolder() {

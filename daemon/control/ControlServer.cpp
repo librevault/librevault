@@ -29,6 +29,7 @@
 #include "ControlServer.h"
 #include "Client.h"
 #include "folder/FolderGroup.h"
+#include "folder/FolderService.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/Index.h"
 #include "folder/fs/Indexer.h"
@@ -141,7 +142,7 @@ std::string ControlServer::make_control_json() {
 
 Json::Value ControlServer::make_state_json() const {
 	Json::Value state_json;                         // state_json
-	for(auto folder : client_.groups()) {
+	for(auto folder : client_.folder_service_->groups()) {
 		Json::Value folder_json;                    /// folder_json
 
 		folder_json["path"] = folder->fs_dir()->path().string();

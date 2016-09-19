@@ -43,19 +43,11 @@ class P2PProvider;
 class NodeKey;
 class PortMappingService;
 class DiscoveryService;
-
-/* Folder info */
-class FolderGroup;
-class FolderParams;
-class Secret;
+class FolderService;
 
 class Client {
 	friend class ControlServer;
 public:
-	struct samekey_error : std::runtime_error {
-		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
-	};
-
 	Client();
 	virtual ~Client();
 
@@ -65,33 +57,13 @@ public:
 	boost::asio::io_service& ios() {return etc_ios_->ios();}
 	boost::asio::io_service& network_ios() {return network_ios_->ios();}
 	boost::asio::io_service& bulk_ios() {return bulk_ios_->ios();}
-
-	/* Signals */
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
-
-	/* FolderGroup nanagenent */
-	void add_folder(Json::Value json_folder);    // Adds folder into config, so JSON. Also, invokes init_folder.
-	void remove_folder(const Secret& secret);   // Invokes deinit_folder and removes folder from config.
-
-	void init_folder(FolderParams params);
-	void deinit_folder(const Secret& secret);
-
-	std::shared_ptr<FolderGroup> get_group(const blob& hash);
-
-	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 private:
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
 	std::unique_ptr<DiscoveryService> discovery_;
-
-	/* Components */
-	std::unique_ptr<ControlServer> control_server_;
-
-	// Remote
+	std::unique_ptr<FolderService> folder_service_;
 	std::unique_ptr<P2PProvider> p2p_provider_;
-
-	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
+	std::unique_ptr<ControlServer> control_server_;
 
 	/* Asynchronous/multithreaded operation */
 	boost::asio::io_service main_loop_ios_;

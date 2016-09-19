@@ -47,7 +47,7 @@ Indexer::Indexer(FSFolder& dir, Client& client) :
 	secret_(dir_.secret()), index_(*dir_.index), client_(client), indexing_now_(0) {}
 
 void Indexer::index(const std::string& file_path) noexcept {
-	LOGT("Indexer::index(" << file_path << ")");
+	LOGFUNC() << file_path;
 
 	++indexing_now_;
 

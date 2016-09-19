@@ -58,7 +58,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, WSService::connection conn);
+	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */

@@ -36,10 +36,10 @@
 
 namespace librevault {
 
-P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping) :
+P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
 		client_(client), node_key_(node_key) {
-	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key);
-	ws_client_ = std::make_unique<WSClient>(client, *this, node_key);
+	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key, folder_service);
+	ws_client_ = std::make_unique<WSClient>(client, *this, node_key, folder_service);
 }
 
 P2PProvider::~P2PProvider() {}

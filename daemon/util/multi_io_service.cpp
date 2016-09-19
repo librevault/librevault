@@ -31,7 +31,7 @@
 
 namespace librevault {
 
-multi_io_service::multi_io_service(std::string name) : name_(name) {}
+multi_io_service::multi_io_service(std::string name) : name_(std::move(name)) {}
 
 multi_io_service::~multi_io_service() {
 	stop();

@@ -81,7 +81,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 	}catch(abort_index& e){
 		LOGN("Skipping " << file_path << ". Reason: " << e.what());
 	}catch(std::runtime_error& e){
-		LOGW("Skipping " << file_path << ". Error: " << e.what());
+		LOGE("Skipping " << file_path << ". Error: " << e.what());
 	}
 
 	--indexing_now_;
@@ -248,7 +248,7 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 
 	file_wrapper f(path, "rb");
 
-	while(!f.ios().eof()) {
+	while(!f.ios().eof() && active) {
 		auto byte_read = f.ios().get(); if(byte_read == EOF) continue;
 
 		buffer.push_back(byte_read);
@@ -260,6 +260,9 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 			buffer.clear();
 		}
 	}
+
+	if(!active)
+		throw abort_index("Application is shutting down");
 
 	if(rabin_finalize(&hasher) != 0)
 		chunks.push_back(populate_chunk(new_meta, buffer, pt_hmac__iv));

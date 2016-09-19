@@ -72,6 +72,7 @@ public:
 
 	/* Getters */
 	bool is_indexing() const {return indexing_now_ != 0;}
+	void stop_indexing() {active = false;}
 
 private:
 	FSFolder& dir_;
@@ -85,6 +86,7 @@ private:
 	std::atomic_uint indexing_now_;
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
+	bool active = true;
 
 	/* File analyzers */
 	Meta::Type get_type(const fs::path& path);

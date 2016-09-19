@@ -27,9 +27,11 @@
  * files in the program, then also delete it here.
  */
 #include "FolderService.h"
-#include "control/FolderParams.h"
-#include "control/Config.h"
 #include "FolderGroup.h"
+#include "control/Config.h"
+#include "control/FolderParams.h"
+#include "folder/fs/FSFolder.h"
+#include "folder/fs/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
 
@@ -43,7 +45,11 @@ FolderService::FolderService() : ios_("FolderService") {
 FolderService::~FolderService() {stop();}
 
 void FolderService::run() {ios_.start(std::thread::hardware_concurrency());}
-void FolderService::stop() {ios_.stop();}
+void FolderService::stop() {
+	for(auto& group : groups())
+		group->fs_dir()->indexer->stop_indexing();
+	ios_.stop();
+}
 
 void FolderService::add_folder(Json::Value json_folder) {
 	LOGFUNC();

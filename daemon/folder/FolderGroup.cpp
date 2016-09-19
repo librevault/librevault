@@ -187,7 +187,7 @@ bool FolderGroup::have_p2p_dir(const blob& pubkey) {
 }
 
 std::string FolderGroup::log_tag() const {
-	return (params_.path.empty() ? params_.system_path : params_.path).string();
+	return std::string("[") + (params_.path.empty() ? params_.system_path : params_.path).string() + "] ";
 }
 
 } /* namespace librevault */

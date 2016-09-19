@@ -58,7 +58,13 @@ void multi_io_service::stop() {
 
 void multi_io_service::run_thread(unsigned worker_number) {
 	LOGD("Thread #" << worker_number << " started");
-	ios_.run();
+	try {
+		ios_.run();
+	}catch(std::exception& e) {
+		LOGEM("Unhandled exception: " << e.what());
+		LOGGER->flush();
+		throw;
+	}
 	LOGD("Thread #" << worker_number << " stopped");
 }
 

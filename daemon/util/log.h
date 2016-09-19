@@ -54,5 +54,11 @@ LOGGER->error() << log_tag() << ARGS
 #define LOGC(ARGS) \
 LOGGER->critical() << log_tag() << ARGS
 
+#define LOGA(ARGS) \
+LOGGER->alert() << log_tag() << ARGS
+
+#define LOGEM(ARGS) \
+LOGGER->emerg() << log_tag() << ARGS
+
 #define LOGFUNC() \
 LOGT(BOOST_CURRENT_FUNCTION)

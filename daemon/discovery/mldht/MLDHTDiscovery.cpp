@@ -26,13 +26,14 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <util/file_util.h>
-#include <MLDHTSessionFile.pb.h>
 #include "MLDHTDiscovery.h"
 #include "MLDHTSearcher.h"
+#include <MLDHTSessionFile.pb.h>
+#include "dht_glue.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "util/log.h"
+#include "util/file_util.h"
 
 #include <dht.h>
 #include <cryptopp/osrng.h>

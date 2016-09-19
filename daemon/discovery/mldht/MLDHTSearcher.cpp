@@ -28,6 +28,7 @@
  */
 #include "MLDHTSearcher.h"
 #include "MLDHTDiscovery.h"
+#include "dht_glue.h"
 #include "folder/FolderGroup.h"
 #include "folder/p2p/P2PFolder.h"
 #include "nat/PortMappingService.h"

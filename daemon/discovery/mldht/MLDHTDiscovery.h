@@ -86,11 +86,3 @@ protected:
 };
 
 } /* namespace librevault */
-
-extern "C" {
-
-static void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
-	((librevault::MLDHTDiscovery*)closure)->pass_callback(closure, event, info_hash, (const uint8_t*)data, data_len);
-}
-
-} /* extern "C" */

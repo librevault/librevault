@@ -36,6 +36,8 @@
 
 #include "control/Config.h"
 
+#include "util/fs.h"
+
 #include <boost/range/adaptor/map.hpp>
 #include <librevault/crypto/Base32.h>
 

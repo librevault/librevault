@@ -27,8 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
-
 #include "AbstractFolder.h"
 #include "control/FolderParams.h"
 #include "util/network.h"
@@ -38,6 +36,8 @@
 #include <librevault/util/bitfield_convert.h>
 
 #include <boost/signals2/signal.hpp>
+#include <set>
+#include <mutex>
 
 namespace librevault {
 

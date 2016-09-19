@@ -36,6 +36,7 @@
 #include <util/file_util.h>
 #include <util/regex_escape.h>
 #include <util/log.h>
+#include <regex>
 
 namespace librevault {
 

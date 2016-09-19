@@ -9,7 +9,6 @@ include_directories(${CMAKE_BINARY_DIR})
 # Sources & headers
 #============================================================================
 
-list(APPEND SRCS "pch.h")
 # Main sources
 file(GLOB_RECURSE MAIN_SRCS "*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "*.h")

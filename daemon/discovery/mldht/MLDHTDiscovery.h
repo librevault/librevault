@@ -27,11 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include "discovery/DiscoverySubService.h"
 #include "../btcompat.h"
 #include <boost/bimap.hpp>
 #include <boost/asio/steady_timer.hpp>
+#include <mutex>
 
 namespace librevault {
 

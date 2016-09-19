@@ -29,6 +29,7 @@
 #pragma once
 #include "Archive.h"
 #include "util/blob.h"
+#include "util/network.h"
 #include <mutex>
 
 namespace librevault {
@@ -47,7 +48,7 @@ public:
 		error() : error("FileAssembler error") {}
 	};
 
-	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client);
+	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, io_service& ios);
 	virtual ~FileAssembler() {}
 
 	blob get_chunk_pt(const blob& ct_hash) const;
@@ -59,7 +60,7 @@ public:
 private:
 	FSFolder& dir_;
 	ChunkStorage& chunk_storage_;
-	Client& client_;
+	io_service& ios_;
 
 	Archive archive_;
 

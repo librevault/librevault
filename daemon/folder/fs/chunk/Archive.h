@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/periodic_process.h>
-#include <util/fs.h>
-#include <util/log_scope.h>
+#include "util/periodic_process.h"
+#include "util/fs.h"
+#include "util/log_scope.h"
+#include "util/network.h"
 #include <boost/filesystem/path.hpp>
 
 namespace librevault {
@@ -40,14 +41,14 @@ class Archive {
 	friend class ArchiveStrategy;
 	LOG_SCOPE("Archive");
 public:
-	Archive(FSFolder& dir, Client& client);
+	Archive(FSFolder& dir, io_service& ios);
 	virtual ~Archive() {}
 
 	void archive(const fs::path& from);
 
 private:
 	FSFolder& dir_;
-	Client& client_;
+	io_service& ios_;
 
 	struct ArchiveStrategy {
 	public:

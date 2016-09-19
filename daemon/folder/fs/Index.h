@@ -28,13 +28,13 @@
  */
 #pragma once
 #include <util/log_scope.h>
+#include <util/network.h>
 #include <util/SQLiteWrapper.h>
 #include <librevault/SignedMeta.h>
 #include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
-class Client;
 class FSFolder;
 
 class Index {
@@ -50,7 +50,7 @@ public:
 	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	Index(FSFolder& dir, Client& client);
+	Index(FSFolder& dir, io_service& ios);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -78,7 +78,7 @@ public:
 
 private:
 	FSFolder& dir_;
-	Client& client_;
+	io_service& ios_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 

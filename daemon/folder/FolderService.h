@@ -29,6 +29,7 @@
 #pragma once
 #include "util/blob.h"
 #include "util/log_scope.h"
+#include "util/multi_io_service.h"
 #include <boost/signals2/signal.hpp>
 #include <json/json.h>
 
@@ -47,8 +48,11 @@ public:
 		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
 	};
 
-	FolderService(Client& client);
+	FolderService();
 	virtual ~FolderService();
+
+	void run();
+	void stop();
 
 	/* Signals */
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
@@ -62,11 +66,10 @@ public:
 	void deinit_folder(const Secret& secret);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
-
 	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 
 private:
-	Client& client_;
+	multi_io_service ios_;
 	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
 };
 

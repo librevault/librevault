@@ -59,6 +59,9 @@ public:
 	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping);
 	virtual ~DiscoveryService();
 
+	void run() {io_service_.start(1);}
+	void stop() {io_service_.stop();}
+
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 

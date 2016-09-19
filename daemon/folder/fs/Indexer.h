@@ -29,6 +29,7 @@
 #pragma once
 #include "util/log_scope.h"
 #include "util/fs.h"
+#include "util/network.h"
 #include <librevault/SignedMeta.h>
 #include <boost/filesystem/path.hpp>
 #include <set>
@@ -57,7 +58,7 @@ public:
 		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
 	};
 
-	Indexer(FSFolder& dir, Client& client);
+	Indexer(FSFolder& dir, io_service& ios);
 	virtual ~Indexer() {}
 
 	// Index manipulation
@@ -78,7 +79,7 @@ private:
 	const Secret& secret_;
 	Index& index_;
 
-	Client& client_;
+	io_service& ios_;
 
 	/* Status */
 	std::atomic_uint indexing_now_;

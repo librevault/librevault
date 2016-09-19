@@ -27,15 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/fs.h>
+#include <util/network.h>
 #include <librevault/Meta.h>
 #include <librevault/util/bitfield_convert.h>
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2/signal.hpp>
-#include <util/fs.h>
 
 namespace librevault {
 
-class Client;
 class FSFolder;
 
 class MemoryCachedStorage;
@@ -48,7 +48,7 @@ class ChunkStorage {
 public:
 	boost::signals2::signal<void(const blob&)> new_chunk_signal;
 
-	ChunkStorage(FSFolder& dir, Client& client);
+	ChunkStorage(FSFolder& dir, io_service& ios);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -61,7 +61,6 @@ public:
 
 protected:
 	FSFolder& dir_;
-	Client& client_;
 
 	std::unique_ptr<MemoryCachedStorage> mem_storage;
 	std::unique_ptr<EncStorage> enc_storage;

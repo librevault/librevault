@@ -41,14 +41,14 @@
 
 namespace librevault {
 
-FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, Client& client) :
+FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, io_service& ios) :
 	dir_(dir),
 	chunk_storage_(chunk_storage),
-	client_(client),
-	archive_(dir_, client_),
+	ios_(ios),
+	archive_(dir_, ios_),
 	secret_(dir_.secret()),
 	index_(*dir_.index),
-	assemble_process_(client_.bulk_ios(), [this](PeriodicProcess& process){periodic_assemble_operation(process);}) {
+	assemble_process_(ios_, [this](PeriodicProcess& process){periodic_assemble_operation(process);}) {
 
 	assemble_process_.invoke();
 }
@@ -68,7 +68,7 @@ void FileAssembler::queue_assemble(const Meta& meta) {
 	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end()) {
 		assemble_queue_.insert(meta.path_id());
 
-		client_.bulk_ios().post([this, meta]() {
+		ios_.post([this, meta]() {
 			assemble(meta);
 
 			assemble_queue_mtx_.lock();

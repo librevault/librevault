@@ -28,15 +28,16 @@
  */
 #include "ControlServer.h"
 #include "Client.h"
+#include "control/Config.h"
+#include "discovery/DiscoveryService.h"
+#include "discovery/mldht/MLDHTDiscovery.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/Index.h"
 #include "folder/fs/Indexer.h"
 #include "folder/p2p/P2PFolder.h"
-#include <discovery/DiscoveryService.h>
-#include <discovery/mldht/MLDHTDiscovery.h>
-#include <util/log.h>
+#include "util/log.h"
 
 namespace librevault {
 

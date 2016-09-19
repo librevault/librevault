@@ -35,13 +35,15 @@
 
 namespace librevault {
 
-FolderService::FolderService(Client& client) : client_(client) {
-	for(auto& folder_config : Config::get()->folders()) {
+FolderService::FolderService() : ios_("FolderService") {
+	for(auto& folder_config : Config::get()->folders())
 		init_folder(folder_config);
-	}
 }
 
-FolderService::~FolderService() {}
+FolderService::~FolderService() {stop();}
+
+void FolderService::run() {ios_.start(std::thread::hardware_concurrency());}
+void FolderService::stop() {ios_.stop();}
 
 void FolderService::add_folder(Json::Value json_folder) {
 	LOGFUNC();
@@ -84,7 +86,7 @@ void FolderService::init_folder(const FolderParams& params) {
 
 	auto group_ptr = get_group(params.secret.get_Hash());
 	if(!group_ptr) {
-		group_ptr = std::make_shared<FolderGroup>(params, client_);
+		group_ptr = std::make_shared<FolderGroup>(params, ios_.ios());
 		hash_group_.insert({group_ptr->hash(), group_ptr});
 
 		folder_added_signal(group_ptr);

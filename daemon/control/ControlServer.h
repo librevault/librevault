@@ -31,8 +31,8 @@
 #include "util/network.h"
 #include "util/parse_url.h"
 #include "folder/p2p/websocket_config.h"
-#include "control/Config.h"
 #include "control/FolderParams.h"
+#include <boost/signals2/signal.hpp>
 #include <unordered_set>
 
 namespace librevault {

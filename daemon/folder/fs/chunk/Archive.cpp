@@ -40,9 +40,9 @@
 
 namespace librevault {
 
-Archive::Archive(FSFolder& dir, Client& client) :
+Archive::Archive(FSFolder& dir, io_service& ios) :
 	dir_(dir),
-	client_(client) {
+	ios_(ios) {
 
 	switch(dir_.params().archive_type) {
 		case FolderParams::ArchiveType::NO_ARCHIVE: archive_strategy_ = std::make_unique<NoArchive>(*this); break;
@@ -84,7 +84,7 @@ void Archive::NoArchive::archive(const fs::path& from) {
 Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
 	archive_path_(parent.dir_.system_path() / "archive"),
-	cleanup_process_(parent.client_.ios(), [this](PeriodicProcess& process){
+	cleanup_process_(parent.ios_, [this](PeriodicProcess& process){
 		maintain_cleanup(process);
 	}) {
 

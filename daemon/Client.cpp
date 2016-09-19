@@ -42,26 +42,23 @@ namespace librevault {
 
 Client::Client() {
 	// Initializing io_service
-	bulk_ios_ = std::make_unique<multi_io_service>("bulk_ios");
 	network_ios_ = std::make_unique<multi_io_service>("network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>("etc_ios");
 
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
-	folder_service_ = std::make_unique<FolderService>(*this);
+	folder_service_ = std::make_unique<FolderService>();
 	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_, *folder_service_);
 	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
-
-	/* Control Server */
 	control_server_ = std::make_unique<ControlServer>(*this);
-	control_server_->add_folder_signal.connect(std::bind(&FolderService::add_folder, folder_service_.get(), std::placeholders::_1));
-	control_server_->remove_folder_signal.connect(std::bind(&FolderService::remove_folder, folder_service_.get(), std::placeholders::_1));
 
 	/* Connecting signals */
 	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->register_group(group);});
 	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->unregister_group(group);});
 	discovery_->discovered_node_signal.connect(std::bind(&P2PProvider::add_node, p2p_provider_.get(), std::placeholders::_1, std::placeholders::_2));
+	control_server_->add_folder_signal.connect(std::bind(&FolderService::add_folder, folder_service_.get(), std::placeholders::_1));
+	control_server_->remove_folder_signal.connect(std::bind(&FolderService::remove_folder, folder_service_.get(), std::placeholders::_1));
 }
 
 Client::~Client() {
@@ -70,7 +67,10 @@ Client::~Client() {
 }
 
 void Client::run() {
-	bulk_ios_->start(std::thread::hardware_concurrency());
+	portmanager_->run();
+	folder_service_->run();
+	discovery_->run();
+
 	network_ios_->start(1);
 	etc_ios_->start(1);
 
@@ -79,13 +79,11 @@ void Client::run() {
 	signals.async_wait(std::bind(&Client::shutdown, this));
 
 	main_loop_ios_.run();
-	main_loop_ios_.reset();
 }
 
 void Client::shutdown(){
 	LOGI("Exiting...");
 
-	bulk_ios_->stop();
 	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();

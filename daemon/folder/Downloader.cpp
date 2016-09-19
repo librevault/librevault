@@ -158,9 +158,9 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 }
 
 /* Downloader */
-Downloader::Downloader(Client& client, FolderGroup& exchange_group) :
+Downloader::Downloader(io_service& ios, FolderGroup& exchange_group) :
 		exchange_group_(exchange_group),
-		periodic_maintain_(client.network_ios(), [this](PeriodicProcess& process){maintain_requests(process);}) {
+		periodic_maintain_(ios, [this](PeriodicProcess& process){maintain_requests(process);}) {
 	LOGFUNC();
 	periodic_maintain_.invoke();
 }

@@ -42,9 +42,9 @@
 
 namespace librevault {
 
-Indexer::Indexer(FSFolder& dir, Client& client) :
+Indexer::Indexer(FSFolder& dir, io_service& ios) :
 	dir_(dir),
-	secret_(dir_.secret()), index_(*dir_.index), client_(client), indexing_now_(0) {}
+	secret_(dir_.secret()), index_(*dir_.index), ios_(ios), indexing_now_(0) {}
 
 void Indexer::index(const std::string& file_path) noexcept {
 	LOGFUNC() << file_path;
@@ -89,7 +89,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 }
 
 void Indexer::async_index(const std::string& file_path) {
-	client_.bulk_ios().post(std::bind([this](const std::string& file_path){
+	ios_.post(std::bind([this](const std::string& file_path){
 		bool perform_index = true;
 		index_queue_mtx_.lock();
 		if(index_queue_.find(file_path) != index_queue_.end())

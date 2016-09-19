@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-Index::Index(FSFolder& dir, Client& client) : dir_(dir), client_(client) {
+Index::Index(FSFolder& dir, io_service& ios) : dir_(dir), ios_(ios) {
 	auto db_filepath = dir_.system_path() / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
@@ -129,7 +129,7 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	else
 		LOGD("Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
-	client_.network_ios().dispatch([=](){
+	ios_.dispatch([=](){
 		new_meta_signal(signed_meta);
 		if(!fully_assembled)
 			assemble_meta_signal(signed_meta.meta());
@@ -171,10 +171,8 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 }
 
 void Index::notify_all() {
-	client_.network_ios().dispatch([=]() {
-		for(auto& smeta : get_meta())
-			new_meta_signal(smeta);
-	});
+	for(auto& smeta : get_meta())
+		new_meta_signal(smeta);
 }
 
 /* Block getter */

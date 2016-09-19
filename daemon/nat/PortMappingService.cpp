@@ -54,6 +54,8 @@ PortMappingService::PortMappingService() :
 PortMappingService::~PortMappingService() {
 	upnp_service_.reset();
 	natpmp_service_.reset();
+
+	stop();
 }
 
 void PortMappingService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {

@@ -41,7 +41,7 @@ class Client;
 class AutoIndexer {
 	LOG_SCOPE("AutoIndexer");
 public:
-	AutoIndexer(FSFolder& dir, Client& client);
+	AutoIndexer(FSFolder& dir, io_service& ios);
 	virtual ~AutoIndexer();
 
 	void enqueue_files(const std::string& relpath);
@@ -57,7 +57,6 @@ public:
 
 private:
 	FSFolder& dir_;
-	Client& client_;
 
 	// Monitor
 	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:

@@ -43,7 +43,7 @@ DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_m
 	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping);
 }
 
-DiscoveryService::~DiscoveryService() {}
+DiscoveryService::~DiscoveryService() {stop();}
 
 void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	static_discovery_->register_group(group_ptr);

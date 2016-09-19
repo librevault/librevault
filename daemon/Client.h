@@ -56,13 +56,12 @@ public:
 
 	boost::asio::io_service& ios() {return etc_ios_->ios();}
 	boost::asio::io_service& network_ios() {return network_ios_->ios();}
-	boost::asio::io_service& bulk_ios() {return bulk_ios_->ios();}
 private:
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
-	std::unique_ptr<DiscoveryService> discovery_;
 	std::unique_ptr<FolderService> folder_service_;
 	std::unique_ptr<P2PProvider> p2p_provider_;
+	std::unique_ptr<DiscoveryService> discovery_;
 	std::unique_ptr<ControlServer> control_server_;
 
 	/* Asynchronous/multithreaded operation */

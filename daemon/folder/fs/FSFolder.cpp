@@ -44,7 +44,7 @@
 
 namespace librevault {
 
-FSFolder::FSFolder(FolderGroup& group, Client& client) :
+FSFolder::FSFolder(FolderGroup& group, io_service& ios) :
 	group_(group)  {
 	// Creating directories
 	bool path_created = fs::create_directories(params().path);
@@ -60,13 +60,13 @@ FSFolder::FSFolder(FolderGroup& group, Client& client) :
 		<< " System path" << (system_path_created ? " created" : "") << "=" << params().system_path);
 
 	ignore_list = std::make_unique<IgnoreList>(*this);
-	index = std::make_unique<Index>(*this, client);
+	index = std::make_unique<Index>(*this, ios);
 
-	chunk_storage = std::make_unique<ChunkStorage>(*this, client);
+	chunk_storage = std::make_unique<ChunkStorage>(*this, ios);
 
 	if(params().secret.get_type() <= Secret::Type::ReadWrite){
-		indexer = std::make_unique<Indexer>(*this, client);
-		auto_indexer = std::make_unique<AutoIndexer>(*this, client);
+		indexer = std::make_unique<Indexer>(*this, ios);
+		auto_indexer = std::make_unique<AutoIndexer>(*this, ios);
 	}
 }
 

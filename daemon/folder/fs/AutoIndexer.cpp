@@ -36,12 +36,12 @@
 
 namespace librevault {
 
-AutoIndexer::AutoIndexer(FSFolder& dir, Client& client) :
-		dir_(dir), client_(client),
+AutoIndexer::AutoIndexer(FSFolder& dir, io_service& ios) :
+		dir_(dir),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
-		rescan_process_(client_.bulk_ios(), [this](PeriodicProcess& process){rescan_operation(process);}),
-		index_process_(client_.bulk_ios(), [this](PeriodicProcess& process){perform_index();}) {
+		rescan_process_(ios, [this](PeriodicProcess& process){rescan_operation(process);}),
+		index_process_(ios, [this](PeriodicProcess& process){perform_index();}) {
 	rescan_process_.invoke_post();
 
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});

@@ -39,12 +39,12 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(FSFolder& dir, Client& client) : dir_(dir), client_(client) {
+ChunkStorage::ChunkStorage(FSFolder& dir, io_service& ios) : dir_(dir) {
 	mem_storage = std::make_unique<MemoryCachedStorage>(dir, *this);
 	enc_storage = std::make_unique<EncStorage>(dir, *this);
 	if(dir_.params().secret.get_type() <= Secret::Type::ReadOnly) {
 		open_storage = std::make_unique<OpenStorage>(dir, *this);
-		file_assembler = std::make_unique<FileAssembler>(dir, *this, client_);
+		file_assembler = std::make_unique<FileAssembler>(dir, *this, ios);
 	}
 
 	dir_.index->assemble_meta_signal.connect([this](const Meta& meta){

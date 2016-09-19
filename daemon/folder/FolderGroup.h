@@ -41,8 +41,6 @@
 
 namespace librevault {
 
-class Client;
-
 class RemoteFolder;
 class FSFolder;
 class P2PFolder;
@@ -61,7 +59,7 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, Client& client);
+	FolderGroup(FolderParams params, io_service& ios);
 	virtual ~FolderGroup();
 
 	/* Actions */

@@ -41,11 +41,11 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, Client& client) :
+FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
 		params_(std::move(params)),
-		fs_dir_(std::make_shared<FSFolder>(*this, client)),
+		fs_dir_(std::make_shared<FSFolder>(*this, ios)),
 		uploader_(std::make_shared<Uploader>(*this)),
-		downloader_(std::make_shared<Downloader>(client, *this)) {
+		downloader_(std::make_shared<Downloader>(ios, *this)) {
 	LOGFUNC();
 
 	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){

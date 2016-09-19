@@ -30,6 +30,7 @@
 #include <util/log.h>
 #include <util/file_util.h>
 #include <util/AvailabilityMap.h>
+#include <util/network.h>
 #include <util/periodic_process.h>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
@@ -126,7 +127,7 @@ public:
 class Downloader {
 	LOG_SCOPE("Downloader");
 public:
-	Downloader(Client& client, FolderGroup& exchange_group);
+	Downloader(io_service& ios, FolderGroup& exchange_group);
 	~Downloader();
 
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);

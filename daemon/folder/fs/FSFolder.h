@@ -62,7 +62,7 @@ public:
 	std::unique_ptr<AutoIndexer> auto_indexer;
 
 	/* Constructors */
-	FSFolder(FolderGroup& group, Client& client);
+	FSFolder(FolderGroup& group, io_service& ios);
 	virtual ~FSFolder();
 
 	/* Actions */

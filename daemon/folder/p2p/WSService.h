@@ -70,9 +70,8 @@ protected:
 
 	P2PProvider& provider_;
 	Client& client_;
-	FolderService& folder_service_;
-
 	NodeKey& node_key_;
+	FolderService& folder_service_;
 
 	std::map<websocketpp::connection_hdl, connection, std::owner_less<websocketpp::connection_hdl>> ws_assignment_;
 

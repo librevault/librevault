@@ -76,7 +76,7 @@ void Config::make_defaults() {
 	/* globals_defaults_ */
 	globals_defaults_.clear();
 	globals_defaults_["client_name"] = boost::asio::ip::host_name();
-	globals_defaults_["control_listen"] = "[::]:42346";
+	globals_defaults_["control_listen"] = "[::1]:42346";
 	globals_defaults_["p2p_listen"] = "[::]:42345";
 	globals_defaults_["p2p_download_slots"] = 10;
 	globals_defaults_["p2p_request_timeout"] = 10;

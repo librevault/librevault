@@ -84,6 +84,10 @@ if(OS_WIN)
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
 endif()
 
+if(OS_MAC)
+	add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
+endif()
+
 if(DEBUG_NORMALIZATION)
 	add_definitions(-DDEBUG_NORMALIZATION)
 endif()

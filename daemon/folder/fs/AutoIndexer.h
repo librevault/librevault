@@ -32,6 +32,7 @@
 #include <util/network.h>
 #include <util/periodic_process.h>
 #include <util/log_scope.h>
+#include <mutex>
 
 namespace librevault {
 

@@ -29,7 +29,6 @@
 #pragma once
 #include "discovery/DiscoverySubService.h"
 #include "../btcompat.h"
-#include <boost/bimap.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <mutex>
 

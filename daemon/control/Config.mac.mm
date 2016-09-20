@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "Config.h"
-#include <Foundation/Foundation.h>
 #include "Version.h"
+#include <Foundation/Foundation.h>
 
 namespace librevault {
 

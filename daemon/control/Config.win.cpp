@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "Config.h"
-#include <shlobj.h>
 #include "Version.h"
+#include <shlobj.h>
 
 namespace librevault {
 

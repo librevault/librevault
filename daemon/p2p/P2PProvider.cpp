@@ -26,52 +26,41 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "Client.h"
-#include "NodeKey.h"
-#include <discovery/DiscoveryService.h>
-#include <util/network.h>
-#include <util/log_scope.h>
-#include <set>
-#include <mutex>
+#include "P2PProvider.h"
+#include "P2PFolder.h"
+#include <folder/FolderGroup.h>
+#include <nat/PortMappingService.h>
+
+#include "WSServer.h"
+#include "WSClient.h"
 
 namespace librevault {
 
-class WSServer;
-class WSClient;
+P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
+		node_key_(node_key) {
+	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key, folder_service);
+	ws_client_ = std::make_unique<WSClient>(client, *this, node_key, folder_service);
+}
 
-/* Port mapping services */
-class PortMappingService;
+P2PProvider::~P2PProvider() {}
 
-class P2PProvider {
-	friend class ControlServer;
-	LOG_SCOPE("P2PProvider");
-public:
-	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
-	virtual ~P2PProvider();
+void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+	ws_client_->connect(node_cred, group_ptr);
+}
 
-	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
+void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
+	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
+	loopback_blacklist_.emplace(endpoint);
+	LOGN("Marked " << endpoint << " as loopback");
+}
 
-	/* Loopback detection */
-	void mark_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const blob& pubkey);
+bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
+	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
+	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
+}
 
-	/* Getters */
-	WSServer* ws_server() {return ws_server_.get();}
-	WSClient* ws_client() {return ws_client_.get();}
-
-private:
-	Client& client_;
-	NodeKey& node_key_;
-
-	/* WebSocket sockets */
-	std::unique_ptr<WSServer> ws_server_;
-	std::unique_ptr<WSClient> ws_client_;
-
-	/* Loopback detection */
-	std::set<tcp_endpoint> loopback_blacklist_;
-	std::mutex loopback_blacklist_mtx_;
-};
+bool P2PProvider::is_loopback(const blob& pubkey) {
+	return node_key_.public_key() == pubkey;
+}
 
 } /* namespace librevault */

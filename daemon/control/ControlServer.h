@@ -30,7 +30,7 @@
 #include "util/log_scope.h"
 #include "util/network.h"
 #include "util/parse_url.h"
-#include "folder/p2p/websocket_config.h"
+#include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
 #include <boost/signals2/signal.hpp>
 #include <unordered_set>

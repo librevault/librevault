@@ -29,9 +29,9 @@
 #include "MulticastDiscovery.h"
 #include "MulticastSender.h"
 #include "MulticastDiscovery.pb.h"
+#include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include <control/Config.h>
-#include <folder/p2p/NodeKey.h>
+#include "nodekey/NodeKey.h"
 #include <util/log.h>
 
 namespace librevault {

@@ -29,7 +29,6 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "control/Config.h"
-#include "control/FolderParams.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/Indexer.h"
 #include "util/log.h"

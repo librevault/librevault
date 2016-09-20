@@ -28,8 +28,7 @@
  */
 #include "UDPTrackerConnection.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PProvider.h"
-#include "folder/fs/FSFolder.h"
+#include "nodekey/NodeKey.h"
 
 namespace librevault {
 

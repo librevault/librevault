@@ -29,7 +29,7 @@
 #include "FolderGroup.h"
 
 #include "folder/fs/FSFolder.h"
-#include "folder/p2p/P2PFolder.h"
+#include "p2p/P2PFolder.h"
 
 #include "fs/Index.h"
 #include "folder/fs/chunk/ChunkStorage.h"

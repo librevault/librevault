@@ -36,7 +36,7 @@
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/Index.h"
 #include "folder/fs/Indexer.h"
-#include "folder/p2p/P2PFolder.h"
+#include "p2p/P2PFolder.h"
 #include "util/log.h"
 
 namespace librevault {

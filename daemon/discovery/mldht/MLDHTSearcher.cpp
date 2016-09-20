@@ -30,8 +30,8 @@
 #include "MLDHTDiscovery.h"
 #include "dht_glue.h"
 #include "folder/FolderGroup.h"
-#include "folder/p2p/P2PFolder.h"
 #include "nat/PortMappingService.h"
+#include "p2p/P2PFolder.h"
 #include <dht.h>
 #include <librevault/crypto/Hex.h>
 

@@ -27,8 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Client.h"
-#include "nodekey/NodeKey.h"
 #include <discovery/DiscoveryService.h>
 #include <util/network.h>
 #include <util/log_scope.h>
@@ -40,15 +38,19 @@ namespace librevault {
 class WSServer;
 class WSClient;
 
-/* Port mapping services */
 class PortMappingService;
+class NodeKey;
+class FolderService;
 
 class P2PProvider {
 	friend class ControlServer;
 	LOG_SCOPE("P2PProvider");
 public:
-	P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
+	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
 	virtual ~P2PProvider();
+
+	void run() {ios_.start(1);}
+	void stop() {ios_.stop();}
 
 	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
 
@@ -58,6 +60,7 @@ public:
 	bool is_loopback(const blob& pubkey);
 
 private:
+	multi_io_service ios_;
 	NodeKey& node_key_;
 
 	/* WebSocket sockets */

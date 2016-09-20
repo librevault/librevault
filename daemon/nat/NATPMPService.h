@@ -34,8 +34,6 @@
 
 namespace librevault {
 
-class Client;
-
 class P2PProvider;
 
 class NATPMPService : public PortMappingSubService {

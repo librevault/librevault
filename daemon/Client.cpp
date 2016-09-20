@@ -33,8 +33,9 @@
 #include "p2p/P2PProvider.h"
 #include "folder/FolderService.h"
 
-#include <nat/PortMappingService.h>
-#include <discovery/DiscoveryService.h>
+#include "nodekey/NodeKey.h"
+#include "nat/PortMappingService.h"
+#include "discovery/DiscoveryService.h"
 
 #include <util/log.h>
 
@@ -42,14 +43,13 @@ namespace librevault {
 
 Client::Client() {
 	// Initializing io_service
-	network_ios_ = std::make_unique<multi_io_service>("network_ios");
 	etc_ios_ = std::make_unique<multi_io_service>("etc_ios");
 
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
 	folder_service_ = std::make_unique<FolderService>();
-	p2p_provider_ = std::make_unique<P2PProvider>(*this, *node_key_, *portmanager_, *folder_service_);
+	p2p_provider_ = std::make_unique<P2PProvider>(*node_key_, *portmanager_, *folder_service_);
 	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
 	control_server_ = std::make_unique<ControlServer>(*this);
 
@@ -70,8 +70,8 @@ void Client::run() {
 	portmanager_->run();
 	folder_service_->run();
 	discovery_->run();
+	p2p_provider_->run();
 
-	network_ios_->start(1);
 	etc_ios_->start(1);
 
 	// Main loop/signal processing loop
@@ -84,7 +84,6 @@ void Client::run() {
 void Client::shutdown(){
 	LOGI("Exiting...");
 
-	network_ios_->stop();
 	etc_ios_->stop();
 	main_loop_ios_.stop();
 }

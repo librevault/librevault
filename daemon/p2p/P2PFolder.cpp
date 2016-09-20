@@ -28,16 +28,16 @@
  */
 #include "P2PFolder.h"
 #include "WSService.h"
-#include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
+#include "nodekey/NodeKey.h"
 
 #include <librevault/Tokens.h>
 
 namespace librevault {
 
-P2PFolder::P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
+P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
 	conn_(std::move(conn)),
 	provider_(provider),
 	ws_service_(ws_service),

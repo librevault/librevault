@@ -27,17 +27,16 @@
  * files in the program, then also delete it here.
  */
 #include "WSClient.h"
-#include "Client.h"
 #include "P2PFolder.h"
 #include "folder/FolderGroup.h"
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
-WSClient::WSClient(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service) : WSService(client, provider, node_key, folder_service) {
+WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service) : WSService(ios, provider, node_key, folder_service) {
 	/* WebSockets client initialization */
 	// General parameters
-	ws_client_.init_asio(&client_.network_ios());
+	ws_client_.init_asio(&ios);
 	ws_client_.set_user_agent(Version::current().user_agent());
 	ws_client_.set_max_message_size(10 * 1024 * 1024);
 

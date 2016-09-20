@@ -44,7 +44,6 @@
 
 namespace librevault {
 
-class Client;
 class FolderGroup;
 
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */

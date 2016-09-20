@@ -36,12 +36,10 @@ namespace librevault {
 
 class P2PFolder;
 
-class Client;
-
 class WSService {
 	LOG_SCOPE("WSService");
 public:
-	WSService(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
+	WSService(io_service& ios, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
 	virtual ~WSService() {}
 
 	struct connection {
@@ -68,8 +66,8 @@ protected:
 		connection_error(const char* what) : std::runtime_error(what) {}
 	};
 
+	io_service& ios_;
 	P2PProvider& provider_;
-	Client& client_;
 	NodeKey& node_key_;
 	FolderService& folder_service_;
 

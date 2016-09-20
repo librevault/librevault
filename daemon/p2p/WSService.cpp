@@ -30,7 +30,6 @@
 #include "WSServer.h"
 #include "WSClient.h"
 #include "P2PFolder.h"
-#include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
@@ -41,7 +40,7 @@ namespace librevault {
 
 const char* WSService::subprotocol_ = "librevault";
 
-WSService::WSService(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service) : provider_(provider), client_(client), node_key_(node_key), folder_service_(folder_service) {}
+WSService::WSService(io_service& ios, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service) : ios_(ios), provider_(provider), node_key_(node_key), folder_service_(folder_service) {}
 
 std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	auto ssl_ctx_ptr = std::make_shared<ssl_context>(ssl_context::tlsv12);
@@ -123,7 +122,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 
 	connection& conn = ws_assignment_[hdl];
-	auto new_folder = std::make_shared<P2PFolder>(client_, provider_, *this, node_key_, folder_service_, conn);
+	auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn);
 	conn.folder = new_folder;
 
 	auto group_ptr = folder_service_.get_group(conn.hash);

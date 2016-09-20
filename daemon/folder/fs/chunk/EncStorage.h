@@ -32,7 +32,6 @@
 
 namespace librevault {
 
-class Client;
 class FSFolder;
 class EncStorage : public AbstractStorage {
 	LOG_SCOPE("EncStorage");

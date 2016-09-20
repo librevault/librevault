@@ -39,7 +39,6 @@
 
 namespace librevault {
 
-class Client;
 class Index;
 class FSFolder;
 class Indexer {

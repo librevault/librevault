@@ -28,21 +28,24 @@
  */
 #include "P2PProvider.h"
 #include "P2PFolder.h"
-#include <folder/FolderGroup.h>
-#include <nat/PortMappingService.h>
+#include "folder/FolderGroup.h"
+#include "nat/PortMappingService.h"
+#include "nodekey/NodeKey.h"
 
 #include "WSServer.h"
 #include "WSClient.h"
 
 namespace librevault {
 
-P2PProvider::P2PProvider(Client& client, NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
-		node_key_(node_key) {
-	ws_server_ = std::make_unique<WSServer>(client, *this, port_mapping, node_key, folder_service);
-	ws_client_ = std::make_unique<WSClient>(client, *this, node_key, folder_service);
+P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
+	ios_("P2PProvider"), node_key_(node_key) {
+	ws_server_ = std::make_unique<WSServer>(ios_.ios(), *this, port_mapping, node_key, folder_service);
+	ws_client_ = std::make_unique<WSClient>(ios_.ios(), *this, node_key, folder_service);
 }
 
-P2PProvider::~P2PProvider() {}
+P2PProvider::~P2PProvider() {
+	ios_.stop();
+}
 
 void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
 	ws_client_->connect(node_cred, group_ptr);

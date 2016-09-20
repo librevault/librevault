@@ -36,8 +36,6 @@
 
 namespace librevault {
 
-class Client;
-
 class NATPMPService;
 class UPnPService;
 class PortMappingSubService;

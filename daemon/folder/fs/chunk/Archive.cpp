@@ -28,7 +28,6 @@
  */
 #include "Archive.h"
 
-#include "Client.h"
 #include "folder/fs/FSFolder.h"
 #include "folder/fs/AutoIndexer.h"
 #include "ChunkStorage.h"

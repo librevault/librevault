@@ -55,7 +55,6 @@ public:
 	void shutdown();
 
 	boost::asio::io_service& ios() {return etc_ios_->ios();}
-	boost::asio::io_service& network_ios() {return network_ios_->ios();}
 private:
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
@@ -66,8 +65,6 @@ private:
 
 	/* Asynchronous/multithreaded operation */
 	boost::asio::io_service main_loop_ios_;
-	std::unique_ptr<multi_io_service> network_ios_;
-	std::unique_ptr<multi_io_service> bulk_ios_;
 	std::unique_ptr<multi_io_service> etc_ios_;
 
 	/* Initialization */

@@ -36,7 +36,6 @@
 namespace librevault {
 
 class FSFolder;
-class Client;
 
 class AutoIndexer {
 	LOG_SCOPE("AutoIndexer");

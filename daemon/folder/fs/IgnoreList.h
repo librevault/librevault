@@ -33,7 +33,6 @@
 
 namespace librevault {
 
-class Client;
 class FSFolder;
 class IgnoreList {
 public:

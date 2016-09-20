@@ -33,8 +33,6 @@
 
 namespace librevault {
 
-class Client;
-
 namespace btcompat {
 
 using info_hash = std::array<uint8_t, 20>;

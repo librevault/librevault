@@ -36,7 +36,6 @@
 namespace librevault {
 
 /* Folder info */
-class Client;
 class FolderGroup;
 class FolderParams;
 class Secret;

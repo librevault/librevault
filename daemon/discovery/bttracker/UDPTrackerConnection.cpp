@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "UDPTrackerConnection.h"
-#include "Client.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/WSServer.h"
 #include <nat/PortMappingService.h>

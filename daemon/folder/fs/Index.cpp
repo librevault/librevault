@@ -28,7 +28,6 @@
  */
 #include "Index.h"
 #include "FSFolder.h"
-#include "Client.h"
 #include <util/file_util.h>
 #include <util/log.h>
 #include <librevault/crypto/Hex.h>

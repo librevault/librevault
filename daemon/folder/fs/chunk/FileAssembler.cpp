@@ -29,7 +29,6 @@
 #include <util/file_util.h>
 #include "FileAssembler.h"
 
-#include "Client.h"
 #include "ChunkStorage.h"
 
 #include "folder/fs/Index.h"

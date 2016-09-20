@@ -40,7 +40,7 @@ class WSClient : public WSService {
 public:
 	using client = websocketpp::client<asio_tls_client>;
 
-	WSClient(Client& client, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
+	WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
 	virtual ~WSClient() {}
 
 	void connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);

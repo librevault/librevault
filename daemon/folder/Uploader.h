@@ -33,7 +33,6 @@
 
 namespace librevault {
 
-class Client;
 class RemoteFolder;
 class FolderGroup;
 

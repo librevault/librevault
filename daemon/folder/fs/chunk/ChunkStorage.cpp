@@ -28,7 +28,6 @@
  */
 #include "ChunkStorage.h"
 #include "folder/fs/FSFolder.h"
-#include "Client.h"
 
 #include "folder/fs/Index.h"
 #include "MemoryCachedStorage.h"

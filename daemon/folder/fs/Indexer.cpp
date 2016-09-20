@@ -32,7 +32,6 @@
 #include "IgnoreList.h"
 #include "Index.h"
 
-#include "Client.h"
 #include <rabin.h>
 #include <util/byte_convert.h>
 #include <util/file_util.h>

@@ -34,8 +34,6 @@
 #include "fs/Index.h"
 #include "folder/fs/chunk/ChunkStorage.h"
 
-#include "../Client.h"
-
 #include "Uploader.h"
 #include "Downloader.h"
 

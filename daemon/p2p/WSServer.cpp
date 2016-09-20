@@ -28,7 +28,6 @@
  */
 #include "WSServer.h"
 #include "P2PFolder.h"
-#include "Client.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "util/parse_url.h"
@@ -37,14 +36,14 @@
 
 namespace librevault {
 
-WSServer::WSServer(Client& client, P2PProvider& provider, PortMappingService& port_mapping, NodeKey& node_key, FolderService& folder_service) : WSService(client, provider, node_key, folder_service), port_mapping_(port_mapping) {
+WSServer::WSServer(io_service& ios, P2PProvider& provider, PortMappingService& port_mapping, NodeKey& node_key, FolderService& folder_service) : WSService(ios, provider, node_key, folder_service), port_mapping_(port_mapping) {
 	// Acceptor initialization
 	url bind_url = url(Config::get()->globals()["p2p_listen"].asString());
 	auto endpoint = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
 	// General parameters
-	ws_server_.init_asio(&client_.network_ios());
+	ws_server_.init_asio(&ios_);
 	ws_server_.set_reuse_addr(true);
 	ws_server_.set_user_agent(Version::current().user_agent());
 	ws_server_.set_max_message_size(10 * 1024 * 1024);

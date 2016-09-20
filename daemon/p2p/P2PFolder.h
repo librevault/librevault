@@ -36,7 +36,6 @@
 
 namespace librevault {
 
-class Client;
 class FolderGroup;
 class P2PProvider;
 class WSService;
@@ -58,7 +57,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(Client& client, P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
+	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */

@@ -35,7 +35,6 @@
 
 namespace librevault {
 
-class Client;
 class FSFolder;
 class Archive {
 	friend class ArchiveStrategy;

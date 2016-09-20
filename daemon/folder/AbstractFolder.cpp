@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "AbstractFolder.h"
-#include "Client.h"
 #include <librevault/crypto/Base32.h>
 
 namespace librevault {

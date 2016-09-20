@@ -31,7 +31,6 @@
 #include "Indexer.h"
 #include "Index.h"
 #include "FSFolder.h"
-#include "../../Client.h"
 #include <util/log.h>
 
 namespace librevault {

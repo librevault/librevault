@@ -39,6 +39,7 @@
 #include "p2p/P2PFolder.h"
 #include "util/log.h"
 
+
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :

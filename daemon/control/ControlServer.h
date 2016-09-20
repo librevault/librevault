@@ -33,6 +33,7 @@
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
 #include <boost/signals2/signal.hpp>
+#include <mutex>
 #include <unordered_set>
 
 namespace librevault {

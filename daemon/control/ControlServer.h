@@ -32,6 +32,7 @@
 #include "util/parse_url.h"
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
+#include "util/multi_io_service.h"
 #include <boost/signals2/signal.hpp>
 #include <mutex>
 #include <unordered_set>
@@ -51,6 +52,7 @@ public:
 private:
 	using server = websocketpp::server<asio_notls>;
 	Client& client_;
+	multi_io_service ios_;
 
 	server ws_server_;
 	std::unordered_set<server::connection_ptr> ws_server_assignment_;

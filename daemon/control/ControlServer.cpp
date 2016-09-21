@@ -43,13 +43,13 @@
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
-		client_(client), timer_(client_.ios()) {
+		client_(client), ios_("ControlServer"), timer_(ios_.ios()) {
 	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */
 	// General parameters
-	ws_server_.init_asio(&client_.ios());
+	ws_server_.init_asio(&ios_.ios());
 	ws_server_.set_reuse_addr(true);
 	ws_server_.set_user_agent(Version::current().user_agent());
 

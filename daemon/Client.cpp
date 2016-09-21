@@ -42,9 +42,6 @@
 namespace librevault {
 
 Client::Client() {
-	// Initializing io_service
-	etc_ios_ = std::make_unique<multi_io_service>("etc_ios");
-
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
@@ -72,8 +69,6 @@ void Client::run() {
 	discovery_->run();
 	p2p_provider_->run();
 
-	etc_ios_->start(1);
-
 	// Main loop/signal processing loop
 	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);
 	signals.async_wait(std::bind(&Client::shutdown, this));
@@ -84,7 +79,6 @@ void Client::run() {
 void Client::shutdown(){
 	LOGI("Exiting...");
 
-	etc_ios_->stop();
 	main_loop_ios_.stop();
 }
 

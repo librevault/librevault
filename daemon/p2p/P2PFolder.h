@@ -43,8 +43,6 @@ class WSService;
 class P2PFolder : public RemoteFolder {
 	friend class P2PProvider;
 	friend class WSService;
-	friend class WSServer;
-	friend class WSClient;
 public:
 	/* Errors */
 	struct error : public std::runtime_error {

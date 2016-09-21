@@ -45,8 +45,7 @@ FolderService::~FolderService() {stop();}
 
 void FolderService::run() {ios_.start(std::thread::hardware_concurrency());}
 void FolderService::stop() {
-	for(auto& group : groups())
-		group->fs_dir()->indexer->stop_indexing();
+	hash_group_.clear();
 	ios_.stop();
 }
 

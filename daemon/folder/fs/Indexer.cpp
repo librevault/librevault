@@ -38,12 +38,22 @@
 #include <util/log.h>
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/AES_CBC.h>
+#include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
 
 Indexer::Indexer(FSFolder& dir, io_service& ios) :
 	dir_(dir),
 	secret_(dir_.secret()), index_(*dir_.index), ios_(ios), indexing_now_(0) {}
+
+Indexer::~Indexer() {
+	LOGFUNC();
+	active = false;
+	for(auto& queue_element : index_queue_) {
+		queue_element.second.wait();
+	}
+	LOGFUNCEND();
+}
 
 void Indexer::index(const std::string& file_path) noexcept {
 	LOGFUNC() << file_path;
@@ -88,22 +98,22 @@ void Indexer::index(const std::string& file_path) noexcept {
 }
 
 void Indexer::async_index(const std::string& file_path) {
-	ios_.post(std::bind([this](const std::string& file_path){
-		bool perform_index = true;
-		index_queue_mtx_.lock();
-		if(index_queue_.find(file_path) != index_queue_.end())
-			perform_index = false;
-		else
-			index_queue_.insert(file_path);
-		index_queue_mtx_.unlock();
+	if(!active) return;
 
-		if(perform_index)
+	std::unique_lock<std::mutex> lk(index_queue_mtx_);
+	if(index_queue_.find(file_path) == index_queue_.end()) {
+		std::shared_ptr<std::packaged_task<void()>> index_task = std::make_shared<std::packaged_task<void()>>([this, file_path] {
 			index(file_path);
 
-		index_queue_mtx_.lock();
-		index_queue_.erase(file_path);
-		index_queue_mtx_.unlock();
-	}, file_path));
+			index_queue_mtx_.lock();
+			index_queue_.erase(file_path);
+			index_queue_mtx_.unlock();
+		});
+
+		index_queue_.emplace(std::make_pair(file_path, std::move(index_task->get_future())));
+
+		ios_.post([index_task]{(*index_task)();});
+	}
 }
 
 void Indexer::async_index(const std::set<std::string>& file_path) {

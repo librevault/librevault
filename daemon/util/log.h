@@ -62,3 +62,6 @@ LOGGER->emerg() << log_tag() << ARGS
 
 #define LOGFUNC() \
 LOGT(BOOST_CURRENT_FUNCTION)
+
+#define LOGFUNCEND() \
+LOGT(BOOST_CURRENT_FUNCTION << " -- end")

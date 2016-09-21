@@ -36,6 +36,7 @@
 #include <atomic>
 #include <mutex>
 #include <map>
+#include <future>
 
 namespace librevault {
 
@@ -58,7 +59,7 @@ public:
 	};
 
 	Indexer(FSFolder& dir, io_service& ios);
-	virtual ~Indexer() {}
+	virtual ~Indexer();
 
 	// Index manipulation
 	void index(const std::string& file_path) noexcept;
@@ -71,7 +72,6 @@ public:
 
 	/* Getters */
 	bool is_indexing() const {return indexing_now_ != 0;}
-	void stop_indexing() {active = false;}
 
 private:
 	FSFolder& dir_;
@@ -83,7 +83,7 @@ private:
 
 	/* Status */
 	std::atomic_uint indexing_now_;
-	std::set<std::string> index_queue_;
+	std::map<std::string, std::future<void>> index_queue_;
 	std::mutex index_queue_mtx_;
 	bool active = true;
 

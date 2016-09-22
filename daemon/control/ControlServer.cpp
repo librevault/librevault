@@ -39,11 +39,10 @@
 #include "p2p/P2PFolder.h"
 #include "util/log.h"
 
-
 namespace librevault {
 
 ControlServer::ControlServer(Client& client) :
-		client_(client), ios_("ControlServer"), timer_(ios_.ios()) {
+		client_(client), ios_("ControlServer"), heartbeat_process_(ios_.ios(), std::bind(&ControlServer::send_heartbeat, this, std::placeholders::_1)) {
 	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
@@ -68,7 +67,7 @@ ControlServer::ControlServer(Client& client) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Control is listening at ws://" << (std::string)bind_url << std::endl;
 
-	send_control_json();
+	heartbeat_process_.invoke_post();
 }
 
 ControlServer::~ControlServer() {}
@@ -101,7 +100,7 @@ void ControlServer::on_open(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = ws_server_.get_con_from_hdl(hdl);
 	ws_server_assignment_.insert(connection_ptr);
 
-	send_control_json();
+	heartbeat_process_.invoke_post();
 }
 
 void ControlServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr) {
@@ -124,7 +123,7 @@ void ControlServer::on_disconnect(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 
 	ws_server_assignment_.erase(ws_server_.get_con_from_hdl(hdl));
-	send_control_json();
+	heartbeat_process_.invoke_post();
 }
 
 std::string ControlServer::make_control_json() {
@@ -193,23 +192,13 @@ Json::Value ControlServer::make_state_json() const {
 	return state_json;                              // /state_json
 }
 
-void ControlServer::send_control_json(const boost::system::error_code& ec) {
+void ControlServer::send_heartbeat(PeriodicProcess& process) {
 	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
+	auto control_json = make_control_json();
 
-	if(ec == boost::asio::error::operation_aborted) return;
-
-	if(send_mutex_.try_lock()) {
-		std::unique_lock<decltype(send_mutex_)> maintain_timer_lk(send_mutex_, std::adopt_lock);
-		timer_.cancel();
-
-		auto control_json = make_control_json();
-
-		for(auto conn_assignment : ws_server_assignment_)
-			conn_assignment->send(control_json);
-
-		timer_.expires_from_now(std::chrono::seconds(1));  // TODO: Replace with value from config.
-		timer_.async_wait(std::bind(&ControlServer::send_control_json, this, std::placeholders::_1));
-	}
+	for(auto conn_assignment : ws_server_assignment_)
+		conn_assignment->send(control_json);
+	process.invoke_after(std::chrono::seconds(1));
 }
 
 void ControlServer::dispatch_control_json(const Json::Value& control_json) {
@@ -226,13 +215,13 @@ void ControlServer::dispatch_control_json(const Json::Value& control_json) {
 
 void ControlServer::handle_add_folder_json(const Json::Value& control_json) {
 	add_folder_signal(control_json["folder"]);
-	send_control_json();
+	heartbeat_process_.invoke_post();
 }
 
 void ControlServer::handle_remove_folder_json(const Json::Value& control_json) {
 	Secret secret = Secret(control_json["secret"].asString());
 	remove_folder_signal(secret);
-	send_control_json();
+	heartbeat_process_.invoke_post();
 }
 
 } /* namespace librevault */

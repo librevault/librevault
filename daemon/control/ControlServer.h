@@ -33,8 +33,8 @@
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"
+#include "util/periodic_process.h"
 #include <boost/signals2/signal.hpp>
-#include <mutex>
 #include <unordered_set>
 
 namespace librevault {
@@ -46,6 +46,8 @@ class ControlServer {
 public:
 	ControlServer(Client& client);
 	virtual ~ControlServer();
+
+	void run() {ios_.start(1);}
 
 	boost::signals2::signal<void(Json::Value)> add_folder_signal;
 	boost::signals2::signal<void(Secret)> remove_folder_signal;
@@ -59,8 +61,7 @@ private:
 
 	tcp_endpoint local_endpoint_;
 
-	boost::asio::steady_timer timer_;
-	std::mutex send_mutex_;
+	PeriodicProcess heartbeat_process_;
 
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_open(websocketpp::connection_hdl hdl);
@@ -69,7 +70,7 @@ private:
 
 	std::string make_control_json();
 	Json::Value make_state_json() const;
-	void send_control_json(const boost::system::error_code& ec = boost::system::error_code());
+	void send_heartbeat(PeriodicProcess& process);
 
 	void dispatch_control_json(const Json::Value& control_json);
 	void handle_add_folder_json(const Json::Value& control_json);

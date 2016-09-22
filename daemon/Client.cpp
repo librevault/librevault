@@ -59,15 +59,20 @@ Client::Client() {
 }
 
 Client::~Client() {
-	control_server_.reset();    // Deleted explicitly, because it must be deleted before writing config and destroying io_service;
+	control_server_.reset();
+	discovery_.reset();
 	p2p_provider_.reset();
+	folder_service_.reset();
+	portmanager_.reset();
+	node_key_.reset();
 }
 
 void Client::run() {
 	portmanager_->run();
 	folder_service_->run();
-	discovery_->run();
 	p2p_provider_->run();
+	discovery_->run();
+	control_server_->run();
 
 	// Main loop/signal processing loop
 	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);

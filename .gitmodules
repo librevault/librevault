@@ -25,7 +25,7 @@
 [submodule "contrib/websocketpp"]
 	path = contrib/websocketpp
 	url = https://github.com/Librevault/websocketpp
-	branch = master
+	branch = develop
 [submodule "contrib/dht"]
 	path = contrib/dht
 	url = https://github.com/Librevault/dht.git

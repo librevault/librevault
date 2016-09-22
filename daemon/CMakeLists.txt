@@ -110,3 +110,5 @@ if(BUILD_STATIC)
 #		target_link_libraries(librevault-daemon c.a)
 	endif()
 endif()
+
+cotire(librevault-daemon)

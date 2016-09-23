@@ -37,11 +37,17 @@
 namespace librevault {
 
 FolderService::FolderService() : ios_("FolderService") {
+	LOGFUNC();
 	for(auto& folder_config : Config::get()->folders())
 		init_folder(folder_config);
+	LOGFUNCEND();
 }
 
-FolderService::~FolderService() {stop();}
+FolderService::~FolderService() {
+	LOGFUNC();
+	stop();
+	LOGFUNCEND();
+}
 
 void FolderService::run() {ios_.start(std::thread::hardware_concurrency());}
 void FolderService::stop() {

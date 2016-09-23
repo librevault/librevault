@@ -44,6 +44,7 @@ bool UPnPService::is_config_enabled() {
 }
 
 void UPnPService::start() {
+	state_changing_mtx_.lock();
 	upnp_urls = std::make_unique<UPNPUrls>();
 	upnp_data = std::make_unique<IGDdatas>();
 
@@ -63,10 +64,12 @@ void UPnPService::start() {
 		LOGD("Found IGD: " << upnp_urls->controlURL);
 
 		add_existing_mappings();
+		state_changing_mtx_.unlock();
 	});
 }
 
 void UPnPService::stop() {
+	std::unique_lock<std::mutex> lk(state_changing_mtx_);
 	active = false;
 
 	mappings_.clear();

@@ -28,10 +28,11 @@
  */
 #pragma once
 #include <boost/signals2/signal.hpp>
-#include <util/parse_url.h>
-#include <util/network.h>
-#include <util/blob.h>
-#include <util/multi_io_service.h>
+#include "util/parse_url.h"
+#include "util/network.h"
+#include "util/blob.h"
+#include "util/multi_io_service.h"
+#include "util/log_scope.h"
 
 namespace librevault {
 
@@ -47,6 +48,7 @@ class PortMappingService;
 
 class DiscoveryService {
 	friend class ControlServer;
+	LOG_SCOPE("DiscoveryService");
 public:
 	struct ConnectCredentials {
 		std::string source;

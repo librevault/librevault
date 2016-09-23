@@ -70,7 +70,14 @@ ControlServer::ControlServer(Client& client) :
 	heartbeat_process_.invoke_post();
 }
 
-ControlServer::~ControlServer() {}
+ControlServer::~ControlServer() {
+	LOGFUNC();
+	heartbeat_process_.wait();
+	ws_server_assignment_.clear();
+	ws_server_.stop_listening();
+	ios_.stop();
+	LOGFUNCEND();
+}
 
 bool ControlServer::on_validate(websocketpp::connection_hdl hdl) {
 	LOGFUNC();

@@ -30,6 +30,7 @@
 //#include <miniupnpc/miniupnpc.h>
 #include "PortMappingSubService.h"
 #include <util/log_scope.h>
+#include <mutex>
 
 struct UPNPUrls;
 struct IGDdatas;
@@ -53,6 +54,8 @@ public:
 
 protected:
 	io_service& ios_;
+
+	std::mutex state_changing_mtx_;
 
 	// RAII wrappers
 	struct DevListWrapper : boost::noncopyable {

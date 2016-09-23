@@ -35,6 +35,7 @@ namespace librevault {
 
 PortMappingService::PortMappingService() :
 	io_service_("PortMappingService") {
+	LOGFUNC();
 	natpmp_service_ = std::make_unique<NATPMPService>(*this, io_service_.ios());
 	upnp_service_ = std::make_unique<UPnPService>(*this, io_service_.ios());
 
@@ -49,13 +50,16 @@ PortMappingService::PortMappingService() :
 	upnp_service_->start();
 
 	io_service_.start(1);
+	LOGFUNCEND();
 }
 
 PortMappingService::~PortMappingService() {
+	LOGFUNC();
 	upnp_service_.reset();
 	natpmp_service_.reset();
 
 	stop();
+	LOGFUNCEND();
 }
 
 void PortMappingService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {

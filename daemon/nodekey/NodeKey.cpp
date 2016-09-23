@@ -41,14 +41,18 @@ namespace librevault {
 NodeKey::NodeKey() :
 		openssl_pkey_(EVP_PKEY_new()),
 		x509_(X509_new()) {
+	LOGFUNC();
 	gen_private_key();
 	write_key();
 	gen_certificate();
+	LOGFUNCEND();
 }
 
 NodeKey::~NodeKey() {
+	LOGFUNC();
 	EVP_PKEY_free(openssl_pkey_);
 	X509_free(x509_);
+	LOGFUNCEND();
 }
 
 CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {

@@ -32,18 +32,25 @@
 #include "bttracker/BTTrackerDiscovery.h"
 #include "multicast/MulticastDiscovery.h"
 #include "mldht/MLDHTDiscovery.h"
+#include "util/log.h"
 
 namespace librevault {
 
 DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping) : io_service_("DiscoveryService") {
+	LOGFUNC();
 	static_discovery_ = std::make_unique<StaticDiscovery>(*this, io_service_.ios());
 	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, io_service_.ios(), node_key);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(*this, io_service_.ios(), node_key);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, io_service_.ios(), node_key, port_mapping);
 	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping);
+	LOGFUNCEND();
 }
 
-DiscoveryService::~DiscoveryService() {stop();}
+DiscoveryService::~DiscoveryService() {
+	LOGFUNC();
+	stop();
+	LOGFUNCEND();
+}
 
 void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	static_discovery_->register_group(group_ptr);

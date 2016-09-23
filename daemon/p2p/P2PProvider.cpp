@@ -39,12 +39,16 @@ namespace librevault {
 
 P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
 	ios_("P2PProvider"), node_key_(node_key) {
+	LOGFUNC();
 	ws_server_ = std::make_unique<WSServer>(ios_.ios(), *this, port_mapping, node_key, folder_service);
 	ws_client_ = std::make_unique<WSClient>(ios_.ios(), *this, node_key, folder_service);
+	LOGFUNCEND();
 }
 
 P2PProvider::~P2PProvider() {
+	LOGFUNC();
 	ios_.stop();
+	LOGFUNCEND();
 }
 
 void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {

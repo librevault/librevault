@@ -114,6 +114,8 @@ void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 	}catch(std::exception& e) {
 		cleanup_process_.invoke_after(std::chrono::minutes(10));    // An error occured, retry in 10 min
 	}
+
+	LOGFUNCEND();
 }
 
 void Archive::TrashArchive::archive(const fs::path& from) {

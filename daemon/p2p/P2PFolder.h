@@ -31,6 +31,7 @@
 #include "P2PProvider.h"
 #include "WSService.h"
 #include "BandwidthCounter.h"
+#include "util/periodic_process.h"
 #include <librevault/protocol/V1Parser.h>
 #include <websocketpp/common/connection_hdl.hpp>
 
@@ -55,7 +56,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
+	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn, io_service& ios);
 	~P2PFolder();
 
 	/* Getters */
@@ -113,6 +114,18 @@ private:
 	// These needed primarily for UI
 	std::string client_name_;
 	std::string user_agent_;
+
+	/* Ping/pong and timeout handlers */
+	PeriodicProcess ping_process_, timeout_process_;
+
+	void bump_timeout();
+
+	void send_ping();
+
+	void handle_ping(std::string payload);
+	void handle_pong(std::string payload);
+
+	std::chrono::milliseconds rtt_;
 
 	/* Message handlers */
 	void handle_Handshake(const blob& message_raw);

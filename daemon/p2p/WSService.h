@@ -60,6 +60,9 @@ public:
 
 	/* Actions */
 	virtual void send_message(websocketpp::connection_hdl hdl, const blob& message) = 0;
+	virtual void ping(websocketpp::connection_hdl hdl, std::string message) = 0;
+	virtual void pong(websocketpp::connection_hdl hdl, std::string message) = 0;
+	virtual void close(websocketpp::connection_hdl hdl, const std::string& reason) = 0;
 
 protected:
 	struct connection_error : public std::runtime_error {
@@ -88,11 +91,13 @@ protected:
 	void on_message(websocketpp::connection_hdl hdl, const std::string& message);
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
+	bool on_ping(websocketpp::connection_hdl hdl, std::string message);
+	void on_pong(websocketpp::connection_hdl hdl, std::string message);
+
 	/* Handler templates */
 	template<class WSClass> void on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl);
 
 	/* Actions */
-	virtual void close(websocketpp::connection_hdl hdl, const std::string& reason) = 0;
 	template<class WSClass> void close(WSClass& c, websocketpp::connection_hdl hdl, const std::string& reason) {
 		LOGFUNC();
 		c.get_con_from_hdl(hdl)->close(websocketpp::close::status::internal_endpoint_error, reason);

@@ -37,11 +37,13 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
+P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn, io_service& ios) :
 	conn_(std::move(conn)),
 	provider_(provider),
 	ws_service_(ws_service),
-	node_key_(node_key) {
+	node_key_(node_key),
+	ping_process_(ios, [this](PeriodicProcess& process){send_ping(); process.invoke_after(std::chrono::seconds(60), PeriodicProcess::NO_RESET_TIMER);}),
+	timeout_process_(ios, [this](PeriodicProcess& process){LOGFUNC();ws_service_.close(conn_.connection_handle, "Connection lost");}) {
 
 	std::ostringstream os; os << conn_.remote_endpoint;
 	name_ = os.str();
@@ -365,6 +367,29 @@ void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset);
+}
+
+void P2PFolder::bump_timeout() {
+	timeout_process_.invoke_after(std::chrono::seconds(120), PeriodicProcess::RESET_TIMER);
+}
+
+void P2PFolder::send_ping() {
+	auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
+	ws_service_.ping(conn_.connection_handle, std::to_string(ms_since_epoch.count()));
+}
+
+void P2PFolder::handle_ping(std::string payload) {
+	bump_timeout();
+}
+
+void P2PFolder::handle_pong(std::string payload) {
+	bump_timeout();
+	try {
+		auto now = std::chrono::steady_clock::now().time_since_epoch();
+		std::chrono::milliseconds ms_payload(stol(payload));
+		if(now - ms_payload > std::chrono::milliseconds(0))
+			rtt_ = std::chrono::duration_cast<std::chrono::milliseconds>(now - ms_payload);
+	}catch(std::exception& e){}
 }
 
 } /* namespace librevault */

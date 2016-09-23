@@ -122,7 +122,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 
 	connection& conn = ws_assignment_[hdl];
-	auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn);
+	auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn, ios_);
 	conn.folder = new_folder;
 
 	auto group_ptr = folder_service_.get_group(conn.hash);
@@ -168,6 +168,26 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 		}
 	}
 	ws_assignment_.erase(hdl);
+}
+
+bool WSService::on_ping(websocketpp::connection_hdl hdl, std::string message) {
+	try {
+		std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder)->handle_ping(message);
+		return true;
+	}catch(std::exception& e) {
+		LOGFUNC() << " e:" << e.what();
+		close(hdl, e.what());
+		return false;
+	}
+}
+
+void WSService::on_pong(websocketpp::connection_hdl hdl, std::string message) {
+	try {
+		std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder)->handle_pong(message);
+	}catch(std::exception& e) {
+		LOGFUNC() << " e:" << e.what();
+		close(hdl, e.what());
+	}
 }
 
 template<class WSClass>

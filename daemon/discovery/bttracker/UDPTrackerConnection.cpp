@@ -27,12 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "UDPTrackerConnection.h"
-#include "nodekey/NodeKey.h"
-#include "p2p/WSServer.h"
-#include <nat/PortMappingService.h>
-
 #include "BTTrackerDiscovery.h"
-
+#include "nat/PortMappingService.h"
+#include "nodekey/NodeKey.h"
+#include "util/log.h"
 #include <cryptopp/osrng.h>
 
 namespace librevault {

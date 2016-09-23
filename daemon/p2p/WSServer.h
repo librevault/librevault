@@ -59,6 +59,8 @@ protected:
 
 	/* Actions */
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;
+	void ping(websocketpp::connection_hdl hdl, std::string message) override;
+	void pong(websocketpp::connection_hdl hdl, std::string message) override;
 	void close(websocketpp::connection_hdl hdl, const std::string& reason) override {
 		WSService::close(ws_server_, hdl, reason);
 	}

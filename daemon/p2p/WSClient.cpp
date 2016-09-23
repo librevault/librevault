@@ -48,6 +48,9 @@ WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, Fo
 	ws_client_.set_message_handler(std::bind(&WSClient::on_message_internal, this, std::placeholders::_1, std::placeholders::_2));
 	ws_client_.set_fail_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
 	ws_client_.set_close_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
+
+	ws_client_.set_ping_handler(std::bind(&WSClient::on_ping, this, std::placeholders::_1, std::placeholders::_2));
+	ws_client_.set_pong_handler(std::bind(&WSClient::on_pong, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
@@ -122,6 +125,16 @@ std::string WSClient::dir_hash_to_query(const blob& dir_hash) {
 void WSClient::send_message(websocketpp::connection_hdl hdl, const blob& message) {
 	LOGFUNC();
 	ws_client_.get_con_from_hdl(hdl)->send(message.data(), message.size());
+}
+
+void WSClient::ping(websocketpp::connection_hdl hdl, std::string message) {
+	LOGFUNC();
+	ws_client_.get_con_from_hdl(hdl)->ping(message);
+}
+
+void WSClient::pong(websocketpp::connection_hdl hdl, std::string message) {
+	LOGFUNC();
+	ws_client_.get_con_from_hdl(hdl)->pong(message);
 }
 
 std::string WSClient::errmsg(websocketpp::connection_hdl hdl) {

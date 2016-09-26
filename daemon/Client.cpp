@@ -45,33 +45,43 @@ Client::Client() {
 	// Initializing components
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
+	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
 	folder_service_ = std::make_unique<FolderService>();
 	p2p_provider_ = std::make_unique<P2PProvider>(*node_key_, *portmanager_, *folder_service_);
-	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
 	control_server_ = std::make_unique<ControlServer>(*this);
 
 	/* Connecting signals */
-	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->register_group(group);});
-	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){discovery_->unregister_group(group);});
-	discovery_->discovered_node_signal.connect(std::bind(&P2PProvider::add_node, p2p_provider_.get(), std::placeholders::_1, std::placeholders::_2));
-	control_server_->add_folder_signal.connect(std::bind(&FolderService::add_folder, folder_service_.get(), std::placeholders::_1));
-	control_server_->remove_folder_signal.connect(std::bind(&FolderService::remove_folder, folder_service_.get(), std::placeholders::_1));
+	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){
+		if(discovery_) discovery_->register_group(group);
+	});
+	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){
+		if(discovery_) discovery_->unregister_group(group);
+	});
+	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr){
+		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
+	});
+	control_server_->add_folder_signal.connect([this](Json::Value json_folder){
+		if(folder_service_) folder_service_->add_folder(json_folder);
+	});
+	control_server_->remove_folder_signal.connect([this](Secret secret){
+		if(folder_service_) folder_service_->remove_folder(secret);
+	});
 }
 
 Client::~Client() {
 	control_server_.reset();
-	discovery_.reset();
 	p2p_provider_.reset();
 	folder_service_.reset();
+	discovery_.reset();
 	portmanager_.reset();
 	node_key_.reset();
 }
 
 void Client::run() {
 	portmanager_->run();
+	discovery_->run();
 	folder_service_->run();
 	p2p_provider_->run();
-	discovery_->run();
 	control_server_->run();
 
 	// Main loop/signal processing loop

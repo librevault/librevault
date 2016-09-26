@@ -36,11 +36,8 @@
 
 namespace librevault {
 
-FolderService::FolderService() : ios_("FolderService") {
+FolderService::FolderService() : ios_("FolderService"), init_queue_(ios_.ios()) {
 	LOGFUNC();
-	for(auto& folder_config : Config::get()->folders())
-		init_folder(folder_config);
-	LOGFUNCEND();
 }
 
 FolderService::~FolderService() {
@@ -49,9 +46,26 @@ FolderService::~FolderService() {
 	LOGFUNCEND();
 }
 
-void FolderService::run() {ios_.start(std::thread::hardware_concurrency());}
+void FolderService::run() {
+	init_queue_.invoke_post([this] {
+		for(auto& folder_config : Config::get()->folders())
+			init_folder(folder_config);
+	});
+
+	ios_.start(std::thread::hardware_concurrency());
+}
+
 void FolderService::stop() {
-	hash_group_.clear();
+	init_queue_.invoke_post([this] {
+		std::vector<Secret> secrets;
+		secrets.reserve(hash_group_.size());
+		for(auto& group : hash_group_)
+			secrets.push_back(group.second->secret());
+
+		for(auto& secret : secrets)
+			deinit_folder(secret);
+	});
+	init_queue_.wait();
 	ios_.stop();
 }
 

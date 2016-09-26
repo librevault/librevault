@@ -27,45 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include "control/FolderParams.h"
-#include "util/log_scope.h"
-
 #include <boost/asio/io_service.hpp>
-#include <boost/signals2/signal.hpp>
+#include <boost/asio/strand.hpp>
+#include <atomic>
+#include <thread>
 
-namespace librevault {
-
-/* Components */
-class ControlServer;
-class P2PProvider;
-
-class NodeKey;
-class PortMappingService;
-class DiscoveryService;
-class FolderService;
-
-class Client {
-	friend class ControlServer;
+class ScopedAsyncQueue {
 public:
-	Client();
-	virtual ~Client();
+	ScopedAsyncQueue(boost::asio::io_service& io_service) : io_service_(io_service), io_service_strand_(io_service) {
+		started_handlers_ = 0;
+	}
+	~ScopedAsyncQueue() {
+		wait();
+	}
 
-	void run();
-	void shutdown();
-private:
-	std::unique_ptr<NodeKey> node_key_;
-	std::unique_ptr<PortMappingService> portmanager_;
-	std::unique_ptr<DiscoveryService> discovery_;
-	std::unique_ptr<FolderService> folder_service_;
-	std::unique_ptr<P2PProvider> p2p_provider_;
-	std::unique_ptr<ControlServer> control_server_;
+	void invoke_post(std::function<void()> function) {
+		++started_handlers_;
+		io_service_strand_.post([this, function]{
+			function();
+			--started_handlers_;
+		});
+	}
 
-	/* Asynchronous/multithreaded operation */
-	boost::asio::io_service main_loop_ios_;
+	void wait() {
+		if(started_handlers_ != 0) {
+			io_service_.dispatch([this] {
+				io_service_.poll();
+			});
+		}
+		while(started_handlers_ != 0 && !io_service_.stopped()) {
+			std::this_thread::yield();
+		}
+	}
 
-	/* Initialization */
-	inline const char* log_tag() {return "";}
+protected:
+	boost::asio::io_service& io_service_;
+	boost::asio::io_service::strand io_service_strand_;
+	std::atomic<unsigned> started_handlers_;
 };
-
-} /* namespace librevault */

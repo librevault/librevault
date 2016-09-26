@@ -30,6 +30,7 @@
 #include "util/blob.h"
 #include "util/log_scope.h"
 #include "util/multi_io_service.h"
+#include "util/scoped_async_queue.h"
 #include <boost/signals2/signal.hpp>
 #include <json/json.h>
 
@@ -70,6 +71,7 @@ public:
 private:
 	multi_io_service ios_;
 	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
+	ScopedAsyncQueue init_queue_;
 };
 
 } /* namespace librevault */

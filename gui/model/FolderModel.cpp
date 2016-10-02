@@ -119,8 +119,10 @@ void FolderModel::handleControlJson(QJsonObject control_json) {
 			auto secret2 = librevault::Secret(folder_config_json_tmp.toObject().value("secret").toString().toStdString());
 			QByteArray hash2((const char*)secret2.get_Hash().data(), secret2.get_Hash().size());
 
-			if(hash == hash2)
-				folder_config_json = folder_config_json_tmp; break;
+			if(hash == hash2) {
+				folder_config_json = folder_config_json_tmp;
+				break;
+			}
 		}
 
 

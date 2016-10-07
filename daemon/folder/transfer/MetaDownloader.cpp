@@ -26,31 +26,39 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractFolder.h"
-#include "util/log_scope.h"
-#include <librevault/Meta.h>
+#include "MetaDownloader.h"
+
+#include "../FolderGroup.h"
+
+#include "folder/fs/FSFolder.h"
+#include "folder/fs/Index.h"
+#include "../RemoteFolder.h"
+#include "../Downloader.h"
+
+#include "util/log.h"
 
 namespace librevault {
 
-class RemoteFolder;
-class FolderGroup;
+MetaDownloader::MetaDownloader(FolderGroup& exchange_group, Downloader& downloader) :
+		exchange_group_(exchange_group), downloader_(downloader) {
+	LOGFUNC();
+}
 
-class Uploader {
-	LOG_SCOPE("Uploader");
-public:
-	Uploader(FolderGroup& exchange_group);
+void MetaDownloader::handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+	if(exchange_group_.fs_dir()->have_meta(revision))
+		downloader_.notify_remote_meta(origin, revision, bitfield);
+	else if(exchange_group_.fs_dir()->index->put_allowed(revision))
+		origin->request_meta(revision);
+	else
+		LOGD("Remote node notified us about an expired Meta");
+}
 
-	/* Message handlers */
-	void handle_interested(std::shared_ptr<RemoteFolder> remote);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
-
-	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
-
-private:
-	FolderGroup& exchange_group_;
-
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-};
+void MetaDownloader::handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
+	if(exchange_group_.fs_dir()->index->put_allowed(smeta.meta().path_revision())) {
+		exchange_group_.fs_dir()->put_meta(smeta);
+		downloader_.notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
+	}else
+		LOGD("Remote node posted to us about an expired Meta");
+}
 
 } /* namespace librevault */

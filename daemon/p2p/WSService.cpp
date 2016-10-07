@@ -66,29 +66,20 @@ std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 blob WSService::pubkey_from_cert(X509* x509) {
 	std::runtime_error e("Certificate error");
 
-	EC_GROUP* ec_group = EC_GROUP_new_by_curve_name(OBJ_sn2nid("prime256v1"));
-	BN_CTX* bn_ctx = BN_CTX_new();
-	EVP_PKEY* remote_pkey = nullptr;
-	EC_KEY* remote_eckey = nullptr;
+	std::unique_ptr<EC_GROUP, decltype(&EC_GROUP_free)> ec_group(EC_GROUP_new_by_curve_name(OBJ_sn2nid("prime256v1")), EC_GROUP_free);
+	std::unique_ptr<BN_CTX, decltype(&BN_CTX_free)> bn_ctx(BN_CTX_new(), BN_CTX_free);
+	std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> remote_pkey(nullptr, EVP_PKEY_free);
+	std::unique_ptr<EC_KEY, decltype(&EC_KEY_free)> remote_eckey(nullptr, EC_KEY_free);
 
 	std::vector<uint8_t> raw_public(33);
 
-	try {
-		if(ec_group == nullptr || bn_ctx == nullptr) throw e;
+	if(ec_group == nullptr || bn_ctx == nullptr) throw e;
 
-		remote_pkey = X509_get_pubkey(x509);	if(remote_pkey == nullptr) throw e;
-		remote_eckey = EVP_PKEY_get1_EC_KEY(remote_pkey);	if(remote_eckey == nullptr) throw e;
-		const EC_POINT* remote_pubkey = EC_KEY_get0_public_key(remote_eckey);	if(remote_pubkey == nullptr) throw e;
+	remote_pkey = decltype(remote_pkey)(X509_get_pubkey(x509), EVP_PKEY_free);	if(remote_pkey == nullptr) throw e;
+	remote_eckey = decltype(remote_eckey)(EVP_PKEY_get1_EC_KEY(remote_pkey.get()), EC_KEY_free);	if(remote_eckey == nullptr) throw e;
+	const EC_POINT* remote_pubkey = EC_KEY_get0_public_key(remote_eckey.get());	if(remote_pubkey == nullptr) throw e;
 
-		EC_POINT_point2oct(ec_group, remote_pubkey, POINT_CONVERSION_COMPRESSED, raw_public.data(), raw_public.size(), bn_ctx);
-	}catch(...){
-		EC_GROUP_free(ec_group); BN_CTX_free(bn_ctx); EVP_PKEY_free(remote_pkey); EC_KEY_free(remote_eckey);
-		ec_group = nullptr; bn_ctx = nullptr; remote_pkey = nullptr; remote_eckey = nullptr;
-
-		throw;
-	}
-
-	EC_GROUP_free(ec_group); BN_CTX_free(bn_ctx); EVP_PKEY_free(remote_pkey); EC_KEY_free(remote_eckey);
+	EC_POINT_point2oct(ec_group.get(), remote_pubkey, POINT_CONVERSION_COMPRESSED, raw_public.data(), raw_public.size(), bn_ctx.get());
 
 	return raw_public;
 }
@@ -157,16 +148,15 @@ void WSService::on_message(websocketpp::connection_hdl hdl, const std::string& m
 void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 	LOGFUNC() << " e:" << errmsg(hdl);
 
-	auto dir_ptr = ws_assignment_[hdl].folder.lock();
-	if(dir_ptr) {
-		try {
-			auto folder_group = dir_ptr->folder_group();
-			if(folder_group)
-				folder_group->detach(dir_ptr);
-		}catch(const std::bad_weak_ptr& e){
-			LOGFUNC() << " e:" << e.what();
-		}
+	try {
+		auto p2p_folder_ptr = std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder);
+		auto folder_group = p2p_folder_ptr->folder_group();
+
+		folder_group->detach(p2p_folder_ptr);
+	}catch(const std::bad_weak_ptr& e){
+		LOGFUNC() << " bad pointer, what:" << e.what();
 	}
+
 	ws_assignment_.erase(hdl);
 }
 

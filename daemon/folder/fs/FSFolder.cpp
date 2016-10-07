@@ -100,7 +100,7 @@ bitfield_type FSFolder::get_bitfield(const Meta::PathRevision& path_revision) {
 
 /* Makers */
 std::string FSFolder::normalize_path(const fs::path& abspath) const {
-#ifdef DEBUG_NORMALIZATION
+#ifdef LV_DEBUG_NORMALIZATION
 	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
 #endif
 
@@ -115,14 +115,14 @@ std::string FSFolder::normalize_path(const fs::path& abspath) const {
 	if(norm_path.size() > 0 && norm_path.back() == '/')
 		norm_path.pop_back();
 
-#ifdef DEBUG_NORMALIZATION
+#ifdef LV_DEBUG_NORMALIZATION
 	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << norm_path;
 #endif
 	return norm_path;
 }
 
 fs::path FSFolder::absolute_path(const std::string& normpath) const {
-#ifdef DEBUG_NORMALIZATION
+#ifdef LV_DEBUG_NORMALIZATION
 	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << normpath;
 #endif
 
@@ -133,7 +133,7 @@ fs::path FSFolder::absolute_path(const std::string& normpath) const {
 #endif
 	fs::path abspath = path() / osnormpath;
 
-#ifdef DEBUG_NORMALIZATION
+#ifdef LV_DEBUG_NORMALIZATION
 	log_->debug() << log_tag() << BOOST_CURRENT_FUNCTION << " " << abspath;
 #endif
 	return abspath;

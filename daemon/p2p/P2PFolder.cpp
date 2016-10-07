@@ -244,7 +244,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	LOGD("LV Handshake successful");
 	is_handshaken_ = true;
 
-	folder_group()->handle_handshake(shared_from_this());
+	handshake_performed();
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {
@@ -253,7 +253,7 @@ void P2PFolder::handle_Choke(const blob& message_raw) {
 
 	if(! peer_choking_) {
 		peer_choking_ = true;
-		folder_group()->handle_choke(shared_from_this());
+		recv_choke();
 	}
 }
 void P2PFolder::handle_Unchoke(const blob& message_raw) {
@@ -262,7 +262,7 @@ void P2PFolder::handle_Unchoke(const blob& message_raw) {
 
 	if(peer_choking_) {
 		peer_choking_ = false;
-		folder_group()->handle_unchoke(shared_from_this());
+		recv_unchoke();
 	}
 }
 void P2PFolder::handle_Interested(const blob& message_raw) {
@@ -271,7 +271,7 @@ void P2PFolder::handle_Interested(const blob& message_raw) {
 
 	if(! peer_interested_) {
 		peer_interested_ = true;
-		folder_group()->handle_interested(shared_from_this());
+		recv_interested();
 	}
 }
 void P2PFolder::handle_NotInterested(const blob& message_raw) {
@@ -280,7 +280,7 @@ void P2PFolder::handle_NotInterested(const blob& message_raw) {
 
 	if(peer_interested_) {
 		peer_interested_ = false;
-		folder_group()->handle_not_interested(shared_from_this());
+		recv_not_interested();
 	}
 }
 
@@ -293,7 +293,7 @@ void P2PFolder::handle_HaveMeta(const blob& message_raw) {
 		<< " revision=" << message_struct.revision.revision_
 		<< " bits=" << message_struct.bitfield);
 
-	folder_group()->notify_meta(shared_from_this(), message_struct.revision, message_struct.bitfield);
+	recv_have_meta(message_struct.revision, message_struct.bitfield);
 }
 void P2PFolder::handle_HaveChunk(const blob& message_raw) {
 	LOGFUNC();
@@ -301,7 +301,7 @@ void P2PFolder::handle_HaveChunk(const blob& message_raw) {
 	auto message_struct = parser_.parse_HaveChunk(message_raw);
 	LOGD("<== HAVE_BLOCK:"
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash));
-	folder_group()->notify_chunk(shared_from_this(), message_struct.ct_hash);
+	recv_have_chunk(message_struct.ct_hash);
 }
 
 void P2PFolder::handle_MetaRequest(const blob& message_raw) {
@@ -312,7 +312,7 @@ void P2PFolder::handle_MetaRequest(const blob& message_raw) {
 		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
 		<< " revision=" << message_struct.revision.revision_);
 
-	folder_group()->request_meta(shared_from_this(), message_struct.revision);
+	recv_meta_request(message_struct.revision);
 }
 void P2PFolder::handle_MetaReply(const blob& message_raw) {
 	LOGFUNC();
@@ -323,7 +323,7 @@ void P2PFolder::handle_MetaReply(const blob& message_raw) {
 		<< " revision=" << message_struct.smeta.meta().revision()
 		<< " bits=" << message_struct.bitfield);
 
-	folder_group()->post_meta(shared_from_this(), message_struct.smeta, message_struct.bitfield);
+	recv_meta_reply(message_struct.smeta, message_struct.bitfield);
 }
 void P2PFolder::handle_MetaCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
@@ -333,6 +333,8 @@ void P2PFolder::handle_MetaCancel(const blob& message_raw) {
 	LOGD("<== META_CANCEL:"
 		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
 		<< " revision=" << message_struct.revision.revision_);
+
+	recv_meta_cancel(message_struct.revision);
 }
 
 void P2PFolder::handle_BlockRequest(const blob& message_raw) {
@@ -344,7 +346,7 @@ void P2PFolder::handle_BlockRequest(const blob& message_raw) {
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset);
 
-	folder_group()->request_block(shared_from_this(), message_struct.ct_hash, message_struct.offset, message_struct.length);
+	recv_block_request(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 void P2PFolder::handle_BlockReply(const blob& message_raw) {
 	LOGFUNC();
@@ -356,7 +358,7 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 
 	counter_.add_down_blocks(message_struct.content.size());
 
-	folder_group()->post_block(shared_from_this(), message_struct.ct_hash, message_struct.content, message_struct.offset);
+	recv_block_reply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }
 void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
@@ -367,6 +369,8 @@ void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " length=" << message_struct.length
 		<< " offset=" << message_struct.offset);
+
+	recv_block_cancel(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 
 void P2PFolder::bump_timeout() {

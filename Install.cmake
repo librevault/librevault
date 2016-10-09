@@ -108,6 +108,53 @@ elseif(OS_LINUX)
 			execute_process(COMMAND /bin/chmod \"+x\" \"${APPDIR_ROOT}/AppRun\")
 		" COMPONENT librevault-package)
 	endif()
+elseif(OS_FREEBSD)
+	if(BUILD_DAEMON)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	endif()
+	if(BUILD_GUI)
+		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+		install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+		install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
+	endif()
+	if(BUILD_DAEMON AND BUILD_GUI AND BUILD_STATIC)
+		include(InstallQt5Plugin)
+
+		list(APPEND DEPENDENCY_BINARIES ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/librevault-daemon)
+		list(APPEND DEPENDENCY_BINARIES ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/librevault-gui)
+
+		# Install Qt5 plugins and library dependencies
+		set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/qt5/plugins)
+		install_qt5_plugin("Qt5::QXcbIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+		install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+		install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+
+		list(APPEND DEPENDENCY_BINARIES ${QT_PLUGIN})
+
+		list(APPEND DEPENDENCY_RESOLVE_PATHS "${Qt5_DIR}/../..")
+
+		install(CODE "
+			include(GetPrerequisites)
+			foreach(DEPENDENCY_BINARY ${DEPENDENCY_BINARIES})
+				get_prerequisites(\"\${DEPENDENCY_BINARY}\" DEPENDENT_BINARIES 1 1 \"\" \"${DEPENDENCY_RESOLVE_PATHS}\")
+				foreach(DEPENDENT_BINARY \${DEPENDENT_BINARIES})
+					gp_resolve_item(\"\${DEPENDENCY_BINARY}\" \"\${DEPENDENT_BINARY}\" \"\" \"\" resolved_file)
+					get_filename_component(resolved_file \${resolved_file} ABSOLUTE)
+					gp_append_unique(PREREQUISITE_LIBS \${resolved_file})
+					get_filename_component(file_canonical \${resolved_file} REALPATH)
+					gp_append_unique(PREREQUISITE_LIBS \${file_canonical})
+				endforeach()
+			endforeach()
+
+			list(SORT PREREQUISITE_LIBS)
+			foreach(PREREQUISITE_LIB \${PREREQUISITE_LIBS})
+				file(INSTALL \${PREREQUISITE_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+			endforeach()
+		" COMPONENT librevault-package)
+
+		# qt.conf
+		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+	endif()
 elseif(OS_MAC)
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")

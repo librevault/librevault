@@ -26,31 +26,35 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractFolder.h"
-#include "util/log_scope.h"
-#include <librevault/Meta.h>
+#include "MetaUploader.h"
+
+#include "../FolderGroup.h"
+
+#include "folder/fs/FSFolder.h"
+#include "folder/fs/Index.h"
+#include "../RemoteFolder.h"
+
+#include "util/log.h"
 
 namespace librevault {
 
-class RemoteFolder;
-class FolderGroup;
+MetaUploader::MetaUploader(FolderGroup& exchange_group) :
+		exchange_group_(exchange_group) {
+	LOGFUNC();
+}
 
-class Uploader {
-	LOG_SCOPE("Uploader");
-public:
-	Uploader(FolderGroup& exchange_group);
+void MetaUploader::handle_handshake(std::shared_ptr<RemoteFolder> remote) {
+	for(auto& meta : exchange_group_.fs_dir()->index->get_meta()) {
+		remote->post_have_meta(meta.meta().path_revision(), exchange_group_.fs_dir()->get_bitfield(meta.meta().path_revision()));
+	}
+}
 
-	/* Message handlers */
-	void handle_interested(std::shared_ptr<RemoteFolder> remote);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
-
-	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
-
-private:
-	FolderGroup& exchange_group_;
-
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-};
+void MetaUploader::handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
+	try {
+		origin->post_meta(exchange_group_.fs_dir()->get_meta(revision), exchange_group_.fs_dir()->get_bitfield(revision));
+	}catch(AbstractFolder::no_such_meta& e){
+		LOGW("Requested nonexistent Meta");
+	}
+}
 
 } /* namespace librevault */

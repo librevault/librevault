@@ -63,32 +63,28 @@ UDPTrackerConnection::~UDPTrackerConnection() {
 	LOGD("UDPTrackerConnection Removed");
 }
 
-void UDPTrackerConnection::reset_buffer() {
-	buffer_.resize(buffer_maxsize_);
-}
-
 void UDPTrackerConnection::receive_loop(){
-	reset_buffer();
-
 	auto endpoint_ptr = std::make_shared<udp_endpoint>();
-	socket_.async_receive_from(boost::asio::buffer(buffer_.data(), buffer_.size()), *endpoint_ptr, std::bind([this](const boost::system::error_code& error, std::size_t bytes_transferred, std::shared_ptr<udp_endpoint> endpoint_ptr){
+	buffer_type buffer_ptr = std::make_shared<std::vector<char>>(buffer_maxsize_);
+
+	socket_.async_receive_from(boost::asio::buffer(buffer_ptr->data(), buffer_ptr->size()), *endpoint_ptr, [this, endpoint_ptr, buffer_ptr](const boost::system::error_code& error, std::size_t bytes_transferred){
 		if(error == boost::asio::error::operation_aborted) return;
 		try {
-			buffer_.resize(bytes_transferred);
+			buffer_ptr->resize(bytes_transferred);
 
-			if(buffer_.size() < sizeof(rep_header)) throw invalid_msg_error();
-			rep_header* reply_header = reinterpret_cast<rep_header*>(buffer_.data());
+			if(buffer_ptr->size() < sizeof(rep_header)) throw invalid_msg_error();
+			rep_header* reply_header = reinterpret_cast<rep_header*>(buffer_ptr->data());
 			Action reply_action = Action(int32_t(reply_header->action_));
 
 			if(reply_header->transaction_id_ != transaction_id_ || reply_action != action_) throw invalid_msg_error();
 
 			switch(reply_action) {
 				case Action::ACTION_CONNECT:
-					handle_connect();
+					handle_connect(buffer_ptr);
 					break;
 				case Action::ACTION_ANNOUNCE:
 				case Action::ACTION_ANNOUNCE6:
-					handle_announce();
+					handle_announce(buffer_ptr);
 					break;
 				case Action::ACTION_SCRAPE: /* TODO: Scrape requests */ throw invalid_msg_error();
 				case Action::ACTION_ERROR: throw invalid_msg_error();
@@ -99,7 +95,7 @@ void UDPTrackerConnection::receive_loop(){
 		}
 
 		receive_loop();
-	}, std::placeholders::_1, std::placeholders::_2, endpoint_ptr));
+	});
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
@@ -173,11 +169,11 @@ void UDPTrackerConnection::handle_resolve(const boost::system::error_code& ec, u
 	connect();
 }
 
-void UDPTrackerConnection::handle_connect() {
+void UDPTrackerConnection::handle_connect(buffer_type buffer) {
 	bump_reconnect_timer();
 
-	if(buffer_.size() == sizeof(conn_rep)) {
-		conn_rep* reply = reinterpret_cast<conn_rep*>(buffer_.data());
+	if(buffer->size() == sizeof(conn_rep)) {
+		conn_rep* reply = reinterpret_cast<conn_rep*>(buffer->data());
 		connection_id_ = reply->connection_id_;
 		action_ = Action::ACTION_NONE;
 		fail_count_ = 0;
@@ -189,19 +185,23 @@ void UDPTrackerConnection::handle_connect() {
 		throw invalid_msg_error();
 }
 
-void UDPTrackerConnection::handle_announce() {
-	announce_rep* reply = reinterpret_cast<announce_rep*>(buffer_.data());
+void UDPTrackerConnection::handle_announce(buffer_type buffer) {
+	if(buffer->size() >= sizeof(announce_rep)) {
+		announce_rep* reply = reinterpret_cast<announce_rep*>(buffer->data());
+		const char* endpoint_array_ptr = reinterpret_cast<const char*>(buffer->data() + sizeof(announce_rep));
+		const size_t endpoint_array_bytesize = buffer->size() - sizeof(announce_rep);
 
-	if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE){
-		for(char* i = buffer_.data()+sizeof(announce_rep); i+sizeof(btcompat::compact_endpoint4) < buffer_.data()+buffer_.size(); i+=sizeof(btcompat::compact_endpoint4)){
-			tracker_discovery_.add_node(btcompat::parse_compact_endpoint4((const uint8_t*)i), group_ptr_);
+		if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE) {
+			for(size_t i = 0; i < (endpoint_array_bytesize / sizeof(btcompat::compact_endpoint4)); i++)
+				tracker_discovery_.add_node(btcompat::parse_compact_endpoint4(reinterpret_cast<const uint8_t*>(endpoint_array_ptr+(i*sizeof(btcompat::compact_endpoint4)))), group_ptr_);
+		}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6) {
+			// TODO: Implement IPv6 tracker discovery
 		}
-	}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6){
-		// TODO: Implement IPv6 tracker discovery
-	}
 
-	announce_interval_ = std::chrono::seconds(reply->interval_);
-	bump_announce_timer();
+		announce_interval_ = std::chrono::seconds(reply->interval_);
+		bump_announce_timer();
+	}else
+		throw invalid_msg_error();
 }
 
 int32_t UDPTrackerConnection::gen_transaction_id() {

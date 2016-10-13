@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoverySubService.h"
+#include "util/log.h"
 
 namespace librevault {
 

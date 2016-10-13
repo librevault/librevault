@@ -29,6 +29,7 @@
 #pragma once
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
+#include <boost/signals2.hpp>
 #include "AbstractFolder.h"
 
 namespace librevault {
@@ -38,6 +39,29 @@ class RemoteFolder : public AbstractFolder, public std::enable_shared_from_this<
 public:
 	RemoteFolder();
 	virtual ~RemoteFolder();
+
+	/* Signals */
+	template <typename Func>
+	using signal = typename boost::signals2::signal_type<Func, boost::signals2::keywords::mutex_type<boost::signals2::dummy_mutex>>::type;
+
+	signal<void()> handshake_performed;
+
+	/* Message signals */
+	signal<void()> recv_choke;
+	signal<void()> recv_unchoke;
+	signal<void()> recv_interested;
+	signal<void()> recv_not_interested;
+
+	signal<void(Meta::PathRevision, bitfield_type)> recv_have_meta;
+	signal<void(blob)> recv_have_chunk;
+
+	signal<void(Meta::PathRevision)> recv_meta_request;
+	signal<void(SignedMeta, bitfield_type)> recv_meta_reply;
+	signal<void(Meta::PathRevision)> recv_meta_cancel;
+
+	signal<void(blob, uint32_t, uint32_t)> recv_block_request;
+	signal<void(blob, uint32_t, blob)> recv_block_reply;
+	signal<void(blob, uint32_t, uint32_t)> recv_block_cancel;
 
 	/* Message senders */
 	virtual void choke() = 0;

@@ -29,6 +29,7 @@ option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
+option(DEBUG_WEBSOCKETPP "Debug websocket++" ON)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 
 if(OS_64bit)
@@ -90,7 +91,11 @@ if(OS_MAC)
 endif()
 
 if(DEBUG_NORMALIZATION)
-	add_definitions(-DDEBUG_NORMALIZATION)
+	add_definitions(-DLV_DEBUG_NORMALIZATION)
+endif()
+
+if(DEBUG_WEBSOCKETPP)
+	add_definitions(-DLV_DEBUG_WEBSOCKETPP)
 endif()
 
 ## Calculating version

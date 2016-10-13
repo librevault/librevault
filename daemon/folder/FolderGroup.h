@@ -45,6 +45,8 @@ class RemoteFolder;
 class FSFolder;
 class P2PFolder;
 
+class MetaUploader;
+class MetaDownloader;
 class Uploader;
 class Downloader;
 
@@ -111,6 +113,8 @@ private:
 
 	std::shared_ptr<Uploader> uploader_;
 	std::shared_ptr<Downloader> downloader_;
+	std::shared_ptr<MetaUploader> meta_uploader_;
+	std::shared_ptr<MetaDownloader> meta_downloader_;
 
 	/* Members */
 	mutable std::mutex p2p_folders_mtx_;

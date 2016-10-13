@@ -27,30 +27,27 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractFolder.h"
 #include "util/log_scope.h"
 #include <librevault/Meta.h>
+#include <memory>
 
 namespace librevault {
 
 class RemoteFolder;
 class FolderGroup;
 
-class Uploader {
-	LOG_SCOPE("Uploader");
+class MetaUploader {
+	LOG_SCOPE("MetaUploader");
 public:
-	Uploader(FolderGroup& exchange_group);
+	MetaUploader(FolderGroup& exchange_group);
 
 	/* Message handlers */
-	void handle_interested(std::shared_ptr<RemoteFolder> remote);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
+	void handle_handshake(std::shared_ptr<RemoteFolder> remote);
 
-	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
+	void handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
 
 private:
 	FolderGroup& exchange_group_;
-
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

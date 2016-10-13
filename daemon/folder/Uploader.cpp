@@ -31,9 +31,10 @@
 #include "FolderGroup.h"
 
 #include "folder/fs/FSFolder.h"
+#include "folder/fs/Index.h"
 #include "p2p/P2PFolder.h"
 
-#include <util/log.h>
+#include "util/log.h"
 
 namespace librevault {
 
@@ -55,9 +56,11 @@ void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
 	remote->choke();
 }
 
-void Uploader::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+void Uploader::handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
 	try {
-		origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+		if(!origin->am_choking() && origin->peer_interested()) {
+			origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+		}
 	}catch(AbstractFolder::no_such_chunk& e){
 		LOGW("Requested nonexistent block");
 	}

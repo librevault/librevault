@@ -34,6 +34,8 @@
 #include "fs/Index.h"
 #include "folder/fs/chunk/ChunkStorage.h"
 
+#include "transfer/MetaDownloader.h"
+#include "transfer/MetaUploader.h"
 #include "Uploader.h"
 #include "Downloader.h"
 
@@ -43,7 +45,9 @@ FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
 		params_(std::move(params)),
 		fs_dir_(std::make_shared<FSFolder>(*this, ios)),
 		uploader_(std::make_shared<Uploader>(*this)),
-		downloader_(std::make_shared<Downloader>(ios, *this)) {
+		downloader_(std::make_shared<Downloader>(ios, *this)),
+		meta_uploader_(std::make_shared<MetaUploader>(*this)),
+		meta_downloader_(std::make_shared<MetaDownloader>(*this, *downloader_)) {
 	LOGFUNC();
 
 	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
@@ -58,6 +62,8 @@ FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
 
 FolderGroup::~FolderGroup() {
 	LOGFUNC();
+
+	p2p_folders_.clear();
 
 	downloader_.reset();
 	uploader_.reset();
@@ -90,61 +96,21 @@ void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_
 
 // RemoteFolder actions
 void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
-	for(auto& meta : fs_dir_->index->get_meta()) {
-		origin->post_have_meta(meta.meta().path_revision(), fs_dir_->get_bitfield(meta.meta().path_revision()));
-	}
-}
+	origin->recv_choke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{downloader_->handle_choke(origin.lock());});
+	origin->recv_unchoke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{downloader_->handle_unchoke(origin.lock());});
+	origin->recv_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{uploader_->handle_interested(origin.lock());});
+	origin->recv_not_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{uploader_->handle_not_interested(origin.lock());});
 
-void FolderGroup::handle_choke(std::shared_ptr<RemoteFolder> origin) {
-	downloader_->handle_choke(origin);
-}
-void FolderGroup::handle_unchoke(std::shared_ptr<RemoteFolder> origin) {
-	downloader_->handle_unchoke(origin);
-}
-void FolderGroup::handle_interested(std::shared_ptr<RemoteFolder> origin) {
-	uploader_->handle_interested(origin);
-}
-void FolderGroup::handle_not_interested(std::shared_ptr<RemoteFolder> origin) {
-	uploader_->handle_not_interested(origin);
-}
+	origin->recv_have_meta.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const Meta::PathRevision& revision, const bitfield_type& bitfield){meta_downloader_->handle_have_meta(origin.lock(), revision, bitfield);});
+	origin->recv_have_chunk.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash){downloader_->notify_remote_chunk(origin.lock(), ct_hash);});
 
-void FolderGroup::notify_meta(std::shared_ptr<RemoteFolder> origin,
-                              const Meta::PathRevision& revision,
-                              const bitfield_type& bitfield) {
-	if(fs_dir_->have_meta(revision))
-		downloader_->notify_remote_meta(origin, revision, bitfield);
-	else if(fs_dir_->index->put_allowed(revision))
-		origin->request_meta(revision);
-	else
-		LOGD("Remote node notified us about an expired Meta");
-}
+	origin->recv_meta_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](Meta::PathRevision path_revision){meta_uploader_->handle_meta_request(origin.lock(), path_revision);});
+	origin->recv_meta_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const SignedMeta& smeta, const bitfield_type& bitfield){meta_downloader_->handle_meta_reply(origin.lock(), smeta, bitfield);});
 
-void FolderGroup::notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash) {
-	downloader_->notify_remote_chunk(origin, ct_hash);
-}
+	origin->recv_block_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, uint32_t size){uploader_->handle_block_request(origin.lock(), ct_hash, offset, size);});
+	origin->recv_block_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, const blob& block){downloader_->put_block(ct_hash, offset, block, origin.lock());});
 
-void FolderGroup::request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
-	try {
-		origin->post_meta(fs_dir_->get_meta(revision), fs_dir_->get_bitfield(revision));
-	}catch(AbstractFolder::no_such_meta& e){
-		LOGW("Requested nonexistent Meta");
-	}
-}
-
-void FolderGroup::post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	if(fs_dir_->index->put_allowed(smeta.meta().path_revision())) {
-		fs_dir_->put_meta(smeta);
-		downloader_->notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
-	}else
-		LOGD("Remote node posted to us about an expired Meta");
-}
-
-void FolderGroup::request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
-	uploader_->request_block(origin, ct_hash, offset, size);
-}
-
-void FolderGroup::post_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset) {
-	downloader_->put_block(ct_hash, offset, chunk, origin);
+	meta_uploader_->handle_handshake(origin);
 }
 
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
@@ -157,6 +123,8 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
 
 	LOGD("Attached remote " << remote_ptr->name());
+
+	remote_ptr->handshake_performed.connect([remote_ptr = std::weak_ptr<RemoteFolder>(remote_ptr), this]{handle_handshake(remote_ptr.lock());});
 
 	attached_signal(remote_ptr);
 }

@@ -96,7 +96,7 @@ public:
 	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
 protected:
-	WSService::connection conn_;
+	const WSService::connection conn_;
 	std::weak_ptr<FolderGroup> group_;
 
 	void handle_message(const blob& message);

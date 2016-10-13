@@ -125,7 +125,12 @@ void WSServer::pong(websocketpp::connection_hdl hdl, std::string message) {
 }
 
 std::string WSServer::errmsg(websocketpp::connection_hdl hdl) {
-	return ws_server_.get_con_from_hdl(hdl)->get_transport_ec().message();
+	std::ostringstream os;
+	os << "websocketpp: "
+	   << ws_server_.get_con_from_hdl(hdl)->get_ec().message()
+	   << " asio: "
+	   << ws_server_.get_con_from_hdl(hdl)->get_transport_ec().message();
+	return os.str();
 }
 
 } /* namespace librevault */

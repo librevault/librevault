@@ -97,8 +97,7 @@ private:
 #pragma pack(pop)
 
 	const size_t buffer_maxsize_ = 65535;
-	std::vector<char> buffer_;
-	void reset_buffer();
+	using buffer_type = std::shared_ptr<std::vector<char>>;
 
 	address bind_address_;
 
@@ -126,8 +125,8 @@ private:
 	void announce(const boost::system::error_code& ec = boost::system::error_code());
 
 	void handle_resolve(const boost::system::error_code& ec, udp_resolver::iterator iterator);
-	void handle_connect();
-	void handle_announce();
+	void handle_connect(buffer_type buffer);
+	void handle_announce(buffer_type buffer);
 };
 
 } /* namespace librevault */

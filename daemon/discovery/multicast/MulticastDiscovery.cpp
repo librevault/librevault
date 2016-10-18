@@ -48,11 +48,11 @@ MulticastDiscovery::~MulticastDiscovery() {
 }
 
 void MulticastDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	senders_.insert({group_ptr->secret().get_Hash(), std::make_shared<MulticastSender>(group_ptr, *this, io_service_, node_key_)});
+	senders_.insert({group_ptr->hash(), std::make_shared<MulticastSender>(group_ptr, *this, io_service_, node_key_)});
 }
 
 void MulticastDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	senders_.erase(group_ptr->secret().get_Hash());
+	senders_.erase(group_ptr->hash());
 }
 
 void MulticastDiscovery::start() {

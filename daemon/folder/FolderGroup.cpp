@@ -64,10 +64,10 @@ FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
 	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, ios);
 	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, ios);
 
-	uploader_ = std::make_shared<Uploader>(*chunk_storage);
-	downloader_ = std::make_shared<Downloader>(params_, *meta_storage_, *chunk_storage, ios);
-	meta_uploader_ = std::make_shared<MetaUploader>(*meta_storage_, *chunk_storage);
-	meta_downloader_ = std::make_shared<MetaDownloader>(*meta_storage_, *downloader_);
+	uploader_ = std::make_unique<Uploader>(*chunk_storage);
+	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage, ios);
+	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage);
+	meta_downloader_ = std::make_unique<MetaDownloader>(*meta_storage_, *downloader_);
 
 	// Connecting signals and slots
 	meta_storage_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
@@ -87,11 +87,6 @@ FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
 
 FolderGroup::~FolderGroup() {
 	LOGFUNC();
-
-	p2p_folders_.clear();
-
-	downloader_.reset();
-	uploader_.reset();
 }
 
 /* Actions */

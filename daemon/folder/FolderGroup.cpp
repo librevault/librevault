@@ -28,36 +28,61 @@
  */
 #include "FolderGroup.h"
 
-#include "folder/fs/FSFolder.h"
+#include "IgnoreList.h"
+#include "PathNormalizer.h"
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
+#include "folder/transfer/MetaDownloader.h"
+#include "folder/transfer/MetaUploader.h"
+#include "folder/transfer/Uploader.h"
+#include "folder/transfer/Downloader.h"
 #include "p2p/P2PFolder.h"
-
-#include "fs/Index.h"
-#include "folder/fs/chunk/ChunkStorage.h"
-
-#include "transfer/MetaDownloader.h"
-#include "transfer/MetaUploader.h"
-#include "Uploader.h"
-#include "Downloader.h"
 
 namespace librevault {
 
 FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
-		params_(std::move(params)),
-		fs_dir_(std::make_shared<FSFolder>(*this, ios)),
-		uploader_(std::make_shared<Uploader>(*this)),
-		downloader_(std::make_shared<Downloader>(ios, *this)),
-		meta_uploader_(std::make_shared<MetaUploader>(*this)),
-		meta_downloader_(std::make_shared<MetaDownloader>(*this, *downloader_)) {
+		params_(std::move(params)) {
 	LOGFUNC();
 
-	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
-		notify_meta(fs_dir_, smeta.meta().path_revision(), fs_dir_->chunk_storage->make_bitfield(smeta.meta()));
+	/* Creating directories */
+	bool path_created = fs::create_directories(params_.path);
+	bool system_path_created = fs::create_directories(params_.system_path);
+#if BOOST_OS_WINDOWS
+	SetFileAttributes(params_.system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
+#endif
+
+	LOGD("New FSFolder:"
+		<< " Key type=" << (char)params_.secret.get_type()
+		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);
+
+	/* Initializing components */
+	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
+	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
+
+	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, ios);
+	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, ios);
+
+	uploader_ = std::make_shared<Uploader>(*chunk_storage);
+	downloader_ = std::make_shared<Downloader>(params_, *meta_storage_, *chunk_storage, ios);
+	meta_uploader_ = std::make_shared<MetaUploader>(*meta_storage_, *chunk_storage);
+	meta_downloader_ = std::make_shared<MetaDownloader>(*meta_storage_, *downloader_);
+
+	// Connecting signals and slots
+	meta_storage_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
+		Meta::PathRevision revision = smeta.meta().path_revision();
+		bitfield_type bitfield = chunk_storage->make_bitfield(smeta.meta());
+
+		downloader_->notify_local_meta(revision, bitfield);
+		meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
 	});
-	fs_dir_->chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
-		notify_chunk(fs_dir_, ct_hash);
+	chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
+		downloader_->notify_local_chunk(ct_hash);
+		uploader_->broadcast_chunk(remotes(), ct_hash);
 	});
 
-	fs_dir_->index->notify_all();
+	meta_storage_->index->notify_all();
 }
 
 FolderGroup::~FolderGroup() {
@@ -67,33 +92,9 @@ FolderGroup::~FolderGroup() {
 
 	downloader_.reset();
 	uploader_.reset();
-	fs_dir_.reset();
 }
 
 /* Actions */
-// FSFolder actions
-void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
-                              Meta::PathRevision revision,
-                              bitfield_type bitfield) {
-	downloader_->notify_local_meta(revision, bitfield);
-
-	// Broadcast to all attached P2PDirectories
-	std::unique_lock<decltype(p2p_folders_mtx_)> dirs_lk(p2p_folders_mtx_);
-	for(auto p2p_dir : p2p_folders_) {
-		p2p_dir->post_have_meta(revision, bitfield);
-	}
-}
-
-void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash) {
-	downloader_->notify_local_chunk(ct_hash);
-
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
-
-	for(auto p2p_folder : p2p_folders_) {
-		p2p_folder->post_have_chunk(ct_hash);
-	}
-}
-
 // RemoteFolder actions
 void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
 	origin->recv_choke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{downloader_->handle_choke(origin.lock());});
@@ -152,8 +153,12 @@ bool FolderGroup::have_p2p_dir(const blob& pubkey) {
 	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
 }
 
+std::set<std::shared_ptr<RemoteFolder>> FolderGroup::remotes() const {
+	return std::set<std::shared_ptr<RemoteFolder>>(p2p_folders_.begin(), p2p_folders_.end());
+}
+
 std::string FolderGroup::log_tag() const {
-	return std::string("[") + (params_.path.empty() ? params_.system_path : params_.path).string() + "] ";
+	return std::string("[") + (!params_.path.empty() ? params_.path : params_.system_path).string() + "] ";
 }
 
 } /* namespace librevault */

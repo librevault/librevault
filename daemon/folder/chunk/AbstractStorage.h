@@ -27,32 +27,24 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <control/Config.h>
-#include <mutex>
-#include <regex>
+#include <librevault/Meta.h>
+#include <memory>
 
 namespace librevault {
 
-class FSFolder;
-class IgnoreList {
+class ChunkStorage;
+class AbstractStorage {
 public:
-	IgnoreList(FSFolder& dir);
-	virtual ~IgnoreList() {}
+	AbstractStorage(ChunkStorage& chunk_storage);
+	virtual ~AbstractStorage() {};
 
-	bool is_ignored(const std::string& relpath) const;
+	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
+	}
+	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
 
-	void add_ignored(const std::string& relpath);
-	void remove_ignored(const std::string& relpath);
-
-	void set_ignored(const std::vector<std::string>& ignored_paths);
-
-private:
-	FSFolder& dir_;
-
-	mutable std::mutex ignored_paths_mtx_;
-	std::map<std::string, std::regex> ignored_paths_;
-
-	std::string log_tag() const;
+protected:
+	ChunkStorage& chunk_storage_;
 };
 
 } /* namespace librevault */

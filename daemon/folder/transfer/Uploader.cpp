@@ -26,31 +26,55 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractFolder.h"
-#include "util/log_scope.h"
-#include <librevault/Meta.h>
+#include "Uploader.h"
+
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/RemoteFolder.h"
+
+#include "util/log.h"
 
 namespace librevault {
 
-class RemoteFolder;
-class FolderGroup;
+Uploader::Uploader(ChunkStorage& chunk_storage) :
+	chunk_storage_(chunk_storage) {
+	LOGFUNC();
+}
 
-class Uploader {
-	LOG_SCOPE("Uploader");
-public:
-	Uploader(FolderGroup& exchange_group);
+void Uploader::broadcast_chunk(std::set<std::shared_ptr<RemoteFolder>> remotes, const blob& ct_hash) {
+	for(auto& remote : remotes) {
+		remote->post_have_chunk(ct_hash);
+	}
+}
 
-	/* Message handlers */
-	void handle_interested(std::shared_ptr<RemoteFolder> remote);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
+void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
+	LOGFUNC();
 
-	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
+	// TODO: write good choking algorithm.
+	remote->unchoke();
+}
+void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
+	LOGFUNC();
 
-private:
-	FolderGroup& exchange_group_;
+	// TODO: write good choking algorithm.
+	remote->choke();
+}
 
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-};
+void Uploader::handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+	try {
+		if(!origin->am_choking() && origin->peer_interested()) {
+			origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+		}
+	}catch(AbstractFolder::no_such_chunk& e){
+		LOGW("Requested nonexistent block");
+	}
+}
+
+blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
+	auto chunk = chunk_storage_.get_chunk(ct_hash);
+	if(offset < chunk.size() && size <= chunk.size()-offset)
+		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
+	else
+		throw AbstractFolder::no_such_chunk();
+}
 
 } /* namespace librevault */

@@ -27,26 +27,32 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
-#include <util/log_scope.h>
+#include "util/network.h"
+#include <boost/signals2/signal.hpp>
+#include <librevault/Meta.h>
 
 namespace librevault {
 
-class FSFolder;
-class EncStorage : public AbstractStorage {
-	LOG_SCOPE("EncStorage");
-public:
-	EncStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~EncStorage() {}
+class FolderParams;
+class IgnoreList;
+class PathNormalizer;
+class Index;
+class Indexer;
+class AutoIndexer;
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
-	void remove_chunk(const blob& ct_hash);
+class MetaStorage {
+public:
+	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
+	virtual ~MetaStorage();
+
+	bool is_indexing() const;
+	void prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+
+	std::unique_ptr<Index> index;
 
 private:
-	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
-	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+	std::unique_ptr<Indexer> indexer_;
+	std::unique_ptr<AutoIndexer> auto_indexer_;
 };
 
 } /* namespace librevault */

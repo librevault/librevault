@@ -28,28 +28,32 @@
  */
 #pragma once
 #include "util/log_scope.h"
-#include <librevault/SignedMeta.h>
-#include <librevault/util/bitfield_convert.h>
+#include "util/blob.h"
 #include <memory>
+#include <set>
 
 namespace librevault {
 
 class RemoteFolder;
-class MetaStorage;
-class Downloader;
+class ChunkStorage;
 
-class MetaDownloader {
-	LOG_SCOPE("MetaDownloader");
+class Uploader {
+	LOG_SCOPE("Uploader");
 public:
-	MetaDownloader(MetaStorage& meta_storage, Downloader& downloader);
+	Uploader(ChunkStorage& chunk_storage);
+
+	void broadcast_chunk(std::set<std::shared_ptr<RemoteFolder>> remotes, const blob& ct_hash);
 
 	/* Message handlers */
-	void handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+	void handle_interested(std::shared_ptr<RemoteFolder> remote);
+	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
+
+	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
-	MetaStorage& meta_storage_;
-	Downloader& downloader_;
+	ChunkStorage& chunk_storage_;
+
+	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

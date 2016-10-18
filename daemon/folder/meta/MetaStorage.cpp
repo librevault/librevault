@@ -26,30 +26,30 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/log_scope.h"
-#include <librevault/SignedMeta.h>
-#include <librevault/util/bitfield_convert.h>
-#include <memory>
+#include "MetaStorage.h"
+#include "control/FolderParams.h"
+#include "folder/PathNormalizer.h"
+#include "Index.h"
+#include "Indexer.h"
+#include "AutoIndexer.h"
 
 namespace librevault {
 
-class RemoteFolder;
-class MetaStorage;
-class Downloader;
-
-class MetaDownloader {
-	LOG_SCOPE("MetaDownloader");
-public:
-	MetaDownloader(MetaStorage& meta_storage, Downloader& downloader);
-
-	/* Message handlers */
-	void handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
-
-private:
-	MetaStorage& meta_storage_;
-	Downloader& downloader_;
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) {
+	index = std::make_unique<Index>(params, ios);
+	if(params.secret.get_type() <= Secret::Type::ReadWrite){
+		indexer_ = std::make_unique<Indexer>(params, *index, ignore_list, path_normalizer, ios);
+		auto_indexer_ = std::make_unique<AutoIndexer>(params, *index, *indexer_, ignore_list, path_normalizer, ios);
+	}
 };
+MetaStorage::~MetaStorage() {}
+
+bool MetaStorage::is_indexing() const {
+	return (indexer_ && indexer_->is_indexing());
+}
+
+void MetaStorage::prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal) {
+	if(auto_indexer_) auto_indexer_->prepare_assemble(relpath, type, with_removal);
+}
 
 } /* namespace librevault */

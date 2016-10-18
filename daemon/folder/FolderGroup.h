@@ -45,12 +45,19 @@ class RemoteFolder;
 class FSFolder;
 class P2PFolder;
 
+class PathNormalizer;
+class IgnoreList;
+
+class ChunkStorage;
+class MetaStorage;
+
 class MetaUploader;
 class MetaDownloader;
 class Uploader;
 class Downloader;
 
 class FolderGroup : public std::enable_shared_from_this<FolderGroup> {
+	friend class ControlServer;
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -97,7 +104,7 @@ public:
 	bool have_p2p_dir(const blob& pubkey);
 
 	/* Getters */
-	inline std::shared_ptr<FSFolder> fs_dir() const {return fs_dir_;}
+	std::set<std::shared_ptr<RemoteFolder>> remotes() const;
 	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_folders_;}
 
 	inline const FolderParams& params() const {return params_;}
@@ -109,7 +116,11 @@ public:
 private:
 	const FolderParams params_;
 
-	std::shared_ptr<FSFolder> fs_dir_;
+	std::unique_ptr<PathNormalizer> path_normalizer_;
+	std::unique_ptr<IgnoreList> ignore_list;
+
+	std::unique_ptr<ChunkStorage> chunk_storage;
+	std::unique_ptr<MetaStorage> meta_storage_;
 
 	std::shared_ptr<Uploader> uploader_;
 	std::shared_ptr<Downloader> downloader_;

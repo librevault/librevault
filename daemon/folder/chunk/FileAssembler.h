@@ -27,66 +27,64 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/periodic_process.h"
-#include "util/fs.h"
-#include "util/log_scope.h"
+#include "Archive.h"
+#include "util/blob.h"
 #include "util/network.h"
-#include <boost/filesystem/path.hpp>
+#include <mutex>
+#include <set>
 
 namespace librevault {
 
-class FSFolder;
-class Archive {
-	friend class ArchiveStrategy;
-	LOG_SCOPE("Archive");
-public:
-	Archive(FSFolder& dir, io_service& ios);
-	virtual ~Archive() {}
+class PathNormalizer;
 
-	void archive(const fs::path& from);
+class MetaStorage;
+class FolderParams;
+class ChunkStorage;
+class Meta;
+class Secret;
+
+class FileAssembler {
+	LOG_SCOPE("FileAssembler");
+public:
+	struct error : std::runtime_error {
+		error(const std::string& what) : std::runtime_error(what) {}
+		error() : error("FileAssembler error") {}
+	};
+
+	FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, io_service& ios);
+	virtual ~FileAssembler() {}
+
+	blob get_chunk_pt(const blob& ct_hash) const;
+
+	// File assembler
+	void queue_assemble(const Meta& meta);
+	//void disassemble(const std::string& file_path, bool delete_file = true);
 
 private:
-	FSFolder& dir_;
+	const FolderParams& params_;
+	MetaStorage& meta_storage_;
+	ChunkStorage& chunk_storage_;
+	PathNormalizer& path_normalizer_;
 	io_service& ios_;
 
-	struct ArchiveStrategy {
-	public:
-		virtual void archive(const fs::path& from) = 0;
-		virtual ~ArchiveStrategy(){}
+	Archive archive_;
 
-	protected:
-		LOG_SCOPE_PARENT(parent_);
-		ArchiveStrategy(Archive& parent) : parent_(parent) {}
-		Archive& parent_;
-	};
-	class NoArchive : public ArchiveStrategy {
-	public:
-		NoArchive(Archive& parent) : ArchiveStrategy(parent) {}
-		virtual ~NoArchive(){}
-		void archive(const fs::path& from);
-	};
-	class TrashArchive : public ArchiveStrategy {
-	public:
-		TrashArchive(Archive& parent);
-		virtual ~TrashArchive();
-		void archive(const fs::path& from);
+	const Secret& secret_;
 
-	private:
-		void maintain_cleanup(PeriodicProcess& process);
+	std::set<blob> assemble_queue_;
+	std::mutex assemble_queue_mtx_;
 
-		const fs::path archive_path_;
-		PeriodicProcess cleanup_process_;
-	};
-	class TimestampArchive : public ArchiveStrategy {
-	public:
-		TimestampArchive(Archive& parent);
-		virtual ~TimestampArchive(){}
-		void archive(const fs::path& from);
+	void periodic_assemble_operation(PeriodicProcess& process);
+	PeriodicProcess assemble_process_;
 
-	private:
-		const fs::path archive_path_;
-	};
-	std::unique_ptr<ArchiveStrategy> archive_strategy_;
+	void assemble(const Meta& meta);
+
+	bool assemble_deleted(const Meta& meta);
+	bool assemble_symlink(const Meta& meta);
+	bool assemble_directory(const Meta& meta);
+	bool assemble_file(const Meta& meta);
+
+	void apply_attrib(const Meta& meta);
 };
 
 } /* namespace librevault */

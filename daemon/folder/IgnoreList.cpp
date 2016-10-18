@@ -26,31 +26,53 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractStorage.h"
-#include <util/log.h>
+#include "IgnoreList.h"
+#include "control/FolderParams.h"
+#include "folder/PathNormalizer.h"
+#include "util/log.h"
+#include "util/regex_escape.h"
 
 namespace librevault {
 
-class FSFolder;
-class Secret;
+IgnoreList::IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer) : params_(params), path_normalizer_(path_normalizer) {
+	set_ignored(params_.ignore_paths);
 
-class OpenStorage : public AbstractStorage {
-	LOG_SCOPE("OpenStorage");
-public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("OpenStorage error") {}
-	};
+	LOGD("IgnoreList initialized");
+}
 
-	OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~OpenStorage() {}
+bool IgnoreList::is_ignored(const std::string& relpath) const {
+	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
+	for(auto& ignored_path : ignored_paths_) {
+		if(std::regex_match(relpath, ignored_path.second)) return true;
+	}
+	return false;
+}
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+void IgnoreList::add_ignored(const std::string& relpath) {
+	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
+	if(!relpath.empty()) {
+		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
+		ignored_paths_.insert({relpath, std::move(relpath_regex)});
+		LOGD("Added to IgnoreList: " << relpath);
+	}
+}
 
-private:
-	const Secret& secret_;
-};
+void IgnoreList::remove_ignored(const std::string& relpath) {
+	std::lock_guard<std::mutex> lk(ignored_paths_mtx_);
+	ignored_paths_.erase(relpath);
+	LOGD("Removed from IgnoreList: " << relpath);
+}
+
+void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
+	ignored_paths_.clear();
+
+	// Config paths
+	for(auto path : params_.ignore_paths) {
+		add_ignored(path);
+	}
+
+	// Predefined paths
+	add_ignored(regex_escape(path_normalizer_.normalize_path(params_.system_path)) + R"((?:\/(?:.*))?)");
+}
 
 } /* namespace librevault */

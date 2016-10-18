@@ -28,22 +28,24 @@
  */
 #include "Archive.h"
 
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/AutoIndexer.h"
 #include "ChunkStorage.h"
-
-#include <util/file_util.h>
-#include <util/regex_escape.h>
-#include <util/log.h>
+#include "control/FolderParams.h"
+#include "folder/PathNormalizer.h"
+#include "folder/meta/MetaStorage.h"
+#include "util/file_util.h"
+#include "util/regex_escape.h"
+#include "util/log.h"
 #include <regex>
 
 namespace librevault {
 
-Archive::Archive(FSFolder& dir, io_service& ios) :
-	dir_(dir),
+Archive::Archive(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios) :
+	params_(params),
+	meta_storage_(meta_storage),
+	path_normalizer_(path_normalizer),
 	ios_(ios) {
 
-	switch(dir_.params().archive_type) {
+	switch(params_.archive_type) {
 		case FolderParams::ArchiveType::NO_ARCHIVE: archive_strategy_ = std::make_unique<NoArchive>(*this); break;
 		case FolderParams::ArchiveType::TRASH_ARCHIVE: archive_strategy_ = std::make_unique<TrashArchive>(*this); break;
 		case FolderParams::ArchiveType::TIMESTAMP_ARCHIVE: archive_strategy_ = std::make_unique<TimestampArchive>(*this); break;
@@ -56,7 +58,7 @@ void Archive::archive(const fs::path& from) {
 	auto file_type = fs::symlink_status(from).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(dir_.normalize_path(from));
+	meta_storage_.prepare_assemble(path_normalizer_.normalize_path(from), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(from)) // Okay, just remove this empty directory
@@ -82,7 +84,7 @@ void Archive::NoArchive::archive(const fs::path& from) {
 // TrashArchive
 Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent.dir_.system_path() / "archive"),
+	archive_path_(parent.params_.system_path / "archive"),
 	cleanup_process_(parent.ios_, [this](PeriodicProcess& process){
 		maintain_cleanup(process);
 	}) {
@@ -101,9 +103,9 @@ void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 	std::list<fs::path> removed_paths;
 	try {
 		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
-			unsigned time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
+			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
 			constexpr unsigned sec_per_day = 60 * 60 * 24;
-			if(time_since_archivation >= parent_.dir_.params().archive_trash_ttl * sec_per_day && parent_.dir_.params().archive_trash_ttl != 0)
+			if(time_since_archivation >= parent_.params_.archive_trash_ttl * sec_per_day && parent_.params_.archive_trash_ttl != 0)
 				removed_paths.push_back(it->path());
 		}
 
@@ -119,7 +121,7 @@ void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
 }
 
 void Archive::TrashArchive::archive(const fs::path& from) {
-	auto archived_path = archive_path_ / fs::path(parent_.dir_.normalize_path(from));
+	auto archived_path = archive_path_ / fs::path(parent_.path_normalizer_.normalize_path(from));
 	LOGD("Adding an archive item: " << archived_path);
 	file_move(from, archived_path);
 	fs::last_write_time(archived_path, time(nullptr));
@@ -128,14 +130,14 @@ void Archive::TrashArchive::archive(const fs::path& from) {
 // TimestampArchive
 Archive::TimestampArchive::TimestampArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent.dir_.system_path() / "archive") {
+	archive_path_(parent.params_.system_path / "archive") {
 
 	fs::create_directory(archive_path_);
 }
 
 void Archive::TimestampArchive::archive(const fs::path& from) {
 	// Add a new entry
-	auto archived_path = archive_path_ / fs::path(parent_.dir_.normalize_path(from));
+	auto archived_path = archive_path_ / fs::path(parent_.path_normalizer_.normalize_path(from));
 
 	time_t mtime = fs::last_write_time(from);
 	std::vector<char> strftime_buf(16);
@@ -159,7 +161,7 @@ void Archive::TimestampArchive::archive(const fs::path& from) {
 			paths.insert({match[1].str(), from});
 		}
 	}
-	if(paths.size() > parent_.dir_.params().archive_timestamp_count && parent_.dir_.params().archive_timestamp_count != 0) {
+	if(paths.size() > parent_.params_.archive_timestamp_count && parent_.params_.archive_timestamp_count != 0) {
 		fs::remove(paths.begin()->second);
 	}
 }

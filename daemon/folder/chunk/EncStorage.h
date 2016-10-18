@@ -26,52 +26,30 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "Uploader.h"
-
-#include "FolderGroup.h"
-
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Index.h"
-#include "p2p/P2PFolder.h"
-
-#include "util/log.h"
+#pragma once
+#include "AbstractStorage.h"
+#include <util/log_scope.h>
+#include "control/FolderParams.h"
 
 namespace librevault {
 
-Uploader::Uploader(FolderGroup& exchange_group) :
-		exchange_group_(exchange_group) {
-	LOGFUNC();
-}
+class FSFolder;
+class EncStorage : public AbstractStorage {
+	LOG_SCOPE("EncStorage");
+public:
+	EncStorage(const FolderParams& params, ChunkStorage& chunk_storage);
+	virtual ~EncStorage() {}
 
-void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
-	LOGFUNC();
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
+	void remove_chunk(const blob& ct_hash);
 
-	// TODO: write good choking algorithm.
-	remote->unchoke();
-}
-void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
-	LOGFUNC();
+private:
+	const FolderParams& params_;
 
-	// TODO: write good choking algorithm.
-	remote->choke();
-}
-
-void Uploader::handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
-	try {
-		if(!origin->am_choking() && origin->peer_interested()) {
-			origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
-		}
-	}catch(AbstractFolder::no_such_chunk& e){
-		LOGW("Requested nonexistent block");
-	}
-}
-
-blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
-	auto chunk = exchange_group_.fs_dir()->get_chunk(ct_hash);
-	if(offset < chunk.size() && size <= chunk.size()-offset)
-		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
-	else
-		throw AbstractFolder::no_such_chunk();
-}
+	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
+	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+};
 
 } /* namespace librevault */

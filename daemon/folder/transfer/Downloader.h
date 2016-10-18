@@ -27,16 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/log.h>
-#include <util/file_util.h>
-#include <util/AvailabilityMap.h>
-#include <util/network.h>
-#include <util/periodic_process.h>
+#include "folder/RemoteFolder.h"
+#include "util/AvailabilityMap.h"
+#include "util/blob.h"
+#include "util/file_util.h"
+#include "util/log.h"
+#include "util/network.h"
+#include "util/periodic_process.h"
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
-#include "RemoteFolder.h"
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f
@@ -44,7 +45,9 @@
 
 namespace librevault {
 
-class FolderGroup;
+class FolderParams;
+class MetaStorage;
+class ChunkStorage;
 
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
@@ -126,7 +129,7 @@ public:
 class Downloader {
 	LOG_SCOPE("Downloader");
 public:
-	Downloader(io_service& ios, FolderGroup& exchange_group);
+	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios);
 	~Downloader();
 
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
@@ -143,7 +146,9 @@ public:
 	void erase_remote(std::shared_ptr<RemoteFolder> remote);
 
 private:
-	FolderGroup& exchange_group_;
+	const FolderParams& params_;
+	MetaStorage& meta_storage_;
+	ChunkStorage& chunk_storage_;
 
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
 	WeightedDownloadQueue download_queue_;

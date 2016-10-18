@@ -33,9 +33,8 @@
 #include "discovery/mldht/MLDHTDiscovery.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Index.h"
-#include "folder/fs/Indexer.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
 #include "p2p/P2PFolder.h"
 #include "util/log.h"
 
@@ -153,14 +152,14 @@ Json::Value ControlServer::make_state_json() const {
 	for(auto folder : client_.folder_service_->groups()) {
 		Json::Value folder_json;                    /// folder_json
 
-		folder_json["path"] = folder->fs_dir()->path().string();
+		folder_json["path"] = folder->params().path.string();
 		folder_json["secret"] = folder->secret().string();
 
 		// Indexer
-		folder_json["is_indexing"] = folder->fs_dir()->indexer ? folder->fs_dir()->indexer->is_indexing() : false;
+		folder_json["is_indexing"] = folder->meta_storage_->is_indexing();
 
 		// Index
-		auto index_status = folder->fs_dir()->index->get_status();
+		auto index_status = folder->meta_storage_->index->get_status();
 		folder_json["file_entries"] = (Json::Value::UInt64)index_status.file_entries;
 		folder_json["directory_entries"] = (Json::Value::UInt64)index_status.directory_entries;
 		folder_json["symlink_entries"] = (Json::Value::UInt64)index_status.symlink_entries;

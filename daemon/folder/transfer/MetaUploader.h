@@ -29,25 +29,30 @@
 #pragma once
 #include "util/log_scope.h"
 #include <librevault/Meta.h>
+#include <librevault/util/bitfield_convert.h>
 #include <memory>
+#include <set>
 
 namespace librevault {
 
 class RemoteFolder;
-class FolderGroup;
+class MetaStorage;
+class ChunkStorage;
 
 class MetaUploader {
 	LOG_SCOPE("MetaUploader");
 public:
-	MetaUploader(FolderGroup& exchange_group);
+	MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storage);
+
+	void broadcast_meta(std::set<std::shared_ptr<RemoteFolder>> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
 
 	/* Message handlers */
 	void handle_handshake(std::shared_ptr<RemoteFolder> remote);
-
 	void handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
 
 private:
-	FolderGroup& exchange_group_;
+	MetaStorage& meta_storage_;
+	ChunkStorage& chunk_storage_;
 };
 
 } /* namespace librevault */

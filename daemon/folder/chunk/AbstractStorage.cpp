@@ -26,56 +26,11 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "IgnoreList.h"
-#include "FSFolder.h"
-#include <util/regex_escape.h>
-#include <util/log.h>
+#include "AbstractStorage.h"
+#include "ChunkStorage.h"
 
 namespace librevault {
 
-IgnoreList::IgnoreList(FSFolder& dir) : dir_(dir) {
-	set_ignored(dir_.params().ignore_paths);
-
-	LOGD("IgnoreList initialized");
-}
-
-bool IgnoreList::is_ignored(const std::string& relpath) const {
-	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
-	for(auto& ignored_path : ignored_paths_) {
-		if(std::regex_match(relpath, ignored_path.second)) return true;
-	}
-	return false;
-}
-
-void IgnoreList::add_ignored(const std::string& relpath) {
-	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
-	if(!relpath.empty()) {
-		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
-		ignored_paths_.insert({relpath, std::move(relpath_regex)});
-		LOGD("Added to IgnoreList: " << relpath);
-	}
-}
-
-void IgnoreList::remove_ignored(const std::string& relpath) {
-	std::lock_guard<std::mutex> lk(ignored_paths_mtx_);
-	ignored_paths_.erase(relpath);
-	LOGD("Removed from IgnoreList: " << relpath);
-}
-
-void IgnoreList::set_ignored(const std::vector<std::string>& ignored_paths) {
-	ignored_paths_.clear();
-
-	// Config paths
-	for(auto path : dir_.params().ignore_paths) {
-		add_ignored(path);
-	}
-
-	// Predefined paths
-	add_ignored(regex_escape(dir_.normalize_path(dir_.system_path())) + R"((?:\/(?:.*))?)");
-}
-
-std::string IgnoreList::log_tag() const {
-	return dir_.log_tag();
-}
+AbstractStorage::AbstractStorage(ChunkStorage& chunk_storage) : chunk_storage_(chunk_storage) {};
 
 } /* namespace librevault */

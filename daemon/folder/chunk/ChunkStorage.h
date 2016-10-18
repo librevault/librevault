@@ -27,71 +27,48 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log_scope.h"
 #include "util/fs.h"
 #include "util/network.h"
-#include <librevault/SignedMeta.h>
+#include <librevault/Meta.h>
+#include <librevault/util/bitfield_convert.h>
 #include <boost/filesystem/path.hpp>
-#include <set>
-#include <atomic>
-#include <mutex>
-#include <map>
-#include <future>
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
-class Index;
-class FSFolder;
-class Indexer {
-	LOG_SCOPE("Indexer");
+class FolderParams;
+class MetaStorage;
+class PathNormalizer;
+
+class MemoryCachedStorage;
+class EncStorage;
+class OpenStorage;
+
+class FileAssembler;
+
+class ChunkStorage {
 public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("Indexer error") {}
-	};
+	boost::signals2::signal<void(const blob&)> new_chunk_signal;
 
-	struct abort_index : error {
-		abort_index(const char* what) : error(what) {}
-	};
+	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios);
+	virtual ~ChunkStorage();
 
-	struct unsupported_filetype : abort_index {
-		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
-	};
+	bool have_chunk(const blob& ct_hash) const noexcept ;
+	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
+	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
 
-	Indexer(FSFolder& dir, io_service& ios);
-	virtual ~Indexer();
+	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
 
-	// Index manipulation
-	void index(const std::string& file_path) noexcept;
+	void cleanup(const Meta& meta);
 
-	void async_index(const std::string& file_path);
-	void async_index(const std::set<std::string>& file_path);
+protected:
+	MetaStorage& meta_storage_;
 
-	// Meta functions
-	SignedMeta make_Meta(const std::string& relpath);
+	std::unique_ptr<MemoryCachedStorage> mem_storage;
+	std::unique_ptr<EncStorage> enc_storage;
+	std::unique_ptr<OpenStorage> open_storage;
 
-	/* Getters */
-	bool is_indexing() const {return indexing_now_ != 0;}
-
-private:
-	FSFolder& dir_;
-
-	const Secret& secret_;
-	Index& index_;
-
-	io_service& ios_;
-
-	/* Status */
-	std::atomic_uint indexing_now_;
-	std::map<std::string, std::future<void>> index_queue_;
-	std::mutex index_queue_mtx_;
-	bool active = true;
-
-	/* File analyzers */
-	Meta::Type get_type(const fs::path& path);
-	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path);
-	void update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path);
-	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+	std::unique_ptr<FileAssembler>(file_assembler);
 };
 
 } /* namespace librevault */

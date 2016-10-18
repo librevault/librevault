@@ -29,8 +29,7 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "control/Config.h"
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Indexer.h"
+#include "folder/meta/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
 

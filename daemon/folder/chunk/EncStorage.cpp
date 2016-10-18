@@ -26,23 +26,23 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <util/file_util.h>
-#include <librevault/crypto/Base32.h>
 #include "EncStorage.h"
-#include "folder/fs/FSFolder.h"
-#include <util/fs.h>
-#include <util/log.h>
+#include "folder/AbstractFolder.h"
+#include "util/fs.h"
+#include "util/log.h"
+#include "util/file_util.h"
+#include <librevault/crypto/Base32.h>
 
 namespace librevault {
 
-EncStorage::EncStorage(FSFolder& dir, ChunkStorage& chunk_storage) : AbstractStorage(dir, chunk_storage) {}
+EncStorage::EncStorage(const FolderParams& params, ChunkStorage& chunk_storage) : AbstractStorage(chunk_storage), params_(params) {}
 
 std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
 }
 
 fs::path EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
-	return dir_.system_path() / make_chunk_ct_name(ct_hash);
+	return params_.system_path / make_chunk_ct_name(ct_hash);
 }
 
 bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {

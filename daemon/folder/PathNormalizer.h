@@ -27,26 +27,23 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/Meta.h>
-#include <memory>
+#include "util/log_scope.h"
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
-class FSFolder;
-class ChunkStorage;
-class AbstractStorage {
+class FolderParams;
+
+class PathNormalizer {
+	LOG_SCOPE("PathNormalizer");
+
 public:
-	AbstractStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~AbstractStorage() {};
+	PathNormalizer(const FolderParams& params);
+	std::string normalize_path(const boost::filesystem::path& abspath) const;
+	boost::filesystem::path absolute_path(const std::string& normpath) const;
 
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
-	}
-	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
-
-protected:
-	FSFolder& dir_;
-	ChunkStorage& chunk_storage_;
+private:
+	const FolderParams& params_;
 };
 
 } /* namespace librevault */

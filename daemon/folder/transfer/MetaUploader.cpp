@@ -28,30 +28,35 @@
  */
 #include "MetaUploader.h"
 
-#include "../FolderGroup.h"
-
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Index.h"
-#include "../RemoteFolder.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/RemoteFolder.h"
 
 #include "util/log.h"
 
 namespace librevault {
 
-MetaUploader::MetaUploader(FolderGroup& exchange_group) :
-		exchange_group_(exchange_group) {
+MetaUploader::MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storage) :
+	meta_storage_(meta_storage), chunk_storage_(chunk_storage) {
 	LOGFUNC();
 }
 
+void MetaUploader::broadcast_meta(std::set<std::shared_ptr<RemoteFolder>> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+	for(auto remote : remotes) {
+		remote->post_have_meta(revision, bitfield);
+	}
+}
+
 void MetaUploader::handle_handshake(std::shared_ptr<RemoteFolder> remote) {
-	for(auto& meta : exchange_group_.fs_dir()->index->get_meta()) {
-		remote->post_have_meta(meta.meta().path_revision(), exchange_group_.fs_dir()->get_bitfield(meta.meta().path_revision()));
+	for(auto& meta : meta_storage_.index->get_meta()) {
+		remote->post_have_meta(meta.meta().path_revision(), chunk_storage_.make_bitfield(meta.meta()));
 	}
 }
 
 void MetaUploader::handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
 	try {
-		origin->post_meta(exchange_group_.fs_dir()->get_meta(revision), exchange_group_.fs_dir()->get_bitfield(revision));
+		origin->post_meta(meta_storage_.index->get_meta(revision), chunk_storage_.make_bitfield(meta_storage_.index->get_meta(revision).meta()));
 	}catch(AbstractFolder::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

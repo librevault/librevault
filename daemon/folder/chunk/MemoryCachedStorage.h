@@ -26,11 +26,32 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#pragma once
 #include "AbstractStorage.h"
-#include "folder/fs/FSFolder.h"
+#include <map>
+#include <list>
 
 namespace librevault {
 
-AbstractStorage::AbstractStorage(FSFolder& dir, ChunkStorage& chunk_storage) : dir_(dir), chunk_storage_(chunk_storage) {};
+// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
+class MemoryCachedStorage : public AbstractStorage {
+public:
+	MemoryCachedStorage(ChunkStorage& chunk_storage);
+	virtual ~MemoryCachedStorage() {}
+
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
+	void remove_chunk(const blob& ct_hash) noexcept;
+
+private:
+	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
+	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
+
+	mutable std::list<ct_hash_data_type> cache_list_;
+	std::map<blob, list_iterator_type> cache_iteraror_map_;
+
+	bool overflow() const;
+};
 
 } /* namespace librevault */

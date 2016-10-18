@@ -26,47 +26,57 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <util/fs.h>
-#include <util/network.h>
-#include <librevault/Meta.h>
-#include <librevault/util/bitfield_convert.h>
-#include <boost/filesystem/path.hpp>
-#include <boost/signals2/signal.hpp>
+#include "PathNormalizer.h"
+#include "control/FolderParams.h"
+#include "util/fs.h"
+#include "util/make_relpath.h"
+#include <boost/locale.hpp>
+#include <codecvt>
 
 namespace librevault {
 
-class FSFolder;
+PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
 
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
+std::string PathNormalizer::normalize_path(const fs::path& abspath) const {
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << abspath;
+#endif
 
-class FileAssembler;
+	// Relative path in platform-independent format
+	fs::path rel_path = ::librevault::make_relpath(abspath, params_.path);
 
-class ChunkStorage {
-public:
-	boost::signals2::signal<void(const blob&)> new_chunk_signal;
+	std::string normpath = rel_path.generic_string(std::codecvt_utf8_utf16<wchar_t>());
+	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
+		normpath = boost::locale::normalize(normpath, boost::locale::norm_nfc);
 
-	ChunkStorage(FSFolder& dir, io_service& ios);
-	virtual ~ChunkStorage();
+	// Removing last '/' in directories
+	if(normpath.size() > 0 && normpath.back() == '/')
+		normpath.pop_back();
 
-	bool have_chunk(const blob& ct_hash) const noexcept ;
-	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << normpath;
+#endif
+	return normpath;
+}
 
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
+fs::path PathNormalizer::absolute_path(const std::string& normpath) const {
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << normpath;
+#endif
 
-	void cleanup(const Meta& meta);
+#if BOOST_OS_WINDOWS
+	std::wstring osnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
+#elif BOOST_OS_MACOS
+	std::string osnormpath = boost::locale::normalize(normpath, boost::locale::norm_nfd);
+#else
+	const std::string& osnormpath(normpath);
+#endif
+	fs::path abspath = params_.path / osnormpath;
 
-protected:
-	FSFolder& dir_;
-
-	std::unique_ptr<MemoryCachedStorage> mem_storage;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
-
-	std::unique_ptr<FileAssembler>(file_assembler);
-};
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << abspath;
+#endif
+	return abspath;
+}
 
 } /* namespace librevault */

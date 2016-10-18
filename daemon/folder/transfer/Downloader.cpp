@@ -230,6 +230,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 		remotes_.insert(remote);
 		download_queue_.set_overall_remotes_count(remotes_.size());
 	}catch(AbstractFolder::no_such_meta){
+		LOGD("Expired Meta");
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
 	}

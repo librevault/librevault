@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "util/network.h"
-#include <boost/signals2/signal.hpp>
 #include <librevault/Meta.h>
 
 namespace librevault {

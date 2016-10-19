@@ -36,7 +36,7 @@
 namespace librevault {
 
 MetaStorage::MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) {
-	index = std::make_unique<Index>(params, ios);
+	index = std::make_unique<Index>(params);
 	if(params.secret.get_type() <= Secret::Type::ReadWrite){
 		indexer_ = std::make_unique<Indexer>(params, *index, ignore_list, path_normalizer, ios);
 		auto_indexer_ = std::make_unique<AutoIndexer>(params, *index, *indexer_, ignore_list, path_normalizer, ios);

@@ -27,9 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/log_scope.h>
-#include <util/network.h>
-#include <util/SQLiteWrapper.h>
+#include "util/log_scope.h"
+#include "util/SQLiteWrapper.h"
 #include <librevault/SignedMeta.h>
 #include <boost/signals2/signal.hpp>
 
@@ -50,7 +49,7 @@ public:
 	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	Index(const FolderParams& params, io_service& ios);
+	Index(const FolderParams& params);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -78,7 +77,6 @@ public:
 
 private:
 	const FolderParams& params_;
-	io_service& ios_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 

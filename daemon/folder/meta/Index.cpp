@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-Index::Index(const FolderParams& params, io_service& ios) : params_(params), ios_(ios) {
+Index::Index(const FolderParams& params) : params_(params) {
 	auto db_filepath = params_.system_path / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
@@ -129,11 +129,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	else
 		LOGD("Added Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
-	ios_.dispatch([=](){
-		new_meta_signal(signed_meta);
-		if(!fully_assembled)
-			assemble_meta_signal(signed_meta.meta());
-	});
+	new_meta_signal(signed_meta);
+	if(!fully_assembled)
+		assemble_meta_signal(signed_meta.meta());
 }
 
 std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){

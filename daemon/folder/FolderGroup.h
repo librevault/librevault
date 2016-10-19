@@ -68,10 +68,12 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, io_service& ios);
+	FolderGroup(FolderParams params, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~FolderGroup();
 
 	/* Actions */
+	void handle_indexed_meta(const SignedMeta& smeta);
+
 	// RemoteFolder actions
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
 
@@ -97,6 +99,7 @@ public:
 	std::string log_tag() const;
 private:
 	const FolderParams params_;
+	io_service& serial_ios_;
 
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;

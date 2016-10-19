@@ -27,26 +27,27 @@
  * files in the program, then also delete it here.
  */
 #include "ChunkStorage.h"
-#include "folder/fs/FSFolder.h"
 
-#include "folder/fs/Index.h"
 #include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
+#include "folder/AbstractFolder.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
 
 #include "FileAssembler.h"
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(FSFolder& dir, io_service& ios) : dir_(dir) {
-	mem_storage = std::make_unique<MemoryCachedStorage>(dir, *this);
-	enc_storage = std::make_unique<EncStorage>(dir, *this);
-	if(dir_.params().secret.get_type() <= Secret::Type::ReadOnly) {
-		open_storage = std::make_unique<OpenStorage>(dir, *this);
-		file_assembler = std::make_unique<FileAssembler>(dir, *this, ios);
+ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios) : meta_storage_(meta_storage) {
+	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
+	enc_storage = std::make_unique<EncStorage>(params, *this);
+	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
+		open_storage = std::make_unique<OpenStorage>(params, meta_storage_, path_normalizer, *this);
+		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, ios);
 	}
 
-	dir_.index->assemble_meta_signal.connect([this](const Meta& meta){
+	meta_storage_.index->assemble_meta_signal.connect([this](const Meta& meta){
 		if(open_storage && file_assembler)
 			file_assembler->queue_assemble(meta);
 	});
@@ -81,7 +82,7 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location) {
 	enc_storage->put_chunk(ct_hash, chunk_location);
 	if(open_storage && file_assembler)
-		for(auto& smeta : dir_.index->containing_chunk(ct_hash))
+		for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
 			file_assembler->queue_assemble(smeta.meta());
 
 	new_chunk_signal(ct_hash);

@@ -26,27 +26,28 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <util/file_util.h>
 #include "FileAssembler.h"
 
 #include "ChunkStorage.h"
-
-#include "folder/fs/Index.h"
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/IgnoreList.h"
-#include "folder/fs/AutoIndexer.h"
-
-#include <util/log.h>
+#include "control/FolderParams.h"
+#include "folder/AbstractFolder.h"
+#include "folder/IgnoreList.h"
+#include "folder/PathNormalizer.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
+#include "util/file_util.h"
+#include "util/log.h"
 
 namespace librevault {
 
-FileAssembler::FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, io_service& ios) :
-	dir_(dir),
+FileAssembler::FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, io_service& ios) :
+	params_(params),
+	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
+	path_normalizer_(path_normalizer),
 	ios_(ios),
-	archive_(dir_, ios_),
-	secret_(dir_.secret()),
-	index_(*dir_.index),
+	archive_(params_, meta_storage_, path_normalizer_, ios_),
+	secret_(params_.secret),
 	assemble_process_(ios_, [this](PeriodicProcess& process){periodic_assemble_operation(process);}) {
 
 	assemble_process_.invoke();
@@ -56,7 +57,7 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 	LOGT("get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
 	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
-	for(auto row : index_.db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
+	for(auto row : meta_storage_.index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
 		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), secret_.get_Encryption_Key(), row[1].as_blob());
 	}
 	throw AbstractFolder::no_such_chunk();
@@ -83,7 +84,7 @@ void FileAssembler::periodic_assemble_operation(PeriodicProcess& process) {
 	LOGFUNC();
 	LOGT("Performing periodic assemble");
 
-	for(auto smeta : dir_.index->get_incomplete_meta())
+	for(auto smeta : meta_storage_.index->get_incomplete_meta())
 		queue_assemble(smeta.meta());
 
 	assemble_process_.invoke_after(std::chrono::seconds(30));   // TODO: move to config
@@ -109,7 +110,7 @@ void FileAssembler::assemble(const Meta& meta){
 			if(meta.meta_type() != Meta::DELETED)
 				apply_attrib(meta);
 
-			index_.db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+			meta_storage_.index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 		}
 	}catch(std::runtime_error& e) {
 		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
@@ -119,11 +120,11 @@ void FileAssembler::assemble(const Meta& meta){
 bool FileAssembler::assemble_deleted(const Meta& meta) {
 	LOGFUNC();
 
-	fs::path file_path = dir_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_deleted_assemble(dir_.normalize_path(file_path));
+	meta_storage_.prepare_assemble(path_normalizer_.normalize_path(file_path), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
@@ -144,7 +145,7 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 bool FileAssembler::assemble_symlink(const Meta& meta) {
 	LOGFUNC();
 
-	fs::path file_path = dir_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
 	fs::remove_all(file_path);
 	fs::create_symlink(meta.symlink_path(secret_), file_path);
 
@@ -154,13 +155,13 @@ bool FileAssembler::assemble_symlink(const Meta& meta) {
 bool FileAssembler::assemble_directory(const Meta& meta) {
 	LOGFUNC();
 
-	fs::path file_path = dir_.absolute_path(meta.path(secret_));
-	auto relpath = dir_.normalize_path(file_path);
+	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	auto relpath = path_normalizer_.normalize_path(file_path);
 
 	bool create_new = true;
 	if(fs::status(file_path).type() != fs::file_type::directory_file)
 		create_new = !fs::remove(file_path);
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_dir_assemble(create_new, relpath);
+	meta_storage_.prepare_assemble(relpath, Meta::DIRECTORY, create_new);
 
 	if(create_new) fs::create_directories(file_path);
 
@@ -175,9 +176,9 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 		return false; // retreat!
 
 	//
-	fs::path file_path = dir_.absolute_path(meta.path(secret_));
-	auto relpath = dir_.normalize_path(file_path);
-	auto assembled_file = dir_.system_path() / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
+	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	auto relpath = path_normalizer_.normalize_path(file_path);
+	auto assembled_file = params_.system_path / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
@@ -192,13 +193,13 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 	fs::last_write_time(assembled_file, meta.mtime());
 
 	//dir_.ignore_list->add_ignored(relpath);
-	if(dir_.auto_indexer) dir_.auto_indexer->prepare_file_assemble(fs::exists(file_path), relpath);
+	meta_storage_.prepare_assemble(relpath, Meta::FILE, fs::exists(file_path));
 
 	archive_.archive(file_path);
 	fs::rename(assembled_file, file_path);
 	//dir_.ignore_list->remove_ignored(relpath);
 
-	index_.db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+	meta_storage_.index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
 
 	chunk_storage_.cleanup(meta);
 
@@ -206,10 +207,10 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 }
 
 void FileAssembler::apply_attrib(const Meta& meta) {
-	fs::path file_path = dir_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
 
 #if BOOST_OS_UNIX
-	if(dir_.params().preserve_unix_attrib) {
+	if(params_.preserve_unix_attrib) {
 		if(meta.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
 			ec = chmod(file_path.c_str(), meta.mode());

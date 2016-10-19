@@ -28,89 +28,116 @@
  */
 #include "FolderGroup.h"
 
-#include "folder/fs/FSFolder.h"
+#include "IgnoreList.h"
+#include "PathNormalizer.h"
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
+#include "folder/transfer/MetaDownloader.h"
+#include "folder/transfer/MetaUploader.h"
+#include "folder/transfer/Uploader.h"
+#include "folder/transfer/Downloader.h"
 #include "p2p/P2PFolder.h"
-
-#include "fs/Index.h"
-#include "folder/fs/chunk/ChunkStorage.h"
-
-#include "transfer/MetaDownloader.h"
-#include "transfer/MetaUploader.h"
-#include "Uploader.h"
-#include "Downloader.h"
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, io_service& ios) :
-		params_(std::move(params)),
-		fs_dir_(std::make_shared<FSFolder>(*this, ios)),
-		uploader_(std::make_shared<Uploader>(*this)),
-		downloader_(std::make_shared<Downloader>(ios, *this)),
-		meta_uploader_(std::make_shared<MetaUploader>(*this)),
-		meta_downloader_(std::make_shared<MetaDownloader>(*this, *downloader_)) {
+FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& serial_ios) :
+		params_(std::move(params)), serial_ios_(serial_ios) {
 	LOGFUNC();
 
-	fs_dir_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
-		notify_meta(fs_dir_, smeta.meta().path_revision(), fs_dir_->chunk_storage->make_bitfield(smeta.meta()));
+	/* Creating directories */
+	bool path_created = fs::create_directories(params_.path);
+	bool system_path_created = fs::create_directories(params_.system_path);
+#if BOOST_OS_WINDOWS
+	SetFileAttributes(params_.system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
+#endif
+
+	LOGD("New FSFolder:"
+		<< " Key type=" << (char)params_.secret.get_type()
+		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);
+
+	/* Initializing components */
+	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
+	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
+
+	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, bulk_ios);
+	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, bulk_ios);
+
+	uploader_ = std::make_unique<Uploader>(*chunk_storage);
+	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage, serial_ios);
+	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage);
+	meta_downloader_ = std::make_unique<MetaDownloader>(*meta_storage_, *downloader_);
+
+	// Connecting signals and slots
+	meta_storage_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
+		serial_ios_.dispatch([=]{
+			handle_indexed_meta(smeta);
+		});
 	});
-	fs_dir_->chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
-		notify_chunk(fs_dir_, ct_hash);
+	chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
+		serial_ios_.dispatch([=]{
+			downloader_->notify_local_chunk(ct_hash);
+			uploader_->broadcast_chunk(remotes(), ct_hash);
+		});
 	});
 
-	fs_dir_->index->notify_all();
+	serial_ios_.dispatch([=]{
+		for(auto& smeta : meta_storage_->index->get_meta())
+			handle_indexed_meta(smeta);
+	});
 }
 
 FolderGroup::~FolderGroup() {
 	LOGFUNC();
-
-	p2p_folders_.clear();
-
-	downloader_.reset();
-	uploader_.reset();
-	fs_dir_.reset();
 }
 
 /* Actions */
-// FSFolder actions
-void FolderGroup::notify_meta(std::shared_ptr<FSFolder> origin,
-                              Meta::PathRevision revision,
-                              bitfield_type bitfield) {
+void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
+	Meta::PathRevision revision = smeta.meta().path_revision();
+	bitfield_type bitfield = chunk_storage->make_bitfield(smeta.meta());
+
 	downloader_->notify_local_meta(revision, bitfield);
-
-	// Broadcast to all attached P2PDirectories
-	std::unique_lock<decltype(p2p_folders_mtx_)> dirs_lk(p2p_folders_mtx_);
-	for(auto p2p_dir : p2p_folders_) {
-		p2p_dir->post_have_meta(revision, bitfield);
-	}
-}
-
-void FolderGroup::notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash) {
-	downloader_->notify_local_chunk(ct_hash);
-
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
-
-	for(auto p2p_folder : p2p_folders_) {
-		p2p_folder->post_have_chunk(ct_hash);
-	}
+	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
 }
 
 // RemoteFolder actions
 void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
-	origin->recv_choke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{downloader_->handle_choke(origin.lock());});
-	origin->recv_unchoke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{downloader_->handle_unchoke(origin.lock());});
-	origin->recv_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{uploader_->handle_interested(origin.lock());});
-	origin->recv_not_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{uploader_->handle_not_interested(origin.lock());});
+	origin->recv_choke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
+		serial_ios_.post([=]{downloader_->handle_choke(origin.lock());});
+	});
+	origin->recv_unchoke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
+		serial_ios_.post([=]{downloader_->handle_unchoke(origin.lock());});
+	});
+	origin->recv_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
+		serial_ios_.post([=]{uploader_->handle_interested(origin.lock());});
+	});
+	origin->recv_not_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
+		serial_ios_.post([=]{uploader_->handle_not_interested(origin.lock());});
+	});
 
-	origin->recv_have_meta.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const Meta::PathRevision& revision, const bitfield_type& bitfield){meta_downloader_->handle_have_meta(origin.lock(), revision, bitfield);});
-	origin->recv_have_chunk.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash){downloader_->notify_remote_chunk(origin.lock(), ct_hash);});
+	origin->recv_have_meta.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const Meta::PathRevision& revision, const bitfield_type& bitfield){
+		serial_ios_.post([=]{meta_downloader_->handle_have_meta(origin.lock(), revision, bitfield);});
+	});
+	origin->recv_have_chunk.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash){
+		serial_ios_.post([=]{downloader_->notify_remote_chunk(origin.lock(), ct_hash);});
+	});
 
-	origin->recv_meta_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](Meta::PathRevision path_revision){meta_uploader_->handle_meta_request(origin.lock(), path_revision);});
-	origin->recv_meta_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const SignedMeta& smeta, const bitfield_type& bitfield){meta_downloader_->handle_meta_reply(origin.lock(), smeta, bitfield);});
+	origin->recv_meta_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](Meta::PathRevision path_revision){
+		serial_ios_.post([=]{meta_uploader_->handle_meta_request(origin.lock(), path_revision);});
+	});
+	origin->recv_meta_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const SignedMeta& smeta, const bitfield_type& bitfield){
+		serial_ios_.post([=]{meta_downloader_->handle_meta_reply(origin.lock(), smeta, bitfield);});
+	});
 
-	origin->recv_block_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, uint32_t size){uploader_->handle_block_request(origin.lock(), ct_hash, offset, size);});
-	origin->recv_block_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, const blob& block){downloader_->put_block(ct_hash, offset, block, origin.lock());});
+	origin->recv_block_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, uint32_t size){
+		serial_ios_.post([=]{uploader_->handle_block_request(origin.lock(), ct_hash, offset, size);});
+	});
+	origin->recv_block_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, const blob& block){
+		serial_ios_.post([=]{downloader_->put_block(ct_hash, offset, block, origin.lock());});
+	});
 
-	meta_uploader_->handle_handshake(origin);
+	serial_ios_.post([origin, this]{meta_uploader_->handle_handshake(origin);});
 }
 
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
@@ -126,7 +153,7 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 
 	remote_ptr->handshake_performed.connect([remote_ptr = std::weak_ptr<RemoteFolder>(remote_ptr), this]{handle_handshake(remote_ptr.lock());});
 
-	attached_signal(remote_ptr);
+	serial_ios_.dispatch([this, remote_ptr]{attached_signal(remote_ptr);});
 }
 
 void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
@@ -139,7 +166,7 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 
 	LOGD("Detached remote " << remote_ptr->name());
 
-	detached_signal(remote_ptr);
+	serial_ios_.dispatch([this, remote_ptr]{detached_signal(remote_ptr);});
 }
 
 bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
@@ -152,8 +179,12 @@ bool FolderGroup::have_p2p_dir(const blob& pubkey) {
 	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
 }
 
+std::set<std::shared_ptr<RemoteFolder>> FolderGroup::remotes() const {
+	return std::set<std::shared_ptr<RemoteFolder>>(p2p_folders_.begin(), p2p_folders_.end());
+}
+
 std::string FolderGroup::log_tag() const {
-	return std::string("[") + (params_.path.empty() ? params_.system_path : params_.path).string() + "] ";
+	return std::string("[") + (!params_.path.empty() ? params_.path : params_.system_path).string() + "] ";
 }
 
 } /* namespace librevault */

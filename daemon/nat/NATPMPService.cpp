@@ -72,7 +72,6 @@ void NATPMPService::reload_config() {
 }
 
 void NATPMPService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
-	mappings_.erase(id);
 	mappings_[id] = std::make_unique<PortMapping>(*this, id, descriptor);
 }
 

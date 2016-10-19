@@ -26,11 +26,32 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AbstractStorage.h"
-#include "folder/fs/FSFolder.h"
+#pragma once
+#include "util/network.h"
+#include <librevault/Meta.h>
 
 namespace librevault {
 
-AbstractStorage::AbstractStorage(FSFolder& dir, ChunkStorage& chunk_storage) : dir_(dir), chunk_storage_(chunk_storage) {};
+class FolderParams;
+class IgnoreList;
+class PathNormalizer;
+class Index;
+class Indexer;
+class AutoIndexer;
+
+class MetaStorage {
+public:
+	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
+	virtual ~MetaStorage();
+
+	bool is_indexing() const;
+	void prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+
+	std::unique_ptr<Index> index;
+
+private:
+	std::unique_ptr<Indexer> indexer_;
+	std::unique_ptr<AutoIndexer> auto_indexer_;
+};
 
 } /* namespace librevault */

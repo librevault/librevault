@@ -28,34 +28,33 @@
  */
 #include "MetaDownloader.h"
 
-#include "../FolderGroup.h"
-
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Index.h"
-#include "../RemoteFolder.h"
-#include "../Downloader.h"
-
+#include "Downloader.h"
+#include "folder/FolderGroup.h"
+#include "folder/RemoteFolder.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
 #include "util/log.h"
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(FolderGroup& exchange_group, Downloader& downloader) :
-		exchange_group_(exchange_group), downloader_(downloader) {
+MetaDownloader::MetaDownloader(MetaStorage& meta_storage, Downloader& downloader) :
+	meta_storage_(meta_storage),
+	downloader_(downloader) {
 	LOGFUNC();
 }
 
 void MetaDownloader::handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
-	if(exchange_group_.fs_dir()->have_meta(revision))
+	if(meta_storage_.index->have_meta(revision))
 		downloader_.notify_remote_meta(origin, revision, bitfield);
-	else if(exchange_group_.fs_dir()->index->put_allowed(revision))
+	else if(meta_storage_.index->put_allowed(revision))
 		origin->request_meta(revision);
 	else
 		LOGD("Remote node notified us about an expired Meta");
 }
 
 void MetaDownloader::handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	if(exchange_group_.fs_dir()->index->put_allowed(smeta.meta().path_revision())) {
-		exchange_group_.fs_dir()->put_meta(smeta);
+	if(meta_storage_.index->put_allowed(smeta.meta().path_revision())) {
+		meta_storage_.index->put_meta(smeta);
 		downloader_.notify_remote_meta(origin, smeta.meta().path_revision(), bitfield);
 	}else
 		LOGD("Remote node posted to us about an expired Meta");

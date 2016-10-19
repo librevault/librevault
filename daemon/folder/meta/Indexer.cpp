@@ -28,23 +28,26 @@
  */
 #include "Indexer.h"
 
-#include "FSFolder.h"
-#include "IgnoreList.h"
 #include "Index.h"
-
-#include <rabin.h>
-#include <util/byte_convert.h>
-#include <util/file_util.h>
-#include <util/log.h>
+#include "control/FolderParams.h"
+#include "folder/AbstractFolder.h"
+#include "folder/IgnoreList.h"
+#include "folder/PathNormalizer.h"
+#include "util/byte_convert.h"
+#include "util/file_util.h"
+#include "util/log.h"
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/AES_CBC.h>
-#include <boost/range/adaptor/map.hpp>
+#include <rabin.h>
 
 namespace librevault {
 
-Indexer::Indexer(FSFolder& dir, io_service& ios) :
-	dir_(dir),
-	secret_(dir_.secret()), index_(*dir_.index), ios_(ios), indexing_now_(0) {}
+Indexer::Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) :
+	params_(params),
+	index_(index),
+	ignore_list_(ignore_list),
+	path_normalizer_(path_normalizer),
+	ios_(ios), secret_(params.secret), indexing_now_(0) {}
 
 Indexer::~Indexer() {
 	LOGFUNC();
@@ -63,11 +66,11 @@ void Indexer::index(const std::string& file_path) noexcept {
 	SignedMeta smeta;
 
 	try {
-		if(dir_.ignore_list->is_ignored(file_path)) throw abort_index("File is ignored");
+		if(ignore_list_.is_ignored(file_path)) throw abort_index("File is ignored");
 
 		try {
 			smeta = index_.get_meta(Meta::make_path_id(file_path, secret_));
-			if(fs::last_write_time(dir_.absolute_path(file_path)) == smeta.meta().mtime()) {
+			if(fs::last_write_time(path_normalizer_.absolute_path(file_path)) == smeta.meta().mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(fs::filesystem_error& e){
@@ -81,7 +84,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		dir_.put_meta(smeta, true);
+		index_.put_meta(smeta, true);
 
 		LOGD("Updated index entry in " << time_spent << "s (" << size_to_string((double)smeta.meta().size()/time_spent) << "/s)"
 			<< " Path=" << file_path
@@ -125,7 +128,7 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	LOGD("make_Meta(" << relpath << ")");
 	Meta old_meta, new_meta;
-	auto abspath = dir_.absolute_path(relpath);
+	auto abspath = path_normalizer_.absolute_path(relpath);
 
 	new_meta.set_path(relpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
@@ -162,7 +165,7 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 }
 
 Meta::Type Indexer::get_type(const boost::filesystem::path& path) {
-	boost::filesystem::file_status file_status = dir_.params().preserve_symlinks ? boost::filesystem::symlink_status(path) : boost::filesystem::status(path);	// Preserves symlinks if such option is set.
+	boost::filesystem::file_status file_status = params_.preserve_symlinks ? boost::filesystem::symlink_status(path) : boost::filesystem::status(path);	// Preserves symlinks if such option is set.
 
 	switch(file_status.type()){
 		case boost::filesystem::regular_file: return Meta::FILE;
@@ -188,13 +191,13 @@ void Indexer::update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::pa
 
 	// Then, write new values of attributes (if enabled in config)
 #if BOOST_OS_WINDOWS
-	if(dir_.params().preserve_windows_attrib) {
+	if(params_.preserve_windows_attrib) {
 		new_meta.set_windows_attrib(GetFileAttributes(path.native().c_str()));	// Windows attributes (I don't have Windows now to test it), this code is stub for now.
 	}
 #elif BOOST_OS_UNIX
-	if(dir_.params().preserve_unix_attrib) {
+	if(params_.preserve_unix_attrib) {
 		struct stat stat_buf; int stat_err = 0;
-		if(dir_.params().preserve_symlinks)
+		if(params_.preserve_symlinks)
 			stat_err = lstat(path.c_str(), &stat_buf);
 		else
 			stat_err = stat(path.c_str(), &stat_buf);
@@ -222,7 +225,7 @@ void Indexer::update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path
 		rabin_global_params = old_meta.rabin_global_params(secret_);
 	}else{
 		new_meta.set_algorithm_type(Meta::RABIN);
-		new_meta.set_strong_hash_type(dir_.params().chunk_strong_hash_type);
+		new_meta.set_strong_hash_type(params_.chunk_strong_hash_type);
 
 		new_meta.set_max_chunksize(8*1024*1024);
 		new_meta.set_min_chunksize(1*1024*1024);

@@ -26,27 +26,30 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractStorage.h"
-#include <util/log_scope.h>
+#include "MetaStorage.h"
+#include "control/FolderParams.h"
+#include "folder/PathNormalizer.h"
+#include "Index.h"
+#include "Indexer.h"
+#include "AutoIndexer.h"
 
 namespace librevault {
 
-class FSFolder;
-class EncStorage : public AbstractStorage {
-	LOG_SCOPE("EncStorage");
-public:
-	EncStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~EncStorage() {}
-
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
-	void remove_chunk(const blob& ct_hash);
-
-private:
-	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
-	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) {
+	index = std::make_unique<Index>(params);
+	if(params.secret.get_type() <= Secret::Type::ReadWrite){
+		indexer_ = std::make_unique<Indexer>(params, *index, ignore_list, path_normalizer, ios);
+		auto_indexer_ = std::make_unique<AutoIndexer>(params, *index, *indexer_, ignore_list, path_normalizer, ios);
+	}
 };
+MetaStorage::~MetaStorage() {}
+
+bool MetaStorage::is_indexing() const {
+	return (indexer_ && indexer_->is_indexing());
+}
+
+void MetaStorage::prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal) {
+	if(auto_indexer_) auto_indexer_->prepare_assemble(relpath, type, with_removal);
+}
 
 } /* namespace librevault */

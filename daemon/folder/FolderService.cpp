@@ -29,14 +29,13 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "control/Config.h"
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Indexer.h"
+#include "folder/meta/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
 
-FolderService::FolderService() : ios_("FolderService"), init_queue_(ios_.ios()) {
+FolderService::FolderService() : bulk_ios_("FolderService_bulk"), serial_ios_("FolderService_serial"), init_queue_(serial_ios_.ios()) {
 	LOGFUNC();
 }
 
@@ -52,7 +51,8 @@ void FolderService::run() {
 			init_folder(folder_config);
 	});
 
-	ios_.start(std::thread::hardware_concurrency());
+	serial_ios_.start(1);
+	bulk_ios_.start(std::thread::hardware_concurrency());
 }
 
 void FolderService::stop() {
@@ -66,7 +66,8 @@ void FolderService::stop() {
 			deinit_folder(secret);
 	});
 	init_queue_.wait();
-	ios_.stop();
+	bulk_ios_.stop();
+	serial_ios_.stop();
 }
 
 void FolderService::add_folder(Json::Value json_folder) {
@@ -110,7 +111,7 @@ void FolderService::init_folder(const FolderParams& params) {
 
 	auto group_ptr = get_group(params.secret.get_Hash());
 	if(!group_ptr) {
-		group_ptr = std::make_shared<FolderGroup>(params, ios_.ios());
+		group_ptr = std::make_shared<FolderGroup>(params, bulk_ios_.ios(), serial_ios_.ios());
 		hash_group_.insert({group_ptr->hash(), group_ptr});
 
 		folder_added_signal(group_ptr);

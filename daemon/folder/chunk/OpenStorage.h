@@ -27,29 +27,35 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log_scope.h"
-#include <librevault/SignedMeta.h>
-#include <librevault/util/bitfield_convert.h>
-#include <memory>
+#include "AbstractStorage.h"
+#include <util/log_scope.h>
 
 namespace librevault {
 
-class RemoteFolder;
+class FolderParams;
+class Secret;
 class MetaStorage;
-class Downloader;
+class PathNormalizer;
 
-class MetaDownloader {
-	LOG_SCOPE("MetaDownloader");
+class OpenStorage : public AbstractStorage {
+	LOG_SCOPE("OpenStorage");
 public:
-	MetaDownloader(MetaStorage& meta_storage, Downloader& downloader);
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("OpenStorage error") {}
+	};
 
-	/* Message handlers */
-	void handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+	OpenStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, ChunkStorage& chunk_storage);
+	virtual ~OpenStorage() {}
+
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
 
 private:
+	const FolderParams& params_;
+	const Secret& secret_;
 	MetaStorage& meta_storage_;
-	Downloader& downloader_;
+	PathNormalizer& path_normalizer_;
 };
 
 } /* namespace librevault */

@@ -27,46 +27,23 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/fs.h>
-#include <util/network.h>
-#include <librevault/Meta.h>
-#include <librevault/util/bitfield_convert.h>
+#include "util/log_scope.h"
 #include <boost/filesystem/path.hpp>
-#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
-class FSFolder;
+class FolderParams;
 
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
+class PathNormalizer {
+	LOG_SCOPE("PathNormalizer");
 
-class FileAssembler;
-
-class ChunkStorage {
 public:
-	boost::signals2::signal<void(const blob&)> new_chunk_signal;
+	PathNormalizer(const FolderParams& params);
+	std::string normalize_path(const boost::filesystem::path& abspath) const;
+	boost::filesystem::path absolute_path(const std::string& normpath) const;
 
-	ChunkStorage(FSFolder& dir, io_service& ios);
-	virtual ~ChunkStorage();
-
-	bool have_chunk(const blob& ct_hash) const noexcept ;
-	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
-
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
-
-	void cleanup(const Meta& meta);
-
-protected:
-	FSFolder& dir_;
-
-	std::unique_ptr<MemoryCachedStorage> mem_storage;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
-
-	std::unique_ptr<FileAssembler>(file_assembler);
+private:
+	const FolderParams& params_;
 };
 
 } /* namespace librevault */

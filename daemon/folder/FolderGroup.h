@@ -45,12 +45,19 @@ class RemoteFolder;
 class FSFolder;
 class P2PFolder;
 
+class PathNormalizer;
+class IgnoreList;
+
+class ChunkStorage;
+class MetaStorage;
+
 class MetaUploader;
 class MetaDownloader;
 class Uploader;
 class Downloader;
 
-class FolderGroup : public std::enable_shared_from_this<FolderGroup> {
+class FolderGroup {
+	friend class ControlServer;
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -61,30 +68,14 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, io_service& ios);
+	FolderGroup(FolderParams params, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~FolderGroup();
 
 	/* Actions */
-	// FSFolder actions
-	void notify_meta(std::shared_ptr<FSFolder> origin, Meta::PathRevision revision, bitfield_type bitfield);
-	void notify_chunk(std::shared_ptr<FSFolder> origin, const blob& ct_hash);
+	void handle_indexed_meta(const SignedMeta& smeta);
 
 	// RemoteFolder actions
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
-
-	void handle_choke(std::shared_ptr<RemoteFolder> origin);
-	void handle_unchoke(std::shared_ptr<RemoteFolder> origin);
-	void handle_interested(std::shared_ptr<RemoteFolder> origin);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> origin);
-
-	void notify_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_chunk(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash);
-
-	void request_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
-	void post_meta(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
-
-	void request_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
-	void post_block(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, const blob& chunk, uint32_t offset);
 
 	/* Membership management */
 	void attach(std::shared_ptr<P2PFolder> remote_ptr);
@@ -97,7 +88,7 @@ public:
 	bool have_p2p_dir(const blob& pubkey);
 
 	/* Getters */
-	inline std::shared_ptr<FSFolder> fs_dir() const {return fs_dir_;}
+	std::set<std::shared_ptr<RemoteFolder>> remotes() const;
 	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_folders_;}
 
 	inline const FolderParams& params() const {return params_;}
@@ -108,13 +99,18 @@ public:
 	std::string log_tag() const;
 private:
 	const FolderParams params_;
+	io_service& serial_ios_;
 
-	std::shared_ptr<FSFolder> fs_dir_;
+	std::unique_ptr<PathNormalizer> path_normalizer_;
+	std::unique_ptr<IgnoreList> ignore_list;
 
-	std::shared_ptr<Uploader> uploader_;
-	std::shared_ptr<Downloader> downloader_;
-	std::shared_ptr<MetaUploader> meta_uploader_;
-	std::shared_ptr<MetaDownloader> meta_downloader_;
+	std::unique_ptr<ChunkStorage> chunk_storage;
+	std::unique_ptr<MetaStorage> meta_storage_;
+
+	std::unique_ptr<Uploader> uploader_;
+	std::unique_ptr<Downloader> downloader_;
+	std::unique_ptr<MetaUploader> meta_uploader_;
+	std::unique_ptr<MetaDownloader> meta_downloader_;
 
 	/* Members */
 	mutable std::mutex p2p_folders_mtx_;

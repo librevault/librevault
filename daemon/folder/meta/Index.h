@@ -27,67 +27,61 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "folder/AbstractFolder.h"
-
-#include "control/FolderParams.h"
-#include "folder/FolderGroup.h"
-
+#include "util/log_scope.h"
+#include "util/SQLiteWrapper.h"
 #include <librevault/SignedMeta.h>
-#include <boost/filesystem/path.hpp>
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
-class FolderGroup;
+class FolderParams;
 
-class IgnoreList;
-class Index;
-class Indexer;
-class AutoIndexer;
-class ChunkStorage;
-
-class FSFolder : public AbstractFolder, public std::enable_shared_from_this<FSFolder> {
+class Index {
+	LOG_SCOPE("Index");
 public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("FSFolder error") {}
+	struct status_t {
+		uint64_t file_entries = 0;
+		uint64_t directory_entries = 0;
+		uint64_t symlink_entries = 0;
+		uint64_t deleted_entries = 0;
 	};
 
-	/* Components */
-	std::unique_ptr<IgnoreList> ignore_list;
-	std::unique_ptr<Index> index;
+	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
+	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	std::unique_ptr<ChunkStorage> chunk_storage;
+	Index(const FolderParams& params);
+	virtual ~Index() {}
 
-	std::unique_ptr<Indexer> indexer;
-	std::unique_ptr<AutoIndexer> auto_indexer;
-
-	/* Constructors */
-	FSFolder(FolderGroup& group, io_service& ios);
-	virtual ~FSFolder();
-
-	/* Actions */
+	/* Meta manipulators */
 	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
 	SignedMeta get_meta(const Meta::PathRevision& path_revision);
-	void put_meta(SignedMeta smeta, bool fully_assembled = false);
+	SignedMeta get_meta(const blob& path_id);
+	std::list<SignedMeta> get_meta();
+	std::list<SignedMeta> get_existing_meta();
+	std::list<SignedMeta> get_incomplete_meta();
+	void put_meta(const SignedMeta& signed_meta, bool fully_assembled = false);
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	blob get_chunk(const blob& ct_hash);
-	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
+	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
 
-	bitfield_type get_bitfield(const Meta::PathRevision& path_revision);
+	/* Index slots */
+	void notify_all();  // Should be invoked after initialization of FolderGroup
 
-	/* Makers */
-	std::string normalize_path(const boost::filesystem::path& abspath) const;
-	boost::filesystem::path absolute_path(const std::string& normpath) const;
+	/* Chunk getter */
+	uint32_t get_chunk_size(const blob& ct_hash);
 
-	/* Getters */
-	const FolderParams& params() const {return group_.params();}
-	const Secret& secret() const {return params().secret;}
-	const boost::filesystem::path& path() const {return params().path;}
-	const boost::filesystem::path& system_path() const {return params().system_path;}
+	/* Properties */
+	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
+	SQLiteDB& db() {return *db_;}
+
+	status_t get_status();
 
 private:
-	FolderGroup& group_;
+	const FolderParams& params_;
+
+	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+
+	std::list<SignedMeta> get_meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	void wipe();
 };
 
 } /* namespace librevault */

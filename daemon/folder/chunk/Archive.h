@@ -27,31 +27,71 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
-#include <map>
-#include <list>
+#include "util/periodic_process.h"
+#include "util/fs.h"
+#include "util/log_scope.h"
+#include "util/network.h"
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
-// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
-class MemoryCachedStorage : public AbstractStorage {
-public:
-	MemoryCachedStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~MemoryCachedStorage() {}
+class FolderParams;
+class MetaStorage;
+class PathNormalizer;
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
-	void remove_chunk(const blob& ct_hash) noexcept;
+class Archive {
+	friend class ArchiveStrategy;
+	LOG_SCOPE("Archive");
+public:
+	Archive(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios);
+	virtual ~Archive() {}
+
+	void archive(const fs::path& from);
 
 private:
-	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
-	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
+	const FolderParams& params_;
+	MetaStorage& meta_storage_;
+	PathNormalizer& path_normalizer_;
+	io_service& ios_;
 
-	mutable std::list<ct_hash_data_type> cache_list_;
-	std::map<blob, list_iterator_type> cache_iteraror_map_;
+	struct ArchiveStrategy {
+	public:
+		virtual void archive(const fs::path& from) = 0;
+		virtual ~ArchiveStrategy(){}
 
-	bool overflow() const;
+	protected:
+		LOG_SCOPE_PARENT(parent_);
+		ArchiveStrategy(Archive& parent) : parent_(parent) {}
+		Archive& parent_;
+	};
+	class NoArchive : public ArchiveStrategy {
+	public:
+		NoArchive(Archive& parent) : ArchiveStrategy(parent) {}
+		virtual ~NoArchive(){}
+		void archive(const fs::path& from);
+	};
+	class TrashArchive : public ArchiveStrategy {
+	public:
+		TrashArchive(Archive& parent);
+		virtual ~TrashArchive();
+		void archive(const fs::path& from);
+
+	private:
+		void maintain_cleanup(PeriodicProcess& process);
+
+		const fs::path archive_path_;
+		PeriodicProcess cleanup_process_;
+	};
+	class TimestampArchive : public ArchiveStrategy {
+	public:
+		TimestampArchive(Archive& parent);
+		virtual ~TimestampArchive(){}
+		void archive(const fs::path& from);
+
+	private:
+		const fs::path archive_path_;
+	};
+	std::unique_ptr<ArchiveStrategy> archive_strategy_;
 };
 
 } /* namespace librevault */

@@ -29,7 +29,6 @@
 #include "Client.h"
 
 #include "control/ControlServer.h"
-#include "folder/fs/FSFolder.h"
 #include "p2p/P2PProvider.h"
 #include "folder/FolderService.h"
 

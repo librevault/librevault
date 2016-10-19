@@ -26,31 +26,57 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "AbstractStorage.h"
-#include <util/log.h>
+#include "PathNormalizer.h"
+#include "control/FolderParams.h"
+#include "util/fs.h"
+#include "util/make_relpath.h"
+#include <boost/locale.hpp>
+#include <codecvt>
 
 namespace librevault {
 
-class FSFolder;
-class Secret;
+PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
 
-class OpenStorage : public AbstractStorage {
-	LOG_SCOPE("OpenStorage");
-public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("OpenStorage error") {}
-	};
+std::string PathNormalizer::normalize_path(const fs::path& abspath) const {
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << abspath;
+#endif
 
-	OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~OpenStorage() {}
+	// Relative path in platform-independent format
+	fs::path rel_path = ::librevault::make_relpath(abspath, params_.path);
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	std::string normpath = rel_path.generic_string(std::codecvt_utf8_utf16<wchar_t>());
+	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
+		normpath = boost::locale::normalize(normpath, boost::locale::norm_nfc);
 
-private:
-	const Secret& secret_;
-};
+	// Removing last '/' in directories
+	if(normpath.size() > 0 && normpath.back() == '/')
+		normpath.pop_back();
+
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << normpath;
+#endif
+	return normpath;
+}
+
+fs::path PathNormalizer::absolute_path(const std::string& normpath) const {
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << normpath;
+#endif
+
+#if BOOST_OS_WINDOWS
+	std::wstring osnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
+#elif BOOST_OS_MACOS
+	std::string osnormpath = boost::locale::normalize(normpath, boost::locale::norm_nfd);
+#else
+	const std::string& osnormpath(normpath);
+#endif
+	fs::path abspath = params_.path / osnormpath;
+
+#ifdef LV_DEBUG_NORMALIZATION
+	LOGFUNC() << abspath;
+#endif
+	return abspath;
+}
 
 } /* namespace librevault */

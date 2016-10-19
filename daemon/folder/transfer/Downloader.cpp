@@ -28,18 +28,15 @@
  */
 #include "Downloader.h"
 
-#include "FolderGroup.h"
-
-#include "folder/fs/FSFolder.h"
-#include "fs/Index.h"
-#include "p2p/P2PFolder.h"
-
 #include "control/Config.h"
-
+#include "control/FolderParams.h"
+#include "folder/AbstractFolder.h"
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/meta/Index.h"
+#include "folder/meta/MetaStorage.h"
 #include "util/fs.h"
-
-#include <boost/range/adaptor/map.hpp>
 #include <librevault/crypto/Base32.h>
+#include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
 
@@ -158,9 +155,9 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 }
 
 /* Downloader */
-Downloader::Downloader(io_service& ios, FolderGroup& exchange_group) :
-		exchange_group_(exchange_group),
-		periodic_maintain_(ios, [this](PeriodicProcess& process){maintain_requests(process);}) {
+Downloader::Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios) :
+	params_(params), meta_storage_(meta_storage), chunk_storage_(chunk_storage),
+	periodic_maintain_(ios, [this](PeriodicProcess& process){maintain_requests(process);}) {
 	LOGFUNC();
 	periodic_maintain_.invoke();
 }
@@ -176,7 +173,7 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 
 	bool incomplete_meta = false;
 
-	auto smeta = exchange_group_.fs_dir()->get_meta(revision);
+	auto smeta = meta_storage_.index->get_meta(revision);
 	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
 		auto& ct_hash = smeta.meta().chunks().at(chunk_idx).ct_hash;
 		if(bitfield[chunk_idx]) {
@@ -191,10 +188,10 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 
 	for(auto& ct_hash : missing_ct_hashes) {
 		/* Compute encrypted chunk size */
-		uint32_t pt_chunksize = exchange_group_.fs_dir()->index->get_chunk_size(ct_hash);
+		uint32_t pt_chunksize = meta_storage_.index->get_chunk_size(ct_hash);
 		uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize / 16) + 1) * 16;
 
-		auto missing_chunk = std::make_shared<MissingChunk>(exchange_group_.params().system_path, ct_hash, padded_chunksize);
+		auto missing_chunk = std::make_shared<MissingChunk>(params_.system_path, ct_hash, padded_chunksize);
 		missing_chunks_.insert({ct_hash, missing_chunk});
 
 		/* Add to download queue */
@@ -215,7 +212,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 	}
 
 	// Mark all other chunks "clustered"
-	for(auto& smeta : exchange_group_.fs_dir()->index->containing_chunk(ct_hash))
+	for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
 		for(auto& chunk : smeta.meta().chunks()) {
 			auto it = missing_chunks_.find(chunk.ct_hash);
 			if(it != missing_chunks_.end())
@@ -226,13 +223,14 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	LOGFUNC();
 	try {
-		auto chunks = exchange_group_.fs_dir()->get_meta(revision).meta().chunks();
+		auto chunks = meta_storage_.index->get_meta(revision).meta().chunks();
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield[chunk_idx])
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
 		remotes_.insert(remote);
 		download_queue_.set_overall_remotes_count(remotes_.size());
 	}catch(AbstractFolder::no_such_meta){
+		LOGD("Expired Meta");
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
 	}
@@ -282,7 +280,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 			missing_chunk_it->second->put_block(offset, data);
 			if(missing_chunk_it->second->complete()) {
-				exchange_group_.fs_dir()->put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
+				chunk_storage_.put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
 			periodic_maintain_.invoke_post();

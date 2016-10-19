@@ -61,7 +61,7 @@ std::string MulticastSender::get_message() const {
 
 		protocol::MulticastDiscovery message;
 		message.set_port(url(Config::get()->globals()["p2p_listen"].asString()).port);
-		message.set_dir_hash(group_ptr->secret().get_Hash().data(), group_ptr->secret().get_Hash().size());
+		message.set_dir_hash(group_ptr->hash().data(), group_ptr->hash().size());
 		message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
 
 		message_ = message.SerializeAsString();

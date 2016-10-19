@@ -27,15 +27,16 @@
  * files in the program, then also delete it here.
  */
 #include "Index.h"
-#include "FSFolder.h"
-#include <util/file_util.h>
-#include <util/log.h>
+#include "control/FolderParams.h"
+#include "folder/AbstractFolder.h"
+#include "util/file_util.h"
+#include "util/log.h"
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
-Index::Index(FSFolder& dir, io_service& ios) : dir_(dir), ios_(ios) {
-	auto db_filepath = dir_.system_path() / "librevault.db";
+Index::Index(const FolderParams& params) : params_(params) {
+	auto db_filepath = params_.system_path / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
 		LOGD("Opening SQLite3 DB: " << db_filepath);
@@ -60,8 +61,8 @@ Index::Index(FSFolder& dir, io_service& ios) : dir_(dir), ios_(ios) {
 	//db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from it. Anyway, we can add it anytime later.
 
 	/* Create a special hash-file */
-	auto hash_txt = dir_.system_path() / "hash.txt";
-	std::string hexhash_conf = crypto::Hex().to_string(dir_.secret().get_Hash());
+	auto hash_txt = params_.system_path / "hash.txt";
+	std::string hexhash_conf = crypto::Hex().to_string(params_.secret.get_Hash());
 	if(boost::filesystem::exists(hash_txt)) {
 		file_wrapper hexhash_f(hash_txt, "r");
 		std::string hexhash_file;
@@ -124,21 +125,19 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << dir_.path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
-	ios_.dispatch([=](){
-		new_meta_signal(signed_meta);
-		if(!fully_assembled)
-			assemble_meta_signal(signed_meta.meta());
-	});
+	new_meta_signal(signed_meta);
+	if(!fully_assembled)
+		assemble_meta_signal(signed_meta.meta());
 }
 
 std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){
 	std::list<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list.push_back(SignedMeta(row[0], row[1], dir_.secret()));
+		result_list.push_back(SignedMeta(row[0], row[1], params_.secret));
 	return result_list;
 }
 SignedMeta Index::get_meta(const blob& path_id){

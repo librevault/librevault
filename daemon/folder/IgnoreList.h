@@ -27,60 +27,35 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Archive.h"
-#include "util/blob.h"
-#include "util/network.h"
+#include <control/Config.h>
+#include "util/log_scope.h"
 #include <mutex>
+#include <regex>
 
 namespace librevault {
 
-class Index;
-class FSFolder;
-class ChunkStorage;
-class Meta;
-class Secret;
+class FolderParams;
+class PathNormalizer;
 
-class FileAssembler {
-	LOG_SCOPE("FileAssembler");
+class IgnoreList {
+	LOG_SCOPE("IgnoreList");
 public:
-	struct error : std::runtime_error {
-		error(const std::string& what) : std::runtime_error(what) {}
-		error() : error("FileAssembler error") {}
-	};
+	IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer);
+	virtual ~IgnoreList() {}
 
-	FileAssembler(FSFolder& dir, ChunkStorage& chunk_storage, io_service& ios);
-	virtual ~FileAssembler() {}
+	bool is_ignored(const std::string& relpath) const;
 
-	blob get_chunk_pt(const blob& ct_hash) const;
+	void add_ignored(const std::string& relpath);
+	void remove_ignored(const std::string& relpath);
 
-	// File assembler
-	void queue_assemble(const Meta& meta);
-	//void disassemble(const std::string& file_path, bool delete_file = true);
+	void set_ignored(const std::vector<std::string>& ignored_paths);
 
 private:
-	FSFolder& dir_;
-	ChunkStorage& chunk_storage_;
-	io_service& ios_;
+	const FolderParams& params_;
+	PathNormalizer& path_normalizer_;
 
-	Archive archive_;
-
-	const Secret& secret_;
-	Index& index_;
-
-	std::set<blob> assemble_queue_;
-	std::mutex assemble_queue_mtx_;
-
-	void periodic_assemble_operation(PeriodicProcess& process);
-	PeriodicProcess assemble_process_;
-
-	void assemble(const Meta& meta);
-
-	bool assemble_deleted(const Meta& meta);
-	bool assemble_symlink(const Meta& meta);
-	bool assemble_directory(const Meta& meta);
-	bool assemble_file(const Meta& meta);
-
-	void apply_attrib(const Meta& meta);
+	mutable std::mutex ignored_paths_mtx_;
+	std::map<std::string, std::regex> ignored_paths_;
 };
 
 } /* namespace librevault */

@@ -27,26 +27,31 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/Meta.h>
-#include <memory>
+#include "AbstractStorage.h"
+#include <map>
+#include <list>
 
 namespace librevault {
 
-class FSFolder;
-class ChunkStorage;
-class AbstractStorage {
+// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
+class MemoryCachedStorage : public AbstractStorage {
 public:
-	AbstractStorage(FSFolder& dir, ChunkStorage& chunk_storage);
-	virtual ~AbstractStorage() {};
+	MemoryCachedStorage(ChunkStorage& chunk_storage);
+	virtual ~MemoryCachedStorage() {}
 
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
-	}
-	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
+	bool have_chunk(const blob& ct_hash) const noexcept;
+	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
+	void remove_chunk(const blob& ct_hash) noexcept;
 
-protected:
-	FSFolder& dir_;
-	ChunkStorage& chunk_storage_;
+private:
+	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
+	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
+
+	mutable std::list<ct_hash_data_type> cache_list_;
+	std::map<blob, list_iterator_type> cache_iteraror_map_;
+
+	bool overflow() const;
 };
 
 } /* namespace librevault */

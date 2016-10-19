@@ -69,7 +69,8 @@ public:
 	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 
 private:
-	multi_io_service ios_;
+	multi_io_service bulk_ios_;
+	multi_io_service serial_ios_;
 	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
 	ScopedAsyncQueue init_queue_;
 };

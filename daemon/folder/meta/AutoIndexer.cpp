@@ -27,16 +27,18 @@
  * files in the program, then also delete it here.
  */
 #include "AutoIndexer.h"
-#include "IgnoreList.h"
-#include "Indexer.h"
 #include "Index.h"
-#include "FSFolder.h"
-#include <util/log.h>
+#include "Indexer.h"
+#include "control/FolderParams.h"
+#include "folder/IgnoreList.h"
+#include "util/log.h"
 
 namespace librevault {
 
-AutoIndexer::AutoIndexer(FSFolder& dir, io_service& ios) :
-		dir_(dir),
+AutoIndexer::AutoIndexer(const FolderParams& params, Index& index, Indexer& indexer, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) :
+		params_(params),
+		index_(index), indexer_(indexer), ignore_list_(ignore_list),
+		path_normalizer_(path_normalizer),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
 		rescan_process_(ios, [this](PeriodicProcess& process){rescan_operation(process);}),
@@ -45,7 +47,7 @@ AutoIndexer::AutoIndexer(FSFolder& dir, io_service& ios) :
 
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
 
-	monitor_.add_directory(dir_.path().string());
+	monitor_.add_directory(params_.path.string());
 	monitor_operation();
 }
 
@@ -61,35 +63,29 @@ void AutoIndexer::enqueue_files(const std::string& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath);
 
-	index_process_.invoke_after(dir_.params().index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
+	index_process_.invoke_after(params_.index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
 }
 
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 
-	index_process_.invoke_after(dir_.params().index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
+	index_process_.invoke_after(params_.index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
 }
 
-void AutoIndexer::prepare_file_assemble(bool with_removal, const std::string& relpath) {
-	unsigned skip_events = 2;	// REMOVED, RENAMED (NEW NAME), MODIFIED
-	if(with_removal) skip_events++;
-	//unsigned skip_events = 0;
+void AutoIndexer::prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal) {
+	unsigned skip_events = 0;
+	if(with_removal || type == Meta::Type::DELETED) skip_events++;
 
-	for(unsigned i = 0; i < skip_events; i++)
-		prepared_assemble_.insert(relpath);
-}
-
-void AutoIndexer::prepare_dir_assemble(bool with_removal, const std::string& relpath) {
-	unsigned skip_events = 1;	// ADDED
-	skip_events += with_removal ? 1 : 0;
-
-	for(unsigned i = 0; i < skip_events; i++)
-		prepared_assemble_.insert(relpath);
-}
-
-void AutoIndexer::prepare_deleted_assemble(const std::string& relpath) {
-	unsigned skip_events = 1;	// REMOVED or UNKNOWN
+	switch(type) {
+		case Meta::FILE:
+			skip_events += 2;   // RENAMED (NEW NAME), MODIFIED
+			break;
+		case Meta::DIRECTORY:
+			skip_events += 1;   // ADDED
+			break;
+		default:;
+	}
 
 	for(unsigned i = 0; i < skip_events; i++)
 		prepared_assemble_.insert(relpath);
@@ -99,16 +95,16 @@ std::set<std::string> AutoIndexer::short_reindex_list() {
 	std::set<std::string> file_list;
 
 	// Files present in the file system
-	for(auto dir_entry_it = fs::recursive_directory_iterator(dir_.path()); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
-		auto relpath = dir_.normalize_path(dir_entry_it->path());
+	for(auto dir_entry_it = fs::recursive_directory_iterator(params_.path); dir_entry_it != fs::recursive_directory_iterator(); dir_entry_it++){
+		auto relpath = path_normalizer_.normalize_path(dir_entry_it->path());
 
-		if(!dir_.ignore_list->is_ignored(relpath)) file_list.insert(relpath);
+		if(!ignore_list_.is_ignored(relpath)) file_list.insert(relpath);
 	}
 
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
 	// They can still be indexed by monitor, though.
-	for(auto& smeta : dir_.index->get_incomplete_meta()) {
-		file_list.erase(smeta.meta().path(dir_.secret()));
+	for(auto& smeta : index_.get_incomplete_meta()) {
+		file_list.erase(smeta.meta().path(params_.secret));
 	}
 
 	return file_list;
@@ -118,8 +114,8 @@ std::set<std::string> AutoIndexer::full_reindex_list() {
 	std::set<std::string> file_list = short_reindex_list();
 
 	// Files present in index (files added from here will be marked as DELETED)
-	for(auto& smeta : dir_.index->get_existing_meta()) {
-		file_list.insert(smeta.meta().path(dir_.secret()));
+	for(auto& smeta : index_.get_existing_meta()) {
+		file_list.insert(smeta.meta().path(params_.secret));
 	}
 
 	return file_list;
@@ -129,10 +125,10 @@ void AutoIndexer::rescan_operation(PeriodicProcess& process) {
 	LOGFUNC();
 	LOGD("Performing full directory rescan");
 
-	if(!dir_.indexer->is_indexing())
+	if(!indexer_.is_indexing())
 		enqueue_files(full_reindex_list());
 
-	process.invoke_after(dir_.params().full_rescan_interval);
+	process.invoke_after(params_.full_rescan_interval);
 }
 
 void AutoIndexer::monitor_operation() {
@@ -158,7 +154,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 	case boost::asio::dir_monitor_event::removed:
 	case boost::asio::dir_monitor_event::null:
 	{
-		std::string relpath = dir_.normalize_path(ev.path);
+		std::string relpath = path_normalizer_.normalize_path(ev.path);
 
 		auto prepared_assemble_it = prepared_assemble_.find(relpath);
 		if(prepared_assemble_it != prepared_assemble_.end()) {
@@ -167,7 +163,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 			// FIXME: "prepares" is a dirty hack. It must be EXTERMINATED!
 		}
 
-		if(!dir_.ignore_list->is_ignored(relpath)){
+		if(!ignore_list_.is_ignored(relpath)){
 			LOGD("[dir_monitor] " << ev);
 			enqueue_files(relpath);
 		}
@@ -182,7 +178,7 @@ void AutoIndexer::perform_index() {
 	index_queue.swap(index_queue_);
 	index_queue_mtx_.unlock();
 
-	dir_.indexer->async_index(index_queue);
+	indexer_.async_index(index_queue);
 }
 
 } /* namespace librevault */

@@ -28,35 +28,38 @@
  */
 #pragma once
 
+#include "folder/PathNormalizer.h"
+#include "util/network.h"
+#include "util/periodic_process.h"
+#include "util/log_scope.h"
+#include <librevault/Meta.h>
 #include <dir_monitor/dir_monitor.hpp>
-#include <util/network.h>
-#include <util/periodic_process.h>
-#include <util/log_scope.h>
 #include <mutex>
 
 namespace librevault {
 
-class FSFolder;
+class Index;
+class Indexer;
+class IgnoreList;
 
 class AutoIndexer {
 	LOG_SCOPE("AutoIndexer");
 public:
-	AutoIndexer(FSFolder& dir, io_service& ios);
+	AutoIndexer(const FolderParams& params, Index& index, Indexer& indexer, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
 	virtual ~AutoIndexer();
 
-	void enqueue_files(const std::string& relpath);
-	void enqueue_files(const std::set<std::string>& relpath);
+	// A VERY DIRTY HACK
+	void prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal = false);
 
-	// A set of VERY DIRTY HACKS
-	void prepare_file_assemble(bool with_removal, const std::string& relpath);
-	void prepare_dir_assemble(bool with_removal, const std::string& relpath);
-	void prepare_deleted_assemble(const std::string& relpath);
+private:
+	const FolderParams& params_;
+	Index& index_;
+	Indexer& indexer_;
+	IgnoreList& ignore_list_;
+	PathNormalizer& path_normalizer_;
 
 	std::set<std::string> short_reindex_list();  // List of files for reindexing on start
 	std::set<std::string> full_reindex_list();  // List of files, ready to be reindexed on full reindexing
-
-private:
-	FSFolder& dir_;
 
 	// Monitor
 	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
@@ -77,6 +80,8 @@ private:
 	// Index queue
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
+	void enqueue_files(const std::string& relpath);
+	void enqueue_files(const std::set<std::string>& relpath);
 
 	void perform_index();
 	PeriodicProcess index_process_;

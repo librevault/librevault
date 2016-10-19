@@ -28,18 +28,25 @@
  */
 #include "OpenStorage.h"
 
-#include "folder/fs/FSFolder.h"
-#include "folder/fs/Index.h"
-#include <util/file_util.h>
+#include "control/FolderParams.h"
+#include "folder/AbstractFolder.h"
+#include "folder/meta/MetaStorage.h"
+#include "folder/PathNormalizer.h"
+#include "folder/meta/Index.h"
+#include "util/file_util.h"
+#include "util/log.h"
 
 namespace librevault {
 
-OpenStorage::OpenStorage(FSFolder& dir, ChunkStorage& chunk_storage) :
-	AbstractStorage(dir, chunk_storage),
-	secret_(dir_.secret()) {}
+OpenStorage::OpenStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, ChunkStorage& chunk_storage) :
+	AbstractStorage(chunk_storage),
+	params_(params),
+	secret_(params_.secret),
+	meta_storage_(meta_storage),
+	path_normalizer_(path_normalizer) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
-	auto sql_result = dir_.index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
+	auto sql_result = meta_storage_.index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
 			{":ct_hash", ct_hash}
 	});
 	return sql_result.have_rows();
@@ -48,7 +55,7 @@ bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 	LOGT("get_chunk(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
 
-	auto metas_containing = dir_.index->containing_chunk(ct_hash);
+	auto metas_containing = meta_storage_.index->containing_chunk(ct_hash);
 
 	for(auto smeta : metas_containing) {
 		// Search for chunk offset and index
@@ -65,7 +72,7 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		file_wrapper f(dir_.absolute_path(smeta.meta().path(secret_)), "rb");
+		file_wrapper f(path_normalizer_.absolute_path(smeta.meta().path(secret_)), "rb");
 		f.ios().exceptions(std::ios::failbit | std::ios::badbit);
 		try {
 			f.ios().seekg(offset);

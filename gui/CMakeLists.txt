@@ -81,7 +81,7 @@ add_executable(librevault-gui ${SRCS})
 # Target properties
 #============================================================================
 
-if(BUILD_UPDATER AND (WIN32 OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
+if(BUILD_UPDATER AND (OS_WIN OR OS_MAC))
 	set(WILL_BUILD_UPDATER ON)
 endif()
 
@@ -98,15 +98,15 @@ target_link_libraries(librevault-gui openssl)
 
 # Qt
 target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)
-if(WIN32)
+if(OS_WIN)
 	target_link_libraries(librevault-gui Qt5::WinExtras)
 endif()
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-gui Qt5::MacExtras)
 endif()
 
 # WinSparkle
-if(WIN32)
+if(OS_WIN)
 	set(SAVED_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .dll)
 	find_library(winsparkle_LIBRARIES winsparkle)
@@ -116,13 +116,13 @@ if(WIN32)
 endif()
 
 # Sparkle (for Macs)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	find_library(SPARKLE_LIBRARIES Sparkle)
 	target_link_libraries(librevault-gui ${SPARKLE_LIBRARIES})
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-gui "-framework CoreFoundation")
 	target_link_libraries(librevault-gui "-framework AppKit")
 endif()

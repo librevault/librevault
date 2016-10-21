@@ -26,6 +26,10 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#if ! __has_feature(objc_arc)
+#error This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag
+#endif
+
 #include "Config.h"
 #include "Version.h"
 #include <Foundation/Foundation.h>

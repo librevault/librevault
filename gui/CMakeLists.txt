@@ -57,6 +57,12 @@ list(APPEND SRCS ${MAIN_HEADERS})
 list(APPEND SRCS ${MAIN_UIS})
 list(APPEND SRCS ${MAIN_QRCS})
 
+## macOS LoginItems helper
+if(OS_MAC)
+	file(GLOB_RECURSE LOGIN_ITEM_SRCS "gui/startup/LoginItemsHelper/*.*")
+	list(REMOVE_ITEM SRCS ${LOGIN_ITEM_SRCS})
+endif()
+
 #============================================================================
 # Third-party packages
 #============================================================================
@@ -76,6 +82,9 @@ list(APPEND SRCS ${librevault-gui_QM_RC})
 #============================================================================
 
 add_executable(librevault-gui ${SRCS})
+if(OS_MAC)
+	add_executable(librevault-loginhelper MACOSX_BUNDLE ${LOGIN_ITEM_SRCS})
+endif()
 
 #============================================================================
 # Target properties
@@ -87,6 +96,10 @@ endif()
 
 if(WILL_BUILD_UPDATER)
 	target_compile_definitions(librevault-gui PRIVATE "BUILD_UPDATER")
+endif()
+
+if(OS_MAC)
+	set_target_properties(librevault-loginhelper PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/gui/startup/LoginItemsHelper/Info.plist")
 endif()
 
 #============================================================================
@@ -123,6 +136,8 @@ endif()
 
 ## CoreFoundation
 if(OS_MAC)
+	target_link_libraries(librevault-gui "-framework ServiceManagement")
 	target_link_libraries(librevault-gui "-framework CoreFoundation")
 	target_link_libraries(librevault-gui "-framework AppKit")
+	target_link_libraries(librevault-loginhelper "-framework AppKit")
 endif()

@@ -26,31 +26,11 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StartupInterface.h"
-#include <CoreServices/CoreServices.h>
-#include <MacTypes.h>
-#include <Foundation/Foundation.h>
-#include <ServiceManagement/SMLoginItem.h>
-#include <Cocoa/Cocoa.h>
-#include <QDebug>
 
-StartupInterface::StartupInterface(QObject* parent) :
-		QObject(parent) {}
+#import <Cocoa/Cocoa.h>
 
-StartupInterface::~StartupInterface() {}
+@interface AppDelegate : NSObject <NSApplicationDelegate>
 
-bool StartupInterface::isSupported() {
-	return true;
-}
 
-bool StartupInterface::isEnabled() const {
-	return false;
-}
+@end
 
-void StartupInterface::enable() {
-    qDebug() << SMLoginItemSetEnabled((__bridge CFStringRef)@"com.librevault.desktop.loginhelper", YES);
-}
-
-void StartupInterface::disable() {
-    qDebug() << SMLoginItemSetEnabled((__bridge CFStringRef)@"com.librevault.desktop.loginhelper", NO);
-}

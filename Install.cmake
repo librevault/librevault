@@ -133,6 +133,8 @@ elseif(OS_MAC)
 	endif()
 	if(BUILD_GUI)
 		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS COMPONENT librevault-package)
+		install(DIRECTORY ${CMAKE_BINARY_DIR}/gui/librevault-loginhelper.app FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+				GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ DESTINATION ../Library/LoginItems COMPONENT librevault-package)
 	endif()
 	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../ COMPONENT librevault-package)
 

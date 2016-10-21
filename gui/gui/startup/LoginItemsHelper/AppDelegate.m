@@ -26,31 +26,44 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StartupInterface.h"
-#include <CoreServices/CoreServices.h>
-#include <MacTypes.h>
-#include <Foundation/Foundation.h>
-#include <ServiceManagement/SMLoginItem.h>
-#include <Cocoa/Cocoa.h>
-#include <QDebug>
+#import "AppDelegate.h"
 
-StartupInterface::StartupInterface(QObject* parent) :
-		QObject(parent) {}
+@interface AppDelegate ()
 
-StartupInterface::~StartupInterface() {}
+@end
 
-bool StartupInterface::isSupported() {
-	return true;
+@implementation AppDelegate
+
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification
+{
+	// Check if main app is already running; if yes, do nothing and terminate helper app
+	BOOL alreadyRunning = NO;
+    BOOL isActive = NO;
+	NSArray *running = [[NSWorkspace sharedWorkspace] runningApplications];
+	for (NSRunningApplication *app in running) {
+		if ([[app bundleIdentifier] isEqualToString:@"com.librevault.desktop"]) {
+			alreadyRunning = YES;
+            isActive = [app isActive];
+		}
+	}
+
+	if (!alreadyRunning || !isActive) {
+		NSString *path = [[NSBundle mainBundle] bundlePath];
+		NSArray *p = [path pathComponents];
+		NSMutableArray *pathComponents = [NSMutableArray arrayWithArray:p];
+		[pathComponents removeLastObject];
+		[pathComponents removeLastObject];
+		[pathComponents removeLastObject];
+		[pathComponents addObject:@"MacOS"];
+		[pathComponents addObject:@"librevault-gui"];
+		NSString *newPath = [NSString pathWithComponents:pathComponents];
+
+		NSAlert *alert = [NSAlert alertWithMessageText:newPath defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"Couldn't remove Helper App from launch at login item list."];
+		[alert runModal];
+
+		[[NSWorkspace sharedWorkspace] launchApplication:newPath];
+	}
+	[NSApp terminate:nil];
 }
 
-bool StartupInterface::isEnabled() const {
-	return false;
-}
-
-void StartupInterface::enable() {
-    qDebug() << SMLoginItemSetEnabled((__bridge CFStringRef)@"com.librevault.desktop.loginhelper", YES);
-}
-
-void StartupInterface::disable() {
-    qDebug() << SMLoginItemSetEnabled((__bridge CFStringRef)@"com.librevault.desktop.loginhelper", NO);
-}
+@end

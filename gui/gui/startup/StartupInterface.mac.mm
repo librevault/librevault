@@ -39,21 +39,15 @@ struct MacStartupInterface {
 	LSSharedFileListItemRef getLoginItem() {
 		Boolean foundIt=false;
 		UInt32 seed = 0U;
-		NSArray * currentLoginItems = [NSMakeCollectable(LSSharedFileListCopySnapshot(login_items, &seed))
-		autorelease];
+		NSArray* currentLoginItems = (__bridge_transfer NSArray*)LSSharedFileListCopySnapshot(login_items, &seed);
 		for (id itemObject in currentLoginItems) {
-			LSSharedFileListItemRef item = (LSSharedFileListItemRef) itemObject;
+			LSSharedFileListItemRef item = (__bridge LSSharedFileListItemRef)itemObject;
 
 			UInt32 resolutionFlags = kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes;
-			CFURLRef URL = NULL;
-			OSStatus err = LSSharedFileListItemResolve(item, resolutionFlags, &URL, /*outRef*/ NULL);
-			if (err == noErr) {
-				foundIt = CFEqual(URL, item_url);
-				CFRelease(URL);
 
-				if (foundIt)
-					return item;
-			}
+			NSURL* url = (__bridge_transfer NSURL*)LSSharedFileListItemCopyResolvedURL(item, resolutionFlags, NULL);
+			if(url && CFEqual((__bridge CFURLRef)url, (__bridge CFURLRef)item_url))
+				return item;
 		}
 		return nil;
 	}
@@ -64,11 +58,9 @@ StartupInterface::StartupInterface(QObject* parent) :
 	interface_impl_ = new MacStartupInterface;
 	static_cast<MacStartupInterface*>(interface_impl_)->login_items = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
 	static_cast<MacStartupInterface*>(interface_impl_)->item_url = [NSURL fileURLWithPath:[[NSBundle mainBundle] bundlePath]];
-	[static_cast<MacStartupInterface*>(interface_impl_)->item_url retain];
 }
 
 StartupInterface::~StartupInterface() {
-	[static_cast<MacStartupInterface*>(interface_impl_)->item_url release];
 	CFRelease(static_cast<MacStartupInterface*>(interface_impl_)->login_items);
 	delete static_cast<MacStartupInterface*>(interface_impl_);
 }
@@ -86,7 +78,7 @@ void StartupInterface::enable() {
 	if(login_item == nil) {
 		LSSharedFileListInsertItemURL(static_cast<MacStartupInterface *>(interface_impl_)->login_items,
 									  kLSSharedFileListItemBeforeFirst,
-									  NULL, NULL, (CFURLRef)(static_cast<MacStartupInterface *>(interface_impl_)->item_url), NULL, NULL);
+									  NULL, NULL, (__bridge CFURLRef)(static_cast<MacStartupInterface *>(interface_impl_)->item_url), NULL, NULL);
 	}
 }
 

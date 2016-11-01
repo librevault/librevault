@@ -59,13 +59,6 @@ AutoIndexer::~AutoIndexer() {
 		monitor_ios_thread_.join();
 }
 
-void AutoIndexer::enqueue_files(const std::string& relpath) {
-	std::unique_lock<std::mutex> lk(index_queue_mtx_);
-	index_queue_.insert(relpath);
-
-	index_process_.invoke_after(params_.index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
-}
-
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());

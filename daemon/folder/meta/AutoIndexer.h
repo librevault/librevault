@@ -80,8 +80,8 @@ private:
 	// Index queue
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
-	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);
+	void enqueue_files(const std::string& relpath) {enqueue_files(std::set<std::string>({relpath}));}
 
 	void perform_index();
 	PeriodicProcess index_process_;

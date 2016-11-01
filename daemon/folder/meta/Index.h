@@ -63,9 +63,6 @@ public:
 
 	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
 
-	/* Index slots */
-	void notify_all();  // Should be invoked after initialization of FolderGroup
-
 	/* Chunk getter */
 	uint32_t get_chunk_size(const blob& ct_hash);
 

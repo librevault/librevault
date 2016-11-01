@@ -261,8 +261,6 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	LOGT("DHT message received");
-
 	std::unique_lock<std::mutex> lk(dht_mutex);
 	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, this);
 	lk.unlock();
@@ -282,7 +280,6 @@ void MLDHTDiscovery::receive(udp_socket& socket) {
 void MLDHTDiscovery::maintain_periodic_requests() {
 	tosleep_timer_.expires_from_now(std::chrono::seconds(tosleep));
 	tosleep_timer_.async_wait([this](const boost::system::error_code& error){
-		LOGFUNC();
 		if(error == boost::asio::error::operation_aborted) return;
 
 		std::unique_lock<std::mutex> lk(dht_mutex);

@@ -52,7 +52,7 @@ void FolderService::run() {
 	});
 
 	serial_ios_.start(1);
-	bulk_ios_.start(std::thread::hardware_concurrency());
+	bulk_ios_.start(std::max(std::thread::hardware_concurrency(), 1u));
 }
 
 void FolderService::stop() {

@@ -44,8 +44,7 @@ Dependency build instructions: Ubuntu & Debian
 sudo apt install build-essential cmake libboost-all-dev libssl-dev qtbase5-dev libqt5svg5-dev libqt5websockets5-dev
 ```
 
-* On at least Ubuntu 16.10+, you can also install `libcrypto++-dev`.  
-  If `libcrypto++-dev` version is < 5.2, then you should [download](http://www.cryptopp.com/#download), unpack and build it yourself:
+* If `libcrypto++-dev` version is < 5.2, then you should [download](http://www.cryptopp.com/#download), unpack and build it yourself:
 
 ```
 sudo make install (or sudo checkinstall)
@@ -58,4 +57,12 @@ sudo make install (or sudo checkinstall)
 ./configure && \
 make && \
 sudo make install (or sudo checkinstall)
+```
+
+### Ubuntu 16.10
+
+All dependencies are available from the repository. Simply install them using the following command:
+
+```
+sudo apt install build-essential cmake libboost-all-dev libssl-dev qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libcrypto++-dev qttools5-dev-tools protobuf-compiler libsqlite3-dev
 ```

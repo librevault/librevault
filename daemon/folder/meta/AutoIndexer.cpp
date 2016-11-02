@@ -60,6 +60,7 @@ AutoIndexer::~AutoIndexer() {
 }
 
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
+	LOGFUNC();
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 
@@ -166,6 +167,7 @@ void AutoIndexer::monitor_handle(const boost::asio::dir_monitor_event& ev) {
 }
 
 void AutoIndexer::perform_index() {
+	LOGFUNC();
 	std::set<std::string> index_queue;
 	index_queue_mtx_.lock();
 	index_queue.swap(index_queue_);

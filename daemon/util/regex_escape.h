@@ -50,4 +50,12 @@ inline std::string regex_escape(std::string str_to_escape) {
 	return str_to_escape;
 }
 
+inline std::string wildcard_to_regex(std::string str_to_escape) {
+	str_to_escape = regex_escape(str_to_escape);
+	boost::replace_all(str_to_escape, "\\?", ".");
+	boost::replace_all(str_to_escape, "\\*", ".*");
+
+	return str_to_escape;
+}
+
 } /* namespace librevault */

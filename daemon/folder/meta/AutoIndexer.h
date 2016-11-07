@@ -58,8 +58,7 @@ private:
 	IgnoreList& ignore_list_;
 	PathNormalizer& path_normalizer_;
 
-	std::set<std::string> short_reindex_list();  // List of files for reindexing on start
-	std::set<std::string> full_reindex_list();  // List of files, ready to be reindexed on full reindexing
+	std::set<std::string> reindex_list();
 
 	// Monitor
 	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:

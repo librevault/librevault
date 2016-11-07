@@ -125,6 +125,7 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 		async_index(file_path1);
 }
 
+/* Actual indexing process */
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	LOGD("make_Meta(" << relpath << ")");
 	Meta old_meta, new_meta;

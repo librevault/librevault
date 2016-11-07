@@ -85,7 +85,7 @@ void AutoIndexer::prepare_assemble(const std::string relpath, Meta::Type type, b
 		prepared_assemble_.insert(relpath);
 }
 
-std::set<std::string> AutoIndexer::short_reindex_list() {
+std::set<std::string> AutoIndexer::reindex_list() {
 	std::set<std::string> file_list;
 
 	// Files present in the file system
@@ -101,12 +101,6 @@ std::set<std::string> AutoIndexer::short_reindex_list() {
 		file_list.erase(smeta.meta().path(params_.secret));
 	}
 
-	return file_list;
-}
-
-std::set<std::string> AutoIndexer::full_reindex_list() {
-	std::set<std::string> file_list = short_reindex_list();
-
 	// Files present in index (files added from here will be marked as DELETED)
 	for(auto& smeta : index_.get_existing_meta()) {
 		file_list.insert(smeta.meta().path(params_.secret));
@@ -120,7 +114,7 @@ void AutoIndexer::rescan_operation(PeriodicProcess& process) {
 	LOGD("Performing full directory rescan");
 
 	if(!indexer_.is_indexing())
-		enqueue_files(full_reindex_list());
+		enqueue_files(reindex_list());
 
 	process.invoke_after(params_.full_rescan_interval);
 }

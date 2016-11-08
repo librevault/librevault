@@ -40,28 +40,55 @@
 
 namespace librevault {
 
+/* GlobalFilePool */
+std::shared_ptr<file_wrapper> GlobalFilePool::get_file(const boost::filesystem::path& chunk_path) {
+	auto file_ptr = cache_[chunk_path].lock();
+	if(!file_ptr)
+		file_ptr = std::make_shared<file_wrapper>(chunk_path, "r+b");
+
+	release_file(chunk_path);
+	retain_file(chunk_path, file_ptr);
+
+	return file_ptr;
+}
+
+void GlobalFilePool::release_file(const boost::filesystem::path& system_path) {
+	auto it = cache_.find(system_path);
+	if(it != cache_.end()) {
+		std::shared_ptr<file_wrapper> file_ptr = it->second.lock();
+		opened_files_.erase(std::remove(opened_files_.begin(), opened_files_.end(), file_ptr), opened_files_.end());
+		cache_.erase(it);
+	}
+}
+
+void GlobalFilePool::retain_file(boost::filesystem::path chunk_path, std::shared_ptr<file_wrapper> retained_file) {
+	cache_[chunk_path] = retained_file;
+	opened_files_.push_front(retained_file);
+	while(overflow())
+		opened_files_.pop_back();
+}
+
 /* MissingChunk */
 MissingChunk::MissingChunk(const fs::path& system_path, blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
 	this_chunk_path_ = system_path / (std::string("incomplete-") + crypto::Base32().to_string(ct_hash_));
 
-	wrapped_file_.open(this_chunk_path_, "wb");
-	wrapped_file_.close();
+	file_wrapper f(this_chunk_path_, "wb");
+	f.close();
 	fs::resize_file(this_chunk_path_, size);
-
-	wrapped_file_.open(this_chunk_path_, "r+b");
 }
 
 fs::path MissingChunk::release_chunk() {
-	wrapped_file_.close();
+	GlobalFilePool::get_instance()->release_file(this_chunk_path_);
 	return this_chunk_path_;
 }
 
 void MissingChunk::put_block(uint32_t offset, const blob& content) {
 	auto inserted = file_map_.insert({offset, content.size()}).second;
 	if(inserted) {
-		if(wrapped_file_.ios().tellp() != offset)
-			wrapped_file_.ios().seekp(offset);
-		wrapped_file_.ios().write((char*)content.data(), content.size());
+		auto file_ptr = GlobalFilePool::get_instance()->get_file(this_chunk_path_);
+		if(file_ptr->ios().tellp() != offset)
+			file_ptr->ios().seekp(offset);
+		file_ptr->ios().write((char*)content.data(), content.size());
 	}
 }
 

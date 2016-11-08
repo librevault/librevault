@@ -44,36 +44,24 @@ namespace librevault {
 MissingChunk::MissingChunk(const fs::path& system_path, blob ct_hash, uint32_t size) : ct_hash_(std::move(ct_hash)), file_map_(size) {
 	this_chunk_path_ = system_path / (std::string("incomplete-") + crypto::Base32().to_string(ct_hash_));
 
-	file_wrapper f(this_chunk_path_, "wb");
-	f.close();
+	wrapped_file_.open(this_chunk_path_, "wb");
+	wrapped_file_.close();
 	fs::resize_file(this_chunk_path_, size);
 
-#ifndef FOPEN_BACKEND
-	mapped_file_.open(this_chunk_path_);
-#else
 	wrapped_file_.open(this_chunk_path_, "r+b");
-#endif
 }
 
 fs::path MissingChunk::release_chunk() {
-#ifndef FOPEN_BACKEND
-	mapped_file_.close();
-#else
 	wrapped_file_.close();
-#endif
 	return this_chunk_path_;
 }
 
 void MissingChunk::put_block(uint32_t offset, const blob& content) {
 	auto inserted = file_map_.insert({offset, content.size()}).second;
 	if(inserted) {
-#ifndef FOPEN_BACKEND
-		std::copy(content.begin(), content.end(), mapped_file_.data()+offset);
-#else
 		if(wrapped_file_.ios().tellp() != offset)
 			wrapped_file_.ios().seekp(offset);
 		wrapped_file_.ios().write((char*)content.data(), content.size());
-#endif
 	}
 }
 

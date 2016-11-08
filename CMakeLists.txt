@@ -32,13 +32,6 @@ option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_WEBSOCKETPP "Debug websocket++" ON)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 
-if(OS_64bit)
-	set(DEFAULT_FILE_BACKEND "mmap")
-else()
-	set(DEFAULT_FILE_BACKEND "fopen")
-endif()
-set(FILE_BACKEND ${DEFAULT_FILE_BACKEND} CACHE STRING "File backend. Use mmap for 64-bit and fopen for 32-bit")
-
 #============================================================================
 # Internal compiler options
 #============================================================================

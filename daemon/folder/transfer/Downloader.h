@@ -37,7 +37,6 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f
@@ -82,11 +81,7 @@ struct MissingChunk {
 private:
 	AvailabilityMap<uint32_t> file_map_;
 	boost::filesystem::path this_chunk_path_;
-#ifndef FOPEN_BACKEND
-	boost::iostreams::mapped_file mapped_file_;
-#else
 	file_wrapper wrapped_file_;
-#endif
 };
 
 class WeightedDownloadQueue {

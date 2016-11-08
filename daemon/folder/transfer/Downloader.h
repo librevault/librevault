@@ -48,6 +48,27 @@ class FolderParams;
 class MetaStorage;
 class ChunkStorage;
 
+/* GlobalFilePool is a singleton class, used to open/close files automatically to reduce simultaneously open file descriptors */
+class GlobalFilePool {
+public:
+	static GlobalFilePool* get_instance() {
+		static GlobalFilePool* instance;
+		if(!instance)
+			instance = new GlobalFilePool();
+		return instance;
+	}
+
+	std::shared_ptr<file_wrapper> get_file(const boost::filesystem::path& chunk_path);
+	void release_file(const boost::filesystem::path& chunk_path);
+
+private:
+	std::map<boost::filesystem::path, std::weak_ptr<file_wrapper>> cache_;
+	std::list<std::shared_ptr<file_wrapper>> opened_files_;
+
+	void retain_file(boost::filesystem::path chunk_path, std::shared_ptr<file_wrapper> retained_file);
+	bool overflow() {return opened_files_.size() > 100;}    // TODO: in config
+};
+
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
 	MissingChunk(const boost::filesystem::path& system_path, blob ct_hash, uint32_t size);
@@ -81,7 +102,6 @@ struct MissingChunk {
 private:
 	AvailabilityMap<uint32_t> file_map_;
 	boost::filesystem::path this_chunk_path_;
-	file_wrapper wrapped_file_;
 };
 
 class WeightedDownloadQueue {

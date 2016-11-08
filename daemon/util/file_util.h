@@ -88,6 +88,8 @@ public:
 	}
 
 	inline void open(const native_char_t* path, const char* mode) {
+		close();
+
 		handle_ = native_fopen(path, mode);
 		if(handle_) {
 			buf_ = std::make_unique<fdstreambuf>(cx_fileno(handle_), boost::iostreams::never_close_handle);

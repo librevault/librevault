@@ -1,5 +1,5 @@
-[submodule "common"]
-	path = common
+[submodule "lvproto"]
+	path = lvproto
 	url = https://github.com/Librevault/librevault-common.git
 	branch = master
 [submodule "contrib/dir_monitor"]

@@ -48,7 +48,7 @@ public:
 
 private:
 	const FolderParams& params_;
-	std::mutex storage_mtx_;
+	mutable std::mutex storage_mtx_;
 
 	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
 	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;

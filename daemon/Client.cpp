@@ -62,8 +62,8 @@ Client::Client() {
 	control_server_->add_folder_signal.connect([this](Json::Value json_folder){
 		if(folder_service_) folder_service_->add_folder(json_folder);
 	});
-	control_server_->remove_folder_signal.connect([this](Secret secret){
-		if(folder_service_) folder_service_->remove_folder(secret);
+	control_server_->remove_folder_signal.connect([this](blob folder_hash){
+		if(folder_service_) folder_service_->remove_folder(folder_hash);
 	});
 }
 

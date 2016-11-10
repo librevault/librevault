@@ -76,7 +76,7 @@ void Daemon::handleStandardOutput() {
 	while(canReadLine() && !listening_already) {
 		auto stdout_line = readLine();
 		/* Regexp for getting listen address from STDOUT */
-		QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
+		QRegExp listen_regexp(R"(^\[CONTROL\].*(http:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
 		if(listen_regexp.indexIn(stdout_line) > -1) {
 			listening_already = true;
 

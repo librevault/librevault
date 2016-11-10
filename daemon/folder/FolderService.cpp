@@ -32,6 +32,7 @@
 #include "folder/meta/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
@@ -63,7 +64,7 @@ void FolderService::stop() {
 			secrets.push_back(group.second->secret());
 
 		for(auto& secret : secrets)
-			deinit_folder(secret);
+			deinit_folder(secret.get_Hash());
 	});
 	init_queue_.wait();
 	bulk_ios_.stop();
@@ -89,13 +90,13 @@ void FolderService::add_folder(Json::Value json_folder) {
 		throw samekey_error();
 }
 
-void FolderService::remove_folder(const Secret& secret) {
+void FolderService::remove_folder(const blob& folder_hash) {
 	LOGFUNC();
 
 	auto folders_copy = Config::get()->folders_custom();
 	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
-		if(FolderParams(folders_copy[i]).secret.get_Hash() == secret.get_Hash()) {
-			deinit_folder(secret);
+		if(FolderParams(folders_copy[i]).secret.get_Hash() == folder_hash) {
+			deinit_folder(folder_hash);
 
 			Json::Value temp;
 			folders_copy.removeIndex(i, &temp);
@@ -119,14 +120,14 @@ void FolderService::init_folder(const FolderParams& params) {
 		throw samekey_error();
 }
 
-void FolderService::deinit_folder(const Secret& secret) {
+void FolderService::deinit_folder(const blob& folder_hash) {
 	LOGFUNC();
 
-	auto group_ptr = get_group(secret.get_Hash());
+	auto group_ptr = get_group(folder_hash);
 
-	hash_group_.erase(secret.get_Hash());
+	hash_group_.erase(folder_hash);
 	folder_removed_signal(group_ptr);
-	LOGD("Group deinitialized: " << secret);
+	LOGD("Group deinitialized: " << crypto::Hex().to_string(folder_hash));
 }
 
 std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {

@@ -27,54 +27,35 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log_scope.h"
-#include "util/network.h"
-#include "util/parse_url.h"
+#include "ControlServer.h"
 #include "p2p/websocket_config.h"
-#include "control/FolderParams.h"
-#include "util/multi_io_service.h"
-#include "util/periodic_process.h"
-#include <boost/signals2/signal.hpp>
-#include <unordered_set>
+#include "util/log_scope.h"
 
 namespace librevault {
 
 class Client;
-class ControlWebsocketServer;
-class ControlHTTPServer;
+class ControlServer;
 
-class ControlServer {
-	LOG_SCOPE("ControlServer");
+class ControlWebsocketServer {
+	LOG_SCOPE("ControlWebsocketServer");
 public:
-	using server = websocketpp::server<asio_notls>;
+	ControlWebsocketServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios);
+	virtual ~ControlWebsocketServer();
 
-	ControlServer(Client& client);
-	virtual ~ControlServer();
+	bool on_validate(websocketpp::connection_hdl hdl);
+	void on_open(websocketpp::connection_hdl hdl);
+	void on_disconnect(websocketpp::connection_hdl hdl);
 
-	void run() {ios_.start(1);}
-	std::string make_control_json();
-
-	bool check_origin(server::connection_ptr conn);
-
-	boost::signals2::signal<void(Json::Value)> add_folder_signal;
-	boost::signals2::signal<void(blob)> remove_folder_signal;
 private:
-
 	Client& client_;
-	multi_io_service ios_;
+	ControlServer& cs_;
+	ControlServer::server& server_;
 
-	server ws_server_;
+	PeriodicProcess heartbeat_process_;
 
-	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
-	std::unique_ptr<ControlHTTPServer> control_http_server_;
+	std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
 
-	tcp_endpoint local_endpoint_;
-
-	Json::Value make_state_json() const;
-
-	void dispatch_control_json(const Json::Value& control_json);
-	void handle_add_folder_json(const Json::Value& control_json);
-	void handle_remove_folder_json(const Json::Value& control_json);
+	void send_heartbeat(PeriodicProcess& process);
 };
 
 } /* namespace librevault */

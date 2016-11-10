@@ -60,10 +60,10 @@ public:
 
 	/* FolderGroup nanagenent */
 	void add_folder(Json::Value json_folder);    // Adds folder into config, so JSON. Also, invokes init_folder.
-	void remove_folder(const Secret& secret);   // Invokes deinit_folder and removes folder from config.
+	void remove_folder(const blob& folder_hash);   // Invokes deinit_folder and removes folder from config.
 
 	void init_folder(const FolderParams& params);
-	void deinit_folder(const Secret& secret);
+	void deinit_folder(const blob& folder_hash);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 	std::vector<std::shared_ptr<FolderGroup>> groups() const;

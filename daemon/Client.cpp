@@ -65,6 +65,12 @@ Client::Client() {
 	control_server_->remove_folder_signal.connect([this](blob folder_hash){
 		if(folder_service_) folder_service_->remove_folder(folder_hash);
 	});
+	control_server_->restart_signal.connect([this]{
+		restart();
+	});
+	control_server_->shutdown_signal.connect([this]{
+		shutdown();
+	});
 }
 
 Client::~Client() {
@@ -90,9 +96,14 @@ void Client::run() {
 	main_loop_ios_.run();
 }
 
+void Client::restart() {
+	LOGI("Restarting...");
+	want_restart_ = true;
+	main_loop_ios_.stop();
+}
+
 void Client::shutdown(){
 	LOGI("Exiting...");
-
 	main_loop_ios_.stop();
 }
 

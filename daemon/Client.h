@@ -52,7 +52,10 @@ public:
 	virtual ~Client();
 
 	void run();
+	void restart();
 	void shutdown();
+
+	bool want_restart() const {return want_restart_;}
 private:
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
@@ -63,6 +66,8 @@ private:
 
 	/* Asynchronous/multithreaded operation */
 	boost::asio::io_service main_loop_ios_;
+
+	bool want_restart_ = false;
 
 	/* Initialization */
 	inline const char* log_tag() {return "";}

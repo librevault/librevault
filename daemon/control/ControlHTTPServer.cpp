@@ -34,8 +34,11 @@
 namespace librevault {
 
 ControlHTTPServer::ControlHTTPServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios) :
-		client_(client), cs_(cs), server_(server) {
+		client_(client), cs_(cs), server_(server), ios_(ios) {
 	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/status\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_status(conn, matched);}));
+	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/version\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_version(conn, matched);}));
+	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/restart\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_restart(conn, matched);}));
+	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/shutdown\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_shutdown(conn, matched);}));
 }
 
 ControlHTTPServer::~ControlHTTPServer() {}
@@ -46,10 +49,10 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = server_.get_con_from_hdl(hdl);
 
 	// CORS
-	if(!cs_.check_origin(connection_ptr)) {
-		connection_ptr->set_status(websocketpp::http::status_code::forbidden);
-		return;
-	}
+	//if(!cs_.check_origin(connection_ptr)) {
+	//	connection_ptr->set_status(websocketpp::http::status_code::forbidden);
+	//	return;
+	//}
 
 	// URI handlers
 	const std::string& uri = connection_ptr->get_request().get_uri();
@@ -68,6 +71,21 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 void ControlHTTPServer::handle_status(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	conn->set_body(cs_.make_control_json());
+}
+
+void ControlHTTPServer::handle_version(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	conn->set_body(Version::current().version_string());
+}
+
+void ControlHTTPServer::handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	ios_.post([this]{cs_.restart_signal();});
+}
+
+void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	ios_.post([this]{cs_.shutdown_signal();});
 }
 
 } /* namespace librevault */

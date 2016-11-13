@@ -67,77 +67,66 @@ Options:
 )";
 
 int main(int argc, char** argv) {
-	// Global initialization
-	std::locale::global(boost::locale::generator().generate(""));
-	boost::filesystem::path::imbue(std::locale());
+	do {
+		// Global initialization
+		std::locale::global(boost::locale::generator().generate(""));
+		boost::filesystem::path::imbue(std::locale());
 
-	// Argument parsing
-	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
+		// Argument parsing
+		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
 
-	if(args["gen-secret"].asBool()) {
-		Secret s;
-		std::cout << s;
-		return 0;
-	}
+		// Initializing config
+		boost::filesystem::path appdata_path;
+		if(args["--data"].isString())
+			appdata_path = args["--data"].asString();
+		Config::init(appdata_path);
 
-	if(args["derive"].asBool()) {
-		Secret::Type type = (Secret::Type)args["<type>"].asString().at(0);
-		std::cout << type << std::endl;
-		Secret s(args["<secret>"].asString());
-		std::cout << s.derive(type);
-		return 0;
-	}
+		if(args["gen-config"].asBool()) {
+			std::cout << Config::get()->globals_defaults().toStyledString();
+			return 0;
+		}
 
-	// Initializing config
-	boost::filesystem::path appdata_path;
-	if(args["--data"].isString())
-		appdata_path = args["--data"].asString();
-	Config::init(appdata_path);
+		// Initializing log
+		spdlog::level::level_enum log_level;
+		switch(args["-v"].asLong()) {
+			case 2:     log_level = spdlog::level::trace; break;
+			case 1:     log_level = spdlog::level::debug; break;
+			default:    log_level = spdlog::level::info;
+		}
 
-	if(args["gen-config"].asBool()) {
-		std::cout << Config::get()->globals_defaults().toStyledString();
-		return 0;
-	}
+		auto log = spdlog::get(Version::current().name());
+		if(!log){
+			std::vector<spdlog::sink_ptr> sinks;
+			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
-	// Initializing log
-	spdlog::level::level_enum log_level;
-	switch(args["-v"].asLong()) {
-		case 2:     log_level = spdlog::level::trace; break;
-		case 1:     log_level = spdlog::level::debug; break;
-		default:    log_level = spdlog::level::info;
-	}
+			auto& log_path = Config::get()->paths().log_path;
+			sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+				(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
+				log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
 
-	auto log = spdlog::get(Version::current().name());
-	if(!log){
-		std::vector<spdlog::sink_ptr> sinks;
-		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+			log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
+			spdlog::register_logger(log);
 
-		auto& log_path = Config::get()->paths().log_path;
-		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-			(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
-			log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
+			log->set_level(log_level);
+			log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
+		}
 
-		log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
-		spdlog::register_logger(log);
+		// Okay, that's a bit of fun, actually.
+		std::cout
+			<< R"(   __    __ _                                _ __ )" << std::endl
+			<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
+			<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
+			<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
+			<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
+		log->info() << Version::current().name() << " " << Version::current().version_string();
 
-		log->set_level(log_level);
-		log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
-	}
+		// And, run!
+		Client client;
+		client.run();
+		log->flush();
 
-	// Okay, that's a bit of fun, actually.
-	std::cout
-		<< R"(   __    __ _                                _ __ )" << std::endl
-		<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
-		<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
-		<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
-		<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-	log->info() << Version::current().name() << " " << Version::current().version_string();
-
-	// And, run!
-	Client client;
-	client.run();
-
-	log->flush();
+		if(!client.want_restart()) break;
+	}while(true);
 
 	return 0;
 }

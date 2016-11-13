@@ -58,6 +58,8 @@ public:
 
 	boost::signals2::signal<void(Json::Value)> add_folder_signal;
 	boost::signals2::signal<void(blob)> remove_folder_signal;
+	boost::signals2::signal<void()> shutdown_signal;
+	boost::signals2::signal<void()> restart_signal;
 private:
 
 	Client& client_;

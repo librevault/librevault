@@ -308,7 +308,7 @@ endif()
 # Subprojects
 #============================================================================
 
-add_subdirectory("common")
+add_subdirectory("lvproto")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

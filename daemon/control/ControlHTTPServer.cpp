@@ -26,55 +26,48 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/log_scope.h"
-#include "util/network.h"
-#include "util/parse_url.h"
-#include "p2p/websocket_config.h"
-#include "control/FolderParams.h"
-#include "util/multi_io_service.h"
-#include "util/periodic_process.h"
-#include <boost/signals2/signal.hpp>
-#include <unordered_set>
+#include "ControlHTTPServer.h"
+#include "Client.h"
+#include "util/log.h"
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace librevault {
 
-class Client;
-class ControlWebsocketServer;
-class ControlHTTPServer;
+ControlHTTPServer::ControlHTTPServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios) :
+		client_(client), cs_(cs), server_(server) {
+	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/status\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_status(conn, matched);}));
+}
 
-class ControlServer {
-	LOG_SCOPE("ControlServer");
-public:
-	using server = websocketpp::server<asio_notls>;
+ControlHTTPServer::~ControlHTTPServer() {}
 
-	ControlServer(Client& client);
-	virtual ~ControlServer();
+void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
+	LOGFUNC();
 
-	void run() {ios_.start(1);}
-	std::string make_control_json();
+	auto connection_ptr = server_.get_con_from_hdl(hdl);
 
-	bool check_origin(server::connection_ptr conn);
+	// CORS
+	if(!cs_.check_origin(connection_ptr)) {
+		connection_ptr->set_status(websocketpp::http::status_code::forbidden);
+		return;
+	}
 
-	boost::signals2::signal<void(Json::Value)> add_folder_signal;
-	boost::signals2::signal<void(blob)> remove_folder_signal;
-private:
+	// URI handlers
+	const std::string& uri = connection_ptr->get_request().get_uri();
+	std::smatch uri_match;
+	for(auto& handler : handlers_) {
+		if(std::regex_match(uri, uri_match, handler.first)) {
+			handler.second(connection_ptr, uri_match);
+			break;
+		}
+	}
+	if(uri_match.empty()) {
+		connection_ptr->set_status(websocketpp::http::status_code::not_implemented);
+	}
+}
 
-	Client& client_;
-	multi_io_service ios_;
-
-	server ws_server_;
-
-	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
-	std::unique_ptr<ControlHTTPServer> control_http_server_;
-
-	tcp_endpoint local_endpoint_;
-
-	Json::Value make_state_json() const;
-
-	void dispatch_control_json(const Json::Value& control_json);
-	void handle_add_folder_json(const Json::Value& control_json);
-	void handle_remove_folder_json(const Json::Value& control_json);
-};
+void ControlHTTPServer::handle_status(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	conn->set_body(cs_.make_control_json());
+}
 
 } /* namespace librevault */

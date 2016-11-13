@@ -49,10 +49,15 @@ private:
 	Client& client_;
 	ControlServer& cs_;
 	ControlServer::server& server_;
+	io_service& ios_;
 
 	std::vector<std::pair<std::regex, std::function<void(ControlServer::server::connection_ptr, std::smatch)>>> handlers_;
 
 	void handle_status(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_version(ControlServer::server::connection_ptr conn, std::smatch matched);
+
+	void handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched);
 };
 
 } /* namespace librevault */

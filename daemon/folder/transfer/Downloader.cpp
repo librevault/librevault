@@ -193,7 +193,7 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 		auto& ct_hash = smeta.meta().chunks().at(chunk_idx).ct_hash;
 		if(bitfield[chunk_idx]) {
 			// We have chunk, remove from missing
-			notify_local_chunk(ct_hash);
+			notify_local_chunk(ct_hash, false); // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
 			incomplete_meta = true;
 		} else {
 			// We haven't this chunk, we need to download it
@@ -216,7 +216,7 @@ void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bit
 	}
 }
 
-void Downloader::notify_local_chunk(const blob& ct_hash) {
+void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 	LOGFUNC();
 
 	// Remove from missing
@@ -227,12 +227,15 @@ void Downloader::notify_local_chunk(const blob& ct_hash) {
 	}
 
 	// Mark all other chunks "clustered"
-	for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
-		for(auto& chunk : smeta.meta().chunks()) {
-			auto it = missing_chunks_.find(chunk.ct_hash);
-			if(it != missing_chunks_.end())
-				download_queue_.mark_clustered(it->second);
+	if(mark_clustered) {
+		for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash)) {
+			for(auto& chunk : smeta.meta().chunks()) {
+				auto it = missing_chunks_.find(chunk.ct_hash);
+				if(it != missing_chunks_.end())
+					download_queue_.mark_clustered(it->second);
+			}
 		}
+	}
 }
 
 void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
@@ -346,10 +349,8 @@ bool Downloader::request_one() {
 	LOGFUNC();
 	// Try to choose chunk to request
 	for(auto missing_chunk : download_queue_.chunks()) {
-		auto& ct_hash = missing_chunk->ct_hash_;
-
 		// Try to choose a remote to request this block from
-		auto remote = find_node_for_request(ct_hash);
+		auto remote = find_node_for_request(missing_chunk);
 		if(remote == nullptr) continue;
 
 		// Rebuild request map to determine, which block to download now.
@@ -364,7 +365,7 @@ bool Downloader::request_one() {
 			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->globals()["p2p_block_size"].asUInt()));
 			request.started = std::chrono::steady_clock::now();
 
-			remote->request_block(ct_hash, request.offset, request.size);
+			remote->request_block(missing_chunk->ct_hash_, request.offset, request.size);
 			missing_chunk->requests.insert({remote, request});
 			return true;
 		}
@@ -372,10 +373,10 @@ bool Downloader::request_one() {
 	return false;
 }
 
-std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(const blob& ct_hash) {
+std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(std::shared_ptr<MissingChunk> chunk) {
 	//LOGFUNC();
 
-	auto missing_chunk_it = missing_chunks_.find(ct_hash);
+	auto missing_chunk_it = missing_chunks_.find(chunk->ct_hash_);
 	if(missing_chunk_it == missing_chunks_.end()) return nullptr;
 
 	auto missing_chunk_ptr = missing_chunk_it->second;

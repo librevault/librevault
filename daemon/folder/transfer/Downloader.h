@@ -148,7 +148,7 @@ public:
 	~Downloader();
 
 	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_local_chunk(const blob& ct_hash);
+	void notify_local_chunk(const blob& ct_hash, bool mark_clustered = true);
 
 	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
 	void notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash);
@@ -174,7 +174,7 @@ private:
 	PeriodicProcess periodic_maintain_;
 	void maintain_requests(PeriodicProcess& process);
 	bool request_one();
-	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
+	std::shared_ptr<RemoteFolder> find_node_for_request(std::shared_ptr<MissingChunk> chunk);
 
 	/* Node management */
 	std::set<std::shared_ptr<RemoteFolder>> remotes_;

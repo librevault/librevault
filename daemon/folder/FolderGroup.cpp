@@ -52,7 +52,7 @@ FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& 
 	SetFileAttributes(params_.system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
-	LOGD("New FSFolder:"
+	LOGD("New folder:"
 		<< " Key type=" << (char)params_.secret.get_type()
 		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
 		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);

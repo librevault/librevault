@@ -73,10 +73,6 @@ private:
 	tcp_endpoint local_endpoint_;
 
 	Json::Value make_state_json() const;
-
-	void dispatch_control_json(const Json::Value& control_json);
-	void handle_add_folder_json(const Json::Value& control_json);
-	void handle_remove_folder_json(const Json::Value& control_json);
 };
 
 } /* namespace librevault */

@@ -28,6 +28,7 @@
  */
 #include "ControlHTTPServer.h"
 #include "Client.h"
+#include "control/Config.h"
 #include "util/log.h"
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -39,6 +40,7 @@ ControlHTTPServer::ControlHTTPServer(Client& client, ControlServer& cs, ControlS
 	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/version\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_version(conn, matched);}));
 	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/restart\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_restart(conn, matched);}));
 	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/shutdown\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_shutdown(conn, matched);}));
+	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/globals(?:\/(\w+?))?\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_globals(conn, matched);}));
 }
 
 ControlHTTPServer::~ControlHTTPServer() {}
@@ -86,6 +88,22 @@ void ControlHTTPServer::handle_restart(ControlServer::server::connection_ptr con
 void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	ios_.post([this]{cs_.shutdown_signal();});
+}
+
+void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	if(conn->get_request().get_method() == "GET" && matched[1].matched == false) {
+		conn->set_status(websocketpp::http::status_code::ok);
+
+		std::ostringstream os;
+		os << Config::get()->globals();
+		conn->set_body(os.str());
+	}else if(conn->get_request().get_method() == "GET" && matched[1].matched == true){
+		conn->set_status(websocketpp::http::status_code::ok);
+
+		std::ostringstream os;
+		os << Config::get()->globals()[matched[1].str()];
+		conn->set_body(os.str());
+	}
 }
 
 } /* namespace librevault */

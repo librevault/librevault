@@ -134,7 +134,7 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 		assemble_meta_signal(signed_meta.meta());
 }
 
-std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){
+std::list<SignedMeta> Index::get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	std::list<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list.push_back(SignedMeta(row[0], row[1], params_.secret));
@@ -166,17 +166,6 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	}catch(AbstractFolder::no_such_meta& e){
 		return true;
 	}
-}
-
-/* Block getter */
-uint32_t Index::get_chunk_size(const blob& ct_hash) {
-	auto sql_result = db_->exec("SELECT size FROM chunk WHERE ct_hash=:ct_hash", {
-			{":ct_hash", ct_hash}
-	});
-
-	if(sql_result.have_rows())
-		return (uint32_t)sql_result.begin()->at(0).as_uint();
-	throw AbstractFolder::no_such_chunk();
 }
 
 std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {

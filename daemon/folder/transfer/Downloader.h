@@ -147,7 +147,7 @@ public:
 	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios);
 	~Downloader();
 
-	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
 	void notify_local_chunk(const blob& ct_hash, bool mark_clustered = true);
 
 	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);

@@ -97,7 +97,7 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	Meta::PathRevision revision = smeta.meta().path_revision();
 	bitfield_type bitfield = chunk_storage->make_bitfield(smeta.meta());
 
-	downloader_->notify_local_meta(revision, bitfield);
+	downloader_->notify_local_meta(smeta, bitfield);
 	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
 }
 

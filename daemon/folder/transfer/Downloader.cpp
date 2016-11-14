@@ -181,38 +181,32 @@ Downloader::~Downloader() {
 	periodic_maintain_.wait();
 }
 
-void Downloader::notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield) {
 	LOGFUNC();
-
-	std::set<blob> missing_ct_hashes;
 
 	bool incomplete_meta = false;
 
-	auto smeta = meta_storage_.index->get_meta(revision);
 	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
-		auto& ct_hash = smeta.meta().chunks().at(chunk_idx).ct_hash;
+		auto& chunk = smeta.meta().chunks().at(chunk_idx);
+		auto& ct_hash = chunk.ct_hash;
 		if(bitfield[chunk_idx]) {
 			// We have chunk, remove from missing
 			notify_local_chunk(ct_hash, false); // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
 			incomplete_meta = true;
-		} else {
+		}else{
 			// We haven't this chunk, we need to download it
-			missing_ct_hashes.insert(ct_hash);
+
+			/* Compute encrypted chunk size */
+			uint32_t padded_chunksize = chunk.size % 16 == 0 ? chunk.size : ((chunk.size / 16) + 1) * 16;
+
+			auto missing_chunk = std::make_shared<MissingChunk>(params_.system_path, ct_hash, padded_chunksize);
+			missing_chunks_.insert({ct_hash, missing_chunk});
+
+			/* Add to download queue */
+			download_queue_.add_chunk(missing_chunk);
+			if(incomplete_meta)
+				download_queue_.mark_clustered(missing_chunk);
 		}
-	}
-
-	for(auto& ct_hash : missing_ct_hashes) {
-		/* Compute encrypted chunk size */
-		uint32_t pt_chunksize = meta_storage_.index->get_chunk_size(ct_hash);
-		uint32_t padded_chunksize = pt_chunksize % 16 == 0 ? pt_chunksize : ((pt_chunksize / 16) + 1) * 16;
-
-		auto missing_chunk = std::make_shared<MissingChunk>(params_.system_path, ct_hash, padded_chunksize);
-		missing_chunks_.insert({ct_hash, missing_chunk});
-
-		/* Add to download queue */
-		download_queue_.add_chunk(missing_chunk);
-		if(incomplete_meta)
-			download_queue_.mark_clustered(missing_chunk);
 	}
 }
 

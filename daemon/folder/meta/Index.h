@@ -63,9 +63,6 @@ public:
 
 	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
 
-	/* Chunk getter */
-	uint32_t get_chunk_size(const blob& ct_hash);
-
 	/* Properties */
 	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
 	SQLiteDB& db() {return *db_;}
@@ -77,7 +74,7 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	std::list<SignedMeta> get_meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	std::list<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 	void wipe();
 };
 

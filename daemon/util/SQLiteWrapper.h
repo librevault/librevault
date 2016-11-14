@@ -135,7 +135,7 @@ public:
 
 	sqlite3* sqlite3_handle(){return db;};
 
-	SQLiteResult exec(const std::string& sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	SQLiteResult exec(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 
 	int64_t last_insert_rowid();
 private:

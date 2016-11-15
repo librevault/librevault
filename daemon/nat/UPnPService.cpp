@@ -40,7 +40,7 @@ UPnPService::UPnPService(PortMappingService& parent, io_service& ios) : PortMapp
 UPnPService::~UPnPService() {stop();}
 
 bool UPnPService::is_config_enabled() {
-	return Config::get()->globals()["upnp_enabled"].asBool();
+	return Config::get()->global_get("upnp_enabled").asBool();
 }
 
 void UPnPService::start() {

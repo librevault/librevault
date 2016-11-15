@@ -62,7 +62,7 @@ inline info_hash get_info_hash(const blob& dir_hash) {
 inline peer_id get_peer_id(const blob& node_pubkey) {
 	peer_id pid;
 
-	std::string az_id = Config::get()->globals()["bttracker_azureus_id"].asString();
+	std::string az_id = Config::get()->global_get("bttracker_azureus_id").asString();
 	az_id.resize(8);
 
 	auto pubkey_bytes_left = pid.size() - az_id.size();

@@ -43,7 +43,7 @@ public:
 		boost::filesystem::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
 	};
 
-	boost::signals2::signal<void()> config_changed;
+	boost::signals2::signal<void(std::string)> config_changed;
 
 	static void init(boost::filesystem::path appdata_path = boost::filesystem::path()) {
 		instance_ = std::unique_ptr<Config>(new Config(std::move(appdata_path)));
@@ -54,7 +54,11 @@ public:
 	}
 
 	/* Getters and setters */
-	const Json::Value& globals() const {return globals_;}
+	Json::Value global_get(const std::string& name);
+	void global_set(const std::string& name, Json::Value value);
+	void global_unset(const std::string& name);
+
+	Json::Value globals() const;
 	void set_globals(Json::Value globals_conf);
 	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
 
@@ -77,11 +81,11 @@ private:
 
 	void make_defaults();
 
-	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value);
+	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value) const;
 
-	void make_merged_globals();
 	void make_merged_folders();
 
+	// File config
 	void load();
 	void save();
 };

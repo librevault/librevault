@@ -51,7 +51,7 @@ Config::Config(boost::filesystem::path appdata_path) {
 	make_defaults();
 	load();
 
-	config_changed.connect([this](){save();});
+	config_changed.connect([this](std::string){save();});
 }
 
 Config::~Config() {
@@ -60,16 +60,43 @@ Config::~Config() {
 
 std::unique_ptr<Config> Config::instance_ = nullptr;
 
+Json::Value Config::global_get(const std::string& name) {
+	return globals_custom_.get(name, globals_defaults_[name]);
+}
+
+void Config::global_set(const std::string& name, Json::Value value) {
+	globals_custom_[name] = value;
+	config_changed(name);
+}
+
+void Config::global_unset(const std::string& name) {
+	globals_custom_[name] = globals_defaults_[name];
+	config_changed(name);
+}
+
+Json::Value Config::globals() const {
+	return make_merged(globals_custom_, globals_defaults_);
+}
+
 void Config::set_globals(Json::Value globals_conf) {
-	globals_custom_ = make_merged(globals_conf, globals_custom_);
-	make_merged_globals();
-	config_changed();
+	std::set<std::pair<std::string, Json::Value>> old_globals, new_globals;
+	std::list<std::pair<std::string, Json::Value>> diff;
+	for(auto& name : globals_custom_.getMemberNames())
+		old_globals.insert({name, globals_custom_[name]});
+	for(auto& name : globals_conf.getMemberNames())
+		new_globals.insert({name, globals_conf[name]});
+	std::set_difference(old_globals.begin(), old_globals.end(), new_globals.begin(), new_globals.end(), diff.begin());
+
+	globals_custom_ = globals_conf;
+
+	for(auto& diff_val : diff)
+		config_changed(diff_val.first);
 }
 
 void Config::set_folders(Json::Value folders_conf) {
 	folders_custom_ = std::move(folders_conf);
 	make_merged_folders();
-	config_changed();
+	//config_changed();
 }
 
 void Config::make_defaults() {
@@ -129,7 +156,7 @@ void Config::make_defaults() {
 	folders_defaults_["mainline_dht_enabled"] = true;
 }
 
-Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) {
+Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) const {
 	Json::Value merged;
 	for(auto& name : default_value.getMemberNames())
 		merged[name] = custom_value.get(name, default_value[name]);
@@ -137,10 +164,6 @@ Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Val
 		if(!merged.isMember(name))
 			merged[name] = custom_value[name];
 	return merged;
-}
-
-void Config::make_merged_globals() {
-	globals_ = make_merged(globals_custom_, globals_defaults_);
 }
 
 void Config::make_merged_folders() {

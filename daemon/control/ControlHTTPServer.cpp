@@ -101,7 +101,7 @@ void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr con
 		conn->set_status(websocketpp::http::status_code::ok);
 
 		std::ostringstream os;
-		os << Config::get()->globals()[matched[1].str()];
+		os << Config::get()->global_get(matched[1].str());
 		conn->set_body(os.str());
 	}
 }

@@ -74,7 +74,7 @@ void MLDHTDiscovery::init() {
 		rng.GenerateBlock(own_id.data(), own_id.size());
 	}
 
-	uint16_t dht_port = (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt();
+	uint16_t dht_port = (uint16_t)Config::get()->global_get("mainline_dht_port").asUInt();
 
 	// Init sockets
 	try {
@@ -112,7 +112,7 @@ void MLDHTDiscovery::init() {
 	port_mapping_.add_port_mapping("mldht", {dht_port, SOCK_DGRAM}, "Librevault DHT");
 
 	// Init routers
-	auto routers = Config::get()->globals()["mainline_dht_routers"];
+	auto routers = Config::get()->global_get("mainline_dht_routers");
 	if(routers.isArray()) {
 		for(auto& router_value : routers) {
 			url router_url(router_value.asString());

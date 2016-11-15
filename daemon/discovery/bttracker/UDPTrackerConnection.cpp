@@ -45,11 +45,11 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 		resolver_(io_service),
 		reconnect_timer_(io_service),
 		announce_timer_(io_service) {
-	announce_interval_ = std::chrono::seconds(Config::get()->globals()["bttracker_min_interval"].asUInt64());
+	announce_interval_ = std::chrono::seconds(Config::get()->global_get("bttracker_min_interval").asUInt64());
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = address::from_string(url(Config::get()->globals()["p2p_listen"].asString()).host);
+	bind_address_ = address::from_string(url(Config::get()->global_get("p2p_listen").asString()).host);
 	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
 	socket_.bind(udp_endpoint(bind_address_, 0));
 
@@ -99,12 +99,12 @@ void UDPTrackerConnection::receive_loop(){
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
-	reconnect_timer_.expires_from_now(std::chrono::seconds(Config::get()->globals()["bttracker_reconnect_interval"].asUInt64()));
+	reconnect_timer_.expires_from_now(std::chrono::seconds(Config::get()->global_get("bttracker_reconnect_interval").asUInt64()));
 	reconnect_timer_.async_wait(std::bind(&UDPTrackerConnection::connect, this, std::placeholders::_1));
 }
 
 void UDPTrackerConnection::bump_announce_timer() {
-	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(Config::get()->globals()["bttracker_min_interval"].asUInt64()));
+	announce_interval_ = std::max(announce_interval_, std::chrono::seconds(Config::get()->global_get("bttracker_min_interval").asUInt64()));
 
 	announce_timer_.expires_from_now(announce_interval_);
 	announce_timer_.async_wait(std::bind(&UDPTrackerConnection::announce, this, std::placeholders::_1));
@@ -144,7 +144,7 @@ void UDPTrackerConnection::announce(const boost::system::error_code& ec) {
 
 	request.event_ = int32_t(announced_times_++ == 0 ? Event::EVENT_STARTED : Event::EVENT_NONE);
 	request.key_ = gen_transaction_id();
-	request.num_want_ = Config::get()->globals()["bttracker_num_want"].asUInt();
+	request.num_want_ = Config::get()->global_get("bttracker_num_want").asUInt();
 
 	request.port_ = port_mapping_.get_port_mapping("main");
 

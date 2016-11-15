@@ -47,7 +47,7 @@ ControlServer::ControlServer(Client& client) :
 		ios_("ControlServer") {
 	control_ws_server_ = std::make_unique<ControlWebsocketServer>(client, *this, ws_server_, ios_.ios());
 	control_http_server_ = std::make_unique<ControlHTTPServer>(client, *this, ws_server_, ios_.ios());
-	url bind_url = parse_url(Config::get()->globals()["control_listen"].asString());
+	url bind_url = parse_url(Config::get()->global_get("control_listen").asString());
 	local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */

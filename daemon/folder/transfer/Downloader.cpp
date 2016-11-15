@@ -317,7 +317,7 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 void Downloader::maintain_requests(PeriodicProcess& process) {
 	LOGFUNC();
 
-	auto request_timeout = std::chrono::seconds(Config::get()->globals()["p2p_request_timeout"].asUInt64());
+	auto request_timeout = std::chrono::seconds(Config::get()->global_get("p2p_request_timeout").asUInt64());
 
 	// Prune old requests by timeout
 	for(auto& missing_chunk : missing_chunks_) {
@@ -331,7 +331,7 @@ void Downloader::maintain_requests(PeriodicProcess& process) {
 	}
 
 	// Make new requests
-	for(size_t i = requests_overall(); i < Config::get()->globals()["p2p_download_slots"].asUInt(); i++) {
+	for(size_t i = requests_overall(); i < Config::get()->global_get("p2p_download_slots").asUInt(); i++) {
 		bool requested = request_one();
 		if(!requested) break;
 	}
@@ -356,7 +356,7 @@ bool Downloader::request_one() {
 		if(!request_map.full()) {
 			MissingChunk::BlockRequest request;
 			request.offset = request_map.begin()->first;
-			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->globals()["p2p_block_size"].asUInt()));
+			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->global_get("p2p_block_size").asUInt()));
 			request.started = std::chrono::steady_clock::now();
 
 			remote->request_block(missing_chunk->ct_hash_, request.offset, request.size);

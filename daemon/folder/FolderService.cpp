@@ -58,13 +58,13 @@ void FolderService::run() {
 
 void FolderService::stop() {
 	init_queue_.invoke_post([this] {
-		std::vector<Secret> secrets;
-		secrets.reserve(hash_group_.size());
-		for(auto& group : hash_group_)
-			secrets.push_back(group.second->secret());
+		std::vector<blob> hashes;
+		hashes.reserve(hash_group_.size());
+		for(auto& hash : hash_group_ | boost::adaptors::map_keys)
+			hashes.push_back(hash);
 
-		for(auto& secret : secrets)
-			deinit_folder(secret.get_Hash());
+		for(auto& hash : hashes)
+			deinit_folder(hash);
 	});
 	init_queue_.wait();
 	bulk_ios_.stop();

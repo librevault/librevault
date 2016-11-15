@@ -77,6 +77,7 @@ void ControlHTTPServer::handle_status(ControlServer::server::connection_ptr conn
 
 void ControlHTTPServer::handle_version(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
+	conn->append_header("Content-Type", "text/plain");
 	conn->set_body(Version::current().version_string());
 }
 
@@ -91,18 +92,31 @@ void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr co
 }
 
 void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET" && matched[1].matched == false) {
+	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+		conn->set_body(Json::FastWriter().write(Config::get()->globals()));
+	}else if(conn->get_request().get_method() == "PUT" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 
-		std::ostringstream os;
-		os << Config::get()->globals();
-		conn->set_body(os.str());
-	}else if(conn->get_request().get_method() == "GET" && matched[1].matched == true){
+		Json::Value new_value;
+		Json::Reader().parse(conn->get_request_body(), new_value);
+
+		Config::get()->set_globals(new_value);
+	}else if(conn->get_request().get_method() == "GET" && matched[1].matched){
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+		conn->set_body(Json::FastWriter().write(Config::get()->global_get(matched[1].str())));
+	}else if(conn->get_request().get_method() == "PUT" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 
-		std::ostringstream os;
-		os << Config::get()->global_get(matched[1].str());
-		conn->set_body(os.str());
+		Json::Value new_value;
+		Json::Reader().parse(conn->get_request_body(), new_value);
+
+		Config::get()->global_set(matched[1].str(), new_value);
+	}else if(conn->get_request().get_method() == "DELETE" && matched[1].matched){
+		conn->set_status(websocketpp::http::status_code::ok);
+		Config::get()->global_unset(matched[1].str());
 	}
 }
 

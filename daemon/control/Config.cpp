@@ -70,7 +70,7 @@ void Config::global_set(const std::string& name, Json::Value value) {
 }
 
 void Config::global_unset(const std::string& name) {
-	globals_custom_[name] = globals_defaults_[name];
+	globals_custom_.removeMember(name);
 	config_changed(name);
 }
 

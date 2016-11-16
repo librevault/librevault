@@ -27,19 +27,19 @@
  * files in the program, then also delete it here.
  */
 #include "MainWindow.h"
+#include "Client.h"
+#include "gui/FolderProperties.h"
+#include "gui/StatusBar.h"
+#include "icons/GUIIconProvider.h"
 #include "model/FolderModel.h"
 #include "ui_MainWindow.h"
-#include <icons/GUIIconProvider.h>
-#include "FolderProperties.h"
-#include "StatusBar.h"
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);
 #endif
 
-MainWindow::MainWindow(Client& client, QWidget* parent) :
-		QMainWindow(parent),
-		client_(client),
+MainWindow::MainWindow(RemoteConfig* remote_config, Updater* updater) :
+		QMainWindow(),
 		ui(std::make_unique<Ui::MainWindow>()) {
 	/* Initializing UI */
 	ui->setupUi(this);
@@ -52,7 +52,7 @@ MainWindow::MainWindow(Client& client, QWidget* parent) :
 	ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
 	/* Initializing dialogs */
-	settings_ = new Settings(this);
+	settings_ = new Settings(remote_config, updater, this);
 	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);

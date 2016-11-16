@@ -37,6 +37,7 @@ class Settings;
 class TrayIcon;
 class FolderModel;
 class ControlClient;
+class RemoteConfig;
 class SingleChannel;
 
 class Client : public QApplication {
@@ -57,13 +58,14 @@ private:
 	QTranslator translator_;
 	QTranslator qt_translator_;
 
-	std::unique_ptr<SingleChannel> single_channel_;
-	std::unique_ptr<ControlClient> control_client_;
+	SingleChannel* single_channel_;
+	ControlClient* control_client_;
+	RemoteConfig* remote_config_;
 
 public:
 	Updater* updater_;
 
 private:
 	// GUI
-	std::unique_ptr<MainWindow> main_window_;
+	MainWindow* main_window_;
 };

@@ -27,16 +27,18 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/log_scope.h"
 #include <json/json.h>
 #include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
 class Config {
+	LOG_SCOPE("Config");
 public:
 	~Config();
 
-	boost::signals2::signal<void(std::string)> config_changed;
+	boost::signals2::signal<void(std::string, Json::Value)> config_changed;
 
 	static Config* get() {
 		if(!instance_)
@@ -63,8 +65,7 @@ protected:
 	static std::unique_ptr<Config> instance_;
 
 private:
-	Json::Value globals_, globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
-
+	Json::Value globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
 
 	void make_defaults();
 

@@ -34,7 +34,7 @@ namespace librevault {
 
 ControlWebsocketServer::ControlWebsocketServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios) :
 		client_(client), cs_(cs), server_(server),
-		heartbeat_process_(ios, std::bind(&ControlWebsocketServer::send_heartbeat, this, std::placeholders::_1)) {
+		heartbeat_process_(ios, std::bind(&ControlWebsocketServer::send_heartbeat, this, std::placeholders::_1)), id_(0) {
 	heartbeat_process_.invoke_post();
 }
 
@@ -75,9 +75,19 @@ void ControlWebsocketServer::send_heartbeat(PeriodicProcess& process) {
 	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
 	auto control_json = cs_.make_control_json();
 
-	for(auto conn_assignment : ws_sessions_)
-		conn_assignment->send(control_json);
+	for(auto session : ws_sessions_)
+		session->send(control_json);
 	process.invoke_after(std::chrono::seconds(1));
+}
+
+void ControlWebsocketServer::send_event(const std::string& type, Json::Value event) {
+	Json::Value event_message;
+	event_message["id"] = Json::Value::UInt64(++id_);
+	event_message["type"] = type;
+	event_message["event"] = event;
+
+	for(auto session : ws_sessions_)
+		session->send(Json::FastWriter().write(event_message));
 }
 
 } /* namespace librevault */

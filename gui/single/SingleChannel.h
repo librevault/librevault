@@ -34,7 +34,7 @@ class SingleChannel : public QUdpSocket {
 Q_OBJECT
 
 public:
-	SingleChannel(QString arg);
+	SingleChannel(QString arg, QObject* parent);
 	~SingleChannel();
 
 signals:

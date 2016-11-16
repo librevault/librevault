@@ -27,13 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
+#include "ui_OpenLink.h"
 #include <QDialog>
-#include "pch.h"
-
-namespace Ui {
-class OpenLink;
-}
 
 class OpenLink : public QDialog {
 Q_OBJECT
@@ -47,7 +42,7 @@ public slots:
 	void accept() override;
 
 protected:
-	std::unique_ptr<Ui::OpenLink> ui;
+	Ui::OpenLink ui;
 
 	// Overrides
 	void showEvent(QShowEvent* e) override;

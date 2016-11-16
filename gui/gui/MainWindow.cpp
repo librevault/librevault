@@ -32,24 +32,22 @@
 #include "gui/StatusBar.h"
 #include "icons/GUIIconProvider.h"
 #include "model/FolderModel.h"
-#include "ui_MainWindow.h"
 
 #ifdef Q_OS_MAC
 void qt_mac_set_dock_menu(QMenu *menu);
 #endif
 
 MainWindow::MainWindow(RemoteConfig* remote_config, Updater* updater) :
-		QMainWindow(),
-		ui(std::make_unique<Ui::MainWindow>()) {
+		QMainWindow() {
 	/* Initializing UI */
-	ui->setupUi(this);
-	status_bar_ = std::make_unique<StatusBar>(ui->statusBar);
+	ui.setupUi(this);
+	status_bar_ = std::make_unique<StatusBar>(ui.statusBar);
 
 	/* Initializing models */
 	folder_model_ = std::make_unique<FolderModel>(this);
-	ui->treeView->setModel(folder_model_.get());
-	ui->treeView->header()->setStretchLastSection(false);
-	ui->treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+	ui.treeView->setModel(folder_model_.get());
+	ui.treeView->header()->setStretchLastSection(false);
+	ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
 	/* Initializing dialogs */
 	settings_ = new Settings(remote_config, updater, this);
@@ -60,7 +58,7 @@ MainWindow::MainWindow(RemoteConfig* remote_config, Updater* updater) :
 
 	open_link_ = new OpenLink(this);
 
-	connect(ui->treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
+	connect(ui.treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
 	init_actions();
 	init_tray();
@@ -85,7 +83,7 @@ void MainWindow::retranslateUi() {
 	delete_folder_action->setText(tr("Delete"));
 	delete_folder_action->setToolTip(tr("Delete folder"));
 
-	ui->retranslateUi(this);
+	ui.retranslateUi(this);
 	settings_->retranslateUi();
 }
 
@@ -129,7 +127,7 @@ void MainWindow::handleRemoveFolder() {
 	confirmation_box.setWindowModality(Qt::WindowModal);
 
 	if(confirmation_box.exec() == QMessageBox::Ok) {
-		auto selection_model = ui->treeView->selectionModel()->selectedRows();
+		auto selection_model = ui.treeView->selectionModel()->selectedRows();
 		for(auto model_index : selection_model) {
 			qDebug() << model_index;
 			QString secret = folder_model_->data(model_index, FolderModel::SecretRole).toString();
@@ -148,7 +146,7 @@ void MainWindow::changeEvent(QEvent* e) {
 	QMainWindow::changeEvent(e);
 	switch(e->type()) {
 		case QEvent::LanguageChange:
-			ui->retranslateUi(this);
+			ui.retranslateUi(this);
 			break;
 		default:
 			break;
@@ -190,13 +188,13 @@ void MainWindow::init_actions() {
 
 void MainWindow::init_toolbar() {
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
-	ui->toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+	ui.toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #endif
-	ui->toolBar->addAction(new_folder_action);
-	ui->toolBar->addAction(open_link_action);
-	ui->toolBar->addAction(delete_folder_action);
-	ui->toolBar->addSeparator();
-	ui->toolBar->addAction(show_settings_window_action);
+	ui.toolBar->addAction(new_folder_action);
+	ui.toolBar->addAction(open_link_action);
+	ui.toolBar->addAction(delete_folder_action);
+	ui.toolBar->addSeparator();
+	ui.toolBar->addAction(show_settings_window_action);
 }
 
 void MainWindow::init_tray() {

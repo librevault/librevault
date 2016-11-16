@@ -27,10 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
+#include "updater/Updater.h"
 #include <QApplication>
 #include <QTranslator>
-#include "updater/Updater.h"
 
 class MainWindow;
 class Settings;

@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "FolderProperties.h"
-#include "ui_FolderProperties.h"
 #include <QShowEvent>
 #include <QFileIconProvider>
 #include <QJsonArray>
@@ -37,26 +36,25 @@
 #include "../model/PeerModel.h"
 
 FolderProperties::FolderProperties(const librevault::Secret& secret, QWidget* parent) :
-		QDialog(parent),
-		ui(std::make_unique<Ui::FolderProperties>()) {
+		QDialog(parent) {
 
-	ui->setupUi(this);
+	ui.setupUi(this);
 
 	peer_model_ = std::make_unique<PeerModel>(this);
-	ui->peers_treeView->setModel(peer_model_.get());
+	ui.peers_treeView->setModel(peer_model_.get());
 
 #ifdef Q_OS_MAC
-	ui->tabWidget->setDocumentMode(false);
+	ui.tabWidget->setDocumentMode(false);
 #endif
 
 	setSecret(secret);
 
-	connect(ui->copy_rw, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_rw->text());});
-	connect(ui->copy_ro, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_ro->text());});
-	connect(ui->copy_do, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui->secret_do->text());});
+	connect(ui.copy_rw, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui.secret_rw->text());});
+	connect(ui.copy_ro, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui.secret_ro->text());});
+	connect(ui.copy_do, &QAbstractButton::clicked, [this](){QApplication::clipboard()->setText(ui.secret_do->text());});
 
 	this->setWindowFlags(Qt::Tool);
-	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(QSize(32, 32)));
+	ui.folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(QSize(32, 32)));
 	setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
 }
 
@@ -66,30 +64,30 @@ void FolderProperties::setSecret(const librevault::Secret& secret) {
 	hash_.setRawData((const char*)secret.get_Hash().data(), secret.get_Hash().size());
 
 	if(secret.get_type() <= secret.ReadWrite)
-		ui->secret_rw->setText(QString::fromStdString(secret.string()));
+		ui.secret_rw->setText(QString::fromStdString(secret.string()));
 	else {
-		ui->label_rw->setVisible(false);
-		ui->secret_rw->setVisible(false);
-		ui->copy_rw->setVisible(false);
+		ui.label_rw->setVisible(false);
+		ui.secret_rw->setVisible(false);
+		ui.copy_rw->setVisible(false);
 	}
 
 	if(secret.get_type() <= secret.ReadOnly)
-		ui->secret_ro->setText(QString::fromStdString(secret.derive(secret.ReadOnly).string()));
+		ui.secret_ro->setText(QString::fromStdString(secret.derive(secret.ReadOnly).string()));
 	else {
-		ui->label_ro->setVisible(false);
-		ui->secret_ro->setVisible(false);
-		ui->copy_ro->setVisible(false);
+		ui.label_ro->setVisible(false);
+		ui.secret_ro->setVisible(false);
+		ui.copy_ro->setVisible(false);
 	}
 
-	ui->secret_do->setText(QString::fromStdString(secret.derive(secret.Download).string()));
+	ui.secret_do->setText(QString::fromStdString(secret.derive(secret.Download).string()));
 }
 
 void FolderProperties::update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json) {
-	ui->folder_name->setText(folder_state_json["path"].toString());
-	ui->folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(32, 32));
+	ui.folder_name->setText(folder_state_json["path"].toString());
+	ui.folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(32, 32));
 
-	ui->folder_size->setText(tr("%n file(s)", "", folder_state_json["file_entries"].toInt()) + " " + tr("%n directory(s)", "", folder_state_json["directory_entries"].toInt()));
-	ui->connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));
+	ui.folder_size->setText(tr("%n file(s)", "", folder_state_json["file_entries"].toInt()) + " " + tr("%n directory(s)", "", folder_state_json["directory_entries"].toInt()));
+	ui.connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));
 
 	peer_model_->update(control_json, folder_config_json, folder_state_json);
 }

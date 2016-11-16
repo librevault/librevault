@@ -27,15 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include <QDialog>
-#include "pch.h"
+#include "ui_FolderProperties.h"
 #include <librevault/Secret.h>
+#include <QDialog>
 #include <QJsonObject>
-
-namespace Ui {
-class FolderProperties;
-}
+#include <memory>
 
 class PeerModel;
 
@@ -51,7 +47,7 @@ public slots:
 	void setSecret(const librevault::Secret& secret);
 
 protected:
-	std::unique_ptr<Ui::FolderProperties> ui;
+	Ui::FolderProperties ui;
 
 private slots:
 

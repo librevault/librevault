@@ -34,11 +34,6 @@
 #include "ui_Settings.h"
 #include "gui/pager/Pager.h"
 #include "startup/StartupInterface.h"
-#include "pch.h"
-
-namespace Ui {
-class Settings;
-}
 
 class RemoteConfig;
 class Updater;

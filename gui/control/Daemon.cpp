@@ -32,7 +32,7 @@
 #include <QMessageBox>
 #include <QDebug>
 
-Daemon::Daemon() : QProcess() {
+Daemon::Daemon(QObject* parent) : QProcess(parent) {
 	/* Process parameters */
 	// Program
 	setProgram(get_executable_path());

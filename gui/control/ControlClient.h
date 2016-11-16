@@ -27,11 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include <QWebSocket>
 #include <QJsonObject>
-#include <QtNetwork/QNetworkAccessManager>
-#include "pch.h"
+#include <QNetworkAccessManager>
+#include <QWebSocket>
+#include <memory>
 
 class Daemon;
 class ControlClient : public QObject {
@@ -74,6 +73,6 @@ private:
 	QNetworkAccessManager* nam_;
 	QWebSocket* event_sock_;
 
-	std::unique_ptr<Daemon> daemon_;
+	Daemon* daemon_;
 	QUrl control_url_;
 };

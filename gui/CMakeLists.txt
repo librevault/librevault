@@ -18,8 +18,6 @@ set(CMAKE_AUTORCC ON)
 #============================================================================
 # Sources & headers
 #============================================================================
-list(APPEND SRCS "pch.h")
-
 # Universal sources
 file(GLOB_RECURSE MAIN_SRCS "*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "*.h")

@@ -27,12 +27,13 @@
  * files in the program, then also delete it here.
  */
 #include "Settings.h"
-#include <QCloseEvent>
-#include <QDebug>
 #include "control/RemoteConfig.h"
 #include "icons/GUIIconProvider.h"
-#include "appver.h"
+#include "updater/Updater.h"
 #include "MainWindow.h"
+#include "appver.h"
+#include <QCloseEvent>
+#include <QDebug>
 
 Settings::Settings(RemoteConfig* config, Updater* updater, QWidget* parent) :
 		QDialog(parent),

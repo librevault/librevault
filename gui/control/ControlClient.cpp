@@ -26,9 +26,9 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <QJsonDocument>
 #include "ControlClient.h"
 #include "Daemon.h"
+#include <QJsonDocument>
 
 ControlClient::ControlClient(QString control_url, QObject* parent) : QObject(parent), control_url_(control_url) {
 	event_sock_ = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
@@ -49,9 +49,9 @@ bool ControlClient::isConnected() {
 void ControlClient::start() {
 	emit connecting();
 	if(control_url_.isEmpty()) {
-		daemon_ = std::make_unique<Daemon>();
-		connect(daemon_.get(), &Daemon::daemonReady, this, &ControlClient::connectDaemon);
-		connect(daemon_.get(), &Daemon::daemonFailed, this, &ControlClient::handle_daemonfail);
+		daemon_ = new Daemon(this);
+		connect(daemon_, &Daemon::daemonReady, this, &ControlClient::connectDaemon);
+		connect(daemon_, &Daemon::daemonFailed, this, &ControlClient::handle_daemonfail);
 		daemon_->launch();
 	}else{
 		connectDaemon(QUrl(control_url_));
@@ -72,7 +72,7 @@ void ControlClient::handle_message(const QString& message) {
 	QString event_type = event_msg_o["type"].toString();
 	QJsonObject event_o = event_msg_o["event"].toObject();
 
-	qDebug() << "EVENT id: " << event_msg_o["id"].toInt() << " t:" << event_type << " event:" << event_o;
+	qDebug() << "EVENT id: " << event_msg_o["id"].toInt() << " t: " << event_type << " event: " << event_o;
 	emit eventReceived(event_type, event_o);
 }
 

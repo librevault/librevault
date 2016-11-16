@@ -32,7 +32,6 @@
 #include <QJsonObject>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QHBoxLayout>
-#include "pch.h"
 
 class StatusBar : public QObject {
 Q_OBJECT

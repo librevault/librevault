@@ -27,20 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
+#include "gui/Settings.h"
+#include "gui/AddFolder.h"
+#include "gui/OpenLink.h"
+#include "ui_MainWindow.h"
 #include <QMainWindow>
 #include <QJsonObject>
 #include <QSystemTrayIcon>
 #include <QMenu>
-#include "pch.h"
-#include "Client.h"
-#include "gui/Settings.h"
-#include "gui/AddFolder.h"
-#include "gui/OpenLink.h"
-
-namespace Ui {
-class MainWindow;
-}
+#include <memory>
 
 class FolderModel;
 class StatusBar;
@@ -72,7 +67,7 @@ protected slots:
 
 protected:
 	/* UI elements */
-	std::unique_ptr<Ui::MainWindow> ui;
+	Ui::MainWindow ui;
 	std::unique_ptr<StatusBar> status_bar_;
 
 	/* Models */

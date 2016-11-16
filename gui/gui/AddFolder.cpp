@@ -27,18 +27,16 @@
  * files in the program, then also delete it here.
  */
 #include "AddFolder.h"
-#include "ui_AddFolder.h"
 #include <librevault/Secret.h>
 #include <QFileDialog>
 #include <QShowEvent>
 
 AddFolder::AddFolder(QWidget* parent) :
-		QDialog(parent),
-		ui(std::make_unique<Ui::AddFolder>()) {
-	ui->setupUi(this);
+		QDialog(parent) {
+	ui.setupUi(this);
 
-	connect(ui->button_CreateSecret, &QPushButton::clicked, this, &AddFolder::generateSecret);
-	connect(ui->button_Browse, &QPushButton::clicked, this, &AddFolder::browseFolder);
+	connect(ui.button_CreateSecret, &QPushButton::clicked, this, &AddFolder::generateSecret);
+	connect(ui.button_Browse, &QPushButton::clicked, this, &AddFolder::browseFolder);
 	connect(this, &QDialog::accepted, this, &AddFolder::handleAccepted);
 	connect(this, &QDialog::rejected, this, &AddFolder::handleRejected);
 }
@@ -46,21 +44,21 @@ AddFolder::AddFolder(QWidget* parent) :
 AddFolder::~AddFolder() {}
 
 void AddFolder::showWithSecret(QString secret) {
-	ui->line_Secret->setText(secret);
+	ui.line_Secret->setText(secret);
 	show();
 }
 
 void AddFolder::handleAccepted() {
-	auto secret = ui->line_Secret->text();
-	auto path = ui->line_Folder->text();
-	ui->line_Folder->clear();
-	ui->line_Secret->clear();
+	auto secret = ui.line_Secret->text();
+	auto path = ui.line_Folder->text();
+	ui.line_Folder->clear();
+	ui.line_Secret->clear();
 	emit folderAdded(secret, path);
 }
 
 void AddFolder::handleRejected() {
-	ui->line_Folder->clear();
-	ui->line_Secret->clear();
+	ui.line_Folder->clear();
+	ui.line_Secret->clear();
 }
 
 void AddFolder::showEvent(QShowEvent* e) {
@@ -70,7 +68,7 @@ void AddFolder::showEvent(QShowEvent* e) {
 
 void AddFolder::generateSecret() {
 	librevault::Secret s;
-	ui->line_Secret->setText(QString::fromStdString(s.string()));
+	ui.line_Secret->setText(QString::fromStdString(s.string()));
 }
 
 void AddFolder::browseFolder() {
@@ -79,5 +77,5 @@ void AddFolder::browseFolder() {
 		QString(),
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
 	);
-	ui->line_Folder->setText(dir);
+	ui.line_Folder->setText(dir);
 }

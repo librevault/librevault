@@ -27,15 +27,13 @@
  * files in the program, then also delete it here.
  */
 #include "OpenLink.h"
-#include "ui_OpenLink.h"
 #include "MainWindow.h"
 #include <QShowEvent>
 #include <QMessageBox>
 
 OpenLink::OpenLink(QWidget* parent) :
-		QDialog(parent),
-		ui(std::make_unique<Ui::OpenLink>()) {
-	ui->setupUi(this);
+		QDialog(parent) {
+	ui.setupUi(this);
 }
 
 OpenLink::~OpenLink() {}
@@ -59,12 +57,12 @@ bool OpenLink::handleLink(QString link) {
 }
 
 void OpenLink::showEvent(QShowEvent* e) {
-	ui->line_url->clear();
+	ui.line_url->clear();
 	adjustSize();
 	e->accept();
 }
 
 void OpenLink::accept() {
-	if(handleLink(ui->line_url->text()) && isVisible())
+	if(handleLink(ui.line_url->text()) && isVisible())
 		QDialog::accept();
 }

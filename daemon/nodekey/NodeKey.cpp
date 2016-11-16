@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "NodeKey.h"
-#include "control/Config.h"
+#include "control/Paths.h"
 #include <util/file_util.h>
 #include <util/log.h>
 #include <cryptopp/oids.h>
@@ -72,7 +72,7 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 }
 
 void NodeKey::write_key() {
-	FILE * f = native_fopen(Config::get()->paths().key_path.c_str(), "w");
+	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "w");
 	fputs("-----BEGIN EC PRIVATE KEY-----\n", f);
 	auto& group_params = private_key_.GetGroupParameters();
 
@@ -129,7 +129,7 @@ void NodeKey::write_key() {
 }
 
 void NodeKey::gen_certificate() {
-	FILE * f = native_fopen(Config::get()->paths().key_path.c_str(), "r");
+	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "r");
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
 	fclose(f);
@@ -162,7 +162,7 @@ void NodeKey::gen_certificate() {
 	}
 
 	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = native_fopen(Config::get()->paths().cert_path.c_str(), "wb");
+	FILE * x509_file = native_fopen(Paths::get()->cert_path.c_str(), "wb");
 	if (!x509_file) {
 		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
 	}

@@ -30,6 +30,7 @@
 #include "MLDHTSearcher.h"
 #include <MLDHTSessionFile.pb.h>
 #include "dht_glue.h"
+#include "control/Paths.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "util/log.h"
@@ -63,7 +64,7 @@ void MLDHTDiscovery::init() {
 
 	// We will restore our session from here
 	MLDHTSessionFile session_pb;
-	file_wrapper session_file(Config::get()->paths().dht_session_path, "r");
+	file_wrapper session_file(Paths::get()->dht_session_path, "r");
 	if(!session_pb.ParseFromIstream(&session_file.ios())) throw;
 
 	// Init id
@@ -203,7 +204,7 @@ void MLDHTDiscovery::deinit_session_file() {
 		std::copy((const char*)&endpoint4, ((const char*)&endpoint4)+sizeof(btcompat::compact_endpoint4), std::back_inserter(*endpoint_str));
 	}
 
-	file_wrapper session_file(Config::get()->paths().dht_session_path, "w");
+	file_wrapper session_file(Paths::get()->dht_session_path, "w");
 	session_pb.SerializeToOstream(&session_file.ios());
 }
 

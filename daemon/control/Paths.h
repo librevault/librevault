@@ -26,19 +26,25 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "Config.h"
-#include "Version.h"
-#include <shlobj.h>
+#pragma once
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
-boost::filesystem::path Config::default_appdata_path() {
-	PWSTR appdata_path;
-	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
-	boost::filesystem::path folder_path = boost::filesystem::path(appdata_path) / Version::current().name();
-	CoTaskMemFree(appdata_path);
+class Paths {
+public:
+	static Paths* get(const boost::filesystem::path& appdata_path = boost::filesystem::path()) {
+		if(!instance_)
+			instance_ = std::unique_ptr<Paths>(new Paths(appdata_path));
+		return instance_.get();
+	}
 
-	return folder_path;
-}
+	const boost::filesystem::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
+private:
+	Paths(const boost::filesystem::path& appdata_path);
+	boost::filesystem::path default_appdata_path();
+
+	static std::unique_ptr<Paths> instance_;
+};
 
 } /* namespace librevault */

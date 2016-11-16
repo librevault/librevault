@@ -26,20 +26,21 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "Config.h"
-#include <pwd.h>
+#if ! __has_feature(objc_arc)
+#error This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag
+#endif
+
+#include "Paths.h"
 #include "Version.h"
+#include <Foundation/Foundation.h>
 
 namespace librevault {
 
-boost::filesystem::path Config::default_appdata_path() {
-	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return boost::filesystem::path(xdg_ptr) / Version::current().name();
-	if(char* home_ptr = getenv("HOME"))
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
-	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
-	return boost::filesystem::path("/etc/xdg") / Version::current().name();
+boost::filesystem::path Paths::default_appdata_path() {
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
+	NSString *applicationSupportDirectory = [paths firstObject];
+
+	return boost::filesystem::path([applicationSupportDirectory UTF8String]) / Version::current().name();
 }
 
 } /* namespace librevault */

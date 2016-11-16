@@ -26,21 +26,22 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#if ! __has_feature(objc_arc)
-#error This file must be compiled with ARC. Either turn on ARC for the project or use -fobjc-arc flag
-#endif
-
-#include "Config.h"
-#include "Version.h"
-#include <Foundation/Foundation.h>
+#include "Paths.h"
+#include <boost/filesystem.hpp>
 
 namespace librevault {
 
-boost::filesystem::path Config::default_appdata_path() {
-	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-	NSString *applicationSupportDirectory = [paths firstObject];
-
-	return boost::filesystem::path([applicationSupportDirectory UTF8String]) / Version::current().name();
+Paths::Paths(const boost::filesystem::path& appdata_path) :
+	appdata_path(appdata_path.empty() ? default_appdata_path() : appdata_path),
+	client_config_path(this->appdata_path / "globals.json"),
+	folders_config_path(this->appdata_path / "folders.json"),
+	log_path(this->appdata_path / "librevault.log"),
+	key_path(this->appdata_path / "key.pem"),
+	cert_path(this->appdata_path / "cert.pem"),
+	dht_session_path(this->appdata_path / "mldht_session.bin") {
+	boost::filesystem::create_directories(this->appdata_path);
 }
+
+std::unique_ptr<Paths> Paths::instance_ = nullptr;
 
 } /* namespace librevault */

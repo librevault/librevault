@@ -26,55 +26,20 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <json/json.h>
-#include <boost/signals2/signal.hpp>
+#include "Paths.h"
+#include <pwd.h>
+#include "Version.h"
 
 namespace librevault {
 
-class Config {
-public:
-	~Config();
-
-	boost::signals2::signal<void(std::string)> config_changed;
-
-	static Config* get() {
-		if(!instance_)
-			instance_ = std::unique_ptr<Config>(new Config());
-		return instance_.get();
-	}
-
-	/* Getters and setters */
-	Json::Value global_get(const std::string& name);
-	void global_set(const std::string& name, Json::Value value);
-	void global_unset(const std::string& name);
-
-	Json::Value globals() const;
-	void set_globals(Json::Value globals_conf);
-	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
-
-	const Json::Value& folders_custom() const {return folders_custom_;}
-	const Json::Value& folders() const {return folders_;}
-	void set_folders(Json::Value folders_conf);
-
-protected:
-	Config();
-
-	static std::unique_ptr<Config> instance_;
-
-private:
-	Json::Value globals_, globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
-
-
-	void make_defaults();
-
-	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value) const;
-
-	void make_merged_folders();
-
-	// File config
-	void load();
-	void save();
-};
+boost::filesystem::path Paths::default_appdata_path() {
+	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
+		return boost::filesystem::path(xdg_ptr) / Version::current().name();
+	if(char* home_ptr = getenv("HOME"))
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
+	if(char* home_ptr = getpwuid(getuid())->pw_dir)
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
+	return boost::filesystem::path("/etc/xdg") / Version::current().name();
+}
 
 } /* namespace librevault */

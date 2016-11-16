@@ -28,26 +28,13 @@
  */
 #include "Config.h"
 #include <codecvt>
+#include "Paths.h"
 #include "util/file_util.h"
 #include <boost/asio/ip/host_name.hpp>
 
 namespace librevault {
 
-Config::Config(boost::filesystem::path appdata_path) {
-	if(appdata_path.empty())
-		paths_.appdata_path = default_appdata_path();
-	else
-		paths_.appdata_path = std::move(appdata_path);
-
-	boost::filesystem::create_directories(paths_.appdata_path);
-
-	paths_.client_config_path = paths_.appdata_path / "globals.json";
-	paths_.folders_config_path = paths_.appdata_path / "folders.json";
-	paths_.log_path = paths_.appdata_path / "librevault.log";
-	paths_.key_path = paths_.appdata_path / "key.pem";
-	paths_.cert_path = paths_.appdata_path / "cert.pem";
-	paths_.dht_session_path = paths_.appdata_path / "mldht_session.bin";
-
+Config::Config() {
 	make_defaults();
 	load();
 
@@ -173,8 +160,8 @@ void Config::make_merged_folders() {
 }
 
 void Config::load() {
-	file_wrapper globals_f(paths_.client_config_path, "rb");
-	file_wrapper folders_f(paths_.folders_config_path, "rb");
+	file_wrapper globals_f(Paths::get()->client_config_path, "rb");
+	file_wrapper folders_f(Paths::get()->folders_config_path, "rb");
 
 	Json::Reader r;
 	r.parse(globals_f.ios(), globals_custom_);
@@ -185,8 +172,8 @@ void Config::load() {
 }
 
 void Config::save() {
-	file_wrapper globals_f(paths_.client_config_path, "wb");
-	file_wrapper folders_f(paths_.folders_config_path, "wb");
+	file_wrapper globals_f(Paths::get()->client_config_path, "wb");
+	file_wrapper folders_f(Paths::get()->folders_config_path, "wb");
 
 	globals_f.ios() << globals_custom_.toStyledString();
 	folders_f.ios() << folders_custom_.toStyledString();

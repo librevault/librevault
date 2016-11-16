@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "control/Config.h"
+#include "util/blob.h"
 #include "util/network.h"
 #include <boost/endian/arithmetic.hpp>
 

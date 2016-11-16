@@ -30,7 +30,7 @@
 #include "WSServer.h"
 #include "WSClient.h"
 #include "P2PFolder.h"
-#include "control/Config.h"
+#include "control/Paths.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include <util/log.h>
@@ -56,8 +56,8 @@ std::shared_ptr<ssl_context> WSService::make_ssl_ctx() {
 	);
 
 	ssl_ctx_ptr->set_verify_mode(boost::asio::ssl::verify_peer | boost::asio::ssl::verify_fail_if_no_peer_cert);
-	ssl_ctx_ptr->use_certificate_file(Config::get()->paths().cert_path.string(std::codecvt_utf8_utf16<wchar_t>()), ssl_context::pem);
-	ssl_ctx_ptr->use_private_key_file(Config::get()->paths().key_path.string(std::codecvt_utf8_utf16<wchar_t>()), ssl_context::pem);
+	ssl_ctx_ptr->use_certificate_file(Paths::get()->cert_path.string(std::codecvt_utf8_utf16<wchar_t>()), ssl_context::pem);
+	ssl_ctx_ptr->use_private_key_file(Paths::get()->key_path.string(std::codecvt_utf8_utf16<wchar_t>()), ssl_context::pem);
 	SSL_CTX_set_cipher_list(ssl_ctx_ptr->native_handle(), "ECDH-ECDSA-AES256-GCM-SHA384:ECDH-ECDSA-AES256-SHA384:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-ECDSA-AES128-SHA256");
 
 	return ssl_ctx_ptr;

@@ -30,6 +30,7 @@
 
 #include <QWebSocket>
 #include <QJsonObject>
+#include <QtNetwork/QNetworkAccessManager>
 #include "pch.h"
 
 class Daemon;
@@ -37,11 +38,18 @@ class ControlClient : public QObject {
 Q_OBJECT
 
 public:
-	ControlClient(QString control_url = QString());
+	ControlClient(QString control_url = QString(), QObject* parent = nullptr);
 	~ControlClient();
+
+	QUrl daemonURL() const {return control_url_;}
+	QNetworkAccessManager* networkAccessManager() {return nam_;}
+
+	bool isConnected();
 
 signals:
 	void ControlJsonReceived(QJsonObject control_json);
+
+	void eventReceived(QString name, QJsonObject event);
 
 	void connecting();
 	void connected();
@@ -56,14 +64,16 @@ public slots:
 	void sendRemoveFolderJson(QString secret);
 
 private slots:
-	void connectDaemon(const QUrl& daemon_address);
+	void connectDaemon(QUrl daemon_address);
 	void handle_message(const QString& message);
 	void handle_connect();
 	void handle_disconnect();
 	void handle_daemonfail(QString reason);
 
 private:
-	std::unique_ptr<QWebSocket> socket_;
+	QNetworkAccessManager* nam_;
+	QWebSocket* event_sock_;
+
 	std::unique_ptr<Daemon> daemon_;
 	QUrl control_url_;
 };

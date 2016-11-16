@@ -71,6 +71,8 @@ ControlServer::ControlServer(Client& client) :
 	// It watches STDOUT for ^\[CONTROL\].*?(http:\/\/.*)$ regexp and connects to the first matched address.
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at http://" << (std::string)bind_url << std::endl;
+
+	Config::get()->config_changed.connect(std::bind(&ControlServer::notify_global_change, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 ControlServer::~ControlServer() {
@@ -82,13 +84,19 @@ ControlServer::~ControlServer() {
 	LOGFUNCEND();
 }
 
+void ControlServer::notify_global_change(const std::string& key, Json::Value value) {
+	Json::Value event;
+	event["key"] = key;
+	event["value"] = value;
+	control_ws_server_->send_event("GLOBAL_CHANGE", event);
+}
+
 std::string ControlServer::make_control_json() {
 	Json::Value control_json;
 
 	// ID
 	static int control_json_id = 0; // Client-wide message id
 	control_json["id"] = control_json_id++;
-	control_json["globals"] = Config::get()->globals();
 	control_json["folders"] = Config::get()->folders();
 	control_json["state"] = make_state_json();
 
@@ -117,14 +125,14 @@ Json::Value ControlServer::make_state_json() const {
 		folder_json["secret"] = folder->secret().string();
 
 		// Indexer
-		folder_json["is_indexing"] = folder->meta_storage_->is_indexing();
+		folder_json["index_process"] = folder->meta_storage_->is_indexing();
 
 		// Index
 		auto index_status = folder->meta_storage_->index->get_status();
-		folder_json["file_entries"] = (Json::Value::UInt64)index_status.file_entries;
-		folder_json["directory_entries"] = (Json::Value::UInt64)index_status.directory_entries;
-		folder_json["symlink_entries"] = (Json::Value::UInt64)index_status.symlink_entries;
-		folder_json["deleted_entries"] = (Json::Value::UInt64)index_status.deleted_entries;
+		folder_json["index_entries_file"] = (Json::Value::UInt64)index_status.file_entries;
+		folder_json["index_entries_directory"] = (Json::Value::UInt64)index_status.directory_entries;
+		folder_json["index_entries_symlink"] = (Json::Value::UInt64)index_status.symlink_entries;
+		folder_json["index_entries_deleted"] = (Json::Value::UInt64)index_status.deleted_entries;
 
 		// Peers
 		folder_json["peers"] = Json::arrayValue;

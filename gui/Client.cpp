@@ -30,6 +30,7 @@
 #include "gui/MainWindow.h"
 #include "model/FolderModel.h"
 #include "control/ControlClient.h"
+#include "control/RemoteConfig.h"
 #include "single/SingleChannel.h"
 #include <QCommandLineParser>
 #include <QLibraryInfo>
@@ -57,43 +58,44 @@ Client::Client(int &argc, char **argv, int appflags) :
 	}
 
 	// Creating components
-	single_channel_ = std::make_unique<SingleChannel>(link);
+	single_channel_ = new SingleChannel(link, this);
+	control_client_ = new ControlClient(parser.value(attach_option), this);
 
-	control_client_ = std::make_unique<ControlClient>(parser.value(attach_option));
+	remote_config_ = new RemoteConfig(control_client_, this);
 
 	updater_ = new Updater(this);
 
-	main_window_ = std::make_unique<MainWindow>(*this);
+	main_window_ = new MainWindow(remote_config_, updater_);
 
 	// Connecting signals & slots
-	connect(single_channel_.get(), &SingleChannel::showMainWindow, main_window_.get(), &QMainWindow::show);
-	connect(single_channel_.get(), &SingleChannel::openLink, this, &Client::openLink);
+	connect(single_channel_, &SingleChannel::showMainWindow, main_window_, &QMainWindow::show);
+	connect(single_channel_, &SingleChannel::openLink, this, &Client::openLink);
 
-	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
+	connect(control_client_, &ControlClient::ControlJsonReceived, main_window_, &MainWindow::handleControlJson);
 
-	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);
-	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
-	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
+	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
+	connect(main_window_, &MainWindow::folderAdded, control_client_, &ControlClient::sendAddFolderJson);
+	connect(main_window_, &MainWindow::folderRemoved, control_client_, &ControlClient::sendRemoveFolderJson);
 
-	connect(control_client_.get(), &ControlClient::connected, main_window_.get(), &MainWindow::handle_connected);
-	connect(control_client_.get(), &ControlClient::disconnected, main_window_.get(), &MainWindow::handle_disconnected);
+	connect(control_client_, &ControlClient::connected, main_window_, &MainWindow::handle_connected);
+	connect(control_client_, &ControlClient::disconnected, main_window_, &MainWindow::handle_disconnected);
 
 	// Initialization complete!
 	control_client_->start();
 
 	if(!link.isEmpty())
-		openLink(link);
+		QTimer::singleShot(0, [this, link]{openLink(link);});
 }
 
 Client::~Client() {
-	main_window_.reset();
-	control_client_.reset();
+	delete main_window_;
 }
 
 bool Client::event(QEvent* event) {
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* open_event = static_cast<QFileOpenEvent*>(event);
-		openLink(open_event->url().toString());
+		QString link = open_event->url().toString();
+		QTimer::singleShot(0, [this, link]{openLink(link);});
 	}
 	return QApplication::event(event);
 }

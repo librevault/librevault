@@ -26,37 +26,34 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "SingleChannel.h"
-#include <QCoreApplication>
 
-SingleChannel::SingleChannel(QString arg, QObject* parent) :
-		QUdpSocket(parent) {
-	bool bound = bind(QHostAddress::LocalHost, 42343);
-	if(bound) {
-		connect(this, &SingleChannel::readyRead, this, &SingleChannel::datagramReceived);
-	}else{
+#pragma once
+#include <QObject>
+#include <QJsonValue>
+#include <QJsonObject>
 
-		if(arg.isEmpty())
-			writeDatagram("show", QHostAddress::LocalHost, 42343);
-		else
-			writeDatagram(QString("arg ").toLatin1()+arg.toUtf8(), QHostAddress::LocalHost, 42343);
-		exit(1);
-	}
-}
+class ControlClient;
 
-SingleChannel::~SingleChannel() {}
+class RemoteConfig : public QObject {
+	Q_OBJECT
 
-void SingleChannel::datagramReceived() {
-	while(hasPendingDatagrams()) {
-		QByteArray datagram(pendingDatagramSize(), 0);
-		QHostAddress sender;
-		uint16_t port;
+public:
+	RemoteConfig(ControlClient* cc, QObject* parent);
+	~RemoteConfig() {}
 
-		readDatagram(datagram.data(), datagram.size(), &sender, &port);
+	QJsonValue getValue(QString key);
 
-		if(datagram == "show")
-			emit showMainWindow();
-		if(datagram.startsWith("arg "))
-			emit openLink(QString::fromUtf8(datagram).mid(4));
-	}
-}
+signals:
+	void valueChanged(QString key, QJsonValue value);
+
+public slots:
+	void renewConfig();
+	void setValue(QString key, QJsonValue value, bool force_send = false);
+
+private:
+	ControlClient* cc_;
+	QJsonObject cached_config_;
+
+private slots:
+	void handleEvent(QString name, QJsonObject event);
+};

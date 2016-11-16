@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #include "Config.h"
-#include <codecvt>
 #include "Paths.h"
 #include "util/file_util.h"
+#include "util/log.h"
 #include <boost/asio/ip/host_name.hpp>
+#include <codecvt>
 
 namespace librevault {
 
@@ -38,7 +39,10 @@ Config::Config() {
 	make_defaults();
 	load();
 
-	config_changed.connect([this](std::string){save();});
+	config_changed.connect([this](std::string key, Json::Value value){
+		LOGI("Global \"" << key << "\" is set to \"" << value << "\"");
+	});
+	config_changed.connect([this](std::string, Json::Value){save();});
 }
 
 Config::~Config() {
@@ -53,12 +57,12 @@ Json::Value Config::global_get(const std::string& name) {
 
 void Config::global_set(const std::string& name, Json::Value value) {
 	globals_custom_[name] = value;
-	config_changed(name);
+	config_changed(name, value);
 }
 
 void Config::global_unset(const std::string& name) {
 	globals_custom_.removeMember(name);
-	config_changed(name);
+	config_changed(name, global_get(name));
 }
 
 Json::Value Config::globals() const {
@@ -77,7 +81,7 @@ void Config::set_globals(Json::Value globals_conf) {
 	globals_custom_ = globals_conf;
 
 	for(auto& diff_val : diff)
-		config_changed(diff_val.first);
+		config_changed(diff_val.first, global_get(diff_val.first));
 }
 
 void Config::set_folders(Json::Value folders_conf) {

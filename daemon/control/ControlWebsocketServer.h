@@ -46,10 +46,15 @@ public:
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
+	//
+	void send_event(const std::string& type, Json::Value event);
+
 private:
 	Client& client_;
 	ControlServer& cs_;
 	ControlServer::server& server_;
+
+	std::atomic<uint64_t> id_;
 
 	PeriodicProcess heartbeat_process_;
 

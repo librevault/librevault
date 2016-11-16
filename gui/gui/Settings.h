@@ -27,24 +27,27 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
 #include <QDialog>
 #include <QToolButton>
 #include <QJsonObject>
 #include <QUrl>
-#include <gui/pager/Pager.h>
-#include "pch.h"
+#include "ui_Settings.h"
+#include "gui/pager/Pager.h"
 #include "startup/StartupInterface.h"
+#include "pch.h"
 
 namespace Ui {
 class Settings;
 }
 
+class RemoteConfig;
+class Updater;
+
 class Settings : public QDialog {
 Q_OBJECT
 
 public:
-	explicit Settings(QWidget* parent = 0);
+	explicit Settings(RemoteConfig* config, Updater* updater, QWidget* parent = 0);
 	~Settings();
 
 	enum Page {
@@ -63,7 +66,7 @@ public slots:
 	void handleControlJson(QJsonObject control_json);
 
 protected:
-	std::unique_ptr<Ui::Settings> ui;
+	Ui::Settings ui;
 	QJsonObject control_json_dynamic, control_json_static;
 
 	void init_ui();
@@ -84,6 +87,8 @@ private slots:
 
 protected:
 	Pager* pager;
-	std::unique_ptr<StartupInterface> startup_interface;
+	RemoteConfig* config_;
+	Updater* updater_;
+	StartupInterface* startup_interface_;
 	QUrl p2p_listen;
 };

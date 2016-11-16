@@ -49,7 +49,7 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	MainWindow(Client& client, QWidget* parent = 0);
+	MainWindow(RemoteConfig* remote_config, Updater* updater);
 	~MainWindow();
 
 signals:
@@ -70,8 +70,6 @@ protected slots:
 	void handleRemoveFolder();
 	void handleOpenFolderProperties(const QModelIndex &index);
 
-public:
-	Client& client_;
 protected:
 	/* UI elements */
 	std::unique_ptr<Ui::MainWindow> ui;

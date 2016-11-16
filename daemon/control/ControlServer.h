@@ -56,10 +56,14 @@ public:
 
 	bool check_origin(server::connection_ptr conn);
 
+	// Signals
 	boost::signals2::signal<void(Json::Value)> add_folder_signal;
 	boost::signals2::signal<void(blob)> remove_folder_signal;
 	boost::signals2::signal<void()> shutdown_signal;
 	boost::signals2::signal<void()> restart_signal;
+
+	// Slots
+	void notify_global_change(const std::string& key, Json::Value value);
 private:
 
 	Client& client_;

@@ -30,14 +30,21 @@
 #include "ControlClient.h"
 #include "Daemon.h"
 
-ControlClient::ControlClient(QString control_url) :	QObject(), socket_(std::make_unique<QWebSocket>()), control_url_(control_url) {
-	connect(socket_.get(), &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
+ControlClient::ControlClient(QString control_url, QObject* parent) : QObject(parent), control_url_(control_url) {
+	event_sock_ = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
+	nam_ = new QNetworkAccessManager(this);
 
-	connect(socket_.get(), &QWebSocket::connected, this, &ControlClient::handle_connect);
-	connect(socket_.get(), &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
+	connect(event_sock_, &QWebSocket::textMessageReceived, this, &ControlClient::handle_message);
+
+	connect(event_sock_, &QWebSocket::connected, this, &ControlClient::handle_connect);
+	connect(event_sock_, &QWebSocket::disconnected, this, &ControlClient::handle_disconnect);
 }
 
 ControlClient::~ControlClient() {}
+
+bool ControlClient::isConnected() {
+	return event_sock_->isValid();
+}
 
 void ControlClient::start() {
 	emit connecting();
@@ -51,16 +58,22 @@ void ControlClient::start() {
 	}
 }
 
-void ControlClient::connectDaemon(const QUrl& daemon_address) {
+void ControlClient::connectDaemon(QUrl daemon_address) {
 	control_url_ = daemon_address;
 	qDebug() << "Connecting to daemon: " << daemon_address;
-	socket_->open(daemon_address);
+	daemon_address.setScheme("ws");
+	event_sock_->open(daemon_address);
 }
 
 void ControlClient::handle_message(const QString& message) {
-	QJsonDocument json_document = QJsonDocument::fromJson(message.toUtf8());
-	qDebug() << "<== " << json_document;
-	emit ControlJsonReceived(json_document.object());
+	QJsonDocument event_msg_d = QJsonDocument::fromJson(message.toUtf8());
+	QJsonObject event_msg_o = event_msg_d.object();
+
+	QString event_type = event_msg_o["type"].toString();
+	QJsonObject event_o = event_msg_o["event"].toObject();
+
+	qDebug() << "EVENT id: " << event_msg_o["id"].toInt() << " t:" << event_type << " event:" << event_o;
+	emit eventReceived(event_type, event_o);
 }
 
 void ControlClient::handle_connect() {
@@ -69,7 +82,7 @@ void ControlClient::handle_connect() {
 }
 
 void ControlClient::handle_disconnect() {
-	QString error_string = socket_->closeReason().isEmpty() ? socket_->errorString() : socket_->closeReason();
+	QString error_string = event_sock_->closeReason().isEmpty() ? event_sock_->errorString() : event_sock_->closeReason();
 
 	qDebug() << "Disconnected from daemon: " << control_url_ << " Reason: " << error_string;
 	emit disconnected(error_string);
@@ -83,7 +96,7 @@ void ControlClient::handle_daemonfail(QString reason) {
 void ControlClient::sendControlJson(QJsonObject control_json) {
 	QJsonDocument json_document(control_json);
 	qDebug() << "==> " << json_document;
-	socket_->sendTextMessage(json_document.toJson());
+	event_sock_->sendTextMessage(json_document.toJson());
 }
 
 void ControlClient::sendConfigJson(QJsonObject config_json) {

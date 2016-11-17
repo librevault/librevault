@@ -44,10 +44,6 @@ class Secret;
 class FolderService {
 	LOG_SCOPE("FolderService");
 public:
-	struct samekey_error : std::runtime_error {
-		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported now") {}
-	};
-
 	FolderService();
 	virtual ~FolderService();
 
@@ -59,9 +55,6 @@ public:
 	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
 	/* FolderGroup nanagenent */
-	void add_folder(Json::Value json_folder);    // Adds folder into config, so JSON. Also, invokes init_folder.
-	void remove_folder(const blob& folder_hash);   // Invokes deinit_folder and removes folder from config.
-
 	void init_folder(const FolderParams& params);
 	void deinit_folder(const blob& folder_hash);
 

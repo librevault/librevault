@@ -95,14 +95,14 @@ void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr con
 	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(Config::get()->globals()));
+		conn->set_body(Json::FastWriter().write(Config::get()->export_globals()));
 	}else if(conn->get_request().get_method() == "PUT" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 
 		Json::Value new_value;
 		Json::Reader().parse(conn->get_request_body(), new_value);
 
-		Config::get()->set_globals(new_value);
+		Config::get()->import_globals(new_value);
 	}else if(conn->get_request().get_method() == "GET" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");

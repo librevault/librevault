@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/blob.h"
 #include "util/log_scope.h"
 #include <json/json.h>
 #include <boost/signals2/signal.hpp>
@@ -38,7 +39,15 @@ class Config {
 public:
 	~Config();
 
+	/* Exceptions */
+	struct samekey_error : std::runtime_error {
+		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported") {}
+	};
+
+	/* Signals */
 	boost::signals2::signal<void(std::string, Json::Value)> config_changed;
+	boost::signals2::signal<void(Json::Value)> folder_added;
+	boost::signals2::signal<void(blob)> folder_removed;
 
 	static Config* get() {
 		if(!instance_)
@@ -50,18 +59,25 @@ public:
 		instance_ = nullptr;
 	}
 
-	/* Getters and setters */
+	/* Global configuration */
 	Json::Value global_get(const std::string& name);
 	void global_set(const std::string& name, Json::Value value);
 	void global_unset(const std::string& name);
 
-	Json::Value globals() const;
-	void set_globals(Json::Value globals_conf);
-	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
+	Json::Value export_globals_custom() const;
+	Json::Value export_globals() const;
+	void import_globals(Json::Value globals_conf);
 
-	const Json::Value& folders_custom() const {return folders_custom_;}
-	const Json::Value& folders() const {return folders_;}
-	void set_folders(Json::Value folders_conf);
+	/* Folder configuration */
+	void folder_add(Json::Value folder_config);
+	void folder_remove(const blob& folderid);
+
+	Json::Value folder_get(const blob& folderid);
+	std::map<blob, Json::Value> folders() const;
+
+	Json::Value export_folders_custom() const;
+	Json::Value export_folders() const;
+	void import_folders(Json::Value folders_conf);
 
 protected:
 	Config();
@@ -69,13 +85,12 @@ protected:
 	static Config* instance_;
 
 private:
-	Json::Value globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
+	Json::Value globals_custom_, globals_defaults_, folders_defaults_;
+	std::map<blob, Json::Value> folders_custom_;
 
 	void make_defaults();
 
 	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value) const;
-
-	void make_merged_folders();
 
 	// File config
 	void load();

@@ -38,7 +38,15 @@ namespace librevault {
 
 WSServer::WSServer(io_service& ios, P2PProvider& provider, PortMappingService& port_mapping, NodeKey& node_key, FolderService& folder_service) : WSService(ios, provider, node_key, folder_service), port_mapping_(port_mapping) {
 	// Acceptor initialization
-	url bind_url = url(Config::get()->global_get("p2p_listen").asString());
+	url bind_url;
+	if(Config::get()->global_get("p2p_listen").isIntegral()) {
+		bind_url.is_ipv6 = true;
+		bind_url.host = "::";
+		bind_url.port = Config::get()->global_get("p2p_listen").asUInt();
+	}else{
+		bind_url = parse_url(Config::get()->global_get("p2p_listen").asString());   // deprecated
+	}
+
 	auto endpoint = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
 
 	/* WebSockets server initialization */

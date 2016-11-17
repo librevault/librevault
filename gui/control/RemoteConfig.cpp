@@ -71,13 +71,14 @@ void RemoteConfig::renewConfig() {
 		connect(reply, &QNetworkReply::finished, [this, reply] {
 			if(reply->error() == QNetworkReply::NoError) {
 				cached_config_ = QJsonDocument::fromJson(reply->readAll()).object();
+				qDebug() << "Fetched new config from daemon";
 			}
 		});
 	}
 }
 
 void RemoteConfig::handleEvent(QString name, QJsonObject event) {
-	if(name == "GLOBAL_CHANGE") {
+	if(name == "EVENT_GLOBAL_CONFIG_CHANGED") {
 		cached_config_[event["key"].toString()] = event["value"];
 	}
 }

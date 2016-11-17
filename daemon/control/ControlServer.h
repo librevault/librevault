@@ -63,9 +63,9 @@ public:
 	boost::signals2::signal<void()> restart_signal;
 
 	// Slots
-	void notify_global_change(const std::string& key, Json::Value value);
-private:
+	void notify_global_config_changed(const std::string& key, Json::Value value);
 
+private:
 	Client& client_;
 	multi_io_service ios_;
 

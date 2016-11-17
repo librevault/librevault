@@ -54,7 +54,7 @@ public:
 	void run() {ios_.start(1);}
 	std::string make_control_json();
 
-	bool check_origin(server::connection_ptr conn);
+	bool check_origin(const std::string& origin);
 
 	// Signals
 	boost::signals2::signal<void(Json::Value)> add_folder_signal;

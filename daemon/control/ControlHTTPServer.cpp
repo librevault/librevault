@@ -51,10 +51,10 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = server_.get_con_from_hdl(hdl);
 
 	// CORS
-	//if(!cs_.check_origin(connection_ptr)) {
-	//	connection_ptr->set_status(websocketpp::http::status_code::forbidden);
-	//	return;
-	//}
+	if(!cs_.check_origin(connection_ptr->get_request_header("Origin"))) {
+		connection_ptr->set_status(websocketpp::http::status_code::forbidden);
+		return;
+	}
 
 	// URI handlers
 	const std::string& uri = connection_ptr->get_request().get_uri();

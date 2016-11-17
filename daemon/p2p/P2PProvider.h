@@ -49,6 +49,7 @@ public:
 	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
 	virtual ~P2PProvider();
 
+	// Slots
 	void run() {ios_.start(1);}
 	void stop() {ios_.stop();}
 

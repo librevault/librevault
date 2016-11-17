@@ -81,7 +81,7 @@ ControlServer::ControlServer(Client& client) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at http://" << (std::string)bind_url << std::endl;
 
-	Config::get()->config_changed.connect(std::bind(&ControlServer::notify_global_change, this, std::placeholders::_1, std::placeholders::_2));
+	Config::get()->config_changed.connect(std::bind(&ControlServer::notify_global_config_changed, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 ControlServer::~ControlServer() {
@@ -93,11 +93,11 @@ ControlServer::~ControlServer() {
 	LOGFUNCEND();
 }
 
-void ControlServer::notify_global_change(const std::string& key, Json::Value value) {
+void ControlServer::notify_global_config_changed(const std::string& key, Json::Value value) {
 	Json::Value event;
 	event["key"] = key;
 	event["value"] = value;
-	control_ws_server_->send_event("GLOBAL_CHANGE", event);
+	control_ws_server_->send_event("EVENT_GLOBAL_CONFIG_CHANGED", event);
 }
 
 std::string ControlServer::make_control_json() {

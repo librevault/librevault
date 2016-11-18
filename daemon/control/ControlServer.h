@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "util/log_scope.h"
-#include "util/network.h"
 #include "util/parse_url.h"
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
@@ -40,6 +39,7 @@
 namespace librevault {
 
 class Client;
+class StateCollector;
 class ControlWebsocketServer;
 class ControlHTTPServer;
 
@@ -48,11 +48,10 @@ class ControlServer {
 public:
 	using server = websocketpp::server<asio_notls>;
 
-	ControlServer(Client& client);
+	ControlServer(StateCollector& state_collector);
 	virtual ~ControlServer();
 
 	void run() {ios_.start(1);}
-	std::string make_control_json();
 
 	bool check_origin(const std::string& origin);
 
@@ -64,19 +63,16 @@ public:
 
 	// Slots
 	void notify_global_config_changed(const std::string& key, Json::Value value);
+	void notify_global_state_changed(std::string key, Json::Value state);
+	void notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state);
 
 private:
-	Client& client_;
 	multi_io_service ios_;
 
 	server ws_server_;
 
 	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
 	std::unique_ptr<ControlHTTPServer> control_http_server_;
-
-	tcp_endpoint local_endpoint_;
-
-	Json::Value make_state_json() const;
 };
 
 } /* namespace librevault */

@@ -30,6 +30,7 @@
 #include "ControlServer.h"
 #include "p2p/websocket_config.h"
 #include "util/log_scope.h"
+#include "util/network.h"
 #include <regex>
 
 namespace librevault {
@@ -40,26 +41,31 @@ class ControlServer;
 class ControlHTTPServer {
 	LOG_SCOPE("ControlHTTPServer");
 public:
-	ControlHTTPServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios);
+	ControlHTTPServer(ControlServer& cs, ControlServer::server& server, StateCollector& state_collector, io_service& ios);
 	virtual ~ControlHTTPServer();
 
 	void on_http(websocketpp::connection_hdl hdl);
 
 private:
-	Client& client_;
 	ControlServer& cs_;
 	ControlServer::server& server_;
+	StateCollector& state_collector_;
 	io_service& ios_;
 
 	std::vector<std::pair<std::regex, std::function<void(ControlServer::server::connection_ptr, std::smatch)>>> handlers_;
 
-	void handle_status(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_version(ControlServer::server::connection_ptr conn, std::smatch matched);
+	// config
+	void handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_config(ControlServer::server::connection_ptr conn, std::smatch matched);
 
+	// state
+	void handle_globals_state(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_state(ControlServer::server::connection_ptr conn, std::smatch matched);
+
+	// daemon
 	void handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched);
 	void handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched);
-
-	void handle_globals(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_version(ControlServer::server::connection_ptr conn, std::smatch matched);
 };
 
 } /* namespace librevault */

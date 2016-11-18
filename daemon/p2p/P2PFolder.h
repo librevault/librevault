@@ -33,6 +33,7 @@
 #include "BandwidthCounter.h"
 #include "util/periodic_process.h"
 #include <librevault/protocol/V1Parser.h>
+#include <json/json-forwards.h>
 #include <websocketpp/common/connection_hdl.hpp>
 
 namespace librevault {
@@ -67,6 +68,7 @@ public:
 	const std::string& user_agent() const {return user_agent_;}
 	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
 	BandwidthCounter::Stats heartbeat_stats() {return counter_.heartbeat();}
+	Json::Value collect_state();
 
 	blob local_token();
 	blob remote_token();

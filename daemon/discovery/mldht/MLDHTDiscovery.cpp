@@ -28,14 +28,14 @@
  */
 #include "MLDHTDiscovery.h"
 #include "MLDHTSearcher.h"
-#include <MLDHTSessionFile.pb.h>
-#include "dht_glue.h"
+#include "discovery/mldht/dht_glue.h"
 #include "control/Paths.h"
+#include "control/StateCollector.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "util/log.h"
 #include "util/file_util.h"
-
+#include <MLDHTSessionFile.pb.h>
 #include <dht.h>
 #include <cryptopp/osrng.h>
 #include <boost/asio/ip/v6_only.hpp>
@@ -44,9 +44,10 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping) :
+MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping, StateCollector& state_collector) :
 	DiscoverySubService(parent, io_service, "DHT"),
 	port_mapping_(port_mapping),
+	state_collector_(state_collector),
 	socket4_(io_service_),
 	socket6_(io_service_),
 	resolver_(io_service_),
@@ -265,9 +266,9 @@ void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buf
 	std::unique_lock<std::mutex> lk(dht_mutex);
 	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, this);
 	lk.unlock();
+	state_collector_.global_state_set("dht_nodes_count", node_count());
 
 	maintain_periodic_requests();
-
 	receive(*socket);    // We received message, continue receiving others
 }
 
@@ -286,6 +287,7 @@ void MLDHTDiscovery::maintain_periodic_requests() {
 		std::unique_lock<std::mutex> lk(dht_mutex);
 		dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
 		lk.unlock();
+		state_collector_.global_state_set("dht_nodes_count", node_count());
 
 		maintain_periodic_requests();
 	});

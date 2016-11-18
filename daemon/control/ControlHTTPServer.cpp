@@ -27,20 +27,32 @@
  * files in the program, then also delete it here.
  */
 #include "ControlHTTPServer.h"
-#include "Client.h"
 #include "control/Config.h"
+#include "control/StateCollector.h"
 #include "util/log.h"
 #include <boost/algorithm/string/predicate.hpp>
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
-ControlHTTPServer::ControlHTTPServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios) :
-		client_(client), cs_(cs), server_(server), ios_(ios) {
-	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/status\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_status(conn, matched);}));
-	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/version\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_version(conn, matched);}));
-	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/restart\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_restart(conn, matched);}));
-	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/shutdown\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_shutdown(conn, matched);}));
-	handlers_.push_back(std::make_pair(std::regex(R"(^\/v1\/globals(?:\/(\w+?))?\/?$)"), [this](ControlServer::server::connection_ptr conn, std::smatch matched){handle_globals(conn, matched);}));
+#define ADD_HANDLER(REGEX, HANDLER) \
+handlers_.push_back(std::make_pair(std::regex(REGEX), [this](ControlServer::server::connection_ptr conn, std::smatch matched){HANDLER(conn, matched);}))
+
+ControlHTTPServer::ControlHTTPServer(ControlServer& cs, ControlServer::server& server, StateCollector& state_collector_, io_service& ios) :
+		cs_(cs), server_(server), state_collector_(state_collector_), ios_(ios) {
+
+	// config
+	ADD_HANDLER(R"(^\/v1\/globals(?:\/(\w+?))?\/?$)", handle_globals_config);
+	ADD_HANDLER(R"(^\/v1\/folders(?:\/(\w+?))?\/?$)", handle_folders_config);
+
+	// state
+	ADD_HANDLER(R"(^\/v1\/state\/?$)", handle_globals_state);
+	ADD_HANDLER(R"(^\/v1\/folders\/(\w+?)\/state\/?$)", handle_folders_state);
+
+	// daemon
+	ADD_HANDLER(R"(^\/v1\/version\/?$)", handle_version);
+	ADD_HANDLER(R"(^\/v1\/restart\/?$)", handle_restart);
+	ADD_HANDLER(R"(^\/v1\/shutdown\/?$)", handle_shutdown);
 }
 
 ControlHTTPServer::~ControlHTTPServer() {}
@@ -70,11 +82,6 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	}
 }
 
-void ControlHTTPServer::handle_status(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	conn->set_status(websocketpp::http::status_code::ok);
-	conn->set_body(cs_.make_control_json());
-}
-
 void ControlHTTPServer::handle_version(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	conn->append_header("Content-Type", "text/plain");
@@ -91,7 +98,7 @@ void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr co
 	ios_.post([this]{cs_.shutdown_signal();});
 }
 
-void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr conn, std::smatch matched) {
+void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
@@ -117,6 +124,50 @@ void ControlHTTPServer::handle_globals(ControlServer::server::connection_ptr con
 	}else if(conn->get_request().get_method() == "DELETE" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 		Config::get()->global_unset(matched[1].str());
+	}
+}
+
+void ControlHTTPServer::handle_folders_config(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+		conn->set_body(Json::FastWriter().write(Config::get()->export_folders()));
+	}else if(matched[1].matched) {
+		blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
+		if(conn->get_request().get_method() == "GET") {
+			conn->set_status(websocketpp::http::status_code::ok);
+			conn->append_header("Content-Type", "text/x-json");
+			conn->set_body(Json::FastWriter().write(Config::get()->folder_get(folderid)));
+		}else if(conn->get_request().get_method() == "PUT") {
+			conn->set_status(websocketpp::http::status_code::ok);
+
+			Json::Value new_value;
+			Json::Reader().parse(conn->get_request_body(), new_value);
+
+			Config::get()->folder_add(new_value);
+		}else if(conn->get_request().get_method() == "DELETE") {
+			conn->set_status(websocketpp::http::status_code::ok);
+			Config::get()->folder_remove(folderid);
+		}
+	}
+}
+
+void ControlHTTPServer::handle_globals_state(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	if(conn->get_request().get_method() == "GET") {
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+		conn->set_body(Json::FastWriter().write(state_collector_.global_state()));
+	}
+}
+
+void ControlHTTPServer::handle_folders_state(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	if(conn->get_request().get_method() == "GET" && matched[1].matched) {
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+
+		blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
+		state_collector_.folder_state(folderid);
+		conn->set_body(Json::FastWriter().write(state_collector_.folder_state(folderid)));
 	}
 }
 

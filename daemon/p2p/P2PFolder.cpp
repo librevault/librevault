@@ -56,6 +56,19 @@ P2PFolder::~P2PFolder() {
 	LOGD("Destroyed");
 }
 
+Json::Value P2PFolder::collect_state() {
+	Json::Value state;
+
+	std::ostringstream os; os << remote_endpoint();
+	state["endpoint"] = os.str();
+	state["client_name"] = client_name();
+	state["user_agent"] = user_agent();
+	state["traffic_stats"] = counter_.heartbeat_json();
+	state["rtt"] = Json::Value::UInt64(rtt_.count());
+
+	return state;
+}
+
 blob P2PFolder::local_token() {
 	return derive_token(folder_group()->secret(), node_key_.public_key());
 }
@@ -66,6 +79,7 @@ blob P2PFolder::remote_token() {
 
 void P2PFolder::send_message(const blob& message) {
 	counter_.add_up(message.size());
+	folder_group()->bandwidth_counter().add_up(message.size());
 	ws_service_.send_message(conn_.connection_handle, message);
 }
 
@@ -185,6 +199,7 @@ void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& blo
 	send_message(parser_.gen_BlockReply(message));
 
 	counter_.add_up_blocks(block.size());
+	folder_group()->bandwidth_counter().add_up_blocks(block.size());
 
 	LOGD("==> BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
@@ -206,6 +221,7 @@ void P2PFolder::handle_message(const blob& message_raw) {
 	V1Parser::message_type message_type = parser_.parse_MessageType(message_raw);
 
 	counter_.add_down(message_raw.size());
+	folder_group()->bandwidth_counter().add_down(message_raw.size());
 
 	if(ready()) {
 		switch(message_type) {
@@ -357,6 +373,7 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 		<< " offset=" << message_struct.offset);
 
 	counter_.add_down_blocks(message_struct.content.size());
+	folder_group()->bandwidth_counter().add_down_blocks(message_struct.content.size());
 
 	recv_block_reply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }

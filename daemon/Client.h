@@ -38,12 +38,12 @@ namespace librevault {
 
 /* Components */
 class ControlServer;
-class P2PProvider;
-
-class NodeKey;
-class PortMappingService;
 class DiscoveryService;
 class FolderService;
+class NodeKey;
+class P2PProvider;
+class PortMappingService;
+class StateCollector;
 
 class Client {
 	friend class ControlServer;
@@ -57,6 +57,7 @@ public:
 
 	bool want_restart() const {return want_restart_;}
 private:
+	std::unique_ptr<StateCollector> state_collector_;
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
 	std::unique_ptr<DiscoveryService> discovery_;

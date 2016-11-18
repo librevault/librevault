@@ -29,46 +29,32 @@
 #pragma once
 #include "util/blob.h"
 #include "util/log_scope.h"
-#include "util/multi_io_service.h"
-#include "util/scoped_async_queue.h"
-#include <boost/signals2/signal.hpp>
 #include <json/json.h>
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
-/* Folder info */
-class FolderGroup;
-class FolderParams;
-class Secret;
-class StateCollector;
-
-class FolderService {
-	LOG_SCOPE("FolderService");
+class StateCollector {
+	LOG_SCOPE("StateCollector");
 public:
-	explicit FolderService(StateCollector& state_collector);
-	virtual ~FolderService();
+	StateCollector();
+	~StateCollector();
 
-	void run();
-	void stop();
+	boost::signals2::signal<void(std::string, Json::Value)> global_state_changed;
+	void global_state_set(const std::string& key, Json::Value value);
 
-	/* Signals */
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
+	boost::signals2::signal<void(const blob& folderid, std::string, Json::Value)> folder_state_changed;
+	void folder_state_set(const blob& folderid, const std::string& key, Json::Value value);
 
-	/* FolderGroup nanagenent */
-	void init_folder(const FolderParams& params);
-	void deinit_folder(const blob& folder_hash);
+	boost::signals2::signal<void(const blob& folderid)> folder_state_purged;
+	void folder_state_purge(const blob& folderid);
 
-	std::shared_ptr<FolderGroup> get_group(const blob& hash);
-	std::vector<std::shared_ptr<FolderGroup>> groups() const;
+	Json::Value global_state();
+	Json::Value folder_state(const blob& folderid);
 
 private:
-	multi_io_service bulk_ios_;
-	multi_io_service serial_ios_;
-	StateCollector& state_collector_;
-
-	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
-	ScopedAsyncQueue init_queue_;
+	Json::Value global_state_buffer;
+	std::map<blob, Json::Value> folder_state_buffers;
 };
 
 } /* namespace librevault */

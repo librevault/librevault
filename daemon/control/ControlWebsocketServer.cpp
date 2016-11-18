@@ -27,17 +27,12 @@
  * files in the program, then also delete it here.
  */
 #include "ControlWebsocketServer.h"
-#include "Client.h"
 #include "util/log.h"
 
 namespace librevault {
 
-ControlWebsocketServer::ControlWebsocketServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios) :
-		client_(client), cs_(cs), server_(server),
-		heartbeat_process_(ios, std::bind(&ControlWebsocketServer::send_heartbeat, this, std::placeholders::_1)), id_(0) {
-	heartbeat_process_.invoke_post();
-}
-
+ControlWebsocketServer::ControlWebsocketServer(ControlServer& cs, ControlServer::server& server, io_service& ios) :
+		cs_(cs), server_(server), id_(0) {}
 ControlWebsocketServer::~ControlWebsocketServer() {}
 
 bool ControlWebsocketServer::on_validate(websocketpp::connection_hdl hdl) {
@@ -57,27 +52,12 @@ bool ControlWebsocketServer::on_validate(websocketpp::connection_hdl hdl) {
 
 void ControlWebsocketServer::on_open(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
-
-	auto connection_ptr = server_.get_con_from_hdl(hdl);
-	ws_sessions_.insert(connection_ptr);
-
-	heartbeat_process_.invoke_post();
+	ws_sessions_.insert(server_.get_con_from_hdl(hdl));
 }
 
 void ControlWebsocketServer::on_disconnect(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
-
 	ws_sessions_.erase(server_.get_con_from_hdl(hdl));
-	heartbeat_process_.invoke_post();
-}
-
-void ControlWebsocketServer::send_heartbeat(PeriodicProcess& process) {
-	//log_->trace() << log_tag() << BOOST_CURRENT_FUNCTION;
-	auto control_json = cs_.make_control_json();
-
-	for(auto session : ws_sessions_)
-		session->send(control_json);
-	process.invoke_after(std::chrono::seconds(1));
 }
 
 void ControlWebsocketServer::send_event(const std::string& type, Json::Value event) {

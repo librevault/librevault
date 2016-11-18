@@ -27,26 +27,44 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QProcess>
+#include <QtCore/QJsonObject>
+#include <QtCore/QUrl>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtWebSockets/QWebSocket>
+#include <memory>
 
-class Daemon : public QProcess {
+class DaemonProcess;
+class RemoteConfig;
+class Daemon : public QObject {
 Q_OBJECT
 
 public:
-	Daemon(QObject* parent);
+	Daemon(QString control_url, QObject* parent);
 	~Daemon();
 
-	void launch();
+	QNetworkAccessManager* nam() {return nam_;}
+	QUrl daemonUrl() {return daemon_url_;}
+
+	RemoteConfig* config() {return remote_config_;}
+	bool isConnected();
+
+private:
+	DaemonProcess* process_;
+	QWebSocket* event_sock_;
+	QNetworkAccessManager* nam_;
+
+	RemoteConfig* remote_config_;
+
+	QUrl daemon_url_;
 
 signals:
-	void daemonReady(const QUrl& control_url);
-	void daemonFailed(QString reason);
+	void connected();
+	void disconnected(QString message);
+
+	void eventReceived(QString name, QJsonObject event);
 
 private slots:
-	void handleError(QProcess::ProcessError error);
-	void handleStandardOutput();
+	void daemonUrlObtained(QUrl daemon_url);
 
-protected:
-	bool listening_already = false;
-	QString get_executable_path() const;
+	void handleEventMessage(const QString& message);
 };

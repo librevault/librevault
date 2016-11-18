@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Settings.h"
+#include "control/Daemon.h"
 #include "control/RemoteConfig.h"
 #include "icons/GUIIconProvider.h"
 #include "updater/Updater.h"
@@ -35,9 +36,9 @@
 #include <QCloseEvent>
 #include <QDebug>
 
-Settings::Settings(RemoteConfig* config, Updater* updater, QWidget* parent) :
+Settings::Settings(Daemon* daemon, Updater* updater, QWidget* parent) :
 		QDialog(parent),
-		config_(config),
+		daemon_(daemon),
 		updater_(updater) {
 	startup_interface_ = new StartupInterface(this);
 
@@ -78,31 +79,31 @@ void Settings::reset_ui_states() {
 	ui.box_update->setChecked(updater_->enabled());
 
 	// client_name
-	ui.line_device_name->setText(config_->getValue("client_name").toString());
+	ui.line_device_name->setText(daemon_->config()->getValue("client_name").toString());
 
 	// p2p_listen
-	p2p_listen.setAuthority(config_->getValue("p2p_listen").toString());
+	p2p_listen.setAuthority(daemon_->config()->getValue("p2p_listen").toString());
 	ui.port_box->setChecked(p2p_listen.port(0) != 0);
 	ui.port_value->setEnabled(p2p_listen.port(0) != 0);
 	ui.port_value->setValue(p2p_listen.port(0));
 
 	// natpmp_enabled
-	ui.natpmp_box->setChecked(config_->getValue("natpmp_enabled").toBool());
+	ui.natpmp_box->setChecked(daemon_->config()->getValue("natpmp_enabled").toBool());
 
 	// upnp_enabled
-	ui.upnp_box->setChecked(config_->getValue("upnp_enabled").toBool());
+	ui.upnp_box->setChecked(daemon_->config()->getValue("upnp_enabled").toBool());
 
 	// bttracker_enabled
-	ui.global_discovery_box->setChecked(config_->getValue("bttracker_enabled").toBool());
+	ui.global_discovery_box->setChecked(daemon_->config()->getValue("bttracker_enabled").toBool());
 
 	// multicast4_enabled || multicast6_enabled
 	ui.local_discovery_box->setChecked(
-		config_->getValue("multicast4_enabled").toBool()
-			|| config_->getValue("multicast6_enabled").toBool()
+		daemon_->config()->getValue("multicast4_enabled").toBool()
+			|| daemon_->config()->getValue("multicast6_enabled").toBool()
 	);
 
 	// mainline_dht_enabled
-	ui.dht_discovery_box->setChecked(config_->getValue("mainline_dht_enabled").toBool());
+	ui.dht_discovery_box->setChecked(daemon_->config()->getValue("mainline_dht_enabled").toBool());
 }
 
 void Settings::process_ui_states() {
@@ -112,27 +113,27 @@ void Settings::process_ui_states() {
 
 	/* Daemon-related settings */
 	// client_name
-	config_->setValue("client_name", ui.line_device_name->text());
+	daemon_->config()->setValue("client_name", ui.line_device_name->text());
 
 	// p2p_listen
 	p2p_listen.setPort(ui.port_box->isChecked() ? ui.port_value->value() : 0);
-	config_->setValue("p2p_listen", p2p_listen.authority());
+	daemon_->config()->setValue("p2p_listen", p2p_listen.authority());
 
 	// natpmp_enabled
-	config_->setValue("natpmp_enabled", ui.natpmp_box->isChecked());
+	daemon_->config()->setValue("natpmp_enabled", ui.natpmp_box->isChecked());
 
 	// upnp_enabled
-	config_->setValue("upnp_enabled", ui.upnp_box->isChecked());
+	daemon_->config()->setValue("upnp_enabled", ui.upnp_box->isChecked());
 
 	// bttracker_enabled
-	config_->setValue("bttracker_enabled", ui.global_discovery_box->isChecked());
+	daemon_->config()->setValue("bttracker_enabled", ui.global_discovery_box->isChecked());
 
 	// multicast4_enabled || multicast6_enabled
-	config_->setValue("multicast4_enabled", ui.local_discovery_box->isChecked());
-	config_->setValue("multicast6_enabled", ui.local_discovery_box->isChecked());
+	daemon_->config()->setValue("multicast4_enabled", ui.local_discovery_box->isChecked());
+	daemon_->config()->setValue("multicast6_enabled", ui.local_discovery_box->isChecked());
 
 	// mainline_dht_enabled
-	config_->setValue("mainline_dht_enabled", ui.dht_discovery_box->isChecked());
+	daemon_->config()->setValue("mainline_dht_enabled", ui.dht_discovery_box->isChecked());
 }
 
 void Settings::init_selector() {

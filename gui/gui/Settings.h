@@ -35,14 +35,14 @@
 #include "gui/pager/Pager.h"
 #include "startup/StartupInterface.h"
 
-class RemoteConfig;
+class Daemon;
 class Updater;
 
 class Settings : public QDialog {
 Q_OBJECT
 
 public:
-	explicit Settings(RemoteConfig* config, Updater* updater, QWidget* parent = 0);
+	explicit Settings(Daemon* daemon, Updater* updater, QWidget* parent = 0);
 	~Settings();
 
 	enum Page {
@@ -82,7 +82,7 @@ private slots:
 
 protected:
 	Pager* pager;
-	RemoteConfig* config_;
+	Daemon* daemon_;
 	Updater* updater_;
 	StartupInterface* startup_interface_;
 	QUrl p2p_listen;

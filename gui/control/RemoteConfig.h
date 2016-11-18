@@ -31,14 +31,15 @@
 #include <QObject>
 #include <QJsonValue>
 #include <QJsonObject>
+#include <QtNetwork/QNetworkAccessManager>
 
-class ControlClient;
+class Daemon;
 
 class RemoteConfig : public QObject {
 	Q_OBJECT
 
 public:
-	RemoteConfig(ControlClient* cc, QObject* parent);
+	explicit RemoteConfig(Daemon* daemon);
 	~RemoteConfig() {}
 
 	QJsonValue getValue(QString key);
@@ -48,12 +49,10 @@ signals:
 
 public slots:
 	void renewConfig();
+	void handleEvent(QString name, QJsonObject event);
 	void setValue(QString key, QJsonValue value, bool force_send = false);
 
 private:
-	ControlClient* cc_;
+	Daemon* daemon_;
 	QJsonObject cached_config_;
-
-private slots:
-	void handleEvent(QString name, QJsonObject event);
 };

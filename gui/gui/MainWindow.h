@@ -44,7 +44,7 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	MainWindow(RemoteConfig* remote_config, Updater* updater);
+	MainWindow(Daemon* daemon, Updater* updater);
 	~MainWindow();
 
 signals:

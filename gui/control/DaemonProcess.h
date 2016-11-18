@@ -26,25 +26,27 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "Daemon.h"
-#include <QCoreApplication>
-#include <windows.h>
+#pragma once
+#include <QProcess>
 
-BOOL Is64BitWindows() {
-#	if defined(_WIN64)
-	return TRUE;
-#	elif defined(_WIN32)
-	BOOL f64 = FALSE;
-    return IsWow64Process(GetCurrentProcess(), &f64) && f64;
-#	else
-	return FALSE;
-#	endif
-}
+class DaemonProcess : public QProcess {
+Q_OBJECT
 
+public:
+	DaemonProcess(QObject* parent);
+	~DaemonProcess();
 
-QString Daemon::get_executable_path() const {
-	if(Is64BitWindows())
-		return QCoreApplication::applicationDirPath() + "/x64/librevault-daemon.exe";
-	else
-		return QCoreApplication::applicationDirPath() + "/x32/librevault-daemon.exe";
-}
+	void launch();
+
+signals:
+	void daemonReady(const QUrl& control_url);
+	void daemonFailed(QString reason);
+
+private slots:
+	void handleError(QProcess::ProcessError error);
+	void handleStandardOutput();
+
+protected:
+	bool listening_already = false;
+	QString get_executable_path() const;
+};

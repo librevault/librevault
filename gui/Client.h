@@ -35,7 +35,7 @@ class MainWindow;
 class Settings;
 class TrayIcon;
 class FolderModel;
-class ControlClient;
+class Daemon;
 class RemoteConfig;
 class SingleChannel;
 
@@ -58,8 +58,7 @@ private:
 	QTranslator qt_translator_;
 
 	SingleChannel* single_channel_;
-	ControlClient* control_client_;
-	RemoteConfig* remote_config_;
+	Daemon* daemon_;
 
 public:
 	Updater* updater_;

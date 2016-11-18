@@ -37,7 +37,7 @@
 void qt_mac_set_dock_menu(QMenu *menu);
 #endif
 
-MainWindow::MainWindow(RemoteConfig* remote_config, Updater* updater) :
+MainWindow::MainWindow(Daemon* daemon, Updater* updater) :
 		QMainWindow() {
 	/* Initializing UI */
 	ui.setupUi(this);
@@ -50,7 +50,7 @@ MainWindow::MainWindow(RemoteConfig* remote_config, Updater* updater) :
 	ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
 	/* Initializing dialogs */
-	settings_ = new Settings(remote_config, updater, this);
+	settings_ = new Settings(daemon, updater, this);
 	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);

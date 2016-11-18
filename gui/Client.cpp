@@ -29,7 +29,7 @@
 #include "Client.h"
 #include "gui/MainWindow.h"
 #include "model/FolderModel.h"
-#include "control/ControlClient.h"
+#include "control/Daemon.h"
 #include "control/RemoteConfig.h"
 #include "single/SingleChannel.h"
 #include <QCommandLineParser>
@@ -59,30 +59,22 @@ Client::Client(int &argc, char **argv, int appflags) :
 
 	// Creating components
 	single_channel_ = new SingleChannel(link, this);
-	control_client_ = new ControlClient(parser.value(attach_option), this);
-
-	remote_config_ = new RemoteConfig(control_client_, this);
-
+	daemon_ = new Daemon(parser.value(attach_option), this);
 	updater_ = new Updater(this);
-
-	main_window_ = new MainWindow(remote_config_, updater_);
+	main_window_ = new MainWindow(daemon_, updater_);
 
 	// Connecting signals & slots
 	connect(single_channel_, &SingleChannel::showMainWindow, main_window_, &QMainWindow::show);
 	connect(single_channel_, &SingleChannel::openLink, this, &Client::openLink);
 
-	connect(control_client_, &ControlClient::ControlJsonReceived, main_window_, &MainWindow::handleControlJson);
+//	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
+//	connect(main_window_, &MainWindow::folderAdded, control_client_, &ControlClient::sendAddFolderJson);
+//	connect(main_window_, &MainWindow::folderRemoved, control_client_, &ControlClient::sendRemoveFolderJson);
 
-	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
-	connect(main_window_, &MainWindow::folderAdded, control_client_, &ControlClient::sendAddFolderJson);
-	connect(main_window_, &MainWindow::folderRemoved, control_client_, &ControlClient::sendRemoveFolderJson);
-
-	connect(control_client_, &ControlClient::connected, main_window_, &MainWindow::handle_connected);
-	connect(control_client_, &ControlClient::disconnected, main_window_, &MainWindow::handle_disconnected);
+	connect(daemon_, &Daemon::connected, main_window_, &MainWindow::handle_connected);
+	connect(daemon_, &Daemon::disconnected, main_window_, &MainWindow::handle_disconnected);
 
 	// Initialization complete!
-	control_client_->start();
-
 	if(!link.isEmpty())
 		QTimer::singleShot(0, [this, link]{openLink(link);});
 }

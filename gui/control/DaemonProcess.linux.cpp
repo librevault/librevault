@@ -26,53 +26,9 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QJsonObject>
-#include <QNetworkAccessManager>
-#include <QWebSocket>
-#include <memory>
+#include "DaemonProcess.h"
+#include <QString>
 
-class Daemon;
-class ControlClient : public QObject {
-Q_OBJECT
-
-public:
-	ControlClient(QString control_url = QString(), QObject* parent = nullptr);
-	~ControlClient();
-
-	QUrl daemonURL() const {return control_url_;}
-	QNetworkAccessManager* networkAccessManager() {return nam_;}
-
-	bool isConnected();
-
-signals:
-	void ControlJsonReceived(QJsonObject control_json);
-
-	void eventReceived(QString name, QJsonObject event);
-
-	void connecting();
-	void connected();
-	void disconnected(QString message);
-
-public slots:
-	void start();
-
-	void sendControlJson(QJsonObject control_json);
-	void sendConfigJson(QJsonObject config_json);
-	void sendAddFolderJson(QString secret, QString path);
-	void sendRemoveFolderJson(QString secret);
-
-private slots:
-	void connectDaemon(QUrl daemon_address);
-	void handle_message(const QString& message);
-	void handle_connect();
-	void handle_disconnect();
-	void handle_daemonfail(QString reason);
-
-private:
-	QNetworkAccessManager* nam_;
-	QWebSocket* event_sock_;
-
-	Daemon* daemon_;
-	QUrl control_url_;
-};
+QString DaemonProcess::get_executable_path() const {
+	return QStringLiteral("librevault-daemon");
+}

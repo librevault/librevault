@@ -44,6 +44,7 @@ class FolderParams;
 class Index;
 class IgnoreList;
 class PathNormalizer;
+class StateCollector;
 class Indexer {
 	LOG_SCOPE("Indexer");
 public:
@@ -60,7 +61,7 @@ public:
 		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
 	};
 
-	Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
+	Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios);
 	virtual ~Indexer();
 
 	// Index manipulation
@@ -80,6 +81,7 @@ private:
 	Index& index_;
 	IgnoreList& ignore_list_;
 	PathNormalizer& path_normalizer_;
+	StateCollector& state_collector_;
 	io_service& ios_;
 
 	const Secret& secret_;

@@ -29,6 +29,7 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "control/Config.h"
+#include "control/StateCollector.h"
 #include "folder/meta/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
@@ -36,7 +37,11 @@
 
 namespace librevault {
 
-FolderService::FolderService() : bulk_ios_("FolderService_bulk"), serial_ios_("FolderService_serial"), init_queue_(serial_ios_.ios()) {
+FolderService::FolderService(StateCollector& state_collector) :
+	bulk_ios_("FolderService_bulk"),
+	serial_ios_("FolderService_serial"),
+	state_collector_(state_collector),
+	init_queue_(serial_ios_.ios()) {
 	LOGFUNC();
 }
 
@@ -80,7 +85,7 @@ void FolderService::stop() {
 
 void FolderService::init_folder(const FolderParams& params) {
 	LOGFUNC();
-	auto group_ptr = std::make_shared<FolderGroup>(params, bulk_ios_.ios(), serial_ios_.ios());
+	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios());
 	hash_group_[group_ptr->hash()] = group_ptr;
 
 	folder_added_signal(group_ptr);

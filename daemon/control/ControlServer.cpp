@@ -26,6 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#include <librevault/crypto/Hex.h>
 #include "ControlServer.h"
 #include "Client.h"
 #include "ControlHTTPServer.h"
@@ -42,11 +43,10 @@
 
 namespace librevault {
 
-ControlServer::ControlServer(Client& client) :
-		client_(client),
+ControlServer::ControlServer(StateCollector& state_collector) :
 		ios_("ControlServer") {
-	control_ws_server_ = std::make_unique<ControlWebsocketServer>(client, *this, ws_server_, ios_.ios());
-	control_http_server_ = std::make_unique<ControlHTTPServer>(client, *this, ws_server_, ios_.ios());
+	control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_, ios_.ios());
+	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, state_collector, ios_.ios());
 
 	url bind_url;
 	if(Config::get()->global_get("control_listen").isIntegral()) {
@@ -100,80 +100,29 @@ void ControlServer::notify_global_config_changed(const std::string& key, Json::V
 	control_ws_server_->send_event("EVENT_GLOBAL_CONFIG_CHANGED", event);
 }
 
-std::string ControlServer::make_control_json() {
-	Json::Value control_json;
-
-	// ID
-	static int control_json_id = 0; // Client-wide message id
-	control_json["id"] = control_json_id++;
-	control_json["folders"] = Config::get()->folders();
-	control_json["state"] = make_state_json();
-
-	// result serialization
-	std::ostringstream os; os << control_json;
-	return os.str();
+void ControlServer::notify_global_state_changed(std::string key, Json::Value state) {
+	Json::Value event;
+	event["key"] = key;
+	event["value"] = state;
+	control_ws_server_->send_event("EVENT_GLOBAL_STATE_CHANGED", event);
 }
 
-bool ControlServer::check_origin(server::connection_ptr conn) {
+void ControlServer::notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state) {
+	Json::Value event;
+	event["folderid"] = crypto::Hex().to_string(folderid);
+	event["key"] = key;
+	event["value"] = state;
+	control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
+}
+
+bool ControlServer::check_origin(const std::string& origin) {
 	// Restrict access by "Origin" header
-	auto origin = conn->get_origin();
 	if(!origin.empty()) {
 		url origin_url(origin);
 		if(origin_url.host != "127.0.0.1" && origin_url.host != "::1" && origin_url.host != "localhost")
 			return false;
 	}
 	return true;
-}
-
-Json::Value ControlServer::make_state_json() const {
-	Json::Value state_json;                         // state_json
-	for(auto folder : client_.folder_service_->groups()) {
-		Json::Value folder_json;                    /// folder_json
-
-		folder_json["path"] = folder->params().path.string();
-		folder_json["secret"] = folder->secret().string();
-
-		// Indexer
-		folder_json["index_process"] = folder->meta_storage_->is_indexing();
-
-		// Index
-		auto index_status = folder->meta_storage_->index->get_status();
-		folder_json["index_entries_file"] = (Json::Value::UInt64)index_status.file_entries;
-		folder_json["index_entries_directory"] = (Json::Value::UInt64)index_status.directory_entries;
-		folder_json["index_entries_symlink"] = (Json::Value::UInt64)index_status.symlink_entries;
-		folder_json["index_entries_deleted"] = (Json::Value::UInt64)index_status.deleted_entries;
-
-		// Peers
-		folder_json["peers"] = Json::arrayValue;
-		for(auto p2p_peer : folder->p2p_dirs()) {
-			Json::Value peer_json;                  //// peer_json
-
-			std::ostringstream os; os << p2p_peer->remote_endpoint();
-			peer_json["endpoint"] = os.str();
-			peer_json["client_name"] = p2p_peer->client_name();
-			peer_json["user_agent"] = p2p_peer->user_agent();
-
-			// Bandwidth
-			auto bandwidth_stats = p2p_peer->heartbeat_stats();
-			peer_json["up_bandwidth"] = bandwidth_stats.up_bandwidth_;
-			peer_json["up_bandwidth_blocks"] = bandwidth_stats.up_bandwidth_;
-			peer_json["down_bandwidth"] = bandwidth_stats.down_bandwidth_;
-			peer_json["down_bandwidth_blocks"] = bandwidth_stats.down_bandwidth_;
-			// Transferred
-			peer_json["up_bytes"] = (Json::Value::UInt64)bandwidth_stats.up_bytes_;
-			peer_json["up_bytes_blocks"] = (Json::Value::UInt64)bandwidth_stats.up_bytes_blocks_;
-			peer_json["down_bytes"] = (Json::Value::UInt64)bandwidth_stats.down_bytes_;
-			peer_json["down_bytes_blocks"] = (Json::Value::UInt64)bandwidth_stats.down_bytes_blocks_;
-
-			folder_json["peers"].append(peer_json); //// /peer_json
-		}
-
-		state_json["folders"].append(folder_json);  /// /folder_json
-	}
-
-	state_json["dht_nodes_count"] = client_.discovery_->mldht_->node_count();
-
-	return state_json;                              // /state_json
 }
 
 } /* namespace librevault */

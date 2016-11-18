@@ -30,6 +30,7 @@
 #include "ControlServer.h"
 #include "p2p/websocket_config.h"
 #include "util/log_scope.h"
+#include "util/network.h"
 
 namespace librevault {
 
@@ -39,7 +40,7 @@ class ControlServer;
 class ControlWebsocketServer {
 	LOG_SCOPE("ControlWebsocketServer");
 public:
-	ControlWebsocketServer(Client& client, ControlServer& cs, ControlServer::server& server, io_service& ios);
+	ControlWebsocketServer(ControlServer& cs, ControlServer::server& server, io_service& ios);
 	virtual ~ControlWebsocketServer();
 
 	bool on_validate(websocketpp::connection_hdl hdl);
@@ -50,17 +51,12 @@ public:
 	void send_event(const std::string& type, Json::Value event);
 
 private:
-	Client& client_;
 	ControlServer& cs_;
 	ControlServer::server& server_;
 
 	std::atomic<uint64_t> id_;
 
-	PeriodicProcess heartbeat_process_;
-
 	std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
-
-	void send_heartbeat(PeriodicProcess& process);
 };
 
 } /* namespace librevault */

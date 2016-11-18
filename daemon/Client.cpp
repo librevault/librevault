@@ -27,43 +27,49 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
-
+#include "control/Config.h"
 #include "control/ControlServer.h"
-#include "p2p/P2PProvider.h"
-#include "folder/FolderService.h"
-
-#include "nodekey/NodeKey.h"
-#include "nat/PortMappingService.h"
+#include "control/StateCollector.h"
 #include "discovery/DiscoveryService.h"
-
+#include "folder/FolderService.h"
+#include "nat/PortMappingService.h"
+#include "nodekey/NodeKey.h"
+#include "p2p/P2PProvider.h"
 #include <util/log.h>
 
 namespace librevault {
 
 Client::Client() {
 	// Initializing components
+	state_collector_ = std::make_unique<StateCollector>();
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
-	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_);
-	folder_service_ = std::make_unique<FolderService>();
+	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_, *state_collector_);
+	folder_service_ = std::make_unique<FolderService>(*state_collector_);
 	p2p_provider_ = std::make_unique<P2PProvider>(*node_key_, *portmanager_, *folder_service_);
-	control_server_ = std::make_unique<ControlServer>(*this);
+	control_server_ = std::make_unique<ControlServer>(*state_collector_);
 
 	/* Connecting signals */
+	state_collector_->global_state_changed.connect([this](std::string key, Json::Value value){
+		if(control_server_) control_server_->notify_global_state_changed(key, value);
+	});
+	state_collector_->folder_state_changed.connect([this](const blob& folderid, std::string key, Json::Value value){
+		if(control_server_) control_server_->notify_folder_state_changed(folderid, key, value);
+	});
+	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr){
+		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
+	});
 	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){
 		if(discovery_) discovery_->register_group(group);
 	});
 	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){
 		if(discovery_) discovery_->unregister_group(group);
 	});
-	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr){
-		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
-	});
 	control_server_->add_folder_signal.connect([this](Json::Value json_folder){
-		if(folder_service_) folder_service_->add_folder(json_folder);
+		Config::get()->folder_add(json_folder);
 	});
 	control_server_->remove_folder_signal.connect([this](blob folder_hash){
-		if(folder_service_) folder_service_->remove_folder(folder_hash);
+		Config::get()->folder_remove(folder_hash);
 	});
 	control_server_->restart_signal.connect([this]{
 		restart();

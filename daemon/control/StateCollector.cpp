@@ -26,49 +26,51 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/multi_io_service.h"
-#include "util/scoped_async_queue.h"
-#include <boost/signals2/signal.hpp>
-#include <json/json.h>
+#include "StateCollector.h"
+#include "util/log.h"
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
-/* Folder info */
-class FolderGroup;
-class FolderParams;
-class Secret;
-class StateCollector;
+StateCollector::StateCollector() {}
+StateCollector::~StateCollector() {}
 
-class FolderService {
-	LOG_SCOPE("FolderService");
-public:
-	explicit FolderService(StateCollector& state_collector);
-	virtual ~FolderService();
+void StateCollector::global_state_set(const std::string& key, Json::Value value) {
+	if(global_state_buffer[key] != value) {
+		global_state_buffer[key] = value;
+		LOGI("Global state \"" << key << "\" is set to \"" << value << "\"");
+		global_state_changed(key, value);
+	}
+}
 
-	void run();
-	void stop();
+void StateCollector::folder_state_set(const blob& folderid, const std::string& key, Json::Value value) {
+	Json::Value& folder_buffer = folder_state_buffers[folderid];
+	if(folder_buffer[key] != value) {
+		folder_buffer[key] = value;
+		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " of \"" << key << "\" is set to \"" << value << "\"");
+		folder_state_changed(folderid, key, value);
+	}
+}
 
-	/* Signals */
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
+void StateCollector::folder_state_purge(const blob& folderid) {
+	auto it = folder_state_buffers.find(folderid);
+	if(it != folder_state_buffers.end()) {
+		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " purged");
+		folder_state_purged(folderid);
+		folder_state_buffers.erase(it);
+	}
+}
 
-	/* FolderGroup nanagenent */
-	void init_folder(const FolderParams& params);
-	void deinit_folder(const blob& folder_hash);
+Json::Value StateCollector::global_state() {
+	return global_state_buffer;
+}
 
-	std::shared_ptr<FolderGroup> get_group(const blob& hash);
-	std::vector<std::shared_ptr<FolderGroup>> groups() const;
-
-private:
-	multi_io_service bulk_ios_;
-	multi_io_service serial_ios_;
-	StateCollector& state_collector_;
-
-	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
-	ScopedAsyncQueue init_queue_;
-};
+Json::Value StateCollector::folder_state(const blob& folderid) {
+	auto it = folder_state_buffers.find(folderid);
+	if(it != folder_state_buffers.end())
+		return it->second;
+	else
+		return Json::Value();
+}
 
 } /* namespace librevault */

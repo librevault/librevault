@@ -39,7 +39,7 @@ class MLDHTSearcher;
 class MLDHTDiscovery : public DiscoverySubService {
 	LOG_SCOPE("MLDHTDiscovery");
 public:
-	MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping);
+	MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping, StateCollector& state_collector);
 	virtual ~MLDHTDiscovery();
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
@@ -53,6 +53,7 @@ public:
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 protected:
 	PortMappingService& port_mapping_;
+	StateCollector& state_collector_;
 
 	std::map<btcompat::info_hash, std::shared_ptr<FolderGroup>> groups_;
 	std::map<btcompat::info_hash, std::unique_ptr<MLDHTSearcher>> searchers_;

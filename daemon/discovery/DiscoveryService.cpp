@@ -27,22 +27,22 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoveryService.h"
-
-#include "StaticDiscovery.h"
-#include "bttracker/BTTrackerDiscovery.h"
-#include "multicast/MulticastDiscovery.h"
-#include "mldht/MLDHTDiscovery.h"
+#include "control/StateCollector.h"
+#include "discovery/StaticDiscovery.h"
+#include "discovery/bttracker/BTTrackerDiscovery.h"
+#include "discovery/multicast/MulticastDiscovery.h"
+#include "discovery/mldht/MLDHTDiscovery.h"
 #include "util/log.h"
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping) : io_service_("DiscoveryService") {
+DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector) : io_service_("DiscoveryService") {
 	LOGFUNC();
 	static_discovery_ = std::make_unique<StaticDiscovery>(*this, io_service_.ios());
 	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, io_service_.ios(), node_key);
 	multicast6_ = std::make_unique<MulticastDiscovery6>(*this, io_service_.ios(), node_key);
 	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, io_service_.ios(), node_key, port_mapping);
-	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping);
+	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping, state_collector);
 	LOGFUNCEND();
 }
 

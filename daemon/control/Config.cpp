@@ -49,7 +49,7 @@ Config::~Config() {
 	save();
 }
 
-std::unique_ptr<Config> Config::instance_ = nullptr;
+Config* Config::instance_ = nullptr;
 
 Json::Value Config::global_get(const std::string& name) {
 	return globals_custom_.get(name, globals_defaults_[name]);

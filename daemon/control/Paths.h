@@ -34,9 +34,14 @@ namespace librevault {
 class Paths {
 public:
 	static Paths* get(const boost::filesystem::path& appdata_path = boost::filesystem::path()) {
-		if(!instance_)
-			instance_ = std::unique_ptr<Paths>(new Paths(appdata_path));
-		return instance_.get();
+		if(!instance_) {
+			instance_ = new Paths(appdata_path);
+		}
+		return instance_;
+	}
+	static void deinit() {
+		delete instance_;
+		instance_ = nullptr;
 	}
 
 	const boost::filesystem::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
@@ -44,7 +49,7 @@ private:
 	Paths(const boost::filesystem::path& appdata_path);
 	boost::filesystem::path default_appdata_path();
 
-	static std::unique_ptr<Paths> instance_;
+	static Paths* instance_;
 };
 
 } /* namespace librevault */

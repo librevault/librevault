@@ -42,8 +42,12 @@ public:
 
 	static Config* get() {
 		if(!instance_)
-			instance_ = std::unique_ptr<Config>(new Config());
-		return instance_.get();
+			instance_ = new Config();
+		return instance_;
+	}
+	static void deinit() {
+		delete instance_;
+		instance_ = nullptr;
 	}
 
 	/* Getters and setters */
@@ -62,7 +66,7 @@ public:
 protected:
 	Config();
 
-	static std::unique_ptr<Config> instance_;
+	static Config* instance_;
 
 private:
 	Json::Value globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;

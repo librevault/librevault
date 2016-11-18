@@ -42,6 +42,6 @@ Paths::Paths(const boost::filesystem::path& appdata_path) :
 	boost::filesystem::create_directories(this->appdata_path);
 }
 
-std::unique_ptr<Paths> Paths::instance_ = nullptr;
+Paths* Paths::instance_ = nullptr;
 
 } /* namespace librevault */

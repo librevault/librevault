@@ -119,11 +119,17 @@ int main(int argc, char** argv) {
 		log->info() << Version::current().name() << " " << Version::current().version_string();
 
 		// And, run!
-		Client client;
-		client.run();
-		log->flush();
+		auto client = std::make_unique<Client>();
+		client->run();
+		bool want_restart = client->want_restart();
+		client.reset();
 
-		if(!client.want_restart()) break;
+		// Deinitialization
+		log->flush();
+		Config::deinit();
+		Paths::deinit();
+
+		if(!want_restart) break;
 	}while(true);
 
 	return 0;

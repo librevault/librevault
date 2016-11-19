@@ -25,7 +25,7 @@ file(GLOB_RECURSE MAIN_UIS "*.ui")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
 # Windows sources
-if(WIN32)
+if(OS_WIN)
 	configure_file(resources/librevault.rc librevault.rc @ONLY)
 	configure_file(resources/librevault.ico librevault.ico COPYONLY)
 	configure_file(resources/visualstyle.manifest visualstyle.manifest COPYONLY)
@@ -36,13 +36,13 @@ else()
 endif()
 
 # Linux sources
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(NOT OS_LINUX)
 	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	file(GLOB_RECURSE MAIN_MMS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
@@ -102,6 +102,9 @@ endif()
 if(OS_MAC)
 	target_link_libraries(librevault-gui Qt5::MacExtras)
 endif()
+
+# QtSingleApplication
+target_link_libraries(librevault-gui QtSingleApplication)
 
 # WinSparkle
 if(OS_WIN)

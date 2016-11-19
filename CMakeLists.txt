@@ -207,6 +207,9 @@ add_subdirectory("contrib/rabin")
 ## dht
 add_subdirectory("contrib/dht")
 
+## QtSingleApplication
+add_subdirectory("contrib/qtsingleapplication")
+
 ## Spdlog
 find_package(spdlog QUIET)
 add_definitions(-DSPDLOG_WCHAR_FILENAMES)

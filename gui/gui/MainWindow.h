@@ -53,6 +53,7 @@ signals:
 	void folderRemoved(QString secret);
 
 public slots:
+	void showWindow();
 	void retranslateUi();
 	void handleControlJson(QJsonObject state_json);
 	void openWebsite();

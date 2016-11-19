@@ -69,6 +69,12 @@ MainWindow::MainWindow(Daemon* daemon, Updater* updater) :
 MainWindow::~MainWindow() {}
 
 /* public slots */
+void MainWindow::showWindow() {
+	show();
+	activateWindow();
+	raise();
+}
+
 void MainWindow::retranslateUi() {
 	show_main_window_action->setText(tr("Show Librevault window"));
 	open_website_action->setText(tr("Open Librevault website"));
@@ -155,9 +161,7 @@ void MainWindow::changeEvent(QEvent* e) {
 
 void MainWindow::init_actions() {
 	show_main_window_action = new QAction(this);
-	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::show);
-	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::activateWindow);
-	connect(show_main_window_action, &QAction::triggered, this, &QMainWindow::raise);
+	connect(show_main_window_action, &QAction::triggered, this, &MainWindow::showWindow);
 
 	open_website_action = new QAction(this);
 	connect(open_website_action, &QAction::triggered, this, &MainWindow::openWebsite);

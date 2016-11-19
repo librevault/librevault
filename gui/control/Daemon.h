@@ -48,6 +48,9 @@ public:
 	RemoteConfig* config() {return remote_config_;}
 	bool isConnected();
 
+public slots:
+	void start();
+
 private:
 	DaemonProcess* process_;
 	QWebSocket* event_sock_;

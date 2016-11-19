@@ -33,6 +33,7 @@
 #include <QtCore/QTimer>
 
 Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
+	daemon_url_ = control_url;
 	process_ = new DaemonProcess(this);
 	event_sock_ = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
 	nam_ = new QNetworkAccessManager(this);
@@ -51,18 +52,19 @@ Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
 
 	connect(this, &Daemon::connected, []{qDebug() << "Daemon connection established";});
 	connect(this, &Daemon::disconnected, [](QString message){qDebug() << "Daemon connection closed: " << message;});
-
-	//
-	if(control_url.isEmpty())
-		QTimer::singleShot(0, process_, &DaemonProcess::launch);
-	else
-		emit daemonUrlObtained(QUrl(control_url));
 }
 
 Daemon::~Daemon() {}
 
 bool Daemon::isConnected() {
 	return event_sock_->isValid();
+}
+
+void Daemon::start() {
+	if(daemon_url_.isEmpty())
+		process_->launch();
+	else
+		emit daemonUrlObtained(QUrl(daemon_url_));
 }
 
 void Daemon::daemonUrlObtained(QUrl daemon_url) {

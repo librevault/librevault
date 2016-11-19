@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "updater/Updater.h"
+#include <QtSingleApplication>
 #include <QApplication>
 #include <QTranslator>
 
@@ -37,9 +38,8 @@ class TrayIcon;
 class FolderModel;
 class Daemon;
 class RemoteConfig;
-class SingleChannel;
 
-class Client : public QApplication {
+class Client : public QtSingleApplication {
 Q_OBJECT
 
 public:
@@ -57,13 +57,18 @@ private:
 	QTranslator translator_;
 	QTranslator qt_translator_;
 
-	SingleChannel* single_channel_;
 	Daemon* daemon_;
 
-public:
 	Updater* updater_;
 
-private:
 	// GUI
 	MainWindow* main_window_;
+
+	QString pending_link_;
+
+	bool allow_multiple;
+
+private slots:
+	void started();
+	void singleMessageReceived(const QString &message);
 };

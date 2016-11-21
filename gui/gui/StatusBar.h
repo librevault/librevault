@@ -33,21 +33,21 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QHBoxLayout>
 
+class Daemon;
 class StatusBar : public QObject {
 Q_OBJECT
 
 public:
-	StatusBar(QStatusBar* bar);
+	StatusBar(QStatusBar* bar, Daemon* daemon);
 	~StatusBar();
 
 public slots:
-	void handleControlJson(QJsonObject state_json);
+	void handleGlobalConfigChanged(QString key, QJsonValue value);
+	void handleGlobalStateChanged(QString key, QJsonValue value);
 
-	void refreshDHT(unsigned nodes);
-	void refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes);
-
-protected:
+private:
 	QStatusBar* bar_;
+	Daemon* daemon_;
 
 	QWidget* container_;
 	QHBoxLayout* container_layout_;
@@ -56,4 +56,10 @@ protected:
 	QLabel* up_label_;
 
 	QFrame* create_separator() const;
+
+private slots:
+	void refreshDHT();
+	void refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes);
+
+	void showDHTMenu(const QPoint& pos);
 };

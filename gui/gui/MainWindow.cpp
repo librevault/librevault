@@ -27,7 +27,9 @@
  * files in the program, then also delete it here.
  */
 #include "MainWindow.h"
-#include "Client.h"
+#include "control/Daemon.h"
+#include "control/RemoteConfig.h"
+#include "control/RemoteState.h"
 #include "gui/FolderProperties.h"
 #include "gui/StatusBar.h"
 #include "icons/GUIIconProvider.h"
@@ -41,7 +43,9 @@ MainWindow::MainWindow(Daemon* daemon, Updater* updater) :
 		QMainWindow() {
 	/* Initializing UI */
 	ui.setupUi(this);
-	status_bar_ = std::make_unique<StatusBar>(ui.statusBar);
+	status_bar_ = new StatusBar(ui.statusBar, daemon);
+	connect(daemon->state(), &RemoteState::globalStateChanged, status_bar_, &StatusBar::handleGlobalStateChanged);
+	connect(daemon->config(), &RemoteConfig::valueChanged, status_bar_, &StatusBar::handleGlobalConfigChanged);
 
 	/* Initializing models */
 	folder_model_ = std::make_unique<FolderModel>(this);
@@ -91,12 +95,6 @@ void MainWindow::retranslateUi() {
 
 	ui.retranslateUi(this);
 	settings_->retranslateUi();
-}
-
-void MainWindow::handleControlJson(QJsonObject state_json) {
-	settings_->handleControlJson(state_json);
-	folder_model_->handleControlJson(state_json);
-	status_bar_->handleControlJson(state_json);
 }
 
 void MainWindow::openWebsite() {

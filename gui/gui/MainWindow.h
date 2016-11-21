@@ -55,7 +55,6 @@ signals:
 public slots:
 	void showWindow();
 	void retranslateUi();
-	void handleControlJson(QJsonObject state_json);
 	void openWebsite();
 
 	void handle_disconnected(QString message);
@@ -69,7 +68,7 @@ protected slots:
 protected:
 	/* UI elements */
 	Ui::MainWindow ui;
-	std::unique_ptr<StatusBar> status_bar_;
+	StatusBar* status_bar_;
 
 	/* Models */
 	std::unique_ptr<FolderModel> folder_model_;

@@ -43,9 +43,15 @@ public:
 	~RemoteConfig() {}
 
 	QJsonValue getValue(QString key);
+	QJsonValue getFolderValue(QByteArray folderid, QString key);
+	QList<QByteArray> folderList();
 
 signals:
+	void globalConfigRenewed();
+	void folderConfigRenewed();
+
 	void valueChanged(QString key, QJsonValue value);
+	//void folder
 
 public slots:
 	void renewConfig();
@@ -55,4 +61,5 @@ public slots:
 private:
 	Daemon* daemon_;
 	QJsonObject cached_config_;
+	QMap<QByteArray, QJsonObject> cached_folders_;
 };

@@ -39,8 +39,8 @@
 void qt_mac_set_dock_menu(QMenu *menu);
 #endif
 
-MainWindow::MainWindow(Daemon* daemon, Updater* updater) :
-		QMainWindow() {
+MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater) :
+		QMainWindow(), folder_model_(folder_model) {
 	/* Initializing UI */
 	ui.setupUi(this);
 	status_bar_ = new StatusBar(ui.statusBar, daemon);
@@ -48,8 +48,7 @@ MainWindow::MainWindow(Daemon* daemon, Updater* updater) :
 	connect(daemon->config(), &RemoteConfig::valueChanged, status_bar_, &StatusBar::handleGlobalConfigChanged);
 
 	/* Initializing models */
-	folder_model_ = std::make_unique<FolderModel>(this);
-	ui.treeView->setModel(folder_model_.get());
+	ui.treeView->setModel(folder_model_);
 	ui.treeView->header()->setStretchLastSection(false);
 	ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
@@ -134,16 +133,16 @@ void MainWindow::handleRemoveFolder() {
 		auto selection_model = ui.treeView->selectionModel()->selectedRows();
 		for(auto model_index : selection_model) {
 			qDebug() << model_index;
-			QString secret = folder_model_->data(model_index, FolderModel::SecretRole).toString();
-			qDebug() << secret;
-			emit folderRemoved(secret);
+			//QString secret = folder_model_->data(model_index, FolderModel::SecretRole).toString();
+			//qDebug() << secret;
+			//emit folderRemoved(secret);
 		}
 	}
 }
 
 void MainWindow::handleOpenFolderProperties(const QModelIndex &index) {
-	QByteArray hash = folder_model_->data(index, FolderModel::HashRole).toByteArray();
-	folder_model_->getFolderDialog(hash)->show();
+	//QByteArray hash = folder_model_->data(index, FolderModel::HashRole).toByteArray();
+	//folder_model_->getFolderDialog(hash)->show();
 }
 
 void MainWindow::changeEvent(QEvent* e) {

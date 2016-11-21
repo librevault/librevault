@@ -44,7 +44,7 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	MainWindow(Daemon* daemon, Updater* updater);
+	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater);
 	~MainWindow();
 
 signals:
@@ -71,7 +71,7 @@ protected:
 	StatusBar* status_bar_;
 
 	/* Models */
-	std::unique_ptr<FolderModel> folder_model_;
+	FolderModel* folder_model_;
 
 	/* Dialogs */
 	Settings* settings_;

@@ -27,19 +27,19 @@
  * files in the program, then also delete it here.
  */
 #include "PeerModel.h"
+#include "FolderModel.h"
+#include "control/Daemon.h"
+#include "control/RemoteState.h"
+#include "util/human_size.h"
 #include <QFileIconProvider>
-#include <QJsonArray>
-#include <util/human_size.h>
-#include <librevault/Secret.h>
-#include "../gui/FolderProperties.h"
 
-PeerModel::PeerModel(QWidget* parent) :
-		QAbstractListModel() {}
+PeerModel::PeerModel(QByteArray folderid, Daemon* daemon, FolderModel* parent) :
+		QAbstractListModel(parent), daemon_(daemon), folderid_(folderid) {}
 
 PeerModel::~PeerModel() {}
 
 int PeerModel::rowCount(const QModelIndex &parent) const {
-	return folder_state_json_["peers"].toArray().size();
+	return daemon_->state()->getFolderValue(folderid_, "peers").toArray().size();
 }
 int PeerModel::columnCount(const QModelIndex &parent) const {
 	return (int)Column::COLUMN_COUNT;
@@ -47,7 +47,7 @@ int PeerModel::columnCount(const QModelIndex &parent) const {
 QVariant PeerModel::data(const QModelIndex &index, int role) const {
 	auto column = (Column)index.column();
 
-	auto peer_object = folder_state_json_["peers"].toArray().at(index.row()).toObject();
+	auto peer_object = daemon_->state()->getFolderValue(folderid_, "peers").toArray().at(index.row()).toObject();
 
 	if(role == Qt::DisplayRole) {
 		switch(column) {
@@ -84,11 +84,7 @@ QVariant PeerModel::headerData(int section, Qt::Orientation orientation, int rol
 	return QVariant();
 }
 
-void PeerModel::update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json) {
-	control_json_ = control_json;
-	folder_config_json_ = folder_config_json;
-	folder_state_json_ = folder_state_json;
-
+void PeerModel::refresh() {
 	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
 	emit layoutChanged();
 }

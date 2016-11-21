@@ -58,6 +58,7 @@ private:
 	QTranslator qt_translator_;
 
 	Daemon* daemon_;
+	FolderModel* folder_model_;
 
 	Updater* updater_;
 

@@ -28,6 +28,7 @@
  */
 #include "RemoteConfig.h"
 #include "Daemon.h"
+#include <librevault/Secret.h>
 #include <QNetworkReply>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -36,6 +37,14 @@ RemoteConfig::RemoteConfig(Daemon* daemon) : QObject(daemon), daemon_(daemon) {}
 
 QJsonValue RemoteConfig::getValue(QString key) {
 	return cached_config_[key];
+}
+
+QJsonValue RemoteConfig::getFolderValue(QByteArray folderid, QString key) {
+	return cached_folders_[folderid][key];
+}
+
+QList<QByteArray> RemoteConfig::folderList() {
+	return cached_folders_.keys();
 }
 
 void RemoteConfig::setValue(QString key, QJsonValue value, bool force_send) {
@@ -61,12 +70,31 @@ void RemoteConfig::setValue(QString key, QJsonValue value, bool force_send) {
 }
 
 void RemoteConfig::renewConfig() {
-	QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals"));
-	QNetworkReply* reply = daemon_->nam()->get(request);
-	connect(reply, &QNetworkReply::finished, [this, reply] {
-		if(reply->error() == QNetworkReply::NoError) {
-			cached_config_ = QJsonDocument::fromJson(reply->readAll()).object();
+	QNetworkRequest globals_request(daemon_->daemonUrl().toString().append("/v1/globals"));
+	QNetworkReply* globals_reply = daemon_->nam()->get(globals_request);
+	connect(globals_reply, &QNetworkReply::finished, [this, globals_reply] {
+		if(globals_reply->error() == QNetworkReply::NoError) {
+			cached_config_ = QJsonDocument::fromJson(globals_reply->readAll()).object();
 			qDebug() << "Fetched new config from daemon";
+			emit globalConfigRenewed();
+		}
+	});
+
+	QNetworkRequest folders_request(daemon_->daemonUrl().toString().append("/v1/folders"));
+	QNetworkReply* folders_reply = daemon_->nam()->get(folders_request);
+	connect(folders_reply, &QNetworkReply::finished, [this, folders_reply] {
+		if(folders_reply->error() == QNetworkReply::NoError) {
+			auto folders_array = QJsonDocument::fromJson(folders_reply->readAll()).array();
+			for(auto folder : folders_array) {
+				QJsonObject folder_object = folder.toObject();
+
+				librevault::Secret secret(folder_object["secret"].toString().toStdString());
+				QByteArray folderid((const char*)secret.get_Hash().data(), secret.get_Hash().size());
+
+				cached_folders_[folderid] = folder_object;
+			}
+			qDebug() << "Fetched new folder config from daemon";
+			emit folderConfigRenewed();
 		}
 	});
 }

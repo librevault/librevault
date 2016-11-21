@@ -30,13 +30,14 @@
 #include <QAbstractTableModel>
 #include <QJsonObject>
 
-class FolderProperties;
+class Daemon;
+class FolderModel;
 
 class PeerModel : public QAbstractListModel {
 Q_OBJECT
 
 public:
-	PeerModel(QWidget* parent);
+	PeerModel(QByteArray folderid, Daemon* daemon, FolderModel* parent);
 	~PeerModel();
 
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
@@ -46,11 +47,11 @@ public:
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
 public slots:
-	void update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json);
+	void refresh();
 
 private:
-	QWidget* parent_widget_;
-	QJsonObject control_json_, folder_config_json_, folder_state_json_;
+	Daemon* daemon_;
+	QByteArray folderid_;
 
 	enum class Column {
 		CLIENT_NAME,

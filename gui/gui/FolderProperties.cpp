@@ -40,7 +40,7 @@ FolderProperties::FolderProperties(const librevault::Secret& secret, QWidget* pa
 
 	ui.setupUi(this);
 
-	peer_model_ = std::make_unique<PeerModel>(this);
+	//peer_model_ = std::make_unique<PeerModel>(this);
 	ui.peers_treeView->setModel(peer_model_.get());
 
 #ifdef Q_OS_MAC
@@ -89,5 +89,5 @@ void FolderProperties::update(const QJsonObject& control_json, const QJsonObject
 	ui.folder_size->setText(tr("%n file(s)", "", folder_state_json["file_entries"].toInt()) + " " + tr("%n directory(s)", "", folder_state_json["directory_entries"].toInt()));
 	ui.connected_counter->setText(tr("%n connected", "", folder_state_json["peers"].toArray().size()));
 
-	peer_model_->update(control_json, folder_config_json, folder_state_json);
+	peer_model_->refresh();
 }

@@ -56,11 +56,13 @@ private:
 
 	// config
 	void handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_config(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_config_all(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_config_one(ControlServer::server::connection_ptr conn, std::smatch matched);
 
 	// state
 	void handle_globals_state(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_state(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_state_all(ControlServer::server::connection_ptr conn, std::smatch matched);
+	void handle_folders_state_one(ControlServer::server::connection_ptr conn, std::smatch matched);
 
 	// daemon
 	void handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched);

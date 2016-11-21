@@ -65,6 +65,13 @@ Json::Value StateCollector::global_state() {
 	return global_state_buffer;
 }
 
+Json::Value StateCollector::folder_state() {
+	Json::Value folder_state_all;
+	for(auto& state_pair : folder_state_buffers)
+		folder_state_all.append(state_pair.second);
+	return folder_state_all;
+}
+
 Json::Value StateCollector::folder_state(const blob& folderid) {
 	auto it = folder_state_buffers.find(folderid);
 	if(it != folder_state_buffers.end())

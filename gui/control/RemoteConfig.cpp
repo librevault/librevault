@@ -61,18 +61,23 @@ void RemoteConfig::setValue(QString key, QJsonValue value, bool force_send) {
 }
 
 void RemoteConfig::renewConfig() {
-		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals"));
-		QNetworkReply* reply = daemon_->nam()->get(request);
-		connect(reply, &QNetworkReply::finished, [this, reply] {
-			if(reply->error() == QNetworkReply::NoError) {
-				cached_config_ = QJsonDocument::fromJson(reply->readAll()).object();
-				qDebug() << "Fetched new config from daemon";
-			}
-		});
+	QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals"));
+	QNetworkReply* reply = daemon_->nam()->get(request);
+	connect(reply, &QNetworkReply::finished, [this, reply] {
+		if(reply->error() == QNetworkReply::NoError) {
+			cached_config_ = QJsonDocument::fromJson(reply->readAll()).object();
+			qDebug() << "Fetched new config from daemon";
+		}
+	});
 }
 
 void RemoteConfig::handleEvent(QString name, QJsonObject event) {
 	if(name == "EVENT_GLOBAL_CONFIG_CHANGED") {
-		cached_config_[event["key"].toString()] = event["value"];
+		QString key = event["key"].toString();
+		QJsonValue value = event["value"];
+		if(cached_config_[key] != value) {
+			cached_config_[key] = value;
+			emit valueChanged(key, value);
+		}
 	}
 }

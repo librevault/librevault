@@ -43,11 +43,13 @@ ControlHTTPServer::ControlHTTPServer(ControlServer& cs, ControlServer::server& s
 
 	// config
 	ADD_HANDLER(R"(^\/v1\/globals(?:\/(\w+?))?\/?$)", handle_globals_config);
-	ADD_HANDLER(R"(^\/v1\/folders(?:\/(\w+?))?\/?$)", handle_folders_config);
+	ADD_HANDLER(R"(^\/v1\/folders\/?$)", handle_folders_config_all);
+	ADD_HANDLER(R"(^\/v1\/folders\/(?!state)(\w+?)\/?$)", handle_folders_config_one);
 
 	// state
 	ADD_HANDLER(R"(^\/v1\/state\/?$)", handle_globals_state);
-	ADD_HANDLER(R"(^\/v1\/folders\/(\w+?)\/state\/?$)", handle_folders_state);
+	ADD_HANDLER(R"(^\/v1\/folders\/state\/?$)", handle_folders_state_all);
+	ADD_HANDLER(R"(^\/v1\/folders\/(?!state)(\w+?)\/state\/?$)", handle_folders_state_one);
 
 	// daemon
 	ADD_HANDLER(R"(^\/v1\/version\/?$)", handle_version);
@@ -127,28 +129,30 @@ void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_
 	}
 }
 
-void ControlHTTPServer::handle_folders_config(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
+void ControlHTTPServer::handle_folders_config_all(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	if(conn->get_request().get_method() == "GET") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
 		conn->set_body(Json::FastWriter().write(Config::get()->export_folders()));
-	}else if(matched[1].matched) {
-		blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
-		if(conn->get_request().get_method() == "GET") {
-			conn->set_status(websocketpp::http::status_code::ok);
-			conn->append_header("Content-Type", "text/x-json");
-			conn->set_body(Json::FastWriter().write(Config::get()->folder_get(folderid)));
-		}else if(conn->get_request().get_method() == "PUT") {
-			conn->set_status(websocketpp::http::status_code::ok);
+	}
+}
 
-			Json::Value new_value;
-			Json::Reader().parse(conn->get_request_body(), new_value);
+void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
+	if(conn->get_request().get_method() == "GET") {
+		conn->set_status(websocketpp::http::status_code::ok);
+		conn->append_header("Content-Type", "text/x-json");
+		conn->set_body(Json::FastWriter().write(Config::get()->folder_get(folderid)));
+	}else if(conn->get_request().get_method() == "PUT") {
+		conn->set_status(websocketpp::http::status_code::ok);
 
-			Config::get()->folder_add(new_value);
-		}else if(conn->get_request().get_method() == "DELETE") {
-			conn->set_status(websocketpp::http::status_code::ok);
-			Config::get()->folder_remove(folderid);
-		}
+		Json::Value new_value;
+		Json::Reader().parse(conn->get_request_body(), new_value);
+
+		Config::get()->folder_add(new_value);
+	}else if(conn->get_request().get_method() == "DELETE") {
+		conn->set_status(websocketpp::http::status_code::ok);
+		Config::get()->folder_remove(folderid);
 	}
 }
 
@@ -160,15 +164,19 @@ void ControlHTTPServer::handle_globals_state(ControlServer::server::connection_p
 	}
 }
 
-void ControlHTTPServer::handle_folders_state(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET" && matched[1].matched) {
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
+void ControlHTTPServer::handle_folders_state_all(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	conn->append_header("Content-Type", "text/x-json");
 
-		blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
-		state_collector_.folder_state(folderid);
-		conn->set_body(Json::FastWriter().write(state_collector_.folder_state(folderid)));
-	}
+	conn->set_body(Json::FastWriter().write(state_collector_.folder_state()));
+}
+
+void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
+	conn->set_status(websocketpp::http::status_code::ok);
+	conn->append_header("Content-Type", "text/x-json");
+
+	blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
+	conn->set_body(Json::FastWriter().write(state_collector_.folder_state(folderid)));
 }
 
 } /* namespace librevault */

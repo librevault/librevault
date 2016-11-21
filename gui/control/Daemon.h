@@ -35,6 +35,7 @@
 
 class DaemonProcess;
 class RemoteConfig;
+class RemoteState;
 class Daemon : public QObject {
 Q_OBJECT
 
@@ -46,6 +47,7 @@ public:
 	QUrl daemonUrl() {return daemon_url_;}
 
 	RemoteConfig* config() {return remote_config_;}
+	RemoteState* state() {return remote_state_;}
 	bool isConnected();
 
 public slots:
@@ -57,6 +59,7 @@ private:
 	QNetworkAccessManager* nam_;
 
 	RemoteConfig* remote_config_;
+	RemoteState* remote_state_;
 
 	QUrl daemon_url_;
 

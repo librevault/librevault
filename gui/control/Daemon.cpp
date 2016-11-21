@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #include "Daemon.h"
-#include "RemoteConfig.h"
 #include "DaemonProcess.h"
+#include "RemoteConfig.h"
+#include "RemoteState.h"
 #include <QtCore/QJsonDocument>
 #include <QtCore/QTimer>
 
@@ -38,6 +39,7 @@ Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
 	event_sock_ = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
 	nam_ = new QNetworkAccessManager(this);
 	remote_config_ = new RemoteConfig(this);
+	remote_state_ = new RemoteState(this);
 
 	// Connecting signals & slots
 	connect(process_, &DaemonProcess::daemonReady, this, &Daemon::daemonUrlObtained);
@@ -48,7 +50,9 @@ Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
 	connect(event_sock_, &QWebSocket::textMessageReceived, this, &Daemon::handleEventMessage);
 
 	connect(this, &Daemon::connected, remote_config_, &RemoteConfig::renewConfig);
+	connect(this, &Daemon::connected, remote_state_, &RemoteState::renewState);
 	connect(this, &Daemon::eventReceived, remote_config_, &RemoteConfig::handleEvent);
+	connect(this, &Daemon::eventReceived, remote_state_, &RemoteState::handleEvent);
 
 	connect(this, &Daemon::connected, []{qDebug() << "Daemon connection established";});
 	connect(this, &Daemon::disconnected, [](QString message){qDebug() << "Daemon connection closed: " << message;});

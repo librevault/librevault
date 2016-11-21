@@ -26,36 +26,35 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+
 #pragma once
-#include "util/blob.h"
-#include "util/log_scope.h"
-#include <json/json.h>
-#include <boost/signals2/signal.hpp>
+#include <QObject>
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QtNetwork/QNetworkAccessManager>
 
-namespace librevault {
+class Daemon;
 
-class StateCollector {
-	LOG_SCOPE("StateCollector");
+class RemoteState : public QObject {
+	Q_OBJECT
+
 public:
-	StateCollector();
-	~StateCollector();
+	explicit RemoteState(Daemon* daemon);
+	~RemoteState() {}
 
-	boost::signals2::signal<void(std::string, Json::Value)> global_state_changed;
-	void global_state_set(const std::string& key, Json::Value value);
+	QJsonValue getValue(QString key);
 
-	boost::signals2::signal<void(const blob& folderid, std::string, Json::Value)> folder_state_changed;
-	void folder_state_set(const blob& folderid, const std::string& key, Json::Value value);
+signals:
+	void globalStateChanged(QString key, QJsonValue value);
+	void folderStateChanged(QByteArray folderid, QString key, QJsonValue value);
 
-	boost::signals2::signal<void(const blob& folderid)> folder_state_purged;
-	void folder_state_purge(const blob& folderid);
-
-	Json::Value global_state();
-	Json::Value folder_state();
-	Json::Value folder_state(const blob& folderid);
+public slots:
+	void renewState();
+	void handleEvent(QString name, QJsonObject event);
+	//void setValue(QString key, QJsonValue value, bool force_send = false);
 
 private:
-	Json::Value global_state_buffer;
-	std::map<blob, Json::Value> folder_state_buffers;
+	Daemon* daemon_;
+	QJsonObject cached_global_state_;
+	QMap<QByteArray, QJsonObject> cached_folder_state_;
 };
-
-} /* namespace librevault */

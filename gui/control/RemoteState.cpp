@@ -35,17 +35,22 @@
 
 RemoteState::RemoteState(Daemon* daemon) : QObject(daemon), daemon_(daemon) {}
 
-QJsonValue RemoteState::getValue(QString key) {
+QJsonValue RemoteState::getGlobalValue(QString key) {
 	return cached_global_state_[key];
 }
 
+QJsonValue RemoteState::getFolderValue(QByteArray folderid, QString key) {
+	return cached_folder_state_[folderid][key];
+}
+
 void RemoteState::renewState() {
-	QNetworkRequest request_globals(daemon_->daemonUrl().toString().append("/v1/globals"));
+	QNetworkRequest request_globals(daemon_->daemonUrl().toString().append("/v1/state"));
 	QNetworkReply* reply_globals = daemon_->nam()->get(request_globals);
 	connect(reply_globals, &QNetworkReply::finished, [this, reply_globals] {
 		if(reply_globals->error() == QNetworkReply::NoError) {
 			cached_global_state_ = QJsonDocument::fromJson(reply_globals->readAll()).object();
 			qDebug() << "Fetched global state from daemon";
+			emit globalStateRenewed();
 		}
 	});
 
@@ -64,6 +69,7 @@ void RemoteState::renewState() {
 				cached_folder_state_[folderid] = state_item_object;
 			}
 			qDebug() << "Fetched folders state from daemon";
+			emit folderStateRenewed();
 		}
 	});
 }

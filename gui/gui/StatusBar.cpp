@@ -101,7 +101,7 @@ QFrame* StatusBar::create_separator() const {
 
 void StatusBar::refreshDHT() {
 	if(daemon_->config()->getValue("mainline_dht_enabled").toBool()) {
-		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getValue("dht_nodes_count").toInt()));
+		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getGlobalValue("dht_nodes_count").toInt()));
 	}else{
 		dht_label_->setText(tr("DHT: disabled", "DHT"));
 	}

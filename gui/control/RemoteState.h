@@ -42,11 +42,14 @@ public:
 	explicit RemoteState(Daemon* daemon);
 	~RemoteState() {}
 
-	QJsonValue getValue(QString key);
+	QJsonValue getGlobalValue(QString key);
+	QJsonValue getFolderValue(QByteArray folderid, QString key);
 
 signals:
 	void globalStateChanged(QString key, QJsonValue value);
 	void folderStateChanged(QByteArray folderid, QString key, QJsonValue value);
+	void globalStateRenewed();
+	void folderStateRenewed();
 
 public slots:
 	void renewState();

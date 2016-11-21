@@ -31,6 +31,7 @@
 #include "model/FolderModel.h"
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
+#include "control/RemoteState.h"
 #include <QCommandLineParser>
 #include <QLibraryInfo>
 
@@ -60,8 +61,9 @@ Client::Client(int &argc, char **argv, int appflags) :
 
 	// Creating components
 	daemon_ = new Daemon(parser.value(attach_option), this);
+	folder_model_ = new FolderModel(daemon_);
 	updater_ = new Updater(this);
-	main_window_ = new MainWindow(daemon_, updater_);
+	main_window_ = new MainWindow(daemon_, folder_model_, updater_);
 
 	// Connecting signals & slots
 //	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
@@ -71,6 +73,10 @@ Client::Client(int &argc, char **argv, int appflags) :
 
 	connect(daemon_, &Daemon::connected, main_window_, &MainWindow::handle_connected);
 	connect(daemon_, &Daemon::disconnected, main_window_, &MainWindow::handle_disconnected);
+
+	connect(daemon_->config(), &RemoteConfig::folderConfigRenewed, folder_model_, &FolderModel::refresh);
+	connect(daemon_->config(), &RemoteConfig::valueChanged, [this]{folder_model_->refresh();});
+	connect(daemon_->state(), &RemoteState::folderStateRenewed, folder_model_, &FolderModel::refresh);
 
 	// Initialization complete!
 	QTimer::singleShot(0, [this]{started();});

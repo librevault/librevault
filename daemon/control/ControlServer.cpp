@@ -115,6 +115,19 @@ void ControlServer::notify_folder_state_changed(const blob& folderid, std::strin
 	control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
 }
 
+void ControlServer::notify_folder_added(const blob& folderid, Json::Value folder_params) {
+	Json::Value event;
+	event["folderid"] = crypto::Hex().to_string(folderid);
+	event["folder_params"] = folder_params;
+	control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
+}
+
+void ControlServer::notify_folder_removed(const blob& folderid) {
+	Json::Value event;
+	event["folderid"] = crypto::Hex().to_string(folderid);
+	control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
+}
+
 bool ControlServer::check_origin(const std::string& origin) {
 	// Restrict access by "Origin" header
 	if(!origin.empty()) {

@@ -38,6 +38,7 @@
 #include <memory>
 
 class FolderModel;
+class FolderProperties;
 class StatusBar;
 
 class MainWindow : public QMainWindow {
@@ -62,6 +63,7 @@ public slots:
 
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
+	void showFolderContextMenu(const QPoint& point);
 	void handleRemoveFolder();
 	void handleOpenFolderProperties(const QModelIndex &index);
 
@@ -75,6 +77,7 @@ protected:
 
 	/* Dialogs */
 	Settings* settings_;
+	QMap<QByteArray, FolderProperties*> folder_properties_windows_;
 public:
 	AddFolder* add_folder_;
 	OpenLink* open_link_;
@@ -99,6 +102,10 @@ protected:
 	/* Tray icon */
 	QSystemTrayIcon tray_icon;
 	QMenu tray_context_menu;
+	QMenu folders_menu;
 
 	void init_tray();
+
+	/* Daemon */
+	Daemon* daemon_;
 };

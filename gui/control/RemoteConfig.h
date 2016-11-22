@@ -26,40 +26,19 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-
 #pragma once
-#include <QObject>
+#include "GenericRemoteDictionary.h"
 #include <QJsonValue>
-#include <QJsonObject>
-#include <QtNetwork/QNetworkAccessManager>
 
 class Daemon;
 
-class RemoteConfig : public QObject {
+class RemoteConfig : public GenericRemoteDictionary {
 	Q_OBJECT
 
 public:
 	explicit RemoteConfig(Daemon* daemon);
-	~RemoteConfig() {}
-
-	QJsonValue getValue(QString key);
-	QJsonValue getFolderValue(QByteArray folderid, QString key);
-	QList<QByteArray> folderList();
-
-signals:
-	void globalConfigRenewed();
-	void folderConfigRenewed();
-
-	void valueChanged(QString key, QJsonValue value);
-	//void folder
+	virtual ~RemoteConfig() {}
 
 public slots:
-	void renewConfig();
-	void handleEvent(QString name, QJsonObject event);
-	void setValue(QString key, QJsonValue value, bool force_send = false);
-
-private:
-	Daemon* daemon_;
-	QJsonObject cached_config_;
-	QMap<QByteArray, QJsonObject> cached_folders_;
+	void setGlobalValue(QString key, QJsonValue value, bool force_send = false);
 };

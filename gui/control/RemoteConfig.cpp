@@ -28,84 +28,13 @@
  */
 #include "RemoteConfig.h"
 #include "Daemon.h"
-#include <librevault/Secret.h>
-#include <QNetworkReply>
-#include <QJsonArray>
-#include <QJsonDocument>
+#include <QNetworkRequest>
 
-RemoteConfig::RemoteConfig(Daemon* daemon) : QObject(daemon), daemon_(daemon) {}
+RemoteConfig::RemoteConfig(Daemon* daemon) : GenericRemoteDictionary(daemon, "/v1/globals", "/v1/folders", "EVENT_GLOBAL_CONFIG_CHANGED", "EVENT_FOLDER_CONFIG_CHANGED") {}
 
-QJsonValue RemoteConfig::getValue(QString key) {
-	return cached_config_[key];
-}
-
-QJsonValue RemoteConfig::getFolderValue(QByteArray folderid, QString key) {
-	return cached_folders_[folderid][key];
-}
-
-QList<QByteArray> RemoteConfig::folderList() {
-	return cached_folders_.keys();
-}
-
-void RemoteConfig::setValue(QString key, QJsonValue value, bool force_send) {
-	if((cached_config_[key] != value || force_send) && daemon_->isConnected()) {
+void RemoteConfig::setGlobalValue(QString key, QJsonValue value, bool force_send) {
+	if((global_cache_[key] != value || force_send) && daemon_->isConnected()) {
 		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals/%1").arg(key));
-		QString body;
-		switch(value.type()) {
-			case QJsonValue::Bool: body = value.toBool() ? "true" : "false";
-				break;
-			case QJsonValue::String: body.append('"').append(value.toString()).append('"');
-				break;
-			case QJsonValue::Null: body = "null";
-				break;
-			case QJsonValue::Array: body = QJsonDocument(value.toArray()).toJson(QJsonDocument::Compact);
-				break;
-			case QJsonValue::Double: body = QString::number(value.toDouble());
-				break;
-			default: body = "undefined";
-				break;
-		}
-		daemon_->nam()->put(request, body.toUtf8());
-	}
-}
-
-void RemoteConfig::renewConfig() {
-	QNetworkRequest globals_request(daemon_->daemonUrl().toString().append("/v1/globals"));
-	QNetworkReply* globals_reply = daemon_->nam()->get(globals_request);
-	connect(globals_reply, &QNetworkReply::finished, [this, globals_reply] {
-		if(globals_reply->error() == QNetworkReply::NoError) {
-			cached_config_ = QJsonDocument::fromJson(globals_reply->readAll()).object();
-			qDebug() << "Fetched new config from daemon";
-			emit globalConfigRenewed();
-		}
-	});
-
-	QNetworkRequest folders_request(daemon_->daemonUrl().toString().append("/v1/folders"));
-	QNetworkReply* folders_reply = daemon_->nam()->get(folders_request);
-	connect(folders_reply, &QNetworkReply::finished, [this, folders_reply] {
-		if(folders_reply->error() == QNetworkReply::NoError) {
-			auto folders_array = QJsonDocument::fromJson(folders_reply->readAll()).array();
-			for(auto folder : folders_array) {
-				QJsonObject folder_object = folder.toObject();
-
-				librevault::Secret secret(folder_object["secret"].toString().toStdString());
-				QByteArray folderid((const char*)secret.get_Hash().data(), secret.get_Hash().size());
-
-				cached_folders_[folderid] = folder_object;
-			}
-			qDebug() << "Fetched new folder config from daemon";
-			emit folderConfigRenewed();
-		}
-	});
-}
-
-void RemoteConfig::handleEvent(QString name, QJsonObject event) {
-	if(name == "EVENT_GLOBAL_CONFIG_CHANGED") {
-		QString key = event["key"].toString();
-		QJsonValue value = event["value"];
-		if(cached_config_[key] != value) {
-			cached_config_[key] = value;
-			emit valueChanged(key, value);
-		}
+		daemon_->nam()->put(request, convertOutValue(value).toUtf8());
 	}
 }

@@ -42,8 +42,7 @@ public:
 	~StatusBar();
 
 public slots:
-	void handleGlobalConfigChanged(QString key, QJsonValue value);
-	void handleGlobalStateChanged(QString key, QJsonValue value);
+	void refresh();
 
 private:
 	QStatusBar* bar_;

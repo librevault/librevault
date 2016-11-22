@@ -31,6 +31,7 @@
 #include "control/ControlServer.h"
 #include "control/StateCollector.h"
 #include "discovery/DiscoveryService.h"
+#include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
@@ -61,15 +62,11 @@ Client::Client() {
 	});
 	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){
 		if(discovery_) discovery_->register_group(group);
+		if(control_server_) control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
 	});
 	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){
 		if(discovery_) discovery_->unregister_group(group);
-	});
-	control_server_->add_folder_signal.connect([this](Json::Value json_folder){
-		Config::get()->folder_add(json_folder);
-	});
-	control_server_->remove_folder_signal.connect([this](blob folder_hash){
-		Config::get()->folder_remove(folder_hash);
+		if(control_server_) control_server_->notify_folder_removed(group->hash());
 	});
 	control_server_->restart_signal.connect([this]{
 		restart();

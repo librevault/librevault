@@ -27,14 +27,42 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "GenericRemoteDictionary.h"
+#include <QObject>
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QtNetwork/QNetworkAccessManager>
 
 class Daemon;
 
-class RemoteState : public GenericRemoteDictionary {
+class GenericRemoteDictionary : public QObject {
 	Q_OBJECT
 
 public:
-	explicit RemoteState(Daemon* daemon);
-	virtual ~RemoteState() {}
+	explicit GenericRemoteDictionary(Daemon* daemon, QString globals_request, QString folders_request, QString global_event, QString folder_event);
+	~GenericRemoteDictionary() {}
+
+	QJsonValue getGlobalValue(QString key);
+	QJsonValue getFolderValue(QByteArray folderid, QString key);
+	QList<QByteArray> folderList();
+
+signals:
+	void changed();
+
+protected:
+	Daemon* daemon_;
+	QJsonObject global_cache_;
+	QMap<QByteArray, QJsonObject> folder_cache_;
+
+	QString convertOutValue(QJsonValue value);
+
+private:
+	QString globals_request_;
+	QString folders_request_;
+
+	QString global_event_;
+	QString folder_event_;
+
+private slots:
+	void renew();
+	void handleEvent(QString name, QJsonObject event);
 };

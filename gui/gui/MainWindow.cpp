@@ -52,7 +52,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 
 	/* Initializing dialogs */
 	settings_ = new Settings(daemon_, updater, this);
-	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
@@ -145,7 +144,6 @@ void MainWindow::handleRemoveFolder() {
 
 	if(confirmation_box.exec() == QMessageBox::Ok) {
 		for(auto model_index : selection_model) {
-			qDebug() << model_index;
 			QByteArray secret = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
 			//qDebug() << secret;
 			//emit folderRemoved(secret);

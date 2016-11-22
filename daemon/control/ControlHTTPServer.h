@@ -68,6 +68,9 @@ private:
 	void handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched);
 	void handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched);
 	void handle_version(ControlServer::server::connection_ptr conn, std::smatch matched);
+
+	/* Error handling */
+	std::string make_error_body(const std::string& code, const std::string& description);
 };
 
 } /* namespace librevault */

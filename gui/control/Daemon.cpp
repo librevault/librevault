@@ -49,11 +49,6 @@ Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
 	connect(event_sock_, &QWebSocket::disconnected, [this]{emit disconnected(event_sock_->closeReason().isEmpty() ? event_sock_->errorString() : event_sock_->closeReason());});
 	connect(event_sock_, &QWebSocket::textMessageReceived, this, &Daemon::handleEventMessage);
 
-	connect(this, &Daemon::connected, remote_config_, &RemoteConfig::renewConfig);
-	connect(this, &Daemon::connected, remote_state_, &RemoteState::renewState);
-	connect(this, &Daemon::eventReceived, remote_config_, &RemoteConfig::handleEvent);
-	connect(this, &Daemon::eventReceived, remote_state_, &RemoteState::handleEvent);
-
 	connect(this, &Daemon::connected, []{qDebug() << "Daemon connection established";});
 	connect(this, &Daemon::disconnected, [](QString message){qDebug() << "Daemon connection closed: " << message;});
 }
@@ -68,7 +63,7 @@ void Daemon::start() {
 	if(daemon_url_.isEmpty())
 		process_->launch();
 	else
-		emit daemonUrlObtained(QUrl(daemon_url_));
+		emit daemonUrlObtained(daemon_url_);
 }
 
 void Daemon::daemonUrlObtained(QUrl daemon_url) {

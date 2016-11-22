@@ -40,12 +40,10 @@ void qt_mac_set_dock_menu(QMenu *menu);
 #endif
 
 MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater) :
-		QMainWindow(), folder_model_(folder_model) {
+		QMainWindow(), folder_model_(folder_model), daemon_(daemon) {
 	/* Initializing UI */
 	ui.setupUi(this);
-	status_bar_ = new StatusBar(ui.statusBar, daemon);
-	connect(daemon->state(), &RemoteState::globalStateChanged, status_bar_, &StatusBar::handleGlobalStateChanged);
-	connect(daemon->config(), &RemoteConfig::valueChanged, status_bar_, &StatusBar::handleGlobalConfigChanged);
+	status_bar_ = new StatusBar(ui.statusBar, daemon_);
 
 	/* Initializing models */
 	ui.treeView->setModel(folder_model_);
@@ -53,7 +51,7 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
 	/* Initializing dialogs */
-	settings_ = new Settings(daemon, updater, this);
+	settings_ = new Settings(daemon_, updater, this);
 	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);
@@ -66,6 +64,10 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	init_actions();
 	init_tray();
 	init_toolbar();
+
+	folders_menu.addAction(delete_folder_action);
+	connect(ui.treeView, &QWidget::customContextMenuRequested, this, &MainWindow::showFolderContextMenu);
+
 	retranslateUi();
 }
 
@@ -112,6 +114,10 @@ void MainWindow::handle_connected() {
 }
 
 /* protected slots */
+void MainWindow::showFolderContextMenu(const QPoint& point) {
+	folders_menu.exec(ui.treeView->mapToGlobal(point));
+}
+
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 #ifndef Q_OS_MAC
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
@@ -119,6 +125,10 @@ void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 }
 
 void MainWindow::handleRemoveFolder() {
+	auto selection_model = ui.treeView->selectionModel()->selectedRows();
+	if(selection_model.empty())
+		return;
+
 	QMessageBox confirmation_box(
 		QMessageBox::Warning,
 		tr("Remove folder from Librevault?"),
@@ -130,10 +140,9 @@ void MainWindow::handleRemoveFolder() {
 	confirmation_box.setWindowModality(Qt::WindowModal);
 
 	if(confirmation_box.exec() == QMessageBox::Ok) {
-		auto selection_model = ui.treeView->selectionModel()->selectedRows();
 		for(auto model_index : selection_model) {
 			qDebug() << model_index;
-			//QString secret = folder_model_->data(model_index, FolderModel::SecretRole).toString();
+			QByteArray secret = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
 			//qDebug() << secret;
 			//emit folderRemoved(secret);
 		}
@@ -141,8 +150,16 @@ void MainWindow::handleRemoveFolder() {
 }
 
 void MainWindow::handleOpenFolderProperties(const QModelIndex &index) {
-	//QByteArray hash = folder_model_->data(index, FolderModel::HashRole).toByteArray();
-	//folder_model_->getFolderDialog(hash)->show();
+	QByteArray folderid = folder_model_->data(index, FolderModel::HashRole).toByteArray();
+
+	auto it = folder_properties_windows_.find(folderid);
+	if(it == folder_properties_windows_.end()) {
+		auto folder_properties_window = new FolderProperties(folderid, daemon_, folder_model_, this);
+		folder_properties_windows_[folderid] = folder_properties_window;
+		connect(folder_properties_window, &QObject::destroyed, [this, folderid]{folder_properties_windows_.remove(folderid);});
+	}else{
+		it.value()->raise();
+	}
 }
 
 void MainWindow::changeEvent(QEvent* e) {
@@ -184,6 +201,7 @@ void MainWindow::init_actions() {
 	delete_folder_action = new QAction(this);
 	delete_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));
 	delete_folder_action->setShortcut(Qt::Key_Delete);
+	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{delete_folder_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
 	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
 }
 

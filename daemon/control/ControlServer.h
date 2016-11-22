@@ -56,8 +56,6 @@ public:
 	bool check_origin(const std::string& origin);
 
 	// Signals
-	boost::signals2::signal<void(Json::Value)> add_folder_signal;
-	boost::signals2::signal<void(blob)> remove_folder_signal;
 	boost::signals2::signal<void()> shutdown_signal;
 	boost::signals2::signal<void()> restart_signal;
 
@@ -65,6 +63,9 @@ public:
 	void notify_global_config_changed(const std::string& key, Json::Value value);
 	void notify_global_state_changed(std::string key, Json::Value state);
 	void notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state);
+
+	void notify_folder_added(const blob& folderid, Json::Value folder_params);
+	void notify_folder_removed(const blob& folderid);
 
 private:
 	multi_io_service ios_;

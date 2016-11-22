@@ -74,9 +74,8 @@ Client::Client(int &argc, char **argv, int appflags) :
 	connect(daemon_, &Daemon::connected, main_window_, &MainWindow::handle_connected);
 	connect(daemon_, &Daemon::disconnected, main_window_, &MainWindow::handle_disconnected);
 
-	connect(daemon_->config(), &RemoteConfig::folderConfigRenewed, folder_model_, &FolderModel::refresh);
-	connect(daemon_->config(), &RemoteConfig::valueChanged, [this]{folder_model_->refresh();});
-	connect(daemon_->state(), &RemoteState::folderStateRenewed, folder_model_, &FolderModel::refresh);
+	connect(daemon_->config(), &RemoteConfig::changed, folder_model_, &FolderModel::refresh);
+	connect(daemon_->state(), &RemoteState::changed, folder_model_, &FolderModel::refresh);
 
 	// Initialization complete!
 	QTimer::singleShot(0, [this]{started();});

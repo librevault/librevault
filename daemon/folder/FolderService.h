@@ -31,8 +31,8 @@
 #include "util/log_scope.h"
 #include "util/multi_io_service.h"
 #include "util/scoped_async_queue.h"
-#include <boost/signals2/signal.hpp>
 #include <json/json.h>
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 

@@ -49,7 +49,6 @@ public:
 	~MainWindow();
 
 signals:
-	void newConfigIssued(QJsonObject config_json);
 	void folderAdded(QString secret, QString path);
 	void folderRemoved(QString secret);
 

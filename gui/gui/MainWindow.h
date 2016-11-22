@@ -64,7 +64,8 @@ protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
 	void showFolderContextMenu(const QPoint& point);
 	void handleRemoveFolder();
-	void handleOpenFolderProperties(const QModelIndex &index);
+	void handleOpenFolderProperties();
+	void handleOpenDestinationFolder();
 
 protected:
 	/* UI elements */
@@ -94,6 +95,8 @@ protected:
 	QAction* new_folder_action;
 	QAction* open_link_action;
 	QAction* delete_folder_action;
+	QAction* folder_properties_action;
+	QAction* folder_destination_action;
 
 	void init_actions();
 	void init_toolbar();

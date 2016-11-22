@@ -47,8 +47,14 @@ Secret::Secret(Type type, const std::vector<uint8_t>& binary_part) {
 }
 
 Secret::Secret(std::string string_secret) : secret_s(std::move(string_secret)) {
-	auto base58_payload = get_encoded_payload();
-	if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
+	try {
+		auto base58_payload = get_encoded_payload();
+
+		if(base58_payload.empty()) throw format_error();
+		if(crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
+	}catch(std::exception& e){
+		throw format_error();
+	}
 
 	// TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }

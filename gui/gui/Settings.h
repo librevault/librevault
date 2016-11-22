@@ -52,17 +52,11 @@ public:
 		//PAGE_ADVANCED = 3
 	};
 
-signals:
-	void newConfigIssued(QJsonObject config_json);
-
 public slots:
-	void selectPage(int page);
 	void retranslateUi();
-	void handleControlJson(QJsonObject control_json);
 
 protected:
 	Ui::Settings ui;
-	QJsonObject control_json_dynamic, control_json_static;
 
 	void init_ui();
 	void reset_ui_states();

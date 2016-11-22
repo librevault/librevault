@@ -62,25 +62,32 @@ ControlHTTPServer::~ControlHTTPServer() {}
 void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 
-	auto connection_ptr = server_.get_con_from_hdl(hdl);
+	auto conn = server_.get_con_from_hdl(hdl);
 
 	// CORS
-	if(!cs_.check_origin(connection_ptr->get_request_header("Origin"))) {
-		connection_ptr->set_status(websocketpp::http::status_code::forbidden);
+	if(!cs_.check_origin(conn->get_request_header("Origin"))) {
+		conn->set_status(websocketpp::http::status_code::forbidden);
+		conn->set_body(make_error_body("BAD_ORIGIN", "Origin not allowed"));
 		return;
 	}
 
 	// URI handlers
-	const std::string& uri = connection_ptr->get_request().get_uri();
-	std::smatch uri_match;
-	for(auto& handler : handlers_) {
-		if(std::regex_match(uri, uri_match, handler.first)) {
-			handler.second(connection_ptr, uri_match);
-			break;
+	try {
+		const std::string& uri = conn->get_request().get_uri();
+		std::smatch uri_match;
+		for(auto& handler : handlers_) {
+			if(std::regex_match(uri, uri_match, handler.first)) {
+				handler.second(conn, uri_match);
+				break;
+			}
 		}
-	}
-	if(uri_match.empty()) {
-		connection_ptr->set_status(websocketpp::http::status_code::not_implemented);
+		if(uri_match.empty()) {
+			conn->set_status(websocketpp::http::status_code::not_implemented);
+			conn->set_body(make_error_body("", "Handler is not implemented"));
+		}
+	}catch(std::exception& e){
+		conn->set_status(websocketpp::http::status_code::internal_server_error);
+		conn->set_body(make_error_body("", e.what()));
 	}
 }
 
@@ -145,7 +152,6 @@ void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connect
 		conn->set_body(Json::FastWriter().write(Config::get()->folder_get(folderid)));
 	}else if(conn->get_request().get_method() == "PUT") {
 		conn->set_status(websocketpp::http::status_code::ok);
-
 		Json::Value new_value;
 		Json::Reader().parse(conn->get_request_body(), new_value);
 
@@ -177,6 +183,13 @@ void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connecti
 
 	blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
 	conn->set_body(Json::FastWriter().write(state_collector_.folder_state(folderid)));
+}
+
+std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {
+	Json::Value error_json;
+	error_json["error_code"] = code.empty() ? "UNKNOWN" : code;
+	error_json["description"] = description;
+	return Json::FastWriter().write(error_json);
 }
 
 } /* namespace librevault */

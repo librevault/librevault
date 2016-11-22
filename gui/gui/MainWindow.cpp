@@ -85,7 +85,11 @@ void MainWindow::retranslateUi() {
 	open_website_action->setText(tr("Open Librevault website"));
 	show_settings_window_action->setText(tr("Settings"));
 	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
-	exit_action->setText(tr("Quit Librevault"));    // TODO: Apply: ux.stackexchange.com/q/50893
+#if Q_OS_WIN    // ux.stackexchange.com/q/50893
+	exit_action->setText(tr("Quit Librevault"));
+#else
+	exit_action->setText(tr("Exit"));
+#endif
 	exit_action->setToolTip("Stop synchronization and exit Librevault application");
 	new_folder_action->setText(tr("Add folder"));
 	new_folder_action->setToolTip(tr("Add new folder for synchronization"));

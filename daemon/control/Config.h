@@ -27,61 +27,72 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/blob.h"
+#include "util/log_scope.h"
 #include <json/json.h>
-#include <boost/filesystem/path.hpp>
 #include <boost/signals2/signal.hpp>
-#include <librevault/Secret.h>
-#include <librevault/Meta.h>
 
 namespace librevault {
 
 class Config {
+	LOG_SCOPE("Config");
 public:
 	~Config();
 
-	struct paths_type {
-		boost::filesystem::path appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
+	/* Exceptions */
+	struct samekey_error : std::runtime_error {
+		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported") {}
 	};
 
-	boost::signals2::signal<void()> config_changed;
+	/* Signals */
+	boost::signals2::signal<void(std::string, Json::Value)> config_changed;
+	boost::signals2::signal<void(Json::Value)> folder_added;
+	boost::signals2::signal<void(blob)> folder_removed;
 
-	static void init(boost::filesystem::path appdata_path = boost::filesystem::path()) {
-		instance_ = std::unique_ptr<Config>(new Config(std::move(appdata_path)));
-	}
 	static Config* get() {
-		if(!instance_) throw std::runtime_error("Config is not initialized yet");
-		return instance_.get();
+		if(!instance_)
+			instance_ = new Config();
+		return instance_;
+	}
+	static void deinit() {
+		delete instance_;
+		instance_ = nullptr;
 	}
 
-	/* Getters and setters */
-	const Json::Value& globals() const {return globals_;}
-	void set_globals(Json::Value globals_conf);
-	const Json::Value& globals_defaults() const {return globals_defaults_;} // For main
+	/* Global configuration */
+	Json::Value global_get(const std::string& name);
+	void global_set(const std::string& name, Json::Value value);
+	void global_unset(const std::string& name);
 
-	const Json::Value& folders_custom() const {return folders_custom_;}
-	const Json::Value& folders() const {return folders_;}
-	void set_folders(Json::Value folders_conf);
+	Json::Value export_globals_custom() const;
+	Json::Value export_globals() const;
+	void import_globals(Json::Value globals_conf);
 
-	const paths_type& paths() const {return paths_;}
+	/* Folder configuration */
+	void folder_add(Json::Value folder_config);
+	void folder_remove(const blob& folderid);
+
+	Json::Value folder_get(const blob& folderid);
+	std::map<blob, Json::Value> folders() const;
+
+	Json::Value export_folders_custom() const;
+	Json::Value export_folders() const;
+	void import_folders(Json::Value folders_conf);
 
 protected:
-	Config(boost::filesystem::path appdata_path);
+	Config();
 
-	static std::unique_ptr<Config> instance_;
+	static Config* instance_;
 
 private:
-	Json::Value globals_, globals_custom_, globals_defaults_, folders_, folders_custom_, folders_defaults_;
-
-	paths_type paths_;
-	boost::filesystem::path default_appdata_path();
+	Json::Value globals_custom_, globals_defaults_, folders_defaults_;
+	std::map<blob, Json::Value> folders_custom_;
 
 	void make_defaults();
 
-	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value);
+	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value) const;
 
-	void make_merged_globals();
-	void make_merged_folders();
-
+	// File config
 	void load();
 	void save();
 };

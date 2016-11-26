@@ -27,37 +27,31 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include <QDialog>
-#include "pch.h"
+#include "ui_FolderProperties.h"
 #include <librevault/Secret.h>
+#include <QDialog>
 #include <QJsonObject>
+#include <memory>
 
-namespace Ui {
-class FolderProperties;
-}
-
-class PeerModel;
+class Daemon;
+class FolderModel;
 
 class FolderProperties : public QDialog {
 Q_OBJECT
 
 public:
-	explicit FolderProperties(const librevault::Secret& secret, QWidget* parent = 0);
+	FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent = 0);
 	~FolderProperties();
 
-public slots:
-	void update(const QJsonObject& control_json, const QJsonObject& folder_config_json, const QJsonObject& folder_state_json);
-	void setSecret(const librevault::Secret& secret);
-
 protected:
-	std::unique_ptr<Ui::FolderProperties> ui;
+	Ui::FolderProperties ui;
+	void init_secrets();
 
-private slots:
+public slots:
+	void refresh();
 
 private:
-	QByteArray hash_;
-
-	/* Models */
-	std::unique_ptr<PeerModel> peer_model_;
+	Daemon* daemon_;
+	FolderModel* folder_model_;
+	QByteArray folderid_;
 };

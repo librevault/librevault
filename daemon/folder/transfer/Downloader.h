@@ -37,7 +37,6 @@
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
-#include <boost/iostreams/device/mapped_file.hpp>
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f
@@ -48,6 +47,27 @@ namespace librevault {
 class FolderParams;
 class MetaStorage;
 class ChunkStorage;
+
+/* GlobalFilePool is a singleton class, used to open/close files automatically to reduce simultaneously open file descriptors */
+class GlobalFilePool {
+public:
+	static GlobalFilePool* get_instance() {
+		static GlobalFilePool* instance;
+		if(!instance)
+			instance = new GlobalFilePool();
+		return instance;
+	}
+
+	std::shared_ptr<file_wrapper> get_file(const boost::filesystem::path& chunk_path);
+	void release_file(const boost::filesystem::path& chunk_path);
+
+private:
+	std::map<boost::filesystem::path, std::weak_ptr<file_wrapper>> cache_;
+	std::list<std::shared_ptr<file_wrapper>> opened_files_;
+
+	void retain_file(boost::filesystem::path chunk_path, std::shared_ptr<file_wrapper> retained_file);
+	bool overflow() {return opened_files_.size() > 100;}    // TODO: in config
+};
 
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
@@ -82,11 +102,6 @@ struct MissingChunk {
 private:
 	AvailabilityMap<uint32_t> file_map_;
 	boost::filesystem::path this_chunk_path_;
-#ifndef FOPEN_BACKEND
-	boost::iostreams::mapped_file mapped_file_;
-#else
-	file_wrapper wrapped_file_;
-#endif
 };
 
 class WeightedDownloadQueue {
@@ -132,8 +147,8 @@ public:
 	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios);
 	~Downloader();
 
-	void notify_local_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void notify_local_chunk(const blob& ct_hash);
+	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
+	void notify_local_chunk(const blob& ct_hash, bool mark_clustered = true);
 
 	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
 	void notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash);
@@ -159,7 +174,7 @@ private:
 	PeriodicProcess periodic_maintain_;
 	void maintain_requests(PeriodicProcess& process);
 	bool request_one();
-	std::shared_ptr<RemoteFolder> find_node_for_request(const blob& ct_hash);
+	std::shared_ptr<RemoteFolder> find_node_for_request(std::shared_ptr<MissingChunk> chunk);
 
 	/* Node management */
 	std::set<std::shared_ptr<RemoteFolder>> remotes_;

@@ -27,29 +27,25 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
+#include "gui/Settings.h"
+#include "gui/AddFolder.h"
+#include "gui/OpenLink.h"
+#include "ui_MainWindow.h"
 #include <QMainWindow>
 #include <QJsonObject>
 #include <QSystemTrayIcon>
 #include <QMenu>
-#include "pch.h"
-#include "Client.h"
-#include "gui/Settings.h"
-#include "gui/AddFolder.h"
-#include "gui/OpenLink.h"
-
-namespace Ui {
-class MainWindow;
-}
+#include <memory>
 
 class FolderModel;
+class FolderProperties;
 class StatusBar;
 
 class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	MainWindow(Client& client, QWidget* parent = 0);
+	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater);
 	~MainWindow();
 
 signals:
@@ -58,8 +54,8 @@ signals:
 	void folderRemoved(QString secret);
 
 public slots:
+	void showWindow();
 	void retranslateUi();
-	void handleControlJson(QJsonObject state_json);
 	void openWebsite();
 
 	void handle_disconnected(QString message);
@@ -67,21 +63,21 @@ public slots:
 
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
+	void showFolderContextMenu(const QPoint& point);
 	void handleRemoveFolder();
 	void handleOpenFolderProperties(const QModelIndex &index);
 
-public:
-	Client& client_;
 protected:
 	/* UI elements */
-	std::unique_ptr<Ui::MainWindow> ui;
-	std::unique_ptr<StatusBar> status_bar_;
+	Ui::MainWindow ui;
+	StatusBar* status_bar_;
 
 	/* Models */
-	std::unique_ptr<FolderModel> folder_model_;
+	FolderModel* folder_model_;
 
 	/* Dialogs */
 	Settings* settings_;
+	QMap<QByteArray, FolderProperties*> folder_properties_windows_;
 public:
 	AddFolder* add_folder_;
 	OpenLink* open_link_;
@@ -106,6 +102,10 @@ protected:
 	/* Tray icon */
 	QSystemTrayIcon tray_icon;
 	QMenu tray_context_menu;
+	QMenu folders_menu;
 
 	void init_tray();
+
+	/* Daemon */
+	Daemon* daemon_;
 };

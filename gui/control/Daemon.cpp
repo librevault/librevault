@@ -27,68 +27,61 @@
  * files in the program, then also delete it here.
  */
 #include "Daemon.h"
-#include <QCoreApplication>
-#include <QUrl>
-#include <QMessageBox>
-#include <QDebug>
+#include "DaemonProcess.h"
+#include "RemoteConfig.h"
+#include "RemoteState.h"
+#include <QtCore/QJsonDocument>
+#include <QtCore/QTimer>
 
-Daemon::Daemon() : QProcess() {
-	/* Process parameters */
-	// Program
-	setProgram(get_executable_path());
-	// Arguments
-	QStringList arguments;
-	//arguments << QString("--data=\"") + QCoreApplication::applicationDirPath() + "\"";
-	arguments << QString("-vv");
-	setArguments(arguments);
+Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
+	daemon_url_ = control_url;
+	process_ = new DaemonProcess(this);
+	event_sock_ = new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this);
+	nam_ = new QNetworkAccessManager(this);
+	remote_config_ = new RemoteConfig(this);
+	remote_state_ = new RemoteState(this);
 
-	setReadChannel(StandardOutput);
+	// Connecting signals & slots
+	connect(process_, &DaemonProcess::daemonReady, this, &Daemon::daemonUrlObtained);
+	connect(process_, &DaemonProcess::daemonFailed, this, &Daemon::disconnected);
+
+	connect(event_sock_, &QWebSocket::connected, this, &Daemon::connected);
+	connect(event_sock_, &QWebSocket::disconnected, [this]{emit disconnected(event_sock_->closeReason().isEmpty() ? event_sock_->errorString() : event_sock_->closeReason());});
+	connect(event_sock_, &QWebSocket::textMessageReceived, this, &Daemon::handleEventMessage);
+
+	connect(this, &Daemon::connected, []{qDebug() << "Daemon connection established";});
+	connect(this, &Daemon::disconnected, [](QString message){qDebug() << "Daemon connection closed: " << message;});
 }
 
-Daemon::~Daemon() {
-	if(state() == Running) {
-		terminate();
-		waitForFinished();
-		kill();
-	}
+Daemon::~Daemon() {}
+
+bool Daemon::isConnected() {
+	return event_sock_->isValid();
 }
 
-void Daemon::launch() {
-	connect(this, static_cast<void(QProcess::*)(QProcess::ProcessError)>(&QProcess::error), this, &Daemon::handleError);
-	connect(this, &QProcess::readyReadStandardOutput, this, &Daemon::handleStandardOutput);
-	start();
+void Daemon::start() {
+	if(daemon_url_.isEmpty())
+		process_->launch();
+	else
+		emit daemonUrlObtained(daemon_url_);
 }
 
-void Daemon::handleError(QProcess::ProcessError error) {
-	switch(error) {
-		case FailedToStart:
-			emit daemonFailed("Couldn't launch Librevault service");
-			break;
-		case Crashed:
-			emit daemonFailed("Librevault service crashed");
-			break;
-		default:
-			emit daemonFailed("Unknown error");
-	}
+void Daemon::daemonUrlObtained(QUrl daemon_url) {
+	daemon_url_ = daemon_url;
+	qDebug() << "Daemon URL obtained: " << daemon_url_;
+
+	QUrl event_url = daemon_url_;
+	event_url.setScheme("ws");
+	event_sock_->open(event_url);
 }
 
-void Daemon::handleStandardOutput() {
-	while(canReadLine() && !listening_already) {
-		auto stdout_line = readLine();
-		/* Regexp for getting listen address from STDOUT */
-		QRegExp listen_regexp(R"(^\[CONTROL\].*(wss?:\/\/\S*))", Qt::CaseSensitive, QRegExp::RegExp2);  // It may compile several times (if not optimized by Qt)
-		if(listen_regexp.indexIn(stdout_line) > -1) {
-			listening_already = true;
+void Daemon::handleEventMessage(const QString& message) {
+	QJsonDocument event_msg_d = QJsonDocument::fromJson(message.toUtf8());
+	QJsonObject event_msg_o = event_msg_d.object();
 
-			QUrl daemon_url = listen_regexp.cap(1);
+	QString event_type = event_msg_o["type"].toString();
+	QJsonObject event_o = event_msg_o["event"].toObject();
 
-			// Because, if listening on all interfaces, then we can connect to localhost
-			if( (daemon_url.host() == "0.0.0.0") | (daemon_url.host() == "::") )
-				daemon_url.setHost("localhost");
-
-			qDebug() << "Connecting to: " << daemon_url;
-
-			emit daemonReady(daemon_url);
-		}
-	}
+	qDebug() << "EVENT id: " << event_msg_o["id"].toInt() << " t: " << event_type << " event: " << event_o;
+	emit eventReceived(event_type, event_o);
 }

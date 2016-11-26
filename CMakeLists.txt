@@ -29,15 +29,9 @@ option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
-option(DEBUG_WEBSOCKETPP "Debug websocket++" ON)
+option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
+option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
-
-if(OS_64bit)
-	set(DEFAULT_FILE_BACKEND "mmap")
-else()
-	set(DEFAULT_FILE_BACKEND "fopen")
-endif()
-set(FILE_BACKEND ${DEFAULT_FILE_BACKEND} CACHE STRING "File backend. Use mmap for 64-bit and fopen for 32-bit")
 
 #============================================================================
 # Internal compiler options
@@ -88,6 +82,8 @@ endif()
 
 if(OS_MAC)
 	add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
+	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fobjc-arc")
+	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-arc")
 endif()
 
 if(DEBUG_NORMALIZATION)
@@ -96,6 +92,10 @@ endif()
 
 if(DEBUG_WEBSOCKETPP)
 	add_definitions(-DLV_DEBUG_WEBSOCKETPP)
+endif()
+
+if(NOT DEBUG_QT)
+	add_definitions(-DQT_NO_DEBUG_OUTPUT)
 endif()
 
 ## Calculating version
@@ -207,6 +207,9 @@ add_subdirectory("contrib/rabin")
 ## dht
 add_subdirectory("contrib/dht")
 
+## QtSingleApplication
+add_subdirectory("contrib/qtsingleapplication")
+
 ## Spdlog
 find_package(spdlog QUIET)
 add_definitions(-DSPDLOG_WCHAR_FILENAMES)
@@ -313,7 +316,8 @@ endif()
 # Subprojects
 #============================================================================
 
-add_subdirectory("common")
+add_subdirectory("lvproto")
+add_subdirectory("cli")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

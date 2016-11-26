@@ -28,6 +28,8 @@ Third-party libraries
 
 - Qt5 - LGPLv3
 
+- QtSingleApplication - LGPLv2.1
+
 CMake Modules
 -------------
 - GetGitRevisionDescription - Boost Software License

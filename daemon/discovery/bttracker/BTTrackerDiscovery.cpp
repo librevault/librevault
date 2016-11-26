@@ -37,8 +37,8 @@ using namespace boost::asio::ip;
 
 BTTrackerDiscovery::BTTrackerDiscovery(DiscoveryService& parent, io_service& io_service, NodeKey& node_key, PortMappingService& port_mapping) :
 	DiscoverySubService(parent, io_service, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
-	if(Config::get()->globals()["bttracker_enabled"].asBool()) {
-		for(auto tracker : Config::get()->globals()["bttracker_trackers"]) {
+	if(Config::get()->global_get("bttracker_enabled").asBool()) {
+		for(auto tracker : Config::get()->global_get("bttracker_trackers")) {
 			trackers_.push_back(tracker.asString());
 			LOGD("Added BitTorrent tracker: " << tracker.asString());
 		}

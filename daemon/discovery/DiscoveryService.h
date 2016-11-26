@@ -27,12 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <boost/signals2/signal.hpp>
-#include "util/parse_url.h"
-#include "util/network.h"
 #include "util/blob.h"
-#include "util/multi_io_service.h"
 #include "util/log_scope.h"
+#include "util/multi_io_service.h"
+#include "util/network.h"
+#include "util/parse_url.h"
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
@@ -45,6 +45,7 @@ class MLDHTDiscovery;
 
 class NodeKey;
 class PortMappingService;
+class StateCollector;
 
 class DiscoveryService {
 	friend class ControlServer;
@@ -58,7 +59,7 @@ public:
 		blob pubkey;
 	};
 
-	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping);
+	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector);
 	virtual ~DiscoveryService();
 
 	void run() {io_service_.start(1);}

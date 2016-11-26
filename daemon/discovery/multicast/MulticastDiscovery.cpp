@@ -107,10 +107,10 @@ MulticastDiscovery4::MulticastDiscovery4(DiscoveryService& parent, io_service& i
 }
 
 void MulticastDiscovery4::reload_config() {
-	enabled_ = Config::get()->globals()["multicast4_enabled"].asBool();
-	repeat_interval_ = std::chrono::seconds(Config::get()->globals()["multicast4_repeat_interval"].asUInt64());
+	enabled_ = Config::get()->global_get("multicast4_enabled").asBool();
+	repeat_interval_ = std::chrono::seconds(Config::get()->global_get("multicast4_repeat_interval").asUInt64());
 
-	auto multicast_group_url = url(Config::get()->globals()["multicast4_group"].asString());
+	auto multicast_group_url = url(Config::get()->global_get("multicast4_group").asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);
 
 	if(enabled_ && !socket_.is_open()) {
@@ -130,10 +130,10 @@ MulticastDiscovery6::MulticastDiscovery6(DiscoveryService& parent, io_service& i
 }
 
 void MulticastDiscovery6::reload_config() {
-	enabled_ = Config::get()->globals()["multicast6_enabled"].asBool();
-	repeat_interval_ = std::chrono::seconds(Config::get()->globals()["multicast6_repeat_interval"].asUInt64());
+	enabled_ = Config::get()->global_get("multicast6_enabled").asBool();
+	repeat_interval_ = std::chrono::seconds(Config::get()->global_get("multicast6_repeat_interval").asUInt64());
 
-	auto multicast_group_url = url(Config::get()->globals()["multicast6_group"].asString());
+	auto multicast_group_url = url(Config::get()->global_get("multicast6_group").asString());
 	group_ = udp_endpoint(address::from_string(multicast_group_url.host), multicast_group_url.port);
 
 	if(enabled_ && !socket_.is_open()) {

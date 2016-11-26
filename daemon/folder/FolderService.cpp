@@ -29,13 +29,19 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "control/Config.h"
+#include "control/StateCollector.h"
 #include "folder/meta/Indexer.h"
 #include "util/log.h"
 #include <boost/range/adaptor/map.hpp>
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 
-FolderService::FolderService() : bulk_ios_("FolderService_bulk"), serial_ios_("FolderService_serial"), init_queue_(serial_ios_.ios()) {
+FolderService::FolderService(StateCollector& state_collector) :
+	bulk_ios_("FolderService_bulk"),
+	serial_ios_("FolderService_serial"),
+	state_collector_(state_collector),
+	init_queue_(serial_ios_.ios()) {
 	LOGFUNC();
 }
 
@@ -46,87 +52,53 @@ FolderService::~FolderService() {
 }
 
 void FolderService::run() {
+	serial_ios_.start(1);
+	bulk_ios_.start(std::max(std::thread::hardware_concurrency(), 1u));
+
 	init_queue_.invoke_post([this] {
 		for(auto& folder_config : Config::get()->folders())
-			init_folder(folder_config);
+			init_folder(folder_config.second);
 	});
 
-	serial_ios_.start(1);
-	bulk_ios_.start(std::thread::hardware_concurrency());
+	Config::get()->folder_added.connect([this](Json::Value json_params){
+		init_folder(json_params);
+	});
+	Config::get()->folder_removed.connect([this](blob folderid){
+		deinit_folder(folderid);
+	});
 }
 
 void FolderService::stop() {
 	init_queue_.invoke_post([this] {
-		std::vector<Secret> secrets;
-		secrets.reserve(hash_group_.size());
-		for(auto& group : hash_group_)
-			secrets.push_back(group.second->secret());
+		std::vector<blob> hashes;
+		hashes.reserve(hash_group_.size());
+		for(auto& hash : hash_group_ | boost::adaptors::map_keys)
+			hashes.push_back(hash);
 
-		for(auto& secret : secrets)
-			deinit_folder(secret);
+		for(auto& hash : hashes)
+			deinit_folder(hash);
 	});
 	init_queue_.wait();
 	bulk_ios_.stop();
 	serial_ios_.stop();
 }
 
-void FolderService::add_folder(Json::Value json_folder) {
-	LOGFUNC();
-
-	FolderParams params(json_folder);
-
-	auto folders_copy = Config::get()->folders_custom();
-
-	auto it = std::find_if(folders_copy.begin(), folders_copy.end(), [&](const Json::Value& v){
-		return FolderParams(v).secret.get_Hash() == params.secret.get_Hash();
-	});
-	if(it == folders_copy.end()) {
-		folders_copy.append(json_folder);
-		Config::get()->set_folders(folders_copy);
-
-		init_folder(params);
-	}else
-		throw samekey_error();
-}
-
-void FolderService::remove_folder(const Secret& secret) {
-	LOGFUNC();
-
-	auto folders_copy = Config::get()->folders_custom();
-	for(Json::ArrayIndex i = 0; i < folders_copy.size(); i++) {
-		if(FolderParams(folders_copy[i]).secret.get_Hash() == secret.get_Hash()) {
-			deinit_folder(secret);
-
-			Json::Value temp;
-			folders_copy.removeIndex(i, &temp);
-			break;
-		}
-	}
-
-	Config::get()->set_folders(folders_copy);
-}
-
 void FolderService::init_folder(const FolderParams& params) {
 	LOGFUNC();
+	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios());
+	hash_group_[group_ptr->hash()] = group_ptr;
 
-	auto group_ptr = get_group(params.secret.get_Hash());
-	if(!group_ptr) {
-		group_ptr = std::make_shared<FolderGroup>(params, bulk_ios_.ios(), serial_ios_.ios());
-		hash_group_.insert({group_ptr->hash(), group_ptr});
-
-		folder_added_signal(group_ptr);
-	}else
-		throw samekey_error();
+	folder_added_signal(group_ptr);
+	LOGD("Folder initialized: " << crypto::Hex().to_string(params.secret.get_Hash()));
 }
 
-void FolderService::deinit_folder(const Secret& secret) {
+void FolderService::deinit_folder(const blob& folder_hash) {
 	LOGFUNC();
-
-	auto group_ptr = get_group(secret.get_Hash());
-
-	hash_group_.erase(secret.get_Hash());
+	auto group_ptr = get_group(folder_hash);
 	folder_removed_signal(group_ptr);
-	LOGD("Group deinitialized: " << secret);
+
+	hash_group_.erase(folder_hash);
+	LOGD("Folder deinitialized: " << crypto::Hex().to_string(folder_hash));
 }
 
 std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
@@ -138,7 +110,7 @@ std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
 
 std::vector<std::shared_ptr<FolderGroup>> FolderService::groups() const {
 	std::vector<std::shared_ptr<FolderGroup>> groups_list;
-	for(auto group_ptr : hash_group_ | boost::adaptors::map_values)
+	for(auto& group_ptr : hash_group_ | boost::adaptors::map_values)
 		groups_list.push_back(group_ptr);
 	return groups_list;
 }

@@ -27,57 +27,131 @@
  * files in the program, then also delete it here.
  */
 #include "Config.h"
-#include <codecvt>
+#include "Paths.h"
 #include "util/file_util.h"
+#include "util/log.h"
+#include <librevault/Secret.h>
 #include <boost/asio/ip/host_name.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <codecvt>
 
 namespace librevault {
 
-Config::Config(boost::filesystem::path appdata_path) {
-	if(appdata_path.empty())
-		paths_.appdata_path = default_appdata_path();
-	else
-		paths_.appdata_path = std::move(appdata_path);
-
-	boost::filesystem::create_directories(paths_.appdata_path);
-
-	paths_.client_config_path = paths_.appdata_path / "globals.json";
-	paths_.folders_config_path = paths_.appdata_path / "folders.json";
-	paths_.log_path = paths_.appdata_path / "librevault.log";
-	paths_.key_path = paths_.appdata_path / "key.pem";
-	paths_.cert_path = paths_.appdata_path / "cert.pem";
-	paths_.dht_session_path = paths_.appdata_path / "mldht_session.bin";
-
+Config::Config() {
 	make_defaults();
 	load();
 
-	config_changed.connect([this](){save();});
+	config_changed.connect([this](std::string key, Json::Value value){
+		LOGI("Global \"" << key << "\" is set to \"" << value << "\"");
+	});
+	config_changed.connect([this](std::string, Json::Value){save();});
 }
 
 Config::~Config() {
 	save();
 }
 
-std::unique_ptr<Config> Config::instance_ = nullptr;
+Config* Config::instance_ = nullptr;
 
-void Config::set_globals(Json::Value globals_conf) {
-	globals_custom_ = make_merged(globals_conf, globals_custom_);
-	make_merged_globals();
-	config_changed();
+Json::Value Config::global_get(const std::string& name) {
+	return globals_custom_.get(name, globals_defaults_[name]);
 }
 
-void Config::set_folders(Json::Value folders_conf) {
-	folders_custom_ = std::move(folders_conf);
-	make_merged_folders();
-	config_changed();
+void Config::global_set(const std::string& name, Json::Value value) {
+	globals_custom_[name] = value;
+	config_changed(name, value);
+}
+
+void Config::global_unset(const std::string& name) {
+	globals_custom_.removeMember(name);
+	config_changed(name, global_get(name));
+}
+
+Json::Value Config::export_globals_custom() const {
+	return globals_custom_;
+}
+
+Json::Value Config::export_globals() const {
+	return make_merged(globals_custom_, globals_defaults_);
+}
+
+void Config::import_globals(Json::Value globals_conf) {
+	std::set<std::pair<std::string, Json::Value>> old_globals, new_globals;
+	std::list<std::pair<std::string, Json::Value>> diff;
+	for(auto& name : globals_custom_.getMemberNames())
+		old_globals.insert({name, globals_custom_[name]});
+	for(auto& name : globals_conf.getMemberNames())
+		new_globals.insert({name, globals_conf[name]});
+	std::set_difference(old_globals.begin(), old_globals.end(), new_globals.begin(), new_globals.end(), diff.begin());
+
+	globals_custom_ = globals_conf;
+
+	for(auto& diff_val : diff)
+		config_changed(diff_val.first, global_get(diff_val.first));
+}
+
+void Config::folder_add(Json::Value folder_config) {
+	auto folderid = Secret(folder_config["secret"].asString()).get_Hash();
+	if(folders_custom_.find(folderid) != folders_custom_.end())
+		throw samekey_error();
+	folders_custom_.insert({folderid, folder_config});
+	folder_added(make_merged(folder_config, folders_defaults_));
+	save();
+}
+
+void Config::folder_remove(const blob& folderid) {
+	folder_removed(folderid);
+	folders_custom_.erase(folderid);
+	save();
+}
+
+Json::Value Config::folder_get(const blob& folderid) {
+	auto it = folders_custom_.find(folderid);
+	if(it != folders_custom_.end())
+		return make_merged(folders_custom_[folderid], folders_defaults_);
+	else
+		return Json::Value();
+}
+
+std::map<blob, Json::Value> Config::folders() const {
+	std::map<blob, Json::Value> folders_merged;
+	for(auto& folder_pair : folders_custom_)
+		folders_merged[folder_pair.first] = make_merged(folder_pair.second, folders_defaults_);
+	return folders_merged;
+}
+
+Json::Value Config::export_folders_custom() const {
+	Json::Value folders_merged;
+	for(auto& folder_pair : folders_custom_)
+		folders_merged.append(folder_pair.second);
+	return folders_merged;
+}
+
+Json::Value Config::export_folders() const {
+	Json::Value folders_merged;
+	for(auto& folder_pair : folders())
+		folders_merged.append(folder_pair.second);
+	return folders_merged;
+}
+
+void Config::import_folders(Json::Value folders_conf) {
+	std::set<blob> folderids;
+	for(auto& folderid : folders_custom_ | boost::adaptors::map_keys)
+		folderids.insert(folderid);
+
+	for(auto& folderid : folderids)
+		folder_remove(folderid);
+
+	for(auto& folder_json : folders_conf)
+		folder_add(folder_json);
 }
 
 void Config::make_defaults() {
 	/* globals_defaults_ */
 	globals_defaults_.clear();
 	globals_defaults_["client_name"] = boost::asio::ip::host_name();
-	globals_defaults_["control_listen"] = "[::1]:42346";
-	globals_defaults_["p2p_listen"] = "[::]:42345";
+	globals_defaults_["control_listen"] = 42346;
+	globals_defaults_["p2p_listen"] = 42345;
 	globals_defaults_["p2p_download_slots"] = 10;
 	globals_defaults_["p2p_request_timeout"] = 10;
 	globals_defaults_["p2p_block_size"] = 32768;
@@ -129,7 +203,7 @@ void Config::make_defaults() {
 	folders_defaults_["mainline_dht_enabled"] = true;
 }
 
-Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) {
+Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) const {
 	Json::Value merged;
 	for(auto& name : default_value.getMemberNames())
 		merged[name] = custom_value.get(name, default_value[name]);
@@ -139,34 +213,26 @@ Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Val
 	return merged;
 }
 
-void Config::make_merged_globals() {
-	globals_ = make_merged(globals_custom_, globals_defaults_);
-}
-
-void Config::make_merged_folders() {
-	folders_.clear();
-	for(auto& folder : folders_custom_)
-		folders_.append(make_merged(folder, folders_defaults_));
-}
-
 void Config::load() {
-	file_wrapper globals_f(paths_.client_config_path, "rb");
-	file_wrapper folders_f(paths_.folders_config_path, "rb");
+	file_wrapper globals_f(Paths::get()->client_config_path, "rb");
+	file_wrapper folders_f(Paths::get()->folders_config_path, "rb");
+
+	Json::Value globals_load, folders_load;
 
 	Json::Reader r;
-	r.parse(globals_f.ios(), globals_custom_);
-	r.parse(folders_f.ios(), folders_custom_);
+	r.parse(globals_f.ios(), globals_load);
+	r.parse(folders_f.ios(), folders_load);
 
-	set_globals(globals_custom_);
-	set_folders(folders_custom_);
+	import_globals(globals_load);
+	import_folders(folders_load);
 }
 
 void Config::save() {
-	file_wrapper globals_f(paths_.client_config_path, "wb");
-	file_wrapper folders_f(paths_.folders_config_path, "wb");
+	file_wrapper globals_f(Paths::get()->client_config_path, "wb");
+	file_wrapper folders_f(Paths::get()->folders_config_path, "wb");
 
-	globals_f.ios() << globals_custom_.toStyledString();
-	folders_f.ios() << folders_custom_.toStyledString();
+	globals_f.ios() << export_globals_custom().toStyledString();
+	folders_f.ios() << export_folders_custom().toStyledString();
 }
 
 } /* namespace librevault */

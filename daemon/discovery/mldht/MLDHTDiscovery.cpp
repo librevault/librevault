@@ -28,13 +28,14 @@
  */
 #include "MLDHTDiscovery.h"
 #include "MLDHTSearcher.h"
-#include <MLDHTSessionFile.pb.h>
-#include "dht_glue.h"
+#include "discovery/mldht/dht_glue.h"
+#include "control/Paths.h"
+#include "control/StateCollector.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "util/log.h"
 #include "util/file_util.h"
-
+#include <MLDHTSessionFile.pb.h>
 #include <dht.h>
 #include <cryptopp/osrng.h>
 #include <boost/asio/ip/v6_only.hpp>
@@ -43,9 +44,10 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping) :
+MLDHTDiscovery::MLDHTDiscovery(DiscoveryService& parent, io_service& io_service, PortMappingService& port_mapping, StateCollector& state_collector) :
 	DiscoverySubService(parent, io_service, "DHT"),
 	port_mapping_(port_mapping),
+	state_collector_(state_collector),
 	socket4_(io_service_),
 	socket6_(io_service_),
 	resolver_(io_service_),
@@ -63,7 +65,7 @@ void MLDHTDiscovery::init() {
 
 	// We will restore our session from here
 	MLDHTSessionFile session_pb;
-	file_wrapper session_file(Config::get()->paths().dht_session_path, "r");
+	file_wrapper session_file(Paths::get()->dht_session_path, "r");
 	if(!session_pb.ParseFromIstream(&session_file.ios())) throw;
 
 	// Init id
@@ -74,7 +76,7 @@ void MLDHTDiscovery::init() {
 		rng.GenerateBlock(own_id.data(), own_id.size());
 	}
 
-	uint16_t dht_port = (uint16_t)Config::get()->globals()["mainline_dht_port"].asUInt();
+	uint16_t dht_port = (uint16_t)Config::get()->global_get("mainline_dht_port").asUInt();
 
 	// Init sockets
 	try {
@@ -112,7 +114,7 @@ void MLDHTDiscovery::init() {
 	port_mapping_.add_port_mapping("mldht", {dht_port, SOCK_DGRAM}, "Librevault DHT");
 
 	// Init routers
-	auto routers = Config::get()->globals()["mainline_dht_routers"];
+	auto routers = Config::get()->global_get("mainline_dht_routers");
 	if(routers.isArray()) {
 		for(auto& router_value : routers) {
 			url router_url(router_value.asString());
@@ -203,7 +205,7 @@ void MLDHTDiscovery::deinit_session_file() {
 		std::copy((const char*)&endpoint4, ((const char*)&endpoint4)+sizeof(btcompat::compact_endpoint4), std::back_inserter(*endpoint_str));
 	}
 
-	file_wrapper session_file(Config::get()->paths().dht_session_path, "w");
+	file_wrapper session_file(Paths::get()->dht_session_path, "w");
 	session_pb.SerializeToOstream(&session_file.ios());
 }
 
@@ -261,14 +263,12 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 void MLDHTDiscovery::process(udp_socket* socket, std::shared_ptr<udp_buffer> buffer, size_t size, std::shared_ptr<udp_endpoint> endpoint_ptr, const boost::system::error_code& ec) {
 	if(ec == boost::asio::error::operation_aborted) return;
 
-	LOGT("DHT message received");
-
 	std::unique_lock<std::mutex> lk(dht_mutex);
 	dht_periodic(buffer.get()->data(), size, endpoint_ptr->data(), (int)endpoint_ptr->size(), &tosleep, lv_dht_callback_glue, this);
 	lk.unlock();
+	state_collector_.global_state_set("dht_nodes_count", node_count());
 
 	maintain_periodic_requests();
-
 	receive(*socket);    // We received message, continue receiving others
 }
 
@@ -282,12 +282,12 @@ void MLDHTDiscovery::receive(udp_socket& socket) {
 void MLDHTDiscovery::maintain_periodic_requests() {
 	tosleep_timer_.expires_from_now(std::chrono::seconds(tosleep));
 	tosleep_timer_.async_wait([this](const boost::system::error_code& error){
-		LOGFUNC();
 		if(error == boost::asio::error::operation_aborted) return;
 
 		std::unique_lock<std::mutex> lk(dht_mutex);
 		dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
 		lk.unlock();
+		state_collector_.global_state_set("dht_nodes_count", node_count());
 
 		maintain_periodic_requests();
 	});

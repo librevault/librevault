@@ -30,6 +30,7 @@
 
 #include "Index.h"
 #include "control/FolderParams.h"
+#include "control/StateCollector.h"
 #include "folder/AbstractFolder.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
@@ -42,12 +43,15 @@
 
 namespace librevault {
 
-Indexer::Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios) :
+Indexer::Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios) :
 	params_(params),
 	index_(index),
 	ignore_list_(ignore_list),
 	path_normalizer_(path_normalizer),
-	ios_(ios), secret_(params.secret), indexing_now_(0) {}
+	state_collector_(state_collector),
+	ios_(ios), secret_(params.secret), indexing_now_(0) {
+	state_collector_.folder_state_set(secret_.get_Hash(), "is_indexing", false);
+}
 
 Indexer::~Indexer() {
 	LOGFUNC();
@@ -61,7 +65,7 @@ Indexer::~Indexer() {
 void Indexer::index(const std::string& file_path) noexcept {
 	LOGFUNC() << file_path;
 
-	++indexing_now_;
+	state_collector_.folder_state_set(secret_.get_Hash(), "is_indexing", bool(++indexing_now_));
 
 	SignedMeta smeta;
 
@@ -96,8 +100,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 		LOGE("Skipping " << file_path << ". Error: " << e.what());
 	}
 
-	--indexing_now_;
-	LOGT("indexing_now_ " << indexing_now_.load());
+	state_collector_.folder_state_set(secret_.get_Hash(), "is_indexing", bool(--indexing_now_));
 }
 
 void Indexer::async_index(const std::string& file_path) {
@@ -125,6 +128,7 @@ void Indexer::async_index(const std::set<std::string>& file_path) {
 		async_index(file_path1);
 }
 
+/* Actual indexing process */
 SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	LOGD("make_Meta(" << relpath << ")");
 	Meta old_meta, new_meta;

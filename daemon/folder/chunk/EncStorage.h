@@ -28,8 +28,9 @@
  */
 #pragma once
 #include "AbstractStorage.h"
-#include <util/log_scope.h>
 #include "control/FolderParams.h"
+#include "util/log_scope.h"
+#include <mutex>
 
 namespace librevault {
 
@@ -47,6 +48,7 @@ public:
 
 private:
 	const FolderParams& params_;
+	mutable std::mutex storage_mtx_;
 
 	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
 	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;

@@ -29,7 +29,9 @@
 #pragma once
 #include "AbstractFolder.h"
 #include "control/FolderParams.h"
+#include "p2p/BandwidthCounter.h"
 #include "util/network.h"
+#include "util/periodic_process.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
@@ -47,6 +49,7 @@ class P2PFolder;
 
 class PathNormalizer;
 class IgnoreList;
+class StateCollector;
 
 class ChunkStorage;
 class MetaStorage;
@@ -68,14 +71,8 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, io_service& bulk_ios, io_service& serial_ios);
+	FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~FolderGroup();
-
-	/* Actions */
-	void handle_indexed_meta(const SignedMeta& smeta);
-
-	// RemoteFolder actions
-	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
 
 	/* Membership management */
 	void attach(std::shared_ptr<P2PFolder> remote_ptr);
@@ -96,9 +93,12 @@ public:
 	inline const Secret& secret() const {return params().secret;}
 	inline const blob& hash() const {return secret().get_Hash();}
 
+	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
+
 	std::string log_tag() const;
 private:
 	const FolderParams params_;
+	StateCollector& state_collector_;
 	io_service& serial_ios_;
 
 	std::unique_ptr<PathNormalizer> path_normalizer_;
@@ -112,6 +112,10 @@ private:
 	std::unique_ptr<MetaUploader> meta_uploader_;
 	std::unique_ptr<MetaDownloader> meta_downloader_;
 
+	BandwidthCounter bandwidth_counter_;
+
+	std::unique_ptr<PeriodicProcess> state_pusher_;
+
 	/* Members */
 	mutable std::mutex p2p_folders_mtx_;
 
@@ -120,6 +124,10 @@ private:
 	// Member lookup optimization
 	std::set<blob> p2p_folders_pubkeys_;
 	std::set<tcp_endpoint> p2p_folders_endpoints_;
+
+	void handle_indexed_meta(const SignedMeta& smeta);
+
+	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
 };
 
 } /* namespace librevault */

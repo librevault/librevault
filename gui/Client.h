@@ -27,19 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
+#include "updater/Updater.h"
+#include <QtSingleApplication>
 #include <QApplication>
 #include <QTranslator>
-#include "updater/Updater.h"
 
 class MainWindow;
 class Settings;
 class TrayIcon;
 class FolderModel;
-class ControlClient;
-class SingleChannel;
+class Daemon;
+class RemoteConfig;
 
-class Client : public QApplication {
+class Client : public QtSingleApplication {
 Q_OBJECT
 
 public:
@@ -57,13 +57,19 @@ private:
 	QTranslator translator_;
 	QTranslator qt_translator_;
 
-	std::unique_ptr<SingleChannel> single_channel_;
-	std::unique_ptr<ControlClient> control_client_;
+	Daemon* daemon_;
+	FolderModel* folder_model_;
 
-public:
 	Updater* updater_;
 
-private:
 	// GUI
-	std::unique_ptr<MainWindow> main_window_;
+	MainWindow* main_window_;
+
+	QString pending_link_;
+
+	bool allow_multiple;
+
+private slots:
+	void started();
+	void singleMessageReceived(const QString &message);
 };

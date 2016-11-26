@@ -27,13 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
+#include "ui_AddFolder.h"
 #include <QDialog>
-#include "pch.h"
-
-namespace Ui {
-class AddFolder;
-}
 
 class AddFolder : public QDialog {
 Q_OBJECT
@@ -51,7 +46,7 @@ public slots:
 	void handleRejected();
 
 protected:
-	std::unique_ptr<Ui::AddFolder> ui;
+	Ui::AddFolder ui;
 
 	// Overrides
 	void showEvent(QShowEvent* e) override;

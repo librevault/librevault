@@ -33,7 +33,7 @@
 #include <AppKit/NSImage.h>
 
 Pager::Pager(QHBoxLayout* layout, QWidget* parent) : QWidget(parent) {
-	toolbar = new QMacToolBar(parent);
+	toolbar = new QMacToolBar(this);
 }
 
 int Pager::add_page() {

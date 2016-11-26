@@ -27,39 +27,51 @@
  * files in the program, then also delete it here.
  */
 #include "StatusBar.h"
-#include <icons/GUIIconProvider.h>
-#include <util/human_size.h>
+#include "control/Daemon.h"
+#include "control/RemoteConfig.h"
+#include "control/RemoteState.h"
+#include "icons/GUIIconProvider.h"
+#include "util/human_size.h"
+#include <QtWidgets/QMenu>
 
-StatusBar::StatusBar(QStatusBar* bar) : bar_(bar) {
-	container_ = new QWidget();
+StatusBar::StatusBar(QStatusBar* bar, Daemon* daemon) : QObject(bar), bar_(bar), daemon_(daemon) {
+	container_ = new QWidget(bar_);
 	container_layout_ = new QHBoxLayout(container_);
 	container_layout_->setContentsMargins(0,0,0,0);
 
-	dht_label_ = new QLabel();
+	dht_label_ = new QLabel(container_);
+	dht_label_->setContextMenuPolicy(Qt::CustomContextMenu);
 	container_layout_->addWidget(dht_label_);
 
 	container_layout_->addWidget(create_separator());
 
-	down_label_ = new QLabel();
+	down_label_ = new QLabel(container_);
 	container_layout_->addWidget(down_label_);
 
 	container_layout_->addWidget(create_separator());
 
-	up_label_ = new QLabel();
+	up_label_ = new QLabel(container_);
 	container_layout_->addWidget(up_label_);
 
 	bar->addPermanentWidget(container_);
 
+	// Connecting signals
+	connect(daemon_->state(), &RemoteState::changed, this, &StatusBar::refresh);
+	connect(daemon_->config(), &RemoteConfig::changed, this, &StatusBar::refresh);
+
+	connect(dht_label_, &QLabel::customContextMenuRequested, this, &StatusBar::showDHTMenu);
+
 	// Setting defaults
-	refreshDHT(0);
-	refreshBandwidth(0,0,0,0);
+	refresh();
 }
 
 StatusBar::~StatusBar() {}
 
-void StatusBar::handleControlJson(QJsonObject state_json) {
-	refreshDHT(state_json["state"].toObject()["dht_nodes_count"].toInt());
+void StatusBar::refresh() {
+	refreshDHT();
+	refreshBandwidth(0,0,0,0);
 
+	/*
 	float up_bandwidth = 0;
 	float down_bandwidth = 0;
 	double up_bytes = 0;
@@ -75,10 +87,21 @@ void StatusBar::handleControlJson(QJsonObject state_json) {
 	}
 
 	refreshBandwidth(up_bandwidth, down_bandwidth, up_bytes, down_bytes);
+	*/
 }
 
-void StatusBar::refreshDHT(unsigned nodes) {
-	dht_label_->setText(QStringLiteral("DHT: %1").arg(tr("%n nodes", "DHT", nodes)));
+QFrame* StatusBar::create_separator() const {
+	QFrame* separator = new QFrame(container_);
+	separator->setFrameStyle(QFrame::VLine);
+	return separator;
+}
+
+void StatusBar::refreshDHT() {
+	if(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool()) {
+		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getGlobalValue("dht_nodes_count").toInt()));
+	}else{
+		dht_label_->setText(tr("DHT: disabled", "DHT"));
+	}
 }
 
 void StatusBar::refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes) {
@@ -86,8 +109,14 @@ void StatusBar::refreshBandwidth(float up_bandwidth, float down_bandwidth, doubl
 	down_label_->setText(QStringLiteral("\u2193 %1 (%2)").arg(human_bandwidth(down_bandwidth)).arg(human_size(down_bytes)));
 }
 
-QFrame* StatusBar::create_separator() const {
-	QFrame* separator = new QFrame();
-	separator->setFrameStyle(QFrame::VLine);
-	return separator;
+void StatusBar::showDHTMenu(const QPoint& pos) {
+	QMenu context_menu("DHT", bar_);
+
+	QAction dht_enabled(tr("Enable DHT"), bar_);
+	dht_enabled.setCheckable(true);
+	dht_enabled.setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
+	connect(&dht_enabled, &QAction::toggled, [this](bool checked){daemon_->config()->setGlobalValue("mainline_dht_enabled", checked);});
+	context_menu.addAction(&dht_enabled);
+
+	context_menu.exec(dht_label_->mapToGlobal(pos));
 }

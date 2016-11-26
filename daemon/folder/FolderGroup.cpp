@@ -26,6 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#include <control/StateCollector.h>
 #include "FolderGroup.h"
 
 #include "IgnoreList.h"
@@ -41,8 +42,8 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& serial_ios) :
-		params_(std::move(params)), serial_ios_(serial_ios) {
+FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios) :
+		params_(std::move(params)), state_collector_(state_collector), serial_ios_(serial_ios) {
 	LOGFUNC();
 
 	/* Creating directories */
@@ -52,16 +53,18 @@ FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& 
 	SetFileAttributes(params_.system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
-	LOGD("New FSFolder:"
+	LOGD("New folder:"
 		<< " Key type=" << (char)params_.secret.get_type()
 		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
 		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);
+
+	state_collector_.folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
 	/* Initializing components */
 	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
 	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
 
-	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, bulk_ios);
+	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, state_collector_, bulk_ios);
 	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, bulk_ios);
 
 	uploader_ = std::make_unique<Uploader>(*chunk_storage);
@@ -82,6 +85,22 @@ FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& 
 		});
 	});
 
+	// Set up periodic processes
+	state_pusher_ = std::make_unique<PeriodicProcess>(serial_ios, [this](PeriodicProcess& process){
+		// peers
+		Json::Value peers_array;
+		for(auto& p2p_folder : p2p_folders_) {
+			peers_array.append(p2p_folder->collect_state());
+		}
+		state_collector_.folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
+		// bandwidth
+		state_collector_.folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
+
+		process.invoke_after(std::chrono::seconds(1));
+	});
+	state_pusher_->invoke();
+
+	// Go through index
 	serial_ios_.dispatch([=]{
 		for(auto& smeta : meta_storage_->index->get_meta())
 			handle_indexed_meta(smeta);
@@ -89,6 +108,8 @@ FolderGroup::FolderGroup(FolderParams params, io_service& bulk_ios, io_service& 
 }
 
 FolderGroup::~FolderGroup() {
+	state_pusher_.reset();
+	state_collector_.folder_state_purge(params_.secret.get_Hash());
 	LOGFUNC();
 }
 
@@ -97,7 +118,7 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	Meta::PathRevision revision = smeta.meta().path_revision();
 	bitfield_type bitfield = chunk_storage->make_bitfield(smeta.meta());
 
-	downloader_->notify_local_meta(revision, bitfield);
+	downloader_->notify_local_meta(smeta, bitfield);
 	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
 }
 

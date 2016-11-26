@@ -48,14 +48,12 @@ Updater::Updater(QObject* parent) : QObject(parent), impl_(new Impl()) {
 	[impl_->updater setAutomaticallyDownloadsUpdates:NO];
 	[impl_->updater setSendsSystemProfile:NO];
 	[impl_->updater resetUpdateCycle];
-	[impl_->updater retain];
 
 	checkUpdatesSilently();
 }
 
-Updater::~Updater() {/*
-	[impl_->updater release];
-	delete impl_;*/
+Updater::~Updater() {
+	delete impl_;
 }
 
 bool Updater::supportsUpdate() const {

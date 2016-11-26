@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <atomic>
 #include <chrono>
+#include <json/json-forwards.h>
 
 namespace librevault {
 
@@ -54,6 +55,7 @@ public:
 	BandwidthCounter();
 
 	Stats heartbeat();
+	Json::Value heartbeat_json();
 
 	void add_down(uint64_t bytes);
 	void add_down_blocks(uint64_t bytes);

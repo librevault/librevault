@@ -27,19 +27,21 @@
  * files in the program, then also delete it here.
  */
 #include "FolderModel.h"
-#include <QFileIconProvider>
-#include <QJsonArray>
-#include <util/human_size.h>
+#include "PeerModel.h"
+#include "control/Daemon.h"
+#include "control/RemoteConfig.h"
+#include "control/RemoteState.h"
+#include "util/human_size.h"
 #include <librevault/Secret.h>
-#include "../gui/FolderProperties.h"
+#include <QFileIconProvider>
 
-FolderModel::FolderModel(QWidget* parent) :
-		QAbstractListModel(), parent_widget_(parent) {}
+FolderModel::FolderModel(Daemon* daemon) :
+		QAbstractListModel(daemon), daemon_(daemon) {}
 
 FolderModel::~FolderModel() {}
 
 int FolderModel::rowCount(const QModelIndex &parent) const {
-	return state_json_["folders"].toArray().size();
+	return folders_all_.size();
 }
 int FolderModel::columnCount(const QModelIndex &parent) const {
 	return (int)Column::COLUMN_COUNT;
@@ -47,29 +49,30 @@ int FolderModel::columnCount(const QModelIndex &parent) const {
 QVariant FolderModel::data(const QModelIndex &index, int role) const {
 	auto column = (Column)index.column();
 
-	auto folder_object = state_json_["folders"].toArray().at(index.row()).toObject();
+	auto folderid = folders_all_[index.row()];
 
 	if(role == Qt::DisplayRole) {
 		switch(column) {
-			case Column::NAME: return folder_object["path"].toString();
-			case Column::STATUS: return [&, this](){
-					if(folder_object["is_indexing"].toBool())
+			case Column::NAME: return daemon_->config()->getFolderValue(folderid, "path").toString();
+			case Column::STATUS: return [&, this]{
+					if(daemon_->state()->getFolderValue(folderid, "is_indexing").toBool())
 						return tr("Indexing");
 					return QString();
 				}();
-			case Column::PEERS: return tr("%n peer(s)", "", folder_object["peers"].toArray().size());
-			case Column::SIZE: return tr("%n file(s)", "", folder_object["file_entries"].toInt()) + " " + tr("%n directory(s)", "", folder_object["directory_entries"].toInt());
+			case Column::PEERS: return tr("%n peer(s)", "", daemon_->state()->getFolderValue(folderid, "peers").toArray().size());
+			case Column::SIZE: {
+				QJsonObject index = daemon_->state()->getFolderValue(folderid, "index").toObject();
+				return tr("%n file(s)", "", index["0"].toInt())
+					+ " " + tr("%n directory(s)", "", index["1"].toInt());
+			}
 
 			default: return QVariant();
 		}
 	}
 	if(role == Qt::DecorationRole && column == Column::NAME)
 		return QFileIconProvider().icon(QFileIconProvider::Folder);
-	if(role == SecretRole)
-		return folder_object["secret"].toString();
 	if(role == HashRole) {
-		auto hash_vec = librevault::Secret(folder_object["secret"].toString().toStdString()).get_Hash();
-		return QByteArray((const char*)hash_vec.data(), hash_vec.size());
+		return folderid;
 	}
 
 	return QVariant();
@@ -90,47 +93,25 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 	return QVariant();
 }
 
-void FolderModel::handleControlJson(QJsonObject control_json) {
-	state_json_ = control_json["state"].toObject();
+void FolderModel::refresh() {
+	QSet<QByteArray> config_folders, new_folders, cleanup_folders;
 
-	// Determining what old Secrets are not present now
-	QSet<QByteArray> existing_set = properties_dialogs_.keys().toSet();
-	QSet<QByteArray> arrived_set;
-	for(const QJsonValue& folder_json : state_json_["folders"].toArray()) {
-		auto hash_vec = librevault::Secret(folder_json.toObject().value("secret").toString().toStdString()).get_Hash();
-		arrived_set.insert(QByteArray((const char*)hash_vec.data(), hash_vec.size()));
-	}
-	QSet<QByteArray> cleanup_set = existing_set - arrived_set;
+	config_folders = daemon_->config()->folderList().toSet();
+	new_folders = config_folders - folders_all_.toSet();
+	cleanup_folders = folders_all_.toSet() - config_folders;
 
-	// Removing deleted dialogs;
-	for(auto& cleanup_secret : cleanup_set) {
-		delete properties_dialogs_[cleanup_secret];
-		properties_dialogs_.remove(cleanup_secret);
+	for(auto folderid : new_folders) {
+		PeerModel* new_peer_model = new PeerModel(folderid, daemon_, this);
+		peer_models_.insert(folderid, new_peer_model);
 	}
 
-	// Updating/creating current dialogs
-	for(const QJsonValue& folder_state_json : state_json_["folders"].toArray()) {
-		auto secret = librevault::Secret(folder_state_json.toObject().value("secret").toString().toStdString());
-		QByteArray hash((const char*)secret.get_Hash().data(), secret.get_Hash().size());
-
-		QJsonValue folder_config_json;
-
-		for(const QJsonValue& folder_config_json_tmp : control_json["folders"].toArray()) {
-			auto secret2 = librevault::Secret(folder_config_json_tmp.toObject().value("secret").toString().toStdString());
-			QByteArray hash2((const char*)secret2.get_Hash().data(), secret2.get_Hash().size());
-
-			if(hash == hash2) {
-				folder_config_json = folder_config_json_tmp;
-				break;
-			}
-		}
-
-
-		if(! properties_dialogs_.contains(hash))
-			properties_dialogs_[hash] = new FolderProperties(secret, parent_widget_);
-
-		properties_dialogs_[hash]->update(control_json, folder_config_json.toObject(), folder_state_json.toObject());
+	for(auto folderid : cleanup_folders) {
+		auto it = peer_models_.find(folderid);
+		delete it.value();
+		peer_models_.erase(it);
 	}
+
+	folders_all_ = config_folders.toList();
 
 	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
 	emit layoutChanged();

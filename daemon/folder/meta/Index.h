@@ -35,6 +35,7 @@
 namespace librevault {
 
 class FolderParams;
+class StateCollector;
 
 class Index {
 	LOG_SCOPE("Index");
@@ -49,7 +50,7 @@ public:
 	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	Index(const FolderParams& params);
+	Index(const FolderParams& params, StateCollector& state_collector);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -63,12 +64,6 @@ public:
 
 	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
 
-	/* Index slots */
-	void notify_all();  // Should be invoked after initialization of FolderGroup
-
-	/* Chunk getter */
-	uint32_t get_chunk_size(const blob& ct_hash);
-
 	/* Properties */
 	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
 	SQLiteDB& db() {return *db_;}
@@ -77,11 +72,14 @@ public:
 
 private:
 	const FolderParams& params_;
+	StateCollector& state_collector_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	std::list<SignedMeta> get_meta(std::string sql, std::map<std::string, SQLValue> values = std::map<std::string, SQLValue>());
+	std::list<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 	void wipe();
+
+	void notify_state();
 };
 
 } /* namespace librevault */

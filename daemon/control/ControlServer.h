@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "util/log_scope.h"
-#include "util/network.h"
 #include "util/parse_url.h"
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
@@ -40,41 +39,41 @@
 namespace librevault {
 
 class Client;
+class StateCollector;
+class ControlWebsocketServer;
+class ControlHTTPServer;
 
 class ControlServer {
 	LOG_SCOPE("ControlServer");
 public:
-	ControlServer(Client& client);
+	using server = websocketpp::server<asio_notls>;
+
+	ControlServer(StateCollector& state_collector);
 	virtual ~ControlServer();
 
 	void run() {ios_.start(1);}
 
-	boost::signals2::signal<void(Json::Value)> add_folder_signal;
-	boost::signals2::signal<void(Secret)> remove_folder_signal;
+	bool check_origin(const std::string& origin);
+
+	// Signals
+	boost::signals2::signal<void()> shutdown_signal;
+	boost::signals2::signal<void()> restart_signal;
+
+	// Slots
+	void notify_global_config_changed(const std::string& key, Json::Value value);
+	void notify_global_state_changed(std::string key, Json::Value state);
+	void notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state);
+
+	void notify_folder_added(const blob& folderid, Json::Value folder_params);
+	void notify_folder_removed(const blob& folderid);
+
 private:
-	using server = websocketpp::server<asio_notls>;
-	Client& client_;
 	multi_io_service ios_;
 
 	server ws_server_;
-	std::unordered_set<server::connection_ptr> ws_server_assignment_;
 
-	tcp_endpoint local_endpoint_;
-
-	PeriodicProcess heartbeat_process_;
-
-	bool on_validate(websocketpp::connection_hdl hdl);
-	void on_open(websocketpp::connection_hdl hdl);
-	void on_message(websocketpp::connection_hdl hdl, server::message_ptr message_ptr);
-	void on_disconnect(websocketpp::connection_hdl hdl);
-
-	std::string make_control_json();
-	Json::Value make_state_json() const;
-	void send_heartbeat(PeriodicProcess& process);
-
-	void dispatch_control_json(const Json::Value& control_json);
-	void handle_add_folder_json(const Json::Value& control_json);
-	void handle_remove_folder_json(const Json::Value& control_json);
+	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
+	std::unique_ptr<ControlHTTPServer> control_http_server_;
 };
 
 } /* namespace librevault */

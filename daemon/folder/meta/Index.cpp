@@ -28,6 +28,7 @@
  */
 #include "Index.h"
 #include "control/FolderParams.h"
+#include "control/StateCollector.h"
 #include "folder/AbstractFolder.h"
 #include "util/file_util.h"
 #include "util/log.h"
@@ -35,7 +36,7 @@
 
 namespace librevault {
 
-Index::Index(const FolderParams& params) : params_(params) {
+Index::Index(const FolderParams& params, StateCollector& state_collector) : params_(params), state_collector_(state_collector) {
 	auto db_filepath = params_.system_path / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
@@ -71,6 +72,8 @@ Index::Index(const FolderParams& params) : params_(params) {
 	}
 	file_wrapper hexhash_f(hash_txt, "w");
 	hexhash_f.ios() << hexhash_conf;
+
+	notify_state();
 }
 
 bool Index::have_meta(const Meta::PathRevision& path_revision) noexcept {
@@ -132,9 +135,11 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	new_meta_signal(signed_meta);
 	if(!fully_assembled)
 		assemble_meta_signal(signed_meta.meta());
+
+	notify_state();
 }
 
-std::list<SignedMeta> Index::get_meta(std::string sql, std::map<std::string, SQLValue> values){
+std::list<SignedMeta> Index::get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	std::list<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list.push_back(SignedMeta(row[0], row[1], params_.secret));
@@ -166,23 +171,6 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	}catch(AbstractFolder::no_such_meta& e){
 		return true;
 	}
-}
-
-void Index::notify_all() {
-	for(auto& smeta : get_meta())
-		new_meta_signal(smeta);
-}
-
-/* Block getter */
-
-uint32_t Index::get_chunk_size(const blob& ct_hash) {
-	auto sql_result = db_->exec("SELECT size FROM chunk WHERE ct_hash=:ct_hash", {
-			{":ct_hash", ct_hash}
-	});
-
-	if(sql_result.have_rows())
-		return (uint32_t)sql_result.begin()->at(0).as_uint();
-	throw AbstractFolder::no_such_chunk();
 }
 
 std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
@@ -219,6 +207,16 @@ Index::status_t Index::get_status() {
 	++it;
 	s.deleted_entries = it[0].as_uint();
 	return s;
+}
+
+void Index::notify_state() {
+	status_t index_status = get_status();
+	Json::Value index_state;
+	index_state["0"] = Json::UInt64(index_status.file_entries);
+	index_state["1"] = Json::UInt64(index_status.directory_entries);
+	index_state["2"] = Json::UInt64(index_status.symlink_entries);
+	index_state["255"] = Json::UInt64(index_status.deleted_entries);
+	state_collector_.folder_state_set(params_.secret.get_Hash(), "index", index_state);
 }
 
 } /* namespace librevault */

@@ -32,16 +32,17 @@
 
 namespace librevault {
 
+class AutoIndexer;
 class FolderParams;
 class IgnoreList;
-class PathNormalizer;
 class Index;
 class Indexer;
-class AutoIndexer;
+class PathNormalizer;
+class StateCollector;
 
 class MetaStorage {
 public:
-	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
+	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios);
 	virtual ~MetaStorage();
 
 	bool is_indexing() const;

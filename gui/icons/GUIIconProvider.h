@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "pch.h"
 #include <QtGui>
 #ifdef Q_OS_WIN
 #include <QtWin>

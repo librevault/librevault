@@ -27,36 +27,39 @@
  * files in the program, then also delete it here.
  */
 #include "Settings.h"
-#include "ui_Settings.h"
+#include "control/Daemon.h"
+#include "control/RemoteConfig.h"
+#include "icons/GUIIconProvider.h"
+#include "updater/Updater.h"
+#include "MainWindow.h"
+#include "appver.h"
 #include <QCloseEvent>
 #include <QDebug>
-#include "icons/GUIIconProvider.h"
-#include "appver.h"
-#include "MainWindow.h"
 
-Settings::Settings(QWidget* parent) :
+Settings::Settings(Daemon* daemon, Updater* updater, QWidget* parent) :
 		QDialog(parent),
-		ui(std::make_unique<Ui::Settings>()) {
-	startup_interface = std::make_unique<StartupInterface>();
+		daemon_(daemon),
+		updater_(updater) {
+	startup_interface_ = new StartupInterface(this);
 
 	init_ui();
-	connect(ui->dialog_box, &QDialogButtonBox::accepted, this, &Settings::okayPressed);
-	connect(ui->dialog_box->button(QDialogButtonBox::StandardButton::Apply), &QPushButton::clicked, this, &Settings::applyPressed);
-	connect(ui->dialog_box, &QDialogButtonBox::rejected, this, &Settings::cancelPressed);
+	connect(ui.dialog_box, &QDialogButtonBox::accepted, this, &Settings::okayPressed);
+	connect(ui.dialog_box->button(QDialogButtonBox::StandardButton::Apply), &QPushButton::clicked, this, &Settings::applyPressed);
+	connect(ui.dialog_box, &QDialogButtonBox::rejected, this, &Settings::cancelPressed);
 }
 
 Settings::~Settings() {}
 
 void Settings::selectPage(int page) {
-	ui->stackedWidget->setCurrentIndex(page);
+	ui.stackedWidget->setCurrentIndex(page);
 }
 
 void Settings::retranslateUi() {
 	for(int page = 0; page < pager->page_count(); page++) {
 		pager->set_text(page, page_name((Page)page));
 	}
-	ui->retranslateUi(this);
-	ui->version_label->setText(ui->version_label->text().arg(LV_APPVER));
+	ui.retranslateUi(this);
+	ui.version_label->setText(ui.version_label->text().arg(LV_APPVER));
 }
 
 void Settings::handleControlJson(QJsonObject control_json) {
@@ -64,88 +67,79 @@ void Settings::handleControlJson(QJsonObject control_json) {
 }
 
 void Settings::init_ui() {
-	ui->setupUi(this);
+	ui.setupUi(this);
 	init_selector();
-	ui->box_startup->setVisible(startup_interface->isSupported());
-	ui->box_update->setVisible(dynamic_cast<MainWindow*>(parent())->client_.updater_->supportsUpdate());
+	ui.box_startup->setVisible(startup_interface_->isSupported());
+	ui.box_update->setVisible(updater_->supportsUpdate());
 }
 
 void Settings::reset_ui_states() {
 	/* GUI-related settings */
-	ui->box_startup->setChecked(startup_interface->isEnabled());
-	ui->box_update->setChecked(dynamic_cast<MainWindow*>(parent())->client_.updater_->enabled());
-
-	/* Daemon-related settings */
-	control_json_static = control_json_dynamic; // "Fixing" a version of control_json
-
-	QJsonObject client = control_json_static["globals"].toObject();
+	ui.box_startup->setChecked(startup_interface_->isEnabled());
+	ui.box_update->setChecked(updater_->enabled());
 
 	// client_name
-	ui->line_device_name->setText(client["client_name"].toString());
+	ui.line_device_name->setText(daemon_->config()->getGlobalValue("client_name").toString());
 
 	// p2p_listen
-	p2p_listen.setAuthority(client["p2p_listen"].toString());
-	ui->port_box->setChecked(p2p_listen.port(0) != 0);
-	ui->port_value->setEnabled(p2p_listen.port(0) != 0);
-	ui->port_value->setValue(p2p_listen.port(0));
+	p2p_listen.setAuthority(daemon_->config()->getGlobalValue("p2p_listen").toString());
+	ui.port_box->setChecked(p2p_listen.port(0) != 0);
+	ui.port_value->setEnabled(p2p_listen.port(0) != 0);
+	ui.port_value->setValue(p2p_listen.port(0));
 
 	// natpmp_enabled
-	ui->natpmp_box->setChecked(client["natpmp_enabled"].toBool());
+	ui.natpmp_box->setChecked(daemon_->config()->getGlobalValue("natpmp_enabled").toBool());
 
 	// upnp_enabled
-	ui->upnp_box->setChecked(client["upnp_enabled"].toBool());
+	ui.upnp_box->setChecked(daemon_->config()->getGlobalValue("upnp_enabled").toBool());
 
 	// bttracker_enabled
-	ui->global_discovery_box->setChecked(client["bttracker_enabled"].toBool());
+	ui.global_discovery_box->setChecked(daemon_->config()->getGlobalValue("bttracker_enabled").toBool());
 
 	// multicast4_enabled || multicast6_enabled
-	ui->local_discovery_box->setChecked(
-		client["multicast4_enabled"].toBool()
-			|| client["multicast6_enabled"].toBool()
+	ui.local_discovery_box->setChecked(
+		daemon_->config()->getGlobalValue("multicast4_enabled").toBool()
+			|| daemon_->config()->getGlobalValue("multicast6_enabled").toBool()
 	);
 
 	// mainline_dht_enabled
-	ui->dht_discovery_box->setChecked(client["mainline_dht_enabled"].toBool());
+	ui.dht_discovery_box->setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
 }
 
 void Settings::process_ui_states() {
 	/* GUI-related settings */
-	startup_interface->setEnabled(ui->box_startup->isChecked());
-	dynamic_cast<MainWindow*>(parent())->client_.updater_->setEnabled(ui->box_update->isChecked());
+	startup_interface_->setEnabled(ui.box_startup->isChecked());
+	updater_->setEnabled(ui.box_update->isChecked());
 
 	/* Daemon-related settings */
-	QJsonObject client;
-
 	// client_name
-	client["client_name"] = ui->line_device_name->text();
+	daemon_->config()->setGlobalValue("client_name", ui.line_device_name->text());
 
 	// p2p_listen
-	p2p_listen.setPort(ui->port_box->isChecked() ? ui->port_value->value() : 0);
-	client["p2p_listen"] = p2p_listen.authority();
+	p2p_listen.setPort(ui.port_box->isChecked() ? ui.port_value->value() : 0);
+	daemon_->config()->setGlobalValue("p2p_listen", p2p_listen.authority());
 
 	// natpmp_enabled
-	client["natpmp_enabled"] = ui->natpmp_box->isChecked();
+	daemon_->config()->setGlobalValue("natpmp_enabled", ui.natpmp_box->isChecked());
 
 	// upnp_enabled
-	client["upnp_enabled"] = ui->upnp_box->isChecked();
+	daemon_->config()->setGlobalValue("upnp_enabled", ui.upnp_box->isChecked());
 
 	// bttracker_enabled
-	client["bttracker_enabled"] = ui->global_discovery_box->isChecked();
+	daemon_->config()->setGlobalValue("bttracker_enabled", ui.global_discovery_box->isChecked());
 
 	// multicast4_enabled || multicast6_enabled
-	client["multicast4_enabled"] = ui->local_discovery_box->isChecked();
-	client["multicast6_enabled"] = ui->local_discovery_box->isChecked();
+	daemon_->config()->setGlobalValue("multicast4_enabled", ui.local_discovery_box->isChecked());
+	daemon_->config()->setGlobalValue("multicast6_enabled", ui.local_discovery_box->isChecked());
 
 	// mainline_dht_enabled
-	client["mainline_dht_enabled"] = ui->dht_discovery_box->isChecked();
-
-	emit newConfigIssued(client);
+	daemon_->config()->setGlobalValue("mainline_dht_enabled", ui.dht_discovery_box->isChecked());
 }
 
 void Settings::init_selector() {
 	int page;
 
-	pager = new Pager(ui->controlBar, this);
+	pager = new Pager(ui.controlBar, this);
 
 	page = pager->add_page();
 	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_GENERAL));

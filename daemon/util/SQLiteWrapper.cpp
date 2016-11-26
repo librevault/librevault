@@ -163,7 +163,7 @@ void SQLiteDB::close() {
 	sqlite3_close(db);
 }
 
-SQLiteResult SQLiteDB::exec(const std::string& sql, std::map<std::string, SQLValue> values){
+SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	sqlite3_stmt* sqlite_stmt;
 	sqlite3_prepare_v2(db, sql.c_str(), (int)sql.size()+1, &sqlite_stmt, 0);
 

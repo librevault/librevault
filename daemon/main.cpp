@@ -29,6 +29,7 @@
 #include "Client.h"
 #include "Version.h"
 #include "control/Config.h"
+#include "control/Paths.h"
 #include <librevault/Secret.h>
 #include <boost/locale.hpp>
 #include <docopt.h>
@@ -49,7 +50,6 @@ See on: https://librevault.com
 Usage:
   librevault [-v | -vv] [--data=<dir>]
   librevault gen-secret
-  librevault gen-config
   librevault derive <secret> <type>
   librevault (-h | --help)
   librevault --version
@@ -67,77 +67,70 @@ Options:
 )";
 
 int main(int argc, char** argv) {
-	// Global initialization
-	std::locale::global(boost::locale::generator().generate(""));
-	boost::filesystem::path::imbue(std::locale());
+	do {
+		// Global initialization
+		std::locale::global(boost::locale::generator().generate(""));
+		boost::filesystem::path::imbue(std::locale());
 
-	// Argument parsing
-	auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
+		// Argument parsing
+		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
 
-	if(args["gen-secret"].asBool()) {
-		Secret s;
-		std::cout << s;
-		return 0;
-	}
+		// Initializing paths
+		boost::filesystem::path appdata_path;
+		if(args["--data"].isString())
+			appdata_path = args["--data"].asString();
+		Paths::get(appdata_path);
 
-	if(args["derive"].asBool()) {
-		Secret::Type type = (Secret::Type)args["<type>"].asString().at(0);
-		std::cout << type << std::endl;
-		Secret s(args["<secret>"].asString());
-		std::cout << s.derive(type);
-		return 0;
-	}
+		// Initializing log
+		spdlog::level::level_enum log_level;
+		switch(args["-v"].asLong()) {
+			case 2:     log_level = spdlog::level::trace; break;
+			case 1:     log_level = spdlog::level::debug; break;
+			default:    log_level = spdlog::level::info;
+		}
 
-	// Initializing config
-	boost::filesystem::path appdata_path;
-	if(args["--data"].isString())
-		appdata_path = args["--data"].asString();
-	Config::init(appdata_path);
+		auto log = spdlog::get(Version::current().name());
+		if(!log){
+			std::vector<spdlog::sink_ptr> sinks;
+			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
-	if(args["gen-config"].asBool()) {
-		std::cout << Config::get()->globals_defaults().toStyledString();
-		return 0;
-	}
+			auto& log_path = Paths::get()->log_path;
+			sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+				(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
+				log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
 
-	// Initializing log
-	spdlog::level::level_enum log_level;
-	switch(args["-v"].asLong()) {
-		case 2:     log_level = spdlog::level::trace; break;
-		case 1:     log_level = spdlog::level::debug; break;
-		default:    log_level = spdlog::level::info;
-	}
+			log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
+			spdlog::register_logger(log);
 
-	auto log = spdlog::get(Version::current().name());
-	if(!log){
-		std::vector<spdlog::sink_ptr> sinks;
-		sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+			log->set_level(log_level);
+			log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
+		}
 
-		auto& log_path = Config::get()->paths().log_path;
-		sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-			(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
-			log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
+		// Initializing config
+		Config::get();
 
-		log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
-		spdlog::register_logger(log);
+		// Okay, that's a bit of fun, actually.
+		std::cout
+			<< R"(   __    __ _                                _ __ )" << std::endl
+			<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
+			<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
+			<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
+			<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
+		log->info() << Version::current().name() << " " << Version::current().version_string();
 
-		log->set_level(log_level);
-		log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
-	}
+		// And, run!
+		auto client = std::make_unique<Client>();
+		client->run();
+		bool want_restart = client->want_restart();
+		client.reset();
 
-	// Okay, that's a bit of fun, actually.
-	std::cout
-		<< R"(   __    __ _                                _ __ )" << std::endl
-		<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
-		<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
-		<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
-		<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-	log->info() << Version::current().name() << " " << Version::current().version_string();
+		// Deinitialization
+		log->flush();
+		Config::deinit();
+		Paths::deinit();
 
-	// And, run!
-	Client client;
-	client.run();
-
-	log->flush();
+		if(!want_restart) break;
+	}while(true);
 
 	return 0;
 }

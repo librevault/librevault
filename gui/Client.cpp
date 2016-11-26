@@ -29,71 +29,66 @@
 #include "Client.h"
 #include "gui/MainWindow.h"
 #include "model/FolderModel.h"
-#include "control/ControlClient.h"
-#include "single/SingleChannel.h"
+#include "control/Daemon.h"
+#include "control/RemoteConfig.h"
+#include "control/RemoteState.h"
 #include <QCommandLineParser>
 #include <QLibraryInfo>
 
 Client::Client(int &argc, char **argv, int appflags) :
-		QApplication(argc, argv, appflags) {
+	QtSingleApplication(argc, argv, true) {
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	setQuitOnLastWindowClosed(false);
 	applyLocale(QLocale::system().name());
 	// Parsing arguments
 	QCommandLineParser parser;
-	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one."), "url");
+	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one"), "url");
+	QCommandLineOption multi_option("multi", tr("Allow multiple instances of GUI"));
 	parser.addOption(attach_option);
+	parser.addOption(multi_option);
 	parser.addPositionalArgument("url", tr("The \"lvlt:\" URL to open."));
 	parser.process(*this);
-
-	QString link;
 
 	if(parser.positionalArguments().size() > 0){
 		QRegularExpression link_regex("lvlt:.*");
 		auto link_index = parser.positionalArguments().indexOf(link_regex);
 		if(link_index != -1)
-			link = parser.positionalArguments().at(link_index);
+			pending_link_ = parser.positionalArguments().at(link_index);
 	}
 
+	allow_multiple = parser.isSet(multi_option);
+
 	// Creating components
-	single_channel_ = std::make_unique<SingleChannel>(link);
-
-	control_client_ = std::make_unique<ControlClient>(parser.value(attach_option));
-
+	daemon_ = new Daemon(parser.value(attach_option), this);
+	folder_model_ = new FolderModel(daemon_);
 	updater_ = new Updater(this);
-
-	main_window_ = std::make_unique<MainWindow>(*this);
+	main_window_ = new MainWindow(daemon_, folder_model_, updater_);
 
 	// Connecting signals & slots
-	connect(single_channel_.get(), &SingleChannel::showMainWindow, main_window_.get(), &QMainWindow::show);
-	connect(single_channel_.get(), &SingleChannel::openLink, this, &Client::openLink);
+//	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
+//	connect(main_window_, &MainWindow::folderAdded, control_client_, &ControlClient::sendAddFolderJson);
+//	connect(main_window_, &MainWindow::folderRemoved, control_client_, &ControlClient::sendRemoveFolderJson);
+	connect(this, &QtSingleApplication::messageReceived, this, &Client::singleMessageReceived);
 
-	connect(control_client_.get(), &ControlClient::ControlJsonReceived, main_window_.get(), &MainWindow::handleControlJson);
+	connect(daemon_, &Daemon::connected, main_window_, &MainWindow::handle_connected);
+	connect(daemon_, &Daemon::disconnected, main_window_, &MainWindow::handle_disconnected);
 
-	connect(main_window_.get(), &MainWindow::newConfigIssued, control_client_.get(), &ControlClient::sendConfigJson);
-	connect(main_window_.get(), &MainWindow::folderAdded, control_client_.get(), &ControlClient::sendAddFolderJson);
-	connect(main_window_.get(), &MainWindow::folderRemoved, control_client_.get(), &ControlClient::sendRemoveFolderJson);
-
-	connect(control_client_.get(), &ControlClient::connected, main_window_.get(), &MainWindow::handle_connected);
-	connect(control_client_.get(), &ControlClient::disconnected, main_window_.get(), &MainWindow::handle_disconnected);
+	connect(daemon_->config(), &RemoteConfig::changed, folder_model_, &FolderModel::refresh);
+	connect(daemon_->state(), &RemoteState::changed, folder_model_, &FolderModel::refresh);
 
 	// Initialization complete!
-	control_client_->start();
-
-	if(!link.isEmpty())
-		openLink(link);
+	QTimer::singleShot(0, [this]{started();});
 }
 
 Client::~Client() {
-	main_window_.reset();
-	control_client_.reset();
+	delete main_window_;
 }
 
 bool Client::event(QEvent* event) {
 	if(event->type() == QEvent::FileOpen) {
 		QFileOpenEvent* open_event = static_cast<QFileOpenEvent*>(event);
-		openLink(open_event->url().toString());
+		pending_link_ = open_event->url().toString();
 	}
 	return QApplication::event(event);
 }
@@ -107,6 +102,32 @@ void Client::applyLocale(QString locale) {
 }
 
 void Client::openLink(QString link) {
-	main_window_->show();   // Cause, this dialog looks ugly without a visible main window
+	main_window_->showWindow();   // Cause, this dialog looks ugly without a visible main window
 	main_window_->open_link_->handleLink(link);
+}
+
+void Client::started() {
+	if(allow_multiple || !isRunning()) {
+		daemon_->start();
+		if(!pending_link_.isEmpty()) {
+			openLink(pending_link_);
+			pending_link_.clear();
+		}
+	}else{
+		if(pending_link_.isEmpty())
+			sendMessage("show");
+		else
+			sendMessage(QString("link ").append(pending_link_));
+		quit();
+	}
+}
+
+void Client::singleMessageReceived(const QString &message) {
+	qDebug() << "SingleApplication: " << message;
+	if(message == "show") {
+		main_window_->showWindow();
+	}else if(message.startsWith("link")){
+		QString link = message.right(message.size()-5);
+		emit openLink(link);
+	}
 }

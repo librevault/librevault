@@ -58,8 +58,7 @@ private:
 	IgnoreList& ignore_list_;
 	PathNormalizer& path_normalizer_;
 
-	std::set<std::string> short_reindex_list();  // List of files for reindexing on start
-	std::set<std::string> full_reindex_list();  // List of files, ready to be reindexed on full reindexing
+	std::set<std::string> reindex_list();
 
 	// Monitor
 	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
@@ -80,8 +79,8 @@ private:
 	// Index queue
 	std::set<std::string> index_queue_;
 	std::mutex index_queue_mtx_;
-	void enqueue_files(const std::string& relpath);
 	void enqueue_files(const std::set<std::string>& relpath);
+	void enqueue_files(const std::string& relpath) {enqueue_files(std::set<std::string>({relpath}));}
 
 	void perform_index();
 	PeriodicProcess index_process_;

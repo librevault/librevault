@@ -38,7 +38,7 @@ NATPMPService::NATPMPService(PortMappingService& parent, io_service& ios) : Port
 NATPMPService::~NATPMPService() {stop();}
 
 bool NATPMPService::is_config_enabled() {
-	return Config::get()->globals()["natpmp_enabled"].asBool();
+	return Config::get()->global_get("natpmp_enabled").asBool();
 }
 
 void NATPMPService::start() {
@@ -100,7 +100,7 @@ void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
 		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
-		active ? Config::get()->globals()["natpmp_lifetime"].asUInt() : 0
+		active ? Config::get()->global_get("natpmp_lifetime").asUInt() : 0
 	);
 	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
 
@@ -116,7 +116,7 @@ void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
 		next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
 	}else{
 		LOGD("Could not set up port mapping");
-		next_request = std::chrono::seconds(Config::get()->globals()["natpmp_lifetime"].asUInt());
+		next_request = std::chrono::seconds(Config::get()->global_get("natpmp_lifetime").asUInt());
 	}
 
 	if(active)

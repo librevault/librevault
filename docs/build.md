@@ -66,3 +66,44 @@ All dependencies are available from the repository. Simply install them using th
 ```
 sudo apt install build-essential cmake libboost-all-dev libssl-dev qtbase5-dev libqt5svg5-dev libqt5websockets5-dev libcrypto++-dev qttools5-dev-tools protobuf-compiler libsqlite3-dev
 ```
+
+### macOS Sierra
+
+Make sure you have Homebrew (http://brew.sh) installed. Then:
+
+1. `brew install cmake`
+2. `brew install qt5`
+3. `brew install boost`
+4. `brew install openssl`
+5. `brew install protobuf`
+6. `brew install cryptopp`
+
+7. Install Sparkle update framework dependency for the graphical interface:
+
+	1. Download Sparkle from https://sparkle-project.org
+  	2. Make sure a ~/Library/Frameworks folder exists: `mkdir ~/Libary/Frameworks`
+  	3. From the downloaded Sparkle folder: `cp -R Sparkle.framework ~/Library/Frameworks`
+
+8. Clone the repository and change to its directory:
+
+	`git clone https://github.com/Librevault/librevault.git && cd librevault`
+
+9. Install the submodules:
+
+	`git submodule update --init`
+
+10. Get an application package directory structure ready:
+
+	`mkdir -p product/Librevault.app/Contents/MacOS`
+
+11. Build Librevault:
+
+	1. `mkdir build && cd build`
+	2. `cmake .. -DCMAKE_PREFIX_PATH=$(brew --prefix qt5) -DOPENSSL_ROOT_DIR=$(brew --prefix openssl) -DOPENSSL_INCLUDE_DIR=$(brew --prefix openssl)/include -DOPENSSL_LIBRARIES=$(brew --prefix openssl)/lib -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_INSTALL_PREFIX=$(pwd)/../product/Librevault.app/Contents/MacOS`
+	3. `cmake --build .`
+
+12. And generate the app bundle:
+
+	`sudo make install`
+
+You’ll find the generated Librevault.app bundle in the product folder.

@@ -1,1 +1,2 @@
-build 'librevault/build'
+def builder = new LibrevaultBuilder();
+builder.build()

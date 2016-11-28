@@ -1,2 +1,2 @@
-def builder = new LibrevaultBuilder();
+def builder = new com.librevault.LibrevaultBuilder();
 builder.build()

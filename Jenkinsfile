@@ -1,3 +1,1 @@
-node {
-    println env.BRANCH_NAME
-}
+build 'librevault/build'

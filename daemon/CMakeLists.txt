@@ -107,4 +107,6 @@ if(BUILD_STATIC)
 	endif()
 endif()
 
-cotire(librevault-daemon)
+if(USE_COTIRE)
+	cotire(librevault-daemon)
+endif()

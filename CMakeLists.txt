@@ -326,6 +326,4 @@ if(BUILD_GUI)
 	add_subdirectory("gui")
 endif()
 
-if(USE_COTIRE)
-	include(Install.cmake)
-endif()
+include(Install.cmake)

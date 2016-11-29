@@ -103,9 +103,9 @@ void MainWindow::retranslateUi() {
 	folder_properties_action->setText(tr("Properties"));
 	folder_properties_action->setToolTip(tr("Open folder properies"));
 
-#if Q_OS_WIN
+#if defined(Q_OS_WIN)
 	folder_destination_action->setText(tr("Open in Explorer"));
-#elif Q_OS_MAC
+#elif defined(Q_OS_MAC)
 	folder_destination_action->setText(tr("Open in Finder"));
 #else
 	folder_destination_action->setText(tr("Open in file manager"));

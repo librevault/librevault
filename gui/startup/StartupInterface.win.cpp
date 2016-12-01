@@ -30,6 +30,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QMessageBox>
+#include <memory>
 
 struct WindowsStartupInterface {
 	std::unique_ptr<QSettings> settings;

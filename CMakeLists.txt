@@ -16,6 +16,7 @@ include(cotire)
 
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
+option(BUILD_CLI "Build console client" ON)
 if((OS_WIN AND OS_32bit) OR NOT OS_WIN)
 	set(DEFAULT_BUILD_GUI ON)
 else()
@@ -317,7 +318,9 @@ endif()
 #============================================================================
 
 add_subdirectory("lvproto")
+if(BUILD_CLI)
 add_subdirectory("cli")
+endif()
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

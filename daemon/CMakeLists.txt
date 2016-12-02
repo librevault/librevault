@@ -87,24 +87,21 @@ target_link_libraries(librevault-daemon icu)
 target_link_libraries(librevault-daemon threads)
 
 ## WinSock
-if(WIN32)
+if(OS_WIN)
 	target_link_libraries(librevault-daemon wsock32 ws2_32 Iphlpapi)
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-daemon "-framework Foundation")
 	target_link_libraries(librevault-daemon "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon "-framework CoreServices")
 endif()
 
-if(BUILD_STATIC)
-#	target_link_libraries(librevault-daemon stdc++.a)
-#	target_link_libraries(librevault-daemon m.a)
-	if(UNIX)
-		target_link_libraries(librevault-daemon dl)
-#		target_link_libraries(librevault-daemon c.a)
-	endif()
+if(BUILD_STATIC AND OS_LINUX)
+	target_link_libraries(librevault-daemon dl)
 endif()
 
-cotire(librevault-daemon)
+if(USE_COTIRE)
+	cotire(librevault-daemon)
+endif()

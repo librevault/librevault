@@ -52,7 +52,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 
 	/* Initializing dialogs */
 	settings_ = new Settings(daemon_, updater, this);
-	connect(settings_, &Settings::newConfigIssued, this, &MainWindow::newConfigIssued);
 
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
@@ -65,7 +64,11 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	init_tray();
 	init_toolbar();
 
+	folders_menu.addAction(folder_destination_action);
+	folders_menu.addSeparator();
 	folders_menu.addAction(delete_folder_action);
+	folders_menu.addSeparator();
+	folders_menu.addAction(folder_properties_action);
 	connect(ui.treeView, &QWidget::customContextMenuRequested, this, &MainWindow::showFolderContextMenu);
 
 	retranslateUi();
@@ -85,14 +88,29 @@ void MainWindow::retranslateUi() {
 	open_website_action->setText(tr("Open Librevault website"));
 	show_settings_window_action->setText(tr("Settings"));
 	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
-	exit_action->setText(tr("Quit Librevault"));    // TODO: Apply: ux.stackexchange.com/q/50893
+#if defined(Q_OS_MAC)    // ux.stackexchange.com/q/50893
+	exit_action->setText(tr("Quit Librevault"));
+#else
+	exit_action->setText(tr("Exit"));
+#endif
 	exit_action->setToolTip("Stop synchronization and exit Librevault application");
 	new_folder_action->setText(tr("Add folder"));
 	new_folder_action->setToolTip(tr("Add new folder for synchronization"));
 	open_link_action->setText(tr("Open URL"));
 	open_link_action->setToolTip(tr("Open shared link"));
-	delete_folder_action->setText(tr("Delete"));
-	delete_folder_action->setToolTip(tr("Delete folder"));
+	delete_folder_action->setText(tr("Remove"));
+	delete_folder_action->setToolTip(tr("Stop synchronization and remove folder"));
+	folder_properties_action->setText(tr("Properties"));
+	folder_properties_action->setToolTip(tr("Open folder properies"));
+
+#if defined(Q_OS_WIN)
+	folder_destination_action->setText(tr("Open in Explorer"));
+#elif defined(Q_OS_MAC)
+	folder_destination_action->setText(tr("Open in Finder"));
+#else
+	folder_destination_action->setText(tr("Open in file manager"));
+#endif
+	folder_destination_action->setToolTip(tr("Open destination folder"));
 
 	ui.retranslateUi(this);
 	settings_->retranslateUi();
@@ -141,7 +159,6 @@ void MainWindow::handleRemoveFolder() {
 
 	if(confirmation_box.exec() == QMessageBox::Ok) {
 		for(auto model_index : selection_model) {
-			qDebug() << model_index;
 			QByteArray secret = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
 			//qDebug() << secret;
 			//emit folderRemoved(secret);
@@ -149,16 +166,36 @@ void MainWindow::handleRemoveFolder() {
 	}
 }
 
-void MainWindow::handleOpenFolderProperties(const QModelIndex &index) {
-	QByteArray folderid = folder_model_->data(index, FolderModel::HashRole).toByteArray();
+void MainWindow::handleOpenFolderProperties() {
+	auto selection_model = ui.treeView->selectionModel()->selectedRows();
+	if(selection_model.empty())
+		return;
 
-	auto it = folder_properties_windows_.find(folderid);
-	if(it == folder_properties_windows_.end()) {
-		auto folder_properties_window = new FolderProperties(folderid, daemon_, folder_model_, this);
-		folder_properties_windows_[folderid] = folder_properties_window;
-		connect(folder_properties_window, &QObject::destroyed, [this, folderid]{folder_properties_windows_.remove(folderid);});
-	}else{
-		it.value()->raise();
+	for(auto model_index : selection_model) {
+		QByteArray folderid = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
+
+		auto it = folder_properties_windows_.find(folderid);
+		if(it == folder_properties_windows_.end()) {
+			auto folder_properties_window = new FolderProperties(folderid, daemon_, folder_model_, this);
+			folder_properties_windows_[folderid] = folder_properties_window;
+			connect(folder_properties_window, &QObject::destroyed, [this, folderid]{folder_properties_windows_.remove(folderid);});
+		}else{
+			it.value()->raise();
+		}
+	}
+}
+
+void MainWindow::handleOpenDestinationFolder() {
+	auto selection_model = ui.treeView->selectionModel()->selectedRows();
+	if(selection_model.empty())
+		return;
+
+	for(auto model_index : selection_model) {
+		QByteArray folderid = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
+
+		QString path = daemon_->config()->getFolderValue(folderid, "path").toString();
+		if(!path.isEmpty())
+			QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 	}
 }
 
@@ -203,6 +240,16 @@ void MainWindow::init_actions() {
 	delete_folder_action->setShortcut(Qt::Key_Delete);
 	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{delete_folder_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
 	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
+
+	folder_properties_action = new QAction(this);
+	//folder_properties_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));
+	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{folder_properties_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
+	connect(folder_properties_action, &QAction::triggered, this, &MainWindow::handleOpenFolderProperties);
+
+	folder_destination_action = new QAction(this);
+	folder_destination_action->setIcon(QFileIconProvider().icon(QFileIconProvider::Folder));
+	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{folder_destination_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
+	connect(folder_destination_action, &QAction::triggered, this, &MainWindow::handleOpenDestinationFolder);
 }
 
 void MainWindow::init_toolbar() {

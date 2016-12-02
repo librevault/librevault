@@ -50,20 +50,12 @@ Settings::Settings(Daemon* daemon, Updater* updater, QWidget* parent) :
 
 Settings::~Settings() {}
 
-void Settings::selectPage(int page) {
-	ui.stackedWidget->setCurrentIndex(page);
-}
-
 void Settings::retranslateUi() {
 	for(int page = 0; page < pager->page_count(); page++) {
 		pager->set_text(page, page_name((Page)page));
 	}
 	ui.retranslateUi(this);
 	ui.version_label->setText(ui.version_label->text().arg(LV_APPVER));
-}
-
-void Settings::handleControlJson(QJsonObject control_json) {
-	control_json_dynamic = control_json;
 }
 
 void Settings::init_ui() {
@@ -152,7 +144,7 @@ void Settings::init_selector() {
 
 	pager->show();
 
-	connect(pager, &Pager::pageSelected, this, &Settings::selectPage);
+	connect(pager, &Pager::pageSelected, ui.stackedWidget, &QStackedWidget::setCurrentIndex);
 }
 
 QString Settings::page_name(Page page) {

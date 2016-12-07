@@ -34,6 +34,7 @@ option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
+option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
 #============================================================================
 # Internal compiler options

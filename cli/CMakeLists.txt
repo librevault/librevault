@@ -23,15 +23,15 @@ list(APPEND SRCS ${MAIN_HEADERS})
 # Compile targets
 #============================================================================
 
-add_executable(librevault ${SRCS})
+add_executable(librevault-cli ${SRCS})
 
 #============================================================================
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault lvcommon)
-target_link_libraries(librevault openssl)
-target_link_libraries(librevault docopt_s)
+target_link_libraries(librevault-cli lvcommon)
+target_link_libraries(librevault-cli openssl)
+target_link_libraries(librevault-cli docopt_s)
 
 # Qt
-target_link_libraries(librevault Qt5::Network)
+target_link_libraries(librevault-cli Qt5::Network)

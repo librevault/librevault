@@ -55,7 +55,7 @@ elseif(OS_LINUX)
 	if(INSTALL_BUNDLE)
 		set(CMAKE_INSTALL_BINDIR opt/librevault/bin)
 		set(CMAKE_INSTALL_LIBDIR opt/librevault/lib)
-		set(CMAKE_INSTALL_DATAROOTDIR usr)
+		set(CMAKE_INSTALL_DATAROOTDIR usr/share)
 	endif()
 
 	if(BUILD_DAEMON)

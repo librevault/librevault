@@ -2,7 +2,7 @@
 
 # Set up environment
 HERE="$(dirname "$(readlink -f "${0}")")"
-export LD_LIBRARY_PATH="${HERE}/usr/lib"
+export LD_LIBRARY_PATH="${HERE}/opt/librevault/lib"
 export PATH="${HERE}/opt/librevault/bin:${PATH}"
 
 function show_usage {

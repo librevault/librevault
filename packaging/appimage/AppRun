@@ -1,3 +1,40 @@
 #!/bin/sh
 HERE="$(dirname "$(readlink -f "${0}")")"
-LD_LIBRARY_PATH="${HERE}/usr/lib" PATH="${HERE}/usr/bin:${PATH}" exec "${HERE}"/usr/bin/librevault-gui "$@"
+export LD_LIBRARY_PATH="${HERE}/usr/lib"
+export PATH="${HERE}/opt/librevault/bin:${PATH}"
+
+if [[ $# -eq 0 ]]; then
+	launch_gui
+fi
+
+LAUNCH_APP=$1
+shift
+
+case "$LAUNCH_APP" in
+	"daemon")
+		launch_daemon $@
+	;;
+	"gui")
+		launch_gui $@
+	;;
+	"cli")
+		launch_cli $@
+	;;
+	*)
+		show_usage
+	;;
+esac
+
+function launch_daemon {
+	exec "${HERE}"/opt/librevault/bin/librevault-daemon "$@"
+}
+function launch_gui {
+	exec "${HERE}"/opt/librevault/bin/librevault-gui "$@"
+}
+function launch_cli {
+	exec "${HERE}"/opt/librevault/bin/librevault-cli "$@"
+}
+
+function show_usage {
+	echo "First argument must be one of these: daemon gui cli"
+}

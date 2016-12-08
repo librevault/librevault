@@ -1,8 +1,25 @@
 #!/bin/bash
+
+# Set up environment
 HERE="$(dirname "$(readlink -f "${0}")")"
 export LD_LIBRARY_PATH="${HERE}/usr/lib"
 export PATH="${HERE}/opt/librevault/bin:${PATH}"
 
+function show_usage {
+	echo "First argument must be one of these: daemon gui cli"
+}
+
+function launch_daemon {
+	exec "${HERE}"/opt/librevault/bin/librevault-daemon "$@"
+}
+function launch_gui {
+	exec "${HERE}"/opt/librevault/bin/librevault-gui "$@"
+}
+function launch_cli {
+	exec "${HERE}"/opt/librevault/bin/librevault-cli "$@"
+}
+
+# If no arguments, then launch GUI (and it will launch daemon by itself)
 if [[ $# -eq 0 ]]; then
 	launch_gui
 fi
@@ -24,17 +41,3 @@ case "$LAUNCH_APP" in
 		show_usage
 	;;
 esac
-
-function launch_daemon {
-	exec "${HERE}"/opt/librevault/bin/librevault-daemon "$@"
-}
-function launch_gui {
-	exec "${HERE}"/opt/librevault/bin/librevault-gui "$@"
-}
-function launch_cli {
-	exec "${HERE}"/opt/librevault/bin/librevault-cli "$@"
-}
-
-function show_usage {
-	echo "First argument must be one of these: daemon gui cli"
-}

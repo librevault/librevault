@@ -36,7 +36,7 @@
 #include <QLibraryInfo>
 
 Client::Client(int &argc, char **argv, int appflags) :
-	QtSingleApplication(argc, argv, true) {
+	QtSingleApplication("com.librevault.desktop", argc, argv) {
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 	setQuitOnLastWindowClosed(false);

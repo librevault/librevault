@@ -53,7 +53,8 @@ if(OS_WINDOWS)
 
 elseif(OS_LINUX)
 	if(INSTALL_BUNDLE)
-		set(CMAKE_INSTALL_BINDIR opt/librevault/bin)
+		set(CMAKE_INSTALL_BINDIR opt/librevault/bin/elf)
+		set(CMAKE_INSTALL_SHIMDIR opt/librevault/bin)
 		set(CMAKE_INSTALL_LIBDIR opt/librevault/lib)
 		set(CMAKE_INSTALL_DATAROOTDIR usr/share)
 	endif()
@@ -111,6 +112,23 @@ elseif(OS_LINUX)
 
 		# qt.conf
 		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT librevault-package)
+
+		# Install ld-linux.so runtime
+		install(CODE "
+			execute_process(
+				COMMAND ldd \"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/librevault-daemon\"
+				COMMAND grep -oP \"(\\\\S*ld-linux\\\\S*)\"
+				OUTPUT_VARIABLE ELF_INTERPRETER_LINK
+				OUTPUT_STRIP_TRAILING_WHITESPACE
+			)
+			execute_process(COMMAND readlink -f \${ELF_INTERPRETER_LINK} OUTPUT_VARIABLE ELF_INTERPRETER OUTPUT_STRIP_TRAILING_WHITESPACE)
+		")
+		install(FILES "/\${ELF_INTERPRETER}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME "ld-linux.so")
+
+		# Install ld-linux shims
+		install(FILES "packaging/linux-standalone/shim_daemon.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-daemon")
+		install(FILES "packaging/linux-standalone/shim_gui.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-gui")
+		install(FILES "packaging/linux-standalone/shim_cli.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-cli")
 	endif()
 elseif(OS_MAC)
 	set(CPACK_GENERATOR "Bundle")

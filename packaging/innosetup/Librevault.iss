@@ -19,10 +19,11 @@ DefaultDirName={userpf}\Librevault
 SetupIconFile=librevault.ico
 UninstallDisplayIcon={app}\librevault-gui.exe
 OutputDir=.
+OutputBaseFilename=librevault_@LV_APPVER@
 PrivilegesRequired=lowest
 ShowLanguageDialog=no
 
-SignTool=signtool_sdk10 sign /a /n $qShishenko$q /as /fd sha256 /td sha256 /tr http://time.certum.pl /d $qLibrevault$q $f
+SignTool=signtool_lv
 ; librevault-daemon is used to stuck sometimes on Windows
 CloseApplications=force
 

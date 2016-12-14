@@ -210,7 +210,9 @@ add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 
 ## QtSingleApplication
+if(BUILD_CLI OR BUILD_GUI)
 add_subdirectory("contrib/qtsingleapplication")
+endif()
 
 ## Spdlog
 find_package(spdlog QUIET)

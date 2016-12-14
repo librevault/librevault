@@ -211,7 +211,9 @@ add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 
 ## QtSingleApplication
+if(BUILD_CLI OR BUILD_GUI)
 add_subdirectory("contrib/qtsingleapplication")
+endif()
 
 ## Spdlog
 find_package(spdlog QUIET)
@@ -310,7 +312,7 @@ endif()
 ## ICU (needed for boost::locale and Qt)
 add_library(icu INTERFACE)
 if(OS_LINUX)
-	find_package(ICU REQUIRED COMPONENTS i18n io le lx uc data)
+	find_package(ICU REQUIRED COMPONENTS i18n io uc data)
 	target_link_libraries(icu INTERFACE ICU::ICU)
 	target_link_libraries(icu INTERFACE dl)
 endif()

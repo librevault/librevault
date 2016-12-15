@@ -98,19 +98,13 @@ void Client::applyLocale(QString locale) {
 	this->installTranslator(&qt_translator_);
 	translator_.load(QStringLiteral(":/lang/librevault_") + locale);
 	this->installTranslator(&translator_);
-	//settings_->retranslateUi();
-}
-
-void Client::openLink(QString link) {
-	main_window_->showWindow();   // Cause, this dialog looks ugly without a visible main window
-	main_window_->open_link_->handleLink(link);
 }
 
 void Client::started() {
 	if(allow_multiple || !isRunning()) {
 		daemon_->start();
 		if(!pending_link_.isEmpty()) {
-			openLink(pending_link_);
+			main_window_->handleLink(pending_link_);
 			pending_link_.clear();
 		}
 	}else{
@@ -128,6 +122,6 @@ void Client::singleMessageReceived(const QString &message) {
 		main_window_->showWindow();
 	}else if(message.startsWith("link")){
 		QString link = message.right(message.size()-5);
-		emit openLink(link);
+		main_window_->handleLink(link);
 	}
 }

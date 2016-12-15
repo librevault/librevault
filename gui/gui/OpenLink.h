@@ -35,18 +35,10 @@ Q_OBJECT
 
 public:
 	explicit OpenLink(QWidget* parent = 0);
-	~OpenLink();
 
 public slots:
-	bool handleLink(QString link);
 	void accept() override;
 
 protected:
 	Ui::OpenLink ui;
-
-	// Overrides
-	void showEvent(QShowEvent* e) override;
-
-private slots:
-
 };

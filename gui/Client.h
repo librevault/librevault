@@ -50,7 +50,6 @@ public:
 
 public slots:
 	void applyLocale(QString locale);
-	void openLink(QString link);
 
 private:
 	// Translation

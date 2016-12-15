@@ -56,8 +56,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	add_folder_ = new AddFolder(this);
 	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
 
-	open_link_ = new OpenLink(this);
-
 	connect(ui.treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
 	init_actions();
@@ -136,10 +134,33 @@ void MainWindow::showFolderContextMenu(const QPoint& point) {
 	folders_menu.exec(ui.treeView->mapToGlobal(point));
 }
 
+bool MainWindow::handleLink(QString link) {
+	QUrl url(link);
+	if(!url.isValid() || url.scheme() != "lvlt") {
+		QMessageBox confirmation_box(
+			QMessageBox::Critical,
+			tr("Wrong link format"),
+			tr("The link you entered is not correct. It must begin with \"lvlt:\" and contain a valid Secret."),
+			QMessageBox::Close,
+			this
+		);
+		confirmation_box.exec();
+		return false;
+	}
+	add_folder_->showWithSecret(url.path());
+
+	return true;
+}
+
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 #ifndef Q_OS_MAC
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
 #endif
+}
+
+void MainWindow::showOpenLinkDialog() {
+	OpenLink* open_link = new OpenLink(this);
+	open_link->exec();
 }
 
 void MainWindow::handleRemoveFolder() {
@@ -233,7 +254,7 @@ void MainWindow::init_actions() {
 
 	open_link_action = new QAction(this);
 	open_link_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::LINK_OPEN));
-	connect(open_link_action, &QAction::triggered, open_link_, &AddFolder::show);
+	connect(open_link_action, &QAction::triggered, this, &MainWindow::showOpenLinkDialog);
 
 	delete_folder_action = new QAction(this);
 	delete_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));

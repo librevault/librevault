@@ -56,12 +56,14 @@ public slots:
 	void showWindow();
 	void retranslateUi();
 	void openWebsite();
+	bool handleLink(QString link);
 
 	void handle_disconnected(QString message);
 	void handle_connected();
 
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
+	void showOpenLinkDialog();
 	void showFolderContextMenu(const QPoint& point);
 	void handleRemoveFolder();
 	void handleOpenFolderProperties();
@@ -77,10 +79,8 @@ protected:
 
 	/* Dialogs */
 	Settings* settings_;
-	QMap<QByteArray, FolderProperties*> folder_properties_windows_;
-public:
 	AddFolder* add_folder_;
-	OpenLink* open_link_;
+	QMap<QByteArray, FolderProperties*> folder_properties_windows_;
 
 protected:
 	/* Event handlers (overrides) */

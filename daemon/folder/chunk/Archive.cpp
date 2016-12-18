@@ -85,8 +85,8 @@ void Archive::NoArchive::archive(const fs::path& from) {
 Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
 	archive_path_(parent.params_.system_path / "archive"),
-	cleanup_process_(parent.ios_, [this](PeriodicProcess& process){
-		maintain_cleanup(process);
+	cleanup_process_(parent.ios_, [this](){
+		maintain_cleanup();
 	}) {
 
 	fs::create_directory(archive_path_);
@@ -97,7 +97,7 @@ Archive::TrashArchive::~TrashArchive() {
 	cleanup_process_.wait();
 }
 
-void Archive::TrashArchive::maintain_cleanup(PeriodicProcess& process) {
+void Archive::TrashArchive::maintain_cleanup() {
 	LOGFUNC();
 
 	std::list<fs::path> removed_paths;

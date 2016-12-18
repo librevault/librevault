@@ -34,7 +34,8 @@
 
 class PeriodicProcess { // TODO: make exception handling
 public:
-	PeriodicProcess(boost::asio::io_service& io_service, std::function<void(PeriodicProcess&)> function) : io_service_(io_service), timer_(io_service_), function_(function) {
+	PeriodicProcess(boost::asio::io_service& io_service, std::function<void()> function) :
+		io_service_(io_service), timer_(io_service_), exiting_(false), function_(function) {
 		started_handlers_ = 0;
 	}
 	~PeriodicProcess() {
@@ -59,12 +60,16 @@ public:
 	}
 
 	void invoke() {
+		if(exiting_) return;
+
 		++started_handlers_;
 		try_concurrent_run();
 		--started_handlers_;
 	}
 
 	void invoke_post() {
+		if(exiting_) return;
+
 		++started_handlers_;
 		io_service_.post([this]{
 			try_concurrent_run();
@@ -73,6 +78,7 @@ public:
 	}
 
 	void wait() {
+		exiting_ = true;
 		timer_.cancel();
 		if(started_handlers_ != 0) {
 			io_service_.dispatch([this] {
@@ -89,12 +95,13 @@ protected:
 	boost::asio::steady_timer timer_;
 	std::atomic<unsigned> started_handlers_;
 	std::atomic_flag running_;
+	std::atomic<bool> exiting_;
 
-	std::function<void(PeriodicProcess&)> function_;
+	std::function<void()> function_;
 
 	void try_concurrent_run() {
 		if(!running_.test_and_set(std::memory_order_acquire)) {
-			function_(*this);
+			function_();
 			running_.clear(std::memory_order_release);
 		}
 	}

@@ -86,19 +86,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 	});
 
 	// Set up periodic processes
-	state_pusher_ = std::make_unique<PeriodicProcess>(serial_ios, [this](PeriodicProcess& process){
-		// peers
-		Json::Value peers_array;
-		for(auto& p2p_folder : p2p_folders_) {
-			peers_array.append(p2p_folder->collect_state());
-		}
-		state_collector_.folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
-		// bandwidth
-		state_collector_.folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
-
-		process.invoke_after(std::chrono::seconds(1));
-	});
-	state_pusher_->invoke();
+	state_pusher_ = std::make_unique<PeriodicProcess>(serial_ios, [this]{push_state();});
 
 	// Go through index
 	serial_ios_.dispatch([=]{
@@ -206,6 +194,19 @@ std::set<std::shared_ptr<RemoteFolder>> FolderGroup::remotes() const {
 
 std::string FolderGroup::log_tag() const {
 	return std::string("[") + (!params_.path.empty() ? params_.path : params_.system_path).string() + "] ";
+}
+
+void FolderGroup::push_state() {
+	// peers
+	Json::Value peers_array;
+	for(auto& p2p_folder : p2p_folders_) {
+		peers_array.append(p2p_folder->collect_state());
+	}
+	state_collector_.folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
+	// bandwidth
+	state_collector_.folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
+
+	state_pusher_->invoke_after(std::chrono::seconds(1));
 }
 
 } /* namespace librevault */

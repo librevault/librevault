@@ -172,7 +172,7 @@ private:
 
 	/* Request process */
 	PeriodicProcess periodic_maintain_;
-	void maintain_requests(PeriodicProcess& process);
+	void maintain_requests();
 	bool request_one();
 	std::shared_ptr<RemoteFolder> find_node_for_request(std::shared_ptr<MissingChunk> chunk);
 

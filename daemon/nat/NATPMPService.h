@@ -71,7 +71,7 @@ protected:
 		PeriodicProcess maintain_mapping_;
 
 		bool active = true;
-		void send_request(PeriodicProcess& process);
+		void send_request();
 	};
 	friend class PortMapping;
 

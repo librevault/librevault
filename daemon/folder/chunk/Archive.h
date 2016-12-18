@@ -77,7 +77,7 @@ private:
 		void archive(const fs::path& from);
 
 	private:
-		void maintain_cleanup(PeriodicProcess& process);
+		void maintain_cleanup();
 
 		const fs::path archive_path_;
 		PeriodicProcess cleanup_process_;

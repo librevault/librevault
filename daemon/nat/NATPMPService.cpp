@@ -84,7 +84,7 @@ NATPMPService::PortMapping::PortMapping(NATPMPService& parent, std::string id, M
 	parent_(parent),
 	id_(id),
 	descriptor_(descriptor),
-	maintain_mapping_(parent.ios_, [this](PeriodicProcess& process){send_request(process);}) {
+	maintain_mapping_(parent.ios_, [this]{send_request();}) {
 	maintain_mapping_.invoke_post();
 }
 
@@ -94,7 +94,7 @@ NATPMPService::PortMapping::~PortMapping() {
 	maintain_mapping_.invoke();
 }
 
-void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
+void NATPMPService::PortMapping::send_request() {
 	int natpmp_ec = sendnewportmappingrequest(
 		&parent_.natpmp,
 		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
@@ -120,7 +120,7 @@ void NATPMPService::PortMapping::send_request(PeriodicProcess& process) {
 	}
 
 	if(active)
-		process.invoke_after(next_request);
+		maintain_mapping_.invoke_after(next_request);
 }
 
 } /* namespace librevault */

@@ -41,8 +41,8 @@ AutoIndexer::AutoIndexer(const FolderParams& params, Index& index, Indexer& inde
 		path_normalizer_(path_normalizer),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
-		rescan_process_(ios, [this](PeriodicProcess& process){rescan_operation(process);}),
-		index_process_(ios, [this](PeriodicProcess& process){perform_index();}) {
+		rescan_process_(ios, [this]{rescan_operation();}),
+		index_process_(ios, [this]{perform_index();}) {
 	rescan_process_.invoke_post();
 
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
@@ -109,14 +109,14 @@ std::set<std::string> AutoIndexer::reindex_list() {
 	return file_list;
 }
 
-void AutoIndexer::rescan_operation(PeriodicProcess& process) {
+void AutoIndexer::rescan_operation() {
 	LOGFUNC();
 	LOGD("Performing full directory rescan");
 
 	if(!indexer_.is_indexing())
 		enqueue_files(reindex_list());
 
-	process.invoke_after(params_.full_rescan_interval);
+	rescan_process_.invoke_after(params_.full_rescan_interval);
 }
 
 void AutoIndexer::monitor_operation() {

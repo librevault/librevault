@@ -69,7 +69,7 @@ private:
 	std::multiset<std::string> prepared_assemble_;
 
 	// Full rescan operations
-	void rescan_operation(PeriodicProcess& process);
+	void rescan_operation();
 	PeriodicProcess rescan_process_;
 
 	// Monitor operations

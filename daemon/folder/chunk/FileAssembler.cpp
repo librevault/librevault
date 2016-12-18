@@ -48,7 +48,7 @@ FileAssembler::FileAssembler(const FolderParams& params, MetaStorage& meta_stora
 	ios_(ios),
 	archive_(params_, meta_storage_, path_normalizer_, ios_),
 	secret_(params_.secret),
-	assemble_process_(ios_, [this](PeriodicProcess& process){periodic_assemble_operation(process);}) {
+	assemble_process_(ios_, [this]{periodic_assemble_operation();}) {
 
 	assemble_process_.invoke();
 }
@@ -80,7 +80,7 @@ void FileAssembler::queue_assemble(const Meta& meta) {
 	assemble_queue_mtx_.unlock();
 }
 
-void FileAssembler::periodic_assemble_operation(PeriodicProcess& process) {
+void FileAssembler::periodic_assemble_operation() {
 	LOGFUNC();
 	LOGT("Performing periodic assemble");
 

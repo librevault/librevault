@@ -128,6 +128,7 @@ private:
 	void handle_indexed_meta(const SignedMeta& smeta);
 
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
+	void push_state();
 };
 
 } /* namespace librevault */

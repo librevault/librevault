@@ -42,8 +42,14 @@ P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node
 	provider_(provider),
 	ws_service_(ws_service),
 	node_key_(node_key),
-	ping_process_(ios, [this](PeriodicProcess& process){send_ping(); process.invoke_after(std::chrono::seconds(60), PeriodicProcess::NO_RESET_TIMER);}),
-	timeout_process_(ios, [this](PeriodicProcess& process){LOGFUNC();ws_service_.close(conn_.connection_handle, "Connection lost");}) {
+	ping_process_(ios, [this]{
+		send_ping();
+		ping_process_.invoke_after(std::chrono::seconds(60), PeriodicProcess::RESET_TIMER);
+	}),
+	timeout_process_(ios, [this]{
+		LOGFUNC();
+		ws_service_.close(conn_.connection_handle, "Connection timed out");
+	}) {
 
 	std::ostringstream os; os << conn_.remote_endpoint;
 	name_ = os.str();

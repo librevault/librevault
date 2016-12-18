@@ -74,7 +74,7 @@ private:
 	std::set<blob> assemble_queue_;
 	std::mutex assemble_queue_mtx_;
 
-	void periodic_assemble_operation(PeriodicProcess& process);
+	void periodic_assemble_operation();
 	PeriodicProcess assemble_process_;
 
 	void assemble(const Meta& meta);

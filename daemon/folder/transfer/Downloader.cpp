@@ -172,7 +172,7 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 /* Downloader */
 Downloader::Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios) :
 	params_(params), meta_storage_(meta_storage), chunk_storage_(chunk_storage),
-	periodic_maintain_(ios, [this](PeriodicProcess& process){maintain_requests(process);}) {
+	periodic_maintain_(ios, [this]{maintain_requests();}) {
 	LOGFUNC();
 	periodic_maintain_.invoke();
 }
@@ -314,7 +314,7 @@ void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
 	download_queue_.set_overall_remotes_count(remotes_.size());
 }
 
-void Downloader::maintain_requests(PeriodicProcess& process) {
+void Downloader::maintain_requests() {
 	LOGFUNC();
 
 	auto request_timeout = std::chrono::seconds(Config::get()->global_get("p2p_request_timeout").asUInt64());
@@ -336,7 +336,7 @@ void Downloader::maintain_requests(PeriodicProcess& process) {
 		if(!requested) break;
 	}
 
-	process.invoke_after(request_timeout);
+	periodic_maintain_.invoke_after(request_timeout);
 }
 
 bool Downloader::request_one() {

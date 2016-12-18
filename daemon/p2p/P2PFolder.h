@@ -67,7 +67,6 @@ public:
 	const std::string& client_name() const {return client_name_;}
 	const std::string& user_agent() const {return user_agent_;}
 	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
-	BandwidthCounter::Stats heartbeat_stats() {return counter_.heartbeat();}
 	Json::Value collect_state();
 
 	blob local_token();
@@ -127,7 +126,7 @@ private:
 	void handle_ping(std::string payload);
 	void handle_pong(std::string payload);
 
-	std::chrono::milliseconds rtt_;
+	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 
 	/* Message handlers */
 	void handle_Handshake(const blob& message_raw);

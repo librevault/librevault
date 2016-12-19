@@ -112,24 +112,21 @@ bool WSService::on_tls_verify(websocketpp::connection_hdl hdl, bool preverified,
 void WSService::on_open(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 
-	connection& conn = ws_assignment_[hdl];
-	auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn, ios_);
-	conn.folder = new_folder;
+	try {
+		connection& conn = ws_assignment_[hdl];
+		auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn, ios_);
+		conn.folder = new_folder;
 
-	auto group_ptr = folder_service_.get_group(conn.hash);
-	if(group_ptr) {
-		LOGD("Connection opened to: " << new_folder->name());   // Finally!
-
-		try {
-			group_ptr->attach(new_folder);
-		}catch(std::exception& e){
-			close(hdl, "Couldn't attach to remote node");
-		}
+		folder_service_.get_group(conn.hash)->attach(new_folder);
 
 		if(conn.role == connection::CLIENT)
 			new_folder->perform_handshake();
-	}else{
-		close(hdl, "Internal Server Error");    // Apparently, the group had been deleted before we opened this connection. This is very unlikely.
+	}catch(FolderService::invalid_group& e) {
+		LOGD("Folder group have been removed in process of connection: " << e.what());
+		close(hdl, "Internal Server Error");
+	}catch(std::exception& e) {
+		LOGD("Exception occured after opening remote connection: " << e.what());
+		close(hdl, "Internal Server Error");
 	}
 }
 

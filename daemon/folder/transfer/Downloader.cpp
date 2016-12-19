@@ -174,7 +174,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage& meta_storage, Ch
 	params_(params), meta_storage_(meta_storage), chunk_storage_(chunk_storage),
 	periodic_maintain_(ios, [this]{maintain_requests();}) {
 	LOGFUNC();
-	periodic_maintain_.invoke();
+	periodic_maintain_.invoke_post();
 }
 
 Downloader::~Downloader() {

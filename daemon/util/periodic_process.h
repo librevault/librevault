@@ -59,14 +59,6 @@ public:
 		});
 	}
 
-	void invoke() {
-		if(exiting_) return;
-
-		++started_handlers_;
-		try_concurrent_run();
-		--started_handlers_;
-	}
-
 	void invoke_post() {
 		if(exiting_) return;
 

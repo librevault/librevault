@@ -38,7 +38,7 @@ public:
 	~multi_io_service();
 
 	void start(unsigned thread_count);
-	void stop();
+	void stop(bool stop_gently = false);
 
 	boost::asio::io_service& ios() {return ios_;}
 

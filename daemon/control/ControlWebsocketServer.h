@@ -43,6 +43,8 @@ public:
 	ControlWebsocketServer(ControlServer& cs, ControlServer::server& server, io_service& ios);
 	virtual ~ControlWebsocketServer();
 
+	void stop();
+
 	bool on_validate(websocketpp::connection_hdl hdl);
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_disconnect(websocketpp::connection_hdl hdl);

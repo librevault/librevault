@@ -35,6 +35,11 @@ ControlWebsocketServer::ControlWebsocketServer(ControlServer& cs, ControlServer:
 		cs_(cs), server_(server), id_(0) {}
 ControlWebsocketServer::~ControlWebsocketServer() {}
 
+void ControlWebsocketServer::stop() {
+	for(auto session : ws_sessions_)
+		session->close(websocketpp::close::status::going_away, "Librevault daemon is shutting down");
+}
+
 bool ControlWebsocketServer::on_validate(websocketpp::connection_hdl hdl) {
 	LOGFUNC();
 

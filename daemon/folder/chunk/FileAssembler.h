@@ -51,7 +51,7 @@ public:
 		error() : error("FileAssembler error") {}
 	};
 
-	FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, io_service& ios);
+	FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, Archive& archive, io_service& ios);
 	virtual ~FileAssembler() {}
 
 	blob get_chunk_pt(const blob& ct_hash) const;
@@ -65,9 +65,8 @@ private:
 	MetaStorage& meta_storage_;
 	ChunkStorage& chunk_storage_;
 	PathNormalizer& path_normalizer_;
+	Archive& archive_;
 	io_service& ios_;
-
-	Archive archive_;
 
 	const Secret& secret_;
 

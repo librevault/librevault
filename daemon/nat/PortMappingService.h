@@ -53,7 +53,7 @@ public:
 	virtual ~PortMappingService();
 
 	void run() {io_service_.start(1);}
-	void stop() {io_service_.stop();}
+	void stop();
 
 	void add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(std::string id);

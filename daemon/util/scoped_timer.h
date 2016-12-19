@@ -27,59 +27,62 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/strand.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/signals2/signal.hpp>
 #include <atomic>
-#include <mutex>
+#include <chrono>
 #include <thread>
 
-class ScopedAsyncQueue {
+class ScopedTimer { // TODO: make exception handling
 public:
-	ScopedAsyncQueue(boost::asio::io_service& io_service) : io_service_(io_service), io_service_strand_(io_service) {
-		started_handlers_ = 0;
+	ScopedTimer(boost::asio::io_service& io_service) :
+		io_service_(io_service),
+		timer_(io_service_),
+		shared_tick_(std::make_shared<boost::signals2::signal<void()>>()),
+		tick_signal(*shared_tick_) {
 	}
-	~ScopedAsyncQueue() {
+	~ScopedTimer() {
 		stop();
 	}
 
-	bool post(std::function<void()> function, bool drop_next = false) {
-		std::unique_lock<decltype(queue_mtx_)> lk(queue_mtx_);
+	void start(std::chrono::steady_clock::duration duration, bool run_immediately, bool reset_timer, bool singleshot) {
+		if(!reset_timer && timer_.expires_from_now() > std::chrono::nanoseconds(0)) return;
 
-		if(drop_next_) return false;
+		if(singleshot)
+			shared_tick_->disconnect(1);
+		else
+			shared_tick_->connect(1, [this]{bump_timer();});
 
-		++started_handlers_;
-		io_service_strand_.post([this, function]{
-			function();
-			--started_handlers_;
-		});
-
-		drop_next_ = drop_next;
-		return true;
-	}
-
-	std::function<void()> wrap(std::function<void()> function) {
-		return [this, function]{post(function);};
+		interval_ = duration;
+		auto shared_tick_local = shared_tick_;
+		if(run_immediately) {
+			io_service_.post([shared_tick_local]{(*shared_tick_local)();});
+		}else{
+			bump_timer();
+		}
 	}
 
 	void stop() {
-		std::unique_lock<decltype(queue_mtx_)> lk(queue_mtx_);
-		drop_next_ = true;
-
-		if(started_handlers_ != 0) {
-			io_service_.dispatch([this] {
-				io_service_.poll();
-			});
-		}
-		while(started_handlers_ != 0 && !io_service_.stopped()) {
-			std::this_thread::yield();
-		}
+		shared_tick_->disconnect_all_slots();
+		timer_.cancel();
 	}
 
-protected:
+private:
 	boost::asio::io_service& io_service_;
-	boost::asio::io_service::strand io_service_strand_;
-	std::atomic<unsigned> started_handlers_;
-	bool drop_next_ = false;
+	boost::asio::steady_timer timer_;
+	std::chrono::steady_clock::duration interval_ = std::chrono::steady_clock::duration(0);
 
-	std::mutex queue_mtx_;
+	void bump_timer() {
+		auto shared_tick_local = shared_tick_;
+		timer_.expires_from_now(interval_);
+		timer_.async_wait([shared_tick_local](const boost::system::error_code& ec){
+			if(ec != boost::asio::error::operation_aborted)
+				(*shared_tick_local)();
+		});
+	}
+
+	std::shared_ptr<boost::signals2::signal<void()>> shared_tick_;
+
+public:
+	boost::signals2::signal<void()>& tick_signal;
 };

@@ -32,8 +32,8 @@
 #include "control/StateCollector.h"
 #include "folder/meta/Indexer.h"
 #include "util/log.h"
-#include <boost/range/adaptor/map.hpp>
 #include <librevault/crypto/Hex.h>
+#include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
 
@@ -55,21 +55,25 @@ void FolderService::run() {
 	serial_ios_.start(1);
 	bulk_ios_.start(std::max(std::thread::hardware_concurrency(), 1u));
 
-	init_queue_.invoke_post([this] {
+	init_queue_.post([this] {
 		for(auto& folder_config : Config::get()->folders())
 			init_folder(folder_config.second);
 	});
 
 	Config::get()->folder_added.connect([this](Json::Value json_params){
-		init_folder(json_params);
+		init_queue_.post([this, json_params]{
+			init_folder(json_params);
+		});
 	});
 	Config::get()->folder_removed.connect([this](blob folderid){
-		deinit_folder(folderid);
+		init_queue_.post([this, folderid]{
+			deinit_folder(folderid);
+		});
 	});
 }
 
 void FolderService::stop() {
-	init_queue_.invoke_post([this] {
+	init_queue_.post([this] {
 		std::vector<blob> hashes;
 		hashes.reserve(hash_group_.size());
 		for(auto& hash : hash_group_ | boost::adaptors::map_keys)
@@ -77,8 +81,9 @@ void FolderService::stop() {
 
 		for(auto& hash : hashes)
 			deinit_folder(hash);
-	});
-	init_queue_.wait();
+	}, true);
+	init_queue_.stop();
+
 	bulk_ios_.stop();
 	serial_ios_.stop();
 }

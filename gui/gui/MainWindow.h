@@ -48,10 +48,6 @@ public:
 	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater);
 	~MainWindow();
 
-signals:
-	void folderAdded(QString secret, QString path);
-	void folderRemoved(QString secret);
-
 public slots:
 	void showWindow();
 	void retranslateUi();
@@ -63,6 +59,7 @@ public slots:
 
 protected slots:
 	void tray_icon_activated(QSystemTrayIcon::ActivationReason reason);
+	void showAddFolderDialog(QJsonObject folder_config = QJsonObject());
 	void showOpenLinkDialog();
 	void showFolderContextMenu(const QPoint& point);
 	void handleRemoveFolder();
@@ -79,7 +76,6 @@ protected:
 
 	/* Dialogs */
 	Settings* settings_;
-	AddFolder* add_folder_;
 	QMap<QByteArray, FolderProperties*> folder_properties_windows_;
 
 protected:

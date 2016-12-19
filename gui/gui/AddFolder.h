@@ -30,28 +30,24 @@
 #include "ui_AddFolder.h"
 #include <QDialog>
 
+class Daemon;
 class AddFolder : public QDialog {
 Q_OBJECT
 
 public:
-	explicit AddFolder(QWidget* parent = 0);
+	AddFolder(QString secret, Daemon* daemon, QWidget* parent = 0);
 	~AddFolder();
-
-signals:
-	void folderAdded(QString secret, QString path);
-
-public slots:
-	void showWithSecret(QString secret);
-	void handleAccepted();
-	void handleRejected();
 
 protected:
 	Ui::AddFolder ui;
+	Daemon* daemon_;
 
 	// Overrides
 	void showEvent(QShowEvent* e) override;
 
 private slots:
+	void accept() override;
+
 	void generateSecret();
 	void browseFolder();
 	//void validateSecret();

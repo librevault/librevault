@@ -113,6 +113,11 @@ void FolderModel::refresh() {
 
 	folders_all_ = config_folders.toList();
 
+	for(auto folderid : folders_all_) {
+		auto it = peer_models_.find(folderid);
+		it.value()->refresh();
+	}
+
 	emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
 	emit layoutChanged();
 }

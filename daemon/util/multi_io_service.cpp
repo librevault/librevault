@@ -34,7 +34,7 @@ namespace librevault {
 multi_io_service::multi_io_service(std::string name) : name_(std::move(name)) {}
 
 multi_io_service::~multi_io_service() {
-	stop();
+	stop(false);
 }
 
 void multi_io_service::start(unsigned thread_count) {
@@ -47,9 +47,11 @@ void multi_io_service::start(unsigned thread_count) {
 	}
 }
 
-void multi_io_service::stop() {
+void multi_io_service::stop(bool stop_gently) {
 	ios_work_.reset();
-	ios_.stop();
+
+	if(!stop_gently)
+		ios_.stop();
 
 	for(auto& thread : worker_threads_){
 		if(thread.joinable()) thread.join();

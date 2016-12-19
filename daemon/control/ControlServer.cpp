@@ -87,7 +87,10 @@ ControlServer::ControlServer(StateCollector& state_collector) :
 ControlServer::~ControlServer() {
 	LOGFUNC();
 	ws_server_.stop_listening();
-	ios_.stop();
+
+	control_ws_server_->stop();
+	ios_.stop(true);
+
 	control_http_server_.reset();
 	control_ws_server_.reset();
 	LOGFUNCEND();

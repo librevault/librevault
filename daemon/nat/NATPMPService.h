@@ -28,8 +28,9 @@
  */
 #pragma once
 #include "PortMappingSubService.h"
-#include <util/log_scope.h>
-#include <util/periodic_process.h>
+#include "util/log_scope.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 #include <natpmp.h>
 
 namespace librevault {
@@ -68,10 +69,10 @@ protected:
 		std::string id_;
 		MappingDescriptor descriptor_;
 
-		PeriodicProcess maintain_mapping_;
+		ScopedAsyncQueue scoped_maintain_queue_;
+		ScopedTimer scoped_timer_;
 
-		bool active = true;
-		void send_request();
+		void send_request(bool disable = false);
 	};
 	friend class PortMapping;
 

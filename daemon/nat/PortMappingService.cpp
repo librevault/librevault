@@ -63,6 +63,10 @@ PortMappingService::~PortMappingService() {
 	LOGFUNCEND();
 }
 
+void PortMappingService::stop() {
+	io_service_.stop(true);
+}
+
 void PortMappingService::add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description) {
 	io_service_.ios().dispatch([=] {
 		std::unique_lock<std::mutex> lk(mappings_mutex_);

@@ -84,23 +84,26 @@ NATPMPService::PortMapping::PortMapping(NATPMPService& parent, std::string id, M
 	parent_(parent),
 	id_(id),
 	descriptor_(descriptor),
-	maintain_mapping_(parent.ios_, [this]{send_request();}) {
-	maintain_mapping_.invoke_post();
+	scoped_maintain_queue_(parent.ios_),
+	scoped_timer_(parent.ios_) {
+
+	scoped_maintain_queue_.post([this]{send_request();});
+	scoped_timer_.tick_signal.connect(scoped_maintain_queue_.wrap([this]{send_request();}));
 }
 
 NATPMPService::PortMapping::~PortMapping() {
-	active = false;
-	maintain_mapping_.wait();
-	maintain_mapping_.invoke();
+	scoped_timer_.stop();
+	scoped_maintain_queue_.post([this]{send_request(false);}, true);
+	scoped_maintain_queue_.stop();
 }
 
-void NATPMPService::PortMapping::send_request() {
+void NATPMPService::PortMapping::send_request(bool disable) {
 	int natpmp_ec = sendnewportmappingrequest(
 		&parent_.natpmp,
 		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
-		active ? Config::get()->global_get("natpmp_lifetime").asUInt() : 0
+		(!disable) ? Config::get()->global_get("natpmp_lifetime").asUInt() : 0
 	);
 	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
 
@@ -119,8 +122,7 @@ void NATPMPService::PortMapping::send_request() {
 		next_request = std::chrono::seconds(Config::get()->global_get("natpmp_lifetime").asUInt());
 	}
 
-	if(active)
-		maintain_mapping_.invoke_after(next_request);
+	scoped_timer_.start(next_request, false, true, true);
 }
 
 } /* namespace librevault */

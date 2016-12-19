@@ -45,17 +45,28 @@ FileAssembler::FileAssembler(const FolderParams& params,
                              ChunkStorage& chunk_storage,
                              PathNormalizer& path_normalizer,
                              Archive& archive,
-                             io_service& bulk_ios) :
+                             io_service& bulk_ios,
+                             io_service& serial_ios) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
 	archive_(archive),
-	ios_(bulk_ios),
+	bulk_ios_(bulk_ios),
 	secret_(params_.secret),
-	assemble_process_(ios_, [this]{periodic_assemble_operation();}) {
+	assemble_timer_(serial_ios),
+	current_assemble_(0) {
 
-	assemble_process_.invoke();
+	assemble_timer_.tick_signal.connect([this]{periodic_assemble_operation();});
+	assemble_timer_.start(std::chrono::seconds(30), true, true, false);
+}
+
+FileAssembler::~FileAssembler() {
+	std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
+	assemble_queue_.clear();
+
+	while(current_assemble_ != 0)
+		std::this_thread::yield();
 }
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
@@ -69,20 +80,19 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 }
 
 void FileAssembler::queue_assemble(const Meta& meta) {
-	assemble_queue_mtx_.lock();
+	std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
 	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end()) {
 		assemble_queue_.insert(meta.path_id());
 
-		ios_.post([this, meta]() {
+		bulk_ios_.post([this, meta]() {
+			++current_assemble_;
 			assemble(meta);
+			--current_assemble_;
 
-			assemble_queue_mtx_.lock();
+			std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
 			assemble_queue_.erase(meta.path_id());
-			assemble_queue_mtx_.unlock();
 		});
 	}
-
-	assemble_queue_mtx_.unlock();
 }
 
 void FileAssembler::periodic_assemble_operation() {
@@ -91,8 +101,6 @@ void FileAssembler::periodic_assemble_operation() {
 
 	for(auto smeta : meta_storage_.index->get_incomplete_meta())
 		queue_assemble(smeta.meta());
-
-	assemble_process_.invoke_after(std::chrono::seconds(30));   // TODO: move to config
 }
 
 void FileAssembler::assemble(const Meta& meta){

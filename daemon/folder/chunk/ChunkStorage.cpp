@@ -49,7 +49,7 @@ ChunkStorage::ChunkStorage(const FolderParams& params,
 	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
 		open_storage = std::make_unique<OpenStorage>(params, meta_storage_, path_normalizer, *this);
 		archive = std::make_unique<Archive>(params, meta_storage_, path_normalizer, serial_ios);
-		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, *archive, bulk_ios);
+		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, *archive, bulk_ios, serial_ios);
 	}
 
 	meta_storage_.index->assemble_meta_signal.connect([this](const Meta& meta){

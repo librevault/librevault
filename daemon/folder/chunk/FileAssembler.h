@@ -30,6 +30,7 @@
 #include "Archive.h"
 #include "util/blob.h"
 #include "util/network.h"
+#include "util/scoped_timer.h"
 #include <mutex>
 #include <set>
 
@@ -51,14 +52,19 @@ public:
 		error() : error("FileAssembler error") {}
 	};
 
-	FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, Archive& archive, io_service& ios);
-	virtual ~FileAssembler() {}
+	FileAssembler(const FolderParams& params,
+	              MetaStorage& meta_storage,
+	              ChunkStorage& chunk_storage,
+	              PathNormalizer& path_normalizer,
+	              Archive& archive,
+	              io_service& bulk_ios,
+	              io_service& serial_ios);
+	virtual ~FileAssembler();
 
 	blob get_chunk_pt(const blob& ct_hash) const;
 
 	// File assembler
 	void queue_assemble(const Meta& meta);
-	//void disassemble(const std::string& file_path, bool delete_file = true);
 
 private:
 	const FolderParams& params_;
@@ -66,7 +72,7 @@ private:
 	ChunkStorage& chunk_storage_;
 	PathNormalizer& path_normalizer_;
 	Archive& archive_;
-	io_service& ios_;
+	io_service& bulk_ios_;
 
 	const Secret& secret_;
 
@@ -74,7 +80,8 @@ private:
 	std::mutex assemble_queue_mtx_;
 
 	void periodic_assemble_operation();
-	PeriodicProcess assemble_process_;
+	ScopedTimer assemble_timer_;
+	std::atomic<unsigned> current_assemble_;
 
 	void assemble(const Meta& meta);
 

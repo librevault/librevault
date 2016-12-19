@@ -43,14 +43,14 @@ class PathNormalizer;
 class MemoryCachedStorage;
 class EncStorage;
 class OpenStorage;
-
+class Archive;
 class FileAssembler;
 
 class ChunkStorage {
 public:
 	boost::signals2::signal<void(const blob&)> new_chunk_signal;
 
-	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios);
+	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -67,8 +67,8 @@ protected:
 	std::unique_ptr<MemoryCachedStorage> mem_storage;
 	std::unique_ptr<EncStorage> enc_storage;
 	std::unique_ptr<OpenStorage> open_storage;
-
-	std::unique_ptr<FileAssembler>(file_assembler);
+	std::unique_ptr<Archive> archive;
+	std::unique_ptr<FileAssembler> file_assembler;
 };
 
 } /* namespace librevault */

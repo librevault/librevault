@@ -40,13 +40,18 @@
 
 namespace librevault {
 
-FileAssembler::FileAssembler(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, PathNormalizer& path_normalizer, io_service& ios) :
+FileAssembler::FileAssembler(const FolderParams& params,
+                             MetaStorage& meta_storage,
+                             ChunkStorage& chunk_storage,
+                             PathNormalizer& path_normalizer,
+                             Archive& archive,
+                             io_service& bulk_ios) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
-	ios_(ios),
-	archive_(params_, meta_storage_, path_normalizer_, ios_),
+	archive_(archive),
+	ios_(bulk_ios),
 	secret_(params_.secret),
 	assemble_process_(ios_, [this]{periodic_assemble_operation();}) {
 

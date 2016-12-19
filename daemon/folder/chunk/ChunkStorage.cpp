@@ -39,12 +39,17 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios) : meta_storage_(meta_storage) {
+ChunkStorage::ChunkStorage(const FolderParams& params,
+                           MetaStorage& meta_storage,
+                           PathNormalizer& path_normalizer,
+                           io_service& bulk_ios,
+                           io_service& serial_ios) : meta_storage_(meta_storage) {
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
 	enc_storage = std::make_unique<EncStorage>(params, *this);
 	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
 		open_storage = std::make_unique<OpenStorage>(params, meta_storage_, path_normalizer, *this);
-		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, ios);
+		archive = std::make_unique<Archive>(params, meta_storage_, path_normalizer, serial_ios);
+		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, *archive, bulk_ios);
 	}
 
 	meta_storage_.index->assemble_meta_signal.connect([this](const Meta& meta){

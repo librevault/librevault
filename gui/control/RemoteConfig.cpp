@@ -28,7 +28,11 @@
  */
 #include "RemoteConfig.h"
 #include "Daemon.h"
+#include <QEventLoop>
+#include <QJsonDocument>
+#include <QNetworkReply>
 #include <QNetworkRequest>
+#include <librevault/Secret.h>
 
 RemoteConfig::RemoteConfig(Daemon* daemon) : GenericRemoteDictionary(daemon, "/v1/globals", "/v1/folders", "EVENT_GLOBAL_CONFIG_CHANGED", "EVENT_FOLDER_CONFIG_CHANGED") {}
 
@@ -36,5 +40,31 @@ void RemoteConfig::setGlobalValue(QString key, QJsonValue value, bool force_send
 	if((global_cache_[key] != value || force_send) && daemon_->isConnected()) {
 		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals/%1").arg(key));
 		daemon_->nam()->put(request, convertOutValue(value).toUtf8());
+	}
+}
+
+void RemoteConfig::addFolder(QJsonObject folder_json) {
+	if(daemon_->isConnected()) {
+		librevault::Secret secret(folder_json["secret"].toString().toStdString());
+		auto& hash_v = secret.get_Hash();
+		QByteArray folderid((char*)hash_v.data(), hash_v.size());
+
+		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/folders/%1").arg(QString(folderid.toHex())));
+		daemon_->nam()->put(request, QJsonDocument(folder_json).toJson());
+	}
+}
+
+void RemoteConfig::removeFolder(QByteArray folderid) {
+	if(daemon_->isConnected()) {
+		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/folders/%1").arg(QString(folderid.toHex())));
+		QNetworkReply* reply = daemon_->nam()->deleteResource(request);
+
+		QEventLoop sync_loop;
+		connect(reply, &QNetworkReply::finished, &sync_loop, &QEventLoop::quit);
+		sync_loop.exec();
+
+		if(reply->error()) {
+			// handle somehow!
+		}
 	}
 }

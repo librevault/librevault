@@ -53,9 +53,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	/* Initializing dialogs */
 	settings_ = new Settings(daemon_, updater, this);
 
-	add_folder_ = new AddFolder(this);
-	connect(add_folder_, &AddFolder::folderAdded, this, &MainWindow::folderAdded);
-
 	connect(ui.treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
 	init_actions();
@@ -104,7 +101,7 @@ void MainWindow::retranslateUi() {
 #if defined(Q_OS_WIN)
 	folder_destination_action->setText(tr("Open in Explorer"));
 #elif defined(Q_OS_MAC)
-	folder_destination_action->setText(tr("Open in Finder"));
+	folder_destination_action->setText(tr("Reveal in Finder"));
 #else
 	folder_destination_action->setText(tr("Open in file manager"));
 #endif
@@ -147,7 +144,10 @@ bool MainWindow::handleLink(QString link) {
 		confirmation_box.exec();
 		return false;
 	}
-	add_folder_->showWithSecret(url.path());
+
+	QJsonObject folder_config;
+	folder_config["secret"] = url.path();
+	showAddFolderDialog(folder_config);
 
 	return true;
 }
@@ -158,9 +158,14 @@ void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 #endif
 }
 
+void MainWindow::showAddFolderDialog(QJsonObject folder_config) {
+	AddFolder* add_folder = new AddFolder(folder_config["secret"].toString(), daemon_, this);
+	add_folder->open();
+}
+
 void MainWindow::showOpenLinkDialog() {
 	OpenLink* open_link = new OpenLink(this);
-	open_link->exec();
+	open_link->open();
 }
 
 void MainWindow::handleRemoveFolder() {
@@ -180,9 +185,8 @@ void MainWindow::handleRemoveFolder() {
 
 	if(confirmation_box.exec() == QMessageBox::Ok) {
 		for(auto model_index : selection_model) {
-			QByteArray secret = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
-			//qDebug() << secret;
-			//emit folderRemoved(secret);
+			QByteArray folderid = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
+			daemon_->config()->removeFolder(folderid);
 		}
 	}
 }
@@ -250,7 +254,7 @@ void MainWindow::init_actions() {
 
 	new_folder_action = new QAction(this);
 	new_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_ADD));
-	connect(new_folder_action, &QAction::triggered, add_folder_, &AddFolder::show);
+	connect(new_folder_action, SIGNAL(triggered()), this, SLOT(showAddFolderDialog()));
 
 	open_link_action = new QAction(this);
 	open_link_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::LINK_OPEN));

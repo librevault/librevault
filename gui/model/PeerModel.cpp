@@ -47,17 +47,18 @@ int PeerModel::columnCount(const QModelIndex &parent) const {
 QVariant PeerModel::data(const QModelIndex &index, int role) const {
 	auto column = (Column)index.column();
 
-	auto peer_object = daemon_->state()->getFolderValue(folderid_, "peers").toArray().at(index.row()).toObject();
+	QJsonObject peer_object = daemon_->state()->getFolderValue(folderid_, "peers").toArray().at(index.row()).toObject();
+	QJsonObject traffic_stats = peer_object["traffic_stats"].toObject();
 
 	if(role == Qt::DisplayRole) {
 		switch(column) {
 			case Column::CLIENT_NAME: return peer_object["client_name"].toString();
 			case Column::ENDPOINT: return peer_object["endpoint"].toString();
 			case Column::USER_AGENT: return peer_object["user_agent"].toString();
-			case Column::DOWN_SPEED: return human_bandwidth(peer_object["down_bandwidth"].toDouble());
-			case Column::UP_SPEED: return human_bandwidth(peer_object["up_bandwidth"].toDouble());
-			case Column::DOWN_BYTES: return human_size(peer_object["down_bytes"].toDouble());
-			case Column::UP_BYTES: return human_size(peer_object["up_bytes"].toDouble());
+			case Column::DOWN_SPEED: return human_bandwidth(traffic_stats["down_bandwidth"].toDouble());
+			case Column::UP_SPEED: return human_bandwidth(traffic_stats["up_bandwidth"].toDouble());
+			case Column::DOWN_BYTES: return human_size(traffic_stats["down_bytes"].toDouble());
+			case Column::UP_BYTES: return human_size(traffic_stats["up_bytes"].toDouble());
 
 			default: return QVariant();
 		}

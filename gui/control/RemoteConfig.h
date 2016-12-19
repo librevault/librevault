@@ -41,4 +41,7 @@ public:
 
 public slots:
 	void setGlobalValue(QString key, QJsonValue value, bool force_send = false);
+
+	void addFolder(QJsonObject folder_json);
+	void removeFolder(QByteArray folderid);
 };

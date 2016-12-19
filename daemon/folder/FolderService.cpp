@@ -105,14 +105,7 @@ std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
 	auto it = hash_group_.find(hash);
 	if(it != hash_group_.end())
 		return it->second;
-	return nullptr;
-}
-
-std::vector<std::shared_ptr<FolderGroup>> FolderService::groups() const {
-	std::vector<std::shared_ptr<FolderGroup>> groups_list;
-	for(auto& group_ptr : hash_group_ | boost::adaptors::map_values)
-		groups_list.push_back(group_ptr);
-	return groups_list;
+	throw invalid_group();
 }
 
 } /* namespace librevault */

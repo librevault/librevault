@@ -45,6 +45,10 @@ class StateCollector;
 class FolderService {
 	LOG_SCOPE("FolderService");
 public:
+	struct invalid_group : std::runtime_error {
+		invalid_group() : std::runtime_error("Folder group not found") {}
+	};
+
 	explicit FolderService(StateCollector& state_collector);
 	virtual ~FolderService();
 
@@ -60,7 +64,6 @@ public:
 	void deinit_folder(const blob& folder_hash);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
-	std::vector<std::shared_ptr<FolderGroup>> groups() const;
 
 private:
 	multi_io_service bulk_ios_;

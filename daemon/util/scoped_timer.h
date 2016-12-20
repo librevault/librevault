@@ -35,6 +35,21 @@
 
 class ScopedTimer { // TODO: make exception handling
 public:
+	enum RunImmediately {
+		RUN_IMMEDIATELY,
+		RUN_DEFERRED
+	};
+
+	enum ResetTimer {
+		RESET_TIMER,
+		NOT_RESET_TIMER
+	};
+
+	enum SingleShot {
+		SINGLESHOT,
+		NOT_SINGLESHOT
+	};
+
 	ScopedTimer(boost::asio::io_service& io_service) :
 		io_service_(io_service),
 		timer_(io_service_),
@@ -45,17 +60,17 @@ public:
 		stop();
 	}
 
-	void start(std::chrono::steady_clock::duration duration, bool run_immediately, bool reset_timer, bool singleshot) {
-		if(!reset_timer && timer_.expires_from_now() > std::chrono::nanoseconds(0)) return;
+	void start(std::chrono::steady_clock::duration duration, RunImmediately run_immediately, ResetTimer reset_timer, SingleShot singleshot) {
+		if(reset_timer == NOT_RESET_TIMER && timer_.expires_from_now() > std::chrono::nanoseconds(0)) return;
 
-		if(singleshot)
+		if(singleshot == SINGLESHOT)
 			shared_tick_->disconnect(1);
 		else
 			shared_tick_->connect(1, [this]{bump_timer();});
 
 		interval_ = duration;
 		auto shared_tick_local = shared_tick_;
-		if(run_immediately) {
+		if(run_immediately == RUN_IMMEDIATELY) {
 			io_service_.post([shared_tick_local]{(*shared_tick_local)();});
 		}else{
 			bump_timer();

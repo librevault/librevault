@@ -58,7 +58,7 @@ FileAssembler::FileAssembler(const FolderParams& params,
 	current_assemble_(0) {
 
 	assemble_timer_.tick_signal.connect([this]{periodic_assemble_operation();});
-	assemble_timer_.start(std::chrono::seconds(30), true, true, false);
+	assemble_timer_.start(std::chrono::seconds(30), ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
 }
 
 FileAssembler::~FileAssembler() {

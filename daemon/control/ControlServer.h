@@ -32,7 +32,6 @@
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"
-#include "util/periodic_process.h"
 #include <boost/signals2/signal.hpp>
 #include <unordered_set>
 

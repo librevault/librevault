@@ -171,14 +171,20 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 
 /* Downloader */
 Downloader::Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios) :
-	params_(params), meta_storage_(meta_storage), chunk_storage_(chunk_storage),
-	periodic_maintain_(ios, [this]{maintain_requests();}) {
+		params_(params),
+		meta_storage_(meta_storage),
+		chunk_storage_(chunk_storage),
+		maintain_queue_(ios),
+		maintain_timer_(ios) {
 	LOGFUNC();
-	periodic_maintain_.invoke_post();
+	maintain_timer_.tick_signal.connect(maintain_queue_.wrap([this]{maintain_requests();}));
+	auto request_timeout = std::chrono::seconds(Config::get()->global_get("p2p_request_timeout").asUInt64());
+	maintain_timer_.start(request_timeout, ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
 }
 
 Downloader::~Downloader() {
-	periodic_maintain_.wait();
+	maintain_timer_.stop();
+	maintain_queue_.stop();
 }
 
 void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield) {
@@ -256,7 +262,7 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 	missing_chunk->owned_by.insert({remote, remote->get_interest_guard()});
 	download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
 
-	periodic_maintain_.invoke_post();
+	maintain_queue_.post([this]{maintain_requests();});
 }
 
 void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
@@ -266,12 +272,12 @@ void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 	for(auto& missing_chunk : missing_chunks_)
 		missing_chunk.second->requests.erase(remote);
 
-	periodic_maintain_.invoke_post();
+	maintain_queue_.post([this]{maintain_requests();});
 }
 
 void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
 	LOGFUNC();
-	periodic_maintain_.invoke_post();
+	maintain_queue_.post([this]{maintain_requests();});
 }
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
@@ -295,7 +301,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 				chunk_storage_.put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
-			periodic_maintain_.invoke_post();
+			maintain_queue_.post([this]{maintain_requests();});
 		}
 
 		if(!incremented_already) ++request_it;
@@ -335,8 +341,6 @@ void Downloader::maintain_requests() {
 		bool requested = request_one();
 		if(!requested) break;
 	}
-
-	periodic_maintain_.invoke_after(request_timeout);
 }
 
 bool Downloader::request_one() {

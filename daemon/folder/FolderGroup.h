@@ -31,7 +31,8 @@
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
 #include "util/network.h"
-#include "util/periodic_process.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
@@ -101,6 +102,8 @@ private:
 	StateCollector& state_collector_;
 	io_service& serial_ios_;
 
+	ScopedAsyncQueue folder_worker_queue_;
+
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;
 
@@ -114,7 +117,9 @@ private:
 
 	BandwidthCounter bandwidth_counter_;
 
-	std::unique_ptr<PeriodicProcess> state_pusher_;
+	// Periodic state pusher
+	ScopedTimer state_pusher_;
+	void push_state();
 
 	/* Members */
 	mutable std::mutex p2p_folders_mtx_;
@@ -128,7 +133,6 @@ private:
 	void handle_indexed_meta(const SignedMeta& smeta);
 
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
-	void push_state();
 };
 
 } /* namespace librevault */

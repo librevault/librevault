@@ -29,9 +29,10 @@
 #pragma once
 
 #include "folder/PathNormalizer.h"
-#include "util/network.h"
-#include "util/periodic_process.h"
 #include "util/log_scope.h"
+#include "util/network.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 #include <librevault/Meta.h>
 #include <dir_monitor/dir_monitor.hpp>
 #include <mutex>
@@ -69,8 +70,9 @@ private:
 	std::multiset<std::string> prepared_assemble_;
 
 	// Full rescan operations
+	ScopedAsyncQueue scoped_async_queue_;
 	void rescan_operation();
-	PeriodicProcess rescan_process_;
+	ScopedTimer rescan_timer_;
 
 	// Monitor operations
 	void monitor_operation();
@@ -83,7 +85,7 @@ private:
 	void enqueue_files(const std::string& relpath) {enqueue_files(std::set<std::string>({relpath}));}
 
 	void perform_index();
-	PeriodicProcess index_process_;
+	ScopedTimer index_event_timer_;
 };
 
 } /* namespace librevault */

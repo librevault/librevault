@@ -43,7 +43,11 @@
 namespace librevault {
 
 FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios) :
-		params_(std::move(params)), state_collector_(state_collector), serial_ios_(serial_ios) {
+		params_(std::move(params)),
+		state_collector_(state_collector),
+		serial_ios_(serial_ios),
+		folder_worker_queue_(serial_ios_),
+		state_pusher_(serial_ios_) {
 	LOGFUNC();
 
 	/* Creating directories */
@@ -85,8 +89,9 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 		});
 	});
 
-	// Set up periodic processes
-	state_pusher_ = std::make_unique<PeriodicProcess>(serial_ios, [this]{push_state();});
+	// Set up state pusher
+	state_pusher_.tick_signal.connect(folder_worker_queue_.wrap([this]{push_state();}));
+	state_pusher_.start(std::chrono::seconds(1), ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
 
 	// Go through index
 	serial_ios_.dispatch([=]{
@@ -96,7 +101,9 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 }
 
 FolderGroup::~FolderGroup() {
-	state_pusher_.reset();
+	state_pusher_.stop();
+	folder_worker_queue_.stop();
+
 	state_collector_.folder_state_purge(params_.secret.get_Hash());
 	LOGFUNC();
 }
@@ -205,8 +212,6 @@ void FolderGroup::push_state() {
 	state_collector_.folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
 	// bandwidth
 	state_collector_.folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
-
-	state_pusher_->invoke_after(std::chrono::seconds(1));
 }
 
 } /* namespace librevault */

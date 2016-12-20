@@ -85,16 +85,17 @@ void Archive::NoArchive::archive(const fs::path& from) {
 Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
 	archive_path_(parent.params_.system_path / "archive"),
-	cleanup_process_(parent.ios_, [this](){
-		maintain_cleanup();
-	}) {
+	cleanup_queue_(parent.ios_),
+	cleanup_timer_(parent.ios_) {
 
 	fs::create_directory(archive_path_);
-	cleanup_process_.invoke_after(std::chrono::minutes(10));    // Start after a small delay.
+	cleanup_timer_.tick_signal.connect(cleanup_queue_.wrap([this]{maintain_cleanup();}));
+	cleanup_timer_.start(std::chrono::minutes(10), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);   // Start after a small delay.
 }
 
 Archive::TrashArchive::~TrashArchive() {
-	cleanup_process_.wait();
+	cleanup_timer_.stop();
+	cleanup_queue_.stop();
 }
 
 void Archive::TrashArchive::maintain_cleanup() {
@@ -112,9 +113,9 @@ void Archive::TrashArchive::maintain_cleanup() {
 		for(const fs::path& path : removed_paths)
 			fs::remove(path);
 
-		cleanup_process_.invoke_after(std::chrono::hours(24));
+		cleanup_timer_.start(std::chrono::hours(24), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
 	}catch(std::exception& e) {
-		cleanup_process_.invoke_after(std::chrono::minutes(10));    // An error occured, retry in 10 min
+		cleanup_timer_.start(std::chrono::minutes(10), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);   // An error occured, retry in 10 min
 	}
 
 	LOGFUNCEND();

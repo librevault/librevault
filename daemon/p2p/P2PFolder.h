@@ -28,10 +28,10 @@
  */
 #pragma once
 #include "folder/RemoteFolder.h"
-#include "P2PProvider.h"
-#include "WSService.h"
-#include "BandwidthCounter.h"
-#include "util/periodic_process.h"
+#include "p2p/P2PProvider.h"
+#include "p2p/WSService.h"
+#include "p2p/BandwidthCounter.h"
+#include "util/scoped_timer.h"
 #include <librevault/protocol/V1Parser.h>
 #include <json/json-forwards.h>
 #include <websocketpp/common/connection_hdl.hpp>
@@ -117,7 +117,7 @@ private:
 	std::string user_agent_;
 
 	/* Ping/pong and timeout handlers */
-	PeriodicProcess ping_process_, timeout_process_;
+	ScopedTimer ping_timer_, timeout_timer_;
 
 	void bump_timeout();
 

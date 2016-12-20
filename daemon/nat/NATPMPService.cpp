@@ -122,7 +122,7 @@ void NATPMPService::PortMapping::send_request(bool disable) {
 		next_request = std::chrono::seconds(Config::get()->global_get("natpmp_lifetime").asUInt());
 	}
 
-	scoped_timer_.start(next_request, false, true, true);
+	scoped_timer_.start(next_request, ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
 }
 
 } /* namespace librevault */

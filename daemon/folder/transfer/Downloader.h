@@ -33,7 +33,8 @@
 #include "util/file_util.h"
 #include "util/log.h"
 #include "util/network.h"
-#include "util/periodic_process.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
@@ -171,7 +172,9 @@ private:
 	size_t requests_overall() const;
 
 	/* Request process */
-	PeriodicProcess periodic_maintain_;
+	ScopedAsyncQueue maintain_queue_;
+	ScopedTimer maintain_timer_;
+
 	void maintain_requests();
 	bool request_one();
 	std::shared_ptr<RemoteFolder> find_node_for_request(std::shared_ptr<MissingChunk> chunk);

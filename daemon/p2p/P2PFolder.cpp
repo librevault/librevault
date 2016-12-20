@@ -38,27 +38,32 @@
 namespace librevault {
 
 P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn, io_service& ios) :
-	conn_(std::move(conn)),
-	provider_(provider),
-	ws_service_(ws_service),
-	node_key_(node_key),
-	ping_process_(ios, [this]{
-		send_ping();
-		ping_process_.invoke_after(std::chrono::seconds(60), PeriodicProcess::RESET_TIMER);
-	}),
-	timeout_process_(ios, [this]{
-		LOGFUNC();
-		ws_service_.close(conn_.connection_handle, "Connection timed out");
-	}) {
-
+		conn_(std::move(conn)),
+		provider_(provider),
+		ws_service_(ws_service),
+		node_key_(node_key),
+		ping_timer_(ios),
+		timeout_timer_(ios) {
 	std::ostringstream os; os << conn_.remote_endpoint;
 	name_ = os.str();
 	LOGD("Created");
 
 	group_ = folder_service.get_group(conn_.hash);
+
+	// Set up timers
+	// If there are crashes in these, then wrap the lambdas inside a ScopedAsyncQueue
+	ping_timer_.tick_signal.connect([this]{send_ping();});
+	timeout_timer_.tick_signal.connect([this]{ws_service_.close(conn_.connection_handle, "Connection timed out");});
+
+	// Start timers
+	ping_timer_.start(std::chrono::seconds(20), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
+	bump_timeout();
 }
 
 P2PFolder::~P2PFolder() {
+	timeout_timer_.stop();
+	ping_timer_.stop();
+
 	LOGD("Destroyed");
 }
 
@@ -229,6 +234,8 @@ void P2PFolder::handle_message(const blob& message_raw) {
 	counter_.add_down(message_raw.size());
 	folder_group()->bandwidth_counter().add_down(message_raw.size());
 
+	bump_timeout();
+
 	if(ready()) {
 		switch(message_type) {
 			case V1Parser::CHOKE: handle_Choke(message_raw); break;
@@ -397,7 +404,7 @@ void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 }
 
 void P2PFolder::bump_timeout() {
-	timeout_process_.invoke_after(std::chrono::seconds(120), PeriodicProcess::RESET_TIMER);
+	timeout_timer_.start(std::chrono::seconds(120), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
 }
 
 void P2PFolder::send_ping() {

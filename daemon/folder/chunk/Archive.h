@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/periodic_process.h"
 #include "util/fs.h"
 #include "util/log_scope.h"
 #include "util/network.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 #include <boost/filesystem/path.hpp>
 
 namespace librevault {
@@ -80,7 +81,8 @@ private:
 		void maintain_cleanup();
 
 		const fs::path archive_path_;
-		PeriodicProcess cleanup_process_;
+		ScopedAsyncQueue cleanup_queue_;
+		ScopedTimer cleanup_timer_;
 	};
 	class TimestampArchive : public ArchiveStrategy {
 	public:

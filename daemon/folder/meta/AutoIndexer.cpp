@@ -41,22 +41,34 @@ AutoIndexer::AutoIndexer(const FolderParams& params, Index& index, Indexer& inde
 		path_normalizer_(path_normalizer),
 		monitor_ios_work_(monitor_ios_),
 		monitor_(monitor_ios_),
-		rescan_process_(ios, [this]{rescan_operation();}),
-		index_process_(ios, [this]{perform_index();}) {
-	rescan_process_.invoke_post();
+		scoped_async_queue_(ios),
+		rescan_timer_(ios),
+		index_event_timer_(ios) {
 
+	// Connect timers
+	rescan_timer_.tick_signal.connect(scoped_async_queue_.wrap([this]{rescan_operation();}));
+	index_event_timer_.tick_signal.connect(scoped_async_queue_.wrap([this]{perform_index();}));
+
+	rescan_timer_.start(params_.full_rescan_interval, ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
+
+	// Start directory monitor
 	monitor_ios_thread_ = std::thread([&, this](){monitor_ios_.run();});
-
 	monitor_.add_directory(params_.path.string());
 	monitor_operation();
 }
 
 AutoIndexer::~AutoIndexer() {
-	rescan_process_.wait();
-	index_process_.wait();
+	// Tear down directory monitor
 	monitor_ios_.stop();
 	if(monitor_ios_thread_.joinable())
 		monitor_ios_thread_.join();
+
+	// Stop timers
+	rescan_timer_.stop();
+	index_event_timer_.stop();
+
+	// Stop working queue
+	scoped_async_queue_.stop();
 }
 
 void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
@@ -64,7 +76,7 @@ void AutoIndexer::enqueue_files(const std::set<std::string>& relpath) {
 	std::unique_lock<std::mutex> lk(index_queue_mtx_);
 	index_queue_.insert(relpath.begin(), relpath.end());
 
-	index_process_.invoke_after(params_.index_event_timeout, PeriodicProcess::NO_RESET_TIMER);    // Bumps timer
+	index_event_timer_.start(params_.index_event_timeout, ScopedTimer::RUN_DEFERRED, ScopedTimer::NOT_RESET_TIMER, ScopedTimer::SINGLESHOT);    // Bumps timer
 }
 
 void AutoIndexer::prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal) {
@@ -115,8 +127,6 @@ void AutoIndexer::rescan_operation() {
 
 	if(!indexer_.is_indexing())
 		enqueue_files(reindex_list());
-
-	rescan_process_.invoke_after(params_.full_rescan_interval);
 }
 
 void AutoIndexer::monitor_operation() {

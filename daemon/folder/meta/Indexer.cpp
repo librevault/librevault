@@ -44,12 +44,12 @@
 namespace librevault {
 
 Indexer::Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios) :
-	params_(params),
-	index_(index),
-	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer),
-	state_collector_(state_collector),
-	ios_(ios), secret_(params.secret), indexing_now_(0) {
+		params_(params),
+		index_(index),
+		ignore_list_(ignore_list),
+		path_normalizer_(path_normalizer),
+		state_collector_(state_collector),
+		ios_(ios), secret_(params.secret), indexing_now_(0) {
 	state_collector_.folder_state_set(secret_.get_Hash(), "is_indexing", false);
 }
 

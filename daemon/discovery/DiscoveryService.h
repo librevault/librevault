@@ -33,6 +33,8 @@
 #include "util/network.h"
 #include "util/parse_url.h"
 #include <boost/signals2/signal.hpp>
+#include <mutex>
+#include <unordered_set>
 
 namespace librevault {
 
@@ -68,7 +70,9 @@ public:
 	void register_group(std::shared_ptr<FolderGroup> group_ptr);
 	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
 
-	boost::signals2::signal<void(ConnectCredentials, std::shared_ptr<FolderGroup>)> discovered_node_signal;
+	void consume_discovered_node(ConnectCredentials cred, std::weak_ptr<FolderGroup> group_ptr);
+
+	boost::signals2::signal<void(ConnectCredentials, std::weak_ptr<FolderGroup>)> discovered_node_signal;
 
 protected:
 	multi_io_service io_service_;
@@ -77,6 +81,9 @@ protected:
 	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
 	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 	std::unique_ptr<MLDHTDiscovery> mldht_;
+
+	std::unordered_set<std::shared_ptr<FolderGroup>> registered_groups_;
+	std::mutex registered_groups_mtx_;
 };
 
 } /* namespace librevault */

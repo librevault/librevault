@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoverySubService.h"
+#include "folder/FolderGroup.h"
 #include "util/log.h"
 
 namespace librevault {
@@ -35,7 +36,7 @@ DiscoverySubService::DiscoverySubService(DiscoveryService& parent, io_service& i
 
 void DiscoverySubService::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
 	node_cred.source = id_;
-	parent_.discovered_node_signal(node_cred, group_ptr);
+	parent_.consume_discovered_node(node_cred, group_ptr);
 }
 
 void DiscoverySubService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {

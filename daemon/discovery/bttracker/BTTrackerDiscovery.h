@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <discovery/DiscoverySubService.h>
-#include <util/parse_url.h>
+#include "discovery/DiscoverySubService.h"
+#include "util/parse_url.h"
 #include <unordered_map>
 
 namespace librevault {

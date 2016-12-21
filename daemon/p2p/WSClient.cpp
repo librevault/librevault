@@ -53,8 +53,10 @@ WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, Fo
 	ws_client_.set_pong_handler(std::bind(&WSClient::on_pong, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::weak_ptr<FolderGroup> group_ptr) {
 	LOGFUNC();
+
+	auto group_ptr_locked = group_ptr.lock();
 
 	if(node_credentials.url.empty()) {
 		assert(node_credentials.endpoint != tcp_endpoint());    // We have no credentials at all, no way to connect
@@ -66,7 +68,7 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 	// Assure, that scheme and query are right
 	node_credentials.url.scheme = "wss";
 	node_credentials.url.query = "/";
-	node_credentials.url.query += dir_hash_to_query(group_ptr->hash());
+	node_credentials.url.query += dir_hash_to_query(group_ptr_locked->hash());
 
 	// URL is ready
 	LOGD("Discovered node: " << (std::string)node_credentials.url << " from " << node_credentials.source);
@@ -75,7 +77,7 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 		LOGD("Refusing to connect to loopback node: " << (std::string)node_credentials.url);
 		return;
 	}
-	if(already_have(node_credentials, group_ptr)) { // Check if already have this node
+	if(already_have(node_credentials, group_ptr_locked)) { // Check if already have this node
 		LOGD("Refusing to connect to existing node: " << (std::string)node_credentials.url);
 		return;
 	}
@@ -90,7 +92,7 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 
 	// Assign websocketpp connection_hdl to internal P2PFolder connection
 	connection& conn = ws_assignment_[websocketpp::connection_hdl(connection_ptr)];
-	conn.hash = group_ptr->hash();
+	conn.hash = group_ptr_locked->hash();
 
 	LOGD("Added node " << std::string(node_credentials.url));
 

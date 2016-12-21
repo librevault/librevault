@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <discovery/DiscoveryInstance.h>
-#include <boost/asio/steady_timer.hpp>
-#include <mutex>
+#include "discovery/DiscoveryInstance.h"
+#include "util/scoped_async_queue.h"
+#include "util/scoped_timer.h"
 
 namespace librevault {
 
@@ -45,13 +45,14 @@ public:
 private:
 	NodeKey& node_key_;
 
-	boost::asio::steady_timer repeat_timer_;
-	std::mutex repeat_timer_mtx_;
+	ScopedAsyncQueue repeat_scope_;
+	ScopedTimer repeat_timer_;
 
 	mutable std::string message_;
 	std::string get_message() const;
 
-	void maintain_requests(const boost::system::error_code& ec = boost::system::error_code());
+	bool& enabled_;
+	void maintain_requests();
 };
 
 } /* namespace librevault */

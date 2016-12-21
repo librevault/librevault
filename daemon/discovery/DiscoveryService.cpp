@@ -59,7 +59,11 @@ DiscoveryService::~DiscoveryService() {
 }
 
 void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
+	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
+
 	LOGFUNC();
+	registered_groups_.insert(group_ptr);
+
 	static_discovery_->register_group(group_ptr);
 	bttracker_->register_group(group_ptr);
 	multicast4_->register_group(group_ptr);
@@ -69,13 +73,26 @@ void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 }
 
 void DiscoveryService::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
+	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
+
 	LOGFUNC();
 	mldht_->unregister_group(group_ptr);
 	multicast6_->unregister_group(group_ptr);
 	multicast4_->unregister_group(group_ptr);
 	bttracker_->unregister_group(group_ptr);
 	static_discovery_->unregister_group(group_ptr);
+
+	registered_groups_.erase(group_ptr);
 	LOGFUNCEND();
+}
+
+void DiscoveryService::consume_discovered_node(ConnectCredentials cred, std::weak_ptr<FolderGroup> group_ptr) {
+	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
+
+	std::shared_ptr<FolderGroup> group_ptr_locked = group_ptr.lock();
+	if(group_ptr_locked && registered_groups_.count(group_ptr_locked)) {
+		discovered_node_signal(cred, group_ptr);
+	}
 }
 
 } /* namespace librevault */

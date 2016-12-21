@@ -53,7 +53,7 @@ public:
 	void run() {ios_.start(1);}
 	void stop() {ios_.stop();}
 
-	void add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr);
+	void add_node(DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr);
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);

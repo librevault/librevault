@@ -39,8 +39,7 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
                                            std::shared_ptr<FolderGroup> group_ptr,
                                            BTTrackerDiscovery& tracker_discovery,
                                            NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service) :
-	TrackerConnection(tracker_address, group_ptr, tracker_discovery, node_key, port_mapping, io_service),
-
+		TrackerConnection(tracker_address, group_ptr, tracker_discovery, node_key, port_mapping, io_service),
 		socket_(io_service),
 		resolver_(io_service),
 		reconnect_timer_(io_service),
@@ -67,35 +66,11 @@ void UDPTrackerConnection::receive_loop(){
 	auto endpoint_ptr = std::make_shared<udp_endpoint>();
 	buffer_type buffer_ptr = std::make_shared<std::vector<char>>(buffer_maxsize_);
 
-	socket_.async_receive_from(boost::asio::buffer(buffer_ptr->data(), buffer_ptr->size()), *endpoint_ptr, [this, endpoint_ptr, buffer_ptr](const boost::system::error_code& error, std::size_t bytes_transferred){
-		if(error == boost::asio::error::operation_aborted) return;
-		try {
-			buffer_ptr->resize(bytes_transferred);
-
-			if(buffer_ptr->size() < sizeof(rep_header)) throw invalid_msg_error();
-			rep_header* reply_header = reinterpret_cast<rep_header*>(buffer_ptr->data());
-			Action reply_action = Action(int32_t(reply_header->action_));
-
-			if(reply_header->transaction_id_ != transaction_id_ || reply_action != action_) throw invalid_msg_error();
-
-			switch(reply_action) {
-				case Action::ACTION_CONNECT:
-					handle_connect(buffer_ptr);
-					break;
-				case Action::ACTION_ANNOUNCE:
-				case Action::ACTION_ANNOUNCE6:
-					handle_announce(buffer_ptr);
-					break;
-				case Action::ACTION_SCRAPE: /* TODO: Scrape requests */ throw invalid_msg_error();
-				case Action::ACTION_ERROR: throw invalid_msg_error();
-				default: throw invalid_msg_error();
-			}
-		}catch(invalid_msg_error& e){
-			LOGW("Invalid message received from tracker.");
-		}
-
-		receive_loop();
-	});
+	socket_.async_receive_from(
+		boost::asio::buffer(buffer_ptr->data(), buffer_ptr->size()),
+		*endpoint_ptr,
+		[this, endpoint_ptr, buffer_ptr](const boost::system::error_code& ec, std::size_t bytes_transferred){handle_message(ec, bytes_transferred, endpoint_ptr, buffer_ptr);}
+	);
 }
 
 void UDPTrackerConnection::bump_reconnect_timer() {
@@ -169,6 +144,36 @@ void UDPTrackerConnection::handle_resolve(const boost::system::error_code& ec, u
 	connect();
 }
 
+void UDPTrackerConnection::handle_message(const boost::system::error_code& ec, std::size_t bytes_transferred, std::shared_ptr<udp_endpoint> endpoint_ptr, buffer_type buffer_ptr) {
+	if(ec == boost::asio::error::operation_aborted) return;
+	try {
+		buffer_ptr->resize(bytes_transferred);
+
+		if(buffer_ptr->size() < sizeof(rep_header)) throw invalid_msg_error();
+		rep_header* reply_header = reinterpret_cast<rep_header*>(buffer_ptr->data());
+		Action reply_action = Action(int32_t(reply_header->action_));
+
+		if(reply_header->transaction_id_ != transaction_id_ || reply_action != action_) throw invalid_msg_error();
+
+		switch(reply_action) {
+			case Action::ACTION_CONNECT:
+				handle_connect(buffer_ptr);
+				break;
+			case Action::ACTION_ANNOUNCE:
+			case Action::ACTION_ANNOUNCE6:
+				handle_announce(buffer_ptr);
+				break;
+			case Action::ACTION_SCRAPE: /* TODO: Scrape requests */ throw invalid_msg_error();
+			case Action::ACTION_ERROR: throw invalid_msg_error();
+			default: throw invalid_msg_error();
+		}
+	}catch(invalid_msg_error& e){
+		LOGW("Invalid message received from tracker.");
+	}
+
+	receive_loop();
+}
+
 void UDPTrackerConnection::handle_connect(buffer_type buffer) {
 	bump_reconnect_timer();
 
@@ -176,7 +181,6 @@ void UDPTrackerConnection::handle_connect(buffer_type buffer) {
 		conn_rep* reply = reinterpret_cast<conn_rep*>(buffer->data());
 		connection_id_ = reply->connection_id_;
 		action_ = Action::ACTION_NONE;
-		fail_count_ = 0;
 
 		LOGD("Connection established. cID=" << connection_id_);
 

@@ -57,7 +57,7 @@ Client::Client() {
 	state_collector_->folder_state_changed.connect([this](const blob& folderid, std::string key, Json::Value value){
 		if(control_server_) control_server_->notify_folder_state_changed(folderid, key, value);
 	});
-	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr){
+	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr){
 		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
 	});
 	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){

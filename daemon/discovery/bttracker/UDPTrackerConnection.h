@@ -115,8 +115,6 @@ private:
 	int32_t transaction_id_ = 0;
 	Action action_ = Action::ACTION_NONE;
 
-	unsigned int fail_count_ = 0;
-
 	int32_t gen_transaction_id();
 
 	void receive_loop();
@@ -125,6 +123,8 @@ private:
 	void announce(const boost::system::error_code& ec = boost::system::error_code());
 
 	void handle_resolve(const boost::system::error_code& ec, udp_resolver::iterator iterator);
+	void handle_message(const boost::system::error_code& ec, std::size_t bytes_transferred, std::shared_ptr<udp_endpoint> endpoint_ptr, buffer_type buffer_ptr);
+
 	void handle_connect(buffer_type buffer);
 	void handle_announce(buffer_type buffer);
 };

@@ -43,7 +43,7 @@ public:
 	WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, FolderService& folder_service);
 	virtual ~WSClient() {}
 
-	void connect(DiscoveryService::ConnectCredentials node_credentials, std::shared_ptr<FolderGroup> group_ptr);
+	void connect(DiscoveryService::ConnectCredentials node_credentials, std::weak_ptr<FolderGroup> group_ptr);
 
 	/* Actions */
 	void send_message(websocketpp::connection_hdl hdl, const blob& message) override;

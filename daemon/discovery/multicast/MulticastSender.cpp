@@ -39,11 +39,13 @@ namespace librevault {
 using namespace boost::asio::ip;
 
 MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDiscovery& service, io_service& io_service, NodeKey& node_key) :
-	DiscoveryInstance(group, service, io_service),
-	node_key_(node_key),
-	repeat_timer_(io_service) {
-
-	maintain_requests();
+		DiscoveryInstance(group, service, io_service),
+		node_key_(node_key),
+		repeat_scope_(io_service),
+		repeat_timer_(io_service),
+		enabled_(static_cast<MulticastDiscovery&>(service_).enabled_) {
+	repeat_timer_.tick_signal.connect(repeat_scope_.wrap([this]{maintain_requests();}));
+	repeat_timer_.start(service.repeat_interval_, ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
 }
 
 void MulticastSender::consume(const tcp_endpoint& node_endpoint, const blob& pubkey) {
@@ -69,21 +71,12 @@ std::string MulticastSender::get_message() const {
 	return message_;
 }
 
-void MulticastSender::maintain_requests(const boost::system::error_code& ec) {
-	if(ec == boost::asio::error::operation_aborted) return;
+void MulticastSender::maintain_requests() {
+	if(!enabled_) return;
 
-	if(repeat_timer_mtx_.try_lock()) {
-		std::unique_lock<decltype(repeat_timer_mtx_)> repeat_timer_lk(repeat_timer_mtx_, std::adopt_lock);
-
-		MulticastDiscovery& service = static_cast<MulticastDiscovery&>(service_);
-		if(service.enabled_) {
-			service.socket_.async_send_to(boost::asio::buffer(get_message()), service.group_, std::bind([]() {}));
-			LOGD("==> " << service.group_);
-		}
-
-		repeat_timer_.expires_from_now(service.repeat_interval_);
-		repeat_timer_.async_wait(std::bind(&MulticastSender::maintain_requests, this, std::placeholders::_1));
-	}
+	auto& service = static_cast<MulticastDiscovery&>(service_);
+	service.socket_.async_send_to(boost::asio::buffer(get_message()), service.group_, std::bind([](){}));
+	LOGD("==> " << service.group_);
 }
 
 } /* namespace librevault */

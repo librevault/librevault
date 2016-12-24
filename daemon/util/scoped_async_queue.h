@@ -30,10 +30,12 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/strand.hpp>
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <thread>
+#include <type_traits>
 
-class ScopedAsyncQueue {
+class ScopedAsyncQueue : public std::enable_shared_from_this<ScopedAsyncQueue> {
 public:
 	ScopedAsyncQueue(boost::asio::io_service& io_service) : io_service_(io_service), io_service_strand_(io_service) {
 		started_handlers_ = 0;
@@ -44,7 +46,6 @@ public:
 
 	bool post(std::function<void()> function, bool drop_next = false) {
 		std::unique_lock<decltype(queue_mtx_)> lk(queue_mtx_);
-
 		if(drop_next_) return false;
 
 		++started_handlers_;
@@ -57,8 +58,18 @@ public:
 		return true;
 	}
 
-	std::function<void()> wrap(std::function<void()> function) {
-		return [this, function]{post(function);};
+	template <typename ...Args, typename AsyncHandler>
+	std::function<void(Args...)> wrap(AsyncHandler handler) {
+		std::function<void(Args...)> function = handler;
+		try {
+			return [queue = shared_from_this(), function](Args... args){
+				queue->post([function, args...]{function(args...);});
+			};
+		}catch(std::bad_weak_ptr& e) {
+			return [queue = this, function](Args... args){
+				queue->post([function, args...]{function(args...);});
+			};
+		}
 	}
 
 	void stop() {

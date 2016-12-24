@@ -245,18 +245,20 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 	auto folder_it = groups_.find(ih);
 	if(folder_it == groups_.end()) return;
 
-	std::shared_ptr<FolderGroup> folder_ptr = folder_it->second;
+	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
+		std::list<tcp_endpoint> endpoints;
+		if(event == DHT_EVENT_VALUES)
+			endpoints = btcompat::parse_compact_endpoint4_list(data, data_len);
+		else if(event == DHT_EVENT_VALUES6)
+			endpoints = btcompat::parse_compact_endpoint6_list(data, data_len);
 
-	if(event == DHT_EVENT_VALUES) {
-		for(const uint8_t* data_cur = data; data_cur < data + data_len; data_cur += 6) {
-			add_node(btcompat::parse_compact_endpoint4(data_cur), folder_ptr);
-		}
-	}else if(event == DHT_EVENT_VALUES6) {
-		for(const uint8_t* data_cur = data; data_cur < data + data_len; data_cur += 18) {
-			add_node(btcompat::parse_compact_endpoint6(data_cur), folder_ptr);
+		for(auto& endpoint : endpoints) {
+			DiscoveryService::ConnectCredentials cred;
+			cred.endpoint = endpoint;
+			add_node(cred, folder_it->second);
 		}
 	}else if(event == DHT_EVENT_SEARCH_DONE || event == DHT_EVENT_SEARCH_DONE6) {
-		searchers_[btcompat::get_info_hash(folder_ptr->hash())]->search_completed(event == DHT_EVENT_SEARCH_DONE, event == DHT_EVENT_SEARCH_DONE6);
+		searchers_[folder_it->first]->search_completed(event == DHT_EVENT_SEARCH_DONE, event == DHT_EVENT_SEARCH_DONE6);
 	}
 }
 

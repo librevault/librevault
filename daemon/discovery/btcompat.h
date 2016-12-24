@@ -87,6 +87,21 @@ inline tcp_endpoint parse_compact_endpoint4(const void* data) {
 inline tcp_endpoint parse_compact_endpoint6(const void* data) {
 	return btcompat::parse_compact_endpoint(*(reinterpret_cast<const btcompat::compact_endpoint6*>(data)));
 };
+
+inline std::list<tcp_endpoint> parse_compact_endpoint4_list(const void* data, size_t size) {
+	std::list<tcp_endpoint> endpoints;
+	for(const uint8_t* data_cur = (const uint8_t*)data; data_cur+6 <= ((const uint8_t*)data+size); data_cur += 6)
+		endpoints.push_back(parse_compact_endpoint4(data));
+	return endpoints;
+}
+
+inline std::list<tcp_endpoint> parse_compact_endpoint6_list(const void* data, size_t size) {
+	std::list<tcp_endpoint> endpoints;
+	for(const uint8_t* data_cur = (const uint8_t*)data; data_cur+18 <= ((const uint8_t*)data+size); data_cur += 18)
+		endpoints.push_back(parse_compact_endpoint6(data));
+	return endpoints;
+}
+
 inline blob make_compact_endpoint(const tcp_endpoint& endpoint) {
 	blob compact_endpoint(18);
 

@@ -34,28 +34,9 @@ namespace librevault {
 
 DiscoverySubService::DiscoverySubService(DiscoveryService& parent, io_service& io_service, std::string id) : parent_(parent), io_service_(io_service), id_(id) {}
 
-void DiscoverySubService::add_node(DiscoveryService::ConnectCredentials node_cred, std::shared_ptr<FolderGroup> group_ptr) {
+void DiscoverySubService::add_node(DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr) {
 	node_cred.source = id_;
 	parent_.consume_discovered_node(node_cred, group_ptr);
-}
-
-void DiscoverySubService::add_node(const url& node_url, std::shared_ptr<FolderGroup> group_ptr) {
-	DiscoveryService::ConnectCredentials credentials;
-	credentials.url = node_url;
-	add_node(std::move(credentials), group_ptr);
-}
-
-void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, std::shared_ptr<FolderGroup> group_ptr) {
-	DiscoveryService::ConnectCredentials credentials;
-	credentials.endpoint = node_endpoint;
-	add_node(std::move(credentials), group_ptr);
-}
-
-void DiscoverySubService::add_node(const tcp_endpoint& node_endpoint, const blob& pubkey, std::shared_ptr<FolderGroup> group_ptr) {
-	DiscoveryService::ConnectCredentials credentials;
-	credentials.endpoint = node_endpoint;
-	credentials.pubkey = pubkey;
-	add_node(std::move(credentials), group_ptr);
 }
 
 } /* namespace librevault */

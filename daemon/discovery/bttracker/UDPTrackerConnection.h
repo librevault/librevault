@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "TrackerConnection.h"
+#include "util/scoped_async_queue.h"
 #include <boost/asio/steady_timer.hpp>
 
 namespace librevault {
@@ -116,6 +117,8 @@ private:
 	Action action_ = Action::ACTION_NONE;
 
 	int32_t gen_transaction_id();
+
+	std::shared_ptr<ScopedAsyncQueue> asio_router_;
 
 	void receive_loop();
 

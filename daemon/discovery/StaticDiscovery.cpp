@@ -40,8 +40,11 @@ StaticDiscovery::StaticDiscovery(DiscoveryService& parent, io_service& io_servic
 StaticDiscovery::~StaticDiscovery() {}
 
 void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& node : group_ptr->params().nodes)
-		add_node(node, group_ptr);
+	for(auto& node : group_ptr->params().nodes) {
+		DiscoveryService::ConnectCredentials cred;
+		cred.url = node;
+		add_node(cred, group_ptr);
+	}
 }
 
 void StaticDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {

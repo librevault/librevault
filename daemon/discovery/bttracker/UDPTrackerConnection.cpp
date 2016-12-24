@@ -44,6 +44,8 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 		resolver_(io_service),
 		reconnect_timer_(io_service),
 		announce_timer_(io_service) {
+	asio_router_ = std::make_shared<ScopedAsyncQueue>(io_service);
+
 	announce_interval_ = std::chrono::seconds(Config::get()->global_get("bttracker_min_interval").asUInt64());
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
@@ -54,11 +56,21 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 
 	LOGD("Resolving IP address");
 
+	//auto cb = [asio_router = asio_router_, service = this](const boost::system::error_code& ec, udp_resolver::iterator iterator){
+	//	asio_router->post([ec, iterator, service]{service->handle_resolve(ec, iterator);});
+	//};
+
 	udp_resolver::query resolver_query = udp_resolver::query(tracker_address.host, std::to_string(tracker_address.port));
-	resolver_.async_resolve(resolver_query, std::bind(&UDPTrackerConnection::handle_resolve, this, std::placeholders::_1, std::placeholders::_2));
+	resolver_.async_resolve(
+		resolver_query,
+		asio_router_->wrap<const boost::system::error_code&, udp_resolver::iterator>([this](const boost::system::error_code& ec, udp_resolver::iterator iterator){
+			handle_resolve(ec, iterator);
+		})
+	);
 }
 
 UDPTrackerConnection::~UDPTrackerConnection() {
+	asio_router_->stop();
 	LOGD("UDPTrackerConnection Removed");
 }
 
@@ -66,10 +78,16 @@ void UDPTrackerConnection::receive_loop(){
 	auto endpoint_ptr = std::make_shared<udp_endpoint>();
 	buffer_type buffer_ptr = std::make_shared<std::vector<char>>(buffer_maxsize_);
 
+//	auto cb = [asio_router = asio_router_, service = this, endpoint_ptr, buffer_ptr](const boost::system::error_code& ec, std::size_t bytes_transferred){
+//		asio_router->post([ec, bytes_transferred, endpoint_ptr, buffer_ptr, service]{service->handle_message(ec, bytes_transferred, endpoint_ptr, buffer_ptr);});
+//	};
+
 	socket_.async_receive_from(
 		boost::asio::buffer(buffer_ptr->data(), buffer_ptr->size()),
 		*endpoint_ptr,
-		[this, endpoint_ptr, buffer_ptr](const boost::system::error_code& ec, std::size_t bytes_transferred){handle_message(ec, bytes_transferred, endpoint_ptr, buffer_ptr);}
+		asio_router_->wrap<const boost::system::error_code&, std::size_t>([this, endpoint_ptr, buffer_ptr](const boost::system::error_code& ec, std::size_t bytes_transferred){
+			handle_message(ec, bytes_transferred, endpoint_ptr, buffer_ptr);
+		})
 	);
 }
 
@@ -195,11 +213,16 @@ void UDPTrackerConnection::handle_announce(buffer_type buffer) {
 		const char* endpoint_array_ptr = reinterpret_cast<const char*>(buffer->data() + sizeof(announce_rep));
 		const size_t endpoint_array_bytesize = buffer->size() - sizeof(announce_rep);
 
-		if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE) {
-			for(size_t i = 0; i < (endpoint_array_bytesize / sizeof(btcompat::compact_endpoint4)); i++)
-				tracker_discovery_.add_node(btcompat::parse_compact_endpoint4(reinterpret_cast<const uint8_t*>(endpoint_array_ptr+(i*sizeof(btcompat::compact_endpoint4)))), group_ptr_);
-		}else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6) {
-			// TODO: Implement IPv6 tracker discovery
+		std::list<tcp_endpoint> endpoints;
+		if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE)
+			endpoints = btcompat::parse_compact_endpoint4_list(endpoint_array_ptr, endpoint_array_bytesize);
+		else if(reply->header_.action_ == (int32_t)Action::ACTION_ANNOUNCE6)
+			endpoints = btcompat::parse_compact_endpoint6_list(endpoint_array_ptr, endpoint_array_bytesize);
+
+		for(auto& endpoint : endpoints) {
+			DiscoveryService::ConnectCredentials cred;
+			cred.endpoint = endpoint;
+			tracker_discovery_.add_node(cred, group_ptr_);
 		}
 
 		announce_interval_ = std::chrono::seconds(reply->interval_);

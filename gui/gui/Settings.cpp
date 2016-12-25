@@ -74,10 +74,10 @@ void Settings::reset_ui_states() {
 	ui.line_device_name->setText(daemon_->config()->getGlobalValue("client_name").toString());
 
 	// p2p_listen
-	p2p_listen.setAuthority(daemon_->config()->getGlobalValue("p2p_listen").toString());
-	ui.port_box->setChecked(p2p_listen.port(0) != 0);
-	ui.port_value->setEnabled(p2p_listen.port(0) != 0);
-	ui.port_value->setValue(p2p_listen.port(0));
+	unsigned short p2p_listen = daemon_->config()->getGlobalValue("p2p_listen").toInt();
+	ui.port_box->setChecked(p2p_listen != 0);
+	ui.port_value->setEnabled(p2p_listen != 0);
+	ui.port_value->setValue(p2p_listen);
 
 	// natpmp_enabled
 	ui.natpmp_box->setChecked(daemon_->config()->getGlobalValue("natpmp_enabled").toBool());
@@ -108,8 +108,7 @@ void Settings::process_ui_states() {
 	daemon_->config()->setGlobalValue("client_name", ui.line_device_name->text());
 
 	// p2p_listen
-	p2p_listen.setPort(ui.port_box->isChecked() ? ui.port_value->value() : 0);
-	daemon_->config()->setGlobalValue("p2p_listen", p2p_listen.authority());
+	daemon_->config()->setGlobalValue("p2p_listen", ui.port_box->isChecked() ? ui.port_value->value() : 0);
 
 	// natpmp_enabled
 	daemon_->config()->setGlobalValue("natpmp_enabled", ui.natpmp_box->isChecked());

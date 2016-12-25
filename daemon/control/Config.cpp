@@ -30,6 +30,7 @@
 #include "Paths.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include "util/parse_url.h"
 #include <librevault/Secret.h>
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/range/adaptor/map.hpp>
@@ -86,6 +87,12 @@ void Config::import_globals(Json::Value globals_conf) {
 
 	globals_custom_ = globals_conf;
 
+	// FIXME: Fixup config schema
+	Json::Value p2p_listen = globals_custom_["p2p_listen"];
+	if(p2p_listen.isString())
+		globals_custom_["p2p_listen"] = parse_url(p2p_listen.asString()).port;
+
+	// Notify other components
 	for(auto& diff_val : diff)
 		config_changed(diff_val.first, global_get(diff_val.first));
 }

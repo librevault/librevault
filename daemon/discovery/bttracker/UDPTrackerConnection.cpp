@@ -50,9 +50,8 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 
 	if(tracker_address_.port == 0){tracker_address_.port = 80;}
 
-	bind_address_ = address::from_string(url(Config::get()->global_get("p2p_listen").asString()).host);
-	socket_.open(bind_address_.is_v6() ? boost::asio::ip::udp::v6() : boost::asio::ip::udp::v4());
-	socket_.bind(udp_endpoint(bind_address_, 0));
+	socket_.open(boost::asio::ip::udp::v6());
+	socket_.bind(udp_endpoint(address_v6::any(), 0));
 
 	LOGD("Resolving IP address");
 
@@ -152,8 +151,7 @@ void UDPTrackerConnection::handle_resolve(const boost::system::error_code& ec, u
 	if(ec == boost::asio::error::operation_aborted) return;
 
 	for(auto& it = iterator; it != udp_resolver::iterator(); it++)
-		if(bind_address_.is_v6() || iterator->endpoint().address().is_v4())
-			target_ = iterator->endpoint();
+		target_ = iterator->endpoint();
 	if(target_ == udp_endpoint()) throw error("Unable to resolve tracker");
 
 	LOGD("Resolved IP: " << target_.address());

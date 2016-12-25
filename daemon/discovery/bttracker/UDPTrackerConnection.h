@@ -100,8 +100,6 @@ private:
 	const size_t buffer_maxsize_ = 65535;
 	using buffer_type = std::shared_ptr<std::vector<char>>;
 
-	address bind_address_;
-
 	udp_socket socket_;
 	udp_resolver resolver_;
 	udp_endpoint target_;

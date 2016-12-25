@@ -78,7 +78,7 @@ void MainWindow::retranslateUi() {
 	open_website_action->setText(tr("Open Librevault website"));
 	show_settings_window_action->setText(tr("Settings"));
 	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
-#if defined(Q_OS_MACOS)    // ux.stackexchange.com/q/50893
+#if defined(Q_OS_MAC)    // ux.stackexchange.com/q/50893
 	exit_action->setText(tr("Quit Librevault"));
 #else
 	exit_action->setText(tr("Exit"));
@@ -95,7 +95,7 @@ void MainWindow::retranslateUi() {
 
 #if defined(Q_OS_WIN)
 	folder_destination_action->setText(tr("Open in Explorer"));
-#elif defined(Q_OS_MACOS)
+#elif defined(Q_OS_MAC)
 	folder_destination_action->setText(tr("Reveal in Finder"));
 #else
 	folder_destination_action->setText(tr("Open in file manager"));
@@ -154,7 +154,7 @@ bool MainWindow::handleLink(QString link) {
 }
 
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
-#ifndef Q_OS_MACOS
+#ifndef Q_OS_MAC
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
 #endif
 }
@@ -280,7 +280,7 @@ void MainWindow::init_actions() {
 }
 
 void MainWindow::init_toolbar() {
-#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
+#if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 	ui.toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #endif
 	ui.toolBar->addAction(new_folder_action);
@@ -298,7 +298,7 @@ void MainWindow::init_tray() {
 	tray_context_menu.addAction(show_settings_window_action);
 	tray_context_menu.addSeparator();
 	tray_context_menu.addAction(exit_action);
-#ifdef Q_OS_MACOS
+#ifdef Q_OS_MAC
 	tray_context_menu.setAsDockMenu();
 #endif
 	tray_icon.setContextMenu(&tray_context_menu);

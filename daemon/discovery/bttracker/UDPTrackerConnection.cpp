@@ -55,10 +55,6 @@ UDPTrackerConnection::UDPTrackerConnection(url tracker_address,
 
 	LOGD("Resolving IP address");
 
-	//auto cb = [asio_router = asio_router_, service = this](const boost::system::error_code& ec, udp_resolver::iterator iterator){
-	//	asio_router->post([ec, iterator, service]{service->handle_resolve(ec, iterator);});
-	//};
-
 	udp_resolver::query resolver_query = udp_resolver::query(tracker_address.host, std::to_string(tracker_address.port));
 	resolver_.async_resolve(
 		resolver_query,

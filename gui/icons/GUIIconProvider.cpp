@@ -31,7 +31,7 @@
 
 QIcon GUIIconProvider::icon(ICON_ID id) const {
 	switch(id) {
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MAC)
 		case SETTINGS_GENERAL: return QIcon(new MacIcon("NSPreferencesGeneral"));
 		case SETTINGS_ACCOUNT: return QIcon(new MacIcon("NSUser"));
 		case SETTINGS_NETWORK: return QIcon(new MacIcon("NSNetwork"));
@@ -54,12 +54,12 @@ QIcon GUIIconProvider::icon(ICON_ID id) const {
 		//"application-exit"
 
 /* "Reveal in Finder" without icon, others will have an icon */
-#if !defined(Q_OS_MACOS)
+#if !defined(Q_OS_MAC)
 		case REVEAL_FOLDER: return QFileIconProvider().icon(QFileIconProvider::Folder);
 #endif
 
 /* Tray icon */
-#if defined(Q_OS_MACOS)
+#if defined(Q_OS_MAC)
 		case TRAYICON: {
 			QIcon icon(":/branding/librevault_icon_black.svg");
 #	if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)

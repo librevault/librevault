@@ -134,13 +134,13 @@ void Settings::init_selector() {
 	pager = new Pager(ui.controlBar, this);
 
 	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_GENERAL));
+	pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_GENERAL));
 	//page = pager->add_page();
-	//pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ACCOUNT));
+	//pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_ACCOUNT));
 	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_NETWORK));
+	pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_NETWORK));
 	//page = pager->add_page();
-	//pager->set_icon(page, GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS_ADVANCED));
+	//pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_ADVANCED));
 
 	pager->show();
 

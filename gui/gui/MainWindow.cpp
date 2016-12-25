@@ -35,10 +35,6 @@
 #include "icons/GUIIconProvider.h"
 #include "model/FolderModel.h"
 
-#ifdef Q_OS_MAC
-void qt_mac_set_dock_menu(QMenu *menu);
-#endif
-
 MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater) :
 		QMainWindow(), folder_model_(folder_model), daemon_(daemon) {
 	/* Initializing UI */
@@ -50,6 +46,10 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	ui.treeView->header()->setStretchLastSection(false);
 	ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
+	QShortcut* shortcut = new QShortcut(this);
+	shortcut->setKey(QKeySequence(QKeySequence::Cancel));
+	connect(shortcut, &QShortcut::activated, ui.treeView, &QTreeView::clearSelection);
+
 	/* Initializing dialogs */
 	settings_ = new Settings(daemon_, updater, this);
 
@@ -59,11 +59,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	init_tray();
 	init_toolbar();
 
-	folders_menu.addAction(folder_destination_action);
-	folders_menu.addSeparator();
-	folders_menu.addAction(delete_folder_action);
-	folders_menu.addSeparator();
-	folders_menu.addAction(folder_properties_action);
 	connect(ui.treeView, &QWidget::customContextMenuRequested, this, &MainWindow::showFolderContextMenu);
 
 	retranslateUi();
@@ -83,7 +78,7 @@ void MainWindow::retranslateUi() {
 	open_website_action->setText(tr("Open Librevault website"));
 	show_settings_window_action->setText(tr("Settings"));
 	show_settings_window_action->setToolTip(tr("Open Librevault settings"));
-#if defined(Q_OS_MAC)    // ux.stackexchange.com/q/50893
+#if defined(Q_OS_MACOS)    // ux.stackexchange.com/q/50893
 	exit_action->setText(tr("Quit Librevault"));
 #else
 	exit_action->setText(tr("Exit"));
@@ -100,7 +95,7 @@ void MainWindow::retranslateUi() {
 
 #if defined(Q_OS_WIN)
 	folder_destination_action->setText(tr("Open in Explorer"));
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
 	folder_destination_action->setText(tr("Reveal in Finder"));
 #else
 	folder_destination_action->setText(tr("Open in file manager"));
@@ -128,7 +123,13 @@ void MainWindow::handle_connected() {
 
 /* protected slots */
 void MainWindow::showFolderContextMenu(const QPoint& point) {
-	folders_menu.exec(ui.treeView->mapToGlobal(point));
+	QMenu folders_menu;
+	folders_menu.addAction(folder_destination_action);
+	folders_menu.addSeparator();
+	folders_menu.addAction(delete_folder_action);
+	folders_menu.addSeparator();
+	folders_menu.addAction(folder_properties_action);
+	folders_menu.exec(QCursor::pos());
 }
 
 bool MainWindow::handleLink(QString link) {
@@ -153,7 +154,7 @@ bool MainWindow::handleLink(QString link) {
 }
 
 void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 	if(reason != QSystemTrayIcon::Context) show_main_window_action->trigger();
 #endif
 }
@@ -261,8 +262,9 @@ void MainWindow::init_actions() {
 	connect(open_link_action, &QAction::triggered, this, &MainWindow::showOpenLinkDialog);
 
 	delete_folder_action = new QAction(this);
-	delete_folder_action->setShortcut(Qt::Key_Delete);
 	delete_folder_action->setIcon(GUIIconProvider().icon(GUIIconProvider::FOLDER_DELETE));
+	delete_folder_action->setShortcut(QKeySequence::Delete);
+	delete_folder_action->setEnabled(ui.treeView->selectionModel()->hasSelection());
 	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{delete_folder_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
 	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
 
@@ -278,7 +280,7 @@ void MainWindow::init_actions() {
 }
 
 void MainWindow::init_toolbar() {
-#if defined(Q_OS_MAC) || defined(Q_OS_WIN)
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
 	ui.toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 #endif
 	ui.toolBar->addAction(new_folder_action);
@@ -296,8 +298,8 @@ void MainWindow::init_tray() {
 	tray_context_menu.addAction(show_settings_window_action);
 	tray_context_menu.addSeparator();
 	tray_context_menu.addAction(exit_action);
-#ifdef Q_OS_MAC
-	qt_mac_set_dock_menu(&tray_context_menu);
+#ifdef Q_OS_MACOS
+	tray_context_menu.setAsDockMenu();
 #endif
 	tray_icon.setContextMenu(&tray_context_menu);
 

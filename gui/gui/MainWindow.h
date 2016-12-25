@@ -100,7 +100,6 @@ protected:
 	/* Tray icon */
 	QSystemTrayIcon tray_icon;
 	QMenu tray_context_menu;
-	QMenu folders_menu;
 
 	void init_tray();
 

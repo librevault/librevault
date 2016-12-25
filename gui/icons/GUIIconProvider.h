@@ -44,20 +44,11 @@ public:
 		FOLDER_DELETE,
 		LINK_OPEN,
 		SETTINGS,
-		TRAYICON
+		TRAYICON,
+		REVEAL_FOLDER
 	};
 
-	QIcon get_icon(ICON_ID id) const;
-
-	static GUIIconProvider* get_instance() {
-		static GUIIconProvider* provider = nullptr;
-		if(provider == nullptr)
-			provider = new GUIIconProvider();
-		return provider;
-	}
-
-protected:
-	GUIIconProvider();
+	QIcon icon(ICON_ID id) const;
 
 #ifdef Q_OS_MAC
 	class MacIcon : public QIconEngine {

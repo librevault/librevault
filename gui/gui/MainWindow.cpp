@@ -243,7 +243,7 @@ void MainWindow::init_actions() {
 	connect(open_website_action, &QAction::triggered, this, &MainWindow::openWebsite);
 
 	show_settings_window_action = new QAction(this);
-	show_settings_window_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::SETTINGS));
+	show_settings_window_action->setIcon(GUIIconProvider().icon(GUIIconProvider::SETTINGS));
 	show_settings_window_action->setMenuRole(QAction::PreferencesRole);
 	connect(show_settings_window_action, &QAction::triggered, settings_, &QDialog::show);
 
@@ -253,16 +253,16 @@ void MainWindow::init_actions() {
 	connect(exit_action, &QAction::triggered, this, &QCoreApplication::quit);
 
 	new_folder_action = new QAction(this);
-	new_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_ADD));
+	new_folder_action->setIcon(GUIIconProvider().icon(GUIIconProvider::FOLDER_ADD));
 	connect(new_folder_action, SIGNAL(triggered()), this, SLOT(showAddFolderDialog()));
 
 	open_link_action = new QAction(this);
-	open_link_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::LINK_OPEN));
+	open_link_action->setIcon(GUIIconProvider().icon(GUIIconProvider::LINK_OPEN));
 	connect(open_link_action, &QAction::triggered, this, &MainWindow::showOpenLinkDialog);
 
 	delete_folder_action = new QAction(this);
-	delete_folder_action->setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::FOLDER_DELETE));
 	delete_folder_action->setShortcut(Qt::Key_Delete);
+	delete_folder_action->setIcon(GUIIconProvider().icon(GUIIconProvider::FOLDER_DELETE));
 	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{delete_folder_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
 	connect(delete_folder_action, &QAction::triggered, this, &MainWindow::handleRemoveFolder);
 
@@ -272,7 +272,7 @@ void MainWindow::init_actions() {
 	connect(folder_properties_action, &QAction::triggered, this, &MainWindow::handleOpenFolderProperties);
 
 	folder_destination_action = new QAction(this);
-	folder_destination_action->setIcon(QFileIconProvider().icon(QFileIconProvider::Folder));
+	folder_destination_action->setIcon(GUIIconProvider().icon(GUIIconProvider::REVEAL_FOLDER));
 	connect(ui.treeView->selectionModel(), &QItemSelectionModel::selectionChanged, [this]{folder_destination_action->setEnabled(ui.treeView->selectionModel()->hasSelection());});
 	connect(folder_destination_action, &QAction::triggered, this, &MainWindow::handleOpenDestinationFolder);
 }
@@ -304,7 +304,7 @@ void MainWindow::init_tray() {
 	// Icon itself
 	connect(&tray_icon, &QSystemTrayIcon::activated, this, &MainWindow::tray_icon_activated);
 
-	tray_icon.setIcon(GUIIconProvider::get_instance()->get_icon(GUIIconProvider::TRAYICON));   // FIXME: Temporary measure. Need to display "sync" icon here. Also, theming support.
+	tray_icon.setIcon(GUIIconProvider().icon(GUIIconProvider::TRAYICON));   // FIXME: Temporary measure. Need to display "sync" icon here. Also, theming support.
 	tray_icon.setToolTip(tr("Librevault"));
 
 	tray_icon.show();

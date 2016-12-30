@@ -33,148 +33,120 @@
 #include "updater/Updater.h"
 #include "MainWindow.h"
 #include "appver.h"
-#include <QCloseEvent>
-#include <QDebug>
 
 Settings::Settings(Daemon* daemon, Updater* updater, QWidget* parent) :
-		QDialog(parent),
+		SettingsWindow(parent),
 		daemon_(daemon),
 		updater_(updater) {
 	startup_interface_ = new StartupInterface(this);
 
 	init_ui();
-	connect(ui.dialog_box, &QDialogButtonBox::accepted, this, &Settings::okayPressed);
-	connect(ui.dialog_box->button(QDialogButtonBox::StandardButton::Apply), &QPushButton::clicked, this, &Settings::applyPressed);
-	connect(ui.dialog_box, &QDialogButtonBox::rejected, this, &Settings::cancelPressed);
+	connect(ui_bottom_.dialog_box, &QDialogButtonBox::accepted, this, &Settings::okayPressed);
+	connect(ui_bottom_.dialog_box, &QDialogButtonBox::rejected, this, &Settings::cancelPressed);
+
+	reset_ui_states();
 }
 
 Settings::~Settings() {}
 
 void Settings::retranslateUi() {
-	for(int page = 0; page < pager->page_count(); page++) {
-		pager->set_text(page, page_name((Page)page));
-	}
-	ui.retranslateUi(this);
-	ui.version_label->setText(ui.version_label->text().arg(LV_APPVER));
+	ui_pane_general_.retranslateUi(pane_general_);
+	ui_pane_network_.retranslateUi(pane_network_);
+	ui_bottom_.bottom_label->setText(tr("Version: %1").arg(LV_APPVER));
 }
 
 void Settings::init_ui() {
-	ui.setupUi(this);
-	init_selector();
-	ui.box_startup->setVisible(startup_interface_->isSupported());
-	ui.box_update->setVisible(updater_->supportsUpdate());
+	pane_general_ = new QWidget();
+	ui_pane_general_.setupUi(pane_general_);
+	pane_general_->setWindowIcon(GUIIconProvider().icon(GUIIconProvider::SETTINGS_GENERAL));
+	addPane(pane_general_);
+
+	pane_network_ = new QWidget();
+	ui_pane_network_.setupUi(pane_network_);
+	pane_network_->setWindowIcon(GUIIconProvider().icon(GUIIconProvider::SETTINGS_NETWORK));
+	addPane(pane_network_);
+
+	ui_pane_general_.box_startup->setVisible(startup_interface_->isSupported());
+	ui_pane_general_.box_update->setVisible(updater_->supportsUpdate());
 }
 
 void Settings::reset_ui_states() {
 	/* GUI-related settings */
-	ui.box_startup->setChecked(startup_interface_->isEnabled());
-	ui.box_update->setChecked(updater_->enabled());
+	ui_pane_general_.box_startup->setChecked(startup_interface_->isEnabled());
+	ui_pane_general_.box_update->setChecked(updater_->enabled());
 
-	// client_name
-	ui.line_device_name->setText(daemon_->config()->getGlobalValue("client_name").toString());
+	/* Daemon settings */
+	ui_pane_general_.line_device->setText(daemon_->config()->getGlobalValue("client_name").toString()); // client_name
+
+	// p2p_download_slots
+	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobalValue("p2p_download_slots").toInt());
 
 	// p2p_listen
 	unsigned short p2p_listen = daemon_->config()->getGlobalValue("p2p_listen").toInt();
-	ui.port_box->setChecked(p2p_listen != 0);
-	ui.port_value->setEnabled(p2p_listen != 0);
-	ui.port_value->setValue(p2p_listen);
+	ui_pane_network_.box_port_random->setChecked(p2p_listen == 0);
+	ui_pane_network_.spin_port->setEnabled(p2p_listen != 0);
+	ui_pane_network_.spin_port->setValue(p2p_listen);
 
 	// natpmp_enabled
-	ui.natpmp_box->setChecked(daemon_->config()->getGlobalValue("natpmp_enabled").toBool());
+	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobalValue("natpmp_enabled").toBool());
 
 	// upnp_enabled
-	ui.upnp_box->setChecked(daemon_->config()->getGlobalValue("upnp_enabled").toBool());
+	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobalValue("upnp_enabled").toBool());
 
 	// bttracker_enabled
-	ui.global_discovery_box->setChecked(daemon_->config()->getGlobalValue("bttracker_enabled").toBool());
+	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobalValue("bttracker_enabled").toBool());
 
 	// multicast4_enabled || multicast6_enabled
-	ui.local_discovery_box->setChecked(
-		daemon_->config()->getGlobalValue("multicast4_enabled").toBool()
-			|| daemon_->config()->getGlobalValue("multicast6_enabled").toBool()
+	ui_pane_network_.local_discovery_box->setChecked(
+		daemon_->config()->getGlobalValue("multicast4_enabled").toBool() ||
+		daemon_->config()->getGlobalValue("multicast6_enabled").toBool()
 	);
 
 	// mainline_dht_enabled
-	ui.dht_discovery_box->setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
+	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
 }
 
 void Settings::process_ui_states() {
 	/* GUI-related settings */
-	startup_interface_->setEnabled(ui.box_startup->isChecked());
-	updater_->setEnabled(ui.box_update->isChecked());
+	startup_interface_->setEnabled(ui_pane_general_.box_startup->isChecked());
+	updater_->setEnabled(ui_pane_general_.box_update->isChecked());
 
-	/* Daemon-related settings */
+	/* Daemon settings */
 	// client_name
-	daemon_->config()->setGlobalValue("client_name", ui.line_device_name->text());
+	daemon_->config()->setGlobalValue("client_name", ui_pane_general_.line_device->text());
+
+	// p2p_download_slots
+	daemon_->config()->setGlobalValue("p2p_download_slots", ui_pane_network_.spin_down_slots->value());
 
 	// p2p_listen
-	daemon_->config()->setGlobalValue("p2p_listen", ui.port_box->isChecked() ? ui.port_value->value() : 0);
+	daemon_->config()->setGlobalValue("p2p_listen", ui_pane_network_.box_port_random->isChecked() ? 0 : ui_pane_network_.spin_port->value());
 
 	// natpmp_enabled
-	daemon_->config()->setGlobalValue("natpmp_enabled", ui.natpmp_box->isChecked());
+	daemon_->config()->setGlobalValue("natpmp_enabled", ui_pane_network_.natpmp_box->isChecked());
 
 	// upnp_enabled
-	daemon_->config()->setGlobalValue("upnp_enabled", ui.upnp_box->isChecked());
+	daemon_->config()->setGlobalValue("upnp_enabled", ui_pane_network_.upnp_box->isChecked());
 
 	// bttracker_enabled
-	daemon_->config()->setGlobalValue("bttracker_enabled", ui.global_discovery_box->isChecked());
+	daemon_->config()->setGlobalValue("bttracker_enabled", ui_pane_network_.global_discovery_box->isChecked());
 
 	// multicast4_enabled || multicast6_enabled
-	daemon_->config()->setGlobalValue("multicast4_enabled", ui.local_discovery_box->isChecked());
-	daemon_->config()->setGlobalValue("multicast6_enabled", ui.local_discovery_box->isChecked());
+	daemon_->config()->setGlobalValue("multicast4_enabled", ui_pane_network_.local_discovery_box->isChecked());
+	daemon_->config()->setGlobalValue("multicast6_enabled", ui_pane_network_.local_discovery_box->isChecked());
 
 	// mainline_dht_enabled
-	daemon_->config()->setGlobalValue("mainline_dht_enabled", ui.dht_discovery_box->isChecked());
-}
-
-void Settings::init_selector() {
-	int page;
-
-	pager = new Pager(ui.controlBar, this);
-
-	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_GENERAL));
-	//page = pager->add_page();
-	//pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_ACCOUNT));
-	page = pager->add_page();
-	pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_NETWORK));
-	//page = pager->add_page();
-	//pager->set_icon(page, GUIIconProvider().icon(GUIIconProvider::SETTINGS_ADVANCED));
-
-	pager->show();
-
-	connect(pager, &Pager::pageSelected, ui.stackedWidget, &QStackedWidget::setCurrentIndex);
-}
-
-QString Settings::page_name(Page page) {
-	switch(page) {
-		case Page::PAGE_GENERAL:
-			return QApplication::translate("Settings", "General", 0);
-		//case Page::PAGE_ACCOUNT:
-		//	return QApplication::translate("Settings", "Account", 0);
-		case Page::PAGE_NETWORK:
-			return QApplication::translate("Settings", "Network", 0);
-		//case Page::PAGE_ADVANCED:
-		//	return QApplication::translate("Settings", "Advanced", 0);
-		default:
-			return QString();
-	}
-}
-
-void Settings::showEvent(QShowEvent* e) {
-	QDialog::showEvent(e);
-	reset_ui_states();
+	daemon_->config()->setGlobalValue("mainline_dht_enabled", ui_pane_network_.dht_discovery_box->isChecked());
 }
 
 void Settings::okayPressed() {
 	process_ui_states();
 	close();
-	reset_ui_states();
-}
-void Settings::applyPressed() {
-	process_ui_states();
 }
 void Settings::cancelPressed() {
 	close();
+}
+
+void Settings::showEvent(QShowEvent* e) {
 	reset_ui_states();
+	QDialog::showEvent(e);
 }

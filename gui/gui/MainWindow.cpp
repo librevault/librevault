@@ -34,6 +34,8 @@
 #include "gui/StatusBar.h"
 #include "icons/GUIIconProvider.h"
 #include "model/FolderModel.h"
+#include <QMessageBox>
+#include <QShortcut>
 
 MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater) :
 		QMainWindow(), folder_model_(folder_model), daemon_(daemon) {

@@ -33,7 +33,9 @@
 #include "control/RemoteConfig.h"
 #include "control/RemoteState.h"
 #include <QCommandLineParser>
+#include <QFileOpenEvent>
 #include <QLibraryInfo>
+#include <QTimer>
 
 Client::Client(int &argc, char **argv, int appflags) :
 	QtSingleApplication("com.librevault.desktop", argc, argv) {

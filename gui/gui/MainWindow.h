@@ -48,6 +48,9 @@ public:
 	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater);
 	~MainWindow();
 
+signals:
+	void languageChanged();
+
 public slots:
 	void showWindow();
 	void retranslateUi();

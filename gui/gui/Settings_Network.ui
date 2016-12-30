@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Settings_Network</class>
+ <widget class="QWidget" name="Settings_Network">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>299</width>
+    <height>334</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Network</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout_3">
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Port settings</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="natpmp_box">
+        <property name="text">
+         <string>Use NAT-PMP port mapping</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QCheckBox" name="upnp_box">
+        <property name="text">
+         <string>Use UPnP port mapping</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Listening port:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="spin_port">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximum">
+         <number>65535</number>
+        </property>
+        <property name="value">
+         <number>51345</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="box_port_random">
+        <property name="text">
+         <string>Random port on startup</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Peer discovery settings</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="dht_discovery_box">
+        <property name="text">
+         <string>Enable DHT</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QCheckBox" name="local_discovery_box">
+        <property name="text">
+         <string>Enable local discovery</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QCheckBox" name="global_discovery_box">
+        <property name="text">
+         <string>Enable global discovery</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_down_slots">
+     <property name="text">
+      <string>Max download slots:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QSpinBox" name="spin_down_slots"/>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>spin_down_slots</tabstop>
+  <tabstop>spin_port</tabstop>
+  <tabstop>box_port_random</tabstop>
+  <tabstop>natpmp_box</tabstop>
+  <tabstop>upnp_box</tabstop>
+  <tabstop>global_discovery_box</tabstop>
+  <tabstop>local_discovery_box</tabstop>
+  <tabstop>dht_discovery_box</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>box_port_random</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>spin_port</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>150</x>
+     <y>90</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

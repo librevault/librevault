@@ -26,43 +26,28 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "gui/settings/SettingsWindow.h"
-#include "startup/StartupInterface.h"
-#include "ui_Settings_General.h"
-#include "ui_Settings_Network.h"
+#include "SettingsWindow.h"
+#include "SettingsWindowPrivate.all.h"
+#include "appver.h"
 
-class Daemon;
-class Updater;
+SettingsWindow::SettingsWindow(QWidget* parent) :
+		QDialog(parent) {
+	ui_window_.setupUi(this);
+	d = new SettingsWindowPrivate(this);
 
-class Settings : public SettingsWindow {
-Q_OBJECT
+//	connect(ui_bottom_.dialog_box, &QDialogButtonBox::accepted, this, &Settings::okayPressed);
+//	connect(ui_bottom_.dialog_box, &QDialogButtonBox::rejected, this, &Settings::cancelPressed);
+}
 
-public:
-	explicit Settings(Daemon* daemon, Updater* updater, QWidget* parent = 0);
-	~Settings();
+SettingsWindow::~SettingsWindow() {
+	delete d;
+}
 
-public slots:
-	void retranslateUi();
+void SettingsWindow::addPane(QWidget* pane) {
+	pane->setParent(this);
+	d->add_pane(pane);
+}
 
-protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
+void SettingsWindow::retranslateUi() {
 
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
-
-	Daemon* daemon_;
-	Updater* updater_;
-	StartupInterface* startup_interface_;
-
-private:
-	void showEvent(QShowEvent* e) override;
-
-private slots:
-	void okayPressed();
-	void cancelPressed();
-};
+}

@@ -27,42 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "gui/settings/SettingsWindow.h"
-#include "startup/StartupInterface.h"
-#include "ui_Settings_General.h"
-#include "ui_Settings_Network.h"
+#include <QDialog>
+#include "ui_SettingsWindow.h"
+#include "ui_SettingsWindow_bottom.h"
 
-class Daemon;
-class Updater;
+class SettingsWindowPrivate;
 
-class Settings : public SettingsWindow {
+class SettingsWindow : public QDialog {
 Q_OBJECT
 
+friend class SettingsWindowPrivate;
+
 public:
-	explicit Settings(Daemon* daemon, Updater* updater, QWidget* parent = 0);
-	~Settings();
+	explicit SettingsWindow(QWidget* parent = 0);
+	~SettingsWindow();
+
+	/**
+	 * Adds a new preferences pane to Settings window.
+	 * An icon will be taken from pane.windowIcon
+	 * The title will be taken from pane.windowTitle
+	 * This SettingsWindow object will take ownership of pane
+	 * @param pane
+	 * @return
+	 */
+	void addPane(QWidget* pane);
 
 public slots:
 	void retranslateUi();
 
 protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
+	Ui::SettingsWindow ui_window_;
+	Ui::SettingsWindow_bottom ui_bottom_;
 
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
-
-	Daemon* daemon_;
-	Updater* updater_;
-	StartupInterface* startup_interface_;
-
-private:
-	void showEvent(QShowEvent* e) override;
-
-private slots:
-	void okayPressed();
-	void cancelPressed();
+protected:
+	SettingsWindowPrivate* d;
 };

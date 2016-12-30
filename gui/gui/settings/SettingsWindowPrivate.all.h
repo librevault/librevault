@@ -26,43 +26,27 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "gui/settings/SettingsWindow.h"
-#include "startup/StartupInterface.h"
-#include "ui_Settings_General.h"
-#include "ui_Settings_Network.h"
+#include <QHBoxLayout>
+#include <QStackedWidget>
+#include <QToolButton>
 
-class Daemon;
-class Updater;
-
-class Settings : public SettingsWindow {
-Q_OBJECT
-
+class SettingsWindow;
+class SettingsWindowPrivate {
 public:
-	explicit Settings(Daemon* daemon, Updater* updater, QWidget* parent = 0);
-	~Settings();
+	SettingsWindowPrivate(SettingsWindow* window);
 
-public slots:
-	void retranslateUi();
-
-protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
-
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
-
-	Daemon* daemon_;
-	Updater* updater_;
-	StartupInterface* startup_interface_;
+	void add_pane(QWidget* pane);
 
 private:
-	void showEvent(QShowEvent* e) override;
+	// Window
+	SettingsWindow* window_;
+	QVBoxLayout* window_layout_;
+
+	// Pager
+	QHBoxLayout* button_layout_;
+	QStackedWidget* panes_stacked_;
+	QList<QToolButton*> buttons_;
 
 private slots:
-	void okayPressed();
-	void cancelPressed();
+	void buttonClicked(int pane);
 };

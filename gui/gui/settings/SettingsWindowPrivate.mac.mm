@@ -26,19 +26,20 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <QtGlobal>
-#ifndef Q_OS_MAC
-#include "SettingsWindowPrivate.all.h"
+#include "SettingsWindowPrivate.mac.h"
 #include "SettingsWindow.h"
+#include <QDebug>
+#include <QTimer>
+#include <AppKit/NSToolbar.h>
+#include <AppKit/NSToolbarItem.h>
+#include <AppKit/NSImage.h>
 
 SettingsWindowPrivate::SettingsWindowPrivate(SettingsWindow* window) : window_(window) {
+	toolbar = new QMacToolBar(window_);
+	window_->window()->winId();
 	window_layout_ = new QVBoxLayout(window_);
-
-	button_layout_ = new QHBoxLayout();
-	window_layout_->addLayout(button_layout_);
-
-	panes_stacked_ = new QStackedWidget(window_);
-	window_layout_->addWidget(panes_stacked_);
+	pane_layout_ = new QVBoxLayout();
+	window_layout_->addLayout(pane_layout_);
 
 	QWidget* bottom_zone = new QWidget(window_);
 	window_->ui_bottom_.setupUi(bottom_zone);
@@ -46,34 +47,35 @@ SettingsWindowPrivate::SettingsWindowPrivate(SettingsWindow* window) : window_(w
 }
 
 void SettingsWindowPrivate::add_pane(QWidget* pane) {
-	auto toolButton = new QToolButton(button_layout_->widget());
-	int page_num = buttons_.size();
+	auto toolButton = toolbar->addItem(pane->windowIcon(), pane->windowTitle());
+	int page_num = (int)buttons_.size();
 	buttons_.push_back(toolButton);
-	panes_stacked_->addWidget(pane);
+	QObject::connect(toolButton, &QMacToolBarItem::activated, [=]{
+		emit showPane(page_num);
+	});
+	toolButton->setSelectable(true);
 
-	QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-	sizePolicy.setHeightForWidth(toolButton->sizePolicy().hasHeightForWidth());
-	toolButton->setSizePolicy(sizePolicy);
+	panes_.push_back(pane);
+	pane_layout_->addWidget(pane);
 
-	toolButton->setIconSize(QSize(32, 32));
+	if(page_num == 0)
+		showPane(0);
+	else
+		pane->setVisible(false);
 
-	toolButton->setIcon(pane->windowIcon());
-	QObject::connect(pane, &QWidget::windowIconChanged, toolButton, &QToolButton::setIcon);
-	toolButton->setText(pane->windowTitle());
-	QObject::connect(pane, &QWidget::windowTitleChanged, toolButton, &QToolButton::setText);
-
-	toolButton->setCheckable(true);
-	toolButton->setChecked(page_num == 0);  // default
-	toolButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-	button_layout_->addWidget(toolButton);
-	QObject::connect(toolButton, &QToolButton::clicked, [=]{buttonClicked(page_num);});
+	QTimer::singleShot(0, [=]{
+		toolbar->detachFromWindow();
+		toolbar->attachToWindow(window_->window()->windowHandle());
+	});
 }
 
-void SettingsWindowPrivate::buttonClicked(int pane) {
-	for(int button_idx = 0; button_idx < (int)buttons_.size(); button_idx++)
-		buttons_[button_idx]->setChecked(button_idx == pane);
-	panes_stacked_->setCurrentIndex(pane);
-}
+void SettingsWindowPrivate::showPane(int page) {
+	// Select in toolbar
+	NSString* item_id = toolbar->items().at(page)->nativeToolBarItem().itemIdentifier;
+	[toolbar->nativeToolbar() setSelectedItemIdentifier:item_id];
 
-#endif
+	// Show pane
+	for(int i = 0; i < panes_.size(); i++)
+		panes_[i]->setVisible(i == page);
+	QTimer::singleShot(0, window_, &QWidget::adjustSize);
+}

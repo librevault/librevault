@@ -27,7 +27,11 @@
  * files in the program, then also delete it here.
  */
 #include "SettingsWindow.h"
-#include "SettingsWindowPrivate.all.h"
+#ifndef Q_OS_MAC
+#	include "SettingsWindowPrivate.all.h"
+#else
+#	include "SettingsWindowPrivate.mac.h"
+#endif
 #include "appver.h"
 
 SettingsWindow::SettingsWindow(QWidget* parent) :

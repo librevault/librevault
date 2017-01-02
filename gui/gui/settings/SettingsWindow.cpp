@@ -32,7 +32,6 @@
 #else
 #	include "SettingsWindowPrivate.mac.h"
 #endif
-#include "appver.h"
 
 SettingsWindow::SettingsWindow(QWidget* parent) :
 		QDialog(parent) {

@@ -37,7 +37,7 @@
 #include <QMessageBox>
 #include <QShortcut>
 
-MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater) :
+MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater, Translator* translator) :
 		QMainWindow(), folder_model_(folder_model), daemon_(daemon) {
 	/* Initializing UI */
 	ui.setupUi(this);
@@ -53,7 +53,7 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 	connect(shortcut, &QShortcut::activated, ui.treeView, &QTreeView::clearSelection);
 
 	/* Initializing dialogs */
-	settings_ = new Settings(daemon_, updater, this);
+	settings_ = new Settings(daemon_, updater, translator, this);
 
 	connect(ui.treeView, &QAbstractItemView::doubleClicked, this, &MainWindow::handleOpenFolderProperties);
 
@@ -231,7 +231,7 @@ void MainWindow::changeEvent(QEvent* e) {
 	QMainWindow::changeEvent(e);
 	switch(e->type()) {
 		case QEvent::LanguageChange:
-			ui.retranslateUi(this);
+			retranslateUi();
 			break;
 		default:
 			break;

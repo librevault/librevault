@@ -45,11 +45,8 @@ class MainWindow : public QMainWindow {
 Q_OBJECT
 
 public:
-	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater);
+	MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater, Translator* translator);
 	~MainWindow();
-
-signals:
-	void languageChanged();
 
 public slots:
 	void showWindow();

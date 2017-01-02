@@ -26,48 +26,40 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "gui/settings/SettingsWindow.h"
-#include "startup/StartupInterface.h"
-#include "ui_Settings_General.h"
-#include "ui_Settings_Network.h"
+#include "Translator.h"
+#include <QLibraryInfo>
+#include <QSettings>
 
-class Daemon;
-class Updater;
-class Translator;
+Translator::Translator(QCoreApplication* app) : QObject(app), app_(app) {
+	applyLocale();
+}
 
-class Settings : public SettingsWindow {
-Q_OBJECT
+QString Translator::getLocaleSetting() {
+	QSettings lang_settings;
+	return lang_settings.value("locale", QStringLiteral("auto")).toString();
+}
 
-public:
-	explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent = 0);
-	~Settings();
-
-signals:
-	void localeChanged(QString code);
-
-public slots:
-	void retranslateUi();
-
-protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
-
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
-
-	Daemon* daemon_;
-	Updater* updater_;
-	Translator* translator_;
-	StartupInterface* startup_interface_;
-
-private:
-	void showEvent(QShowEvent* e) override;
-
-private slots:
-	void okayPressed();
-	void cancelPressed();
+QMap<QString, QString> Translator::availableLocales() {
+	return {
+		{"en", "English"},
+		{"ru", QString::fromUtf16(u"\u0420\u0443\u0441\u0441\u043A\u0438\u0439")}
+	};
 };
+
+void Translator::setLocale(QString locale) {
+	QSettings lang_settings;
+	lang_settings.setValue("locale", locale);
+	applyLocale();
+}
+
+void Translator::applyLocale() {
+	QSettings lang_settings;
+	QString locale = lang_settings.value("locale", QStringLiteral("auto")).toString();
+	if(locale == "auto")
+		locale = QLocale::system().name();
+
+	qt_translator_.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+	app_->installTranslator(&qt_translator_);
+	translator_.load(QStringLiteral(":/lang/librevault_") + locale);
+	app_->installTranslator(&translator_);
+}

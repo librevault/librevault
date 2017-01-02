@@ -27,47 +27,27 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "gui/settings/SettingsWindow.h"
-#include "startup/StartupInterface.h"
-#include "ui_Settings_General.h"
-#include "ui_Settings_Network.h"
+#include <QCoreApplication>
+#include <QLocale>
+#include <QTranslator>
 
-class Daemon;
-class Updater;
-class Translator;
-
-class Settings : public SettingsWindow {
+class Translator : public QObject {
 Q_OBJECT
 
 public:
-	explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent = 0);
-	~Settings();
+	Translator(QCoreApplication* app);
 
-signals:
-	void localeChanged(QString code);
+	QString getLocaleSetting();
+	QMap<QString, QString> availableLocales();
 
 public slots:
-	void retranslateUi();
-
-protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
-
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
-
-	Daemon* daemon_;
-	Updater* updater_;
-	Translator* translator_;
-	StartupInterface* startup_interface_;
+	void setLocale(QString locale);
+	void applyLocale();
 
 private:
-	void showEvent(QShowEvent* e) override;
+	QCoreApplication* app_;
 
-private slots:
-	void okayPressed();
-	void cancelPressed();
+	// Translation
+	QTranslator translator_;
+	QTranslator qt_translator_;
 };

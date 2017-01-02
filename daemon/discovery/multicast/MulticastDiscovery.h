@@ -50,7 +50,7 @@ protected:
 	using udp_buffer = std::array<char, 65536>;
 
 	/* Config parameters */
-	bool enabled_;
+	bool enabled_ = true;
 	udp_endpoint group_;
 	std::chrono::seconds repeat_interval_ = std::chrono::seconds(0);
 

@@ -125,6 +125,10 @@ void MainWindow::handle_connected() {
 
 /* protected slots */
 void MainWindow::showFolderContextMenu(const QPoint& point) {
+	auto selection_model = ui.treeView->selectionModel()->selectedRows();
+	if(selection_model.empty())
+		return;
+
 	QMenu folders_menu;
 	folders_menu.addAction(folder_destination_action);
 	folders_menu.addSeparator();

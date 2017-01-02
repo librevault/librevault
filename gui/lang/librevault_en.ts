@@ -44,7 +44,7 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui/AddFolder.cpp" line="65"/>
+        <location filename="../gui/AddFolder.cpp" line="74"/>
         <source>Choose the directory to sync</source>
         <translation></translation>
     </message>
@@ -78,38 +78,30 @@
 <context>
     <name>Client</name>
     <message>
-        <location filename="../Client.cpp" line="33"/>
-        <source>Attach to running daemon instead of creating a new one.</source>
-        <translation type="unfinished"></translation>
+        <location filename="../Client.cpp" line="50"/>
+        <source>Attach to running daemon instead of creating a new one</source>
+        <translation></translation>
     </message>
     <message>
-        <location filename="../Client.cpp" line="35"/>
+        <location filename="../Client.cpp" line="51"/>
+        <source>Allow multiple instances of GUI</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../Client.cpp" line="54"/>
         <source>The &quot;lvlt:&quot; URL to open.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Daemon</name>
-    <message>
-        <location filename="../control/Daemon.cpp" line="53"/>
-        <source>Couldn&apos;t launch Librevault application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../control/Daemon.cpp" line="54"/>
-        <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault-daemon&quot; executable in application or PATH folder.</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>FolderModel</name>
     <message>
-        <location filename="../model/FolderModel.cpp" line="44"/>
+        <location filename="../model/FolderModel.cpp" line="59"/>
         <source>Indexing</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="47"/>
+        <location filename="../model/FolderModel.cpp" line="62"/>
         <source>%n peer(s)</source>
         <translation>
             <numerusform>%n peer</numerusform>
@@ -117,7 +109,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="48"/>
+        <location filename="../model/FolderModel.cpp" line="65"/>
         <source>%n file(s)</source>
         <translation>
             <numerusform>%n file</numerusform>
@@ -125,7 +117,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../model/FolderModel.cpp" line="48"/>
+        <location filename="../model/FolderModel.cpp" line="66"/>
         <source>%n directory(s)</source>
         <translation>
             <numerusform>%n directory</numerusform>
@@ -133,22 +125,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="69"/>
+        <location filename="../model/FolderModel.cpp" line="85"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="70"/>
+        <location filename="../model/FolderModel.cpp" line="86"/>
         <source>Status</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="71"/>
+        <location filename="../model/FolderModel.cpp" line="87"/>
         <source>Peers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/FolderModel.cpp" line="72"/>
+        <location filename="../model/FolderModel.cpp" line="88"/>
         <source>Size</source>
         <translation type="unfinished"></translation>
     </message>
@@ -198,7 +190,7 @@
         <translation></translation>
     </message>
     <message numerus="yes">
-        <location filename="../gui/FolderProperties.cpp" line="78"/>
+        <location filename="../gui/FolderProperties.cpp" line="102"/>
         <source>%n file(s)</source>
         <translation>
             <numerusform>%n file</numerusform>
@@ -206,7 +198,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../gui/FolderProperties.cpp" line="78"/>
+        <location filename="../gui/FolderProperties.cpp" line="102"/>
         <source>%n directory(s)</source>
         <translation>
             <numerusform>%n directory</numerusform>
@@ -214,38 +206,38 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../gui/FolderProperties.cpp" line="79"/>
-        <source>%n connected</source>
-        <translation>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <location filename="../gui/FolderProperties.cpp" line="103"/>
+        <source>%n peer(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n peer</numerusform>
+            <numerusform>%n peers</numerusform>
         </translation>
     </message>
 </context>
 <context>
     <name>Human Bandwidth</name>
     <message>
-        <location filename="../util/human_size.h" line="44"/>
+        <location filename="../util/human_size.h" line="57"/>
         <source>%1 B/s</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="48"/>
+        <location filename="../util/human_size.h" line="61"/>
         <source>%1 KB/s</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="52"/>
+        <location filename="../util/human_size.h" line="65"/>
         <source>%1 MB/s</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="56"/>
+        <location filename="../util/human_size.h" line="69"/>
         <source>%1 GB/s</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="59"/>
+        <location filename="../util/human_size.h" line="72"/>
         <source>%1 TB/s</source>
         <translation></translation>
     </message>
@@ -253,7 +245,7 @@
 <context>
     <name>Human Size</name>
     <message numerus="yes">
-        <location filename="../util/human_size.h" line="24"/>
+        <location filename="../util/human_size.h" line="37"/>
         <source>%n bytes</source>
         <translation>
             <numerusform>%n byte</numerusform>
@@ -261,22 +253,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="28"/>
+        <location filename="../util/human_size.h" line="41"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="32"/>
+        <location filename="../util/human_size.h" line="45"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="36"/>
+        <location filename="../util/human_size.h" line="49"/>
         <source>%1 GB</source>
         <translation>%1 GB</translation>
     </message>
     <message>
-        <location filename="../util/human_size.h" line="39"/>
+        <location filename="../util/human_size.h" line="52"/>
         <source>%1 TB</source>
         <translation>%1 TB</translation>
     </message>
@@ -285,72 +277,127 @@
     <name>MainWindow</name>
     <message>
         <location filename="../gui/MainWindow.ui" line="17"/>
-        <location filename="../gui/MainWindow.cpp" line="193"/>
+        <location filename="../gui/MainWindow.cpp" line="312"/>
         <source>Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="61"/>
+        <location filename="../gui/MainWindow.cpp" line="79"/>
         <source>Show Librevault window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="62"/>
+        <location filename="../gui/MainWindow.cpp" line="80"/>
         <source>Open Librevault website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="63"/>
+        <location filename="../gui/MainWindow.cpp" line="81"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="64"/>
+        <location filename="../gui/MainWindow.cpp" line="82"/>
         <source>Open Librevault settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="65"/>
+        <location filename="../gui/MainWindow.cpp" line="84"/>
         <source>Quit Librevault</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="67"/>
+        <location filename="../gui/MainWindow.cpp" line="86"/>
+        <source>Exit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="89"/>
         <source>Add folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="68"/>
+        <location filename="../gui/MainWindow.cpp" line="90"/>
         <source>Add new folder for synchronization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="69"/>
+        <location filename="../gui/MainWindow.cpp" line="91"/>
         <source>Open URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="70"/>
+        <location filename="../gui/MainWindow.cpp" line="92"/>
         <source>Open shared link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="71"/>
-        <source>Delete</source>
+        <location filename="../gui/MainWindow.cpp" line="93"/>
+        <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="72"/>
-        <source>Delete folder</source>
+        <location filename="../gui/MainWindow.cpp" line="94"/>
+        <source>Stop synchronization and remove folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="97"/>
+        <location filename="../gui/MainWindow.cpp" line="95"/>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="96"/>
+        <source>Open folder properies</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="99"/>
+        <source>Open in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="101"/>
+        <source>Reveal in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="103"/>
+        <source>Open in file manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="105"/>
+        <source>Open destination folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="117"/>
+        <source>Problem running Librevault application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="118"/>
+        <source>Problem running Librevault service: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="142"/>
+        <source>Wrong link format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="143"/>
+        <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/MainWindow.cpp" line="181"/>
         <source>Remove folder from Librevault?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/MainWindow.cpp" line="98"/>
+        <location filename="../gui/MainWindow.cpp" line="182"/>
         <source>This folder will be removed from Librevault and no longer synced with other peers. Existing folder contents will not be altered.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -358,60 +405,50 @@
 <context>
     <name>OpenLink</name>
     <message>
-        <location filename="../gui/OpenLink.ui" line="29"/>
+        <location filename="../gui/OpenLink.ui" line="27"/>
         <source>Open Link</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/OpenLink.ui" line="42"/>
+        <location filename="../gui/OpenLink.ui" line="40"/>
         <source>Please, enter the link you received in the field below. The link must start from &quot;lvlt:&quot;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/OpenLink.cpp" line="35"/>
-        <source>Wrong link format</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/OpenLink.cpp" line="36"/>
-        <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PeerModel</name>
     <message>
-        <location filename="../model/PeerModel.cpp" line="60"/>
+        <location filename="../model/PeerModel.cpp" line="74"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="61"/>
+        <location filename="../model/PeerModel.cpp" line="75"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="62"/>
+        <location filename="../model/PeerModel.cpp" line="76"/>
         <source>Client</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="63"/>
+        <location filename="../model/PeerModel.cpp" line="77"/>
         <source>Down speed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="64"/>
+        <location filename="../model/PeerModel.cpp" line="78"/>
         <source>Up speed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="65"/>
+        <location filename="../model/PeerModel.cpp" line="79"/>
         <source>Downloaded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../model/PeerModel.cpp" line="66"/>
+        <location filename="../model/PeerModel.cpp" line="80"/>
         <source>Uploaded</source>
         <translation type="unfinished"></translation>
     </message>
@@ -419,151 +456,147 @@
 <context>
     <name>Settings</name>
     <message>
-        <location filename="../gui/Settings.ui" line="17"/>
-        <source>Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="53"/>
-        <source>Start on computer startup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="63"/>
-        <source>Check for updates on startup</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="89"/>
+        <location filename="../gui/Settings.cpp" line="57"/>
         <source>Version: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.ui" line="96"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Icons by &lt;a href=&quot;https://icons8.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Icons8&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <location filename="../gui/Settings.cpp" line="59"/>
+        <source>System language</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>SettingsWindow</name>
     <message>
-        <location filename="../gui/Settings.ui" line="165"/>
-        <source>Use UPnP port mapping</source>
+        <location filename="../gui/settings/SettingsWindow.ui" line="23"/>
+        <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>SettingsWindow_bottom</name>
     <message>
-        <location filename="../gui/Settings.ui" line="181"/>
-        <source>Enable DHT</source>
+        <location filename="../gui/settings/SettingsWindow_bottom.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>Settings_General</name>
     <message>
-        <location filename="../gui/Settings.ui" line="208"/>
-        <source>All these settings currently require a restart.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="267"/>
-        <source>Create account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="280"/>
-        <source>Sign in</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="329"/>
-        <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="352"/>
-        <source>Account</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="358"/>
-        <source>%1 (%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="378"/>
-        <source>Sign out</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="388"/>
-        <source>Space usage</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="394"/>
-        <source>%1 GB of %2 GB used</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="401"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="119"/>
-        <source>Port settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="40"/>
-        <source>S&amp;ystem</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="46"/>
-        <source>Device name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="138"/>
-        <source>Listening port:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="158"/>
-        <source>Use NAT-PMP port mapping</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="175"/>
-        <source>Peer discovery settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="188"/>
-        <source>Enable global discovery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.ui" line="195"/>
-        <source>Enable local discovery</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../gui/Settings.cpp" line="154"/>
+        <location filename="../gui/Settings_General.ui" line="20"/>
         <source>General</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui/Settings.cpp" line="158"/>
+        <location filename="../gui/Settings_General.ui" line="26"/>
+        <source>Device name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_General.ui" line="36"/>
+        <source>Start on computer startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_General.ui" line="43"/>
+        <source>Check for updates on startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_General.ui" line="50"/>
+        <source>Language:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Settings_Network</name>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="20"/>
         <source>Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="32"/>
+        <source>Port settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="38"/>
+        <source>Use NAT-PMP port mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="45"/>
+        <source>Use UPnP port mapping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="52"/>
+        <source>Listening port:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="72"/>
+        <source>Random port on startup</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="91"/>
+        <source>Peer discovery settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="97"/>
+        <source>Enable DHT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="104"/>
+        <source>Enable local discovery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="111"/>
+        <source>Enable global discovery</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/Settings_Network.ui" line="121"/>
+        <source>Max download slots:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>StatusBar</name>
     <message numerus="yes">
-        <location filename="../gui/StatusBar.cpp" line="68"/>
         <source>%n nodes</source>
         <comment>DHT</comment>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n node</numerusform>
             <numerusform>%n nodes</numerusform>
         </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../gui/StatusBar.cpp" line="101"/>
+        <source>DHT: %n nodes</source>
+        <comment>DHT</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../gui/StatusBar.cpp" line="103"/>
+        <source>DHT: disabled</source>
+        <comment>DHT</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui/StatusBar.cpp" line="115"/>
+        <source>Enable DHT</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

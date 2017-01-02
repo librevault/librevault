@@ -57,7 +57,6 @@ private:
 	QFrame* create_separator() const;
 
 private slots:
-	void refreshDHT();
 	void refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes);
 
 	void showDHTMenu(const QPoint& pos);

@@ -214,19 +214,23 @@
 <context>
     <name>Client</name>
     <message>
-        <source>Attach to running daemon instead of creating a new one.</source>
-        <translation type="unfinished"></translation>
+        <source>The &quot;lvlt:&quot; URL to open.</source>
+        <translation></translation>
     </message>
     <message>
-        <source>The &quot;lvlt:&quot; URL to open.</source>
-        <translation type="unfinished"></translation>
+        <source>Attach to running daemon instead of creating a new one</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Allow multiple instances of GUI</source>
+        <translation></translation>
     </message>
 </context>
 <context>
     <name>Daemon</name>
     <message>
         <source>Couldn&apos;t launch Librevault application</source>
-        <translation>Не удалось запустить Librevault</translation>
+        <translation type="vanished">Не удалось запустить Librevault</translation>
     </message>
     <message>
         <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault&quot; executable in application or system folder.</source>
@@ -234,7 +238,7 @@
     </message>
     <message>
         <source>There is a problem launching Librevault service: couldn&apos;t find &quot;librevault-daemon&quot; executable in application or PATH folder.</source>
-        <translation>Возникла проблема во время запуска службы Librevault: не удалось найти исполняемый файл &quot;librevault-daemon&quot; в директории приложения и директориях PATH.</translation>
+        <translation type="vanished">Возникла проблема во время запуска службы Librevault: не удалось найти исполняемый файл &quot;librevault-daemon&quot; в директории приложения и директориях PATH.</translation>
     </message>
 </context>
 <context>
@@ -337,7 +341,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message numerus="yes">
         <source>%n connected</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n подключён</numerusform>
             <numerusform>%n подключено</numerusform>
             <numerusform>%n подключено</numerusform>
@@ -350,6 +354,14 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
             <numerusform>%n папка</numerusform>
             <numerusform>%n папки</numerusform>
             <numerusform>%n папок</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n peer(s)</source>
+        <translation type="unfinished">
+            <numerusform>%n участник</numerusform>
+            <numerusform>%n участника</numerusform>
+            <numerusform>%n участников</numerusform>
         </translation>
     </message>
 </context>
@@ -458,11 +470,11 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Удалить</translation>
+        <translation type="vanished">Удалить</translation>
     </message>
     <message>
         <source>Delete folder</source>
-        <translation>Удалить папку</translation>
+        <translation type="vanished">Удалить папку</translation>
     </message>
     <message>
         <source>Librevault</source>
@@ -480,6 +492,58 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
         <source>Open shared link</source>
         <translation>Добавить папку по ссылке</translation>
     </message>
+    <message>
+        <source>Exit</source>
+        <translation>Выход</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>Stop synchronization and remove folder</source>
+        <translation>Остановить синхронизацию и удалить папку</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>Свойства</translation>
+    </message>
+    <message>
+        <source>Open folder properies</source>
+        <translation>Открыть свойства папки</translation>
+    </message>
+    <message>
+        <source>Open in Explorer</source>
+        <translation>Открыть в проводнике</translation>
+    </message>
+    <message>
+        <source>Reveal in Finder</source>
+        <translation>Показать в Finder</translation>
+    </message>
+    <message>
+        <source>Open in file manager</source>
+        <translation>Открыть в файловом менеджере</translation>
+    </message>
+    <message>
+        <source>Open destination folder</source>
+        <translation>Открыть папку синхронизации</translation>
+    </message>
+    <message>
+        <source>Problem running Librevault application</source>
+        <translation>Ошибка программы Librevault</translation>
+    </message>
+    <message>
+        <source>Problem running Librevault service: %1</source>
+        <translation>Произошла ошибка во время исполнения службы Librevault: %1</translation>
+    </message>
+    <message>
+        <source>Wrong link format</source>
+        <translation>Некорретный формат ссылки</translation>
+    </message>
+    <message>
+        <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
+        <translation>Ссылка введена некорректно. Правильная ссылка должна начинаться с &quot;lvlt:&quot; и содержать действительный Ключ.</translation>
+    </message>
 </context>
 <context>
     <name>OpenLink</name>
@@ -493,11 +557,11 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Wrong link format</source>
-        <translation>Некорретный формат ссылки</translation>
+        <translation type="vanished">Некорретный формат ссылки</translation>
     </message>
     <message>
         <source>The link you entered is not correct. It must begin with &quot;lvlt:&quot; and contain a valid Secret.</source>
-        <translation>Ссылка введена некорректно. Правильная ссылка должна начинаться с &quot;lvlt:&quot; и содержать действительный Секрет.</translation>
+        <translation type="vanished">Ссылка введена некорректно. Правильная ссылка должна начинаться с &quot;lvlt:&quot; и содержать действительный Секрет.</translation>
     </message>
     <message>
         <source>Please, enter the link you received in the field below. The link must start from &quot;lvlt:&quot;</source>
@@ -520,11 +584,11 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Down speed</source>
-        <translation type="unfinished">Скачивание</translation>
+        <translation>Скачивание</translation>
     </message>
     <message>
         <source>Up speed</source>
-        <translation type="unfinished">Отдача</translation>
+        <translation>Отдача</translation>
     </message>
     <message>
         <source>Downloaded</source>
@@ -539,7 +603,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <name>Settings</name>
     <message>
         <source>Settings</source>
-        <translation>Настройки</translation>
+        <translation type="vanished">Настройки</translation>
     </message>
     <message>
         <source>System</source>
@@ -547,7 +611,7 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Start on computer startup</source>
-        <translation>Запускать при включении компьютера</translation>
+        <translation type="vanished">Запускать при включении компьютера</translation>
     </message>
     <message>
         <source>Language</source>
@@ -555,109 +619,189 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     </message>
     <message>
         <source>Create account</source>
-        <translation>Регистрация</translation>
+        <translation type="vanished">Регистрация</translation>
     </message>
     <message>
         <source>Sign in</source>
-        <translation>Вход</translation>
+        <translation type="vanished">Вход</translation>
     </message>
     <message>
         <source>Sign in with your Librevault Cloud account to sync folders across your devices</source>
-        <translation>Войдите с учётной записью Librevault Cloud, чтобы синхронизировать папки со всеми вашими устройствами</translation>
+        <translation type="vanished">Войдите с учётной записью Librevault Cloud, чтобы синхронизировать папки со всеми вашими устройствами</translation>
     </message>
     <message>
         <source>Account</source>
         <translatorcomment>https://rus.stackexchange.com/questions/417072/%D0%90%D0%BA%D0%BA%D0%B0%D1%83%D0%BD%D1%82-%D0%B8%D0%BB%D0%B8-%D1%83%D1%87%D0%B5%D1%82%D0%BD%D0%B0%D1%8F-%D0%B7%D0%B0%D0%BF%D0%B8%D1%81%D1%8C</translatorcomment>
-        <translation>Аккаунт</translation>
+        <translation type="vanished">Аккаунт</translation>
     </message>
     <message>
         <source>Sign out</source>
-        <translation>Выйти из аккаунта</translation>
+        <translation type="vanished">Выйти из аккаунта</translation>
     </message>
     <message>
         <source>Space usage</source>
-        <translation>Занятое место</translation>
+        <translation type="vanished">Занятое место</translation>
     </message>
     <message>
         <source>%1 GB of %2 GB used</source>
         <translatorcomment>Или лучше наоборот, &quot;Использовано ...&quot;?</translatorcomment>
-        <translation type="unfinished">%1 ГБ из %2 ГБ использовано</translation>
+        <translation type="obsolete">%1 ГБ из %2 ГБ использовано</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Need more space?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Нужно больше места?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://librevault.com/upgrade&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Нужно больше места?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Port settings</source>
-        <translation>Настройки порта</translation>
+        <translation type="vanished">Настройки порта</translation>
     </message>
     <message>
         <source>Listening port:</source>
-        <translation>Слушающий порт:</translation>
+        <translation type="vanished">Слушающий порт:</translation>
     </message>
     <message>
         <source>Use NAT-PMP port mapping</source>
-        <translation>Использовать перенаправление порта через NAT-PMP</translation>
+        <translation type="vanished">Использовать перенаправление порта через NAT-PMP</translation>
     </message>
     <message>
         <source>Peer discovery settings</source>
-        <translation>Настройки обнаружения участников</translation>
+        <translation type="vanished">Настройки обнаружения участников</translation>
     </message>
     <message>
         <source>Enable global discovery</source>
-        <translation>Включить глобальное обнаружение</translation>
+        <translation type="vanished">Включить глобальное обнаружение</translation>
     </message>
     <message>
         <source>Enable local discovery</source>
-        <translation>Включить локальное обнаружение</translation>
+        <translation type="vanished">Включить локальное обнаружение</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>Общие</translation>
+        <translation type="vanished">Общие</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Сеть</translation>
+        <translation type="vanished">Сеть</translation>
     </message>
     <message>
         <source>Advanced</source>
         <translation type="vanished">Дополнительно</translation>
     </message>
     <message>
-        <source>%1 (%2)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>S&amp;ystem</source>
-        <translation type="unfinished">Систе&amp;ма</translation>
+        <translation type="obsolete">Систе&amp;ма</translation>
     </message>
     <message>
         <source>Device name:</source>
-        <translation>Имя устройства:</translation>
+        <translation type="vanished">Имя устройства:</translation>
     </message>
     <message>
         <source>Version: %1</source>
         <translation>Версия: %1</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Icons by &lt;a href=&quot;https://icons8.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;Icons8&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>Check for updates on startup</source>
+        <translation type="vanished">Проверять обновления программы</translation>
+    </message>
+    <message>
+        <source>Enable DHT</source>
+        <translation type="vanished">Включить DHT</translation>
+    </message>
+    <message>
+        <source>All these settings currently require a restart.</source>
+        <translation type="vanished">Для корректного применения настроек требуется перезапуск.</translation>
+    </message>
+    <message>
+        <source>Use UPnP port mapping</source>
+        <translation type="vanished">Использовать перенаправление порта через UPnP</translation>
+    </message>
+    <message>
+        <source>System language</source>
+        <translation>Язык системы</translation>
+    </message>
+</context>
+<context>
+    <name>SettingsWindow</name>
+    <message>
+        <source>Settings</source>
+        <translation>Настройки</translation>
+    </message>
+</context>
+<context>
+    <name>SettingsWindow_bottom</name>
+    <message>
+        <source>Form</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Settings_General</name>
+    <message>
+        <source>General</source>
+        <translation>Общие</translation>
+    </message>
+    <message>
+        <source>Device name:</source>
+        <translation>Имя устройства:</translation>
+    </message>
+    <message>
+        <source>Start on computer startup</source>
+        <translation>Запускать при включении компьютера</translation>
     </message>
     <message>
         <source>Check for updates on startup</source>
         <translation>Проверять обновления программы</translation>
     </message>
     <message>
-        <source>Enable DHT</source>
-        <translation>Включить DHT</translation>
+        <source>Language:</source>
+        <translation>Язык:</translation>
+    </message>
+</context>
+<context>
+    <name>Settings_Network</name>
+    <message>
+        <source>Network</source>
+        <translation>Сеть</translation>
     </message>
     <message>
-        <source>All these settings currently require a restart.</source>
-        <translation>Для корректного применения настроек требуется перезапуск.</translation>
+        <source>Port settings</source>
+        <translation>Настройки порта</translation>
+    </message>
+    <message>
+        <source>Use NAT-PMP port mapping</source>
+        <translation>Использовать перенаправление порта через NAT-PMP</translation>
     </message>
     <message>
         <source>Use UPnP port mapping</source>
         <translation>Использовать перенаправление порта через UPnP</translation>
+    </message>
+    <message>
+        <source>Listening port:</source>
+        <translation>Слушающий порт:</translation>
+    </message>
+    <message>
+        <source>Random port on startup</source>
+        <translation>Случайный порт при запуске</translation>
+    </message>
+    <message>
+        <source>Peer discovery settings</source>
+        <translation>Настройки обнаружения участников</translation>
+    </message>
+    <message>
+        <source>Enable DHT</source>
+        <translation>Включить DHT</translation>
+    </message>
+    <message>
+        <source>Enable local discovery</source>
+        <translation>Включить локальное обнаружение</translation>
+    </message>
+    <message>
+        <source>Enable global discovery</source>
+        <translation>Включить глобальное обнаружение</translation>
+    </message>
+    <message>
+        <source>Max download slots:</source>
+        <translation type="unfinished">Количество слотов скачивания:</translation>
     </message>
 </context>
 <context>
@@ -665,11 +809,29 @@ Ref2: http://forum.lingvo.ru/actualthread.aspx?tid=156633</translatorcomment>
     <message numerus="yes">
         <source>%n nodes</source>
         <comment>DHT</comment>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n узел</numerusform>
             <numerusform>%n узла</numerusform>
             <numerusform>%n узлов</numerusform>
         </translation>
+    </message>
+    <message numerus="yes">
+        <source>DHT: %n nodes</source>
+        <comment>DHT</comment>
+        <translation>
+            <numerusform>DHT: %n узел</numerusform>
+            <numerusform>DHT: %n узла</numerusform>
+            <numerusform>DHT: %n узлов</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>DHT: disabled</source>
+        <comment>DHT</comment>
+        <translation>DHT: отключён</translation>
+    </message>
+    <message>
+        <source>Enable DHT</source>
+        <translation>Включить DHT</translation>
     </message>
 </context>
 <context>

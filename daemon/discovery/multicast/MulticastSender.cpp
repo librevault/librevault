@@ -49,6 +49,7 @@ MulticastSender::MulticastSender(std::weak_ptr<FolderGroup> group, MulticastDisc
 }
 
 void MulticastSender::consume(const tcp_endpoint& node_endpoint, const blob& pubkey) {
+	LOGFUNC() << node_endpoint;
 	DiscoveryService::ConnectCredentials cred;
 	cred.endpoint = node_endpoint;
 	cred.pubkey = pubkey;

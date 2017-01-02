@@ -83,7 +83,6 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 		tcp_endpoint node_endpoint(endpoint_ptr->address(), port);
 		LOGD("<== " << node_endpoint);
 
-		std::shared_ptr<MulticastSender> sender;
 		auto it = senders_.find(dir_hash);
 		if(it != senders_.end()) it->second->consume(node_endpoint, pubkey);
 	}else{

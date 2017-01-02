@@ -38,6 +38,7 @@ class TrayIcon;
 class FolderModel;
 class Daemon;
 class RemoteConfig;
+class Translator;
 
 class Client : public QtSingleApplication {
 Q_OBJECT
@@ -48,14 +49,8 @@ public:
 	
 	bool event(QEvent* event);
 
-public slots:
-	void applyLocale(QString locale);
-
 private:
-	// Translation
-	QTranslator translator_;
-	QTranslator qt_translator_;
-
+	Translator* translator_;
 	Daemon* daemon_;
 	FolderModel* folder_model_;
 

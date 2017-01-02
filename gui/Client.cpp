@@ -27,11 +27,12 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
-#include "gui/MainWindow.h"
-#include "model/FolderModel.h"
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
 #include "control/RemoteState.h"
+#include "gui/MainWindow.h"
+#include "model/FolderModel.h"
+#include "translator/Translator.h"
 #include <QCommandLineParser>
 #include <QFileOpenEvent>
 #include <QLibraryInfo>
@@ -40,9 +41,10 @@
 Client::Client(int &argc, char **argv, int appflags) :
 	QtSingleApplication("com.librevault.desktop", argc, argv) {
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
-
 	setQuitOnLastWindowClosed(false);
-	applyLocale(QLocale::system().name());
+
+	translator_ = new Translator(this);
+
 	// Parsing arguments
 	QCommandLineParser parser;
 	QCommandLineOption attach_option(QStringList() << "a" << "attach", tr("Attach to running daemon instead of creating a new one"), "url");
@@ -65,7 +67,7 @@ Client::Client(int &argc, char **argv, int appflags) :
 	daemon_ = new Daemon(parser.value(attach_option), this);
 	folder_model_ = new FolderModel(daemon_);
 	updater_ = new Updater(this);
-	main_window_ = new MainWindow(daemon_, folder_model_, updater_);
+	main_window_ = new MainWindow(daemon_, folder_model_, updater_, translator_);
 
 	// Connecting signals & slots
 //	connect(main_window_, &MainWindow::newConfigIssued, control_client_, &ControlClient::sendConfigJson);
@@ -93,13 +95,6 @@ bool Client::event(QEvent* event) {
 		pending_link_ = open_event->url().toString();
 	}
 	return QApplication::event(event);
-}
-
-void Client::applyLocale(QString locale) {
-	qt_translator_.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-	this->installTranslator(&qt_translator_);
-	translator_.load(QStringLiteral(":/lang/librevault_") + locale);
-	this->installTranslator(&translator_);
 }
 
 void Client::started() {

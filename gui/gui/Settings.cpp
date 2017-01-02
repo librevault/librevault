@@ -30,14 +30,16 @@
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
 #include "icons/GUIIconProvider.h"
+#include "translator/Translator.h"
 #include "updater/Updater.h"
 #include "MainWindow.h"
 #include "appver.h"
 
-Settings::Settings(Daemon* daemon, Updater* updater, QWidget* parent) :
+Settings::Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent) :
 		SettingsWindow(parent),
 		daemon_(daemon),
-		updater_(updater) {
+		updater_(updater),
+		translator_(translator) {
 	startup_interface_ = new StartupInterface(this);
 
 	init_ui();
@@ -53,6 +55,8 @@ void Settings::retranslateUi() {
 	ui_pane_general_.retranslateUi(pane_general_);
 	ui_pane_network_.retranslateUi(pane_network_);
 	ui_bottom_.bottom_label->setText(tr("Version: %1").arg(LV_APPVER));
+
+	ui_pane_general_.combo_lang->setItemText(0, tr("System language"));
 }
 
 void Settings::init_ui() {
@@ -68,12 +72,28 @@ void Settings::init_ui() {
 
 	ui_pane_general_.box_startup->setVisible(startup_interface_->isSupported());
 	ui_pane_general_.box_update->setVisible(updater_->supportsUpdate());
+
+	/* Language switcher */
+	ui_pane_general_.combo_lang->addItem("auto", "auto");
+	ui_pane_general_.combo_lang->insertSeparator(1);
+	auto locales = translator_->availableLocales();
+	for(auto lang = locales.begin(); lang != locales.end(); lang++) {
+		ui_pane_general_.combo_lang->addItem(lang.value(), lang.key());
+	}
 }
 
 void Settings::reset_ui_states() {
 	/* GUI-related settings */
 	ui_pane_general_.box_startup->setChecked(startup_interface_->isEnabled());
 	ui_pane_general_.box_update->setChecked(updater_->enabled());
+
+	// Language
+	ui_pane_general_.combo_lang->setCurrentIndex(0);
+	for(auto i = 0; i < ui_pane_general_.combo_lang->count(); i++) {
+		if(translator_->getLocaleSetting() == ui_pane_general_.combo_lang->itemData(i).toString()) {
+			ui_pane_general_.combo_lang->setCurrentIndex(i);
+		}
+	}
 
 	/* Daemon settings */
 	ui_pane_general_.line_device->setText(daemon_->config()->getGlobalValue("client_name").toString()); // client_name
@@ -110,6 +130,9 @@ void Settings::process_ui_states() {
 	/* GUI-related settings */
 	startup_interface_->setEnabled(ui_pane_general_.box_startup->isChecked());
 	updater_->setEnabled(ui_pane_general_.box_update->isChecked());
+
+	// Language
+	translator_->setLocale(ui_pane_general_.combo_lang->currentData().toString());
 
 	/* Daemon settings */
 	// client_name

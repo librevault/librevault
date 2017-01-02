@@ -68,40 +68,33 @@ StatusBar::StatusBar(QStatusBar* bar, Daemon* daemon) : QObject(bar), bar_(bar),
 StatusBar::~StatusBar() {}
 
 void StatusBar::refresh() {
-	refreshDHT();
-	refreshBandwidth(0,0,0,0);
+	/* Refresh DHT */
+	if(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool()) {
+		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getGlobalValue("dht_nodes_count").toInt()));
+	}else{
+		dht_label_->setText(tr("DHT: disabled", "DHT"));
+	}
 
-	/*
+	/* Refresh bandwidth */
 	float up_bandwidth = 0;
 	float down_bandwidth = 0;
 	double up_bytes = 0;
 	double down_bytes = 0;
 
-	for(const auto& json_folder : state_json["state"].toObject()["folders"].toArray()) {
-		for(const auto& json_peer : json_folder.toObject()["peers"].toArray()) {
-			up_bandwidth += json_peer.toObject()["up_bandwidth"].toDouble();
-			down_bandwidth += json_peer.toObject()["down_bandwidth"].toDouble();
-			up_bytes += json_peer.toObject()["up_bytes"].toDouble();
-			down_bytes += json_peer.toObject()["down_bytes"].toDouble();
-		}
+	for(auto& folderid : daemon_->state()->folderList()) {
+		QJsonObject traffic_stats = daemon_->state()->getFolderValue(folderid, "traffic_stats").toObject();
+		up_bandwidth += traffic_stats["up_bandwidth"].toDouble();
+		down_bandwidth += traffic_stats["down_bandwidth"].toDouble();
+		up_bytes += traffic_stats["up_bytes"].toDouble();
+		down_bytes += traffic_stats["down_bytes"].toDouble();
 	}
-
 	refreshBandwidth(up_bandwidth, down_bandwidth, up_bytes, down_bytes);
-	*/
 }
 
 QFrame* StatusBar::create_separator() const {
 	QFrame* separator = new QFrame(container_);
 	separator->setFrameStyle(QFrame::VLine);
 	return separator;
-}
-
-void StatusBar::refreshDHT() {
-	if(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool()) {
-		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getGlobalValue("dht_nodes_count").toInt()));
-	}else{
-		dht_label_->setText(tr("DHT: disabled", "DHT"));
-	}
 }
 
 void StatusBar::refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes) {

@@ -38,6 +38,8 @@
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
 
+#include <QObject>
+
 #include <boost/signals2/signal.hpp>
 #include <set>
 #include <mutex>
@@ -60,7 +62,8 @@ class MetaDownloader;
 class Uploader;
 class Downloader;
 
-class FolderGroup {
+class FolderGroup : public QObject {
+	Q_OBJECT
 	friend class ControlServer;
 public:
 	struct error : std::runtime_error {
@@ -72,7 +75,7 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios);
+	FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
 	virtual ~FolderGroup();
 
 	/* Membership management */

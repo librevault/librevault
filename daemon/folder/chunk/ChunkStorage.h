@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/blob.h"
 #include "util/fs.h"
 #include "util/network.h"
 #include <librevault/Meta.h>

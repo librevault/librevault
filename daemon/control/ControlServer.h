@@ -32,7 +32,7 @@
 #include "p2p/websocket_config.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"
-#include <boost/signals2/signal.hpp>
+#include <QObject>
 #include <unordered_set>
 
 namespace librevault {
@@ -42,23 +42,24 @@ class StateCollector;
 class ControlWebsocketServer;
 class ControlHTTPServer;
 
-class ControlServer {
+class ControlServer : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("ControlServer");
 public:
 	using server = websocketpp::server<asio_notls>;
 
-	ControlServer(StateCollector& state_collector);
+	ControlServer(StateCollector* state_collector, QObject* parent);
 	virtual ~ControlServer();
 
 	void run() {ios_.start(1);}
 
 	bool check_origin(const std::string& origin);
 
-	// Signals
-	boost::signals2::signal<void()> shutdown_signal;
-	boost::signals2::signal<void()> restart_signal;
+signals:
+	void shutdown();
+	void restart();
 
-	// Slots
+public slots:
 	void notify_global_config_changed(const std::string& key, Json::Value value);
 	void notify_global_state_changed(std::string key, Json::Value state);
 	void notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state);

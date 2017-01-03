@@ -51,7 +51,7 @@ P2PProvider::~P2PProvider() {
 	LOGFUNCEND();
 }
 
-void P2PProvider::add_node(DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr) {
+void P2PProvider::add_node(DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr) {
 	ios_.ios().dispatch([=]{
 		ws_client_->connect(node_cred, group_ptr);
 	});

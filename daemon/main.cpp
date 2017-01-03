@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 		boost::filesystem::path::imbue(std::locale());
 
 		// Argument parsing
-		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string());
+		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
 
 		// Initializing paths
 		boost::filesystem::path appdata_path;
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 			default:    log_level = spdlog::level::info;
 		}
 
-		auto log = spdlog::get(Version::current().name());
+		auto log = spdlog::get(Version::current().name().toStdString());
 		if(!log){
 			std::vector<spdlog::sink_ptr> sinks;
 			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
 				(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
 				log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
 
-			log = std::make_shared<spdlog::logger>(Version::current().name(), sinks.begin(), sinks.end());
+			log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
 			spdlog::register_logger(log);
 
 			log->set_level(log_level);
@@ -117,12 +117,11 @@ int main(int argc, char** argv) {
 			<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
 			<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
 			<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-		log->info() << Version::current().name() << " " << Version::current().version_string();
+		log->info() << Version::current().name().toStdString() << " " << Version::current().version_string().toStdString();
 
 		// And, run!
-		auto client = std::make_unique<Client>();
-		client->run();
-		bool want_restart = client->want_restart();
+		auto client = std::make_unique<Client>(argc, argv);
+		int ret = client->run();
 		client.reset();
 
 		// Deinitialization
@@ -130,7 +129,7 @@ int main(int argc, char** argv) {
 		Config::deinit();
 		Paths::deinit();
 
-		if(!want_restart) break;
+		if(ret != EXIT_RESTART) return ret;
 	}while(true);
 
 	return 0;

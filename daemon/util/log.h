@@ -31,7 +31,7 @@
 #include "Version.h"
 #include <spdlog/spdlog.h>
 
-#define LOGGER spdlog::get(Version::current().name())
+#define LOGGER spdlog::get(Version::current().name().toStdString())
 
 #define LOGT(ARGS) \
 LOGGER->trace() << log_tag() << ARGS

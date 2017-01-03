@@ -37,7 +37,7 @@ WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, Fo
 	/* WebSockets client initialization */
 	// General parameters
 	ws_client_.init_asio(&ios);
-	ws_client_.set_user_agent(Version::current().user_agent());
+	ws_client_.set_user_agent(Version::current().user_agent().toStdString());
 	ws_client_.set_max_message_size(10 * 1024 * 1024);
 
 	// Handlers
@@ -53,40 +53,38 @@ WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, Fo
 	ws_client_.set_pong_handler(std::bind(&WSClient::on_pong, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, std::weak_ptr<FolderGroup> group_ptr) {
+void WSClient::connect(DiscoveryResult node_credentials, std::weak_ptr<FolderGroup> group_ptr) {
 	LOGFUNC();
 
 	auto group_ptr_locked = group_ptr.lock();
 
-	if(node_credentials.url.empty()) {
+	if(node_credentials.url.isEmpty()) {
 		assert(node_credentials.endpoint != tcp_endpoint());    // We have no credentials at all, no way to connect
 
-		if(node_credentials.endpoint.address().is_v6()) node_credentials.url.is_ipv6 = true;
-		node_credentials.url.host = node_credentials.endpoint.address().to_string();
-		node_credentials.url.port = node_credentials.endpoint.port();
+		node_credentials.url.setHost(QString::fromStdString(node_credentials.endpoint.address().to_string()));
+		node_credentials.url.setPort(node_credentials.endpoint.port());
 	}
 	// Assure, that scheme and query are right
-	node_credentials.url.scheme = "wss";
-	node_credentials.url.query = "/";
-	node_credentials.url.query += dir_hash_to_query(group_ptr_locked->hash());
+	node_credentials.url.setScheme(QStringLiteral("wss"));
+	node_credentials.url.setQuery(QString::fromStdString(dir_hash_to_query(group_ptr_locked->hash())));
 
 	// URL is ready
-	LOGD("Discovered node: " << (std::string)node_credentials.url << " from " << node_credentials.source);
+	LOGD("Discovered node: " << node_credentials.url.toString().toStdString() << " from " << node_credentials.source.toStdString());
 
 	if(is_loopback(node_credentials)) { // Check for loopback
-		LOGD("Refusing to connect to loopback node: " << (std::string)node_credentials.url);
+		LOGD("Refusing to connect to loopback node: " << node_credentials.url.toString().toStdString());
 		return;
 	}
 	if(already_have(node_credentials, group_ptr_locked)) { // Check if already have this node
-		LOGD("Refusing to connect to existing node: " << (std::string)node_credentials.url);
+		LOGD("Refusing to connect to existing node: " << node_credentials.url.toString().toStdString());
 		return;
 	}
 
 	// Get connection pointer
 	websocketpp::lib::error_code ec;
-	auto connection_ptr = ws_client_.get_connection(node_credentials.url, ec);
+	auto connection_ptr = ws_client_.get_connection(node_credentials.url.toString().toStdString(), ec);
 	if(ec) {
-		LOGW("Error connecting to " << (std::string)node_credentials.url);
+		LOGW("Error connecting to " << node_credentials.url.toString().toStdString());
 		return;
 	}
 
@@ -94,13 +92,13 @@ void WSClient::connect(DiscoveryService::ConnectCredentials node_credentials, st
 	connection& conn = ws_assignment_[websocketpp::connection_hdl(connection_ptr)];
 	conn.hash = group_ptr_locked->hash();
 
-	LOGD("Added node " << std::string(node_credentials.url));
+	LOGD("Added node " << node_credentials.url.toString().toStdString());
 
 	// Actually connect
 	ws_client_.connect(connection_ptr);
 }
 
-bool WSClient::is_loopback(const DiscoveryService::ConnectCredentials& node_credentials) {
+bool WSClient::is_loopback(const DiscoveryResult& node_credentials) {
 	if(!node_credentials.pubkey.empty() && provider_.is_loopback(node_credentials.pubkey))  // Public key based loopback (no false negatives!)
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && provider_.is_loopback(node_credentials.endpoint))    // Endpoint-based loopback (may be false negative)
@@ -108,7 +106,7 @@ bool WSClient::is_loopback(const DiscoveryService::ConnectCredentials& node_cred
 	return false;
 }
 
-bool WSClient::already_have(const DiscoveryService::ConnectCredentials& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
+bool WSClient::already_have(const DiscoveryResult& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
 	if(!node_credentials.pubkey.empty() && group_ptr->have_p2p_dir(node_credentials.pubkey))
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && group_ptr->have_p2p_dir(node_credentials.endpoint))

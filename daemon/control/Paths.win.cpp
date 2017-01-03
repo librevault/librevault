@@ -35,7 +35,7 @@ namespace librevault {
 boost::filesystem::path Paths::default_appdata_path() {
 	PWSTR appdata_path;
 	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
-	boost::filesystem::path folder_path = boost::filesystem::path(appdata_path) / Version::current().name();
+	boost::filesystem::path folder_path = boost::filesystem::path(appdata_path) / Version::current().name().toStdString();
 	CoTaskMemFree(appdata_path);
 
 	return folder_path;

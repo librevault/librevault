@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "StaticDiscovery.h"
+#include "DiscoveryResult.h"
 #include "folder/FolderGroup.h"
 
 namespace librevault {
@@ -41,7 +42,7 @@ StaticDiscovery::~StaticDiscovery() {}
 
 void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	for(auto& node : group_ptr->params().nodes) {
-		DiscoveryService::ConnectCredentials cred;
+		DiscoveryResult cred;
 		cred.url = node;
 		add_node(cred, group_ptr);
 	}

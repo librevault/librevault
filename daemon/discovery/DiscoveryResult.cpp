@@ -26,57 +26,9 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
 #include "DiscoveryResult.h"
-#include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/multi_io_service.h"
-#include "util/network.h"
-#include "util/parse_url.h"
-#include <boost/signals2/signal.hpp>
-#include <mutex>
-#include <unordered_set>
 
 namespace librevault {
 
-class FolderGroup;
-
-class StaticDiscovery;
-class MulticastDiscovery;
-class BTTrackerDiscovery;
-class MLDHTDiscovery;
-
-class NodeKey;
-class PortMappingService;
-class StateCollector;
-
-class DiscoveryService {
-	friend class ControlServer;
-	LOG_SCOPE("DiscoveryService");
-public:
-	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector);
-	virtual ~DiscoveryService();
-
-	void run() {io_service_.start(1);}
-	void stop() {io_service_.stop();}
-
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
-
-	void consume_discovered_node(DiscoveryResult cred, std::weak_ptr<FolderGroup> group_ptr);
-
-	boost::signals2::signal<void(DiscoveryResult, std::weak_ptr<FolderGroup>)> discovered_node_signal;
-
-protected:
-	multi_io_service io_service_;
-
-	std::unique_ptr<StaticDiscovery> static_discovery_;
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
-	std::unique_ptr<BTTrackerDiscovery> bttracker_;
-	std::unique_ptr<MLDHTDiscovery> mldht_;
-
-	std::unordered_set<std::shared_ptr<FolderGroup>> registered_groups_;
-	std::mutex registered_groups_mtx_;
-};
 
 } /* namespace librevault */

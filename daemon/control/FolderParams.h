@@ -31,6 +31,8 @@
 #include <json/json.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
+#include <QString>
+#include <QUrl>
 #include <boost/filesystem/path.hpp>
 #include <chrono>
 
@@ -65,7 +67,7 @@ struct FolderParams {
 		for(auto ignore_path : json_params["ignore_paths"])
 			ignore_paths.push_back(ignore_path.asString());
 		for(auto node : json_params["nodes"])
-			nodes.push_back(node.asString());
+			nodes.push_back(QString::fromStdString(node.asString()));
 
 		auto archive_type_str = json_params.get("archive_type", "trash").asString();
 		if(archive_type_str == "none")
@@ -94,7 +96,7 @@ struct FolderParams {
 	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
 	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
 	std::vector<std::string> ignore_paths;
-	std::vector<url> nodes;
+	std::vector<QUrl> nodes;
 	ArchiveType archive_type = ArchiveType::TRASH_ARCHIVE;
 	unsigned archive_trash_ttl = 30;
 	unsigned archive_timestamp_count = 5;

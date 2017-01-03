@@ -32,15 +32,17 @@
 #include "util/scoped_async_queue.h"
 #include "util/scoped_timer.h"
 #include <natpmp.h>
+#include <QTimer>
 
 namespace librevault {
 
 class P2PProvider;
-
+class NATPMPMapping;
 class NATPMPService : public PortMappingSubService {
 	LOG_SCOPE("NATPMPService");
+	friend class NATPMPMapping;
 public:
-	NATPMPService(PortMappingService& parent, io_service& ios);
+	NATPMPService(PortMappingService& parent);
 	virtual ~NATPMPService();
 
 	void reload_config();
@@ -51,32 +53,31 @@ public:
 	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(const std::string& id);
 
-	io_service& ios_;
-
 protected:
 	bool is_config_enabled();
 	bool active = false;
 	natpmp_t natpmp;
 
-	class PortMapping {
-		LOG_SCOPE("NATPMPService")
-	public:
-		PortMapping(NATPMPService& parent, std::string id, MappingDescriptor descriptor);
-		~PortMapping();
+	std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
+};
 
-	private:
-		NATPMPService& parent_;
-		std::string id_;
-		MappingDescriptor descriptor_;
+class NATPMPMapping : public QObject {
+Q_OBJECT
+	LOG_SCOPE("NATPMPService")
+public:
+	NATPMPMapping(NATPMPService& parent, std::string id, PortMappingService::MappingDescriptor descriptor);
+	~NATPMPMapping();
 
-		ScopedAsyncQueue scoped_maintain_queue_;
-		ScopedTimer scoped_timer_;
+private:
+	NATPMPService& parent_;
+	std::string id_;
+	PortMappingService::MappingDescriptor descriptor_;
 
-		void send_request(bool disable = false);
-	};
-	friend class PortMapping;
+	QTimer* timer_;
 
-	std::map<std::string, std::unique_ptr<PortMapping>> mappings_;
+private slots:
+	void sendPeriodicRequest();
+	void sendZeroRequest();
 };
 
 } /* namespace librevault */

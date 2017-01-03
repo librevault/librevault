@@ -29,7 +29,8 @@
 #pragma once
 //#include <miniupnpc/miniupnpc.h>
 #include "PortMappingSubService.h"
-#include <util/log_scope.h>
+#include "util/log_scope.h"
+#include <boost/asio/io_service.hpp>
 #include <mutex>
 
 struct UPNPUrls;
@@ -41,7 +42,7 @@ namespace librevault {
 class UPnPService : public PortMappingSubService {
 	LOG_SCOPE("UPnPService");
 public:
-	UPnPService(PortMappingService& parent, io_service& ios);
+	UPnPService(PortMappingService& parent);
 	~UPnPService();
 
 	void reload_config();
@@ -53,8 +54,6 @@ public:
 	void remove_port_mapping(const std::string& id);
 
 protected:
-	io_service& ios_;
-
 	std::mutex state_changing_mtx_;
 
 	// RAII wrappers

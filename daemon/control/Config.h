@@ -30,11 +30,12 @@
 #include "util/blob.h"
 #include "util/log_scope.h"
 #include <json/json.h>
-#include <boost/signals2/signal.hpp>
+#include <QObject>
 
 namespace librevault {
 
-class Config {
+class Config : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("Config");
 public:
 	~Config();
@@ -43,11 +44,6 @@ public:
 	struct samekey_error : std::runtime_error {
 		samekey_error() : std::runtime_error("Multiple directories with the same key (or derived from the same key) are not supported") {}
 	};
-
-	/* Signals */
-	boost::signals2::signal<void(std::string, Json::Value)> config_changed;
-	boost::signals2::signal<void(Json::Value)> folder_added;
-	boost::signals2::signal<void(blob)> folder_removed;
 
 	static Config* get() {
 		if(!instance_)
@@ -78,6 +74,11 @@ public:
 	Json::Value export_folders_custom() const;
 	Json::Value export_folders() const;
 	void import_folders(Json::Value folders_conf);
+
+signals:
+	void configChanged(std::string key, Json::Value value);
+	void folderAdded(Json::Value fconfig);
+	void folderRemoved(blob folderid);
 
 protected:
 	Config();

@@ -214,7 +214,7 @@ void UDPTrackerConnection::handle_announce(buffer_type buffer) {
 			endpoints = btcompat::parse_compact_endpoint6_list(endpoint_array_ptr, endpoint_array_bytesize);
 
 		for(auto& endpoint : endpoints) {
-			DiscoveryService::ConnectCredentials cred;
+			DiscoveryResult cred;
 			cred.endpoint = endpoint;
 			tracker_discovery_.add_node(cred, group_ptr_);
 		}

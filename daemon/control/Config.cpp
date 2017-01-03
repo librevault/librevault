@@ -42,10 +42,10 @@ Config::Config() {
 	make_defaults();
 	load();
 
-	config_changed.connect([this](std::string key, Json::Value value){
+	connect(this, &Config::configChanged, this, [this](std::string key, Json::Value value){
 		LOGI("Global \"" << key << "\" is set to \"" << value << "\"");
 	});
-	config_changed.connect([this](std::string, Json::Value){save();});
+	connect(this, &Config::configChanged, this, &Config::save);
 }
 
 Config::~Config() {
@@ -60,12 +60,12 @@ Json::Value Config::global_get(const std::string& name) {
 
 void Config::global_set(const std::string& name, Json::Value value) {
 	globals_custom_[name] = value;
-	config_changed(name, value);
+	emit configChanged(name, value);
 }
 
 void Config::global_unset(const std::string& name) {
 	globals_custom_.removeMember(name);
-	config_changed(name, global_get(name));
+	emit configChanged(name, global_get(name));
 }
 
 Json::Value Config::export_globals_custom() const {
@@ -94,7 +94,7 @@ void Config::import_globals(Json::Value globals_conf) {
 
 	// Notify other components
 	for(auto& diff_val : diff)
-		config_changed(diff_val.first, global_get(diff_val.first));
+		emit configChanged(diff_val.first, global_get(diff_val.first));
 }
 
 void Config::folder_add(Json::Value folder_config) {
@@ -102,12 +102,12 @@ void Config::folder_add(Json::Value folder_config) {
 	if(folders_custom_.find(folderid) != folders_custom_.end())
 		throw samekey_error();
 	folders_custom_.insert({folderid, folder_config});
-	folder_added(make_merged(folder_config, folders_defaults_));
+	emit folderAdded(make_merged(folder_config, folders_defaults_));
 	save();
 }
 
 void Config::folder_remove(const blob& folderid) {
-	folder_removed(folderid);
+	emit folderRemoved(folderid);
 	folders_custom_.erase(folderid);
 	save();
 }

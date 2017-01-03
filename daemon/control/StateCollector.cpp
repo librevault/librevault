@@ -32,14 +32,14 @@
 
 namespace librevault {
 
-StateCollector::StateCollector() {}
+StateCollector::StateCollector(QObject* parent) : QObject(parent) {}
 StateCollector::~StateCollector() {}
 
 void StateCollector::global_state_set(const std::string& key, Json::Value value) {
 	if(global_state_buffer[key] != value) {
 		global_state_buffer[key] = value;
 		LOGI("Global state \"" << key << "\" is set to \"" << value << "\"");
-		global_state_changed(key, value);
+		emit globalStateChanged(key, value);
 	}
 }
 
@@ -48,7 +48,7 @@ void StateCollector::folder_state_set(const blob& folderid, const std::string& k
 	if(folder_buffer[key] != value) {
 		folder_buffer[key] = value;
 		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " of \"" << key << "\" is set to \"" << value << "\"");
-		folder_state_changed(folderid, key, value);
+		emit folderStateChanged(folderid, key, value);
 	}
 }
 
@@ -56,7 +56,6 @@ void StateCollector::folder_state_purge(const blob& folderid) {
 	auto it = folder_state_buffers.find(folderid);
 	if(it != folder_state_buffers.end()) {
 		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " purged");
-		folder_state_purged(folderid);
 		folder_state_buffers.erase(it);
 	}
 }

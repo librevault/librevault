@@ -40,7 +40,7 @@ boost::filesystem::path Paths::default_appdata_path() {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
 	NSString *applicationSupportDirectory = [paths firstObject];
 
-	return boost::filesystem::path([applicationSupportDirectory UTF8String]) / Version::current().name();
+	return boost::filesystem::path([applicationSupportDirectory UTF8String]) / Version::current().name().toStdString();
 }
 
 } /* namespace librevault */

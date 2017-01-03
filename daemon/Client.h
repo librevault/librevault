@@ -28,11 +28,10 @@
  */
 #pragma once
 
-#include "control/FolderParams.h"
-#include "util/log_scope.h"
+#define EXIT_RESTART 451
 
-#include <boost/asio/io_service.hpp>
-#include <boost/signals2/signal.hpp>
+#include <QCoreApplication>
+#include <memory>
 
 namespace librevault {
 
@@ -45,30 +44,23 @@ class P2PProvider;
 class PortMappingService;
 class StateCollector;
 
-class Client {
-	friend class ControlServer;
+class Client : public QCoreApplication {
+	Q_OBJECT
 public:
-	Client();
+	Client(int argc, char** argv);
 	virtual ~Client();
 
-	void run();
+	int run();
 	void restart();
 	void shutdown();
-
-	bool want_restart() const {return want_restart_;}
 private:
-	std::unique_ptr<StateCollector> state_collector_;
+	StateCollector* state_collector_;
 	std::unique_ptr<NodeKey> node_key_;
 	std::unique_ptr<PortMappingService> portmanager_;
 	std::unique_ptr<DiscoveryService> discovery_;
 	std::unique_ptr<FolderService> folder_service_;
 	std::unique_ptr<P2PProvider> p2p_provider_;
-	std::unique_ptr<ControlServer> control_server_;
-
-	/* Asynchronous/multithreaded operation */
-	boost::asio::io_service main_loop_ios_;
-
-	bool want_restart_ = false;
+	ControlServer* control_server_;
 
 	/* Initialization */
 	inline const char* log_tag() {return "";}

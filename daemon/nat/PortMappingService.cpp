@@ -29,15 +29,14 @@
 #include "PortMappingService.h"
 #include "NATPMPService.h"
 #include "UPnPService.h"
-#include <util/log.h>
+#include "util/log.h"
 
 namespace librevault {
 
-PortMappingService::PortMappingService() :
-	io_service_("PortMappingService") {
+PortMappingService::PortMappingService() {
 	LOGFUNC();
-	natpmp_service_ = std::make_unique<NATPMPService>(*this, io_service_.ios());
-	upnp_service_ = std::make_unique<UPnPService>(*this, io_service_.ios());
+	natpmp_service_ = new NATPMPService(*this);
+	upnp_service_ = new UPnPService(*this);
 
 	auto port_callback = [this](std::string id, uint16_t port) {
 		LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
@@ -49,40 +48,27 @@ PortMappingService::PortMappingService() :
 	natpmp_service_->start();
 	upnp_service_->start();
 
-	io_service_.start(1);
 	LOGFUNCEND();
 }
 
 PortMappingService::~PortMappingService() {
 	LOGFUNC();
-	upnp_service_.reset();
-	natpmp_service_.reset();
 	mappings_.clear();
-
-	stop();
 	LOGFUNCEND();
 }
 
-void PortMappingService::stop() {
-	io_service_.stop(true);
-}
-
 void PortMappingService::add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description) {
-	io_service_.ios().dispatch([=] {
-		std::unique_lock<std::mutex> lk(mappings_mutex_);
-		Mapping m;
-		m.descriptor = descriptor;
-		m.description = description;
-		m.port = descriptor.port;
-		mappings_[id] = std::move(m);
+	Mapping m;
+	m.descriptor = descriptor;
+	m.description = description;
+	m.port = descriptor.port;
+	mappings_[id] = std::move(m);
 
-		natpmp_service_->add_port_mapping(id, descriptor, description);
-		upnp_service_->add_port_mapping(id, descriptor, description);
-	});
+	natpmp_service_->add_port_mapping(id, descriptor, description);
+	upnp_service_->add_port_mapping(id, descriptor, description);
 }
 
 void PortMappingService::remove_port_mapping(std::string id) {
-	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	upnp_service_->remove_port_mapping(id);
 	natpmp_service_->remove_port_mapping(id);
 
@@ -90,7 +76,6 @@ void PortMappingService::remove_port_mapping(std::string id) {
 }
 
 uint16_t PortMappingService::get_port_mapping(const std::string& id) {
-	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	auto it = mappings_.find(id);
 	if(it != mappings_.end())
 		return it->second.port;
@@ -99,7 +84,6 @@ uint16_t PortMappingService::get_port_mapping(const std::string& id) {
 }
 
 void PortMappingService::add_existing_mappings(PortMappingSubService* subservice) {
-	std::unique_lock<std::mutex> lk(mappings_mutex_);
 	for(auto& mapping : mappings_)
 		subservice->add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
 }

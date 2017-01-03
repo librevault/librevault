@@ -94,17 +94,17 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 void ControlHTTPServer::handle_version(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	conn->append_header("Content-Type", "text/plain");
-	conn->set_body(Version::current().version_string());
+	conn->set_body(Version::current().version_string().toStdString());
 }
 
 void ControlHTTPServer::handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
-	ios_.post([this]{cs_.restart_signal();});
+	emit cs_.restart();
 }
 
 void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
-	ios_.post([this]{cs_.shutdown_signal();});
+	emit cs_.shutdown();
 }
 
 void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched) {

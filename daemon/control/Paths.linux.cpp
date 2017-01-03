@@ -34,12 +34,12 @@ namespace librevault {
 
 boost::filesystem::path Paths::default_appdata_path() {
 	if(char* xdg_ptr = getenv("XDG_CONFIG_HOME"))
-		return boost::filesystem::path(xdg_ptr) / Version::current().name();
+		return boost::filesystem::path(xdg_ptr) / Version::current().name().toStdString();
 	if(char* home_ptr = getenv("HOME"))
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name().toStdString();
 	if(char* home_ptr = getpwuid(getuid())->pw_dir)
-		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name();
-	return boost::filesystem::path("/etc/xdg") / Version::current().name();
+		return boost::filesystem::path(home_ptr) / ".config" / Version::current().name().toStdString();
+	return boost::filesystem::path("/etc/xdg") / Version::current().name().toStdString();
 }
 
 } /* namespace librevault */

@@ -27,41 +27,31 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../btcompat.h"
-#include <util/parse_url.h>
+#include "discovery/btcompat.h"
+#include "util/log_scope.h"
+#include <QObject>
+#include <set>
 
 namespace librevault {
 
+class BTTrackerConnection;
+class BTTrackerProvider;
 class FolderGroup;
-class P2PProvider;
-class BTTrackerDiscovery;
-class NodeKey;
-class PortMappingService;
-
-// BEP-0015 partial implementation (without scrape mechanism)
-class TrackerConnection {
-public:
-	TrackerConnection(url tracker_address, std::shared_ptr<FolderGroup> group_ptr, BTTrackerDiscovery& tracker_discovery, NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service);
-	virtual ~TrackerConnection();
+class BTTrackerGroup : public QObject {
 protected:
-	enum class Event : int32_t {
-		EVENT_NONE=0, EVENT_COMPLETED=1, EVENT_STARTED=2, EVENT_STOPPED=3
-	};
+	Q_OBJECT
+	LOG_SCOPE("BTTrackerProvider");
+public:
+	BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup);
+	virtual ~BTTrackerGroup() {}
 
-	io_service& io_service_;
-	BTTrackerDiscovery& tracker_discovery_;
-	NodeKey& node_key_;
-	PortMappingService& port_mapping_;
+	btcompat::info_hash getInfoHash() const {return ih_;}
+	void setEnabled(bool enabled);
 
-	url tracker_address_;
-	std::shared_ptr<FolderGroup> group_ptr_;
-
-	unsigned int announced_times_ = 0;
-
-	std::string log_tag() const {return std::string("[bttracker: ") + std::string(tracker_address_) + "] ";}
-
-	btcompat::info_hash get_info_hash() const;
-	btcompat::peer_id get_peer_id() const;
+protected:
+	BTTrackerProvider* provider_;
+	btcompat::info_hash ih_;
+	std::map<QUrl, std::unique_ptr<BTTrackerConnection>> connections_;
 };
 
 } /* namespace librevault */

@@ -26,35 +26,45 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "UDPTrackerConnection.h"
+#include "BTTrackerProvider.h"
 #include "folder/FolderGroup.h"
+#include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
+#include "util/log.h"
+#include <QtEndian>
 
 namespace librevault {
 
-TrackerConnection::TrackerConnection(url tracker_address,
-                                     std::shared_ptr<FolderGroup> group_ptr,
-                                     BTTrackerDiscovery& tracker_discovery,
-                                     NodeKey& node_key, PortMappingService& port_mapping, io_service& io_service) :
-		io_service_(io_service),
-		tracker_discovery_(tracker_discovery),
-		node_key_(node_key),
-		port_mapping_(port_mapping),
-		tracker_address_(tracker_address),
-		group_ptr_(group_ptr) {
-	assert(tracker_address_.scheme == "udp");
-	if(tracker_address_.port == 0)
-		tracker_address_.port = 80;
+BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMappingService* portmapping, QObject* parent) : QObject(parent),
+	node_key_(node_key), portmapping_(portmapping) {
+	socket_ = new QUdpSocket();
+	socket_->bind();
+
+	connect(socket_, &QUdpSocket::readyRead, this, &BTTrackerProvider::processDatagram);
 }
 
-TrackerConnection::~TrackerConnection() {}
+BTTrackerProvider::~BTTrackerProvider() {}
 
-btcompat::info_hash TrackerConnection::get_info_hash() const {
-	return btcompat::get_info_hash(group_ptr_->hash());
+quint16 BTTrackerProvider::getExternalPort() const {
+	return portmapping_->get_port_mapping("BT");
 }
 
-btcompat::peer_id TrackerConnection::get_peer_id() const {
-	return btcompat::get_peer_id(node_key_.public_key());
+btcompat::peer_id BTTrackerProvider::getPeerId() const {
+	return btcompat::get_peer_id(node_key_->public_key());
+}
+
+void BTTrackerProvider::processDatagram() {
+	char datagram_buffer[buffer_size_];
+	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_);
+
+	QByteArray message(datagram_buffer, datagram_size);
+	if(message.size() >= 8) {
+		quint32 action, transaction_id;
+		std::copy(message.data()+0, message.data()+4, reinterpret_cast<char*>(&action));
+		std::copy(message.data()+4, message.data()+8, reinterpret_cast<char*>(&transaction_id));
+
+		emit receivedMessage(qFromBigEndian(action), transaction_id, message);
+	}
 }
 
 } /* namespace librevault */

@@ -28,7 +28,7 @@
  */
 #include "DiscoveryService.h"
 #include "control/StateCollector.h"
-#include "discovery/bttracker/BTTrackerDiscovery.h"
+#include "discovery/bttracker/BTTrackerProvider.h"
 #include "discovery/multicast/MulticastProvider.h"
 #include "discovery/mldht/MLDHTDiscovery.h"
 #include "folder/FolderGroup.h"
@@ -36,18 +36,17 @@
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector, QObject* parent) : QObject(parent), io_service_("DiscoveryService") {
+DiscoveryService::DiscoveryService(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent), io_service_("DiscoveryService") {
 	LOGFUNC();
 	multicast_ = new MulticastProvider(this);
-	bttracker_ = std::make_unique<BTTrackerDiscovery>(*this, io_service_.ios(), node_key, port_mapping);
-	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), port_mapping, state_collector);
+	bttracker_ = new BTTrackerProvider(node_key, port_mapping, this);
+	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), *port_mapping, *state_collector);
 	LOGFUNCEND();
 }
 
 DiscoveryService::~DiscoveryService() {
 	LOGFUNC();
 	mldht_.reset();
-	bttracker_.reset();
 
 	stop();
 	LOGFUNCEND();
@@ -59,7 +58,6 @@ void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
 	LOGFUNC();
 	registered_groups_.insert(group_ptr);
 
-	bttracker_->register_group(group_ptr);
 	mldht_->register_group(group_ptr);
 	LOGFUNCEND();
 }
@@ -69,7 +67,6 @@ void DiscoveryService::unregister_group(std::shared_ptr<FolderGroup> group_ptr) 
 
 	LOGFUNC();
 	mldht_->unregister_group(group_ptr);
-	bttracker_->unregister_group(group_ptr);
 
 	registered_groups_.erase(group_ptr);
 	LOGFUNCEND();

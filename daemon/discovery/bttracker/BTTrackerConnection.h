@@ -27,29 +27,70 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/DiscoverySubService.h"
-#include "util/parse_url.h"
-#include <unordered_map>
+#include "discovery/btcompat.h"
+#include "discovery/DiscoveryResult.h"
+#include <QHostInfo>
+#include <QTimer>
+#include <QUdpSocket>
+#include <QUrl>
 
 namespace librevault {
 
-class TrackerConnection;
+class BTTrackerProvider;
+class BTTrackerGroup;
+class FolderGroup;
 
-class BTTrackerDiscovery : public DiscoverySubService {
-protected:
-	LOG_SCOPE("BTTrackerDiscovery");
+// BEP-0015 partial implementation (without scrape mechanism)
+class BTTrackerConnection : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("BTTrackerConnection");
 public:
-	BTTrackerDiscovery(DiscoveryService& parent, io_service& io_service, NodeKey& node_key, PortMappingService& port_mapping);
-	virtual ~BTTrackerDiscovery();
+	BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider);
+	virtual ~BTTrackerConnection();
 
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
-protected:
-	NodeKey& node_key_;
-	PortMappingService& port_mapping_;
-	std::unordered_multimap<std::shared_ptr<FolderGroup>, std::unique_ptr<TrackerConnection>> groups_;
+	void setEnabled(bool enabled);
 
-	std::list<url> trackers_;
+signals:
+	void discovered(DiscoveryResult result);
+
+private:
+	BTTrackerProvider* provider_;
+	BTTrackerGroup* btgroup_;
+
+	QUrl tracker_address_;
+
+	unsigned int announced_times_ = 0;
+
+	QUdpSocket* socket_;
+
+	// Tracker address
+	QHostAddress addr_;
+	quint16 port_;
+
+	// Connection state
+	quint64 connection_id_ = 0;
+	quint32 transaction_id_connect_ = 0;
+	quint32 transaction_id_announce4_ = 0;
+	quint32 transaction_id_announce6_ = 0;
+
+	// Timers
+	QTimer* resolver_timer_;
+	QTimer* connect_timer_;
+	QTimer* announce_timer_;
+	int resolver_lookup_id_ = 0;
+
+	quint32 gen_transaction_id();
+
+	void resolve();
+	void btconnect();
+	void announce();
+
+private slots:
+	void handle_message(quint32 action, quint32 transaction_id, QByteArray message);
+
+	void handle_resolve(const QHostInfo& host);
+	void handle_connect(QByteArray message);
+	void handle_announce(QByteArray message);
 };
 
 } /* namespace librevault */

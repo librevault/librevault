@@ -26,42 +26,38 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "BTTrackerDiscovery.h"
-#include "folder/FolderGroup.h"
-#include "UDPTrackerConnection.h"
-#include <util/log.h>
+#pragma once
+#include "discovery/btcompat.h"
+#include <QUdpSocket>
+#include <unordered_map>
 
 namespace librevault {
 
-using namespace boost::asio::ip;
+class NodeKey;
+class PortMappingService;
+class BTTrackerProvider : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("BTTrackerProvider");
+public:
+	BTTrackerProvider(NodeKey* node_key, PortMappingService* portmapping, QObject* parent);
+	virtual ~BTTrackerProvider();
 
-BTTrackerDiscovery::BTTrackerDiscovery(DiscoveryService& parent, io_service& io_service, NodeKey& node_key, PortMappingService& port_mapping) :
-	DiscoverySubService(parent, io_service, "BT"), node_key_(node_key), port_mapping_(port_mapping) {
-	if(Config::get()->global_get("bttracker_enabled").asBool()) {
-		for(auto tracker : Config::get()->global_get("bttracker_trackers")) {
-			trackers_.push_back(tracker.asString());
-			LOGD("Added BitTorrent tracker: " << tracker.asString());
-		}
-	}else
-		LOGI("BitTorrent tracker discovery is disabled");
-}
+	quint16 getExternalPort() const;
+	btcompat::peer_id getPeerId() const;
+	QUdpSocket* getSocket() {return socket_;}
 
-BTTrackerDiscovery::~BTTrackerDiscovery() {}
+signals:
+	void receivedMessage(quint32 action, quint32 transaction_id, QByteArray message);
 
-void BTTrackerDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& tracker_url : trackers_) {
-		std::unique_ptr<TrackerConnection> tracker_connection;
+private:
+	QUdpSocket* socket_;
+	NodeKey* node_key_;
+	PortMappingService* portmapping_;
 
-		if(tracker_url.scheme == "udp") {
-			tracker_connection = std::make_unique<UDPTrackerConnection>(tracker_url, group_ptr, *this, node_key_, port_mapping_, io_service_);
-		}
+	static constexpr size_t buffer_size_ = 65535;
 
-		groups_.emplace(group_ptr, std::move(tracker_connection));
-	}
-}
-
-void BTTrackerDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	groups_.erase(group_ptr);
-}
+private slots:
+	void processDatagram();
+};
 
 } /* namespace librevault */

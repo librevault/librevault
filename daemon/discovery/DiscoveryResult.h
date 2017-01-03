@@ -42,11 +42,11 @@ public:
 
 	QUrl url;
 
-	tcp_endpoint endpoint;
+	tcp_endpoint endpoint;  // TODO: remove
 	QHostAddress address;
 	quint16 port;
 
-	blob pubkey;
+	blob pubkey;    // TODO: replace with QByteArray
 };
 
 } /* namespace librevault */

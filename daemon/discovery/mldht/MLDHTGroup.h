@@ -27,36 +27,37 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <discovery/DiscoveryInstance.h>
-#include "../btcompat.h"
-#include <util/log_scope.h>
-#include <boost/asio/steady_timer.hpp>
-#include <boost/signals2.hpp>
+#include "discovery/btcompat.h"
+#include "discovery/DiscoveryResult.h"
+#include "util/log_scope.h"
+#include <QObject>
 
 namespace librevault {
 
-class MLDHTDiscovery;
-class PortMappingService;
+class MLDHTProvider;
+class FolderGroup;
 
-class MLDHTSearcher : public DiscoveryInstance {
-	LOG_SCOPE("MLDHTSearcher");
+class MLDHTGroup : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("MLDHTGroup");
 public:
-	MLDHTSearcher(std::weak_ptr<FolderGroup> group, MLDHTDiscovery& service, PortMappingService& port_mapping, io_service& io_service);
+	MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
 
-	void set_enabled(bool enable);
+	void setEnabled(bool enable);
 	void start_search(int af);
-	void search_completed(bool start_v4, bool start_v6);
+
+signals:
+	void discovered(DiscoveryResult result);
+
+public slots:
+	void handleEvent(int event, btcompat::info_hash ih, QByteArray values);
 
 private:
-	PortMappingService& port_mapping_;
+	MLDHTProvider* provider_;
 
 	btcompat::info_hash info_hash_;
-	boost::signals2::scoped_connection attached_connection_;
 
 	bool enabled_ = false;
-
-
-	boost::asio::steady_timer search_timer6_, search_timer4_;
 };
 
 } /* namespace librevault */

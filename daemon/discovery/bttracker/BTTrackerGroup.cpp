@@ -33,7 +33,7 @@
 
 namespace librevault {
 
-BTTrackerGroup::BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup) : provider_(provider), ih_(btcompat::get_info_hash(fgroup->folderid())) {}
+BTTrackerGroup::BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup) : provider_(provider), ih_(btcompat::getInfoHash(fgroup->folderid())) {}
 
 void BTTrackerGroup::setEnabled(bool enabled) {
 	if(enabled) {

@@ -1,0 +1,89 @@
+/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
+ */
+#include "MLDHTGroup.h"
+#include "MLDHTProvider.h"
+#include "dht_glue.h"
+#include "folder/FolderGroup.h"
+#include "util/log.h"
+#include <dht.h>
+#include <librevault/crypto/Hex.h>
+
+namespace librevault {
+
+MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup) : provider_(provider) {
+	info_hash_ = btcompat::getInfoHash(fgroup->folderid());
+	connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent);
+}
+
+void MLDHTGroup::setEnabled(bool enable) {
+	if(enable && !enabled_) {
+		enabled_ = true;
+		start_search(AF_INET);
+		start_search(AF_INET6);
+	}else if(!enable && enabled_) {
+		enabled_ = false;
+	}
+}
+
+void MLDHTGroup::start_search(int af) {
+	bool announce = true;
+
+	LOGD("Starting "
+		<< (af == AF_INET6 ? "IPv6" : "IPv4") << " "
+		<< (announce ? "announce" : "search")
+		<< " for: " << crypto::Hex().to_string(info_hash_)
+		<< (announce ? " on port: " : "") << (announce ? std::to_string(provider_->getExternalPort()) : std::string()));
+
+	dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, (MLDHTProvider*)&provider_);
+}
+
+void MLDHTGroup::handleEvent(int event, btcompat::info_hash ih, QByteArray values) {
+	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
+		std::list<tcp_endpoint> endpoints;
+
+		if(event == DHT_EVENT_VALUES)
+			endpoints = btcompat::parse_compact_endpoint4_list(values.data(), values.size());
+		else if(event == DHT_EVENT_VALUES6)
+			endpoints = btcompat::parse_compact_endpoint6_list(values.data(), values.size());
+
+		for(auto& endpoint : endpoints) {
+			DiscoveryResult result;
+			result.source = "DHT";
+			result.address = QHostAddress(QString::fromStdString(endpoint.address().to_string()));
+			result.port = endpoint.port();
+			emit discovered(result);
+		}
+	}else if(event == DHT_EVENT_SEARCH_DONE) {
+		start_search(AF_INET);
+	}else if(event == DHT_EVENT_SEARCH_DONE6) {
+		start_search(AF_INET6);
+	}
+}
+
+} /* namespace librevault */

@@ -40,16 +40,11 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_, ios_.ios());
 	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, *state_collector, ios_.ios());
 
-	url bind_url;
-	if(Config::get()->global_get("control_listen").isIntegral()) {
-		bind_url.is_ipv6 = true;
-		bind_url.host = "::";
-		bind_url.port = Config::get()->global_get("control_listen").asUInt();
-	}else{
-		bind_url = parse_url(Config::get()->global_get("control_listen").asString());   // deprecated
-	}
-
-	tcp_endpoint local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host), bind_url.port);
+	QUrl bind_url;
+	bind_url.setScheme("http");
+	bind_url.setHost("::");
+	bind_url.setPort(Config::get()->global_get("control_listen").asUInt());
+	tcp_endpoint local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host().toStdString()), bind_url.port());
 
 	/* WebSockets server initialization */
 	// General parameters
@@ -71,7 +66,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	// This string is for control client, that launches librevault daemon as its child process.
 	// It watches STDOUT for ^\[CONTROL\].*?(http:\/\/.*)$ regexp and connects to the first matched address.
 	// So, change it carefully, preserving the compatibility.
-	std::cout << "[CONTROL] Librevault Client API is listening at http://" << (std::string)bind_url << std::endl;
+	std::cout << "[CONTROL] Librevault Client API is listening at " << bind_url.toString().toStdString() << std::endl;
 
 	connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
 }

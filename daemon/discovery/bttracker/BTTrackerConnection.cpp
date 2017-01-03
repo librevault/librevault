@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider) {
+BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider) : tracker_address_(tracker_address) {
 	// Resolve loop
 	resolver_timer_ = new QTimer(this);
 	resolver_timer_->setInterval(30*1000);
@@ -52,6 +52,7 @@ BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* b
 	connect(announce_timer_, &QTimer::timeout, this, &BTTrackerConnection::announce);
 
 	connect(tracker_provider, &BTTrackerProvider::receivedMessage, this, &BTTrackerConnection::handle_message);
+	connect(this, &BTTrackerConnection::discovered, btgroup_, &BTTrackerGroup::discovered);
 }
 
 BTTrackerConnection::~BTTrackerConnection() {
@@ -76,7 +77,7 @@ void BTTrackerConnection::resolve() {
 	}
 
 	LOGD("Resolving IP address for: " << tracker_address_.host().toStdString());
-	resolver_lookup_id_ = QHostInfo::lookupHost(tracker_address_.host(), this, SLOT(handle_resolve));
+	resolver_lookup_id_ = QHostInfo::lookupHost(tracker_address_.host(), this, SLOT(handle_resolve(QHostInfo)));
 }
 
 void BTTrackerConnection::btconnect() {

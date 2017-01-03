@@ -54,12 +54,9 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	/* Connecting signals */
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
-	connect(discovery_, &DiscoveryService::discovered, p2p_provider_, &P2PProvider::add_node);
-	connect(folder_service_, &FolderService::folderAdded, discovery_, &DiscoveryService::register_group);
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](std::shared_ptr<FolderGroup> group){
 		control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
 	});
-	connect(folder_service_, &FolderService::folderRemoved, discovery_, &DiscoveryService::unregister_group);
 	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](std::shared_ptr<FolderGroup> group){
 		control_server_->notify_folder_removed(group->hash());
 	});
@@ -70,7 +67,6 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 Client::~Client() {}
 
 int Client::run() {
-	discovery_->run();
 	folder_service_->run();
 	p2p_provider_->run();
 	control_server_->run();

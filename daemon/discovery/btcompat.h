@@ -63,7 +63,7 @@ inline info_hash get_info_hash(const blob& dir_hash) {
 	return ih;
 }
 
-inline info_hash get_info_hash(const QByteArray& folderid) {
+inline info_hash getInfoHash(const QByteArray& folderid) {
 	info_hash ih; std::copy(folderid.begin(), folderid.begin()+std::min(ih.size(), (size_t)folderid.size()), ih.begin());
 	return ih;
 }

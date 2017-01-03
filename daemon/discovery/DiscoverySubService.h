@@ -30,6 +30,7 @@
 #include <util/parse_url.h>
 #include <util/log_scope.h>
 #include "DiscoveryService.h"
+#include <QString>
 
 namespace librevault {
 
@@ -38,19 +39,19 @@ class FolderGroup;
 class DiscoverySubService {
 	LOG_SCOPE("DiscoverySubService");
 public:
-	DiscoverySubService(DiscoveryService& parent, io_service& io_service, std::string id);
+	DiscoverySubService(DiscoveryService& parent, io_service& io_service, QString id);
 	virtual ~DiscoverySubService(){}
 
 	virtual void register_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 	virtual void unregister_group(std::shared_ptr<FolderGroup> group_ptr) = 0;
 
-	void add_node(DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr);
+	void add_node(DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr);
 
 protected:
 	DiscoveryService& parent_;
 
 	io_service& io_service_;
-	std::string id_;
+	QString id_;
 };
 
 } /* namespace librevault */

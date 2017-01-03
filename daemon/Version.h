@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <string>
+#include <QString>
 
 namespace librevault {
 
@@ -35,14 +35,14 @@ class Version {
 public:
 	Version();
 
-	std::string name() const {return name_;}
-	std::string version_string() const {return version_string_;}
-	std::string user_agent() const {return name() + "/" + version_string_;}
+	QString name() const {return name_;}
+	QString version_string() const {return version_string_;}
+	QString user_agent() const {return name() + "/" + version_string_;}
 
 	static Version current() {static Version current; return current;}
 protected:
-	const std::string name_;
-	const std::string version_string_;
+	const QString name_;
+	const QString version_string_;
 };
 
 } /* namespace librevault */

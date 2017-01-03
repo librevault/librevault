@@ -32,6 +32,7 @@
 #include "util/multi_io_service.h"
 #include "util/scoped_async_queue.h"
 #include <json/json.h>
+#include <QObject>
 #include <boost/signals2/signal.hpp>
 
 namespace librevault {
@@ -42,7 +43,8 @@ class FolderParams;
 class Secret;
 class StateCollector;
 
-class FolderService {
+class FolderService : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("FolderService");
 public:
 	struct invalid_group : std::runtime_error {

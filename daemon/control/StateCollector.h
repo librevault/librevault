@@ -30,32 +30,36 @@
 #include "util/blob.h"
 #include "util/log_scope.h"
 #include <json/json.h>
-#include <boost/signals2/signal.hpp>
+#include <QObject>
+#include <QJsonObject>
+#include <QJsonValue>
 
 namespace librevault {
 
-class StateCollector {
+class StateCollector : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("StateCollector");
 public:
-	StateCollector();
+	StateCollector(QObject* parent);
 	~StateCollector();
 
-	boost::signals2::signal<void(std::string, Json::Value)> global_state_changed;
 	void global_state_set(const std::string& key, Json::Value value);
-
-	boost::signals2::signal<void(const blob& folderid, std::string, Json::Value)> folder_state_changed;
 	void folder_state_set(const blob& folderid, const std::string& key, Json::Value value);
-
-	boost::signals2::signal<void(const blob& folderid)> folder_state_purged;
 	void folder_state_purge(const blob& folderid);
 
 	Json::Value global_state();
 	Json::Value folder_state();
 	Json::Value folder_state(const blob& folderid);
 
+signals:
+	void globalStateChanged(std::string key, Json::Value value);
+	void folderStateChanged(blob folderid, std::string key, Json::Value value);
+
 private:
 	Json::Value global_state_buffer;
 	std::map<blob, Json::Value> folder_state_buffers;
+
+	QJsonObject global_state_buffer_;
 };
 
 } /* namespace librevault */

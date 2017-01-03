@@ -5,6 +5,10 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_BINARY_DIR})
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
 #============================================================================
 # Sources & headers
 #============================================================================
@@ -60,6 +64,7 @@ target_link_libraries(librevault-daemon dht)
 target_link_libraries(librevault-daemon jsoncpp)
 target_link_libraries(librevault-daemon sqlite3)
 target_link_libraries(librevault-daemon websocketpp)
+target_link_libraries(librevault-daemon Qt5::WebSockets)
 
 ##### External libraries #####
 

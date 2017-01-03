@@ -29,33 +29,21 @@
 #pragma once
 #include <util/blob.h>
 #include <util/log_scope.h>
-#include <cryptopp/eccrypto.h>
-#include <cryptopp/ecp.h>
-#include <openssl/x509.h>
 
 namespace librevault {
 
 class NodeKey {
 	LOG_SCOPE("NodeKey");
 public:
-	using private_key_t = CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>;
-
 	NodeKey();
 	virtual ~NodeKey();
 
-	const private_key_t& private_key() const {return private_key_;}
 	const blob& public_key() const {return public_key_;}
 
 private:
-	private_key_t private_key_;
 	blob public_key_;
-	EVP_PKEY* openssl_pkey_;	// Yes, we have both Crypto++ and OpenSSL-format private keys, because we have to use both libraries.
 
-	X509* x509_;	// X509 structure pointer from OpenSSL
-
-	private_key_t& gen_private_key();
 	void write_key();
-
 	void gen_certificate();
 };
 

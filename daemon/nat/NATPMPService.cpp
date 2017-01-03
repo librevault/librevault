@@ -32,8 +32,8 @@
 
 namespace librevault {
 
-NATPMPService::NATPMPService(PortMappingService& parent, io_service& ios) : PortMappingSubService(parent), ios_(ios) {
-	Config::get()->config_changed.connect(std::bind(&NATPMPService::reload_config, this));
+NATPMPService::NATPMPService(PortMappingService& parent) : PortMappingSubService(parent) {
+	//Config::get()->config_changed.connect(std::bind(&NATPMPService::reload_config, this));
 }
 NATPMPService::~NATPMPService() {stop();}
 
@@ -44,15 +44,13 @@ bool NATPMPService::is_config_enabled() {
 void NATPMPService::start() {
 	if(!is_config_enabled()) return;
 
-	ios_.post([this]{
-		int natpmp_ec = initnatpmp(&natpmp, 0, 0);
-		LOGT("initnatpmp() = " << natpmp_ec);
+	int natpmp_ec = initnatpmp(&natpmp, 0, 0);
+	LOGT("initnatpmp() = " << natpmp_ec);
 
-		if(natpmp_ec == 0) {
-			active = true;
-			add_existing_mappings();
-		}
-	});
+	if(natpmp_ec == 0) {
+		active = true;
+		add_existing_mappings();
+	}
 }
 
 void NATPMPService::stop() {
@@ -72,38 +70,35 @@ void NATPMPService::reload_config() {
 }
 
 void NATPMPService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
-	mappings_[id] = std::make_unique<PortMapping>(*this, id, descriptor);
+	mappings_[id] = std::make_unique<NATPMPMapping>(*this, id, descriptor);
 }
 
 void NATPMPService::remove_port_mapping(const std::string& id) {
 	mappings_.erase(id);
 }
 
-/* NATPMPService::PortMapping */
-NATPMPService::PortMapping::PortMapping(NATPMPService& parent, std::string id, MappingDescriptor descriptor) :
+/* NATPMPMapping */
+NATPMPMapping::NATPMPMapping(NATPMPService& parent, std::string id, PortMappingService::MappingDescriptor descriptor) :
 	parent_(parent),
 	id_(id),
-	descriptor_(descriptor),
-	scoped_maintain_queue_(parent.ios_),
-	scoped_timer_(parent.ios_) {
+	descriptor_(descriptor) {
 
-	scoped_maintain_queue_.post([this]{send_request();});
-	scoped_timer_.tick_signal.connect(scoped_maintain_queue_.wrap([this]{send_request();}));
+	timer_ = new QTimer(this);
+
+	QTimer::singleShot(0, this, &NATPMPMapping::sendPeriodicRequest);
 }
 
-NATPMPService::PortMapping::~PortMapping() {
-	scoped_timer_.stop();
-	scoped_maintain_queue_.post([this]{send_request(false);}, true);
-	scoped_maintain_queue_.stop();
+NATPMPMapping::~NATPMPMapping() {
+	sendZeroRequest();
 }
 
-void NATPMPService::PortMapping::send_request(bool disable) {
+void NATPMPMapping::sendPeriodicRequest() {
 	int natpmp_ec = sendnewportmappingrequest(
 		&parent_.natpmp,
 		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
-		(!disable) ? Config::get()->global_get("natpmp_lifetime").asUInt() : 0
+		Config::get()->global_get("natpmp_lifetime").asUInt()
 	);
 	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
 
@@ -113,16 +108,27 @@ void NATPMPService::PortMapping::send_request(bool disable) {
 	}while(natpmp_ec == NATPMP_TRYAGAIN);
 	LOGT("readnatpmpresponseorretry() = " << natpmp_ec);
 
-	std::chrono::seconds next_request;
+	int next_request_sec;
 	if(natpmp_ec >= 0) {
 		parent_.port_signal(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
-		next_request = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
+		next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
 	}else{
 		LOGD("Could not set up port mapping");
-		next_request = std::chrono::seconds(Config::get()->global_get("natpmp_lifetime").asUInt());
+		next_request_sec = Config::get()->global_get("natpmp_lifetime").asUInt();
 	}
 
-	scoped_timer_.start(next_request, ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
+	timer_->setInterval(next_request_sec*1000);
+}
+
+void NATPMPMapping::sendZeroRequest() {
+	int natpmp_ec = sendnewportmappingrequest(
+		&parent_.natpmp,
+		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+		descriptor_.port,
+		descriptor_.port,
+		0
+	);
+	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
 }
 
 } /* namespace librevault */

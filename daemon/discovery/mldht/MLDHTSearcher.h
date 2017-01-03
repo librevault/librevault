@@ -30,8 +30,8 @@
 #include <discovery/DiscoveryInstance.h>
 #include "../btcompat.h"
 #include <util/log_scope.h>
-
 #include <boost/asio/steady_timer.hpp>
+#include <boost/signals2.hpp>
 
 namespace librevault {
 

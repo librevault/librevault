@@ -28,25 +28,17 @@
  */
 #include <librevault/crypto/Hex.h>
 #include "ControlServer.h"
-#include "Client.h"
 #include "ControlHTTPServer.h"
 #include "ControlWebsocketServer.h"
 #include "control/Config.h"
-#include "discovery/DiscoveryService.h"
-#include "discovery/mldht/MLDHTDiscovery.h"
-#include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
-#include "folder/meta/Index.h"
-#include "folder/meta/MetaStorage.h"
-#include "p2p/P2PFolder.h"
 #include "util/log.h"
 
 namespace librevault {
 
-ControlServer::ControlServer(StateCollector& state_collector) :
-		ios_("ControlServer") {
+ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) : QObject(parent),
+                                                                                 ios_("ControlServer") {
 	control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_, ios_.ios());
-	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, state_collector, ios_.ios());
+	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, *state_collector, ios_.ios());
 
 	url bind_url;
 	if(Config::get()->global_get("control_listen").isIntegral()) {
@@ -63,7 +55,7 @@ ControlServer::ControlServer(StateCollector& state_collector) :
 	// General parameters
 	ws_server_.init_asio(&ios_.ios());
 	ws_server_.set_reuse_addr(true);
-	ws_server_.set_user_agent(Version::current().user_agent());
+	ws_server_.set_user_agent(Version::current().user_agent().toStdString());
 
 	// Handlers
 	ws_server_.set_validate_handler(std::bind(&ControlWebsocketServer::on_validate, control_ws_server_.get(), std::placeholders::_1));
@@ -81,7 +73,7 @@ ControlServer::ControlServer(StateCollector& state_collector) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at http://" << (std::string)bind_url << std::endl;
 
-	Config::get()->config_changed.connect(std::bind(&ControlServer::notify_global_config_changed, this, std::placeholders::_1, std::placeholders::_2));
+	connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
 }
 
 ControlServer::~ControlServer() {

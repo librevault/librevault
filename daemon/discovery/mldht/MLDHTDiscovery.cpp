@@ -253,7 +253,7 @@ void MLDHTDiscovery::pass_callback(void* closure, int event, const uint8_t* info
 			endpoints = btcompat::parse_compact_endpoint6_list(data, data_len);
 
 		for(auto& endpoint : endpoints) {
-			DiscoveryService::ConnectCredentials cred;
+			DiscoveryResult cred;
 			cred.endpoint = endpoint;
 			add_node(cred, folder_it->second);
 		}

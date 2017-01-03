@@ -27,15 +27,16 @@
  * files in the program, then also delete it here.
  */
 #include "UPnPService.h"
-#include <control/Config.h>
+#include "control/Config.h"
+#include "util/log.h"
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
-#include <util/log.h>
+#include <QTimer>
 
 namespace librevault {
 
-UPnPService::UPnPService(PortMappingService& parent, io_service& ios) : PortMappingSubService(parent), ios_(ios) {
-	Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
+UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) {
+	//Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
 }
 UPnPService::~UPnPService() {stop();}
 
@@ -44,32 +45,27 @@ bool UPnPService::is_config_enabled() {
 }
 
 void UPnPService::start() {
-	state_changing_mtx_.lock();
 	upnp_urls = std::make_unique<UPNPUrls>();
 	upnp_data = std::make_unique<IGDdatas>();
 
-	ios_.post([this]{
-		if(!is_config_enabled()) return;
+	if(!is_config_enabled()) return;
 
-		active = true;
+	active = true;
 
-		/* Discovering IGD */
-		DevListWrapper devlist;
+	/* Discovering IGD */
+	DevListWrapper devlist;
 
-		if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
-			LOGD("IGD not found. e: " << strerror(errno));
-			return;
-		}
+	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
+		LOGD("IGD not found. e: " << strerror(errno));
+		return;
+	}
 
-		LOGD("Found IGD: " << upnp_urls->controlURL);
+	LOGD("Found IGD: " << upnp_urls->controlURL);
 
-		add_existing_mappings();
-		state_changing_mtx_.unlock();
-	});
+	add_existing_mappings();
 }
 
 void UPnPService::stop() {
-	std::unique_lock<std::mutex> lk(state_changing_mtx_);
 	active = false;
 
 	mappings_.clear();

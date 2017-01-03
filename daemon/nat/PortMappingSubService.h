@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "PortMappingService.h"
+#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 

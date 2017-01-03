@@ -30,19 +30,19 @@
 #include "control/Paths.h"
 #include <util/file_util.h>
 #include <util/log.h>
+#include <cryptopp/eccrypto.h>
+#include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
 #include <openssl/pem.h>
+#include <openssl/x509.h>
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/Base64.h>
 
 namespace librevault {
 
-NodeKey::NodeKey() :
-		openssl_pkey_(EVP_PKEY_new()),
-		x509_(X509_new()) {
+NodeKey::NodeKey() {
 	LOGFUNC();
-	gen_private_key();
 	write_key();
 	gen_certificate();
 	LOGFUNCEND();
@@ -50,17 +50,18 @@ NodeKey::NodeKey() :
 
 NodeKey::~NodeKey() {
 	LOGFUNC();
-	EVP_PKEY_free(openssl_pkey_);
-	X509_free(x509_);
 	LOGFUNCEND();
 }
 
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
+void NodeKey::write_key() {
+	/* Generate key */
+	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
+
 	CryptoPP::AutoSeededRandomPool rng;
-	private_key_.Initialize(rng, CryptoPP::ASN1::secp256r1());
+	private_key.Initialize(rng, CryptoPP::ASN1::secp256r1());
 	CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
 
-	private_key_.MakePublicKey(public_key);
+	private_key.MakePublicKey(public_key);
 	public_key.AccessGroupParameters().SetPointCompression(true);
 
 	public_key_.resize(33);
@@ -68,19 +69,16 @@ CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& NodeKey::gen_private_key() {
 
 	LOGD("Public key: " << crypto::Hex().to_string(public_key_));
 
-	return private_key_;
-}
-
-void NodeKey::write_key() {
+	/* Write to PEM */
 	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "w");
 	fputs("-----BEGIN EC PRIVATE KEY-----\n", f);
-	auto& group_params = private_key_.GetGroupParameters();
+	auto& group_params = private_key.GetGroupParameters();
 
 	bool old = group_params.GetEncodeAsOID();
 	const_cast<CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>&>(group_params).SetEncodeAsOID(true);
 
     CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> pkey;
-    private_key_.MakePublicKey(pkey);
+	private_key.MakePublicKey(pkey);
 
     std::string s;
     CryptoPP::StringSink ss(s);
@@ -88,12 +86,12 @@ void NodeKey::write_key() {
     CryptoPP::DEREncodeUnsigned<CryptoPP::word32>(seq, 1);
 
     // Private key
-    const CryptoPP::Integer& x = private_key_.GetPrivateExponent();
+    const CryptoPP::Integer& x = private_key.GetPrivateExponent();
     x.DEREncodeAsOctetString(seq, group_params.GetSubgroupOrder().ByteCount());
 
     // Named curve
     CryptoPP::OID oid;
-    if(!private_key_.GetVoidValue(CryptoPP::Name::GroupOID(), typeid(oid), &oid))
+    if(!private_key.GetVoidValue(CryptoPP::Name::GroupOID(), typeid(oid), &oid))
         throw CryptoPP::Exception(CryptoPP::Exception::OTHER_ERROR, "PEM_DEREncode: failed to retrieve curve OID");
 
     // Encoder for OID
@@ -129,6 +127,9 @@ void NodeKey::write_key() {
 }
 
 void NodeKey::gen_certificate() {
+	X509* x509_ = X509_new();
+	EVP_PKEY* openssl_pkey_ = EVP_PKEY_new();
+
 	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "r");
 
 	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
@@ -170,6 +171,9 @@ void NodeKey::gen_certificate() {
 	/* Write the certificate to disk. */
 	PEM_write_X509(x509_file, x509_);
 	fclose(x509_file);
+
+	EVP_PKEY_free(openssl_pkey_);
+	X509_free(x509_);
 }
 
 } /* namespace librevault */

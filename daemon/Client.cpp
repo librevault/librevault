@@ -40,24 +40,21 @@
 
 namespace librevault {
 
-Client::Client() {
+Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
+	setApplicationName("Librevault");
 	// Initializing components
-	state_collector_ = std::make_unique<StateCollector>();
+	state_collector_ = new StateCollector(this);
 	node_key_ = std::make_unique<NodeKey>();
 	portmanager_ = std::make_unique<PortMappingService>();
 	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_, *state_collector_);
 	folder_service_ = std::make_unique<FolderService>(*state_collector_);
 	p2p_provider_ = std::make_unique<P2PProvider>(*node_key_, *portmanager_, *folder_service_);
-	control_server_ = std::make_unique<ControlServer>(*state_collector_);
+	control_server_ = new ControlServer(state_collector_, this);
 
 	/* Connecting signals */
-	state_collector_->global_state_changed.connect([this](std::string key, Json::Value value){
-		if(control_server_) control_server_->notify_global_state_changed(key, value);
-	});
-	state_collector_->folder_state_changed.connect([this](const blob& folderid, std::string key, Json::Value value){
-		if(control_server_) control_server_->notify_folder_state_changed(folderid, key, value);
-	});
-	discovery_->discovered_node_signal.connect([this](DiscoveryService::ConnectCredentials node_cred, std::weak_ptr<FolderGroup> group_ptr){
+	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
+	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
+	discovery_->discovered_node_signal.connect([this](DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr){
 		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
 	});
 	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){
@@ -68,16 +65,11 @@ Client::Client() {
 		if(discovery_) discovery_->unregister_group(group);
 		if(control_server_) control_server_->notify_folder_removed(group->hash());
 	});
-	control_server_->restart_signal.connect([this]{
-		restart();
-	});
-	control_server_->shutdown_signal.connect([this]{
-		shutdown();
-	});
+	connect(control_server_, &ControlServer::restart, this, &Client::restart);
+	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }
 
 Client::~Client() {
-	control_server_.reset();
 	p2p_provider_.reset();
 	folder_service_.reset();
 	discovery_.reset();
@@ -85,29 +77,23 @@ Client::~Client() {
 	node_key_.reset();
 }
 
-void Client::run() {
-	portmanager_->run();
+int Client::run() {
 	discovery_->run();
 	folder_service_->run();
 	p2p_provider_->run();
 	control_server_->run();
 
-	// Main loop/signal processing loop
-	boost::asio::signal_set signals(main_loop_ios_, SIGINT, SIGTERM);
-	signals.async_wait(std::bind(&Client::shutdown, this));
-
-	main_loop_ios_.run();
+	return this->exec();
 }
 
 void Client::restart() {
 	LOGI("Restarting...");
-	want_restart_ = true;
-	main_loop_ios_.stop();
+	this->exit(EXIT_RESTART);
 }
 
 void Client::shutdown(){
 	LOGI("Exiting...");
-	main_loop_ios_.stop();
+	this->exit();
 }
 
 } /* namespace librevault */

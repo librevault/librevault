@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-FolderService::FolderService(StateCollector& state_collector) :
+FolderService::FolderService(StateCollector& state_collector) : QObject(),
 	bulk_ios_("FolderService_bulk"),
 	serial_ios_("FolderService_serial"),
 	state_collector_(state_collector),
@@ -60,12 +60,12 @@ void FolderService::run() {
 			init_folder(folder_config.second);
 	});
 
-	Config::get()->folder_added.connect([this](Json::Value json_params){
+	connect(Config::get(), &Config::folderAdded, this, [this](Json::Value json_params){
 		init_queue_.post([this, json_params]{
 			init_folder(json_params);
 		});
 	});
-	Config::get()->folder_removed.connect([this](blob folderid){
+	connect(Config::get(), &Config::folderRemoved, this, [this](blob folderid){
 		init_queue_.post([this, folderid]{
 			deinit_folder(folderid);
 		});

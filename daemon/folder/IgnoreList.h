@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <control/Config.h>
+#include "control/Config.h"
 #include "util/log_scope.h"
+#include <boost/optional.hpp>
 #include <mutex>
 #include <regex>
 

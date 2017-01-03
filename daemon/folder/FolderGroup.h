@@ -93,6 +93,7 @@ public:
 
 	inline const Secret& secret() const {return params().secret;}
 	inline const blob& hash() const {return secret().get_Hash();}
+	QByteArray folderid() const {return QByteArray((char*)hash().data(), hash().size());}
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 

@@ -86,7 +86,7 @@ void DiscoveryService::unregister_group(std::shared_ptr<FolderGroup> group_ptr) 
 	LOGFUNCEND();
 }
 
-void DiscoveryService::consume_discovered_node(ConnectCredentials cred, std::weak_ptr<FolderGroup> group_ptr) {
+void DiscoveryService::consume_discovered_node(DiscoveryResult cred, std::weak_ptr<FolderGroup> group_ptr) {
 	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
 
 	std::shared_ptr<FolderGroup> group_ptr_locked = group_ptr.lock();

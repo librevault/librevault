@@ -27,11 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/log_scope.h>
-#include <util/network.h>
-#include <util/multi_io_service.h>
-
-#include <boost/signals2.hpp>
+#include "util/log_scope.h"
+#include <QObject>
+#include <memory>
 #include <mutex>
 
 namespace librevault {
@@ -40,7 +38,8 @@ class NATPMPService;
 class UPnPService;
 class PortMappingSubService;
 
-class PortMappingService {
+class PortMappingService : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("PortMappingService");
 	friend class PortMappingSubService;
 public:
@@ -52,17 +51,11 @@ public:
 	PortMappingService();
 	virtual ~PortMappingService();
 
-	void run() {io_service_.start(1);}
-	void stop();
-
 	void add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description);
 	void remove_port_mapping(std::string id);
 	uint16_t get_port_mapping(const std::string& id);
 
 private:
-	multi_io_service io_service_;
-
-	std::mutex mappings_mutex_;
 	struct Mapping {
 		MappingDescriptor descriptor;
 		std::string description;
@@ -70,8 +63,8 @@ private:
 	};
 	std::map<std::string, Mapping> mappings_;
 
-	std::unique_ptr<NATPMPService> natpmp_service_;
-	std::unique_ptr<UPnPService> upnp_service_;
+	NATPMPService* natpmp_service_;
+	UPnPService* upnp_service_;
 
 	void add_existing_mappings(PortMappingSubService* subservice);
 };

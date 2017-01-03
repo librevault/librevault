@@ -44,7 +44,7 @@ WSServer::WSServer(io_service& ios, P2PProvider& provider, PortMappingService& p
 	// General parameters
 	ws_server_.init_asio(&ios_);
 	ws_server_.set_reuse_addr(true);
-	ws_server_.set_user_agent(Version::current().user_agent());
+	ws_server_.set_user_agent(Version::current().user_agent().toStdString());
 	ws_server_.set_max_message_size(10 * 1024 * 1024);
 
 	// Handlers

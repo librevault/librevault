@@ -27,26 +27,39 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/network.h"
-#include <QString>
-#include <QUrl>
-#include <QHostAddress>
-#include <QByteArray>
+#include "discovery/DiscoveryResult.h"
+#include <QTimer>
+#include <QUdpSocket>
 
 namespace librevault {
 
-class DiscoveryResult {
+class DiscoveryGroup;
+class MulticastGroup : public QObject {
+	Q_OBJECT
+
 public:
-	QString source;
+	MulticastGroup(QUdpSocket* socket4, QUdpSocket* socket6, DiscoveryGroup* parent);
+	virtual ~MulticastGroup();
 
-	QUrl url;
+signals:
+	void discovered(DiscoveryResult result);
 
-	tcp_endpoint endpoint;
-	QHostAddress address;
-	quint16 port;
+public slots:
+	void useDiscoveredResult(QByteArray folderid, DiscoveryResult result);
 
-	blob pubkey;
+private:
+	QUdpSocket* socket4_;
+	QUdpSocket* socket6_;
+
+	QTimer* timer_;
+
+	QByteArray folderid_;
+
+	QByteArray get_message();
+	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
+
+private slots:
+	void sendMulticasts();
 };
 
 } /* namespace librevault */

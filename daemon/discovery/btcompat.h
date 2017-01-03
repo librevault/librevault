@@ -30,10 +30,13 @@
 #include "control/Config.h"
 #include "util/blob.h"
 #include "util/network.h"
+#include <QByteArray>
+#include <QHostAddress>
+#include <QtEndian>
 #include <boost/endian/arithmetic.hpp>
+#include <array>
 
 namespace librevault {
-
 namespace btcompat {
 
 using info_hash = std::array<uint8_t, 20>;
@@ -42,11 +45,11 @@ using peer_id = std::array<uint8_t, 20>;
 #pragma pack(push, 1)
 struct compact_endpoint4 {
 	std::array<uint8_t, 4> ip4;
-	boost::endian::big_uint16_t port;
+	quint16 port;
 };
 struct compact_endpoint6 {
 	std::array<uint8_t, 16> ip6;
-	boost::endian::big_uint16_t port;
+	quint16 port;
 };
 #pragma pack(pop)
 
@@ -57,6 +60,11 @@ static_assert(sizeof(compact_endpoint6) == 18, "compact_endpoint6 size is incorr
 // Function declaration
 inline info_hash get_info_hash(const blob& dir_hash) {
 	info_hash ih; std::copy(dir_hash.begin(), dir_hash.begin()+std::min(ih.size(), dir_hash.size()), ih.begin());
+	return ih;
+}
+
+inline info_hash get_info_hash(const QByteArray& folderid) {
+	info_hash ih; std::copy(folderid.begin(), folderid.begin()+std::min(ih.size(), (size_t)folderid.size()), ih.begin());
 	return ih;
 }
 
@@ -102,20 +110,34 @@ inline std::list<tcp_endpoint> parse_compact_endpoint6_list(const void* data, si
 	return endpoints;
 }
 
-inline blob make_compact_endpoint(const tcp_endpoint& endpoint) {
-	blob compact_endpoint(18);
-
-	if(endpoint.address().is_v6()) {
-		((compact_endpoint6*)(compact_endpoint.data()))->ip6 = endpoint.address().to_v6().to_bytes();
-		((compact_endpoint6*)(compact_endpoint.data()))->port = endpoint.port();
-	}else if(endpoint.address().is_v4()) {
-		compact_endpoint.resize(6);
-		((compact_endpoint4*)(compact_endpoint.data()))->ip4 = endpoint.address().to_v4().to_bytes();
-		((compact_endpoint4*)(compact_endpoint.data()))->port = endpoint.port();
-	}
-
-	return compact_endpoint;
+inline std::pair<QHostAddress, quint16> parseCompactEndpoint(const compact_endpoint4& compact_endpoint) {
+	return {QHostAddress(*reinterpret_cast<const quint32*>(compact_endpoint.ip4.data())), qFromBigEndian(compact_endpoint.port)};
 };
+
+inline std::pair<QHostAddress, quint16> parseCompactEndpoint(const compact_endpoint6& compact_endpoint) {
+	return {QHostAddress(compact_endpoint.ip6.data()), qFromBigEndian(compact_endpoint.port)};
+};
+
+inline std::pair<QHostAddress, quint16> parseCompactEndpoint4(const void* data) {
+	return btcompat::parseCompactEndpoint(*(reinterpret_cast<const btcompat::compact_endpoint4*>(data)));
+};
+inline std::pair<QHostAddress, quint16> parseCompactEndpoint6(const void* data) {
+	return btcompat::parseCompactEndpoint(*(reinterpret_cast<const btcompat::compact_endpoint6*>(data)));
+};
+
+inline QList<std::pair<QHostAddress, quint16>> parseCompactEndpoint4List(QByteArray data) {
+	QList<std::pair<QHostAddress, quint16>> endpoints;
+	for(const char* data_cur = data.data(); data_cur+6 <= (data.data()+data.size()); data_cur += 6)
+		endpoints.push_back(parseCompactEndpoint4(data.data()));
+	return endpoints;
+}
+
+inline QList<std::pair<QHostAddress, quint16>> parseCompactEndpoint6List(QByteArray data) {
+	QList<std::pair<QHostAddress, quint16>> endpoints;
+	for(const char* data_cur = data.data(); data_cur+18 <= (data.data()+data.size()); data_cur += 18)
+		endpoints.push_back(parseCompactEndpoint6(data.data()));
+	return endpoints;
+}
 
 } /* namespace btcompat */
 } /* namespace librevault */

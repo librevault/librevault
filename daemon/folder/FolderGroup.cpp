@@ -43,12 +43,10 @@
 namespace librevault {
 
 FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
-		QObject(),
+		QObject(parent),
 		params_(std::move(params)),
 		state_collector_(state_collector),
-		serial_ios_(serial_ios),
-		folder_worker_queue_(serial_ios_),
-		state_pusher_(serial_ios_) {
+		serial_ios_(serial_ios) {
 	LOGFUNC();
 
 	/* Creating directories */
@@ -77,22 +75,19 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage);
 	meta_downloader_ = std::make_unique<MetaDownloader>(*meta_storage_, *downloader_);
 
+	state_pusher_ = new QTimer(this);
+
 	// Connecting signals and slots
-	meta_storage_->index->new_meta_signal.connect([this](const SignedMeta& smeta){
-		serial_ios_.dispatch([=]{
-			handle_indexed_meta(smeta);
-		});
+	connect(meta_storage_->index.get(), &Index::metaAdded, this, &FolderGroup::handle_indexed_meta);
+	connect(chunk_storage.get(), &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
+		downloader_->notify_local_chunk(ct_hash);
+		uploader_->broadcast_chunk(remotes(), ct_hash);
 	});
-	chunk_storage->new_chunk_signal.connect([this](const blob& ct_hash){
-		serial_ios_.dispatch([=]{
-			downloader_->notify_local_chunk(ct_hash);
-			uploader_->broadcast_chunk(remotes(), ct_hash);
-		});
-	});
+	connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);
 
 	// Set up state pusher
-	state_pusher_.tick_signal.connect(folder_worker_queue_.wrap([this]{push_state();}));
-	state_pusher_.start(std::chrono::seconds(1), ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
+	state_pusher_->setInterval(1000);
+	state_pusher_->start();
 
 	// Go through index
 	serial_ios_.dispatch([=]{
@@ -102,8 +97,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 }
 
 FolderGroup::~FolderGroup() {
-	state_pusher_.stop();
-	folder_worker_queue_.stop();
+	state_pusher_->stop();
 
 	state_collector_.folder_state_purge(params_.secret.get_Hash());
 	LOGFUNC();

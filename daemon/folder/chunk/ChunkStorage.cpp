@@ -90,7 +90,7 @@ void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path&
 		for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
 			file_assembler->queue_assemble(smeta.meta());
 
-	new_chunk_signal(ct_hash);
+	emit chunkAdded(ct_hash);
 }
 
 bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {

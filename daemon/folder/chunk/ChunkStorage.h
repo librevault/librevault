@@ -32,8 +32,8 @@
 #include "util/network.h"
 #include <librevault/Meta.h>
 #include <librevault/util/bitfield_convert.h>
+#include <QObject>
 #include <boost/filesystem/path.hpp>
-#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
@@ -47,10 +47,9 @@ class OpenStorage;
 class Archive;
 class FileAssembler;
 
-class ChunkStorage {
+class ChunkStorage : public QObject {
+	Q_OBJECT
 public:
-	boost::signals2::signal<void(const blob&)> new_chunk_signal;
-
 	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~ChunkStorage();
 
@@ -61,6 +60,9 @@ public:
 	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
 
 	void cleanup(const Meta& meta);
+
+signals:
+	void chunkAdded(blob ct_hash);
 
 protected:
 	MetaStorage& meta_storage_;

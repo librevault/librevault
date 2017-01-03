@@ -28,48 +28,66 @@
  */
 #include "MulticastGroup.h"
 #include "control/Config.h"
-#include "discovery/DiscoveryGroup.h"
+#include "discovery/multicast/MulticastProvider.h"
+#include "folder/FolderGroup.h"
 #include <MulticastDiscovery.pb.h>
 
 namespace librevault {
 
-MulticastGroup::MulticastGroup(QUdpSocket* socket4, QUdpSocket* socket6, DiscoveryGroup* parent) : QObject(parent),
-	socket4_(socket4), socket6_(socket6), folderid_(parent->folderid()) {
+MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup) :
+	provider_(provider), fgroup_(fgroup) {
 	timer_ = new QTimer(this);
 	timer_->setInterval(Config::get()->global_get("multicast_repeat_interval").asUInt64()*1000);
-	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
 
-	timer_->start();
+	// Connecting signals
+	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
+	connect(provider_, &MulticastProvider::discovered, this, &MulticastGroup::useDiscoveredResult);
 }
 
 MulticastGroup::~MulticastGroup() {}
 
+void MulticastGroup::setEnabled(bool enabled) {
+	if(!timer_->isActive() && enabled)
+		timer_->start();
+	else if(timer_->isActive() && !enabled)
+		timer_->stop();
+}
+
 void MulticastGroup::useDiscoveredResult(QByteArray folderid, DiscoveryResult result) {
-	if(folderid == folderid_)
+	if(timer_->isActive() && folderid == fgroup_->folderid())
 		emit discovered(result);
 }
 
 QByteArray MulticastGroup::get_message() {
-	protocol::MulticastDiscovery message;
-	message.set_port(Config::get()->global_get("p2p_listen").asUInt());
-	message.set_folderid(folderid_.data(), folderid_.size());
-	//message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
+	if(message_.isEmpty()) {
+		protocol::MulticastDiscovery message;
 
-	QByteArray message_s(message.ByteSize(), 0);
-	message.SerializeToArray(message_s.data(), message_s.size());
-	return message_s;
+		// Port
+		message.set_port(Config::get()->global_get("p2p_listen").asUInt());
+
+		// FolderID
+		QByteArray folderid = fgroup_->folderid();
+		message.set_folderid(folderid.data(), folderid.size());
+
+		// PeerID
+		//message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
+
+		message_.resize(message.ByteSize());
+		message.SerializeToArray(message_.data(), message_.size());
+	}
+	return message_;
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
 	if(socket->writeDatagram(get_message(), addr, port))
 		qDebug() << "===> Multicast message sent to: " << addr << ":" << port;
 	else
-		qDebug() << "=X=> Multicast message not sent to: " << addr << ":" << port;
+		qDebug() << "=X=> Multicast message not sent to: " << addr << ":" << port << " E:" << socket->errorString();
 }
 
 void MulticastGroup::sendMulticasts() {
-	sendMulticast(socket4_, QHostAddress("239.192.152.144"), 28914);
-	sendMulticast(socket6_, QHostAddress("ff08::BD02"), 28914);
+	sendMulticast(provider_->getSocketV4(), provider_->getAddressV4(), provider_->getPort());
+	sendMulticast(provider_->getSocketV6(), provider_->getAddressV6(), provider_->getPort());
 }
 
 } /* namespace librevault */

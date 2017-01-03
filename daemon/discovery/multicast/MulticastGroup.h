@@ -33,13 +33,16 @@
 
 namespace librevault {
 
-class DiscoveryGroup;
+class FolderGroup;
+class MulticastProvider;
 class MulticastGroup : public QObject {
 	Q_OBJECT
 
 public:
-	MulticastGroup(QUdpSocket* socket4, QUdpSocket* socket6, DiscoveryGroup* parent);
+	MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup);
 	virtual ~MulticastGroup();
+
+	void setEnabled(bool enabled);
 
 signals:
 	void discovered(DiscoveryResult result);
@@ -48,12 +51,13 @@ public slots:
 	void useDiscoveredResult(QByteArray folderid, DiscoveryResult result);
 
 private:
-	QUdpSocket* socket4_;
-	QUdpSocket* socket6_;
+	MulticastProvider* provider_;
+	FolderGroup* fgroup_;
 
 	QTimer* timer_;
+	bool enabled_ = false;
 
-	QByteArray folderid_;
+	QByteArray message_;
 
 	QByteArray get_message();
 	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);

@@ -26,27 +26,19 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/blob.h"
-#include "util/network.h"
-#include <QString>
-#include <QUrl>
-#include <QHostAddress>
-#include <QByteArray>
+#include "DiscoveryGroup.h"
+#include "multicast/MulticastGroup.h"
+#include "multicast/MulticastProvider.h"
 
 namespace librevault {
 
-class DiscoveryResult {
-public:
-	QString source;
+DiscoveryGroup::DiscoveryGroup(MulticastProvider* mprovider, QByteArray folderid, QObject* parent) :
+	QObject(parent), folderid_(folderid) {
 
-	QUrl url;
+	mgroup_ = mprovider->makeGroup(this);
+	connect(mgroup_, &MulticastGroup::discovered, this, &DiscoveryGroup::discovered);
+}
 
-	tcp_endpoint endpoint;
-	QHostAddress address;
-	quint16 port;
-
-	blob pubkey;
-};
+DiscoveryGroup::~DiscoveryGroup() {}
 
 } /* namespace librevault */

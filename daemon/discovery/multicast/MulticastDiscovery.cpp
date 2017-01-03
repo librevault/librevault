@@ -77,7 +77,7 @@ void MulticastDiscovery::process(std::shared_ptr<udp_buffer> buffer, size_t size
 	protocol::MulticastDiscovery message;
 	if(enabled_ && message.ParseFromArray(buffer->data(), size)) {
 		uint16_t port = uint16_t(message.port());
-		blob dir_hash = blob(message.dir_hash().begin(), message.dir_hash().end());
+		blob dir_hash = blob(message.folderid().begin(), message.folderid().end());
 		blob pubkey = blob(message.pubkey().begin(), message.pubkey().end());
 
 		tcp_endpoint node_endpoint(endpoint_ptr->address(), port);

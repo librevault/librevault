@@ -18,6 +18,6 @@ package librevault.protocol;
 
 message MulticastDiscovery {
 	uint32 port = 1;
-	bytes dir_hash = 2;
+	bytes folderid = 2;
 	bytes pubkey = 3;
 }

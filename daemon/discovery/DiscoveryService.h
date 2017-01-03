@@ -27,25 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "DiscoveryResult.h"
-#include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/multi_io_service.h"
-#include "util/network.h"
-#include "util/parse_url.h"
 #include <QObject>
-#include <mutex>
-#include <unordered_set>
 
 namespace librevault {
 
 class FolderGroup;
-class DiscoveryGroup;
 
-class StaticDiscovery;
 class MulticastProvider;
 class BTTrackerProvider;
-class MLDHTDiscovery;
+class MLDHTProvider;
 
 class NodeKey;
 class PortMappingService;
@@ -53,32 +43,15 @@ class StateCollector;
 
 class DiscoveryService : public QObject {
 	Q_OBJECT
-	friend class ControlServer;
-	LOG_SCOPE("DiscoveryService");
+
 public:
 	DiscoveryService(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
 	virtual ~DiscoveryService();
 
-	void run() {io_service_.start(1);}
-	void stop() {io_service_.stop();}
-
-	void register_group(std::shared_ptr<FolderGroup> group_ptr);
-	void unregister_group(std::shared_ptr<FolderGroup> group_ptr);
-
-	void consume_discovered_node(DiscoveryResult cred, std::weak_ptr<FolderGroup> group_ptr);
-
-signals:
-	void discovered(DiscoveryResult result, std::weak_ptr<FolderGroup> group);
-
 protected:
-	multi_io_service io_service_;
-
 	MulticastProvider* multicast_;
 	BTTrackerProvider* bttracker_;
-	std::unique_ptr<MLDHTDiscovery> mldht_;
-
-	std::unordered_set<std::shared_ptr<FolderGroup>> registered_groups_;
-	std::mutex registered_groups_mtx_;
+	MLDHTProvider* mldht_;
 };
 
 } /* namespace librevault */

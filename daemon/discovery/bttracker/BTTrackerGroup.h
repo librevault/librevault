@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "discovery/btcompat.h"
+#include "discovery/DiscoveryResult.h"
 #include "util/log_scope.h"
 #include <QObject>
 #include <set>
@@ -47,6 +48,9 @@ public:
 
 	btcompat::info_hash getInfoHash() const {return ih_;}
 	void setEnabled(bool enabled);
+
+signals:
+	void discovered(DiscoveryResult result);
 
 protected:
 	BTTrackerProvider* provider_;

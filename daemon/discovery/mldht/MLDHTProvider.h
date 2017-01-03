@@ -26,17 +26,64 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "DiscoverySubService.h"
-#include "folder/FolderGroup.h"
-#include "util/log.h"
+#pragma once
+#include "discovery/btcompat.h"
+#include <QHostInfo>
+#include <QTimer>
+#include <QUdpSocket>
+#include <mutex>
 
 namespace librevault {
 
-DiscoverySubService::DiscoverySubService(DiscoveryService& parent, io_service& io_service, QString id) : parent_(parent), io_service_(io_service), id_(id) {}
+class PortMappingService;
+class StateCollector;
+class MLDHTProvider : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("MLDHTProvider");
+public:
+	MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+	virtual ~MLDHTProvider();
 
-void DiscoverySubService::add_node(DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr) {
-	node_cred.source = id_;
-	parent_.consume_discovered_node(node_cred, group_ptr);
-}
+	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
+
+	uint_least32_t node_count() const;
+
+	quint16 getPort();
+	quint16 getExternalPort();
+
+signals:
+	void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
+
+public slots:
+	void addNode(tcp_endpoint endpoint);
+
+private:
+	PortMappingService* port_mapping_;
+	StateCollector* state_collector_;
+
+	using dht_id = btcompat::info_hash;
+	dht_id own_id;
+
+	// Sockets
+	QUdpSocket* socket_;
+	QTimer* periodic_;
+
+	// Initialization
+	void init();
+	void readSessionFile();
+
+	void deinit();
+	void writeSessionFile();
+
+	static constexpr size_t buffer_size_ = 65535;
+	void processDatagram();
+
+	void periodic_request();
+
+	QMap<int, quint16> resolves_;
+
+private slots:
+	void handle_resolve(const QHostInfo& host);
+};
 
 } /* namespace librevault */

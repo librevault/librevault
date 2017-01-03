@@ -27,58 +27,18 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoveryService.h"
-#include "control/StateCollector.h"
 #include "discovery/bttracker/BTTrackerProvider.h"
 #include "discovery/multicast/MulticastProvider.h"
-#include "discovery/mldht/MLDHTDiscovery.h"
-#include "folder/FolderGroup.h"
-#include "util/log.h"
+#include "discovery/mldht/MLDHTProvider.h"
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent), io_service_("DiscoveryService") {
-	LOGFUNC();
+DiscoveryService::DiscoveryService(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent) {
 	multicast_ = new MulticastProvider(this);
 	bttracker_ = new BTTrackerProvider(node_key, port_mapping, this);
-	mldht_ = std::make_unique<MLDHTDiscovery>(*this, io_service_.ios(), *port_mapping, *state_collector);
-	LOGFUNCEND();
+	mldht_ = new MLDHTProvider(port_mapping, state_collector, this);
 }
 
-DiscoveryService::~DiscoveryService() {
-	LOGFUNC();
-	mldht_.reset();
-
-	stop();
-	LOGFUNCEND();
-}
-
-void DiscoveryService::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
-
-	LOGFUNC();
-	registered_groups_.insert(group_ptr);
-
-	mldht_->register_group(group_ptr);
-	LOGFUNCEND();
-}
-
-void DiscoveryService::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
-
-	LOGFUNC();
-	mldht_->unregister_group(group_ptr);
-
-	registered_groups_.erase(group_ptr);
-	LOGFUNCEND();
-}
-
-void DiscoveryService::consume_discovered_node(DiscoveryResult cred, std::weak_ptr<FolderGroup> group_ptr) {
-	std::unique_lock<std::mutex> lk(registered_groups_mtx_);
-
-	std::shared_ptr<FolderGroup> group_ptr_locked = group_ptr.lock();
-	if(group_ptr_locked && registered_groups_.count(group_ptr_locked)) {
-		emit discovered(cred, group_ptr);
-	}
-}
+DiscoveryService::~DiscoveryService() {}
 
 } /* namespace librevault */

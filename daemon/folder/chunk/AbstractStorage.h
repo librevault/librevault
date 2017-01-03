@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/blob.h"
 #include <librevault/Meta.h>
 #include <memory>
 

@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/blob.h"
 #include "util/log_scope.h"
 #include "util/parse_url.h"
 #include "p2p/websocket_config.h"

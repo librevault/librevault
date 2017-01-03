@@ -42,7 +42,8 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios) :
+FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
+		QObject(),
 		params_(std::move(params)),
 		state_collector_(state_collector),
 		serial_ios_(serial_ios),

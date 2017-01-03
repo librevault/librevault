@@ -73,15 +73,9 @@ void FolderService::run() {
 }
 
 void FolderService::stop() {
-	init_queue_.post([this] {
-		std::vector<blob> hashes;
-		hashes.reserve(hash_group_.size());
-		for(auto& hash : hash_group_ | boost::adaptors::map_keys)
-			hashes.push_back(hash);
+	for(auto& hash : hash_group_.keys())
+		deinit_folder(hash);
 
-		for(auto& hash : hashes)
-			deinit_folder(hash);
-	}, true);
 	init_queue_.stop();
 
 	bulk_ios_.stop();
@@ -90,7 +84,7 @@ void FolderService::stop() {
 
 void FolderService::init_folder(const FolderParams& params) {
 	LOGFUNC();
-	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios());
+	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios(), this);
 	hash_group_[group_ptr->hash()] = group_ptr;
 
 	emit folderAdded(group_ptr);
@@ -102,14 +96,14 @@ void FolderService::deinit_folder(const blob& folder_hash) {
 	auto group_ptr = get_group(folder_hash);
 	emit folderRemoved(group_ptr);
 
-	hash_group_.erase(folder_hash);
+	hash_group_.remove(folder_hash);
 	LOGD("Folder deinitialized: " << crypto::Hex().to_string(folder_hash));
 }
 
 std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
 	auto it = hash_group_.find(hash);
 	if(it != hash_group_.end())
-		return it->second;
+		return it.value();
 	throw invalid_group();
 }
 

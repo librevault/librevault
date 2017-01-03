@@ -33,6 +33,7 @@
 #include "util/scoped_async_queue.h"
 #include <json/json.h>
 #include <QObject>
+#include <QMap>
 
 namespace librevault {
 
@@ -71,7 +72,7 @@ private:
 	multi_io_service serial_ios_;
 	StateCollector& state_collector_;
 
-	std::map<blob, std::shared_ptr<FolderGroup>> hash_group_;
+	QMap<blob, std::shared_ptr<FolderGroup>> hash_group_;
 	ScopedAsyncQueue init_queue_;
 };
 

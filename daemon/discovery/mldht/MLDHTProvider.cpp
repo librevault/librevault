@@ -263,8 +263,7 @@ void dht_hash(void *hash_return, int hash_size, const void *v1, int len1, const 
 }
 
 int dht_random_bytes(void *buf, size_t size) {
-	CryptoPP::AutoSeededRandomPool rng;
-	rng.GenerateBlock((uint8_t*)buf, size);
+	CryptoPP::AutoSeededRandomPool().GenerateBlock((uint8_t*)buf, size);
 	return size;
 }
 

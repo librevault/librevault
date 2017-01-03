@@ -31,6 +31,7 @@
 #include <json/json.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
+#include <QList>
 #include <QString>
 #include <QUrl>
 #include <boost/filesystem/path.hpp>
@@ -96,7 +97,7 @@ struct FolderParams {
 	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
 	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
 	std::vector<std::string> ignore_paths;
-	std::vector<QUrl> nodes;
+	QList<QUrl> nodes;
 	ArchiveType archive_type = ArchiveType::TRASH_ARCHIVE;
 	unsigned archive_trash_ttl = 30;
 	unsigned archive_timestamp_count = 5;

@@ -33,17 +33,23 @@
 namespace librevault {
 
 MulticastProvider::MulticastProvider(QObject* parent) : QObject(parent) {
+	// Multicast parameters
+	address_v4_ = "239.192.152.144";
+	address_v6_ = "ff08::BD02";
+	port_ = 28914;
+	//
+
 	socket4_ = new QUdpSocket(this);
 	socket6_ = new QUdpSocket(this);
 
-	if(! socket4_->bind(QHostAddress::AnyIPv4, 423))
+	if(! socket4_->bind(QHostAddress::AnyIPv4, port_))
 		qWarning() << "Could not bind MulticastProvider's IPv4 socket: " << socket4_->errorString();
-	if(! socket6_->bind(QHostAddress::AnyIPv6, 12345))
+	if(! socket6_->bind(QHostAddress::AnyIPv6, port_))
 		qWarning() << "Could not bind MulticastProvider's IPv6 socket: " << socket6_->errorString();
 
-	if(! socket4_->joinMulticastGroup(QHostAddress("1.2.3.4")))
+	if(! socket4_->joinMulticastGroup(address_v4_))
 		qWarning() << "Could not join IPv4 multicast group: " << socket4_->errorString();
-	if(! socket6_->joinMulticastGroup(QHostAddress("::")))
+	if(! socket6_->joinMulticastGroup(address_v6_))
 		qWarning() << "Could not join IPv6 multicast group: " << socket6_->errorString();
 
 	connect(socket4_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
@@ -51,15 +57,8 @@ MulticastProvider::MulticastProvider(QObject* parent) : QObject(parent) {
 }
 
 MulticastProvider::~MulticastProvider() {
-	socket4_->leaveMulticastGroup(QHostAddress("1.2.3.4"));
-	socket6_->leaveMulticastGroup(QHostAddress("::"));
-}
-
-MulticastGroup* MulticastProvider::makeGroup(DiscoveryGroup* dgroup) {
-	MulticastGroup* mgroup = new MulticastGroup(socket4_, socket6_, dgroup);
-	connect(this, &MulticastProvider::discovered, mgroup, &MulticastGroup::useDiscoveredResult);
-
-	return mgroup;
+	socket4_->leaveMulticastGroup(address_v4_);
+	socket6_->leaveMulticastGroup(address_v6_);
 }
 
 void MulticastProvider::processDatagram() {

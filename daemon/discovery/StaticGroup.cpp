@@ -26,19 +26,34 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "DiscoveryGroup.h"
-#include "multicast/MulticastGroup.h"
-#include "multicast/MulticastProvider.h"
+#include "StaticGroup.h"
+#include "control/FolderParams.h"
+#include "folder/FolderGroup.h"
 
 namespace librevault {
 
-DiscoveryGroup::DiscoveryGroup(MulticastProvider* mprovider, QByteArray folderid, QObject* parent) :
-	QObject(parent), folderid_(folderid) {
-
-	mgroup_ = mprovider->makeGroup(this);
-	connect(mgroup_, &MulticastGroup::discovered, this, &DiscoveryGroup::discovered);
+StaticGroup::StaticGroup(FolderGroup* fgroup) :
+	fgroup_(fgroup) {
+	timer_ = new QTimer(this);
+	timer_->setInterval(30*1000);
+	connect(timer_, &QTimer::timeout, this, &StaticGroup::tick);
 }
 
-DiscoveryGroup::~DiscoveryGroup() {}
+void StaticGroup::setEnabled(bool enabled) {
+	if(!timer_->isActive() && enabled)
+		timer_->start();
+	else if(timer_->isActive() && !enabled)
+		timer_->stop();
+}
+
+void StaticGroup::tick() {
+	QString source = QStringLiteral("Static");
+	foreach(const QUrl& node, fgroup_->params().nodes) {
+		DiscoveryResult result;
+		result.source = source;
+		result.url = node;
+		emit discovered(result);
+	}
+}
 
 } /* namespace librevault */

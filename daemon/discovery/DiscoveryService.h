@@ -40,9 +40,10 @@
 namespace librevault {
 
 class FolderGroup;
+class DiscoveryGroup;
 
 class StaticDiscovery;
-class MulticastDiscovery;
+class MulticastProvider;
 class BTTrackerDiscovery;
 class MLDHTDiscovery;
 
@@ -72,8 +73,7 @@ signals:
 protected:
 	multi_io_service io_service_;
 
-	std::unique_ptr<StaticDiscovery> static_discovery_;
-	std::unique_ptr<MulticastDiscovery> multicast4_, multicast6_;
+	MulticastProvider* multicast_;
 	std::unique_ptr<BTTrackerDiscovery> bttracker_;
 	std::unique_ptr<MLDHTDiscovery> mldht_;
 

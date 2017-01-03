@@ -26,30 +26,30 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StaticDiscovery.h"
+#pragma once
 #include "DiscoveryResult.h"
-#include "folder/FolderGroup.h"
+#include <QTimer>
 
 namespace librevault {
 
-using namespace boost::asio::ip;
+class FolderGroup;
+class StaticGroup : public QObject {
+	Q_OBJECT
+public:
+	StaticGroup(FolderGroup* fgroup);
+	virtual ~StaticGroup() {}
 
-StaticDiscovery::StaticDiscovery(DiscoveryService& parent, io_service& io_service) :
-	DiscoverySubService(parent, io_service, "Static") {
-}
+	void setEnabled(bool enabled);
 
-StaticDiscovery::~StaticDiscovery() {}
+signals:
+	void discovered(DiscoveryResult result);
 
-void StaticDiscovery::register_group(std::shared_ptr<FolderGroup> group_ptr) {
-	for(auto& node : group_ptr->params().nodes) {
-		DiscoveryResult cred;
-		cred.url = node;
-		add_node(cred, group_ptr);
-	}
-}
+private:
+	FolderGroup* fgroup_;
+	QTimer* timer_;
 
-void StaticDiscovery::unregister_group(std::shared_ptr<FolderGroup> group_ptr) {
-	groups_.erase(group_ptr);
-}
+private slots:
+	void tick();
+};
 
 } /* namespace librevault */

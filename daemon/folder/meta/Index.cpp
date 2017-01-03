@@ -132,7 +132,7 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	else
 		LOGD("Added Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
-	new_meta_signal(signed_meta);
+	emit metaAdded(signed_meta);
 	if(!fully_assembled)
 		assemble_meta_signal(signed_meta.meta());
 

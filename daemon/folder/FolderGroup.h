@@ -27,11 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractFolder.h"
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
 #include "util/network.h"
-#include "util/scoped_async_queue.h"
 #include "util/scoped_timer.h"
 
 #include <librevault/Secret.h>
@@ -39,6 +37,7 @@
 #include <librevault/util/bitfield_convert.h>
 
 #include <QObject>
+#include <QTimer>
 
 #include <boost/signals2/signal.hpp>
 #include <set>
@@ -90,7 +89,6 @@ public:
 
 	/* Getters */
 	std::set<std::shared_ptr<RemoteFolder>> remotes() const;
-	inline std::set<std::shared_ptr<P2PFolder>> p2p_dirs() const {return p2p_folders_;}
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -106,8 +104,6 @@ private:
 	StateCollector& state_collector_;
 	io_service& serial_ios_;
 
-	ScopedAsyncQueue folder_worker_queue_;
-
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;
 
@@ -121,9 +117,7 @@ private:
 
 	BandwidthCounter bandwidth_counter_;
 
-	// Periodic state pusher
-	ScopedTimer state_pusher_;
-	void push_state();
+	QTimer* state_pusher_;
 
 	/* Members */
 	mutable std::mutex p2p_folders_mtx_;
@@ -134,8 +128,9 @@ private:
 	std::set<blob> p2p_folders_pubkeys_;
 	std::set<tcp_endpoint> p2p_folders_endpoints_;
 
+private slots:
+	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-
 	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
 };
 

@@ -27,14 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/util/bitfield_convert.h>
 #include "util/blob.h"
+#include <QObject>
+#include <stdexcept>
+#include <string>
 
 namespace librevault {
 
 class FolderGroup;
 
-class AbstractFolder {
+class AbstractFolder : public QObject {
+	Q_OBJECT
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}

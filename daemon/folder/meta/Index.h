@@ -32,13 +32,15 @@
 #include "util/SQLiteWrapper.h"
 #include <librevault/SignedMeta.h>
 #include <boost/signals2/signal.hpp>
+#include <QObject>
 
 namespace librevault {
 
 class FolderParams;
 class StateCollector;
 
-class Index {
+class Index : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("Index");
 public:
 	struct status_t {
@@ -48,7 +50,6 @@ public:
 		uint64_t deleted_entries = 0;
 	};
 
-	boost::signals2::signal<void(const SignedMeta&)> new_meta_signal;
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
 	Index(const FolderParams& params, StateCollector& state_collector);
@@ -70,6 +71,9 @@ public:
 	SQLiteDB& db() {return *db_;}
 
 	status_t get_status();
+
+signals:
+	void metaAdded(SignedMeta meta);
 
 private:
 	const FolderParams& params_;

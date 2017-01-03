@@ -27,20 +27,22 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "AbstractFolder.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
+#include <librevault/util/bitfield_convert.h>
 #include <boost/signals2.hpp>
-#include "AbstractFolder.h"
 
 namespace librevault {
 
 class RemoteFolder : public AbstractFolder, public std::enable_shared_from_this<RemoteFolder> {
+	Q_OBJECT
 	friend class FolderGroup;
 public:
 	RemoteFolder();
 	virtual ~RemoteFolder();
 
-	/* Signals */
+//signals:
 	template <typename Func>
 	using signal = typename boost::signals2::signal_type<Func, boost::signals2::keywords::mutex_type<boost::signals2::dummy_mutex>>::type;
 
@@ -63,6 +65,7 @@ public:
 	signal<void(blob, uint32_t, blob)> recv_block_reply;
 	signal<void(blob, uint32_t, uint32_t)> recv_block_cancel;
 
+public:
 	/* Message senders */
 	virtual void choke() = 0;
 	virtual void unchoke() = 0;

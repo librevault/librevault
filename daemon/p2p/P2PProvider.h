@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <discovery/DiscoveryService.h>
-#include <util/network.h>
-#include <util/log_scope.h>
+#include "discovery/DiscoveryService.h"
+#include "util/network.h"
+#include "util/log_scope.h"
+#include <QObject>
 #include <set>
 #include <mutex>
 
@@ -42,11 +43,12 @@ class PortMappingService;
 class NodeKey;
 class FolderService;
 
-class P2PProvider {
+class P2PProvider : public QObject {
+	Q_OBJECT
 	friend class ControlServer;
 	LOG_SCOPE("P2PProvider");
 public:
-	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service);
+	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service, QObject* parent);
 	virtual ~P2PProvider();
 
 	// Slots

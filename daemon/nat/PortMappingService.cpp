@@ -33,7 +33,7 @@
 
 namespace librevault {
 
-PortMappingService::PortMappingService() {
+PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
 	LOGFUNC();
 	natpmp_service_ = new NATPMPService(*this);
 	upnp_service_ = new UPnPService(*this);

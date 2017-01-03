@@ -55,11 +55,11 @@ public:
 	void shutdown();
 private:
 	StateCollector* state_collector_;
-	std::unique_ptr<NodeKey> node_key_;
-	std::unique_ptr<PortMappingService> portmanager_;
-	std::unique_ptr<DiscoveryService> discovery_;
-	std::unique_ptr<FolderService> folder_service_;
-	std::unique_ptr<P2PProvider> p2p_provider_;
+	NodeKey* node_key_;
+	PortMappingService* portmanager_;
+	DiscoveryService* discovery_;
+	FolderService* folder_service_;
+	P2PProvider* p2p_provider_;
 	ControlServer* control_server_;
 
 	/* Initialization */

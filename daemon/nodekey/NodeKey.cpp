@@ -41,7 +41,7 @@
 
 namespace librevault {
 
-NodeKey::NodeKey() {
+NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	LOGFUNC();
 	write_key();
 	gen_certificate();

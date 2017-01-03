@@ -33,7 +33,7 @@
 #include "util/multi_io_service.h"
 #include "util/network.h"
 #include "util/parse_url.h"
-#include <boost/signals2/signal.hpp>
+#include <QObject>
 #include <mutex>
 #include <unordered_set>
 
@@ -50,11 +50,12 @@ class NodeKey;
 class PortMappingService;
 class StateCollector;
 
-class DiscoveryService {
+class DiscoveryService : public QObject {
+	Q_OBJECT
 	friend class ControlServer;
 	LOG_SCOPE("DiscoveryService");
 public:
-	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector);
+	DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector, QObject* parent);
 	virtual ~DiscoveryService();
 
 	void run() {io_service_.start(1);}
@@ -65,7 +66,8 @@ public:
 
 	void consume_discovered_node(DiscoveryResult cred, std::weak_ptr<FolderGroup> group_ptr);
 
-	boost::signals2::signal<void(DiscoveryResult, std::weak_ptr<FolderGroup>)> discovered_node_signal;
+signals:
+	void discovered(DiscoveryResult result, std::weak_ptr<FolderGroup> group);
 
 protected:
 	multi_io_service io_service_;

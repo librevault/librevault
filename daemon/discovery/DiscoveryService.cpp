@@ -36,7 +36,7 @@
 
 namespace librevault {
 
-DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector) : io_service_("DiscoveryService") {
+DiscoveryService::DiscoveryService(NodeKey& node_key, PortMappingService& port_mapping, StateCollector& state_collector, QObject* parent) : QObject(parent), io_service_("DiscoveryService") {
 	LOGFUNC();
 	static_discovery_ = std::make_unique<StaticDiscovery>(*this, io_service_.ios());
 	multicast4_ = std::make_unique<MulticastDiscovery4>(*this, io_service_.ios(), node_key);
@@ -91,7 +91,7 @@ void DiscoveryService::consume_discovered_node(DiscoveryResult cred, std::weak_p
 
 	std::shared_ptr<FolderGroup> group_ptr_locked = group_ptr.lock();
 	if(group_ptr_locked && registered_groups_.count(group_ptr_locked)) {
-		discovered_node_signal(cred, group_ptr);
+		emit discovered(cred, group_ptr);
 	}
 }
 

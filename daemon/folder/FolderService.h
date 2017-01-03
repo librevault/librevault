@@ -33,7 +33,6 @@
 #include "util/scoped_async_queue.h"
 #include <json/json.h>
 #include <QObject>
-#include <boost/signals2/signal.hpp>
 
 namespace librevault {
 
@@ -51,21 +50,21 @@ public:
 		invalid_group() : std::runtime_error("Folder group not found") {}
 	};
 
-	explicit FolderService(StateCollector& state_collector);
+	explicit FolderService(StateCollector& state_collector, QObject* parent);
 	virtual ~FolderService();
 
 	void run();
 	void stop();
-
-	/* Signals */
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_added_signal;
-	boost::signals2::signal<void(std::shared_ptr<FolderGroup>)> folder_removed_signal;
 
 	/* FolderGroup nanagenent */
 	void init_folder(const FolderParams& params);
 	void deinit_folder(const blob& folder_hash);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
+
+signals:
+	void folderAdded(std::shared_ptr<FolderGroup> fgroup);
+	void folderRemoved(std::shared_ptr<FolderGroup> fgroup);
 
 private:
 	multi_io_service bulk_ios_;

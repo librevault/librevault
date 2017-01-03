@@ -27,15 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <util/blob.h>
-#include <util/log_scope.h>
+#include "util/blob.h"
+#include "util/log_scope.h"
+#include <QObject>
 
 namespace librevault {
 
-class NodeKey {
+class NodeKey : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("NodeKey");
 public:
-	NodeKey();
+	NodeKey(QObject* parent);
 	virtual ~NodeKey();
 
 	const blob& public_key() const {return public_key_;}

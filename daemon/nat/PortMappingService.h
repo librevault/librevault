@@ -48,7 +48,7 @@ public:
 		int protocol;
 	};
 
-	PortMappingService();
+	PortMappingService(QObject* parent);
 	virtual ~PortMappingService();
 
 	void add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description);

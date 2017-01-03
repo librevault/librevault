@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service) :
+P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service, QObject* parent) : QObject(parent),
 	ios_("P2PProvider"), node_key_(node_key) {
 	LOGFUNC();
 	ws_server_ = std::make_unique<WSServer>(ios_.ios(), *this, port_mapping, node_key, folder_service);

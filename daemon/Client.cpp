@@ -36,7 +36,7 @@
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/P2PProvider.h"
-#include <util/log.h>
+#include "util/log.h"
 
 namespace librevault {
 
@@ -44,38 +44,30 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	setApplicationName("Librevault");
 	// Initializing components
 	state_collector_ = new StateCollector(this);
-	node_key_ = std::make_unique<NodeKey>();
-	portmanager_ = std::make_unique<PortMappingService>();
-	discovery_ = std::make_unique<DiscoveryService>(*node_key_, *portmanager_, *state_collector_);
-	folder_service_ = std::make_unique<FolderService>(*state_collector_);
-	p2p_provider_ = std::make_unique<P2PProvider>(*node_key_, *portmanager_, *folder_service_);
+	node_key_ = new NodeKey(this);
+	portmanager_ = new PortMappingService(this);
+	discovery_ = new DiscoveryService(*node_key_, *portmanager_, *state_collector_, this);
+	folder_service_ = new FolderService(*state_collector_, this);
+	p2p_provider_ = new P2PProvider(*node_key_, *portmanager_, *folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 
 	/* Connecting signals */
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
-	discovery_->discovered_node_signal.connect([this](DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr){
-		if(p2p_provider_) p2p_provider_->add_node(node_cred, group_ptr);
+	connect(discovery_, &DiscoveryService::discovered, p2p_provider_, &P2PProvider::add_node);
+	connect(folder_service_, &FolderService::folderAdded, discovery_, &DiscoveryService::register_group);
+	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](std::shared_ptr<FolderGroup> group){
+		control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
 	});
-	folder_service_->folder_added_signal.connect([this](std::shared_ptr<FolderGroup> group){
-		if(discovery_) discovery_->register_group(group);
-		if(control_server_) control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
-	});
-	folder_service_->folder_removed_signal.connect([this](std::shared_ptr<FolderGroup> group){
-		if(discovery_) discovery_->unregister_group(group);
-		if(control_server_) control_server_->notify_folder_removed(group->hash());
+	connect(folder_service_, &FolderService::folderRemoved, discovery_, &DiscoveryService::unregister_group);
+	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](std::shared_ptr<FolderGroup> group){
+		control_server_->notify_folder_removed(group->hash());
 	});
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }
 
-Client::~Client() {
-	p2p_provider_.reset();
-	folder_service_.reset();
-	discovery_.reset();
-	portmanager_.reset();
-	node_key_.reset();
-}
+Client::~Client() {}
 
 int Client::run() {
 	discovery_->run();

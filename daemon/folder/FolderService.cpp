@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-FolderService::FolderService(StateCollector& state_collector) : QObject(),
+FolderService::FolderService(StateCollector& state_collector, QObject* parent) : QObject(parent),
 	bulk_ios_("FolderService_bulk"),
 	serial_ios_("FolderService_serial"),
 	state_collector_(state_collector),
@@ -93,14 +93,14 @@ void FolderService::init_folder(const FolderParams& params) {
 	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios());
 	hash_group_[group_ptr->hash()] = group_ptr;
 
-	folder_added_signal(group_ptr);
+	emit folderAdded(group_ptr);
 	LOGD("Folder initialized: " << crypto::Hex().to_string(params.secret.get_Hash()));
 }
 
 void FolderService::deinit_folder(const blob& folder_hash) {
 	LOGFUNC();
 	auto group_ptr = get_group(folder_hash);
-	folder_removed_signal(group_ptr);
+	emit folderRemoved(group_ptr);
 
 	hash_group_.erase(folder_hash);
 	LOGD("Folder deinitialized: " << crypto::Hex().to_string(folder_hash));

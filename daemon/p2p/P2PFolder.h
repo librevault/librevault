@@ -29,7 +29,6 @@
 #pragma once
 #include "folder/RemoteFolder.h"
 #include "p2p/P2PProvider.h"
-#include "p2p/WSService.h"
 #include "p2p/BandwidthCounter.h"
 #include <librevault/protocol/V1Parser.h>
 #include <json/json-forwards.h>
@@ -58,7 +57,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service, WSService::connection conn);
+	P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service);
 	~P2PFolder();
 
 	/* Getters */
@@ -94,21 +93,14 @@ public:
 	void post_block(const blob& ct_hash, uint32_t offset, const blob& block);
 	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
-protected:
-	const WSService::connection conn_;
-	FolderGroup* fgroup_;
-
-	void handle_message(const blob& message);
-
 private:
 	enum Role {SERVER, CLIENT} role_;
 
 	P2PProvider* provider_;
 	NodeKey* node_key_;
-
 	QWebSocket* socket_;
+	FolderGroup* fgroup_;
 
-	V1Parser parser_;   // Protocol parser
 	bool is_handshaken_ = false;
 
 	BandwidthCounter counter_;
@@ -133,6 +125,8 @@ private:
 	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 
 	/* Message handlers */
+	void handle_message(const QByteArray& message);
+
 	void handle_Handshake(const blob& message_raw);
 
 	void handle_Choke(const blob& message_raw);

@@ -32,6 +32,7 @@
 #include "util/network.h"
 #include "util/log_scope.h"
 #include <QObject>
+#include <QWebSocketServer>
 #include <set>
 #include <mutex>
 
@@ -57,7 +58,7 @@ public:
 	void run() {ios_.start(1);}
 	void stop() {ios_.stop();}
 
-	void add_node(DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr);
+	QSslConfiguration getSslConfiguration();
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
@@ -72,9 +73,13 @@ private:
 	std::unique_ptr<WSServer> ws_server_;
 	std::unique_ptr<WSClient> ws_client_;
 
+	QWebSocketServer* server_;
+
 	/* Loopback detection */
 	std::set<tcp_endpoint> loopback_blacklist_;
-	std::mutex loopback_blacklist_mtx_;
+
+private slots:
+	void handleConnection();
 };
 
 } /* namespace librevault */

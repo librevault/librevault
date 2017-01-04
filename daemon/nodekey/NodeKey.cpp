@@ -28,8 +28,8 @@
  */
 #include "NodeKey.h"
 #include "control/Paths.h"
-#include <util/file_util.h>
-#include <util/log.h>
+#include "util/file_util.h"
+#include "util/log.h"
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
@@ -38,6 +38,7 @@
 #include <openssl/x509.h>
 #include <librevault/crypto/Hex.h>
 #include <librevault/crypto/Base64.h>
+#include <QFile>
 
 namespace librevault {
 
@@ -51,6 +52,22 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 NodeKey::~NodeKey() {
 	LOGFUNC();
 	LOGFUNCEND();
+}
+
+QByteArray NodeKey::digest() const {
+	return certificate().digest();
+}
+
+QSslKey NodeKey::privateKey() const {
+	QFile ssl_key_file(QString::fromStdWString(Paths::get()->key_path.wstring()));
+	ssl_key_file.open(QIODevice::ReadOnly);
+	return QSslKey(&ssl_key_file);
+}
+
+QSslCertificate NodeKey::certificate() const {
+	QFile ssl_cert_file(QString::fromStdWString(Paths::get()->cert_path.wstring()));
+	ssl_cert_file.open(QIODevice::ReadOnly);
+	return QSslCertificate(&ssl_cert_file);
 }
 
 void NodeKey::write_key() {

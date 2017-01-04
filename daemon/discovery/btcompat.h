@@ -68,17 +68,16 @@ inline info_hash getInfoHash(const QByteArray& folderid) {
 	return ih;
 }
 
-inline peer_id get_peer_id(const blob& node_pubkey) {
+inline peer_id get_peer_id(QByteArray node_pubkey) {
 	peer_id pid;
 
 	std::string az_id = Config::get()->global_get("bttracker_azureus_id").asString();
 	az_id.resize(8);
 
-	auto pubkey_bytes_left = pid.size() - az_id.size();
+	node_pubkey = node_pubkey.leftJustified(pid.size() - az_id.size(), 0, true);
 
 	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(node_pubkey.begin(),
-		node_pubkey.begin() + pubkey_bytes_left, pid.begin() + az_id.size());
+	std::copy(node_pubkey.begin(), node_pubkey.end(), pid.begin() + az_id.size());
 
 	return pid;
 }

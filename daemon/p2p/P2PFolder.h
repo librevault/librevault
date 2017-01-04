@@ -35,6 +35,7 @@
 #include <json/json-forwards.h>
 #include <websocketpp/common/connection_hdl.hpp>
 #include <QTimer>
+#include <QWebSocket>
 
 namespace librevault {
 
@@ -57,11 +58,12 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
+	P2PFolder(P2PProvider* provider, WSService* ws_service, NodeKey* node_key, FolderService* folder_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */
 	QString displayName() const;
+	QByteArray cert_digest() const;
 	const blob& remote_pubkey() const {return conn_.remote_pubkey;}
 	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
 	const WSService::connection::role_type role() const {return conn_.role;}
@@ -69,9 +71,6 @@ public:
 	const std::string& user_agent() const {return user_agent_;}
 	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
 	Json::Value collect_state();
-
-	blob local_token();
-	blob remote_token();
 
 	/* RPC Actions */
 	void send_message(const blob& message);
@@ -104,16 +103,18 @@ protected:
 	void handle_message(const blob& message);
 
 private:
-	P2PProvider& provider_;
-	WSService& ws_service_;
-	NodeKey& node_key_;
+	P2PProvider* provider_;
+	WSService* ws_service_;
+	NodeKey* node_key_;
+
+	QWebSocket* socket_;
 
 	V1Parser parser_;   // Protocol parser
 	bool is_handshaken_ = false;
 
 	BandwidthCounter counter_;
 
-	// These needed primarily for UI
+	/* These needed primarily for UI */
 	std::string client_name_;
 	std::string user_agent_;
 
@@ -121,12 +122,14 @@ private:
 	QTimer* ping_timer_;
 	QTimer* timeout_timer_;
 
+	/* Token generators */
+	blob derive_token_digest(const Secret& secret, QByteArray digest);
+	blob local_token();
+	blob remote_token();
+
 	void bump_timeout();
 
-	void send_ping();
-
-	void handle_ping(std::string payload);
-	void handle_pong(std::string payload);
+	void handle_pong(quint64 rtt);
 
 	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 

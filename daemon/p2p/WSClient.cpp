@@ -48,9 +48,6 @@ WSClient::WSClient(io_service& ios, P2PProvider& provider, NodeKey& node_key, Fo
 	ws_client_.set_message_handler(std::bind(&WSClient::on_message_internal, this, std::placeholders::_1, std::placeholders::_2));
 	ws_client_.set_fail_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
 	ws_client_.set_close_handler(std::bind(&WSClient::on_disconnect, this, std::placeholders::_1));
-
-	ws_client_.set_ping_handler(std::bind(&WSClient::on_ping, this, std::placeholders::_1, std::placeholders::_2));
-	ws_client_.set_pong_handler(std::bind(&WSClient::on_pong, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void WSClient::connect(DiscoveryResult node_credentials, std::weak_ptr<FolderGroup> group_ptr) {

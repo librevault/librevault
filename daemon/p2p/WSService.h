@@ -91,9 +91,6 @@ protected:
 	void on_message(websocketpp::connection_hdl hdl, const std::string& message);
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
-	bool on_ping(websocketpp::connection_hdl hdl, std::string message);
-	void on_pong(websocketpp::connection_hdl hdl, std::string message);
-
 	/* Handler templates */
 	template<class WSClass> void on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl);
 

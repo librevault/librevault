@@ -57,9 +57,6 @@ WSServer::WSServer(io_service& ios, P2PProvider& provider, PortMappingService& p
 	ws_server_.set_fail_handler(std::bind(&WSServer::on_disconnect, this, std::placeholders::_1));
 	ws_server_.set_close_handler(std::bind(&WSServer::on_disconnect, this, std::placeholders::_1));
 
-	ws_server_.set_ping_handler(std::bind(&WSServer::on_ping, this, std::placeholders::_1, std::placeholders::_2));
-	ws_server_.set_pong_handler(std::bind(&WSServer::on_pong, this, std::placeholders::_1, std::placeholders::_2));
-
 	ws_server_.listen(endpoint);
 	ws_server_.start_accept();
 

@@ -55,7 +55,7 @@ public:
 		blob hash;
 
 		// Set on_open
-		std::weak_ptr<P2PFolder> folder;
+		P2PFolder* folder;
 	};
 
 	/* Actions */

@@ -114,7 +114,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 
 	try {
 		connection& conn = ws_assignment_[hdl];
-		auto new_folder = std::make_shared<P2PFolder>(&provider_, this, &node_key_, &folder_service_, conn);
+		auto new_folder = new P2PFolder(&provider_, this, &node_key_, &folder_service_, conn);
 		conn.folder = new_folder;
 
 		folder_service_.get_group(conn.hash)->attach(new_folder);
@@ -146,7 +146,7 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 	LOGFUNC() << " e:" << errmsg(hdl);
 
 	try {
-		auto p2p_folder_ptr = std::shared_ptr<P2PFolder>(ws_assignment_[hdl].folder);
+		auto p2p_folder_ptr = ws_assignment_[hdl].folder;
 		auto folder_group = p2p_folder_ptr->folder_group();
 
 		folder_group->detach(p2p_folder_ptr);

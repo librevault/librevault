@@ -44,8 +44,8 @@ public:
 	MetaDownloader(MetaStorage& meta_storage, Downloader& downloader);
 
 	/* Message handlers */
-	void handle_have_meta(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(std::shared_ptr<RemoteFolder> origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+	void handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
 
 private:
 	MetaStorage& meta_storage_;

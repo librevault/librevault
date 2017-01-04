@@ -113,45 +113,45 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 }
 
 // RemoteFolder actions
-void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
-	origin->recv_choke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
-		serial_ios_.post([=]{downloader_->handle_choke(origin.lock());});
+void FolderGroup::handle_handshake(RemoteFolder* origin) {
+	origin->recv_choke.connect([=]{
+		downloader_->handle_choke(origin);
 	});
-	origin->recv_unchoke.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
-		serial_ios_.post([=]{downloader_->handle_unchoke(origin.lock());});
+	origin->recv_unchoke.connect([=]{
+		downloader_->handle_unchoke(origin);
 	});
-	origin->recv_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
-		serial_ios_.post([=]{uploader_->handle_interested(origin.lock());});
+	origin->recv_interested.connect([=]{
+		uploader_->handle_interested(origin);
 	});
-	origin->recv_not_interested.connect([origin = std::weak_ptr<RemoteFolder>(origin), this]{
-		serial_ios_.post([=]{uploader_->handle_not_interested(origin.lock());});
-	});
-
-	origin->recv_have_meta.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const Meta::PathRevision& revision, const bitfield_type& bitfield){
-		serial_ios_.post([=]{meta_downloader_->handle_have_meta(origin.lock(), revision, bitfield);});
-	});
-	origin->recv_have_chunk.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash){
-		serial_ios_.post([=]{downloader_->notify_remote_chunk(origin.lock(), ct_hash);});
+	origin->recv_not_interested.connect([=]{
+		uploader_->handle_not_interested(origin);
 	});
 
-	origin->recv_meta_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](Meta::PathRevision path_revision){
-		serial_ios_.post([=]{meta_uploader_->handle_meta_request(origin.lock(), path_revision);});
+	origin->recv_have_meta.connect([=](const Meta::PathRevision& revision, const bitfield_type& bitfield){
+		meta_downloader_->handle_have_meta(origin, revision, bitfield);
 	});
-	origin->recv_meta_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const SignedMeta& smeta, const bitfield_type& bitfield){
-		serial_ios_.post([=]{meta_downloader_->handle_meta_reply(origin.lock(), smeta, bitfield);});
-	});
-
-	origin->recv_block_request.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, uint32_t size){
-		serial_ios_.post([=]{uploader_->handle_block_request(origin.lock(), ct_hash, offset, size);});
-	});
-	origin->recv_block_reply.connect([origin = std::weak_ptr<RemoteFolder>(origin), this](const blob& ct_hash, uint32_t offset, const blob& block){
-		serial_ios_.post([=]{downloader_->put_block(ct_hash, offset, block, origin.lock());});
+	origin->recv_have_chunk.connect([=](const blob& ct_hash){
+		downloader_->notify_remote_chunk(origin, ct_hash);
 	});
 
-	serial_ios_.post([origin, this]{meta_uploader_->handle_handshake(origin);});
+	origin->recv_meta_request.connect([=](Meta::PathRevision path_revision){
+		meta_uploader_->handle_meta_request(origin, path_revision);
+	});
+	origin->recv_meta_reply.connect([=](const SignedMeta& smeta, const bitfield_type& bitfield){
+		meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
+	});
+
+	origin->recv_block_request.connect([=](const blob& ct_hash, uint32_t offset, uint32_t size){
+		uploader_->handle_block_request(origin, ct_hash, offset, size);
+	});
+	origin->recv_block_reply.connect([=](const blob& ct_hash, uint32_t offset, const blob& block){
+		downloader_->put_block(ct_hash, offset, block, origin);
+	});
+
+	serial_ios_.post([=]{meta_uploader_->handle_handshake(origin);});
 }
 
-void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
+void FolderGroup::attach(P2PFolder* remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->digest())) throw attach_error();
 
 	p2p_folders_.insert(remote_ptr);
@@ -160,12 +160,12 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 
 	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
 
-	remote_ptr->handshake_performed.connect([remote_ptr = std::weak_ptr<RemoteFolder>(remote_ptr), this]{handle_handshake(remote_ptr.lock());});
+	remote_ptr->handshake_performed.connect([=]{handle_handshake(remote_ptr);});
 
 	emit attached(remote_ptr);
 }
 
-void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
+void FolderGroup::detach(P2PFolder* remote_ptr) {
 	downloader_->erase_remote(remote_ptr);
 
 	p2p_folders_digests_.erase(remote_ptr->digest());
@@ -185,8 +185,8 @@ bool FolderGroup::have_p2p_dir(const QByteArray& digest) {
 	return p2p_folders_digests_.find(digest) != p2p_folders_digests_.end();
 }
 
-std::set<std::shared_ptr<RemoteFolder>> FolderGroup::remotes() const {
-	return std::set<std::shared_ptr<RemoteFolder>>(p2p_folders_.begin(), p2p_folders_.end());
+std::set<RemoteFolder*> FolderGroup::remotes() const {
+	return std::set<RemoteFolder*>(p2p_folders_.begin(), p2p_folders_.end());
 }
 
 std::string FolderGroup::log_tag() const {

@@ -71,7 +71,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, bulk_ios, serial_ios);
 
 	uploader_ = std::make_unique<Uploader>(*chunk_storage);
-	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage, serial_ios);
+	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage);
 	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage);
 	meta_downloader_ = std::make_unique<MetaDownloader>(*meta_storage_, *downloader_);
 

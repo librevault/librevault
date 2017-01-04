@@ -27,8 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/network.h"
 #include <QString>
 #include <QUrl>
 #include <QHostAddress>
@@ -42,7 +40,6 @@ public:
 
 	QUrl url;
 
-	tcp_endpoint endpoint;  // TODO: remove
 	QHostAddress address;
 	quint16 port;
 

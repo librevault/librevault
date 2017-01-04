@@ -284,6 +284,7 @@ if(BUILD_GUI OR BUILD_CLI)
 	endif()
 	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 endif()
+#add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)

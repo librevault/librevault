@@ -51,7 +51,7 @@ public:
 		invalid_group() : std::runtime_error("Folder group not found") {}
 	};
 
-	explicit FolderService(StateCollector& state_collector, QObject* parent);
+	explicit FolderService(StateCollector* state_collector, QObject* parent);
 	virtual ~FolderService();
 
 	void run();
@@ -71,7 +71,7 @@ signals:
 private:
 	multi_io_service bulk_ios_;
 	multi_io_service serial_ios_;
-	StateCollector& state_collector_;
+	StateCollector* state_collector_;
 
 	QMap<blob, std::shared_ptr<FolderGroup>> hash_group_;
 	QMap<QByteArray, FolderGroup*> groups_;

@@ -40,29 +40,29 @@ Uploader::Uploader(ChunkStorage& chunk_storage) :
 	LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(std::set<std::shared_ptr<RemoteFolder>> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(std::set<RemoteFolder*> remotes, const blob& ct_hash) {
 	for(auto& remote : remotes) {
 		remote->post_have_chunk(ct_hash);
 	}
 }
 
-void Uploader::handle_interested(std::shared_ptr<RemoteFolder> remote) {
+void Uploader::handle_interested(RemoteFolder* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->unchoke();
 }
-void Uploader::handle_not_interested(std::shared_ptr<RemoteFolder> remote) {
+void Uploader::handle_not_interested(RemoteFolder* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->choke();
 }
 
-void Uploader::handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size) {
+void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) {
 	try {
-		if(!origin->am_choking() && origin->peer_interested()) {
-			origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+		if(!remote->am_choking() && remote->peer_interested()) {
+			remote->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
 		}
 	}catch(ChunkStorage::no_such_chunk& e){
 		LOGW("Requested nonexistent block");

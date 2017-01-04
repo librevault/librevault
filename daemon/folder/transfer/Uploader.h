@@ -42,13 +42,13 @@ class Uploader {
 public:
 	Uploader(ChunkStorage& chunk_storage);
 
-	void broadcast_chunk(std::set<std::shared_ptr<RemoteFolder>> remotes, const blob& ct_hash);
+	void broadcast_chunk(std::set<RemoteFolder*> remotes, const blob& ct_hash);
 
 	/* Message handlers */
-	void handle_interested(std::shared_ptr<RemoteFolder> remote);
-	void handle_not_interested(std::shared_ptr<RemoteFolder> remote);
+	void handle_interested(RemoteFolder* remote);
+	void handle_not_interested(RemoteFolder* remote);
 
-	void handle_block_request(std::shared_ptr<RemoteFolder> origin, const blob& ct_hash, uint32_t offset, uint32_t size);
+	void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
 	ChunkStorage& chunk_storage_;

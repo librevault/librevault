@@ -95,8 +95,8 @@ struct MissingChunk {
 		uint32_t size;
 		std::chrono::steady_clock::time_point started;
 	};
-	std::unordered_multimap<std::shared_ptr<RemoteFolder>, BlockRequest> requests;
-	std::unordered_map<std::shared_ptr<RemoteFolder>, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
+	std::unordered_multimap<RemoteFolder*, BlockRequest> requests;
+	std::unordered_map<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
 	const blob ct_hash_;
 
@@ -151,15 +151,15 @@ public:
 	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
 	void notify_local_chunk(const blob& ct_hash, bool mark_clustered = true);
 
-	void notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash);
+	void notify_remote_meta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
+	void notify_remote_chunk(RemoteFolder* remote, const blob& ct_hash);
 
-	void handle_choke(std::shared_ptr<RemoteFolder> remote);
-	void handle_unchoke(std::shared_ptr<RemoteFolder> remote);
+	void handle_choke(RemoteFolder* remote);
+	void handle_unchoke(RemoteFolder* remote);
 
-	void put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from);
+	void put_block(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
 
-	void erase_remote(std::shared_ptr<RemoteFolder> remote);
+	void erase_remote(RemoteFolder* remote);
 
 private:
 	const FolderParams& params_;
@@ -177,10 +177,10 @@ private:
 
 	void maintain_requests();
 	bool request_one();
-	std::shared_ptr<RemoteFolder> find_node_for_request(std::shared_ptr<MissingChunk> chunk);
+	RemoteFolder* find_node_for_request(std::shared_ptr<MissingChunk> chunk);
 
 	/* Node management */
-	std::set<std::shared_ptr<RemoteFolder>> remotes_;
+	std::set<RemoteFolder*> remotes_;
 };
 
 } /* namespace librevault */

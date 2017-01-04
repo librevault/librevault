@@ -64,8 +64,8 @@ class FolderGroup : public QObject {
 	friend class ControlServer;
 
 signals:
-	void attached(std::shared_ptr<P2PFolder> remote_ptr);
-	void detached(std::shared_ptr<P2PFolder> remote_ptr);
+	void attached(P2PFolder* remote_ptr);
+	void detached(P2PFolder* remote_ptr);
 
 public:
 	struct error : std::runtime_error {
@@ -81,14 +81,14 @@ public:
 	virtual ~FolderGroup();
 
 	/* Membership management */
-	void attach(std::shared_ptr<P2PFolder> remote_ptr);
-	void detach(std::shared_ptr<P2PFolder> remote_ptr);
+	void attach(P2PFolder* remote_ptr);
+	void detach(P2PFolder* remote_ptr);
 
 	bool have_p2p_dir(const tcp_endpoint& endpoint);
 	bool have_p2p_dir(const QByteArray& digest);
 
 	/* Getters */
-	std::set<std::shared_ptr<RemoteFolder>> remotes() const;
+	std::set<RemoteFolder*> remotes() const;
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -120,7 +120,7 @@ private:
 	QTimer* state_pusher_;
 
 	/* Members */
-	std::set<std::shared_ptr<P2PFolder>> p2p_folders_;
+	std::set<P2PFolder*> p2p_folders_;
 
 	// Member lookup optimization
 	std::set<QByteArray> p2p_folders_digests_;
@@ -129,7 +129,7 @@ private:
 private slots:
 	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(std::shared_ptr<RemoteFolder> origin);
+	void handle_handshake(RemoteFolder* origin);
 };
 
 } /* namespace librevault */

@@ -44,11 +44,11 @@ class MetaUploader {
 public:
 	MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storage);
 
-	void broadcast_meta(std::set<std::shared_ptr<RemoteFolder>> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void broadcast_meta(std::set<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
 
 	/* Message handlers */
-	void handle_handshake(std::shared_ptr<RemoteFolder> remote);
-	void handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision);
+	void handle_handshake(RemoteFolder* remote);
+	void handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision);
 
 private:
 	MetaStorage& meta_storage_;

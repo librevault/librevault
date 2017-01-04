@@ -237,7 +237,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 	}
 }
 
-void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notify_remote_meta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	LOGFUNC();
 	try {
 		auto chunks = meta_storage_.index->get_meta(revision).meta().chunks();
@@ -252,7 +252,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 		// Nevertheless, ignore this notification.
 	}
 }
-void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const blob& ct_hash) {
+void Downloader::notify_remote_chunk(RemoteFolder* remote, const blob& ct_hash) {
 	LOGFUNC();
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
@@ -264,7 +264,7 @@ void Downloader::notify_remote_chunk(std::shared_ptr<RemoteFolder> remote, const
 	maintain_queue_.post([this]{maintain_requests();});
 }
 
-void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
+void Downloader::handle_choke(RemoteFolder* remote) {
 	LOGFUNC();
 
 	/* Remove requests to this node */
@@ -274,12 +274,12 @@ void Downloader::handle_choke(std::shared_ptr<RemoteFolder> remote) {
 	maintain_queue_.post([this]{maintain_requests();});
 }
 
-void Downloader::handle_unchoke(std::shared_ptr<RemoteFolder> remote) {
+void Downloader::handle_unchoke(RemoteFolder* remote) {
 	LOGFUNC();
 	maintain_queue_.post([this]{maintain_requests();});
 }
 
-void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, std::shared_ptr<RemoteFolder> from) {
+void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from) {
 	LOGFUNC();
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
@@ -307,7 +307,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 	}
 }
 
-void Downloader::erase_remote(std::shared_ptr<RemoteFolder> remote) {
+void Downloader::erase_remote(RemoteFolder* remote) {
 	LOGFUNC();
 
 	for(auto& missing_chunk : missing_chunks_ | boost::adaptors::map_values) {
@@ -370,7 +370,7 @@ bool Downloader::request_one() {
 	return false;
 }
 
-std::shared_ptr<RemoteFolder> Downloader::find_node_for_request(std::shared_ptr<MissingChunk> chunk) {
+RemoteFolder* Downloader::find_node_for_request(std::shared_ptr<MissingChunk> chunk) {
 	//LOGFUNC();
 
 	auto missing_chunk_it = missing_chunks_.find(chunk->ct_hash_);

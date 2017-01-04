@@ -34,18 +34,14 @@
 #include <QObject>
 #include <QWebSocketServer>
 #include <set>
-#include <mutex>
 
 namespace librevault {
 
-class WSServer;
-class WSClient;
-
-class PortMappingService;
-class NodeKey;
-class FolderService;
 class FolderGroup;
-
+class FolderService;
+class NodeKey;
+class P2PFolder;
+class PortMappingService;
 class P2PProvider : public QObject {
 	Q_OBJECT
 	friend class ControlServer;
@@ -54,11 +50,8 @@ public:
 	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service, QObject* parent);
 	virtual ~P2PProvider();
 
-	// Slots
-	void run() {ios_.start(1);}
-	void stop() {ios_.stop();}
-
 	QSslConfiguration getSslConfiguration();
+	P2PFolder* startConnection(DiscoveryResult result, FolderGroup* fgroup);
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
@@ -66,12 +59,7 @@ public:
 	bool is_loopback(const QByteArray& digest);
 
 private:
-	multi_io_service ios_;
 	NodeKey& node_key_;
-
-	/* WebSocket sockets */
-	std::unique_ptr<WSServer> ws_server_;
-	std::unique_ptr<WSClient> ws_client_;
 
 	QWebSocketServer* server_;
 

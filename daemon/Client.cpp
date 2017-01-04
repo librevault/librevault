@@ -47,7 +47,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMappingService(this);
 	discovery_ = new DiscoveryService(node_key_, portmanager_, state_collector_, this);
-	folder_service_ = new FolderService(*state_collector_, this);
+	folder_service_ = new FolderService(state_collector_, this);
 	p2p_provider_ = new P2PProvider(*node_key_, *portmanager_, *folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 
@@ -68,7 +68,6 @@ Client::~Client() {}
 
 int Client::run() {
 	folder_service_->run();
-	p2p_provider_->run();
 	control_server_->run();
 
 	return this->exec();

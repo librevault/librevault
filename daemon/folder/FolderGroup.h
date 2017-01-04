@@ -77,7 +77,7 @@ public:
 		attach_error() : error("Could not attach remote to FolderGroup") {}
 	};
 
-	FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
+	FolderGroup(FolderParams params, StateCollector* state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
 	virtual ~FolderGroup();
 
 	/* Membership management */
@@ -99,9 +99,10 @@ public:
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 
 	std::string log_tag() const;
+
 private:
 	const FolderParams params_;
-	StateCollector& state_collector_;
+	StateCollector* state_collector_;
 
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;

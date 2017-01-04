@@ -34,6 +34,7 @@
 #include "util/log.h"
 #include "util/readable.h"
 #include <librevault/Tokens.h>
+#include <librevault/protocol/V1Parser.h>
 #include <QByteArray>
 
 namespace librevault {
@@ -112,15 +113,14 @@ void P2PFolder::send_message(const blob& message) {
 	socket_->sendBinaryMessage(QByteArray::fromRawData((char*)message.data(), message.size()));
 }
 
-void P2PFolder::perform_handshake() {
-	if(!fgroup_) throw protocol_error();
-
+void P2PFolder::sendHandshake() {
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
 	message_struct.device_name = Config::get()->global_get("client_name").asString();
 	message_struct.user_agent = Version::current().user_agent().toStdString();
 
 	send_message(V1Parser().gen_Handshake(message_struct));
+	handshake_sent_ = true;
 	LOGD("==> HANDSHAKE");
 }
 
@@ -284,13 +284,13 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	// Checking authentication using token
 	if(message_struct.auth_token != remote_token()) throw auth_error();
 
-	if(role_ == SERVER) perform_handshake();
+	if(role_ == SERVER) sendHandshake();
 
 	client_name_ = message_struct.device_name;
 	user_agent_ = message_struct.user_agent;
 
 	LOGD("LV Handshake successful");
-	is_handshaken_ = true;
+	handshake_received_ = true;
 
 	emit handshakePerformed();
 }

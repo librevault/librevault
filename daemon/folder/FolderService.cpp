@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-FolderService::FolderService(StateCollector& state_collector, QObject* parent) : QObject(parent),
+FolderService::FolderService(StateCollector* state_collector, QObject* parent) : QObject(parent),
 	bulk_ios_("FolderService_bulk"),
 	serial_ios_("FolderService_serial"),
 	state_collector_(state_collector) {

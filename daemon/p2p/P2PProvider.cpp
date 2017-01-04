@@ -33,20 +33,12 @@
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
-
-#include "WSServer.h"
-#include "WSClient.h"
+#include "util/log.h"
 
 namespace librevault {
 
 P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service, QObject* parent) : QObject(parent),
-	ios_("P2PProvider"), node_key_(node_key) {
-	LOGFUNC();
-	ws_server_ = std::make_unique<WSServer>(ios_.ios(), *this, port_mapping, node_key, folder_service);
-	ws_client_ = std::make_unique<WSClient>(ios_.ios(), *this, node_key, folder_service);
-	LOGFUNCEND();
-
-	///
+	node_key_(node_key) {
 	server_ = new QWebSocketServer(Version().user_agent(), QWebSocketServer::SecureMode, this);
 	server_->setSslConfiguration(getSslConfiguration());
 
@@ -55,11 +47,7 @@ P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, Fo
 	server_->listen(QHostAddress::Any, Config::get()->global_get("p2p_listen").asUInt());
 }
 
-P2PProvider::~P2PProvider() {
-	LOGFUNC();
-	ios_.stop();
-	LOGFUNCEND();
-}
+P2PProvider::~P2PProvider() {}
 
 QSslConfiguration P2PProvider::getSslConfiguration() {
 	QSslConfiguration config;
@@ -82,10 +70,28 @@ bool P2PProvider::is_loopback(const QByteArray& digest) {
 	return node_key_.digest() == digest;
 }
 
+/* Here are where new QWebSocket created */
 void P2PProvider::handleConnection() {
 	while(server_->hasPendingConnections()) {
-		QWebSocket* connection = server_->nextPendingConnection();
+		QWebSocket* socket = server_->nextPendingConnection();
+		qDebug() << socket->requestUrl();
 	}
+}
+
+P2PFolder* P2PProvider::startConnection(DiscoveryResult result, FolderGroup* fgroup) {
+	QUrl ws_url = result.url;
+	ws_url.setScheme("wss");
+	ws_url.setPath(QString("/")+fgroup->folderid().toHex());
+	if(ws_url.isValid()) {
+		ws_url.setHost(result.address.toString());
+		ws_url.setPort(result.port);
+	}
+
+	qDebug() << "New connection: " << ws_url;
+
+	QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
+	P2PFolder* folder;
+	return folder;
 }
 
 } /* namespace librevault */

@@ -30,7 +30,6 @@
 #include "folder/RemoteFolder.h"
 #include "p2p/P2PProvider.h"
 #include "p2p/BandwidthCounter.h"
-#include <librevault/protocol/V1Parser.h>
 #include <json/json-forwards.h>
 #include <QTimer>
 #include <QWebSocket>
@@ -39,12 +38,10 @@ namespace librevault {
 
 class FolderGroup;
 class P2PProvider;
-class WSService;
 
 class P2PFolder : public RemoteFolder {
 	Q_OBJECT
 	friend class P2PProvider;
-	friend class WSService;
 public:
 	/* Errors */
 	struct error : public std::runtime_error {
@@ -73,8 +70,8 @@ public:
 	void send_message(const blob& message);
 
 	// Handshake
-	void perform_handshake();
-	bool ready() const {return is_handshaken_;}
+	void sendHandshake();
+	bool ready() const {return handshake_sent_ && handshake_received_;}
 
 	/* Message senders */
 	void choke();
@@ -101,7 +98,8 @@ private:
 	QWebSocket* socket_;
 	FolderGroup* fgroup_;
 
-	bool is_handshaken_ = false;
+	bool handshake_received_ = false;
+	bool handshake_sent_ = false;
 
 	BandwidthCounter counter_;
 

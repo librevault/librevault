@@ -42,7 +42,7 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
+FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
 		QObject(parent),
 		params_(std::move(params)),
 		state_collector_(state_collector) {
@@ -60,13 +60,13 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
 		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);
 
-	state_collector_.folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
+	state_collector_->folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
 	/* Initializing components */
 	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
 	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
 
-	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, state_collector_, bulk_ios);
+	meta_storage_ = std::make_unique<MetaStorage>(params_, *ignore_list, *path_normalizer_, *state_collector_, bulk_ios);
 	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, bulk_ios, serial_ios);
 
 	uploader_ = std::make_unique<Uploader>(*chunk_storage);
@@ -98,7 +98,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 FolderGroup::~FolderGroup() {
 	state_pusher_->stop();
 
-	state_collector_.folder_state_purge(params_.secret.get_Hash());
+	state_collector_->folder_state_purge(params_.secret.get_Hash());
 	LOGFUNC();
 }
 
@@ -188,9 +188,9 @@ void FolderGroup::push_state() {
 	for(auto& p2p_folder : p2p_folders_) {
 		peers_array.append(p2p_folder->collect_state());
 	}
-	state_collector_.folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
+	state_collector_->folder_state_set(params_.secret.get_Hash(), "peers", peers_array);
 	// bandwidth
-	state_collector_.folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
+	state_collector_->folder_state_set(params_.secret.get_Hash(), "traffic_stats", bandwidth_counter_.heartbeat_json());
 }
 
 } /* namespace librevault */

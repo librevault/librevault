@@ -73,7 +73,6 @@ private:
 	StateCollector& state_collector_;
 
 	QMap<blob, std::shared_ptr<FolderGroup>> hash_group_;
-	ScopedAsyncQueue init_queue_;
 };
 
 } /* namespace librevault */

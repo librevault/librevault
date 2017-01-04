@@ -42,15 +42,11 @@ public:
 	NodeKey(QObject* parent);
 	virtual ~NodeKey();
 
-	const blob& public_key() const {return public_key_;}
-
 	QByteArray digest() const;
 	QSslKey privateKey() const;
 	QSslCertificate certificate() const;
 
 private:
-	blob public_key_;
-
 	void write_key();
 	void gen_certificate();
 };

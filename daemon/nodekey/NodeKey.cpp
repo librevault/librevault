@@ -81,10 +81,10 @@ void NodeKey::write_key() {
 	private_key.MakePublicKey(public_key);
 	public_key.AccessGroupParameters().SetPointCompression(true);
 
-	public_key_.resize(33);
-	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_.data());
+	blob public_key_compressed(33);
+	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_compressed.data());
 
-	LOGD("Public key: " << crypto::Hex().to_string(public_key_));
+	LOGD("Public key: " << crypto::Hex().to_string(public_key_compressed));
 
 	/* Write to PEM */
 	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "w");

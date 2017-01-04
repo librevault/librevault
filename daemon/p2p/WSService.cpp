@@ -177,10 +177,10 @@ void WSService::on_tcp_post_init(WSClass& c, websocketpp::connection_hdl hdl) {
 
 		X509_free(x509);
 
-		if(provider_.is_loopback(conn.remote_pubkey) || provider_.is_loopback(conn.remote_endpoint)) {
-			provider_.mark_loopback(conn.remote_endpoint);
-			throw connection_error("Loopback detected");
-		}
+		//if(provider_.is_loopback(conn.remote_pubkey) || provider_.is_loopback(conn.remote_endpoint)) {
+		//	provider_.mark_loopback(conn.remote_endpoint);
+		//	throw connection_error("Loopback detected");
+		//}
 	}catch(std::exception& e) {
 		LOGFUNC() << " e:" << e.what();
 		connection_ptr->terminate(websocketpp::lib::error_code());

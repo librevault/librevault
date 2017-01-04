@@ -96,7 +96,7 @@ void WSClient::connect(DiscoveryResult node_credentials, std::weak_ptr<FolderGro
 }
 
 bool WSClient::is_loopback(const DiscoveryResult& node_credentials) {
-	if(!node_credentials.pubkey.empty() && provider_.is_loopback(node_credentials.pubkey))  // Public key based loopback (no false negatives!)
+	if(!node_credentials.digest.isEmpty() && provider_.is_loopback(node_credentials.digest))  // SSL certificate digest based loopback (no false negatives!)
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && provider_.is_loopback(node_credentials.endpoint))    // Endpoint-based loopback (may be false negative)
 		return true;
@@ -104,7 +104,7 @@ bool WSClient::is_loopback(const DiscoveryResult& node_credentials) {
 }
 
 bool WSClient::already_have(const DiscoveryResult& node_credentials, std::shared_ptr<FolderGroup> group_ptr) {
-	if(!node_credentials.pubkey.empty() && group_ptr->have_p2p_dir(node_credentials.pubkey))
+	if(!node_credentials.digest.isEmpty() && group_ptr->have_p2p_dir(node_credentials.digest))
 		return true;
 	if(node_credentials.endpoint != tcp_endpoint() && group_ptr->have_p2p_dir(node_credentials.endpoint))
 		return true;

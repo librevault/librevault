@@ -78,8 +78,8 @@ bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
 	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
 }
 
-bool P2PProvider::is_loopback(const blob& pubkey) {
-	return node_key_.public_key() == pubkey;
+bool P2PProvider::is_loopback(const QByteArray& digest) {
+	return node_key_.digest() == digest;
 }
 
 void P2PProvider::handleConnection() {

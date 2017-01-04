@@ -63,8 +63,7 @@ public:
 
 	/* Getters */
 	QString displayName() const;
-	QByteArray cert_digest() const;
-	const blob& remote_pubkey() const {return conn_.remote_pubkey;}
+	QByteArray digest() const;
 	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
 	const WSService::connection::role_type role() const {return conn_.role;}
 	const std::string& client_name() const {return client_name_;}

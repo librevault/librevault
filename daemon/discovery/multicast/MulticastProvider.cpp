@@ -28,11 +28,12 @@
  */
 #include "MulticastProvider.h"
 #include "MulticastGroup.h"
+#include "nodekey/NodeKey.h"
 #include <MulticastDiscovery.pb.h>
 
 namespace librevault {
 
-MulticastProvider::MulticastProvider(QObject* parent) : QObject(parent) {
+MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObject(parent), nodekey_(nodekey) {
 	// Multicast parameters
 	address_v4_ = "239.192.152.144";
 	address_v6_ = "ff08::BD02";
@@ -61,6 +62,10 @@ MulticastProvider::~MulticastProvider() {
 	socket6_->leaveMulticastGroup(address_v6_);
 }
 
+QByteArray MulticastProvider::getDigest() const {
+	return nodekey_->digest();
+}
+
 void MulticastProvider::processDatagram() {
 	// Choose socket to read
 	QUdpSocket* socket;
@@ -84,7 +89,7 @@ void MulticastProvider::processDatagram() {
 		result.source = QStringLiteral("Multicast");
 		result.address = address;
 		result.port = message.port();
-		result.pubkey = blob(message.pubkey().begin(), message.pubkey().end());
+		result.digest = QByteArray(message.digest().data(), message.digest().size());
 
 		QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
 		qDebug() << "<=== Multicast message received from: " << address << ":" << port;

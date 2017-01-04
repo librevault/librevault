@@ -46,7 +46,7 @@ public:
 	QHostAddress address;
 	quint16 port;
 
-	blob pubkey;    // TODO: replace with QByteArray
+	QByteArray digest;
 };
 
 } /* namespace librevault */

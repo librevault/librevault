@@ -63,7 +63,7 @@ public:
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const blob& pubkey);
+	bool is_loopback(const QByteArray& digest);
 
 private:
 	multi_io_service ios_;

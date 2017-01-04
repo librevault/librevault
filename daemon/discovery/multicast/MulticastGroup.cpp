@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "MulticastGroup.h"
+#include "MulticastProvider.h"
 #include "control/Config.h"
-#include "discovery/multicast/MulticastProvider.h"
 #include "folder/FolderGroup.h"
 #include <MulticastDiscovery.pb.h>
 
@@ -70,7 +70,8 @@ QByteArray MulticastGroup::get_message() {
 		message.set_folderid(folderid.data(), folderid.size());
 
 		// PeerID
-		//message.set_pubkey(node_key_.public_key().data(), node_key_.public_key().size());
+		QByteArray digest = provider_->getDigest();
+		message.set_digest(digest.data(), digest.size());
 
 		message_.resize(message.ByteSize());
 		message.SerializeToArray(message_.data(), message_.size());

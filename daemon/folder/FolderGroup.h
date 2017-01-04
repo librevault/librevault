@@ -85,7 +85,7 @@ public:
 	void detach(std::shared_ptr<P2PFolder> remote_ptr);
 
 	bool have_p2p_dir(const tcp_endpoint& endpoint);
-	bool have_p2p_dir(const blob& pubkey);
+	bool have_p2p_dir(const QByteArray& digest);
 
 	/* Getters */
 	std::set<std::shared_ptr<RemoteFolder>> remotes() const;
@@ -123,7 +123,7 @@ private:
 	std::set<std::shared_ptr<P2PFolder>> p2p_folders_;
 
 	// Member lookup optimization
-	std::set<blob> p2p_folders_pubkeys_;
+	std::set<QByteArray> p2p_folders_digests_;
 	std::set<tcp_endpoint> p2p_folders_endpoints_;
 
 private slots:

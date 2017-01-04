@@ -152,11 +152,11 @@ void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
 }
 
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
-	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
+	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->digest())) throw attach_error();
 
 	p2p_folders_.insert(remote_ptr);
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
-	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
+	p2p_folders_digests_.insert(remote_ptr->digest());
 
 	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
 
@@ -168,7 +168,7 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 	downloader_->erase_remote(remote_ptr);
 
-	p2p_folders_pubkeys_.erase(remote_ptr->remote_pubkey());
+	p2p_folders_digests_.erase(remote_ptr->digest());
 	p2p_folders_endpoints_.erase(remote_ptr->remote_endpoint());
 	p2p_folders_.erase(remote_ptr);
 
@@ -181,8 +181,8 @@ bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
 	return p2p_folders_endpoints_.find(endpoint) != p2p_folders_endpoints_.end();
 }
 
-bool FolderGroup::have_p2p_dir(const blob& pubkey) {
-	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
+bool FolderGroup::have_p2p_dir(const QByteArray& digest) {
+	return p2p_folders_digests_.find(digest) != p2p_folders_digests_.end();
 }
 
 std::set<std::shared_ptr<RemoteFolder>> FolderGroup::remotes() const {

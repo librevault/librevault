@@ -72,7 +72,7 @@ QString P2PFolder::displayName() const {
 	return QString::fromStdString(os.str());
 }
 
-QByteArray P2PFolder::cert_digest() const {
+QByteArray P2PFolder::digest() const {
 	return socket_->sslConfiguration().peerCertificate().digest();
 }
 
@@ -98,7 +98,7 @@ blob P2PFolder::local_token() {
 }
 
 blob P2PFolder::remote_token() {
-	return derive_token_digest(folder_group()->secret(), cert_digest());
+	return derive_token_digest(folder_group()->secret(), digest());
 }
 
 void P2PFolder::send_message(const blob& message) {

@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/parse_url.h"
-#include <json/json.h>
+#include <json/json-forwards.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
 #include <QList>
@@ -48,42 +48,7 @@ struct FolderParams {
 	};
 
 	FolderParams(){}
-	FolderParams(const Json::Value& json_params) {
-		FolderParams defaults;
-
-		// Necessary
-		secret = json_params["secret"].asString();
-		path = json_params["path"].asString();
-
-		// Optional
-		system_path = json_params.get("system_path", (path / ".librevault").string()).asString();
-		index_event_timeout = std::chrono::milliseconds(json_params.get("index_event_timeout", Json::Value::UInt64(defaults.index_event_timeout.count())).asUInt64());
-		preserve_unix_attrib = json_params.get("preserve_unix_attrib", defaults.preserve_unix_attrib).asBool();
-		preserve_windows_attrib = json_params.get("preserve_windows_attrib", defaults.preserve_windows_attrib).asBool();
-		preserve_symlinks = json_params.get("preserve_symlinks", defaults.preserve_symlinks).asBool();
-		normalize_unicode = json_params.get("normalize_unicode", defaults.normalize_unicode).asBool();
-		chunk_strong_hash_type = Meta::StrongHashType(json_params.get("chunk_strong_hash_type", defaults.chunk_strong_hash_type).asUInt());
-		full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", Json::Value::UInt64(defaults.full_rescan_interval.count())).asUInt64());
-
-		for(auto ignore_path : json_params["ignore_paths"])
-			ignore_paths.push_back(ignore_path.asString());
-		for(auto node : json_params["nodes"])
-			nodes.push_back(QString::fromStdString(node.asString()));
-
-		auto archive_type_str = json_params.get("archive_type", "trash").asString();
-		if(archive_type_str == "none")
-			archive_type = ArchiveType::NO_ARCHIVE;
-		if(archive_type_str == "trash")
-			archive_type = ArchiveType::TRASH_ARCHIVE;
-		if(archive_type_str == "timestamp")
-			archive_type = ArchiveType::TIMESTAMP_ARCHIVE;
-		if(archive_type_str == "block")
-			archive_type = ArchiveType::BLOCK_ARCHIVE;
-
-		archive_trash_ttl = json_params.get("archive_trash_ttl", defaults.archive_trash_ttl).asUInt();
-		archive_timestamp_count = json_params.get("archive_timestamp_count", defaults.archive_timestamp_count).asUInt();
-		mainline_dht_enabled = json_params.get("mainline_dht_enabled", defaults.mainline_dht_enabled).asBool();
-	}
+	FolderParams(const Json::Value& json_params);
 
 	/* Parameters */
 	Secret secret;

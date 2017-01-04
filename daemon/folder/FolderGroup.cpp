@@ -26,11 +26,11 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <control/StateCollector.h>
 #include "FolderGroup.h"
 
 #include "IgnoreList.h"
 #include "PathNormalizer.h"
+#include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
@@ -154,8 +154,6 @@ void FolderGroup::handle_handshake(std::shared_ptr<RemoteFolder> origin) {
 void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->remote_pubkey())) throw attach_error();
 
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
-
 	p2p_folders_.insert(remote_ptr);
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
 	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
@@ -164,11 +162,10 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 
 	remote_ptr->handshake_performed.connect([remote_ptr = std::weak_ptr<RemoteFolder>(remote_ptr), this]{handle_handshake(remote_ptr.lock());});
 
-	serial_ios_.dispatch([this, remote_ptr]{attached_signal(remote_ptr);});
+	emit attached(remote_ptr);
 }
 
 void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	downloader_->erase_remote(remote_ptr);
 
 	p2p_folders_pubkeys_.erase(remote_ptr->remote_pubkey());
@@ -177,16 +174,14 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 
 	LOGD("Detached remote " << remote_ptr->name());
 
-	serial_ios_.dispatch([this, remote_ptr]{detached_signal(remote_ptr);});
+	emit detached(remote_ptr);
 }
 
 bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	return p2p_folders_endpoints_.find(endpoint) != p2p_folders_endpoints_.end();
 }
 
 bool FolderGroup::have_p2p_dir(const blob& pubkey) {
-	std::unique_lock<decltype(p2p_folders_mtx_)> lk(p2p_folders_mtx_);
 	return p2p_folders_pubkeys_.find(pubkey) != p2p_folders_pubkeys_.end();
 }
 

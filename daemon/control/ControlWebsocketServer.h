@@ -50,7 +50,7 @@ public:
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
 	//
-	void send_event(const std::string& type, Json::Value event);
+	void send_event(const std::string& type, const Json::Value& event);
 
 private:
 	ControlServer& cs_;

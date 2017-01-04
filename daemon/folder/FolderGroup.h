@@ -102,7 +102,6 @@ public:
 private:
 	const FolderParams params_;
 	StateCollector& state_collector_;
-	io_service& serial_ios_;
 
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;

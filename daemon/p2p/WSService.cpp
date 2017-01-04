@@ -147,7 +147,7 @@ void WSService::on_disconnect(websocketpp::connection_hdl hdl) {
 
 	try {
 		auto p2p_folder_ptr = ws_assignment_[hdl].folder;
-		auto folder_group = p2p_folder_ptr->folder_group();
+		auto folder_group = p2p_folder_ptr->fgroup();
 
 		folder_group->detach(p2p_folder_ptr);
 	}catch(const std::bad_weak_ptr& e){

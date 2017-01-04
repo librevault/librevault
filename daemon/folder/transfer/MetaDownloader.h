@@ -30,6 +30,7 @@
 #include "util/log_scope.h"
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
+#include <QObject>
 
 namespace librevault {
 
@@ -37,7 +38,8 @@ class RemoteFolder;
 class MetaStorage;
 class Downloader;
 
-class MetaDownloader {
+class MetaDownloader : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("MetaDownloader");
 public:
 	MetaDownloader(MetaStorage& meta_storage, Downloader& downloader);

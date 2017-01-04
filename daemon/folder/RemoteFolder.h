@@ -32,7 +32,6 @@
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
 #include <QObject>
-#include <boost/signals2.hpp>
 
 namespace librevault {
 
@@ -40,29 +39,25 @@ class RemoteFolder : public QObject, public std::enable_shared_from_this<RemoteF
 	Q_OBJECT
 	friend class FolderGroup;
 
-public:
-//signals:
-	template <typename Func>
-	using signal = typename boost::signals2::signal_type<Func, boost::signals2::keywords::mutex_type<boost::signals2::dummy_mutex>>::type;
-
-	signal<void()> handshake_performed;
+signals:
+	void handshakePerformed();
 
 	/* Message signals */
-	signal<void()> recv_choke;
-	signal<void()> recv_unchoke;
-	signal<void()> recv_interested;
-	signal<void()> recv_not_interested;
+	void rcvdChoke();
+	void rcvdUnchoke();
+	void rcvdInterested();
+	void rcvdNotInterested();
 
-	signal<void(Meta::PathRevision, bitfield_type)> recv_have_meta;
-	signal<void(blob)> recv_have_chunk;
+	void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
+	void rcvdHaveChunk(blob);
 
-	signal<void(Meta::PathRevision)> recv_meta_request;
-	signal<void(SignedMeta, bitfield_type)> recv_meta_reply;
-	signal<void(Meta::PathRevision)> recv_meta_cancel;
+	void rcvdMetaRequest(Meta::PathRevision);
+	void rcvdMetaReply(SignedMeta, bitfield_type);
+	void rcvdMetaCancel(Meta::PathRevision);
 
-	signal<void(blob, uint32_t, uint32_t)> recv_block_request;
-	signal<void(blob, uint32_t, blob)> recv_block_reply;
-	signal<void(blob, uint32_t, uint32_t)> recv_block_cancel;
+	void rcvdBlockRequest(blob, uint32_t, uint32_t);
+	void rcvdBlockReply(blob, uint32_t, blob);
+	void rcvdBlockCancel(blob, uint32_t, uint32_t);
 
 public:
 	RemoteFolder();

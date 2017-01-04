@@ -29,6 +29,7 @@
 #pragma once
 #include "util/log_scope.h"
 #include "util/blob.h"
+#include <QObject>
 #include <set>
 
 namespace librevault {
@@ -36,7 +37,8 @@ namespace librevault {
 class RemoteFolder;
 class ChunkStorage;
 
-class Uploader {
+class Uploader : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("Uploader");
 public:
 	Uploader(ChunkStorage& chunk_storage);

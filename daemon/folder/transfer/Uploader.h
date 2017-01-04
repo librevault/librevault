@@ -29,7 +29,6 @@
 #pragma once
 #include "util/log_scope.h"
 #include "util/blob.h"
-#include <memory>
 #include <set>
 
 namespace librevault {

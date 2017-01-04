@@ -27,10 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "Uploader.h"
-
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/RemoteFolder.h"
-
 #include "util/log.h"
 
 namespace librevault {

@@ -30,7 +30,6 @@
 #include "util/log_scope.h"
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
-#include <memory>
 
 namespace librevault {
 

@@ -32,7 +32,6 @@
 #include "util/blob.h"
 #include "util/file_util.h"
 #include "util/log.h"
-#include "util/network.h"
 #include <QTimer>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>

@@ -26,20 +26,13 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AbstractFolder.h"
-#include <librevault/crypto/Base32.h>
+#pragma once
+#include "blob.h"
+#include <string>
 
 namespace librevault {
 
-AbstractFolder::AbstractFolder() {}
-AbstractFolder::~AbstractFolder() {}
-
-std::string AbstractFolder::path_id_readable(const blob& path_id) {
-	return crypto::Base32().to_string(path_id);
-}
-
-std::string AbstractFolder::ct_hash_readable(const blob& ct_hash) {
-	return crypto::Base32().to_string(ct_hash);
-}
+std::string path_id_readable(const blob& path_id);
+std::string ct_hash_readable(const blob& ct_hash);
 
 } /* namespace librevault */

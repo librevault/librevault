@@ -50,6 +50,10 @@ class FileAssembler;
 class ChunkStorage : public QObject {
 	Q_OBJECT
 public:
+	struct no_such_chunk : public std::runtime_error {
+		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
+	};
+
 	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios);
 	virtual ~ChunkStorage();
 

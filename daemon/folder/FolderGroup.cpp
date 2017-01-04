@@ -158,7 +158,7 @@ void FolderGroup::attach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
 	p2p_folders_pubkeys_.insert(remote_ptr->remote_pubkey());
 
-	LOGD("Attached remote " << remote_ptr->name());
+	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
 
 	remote_ptr->handshake_performed.connect([remote_ptr = std::weak_ptr<RemoteFolder>(remote_ptr), this]{handle_handshake(remote_ptr.lock());});
 
@@ -172,7 +172,7 @@ void FolderGroup::detach(std::shared_ptr<P2PFolder> remote_ptr) {
 	p2p_folders_endpoints_.erase(remote_ptr->remote_endpoint());
 	p2p_folders_.erase(remote_ptr);
 
-	LOGD("Detached remote " << remote_ptr->name());
+	LOGD("Detached remote " << remote_ptr->displayName().toStdString());
 
 	emit detached(remote_ptr);
 }

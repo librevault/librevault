@@ -27,12 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "MetaUploader.h"
-
+#include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
-#include "folder/chunk/ChunkStorage.h"
 #include "folder/RemoteFolder.h"
-
 #include "util/log.h"
 
 namespace librevault {
@@ -57,7 +55,7 @@ void MetaUploader::handle_handshake(std::shared_ptr<RemoteFolder> remote) {
 void MetaUploader::handle_meta_request(std::shared_ptr<RemoteFolder> origin, const Meta::PathRevision& revision) {
 	try {
 		origin->post_meta(meta_storage_.index->get_meta(revision), chunk_storage_.make_bitfield(meta_storage_.index->get_meta(revision).meta()));
-	}catch(AbstractFolder::no_such_meta& e){
+	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}
 }

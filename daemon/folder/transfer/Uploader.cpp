@@ -64,7 +64,7 @@ void Uploader::handle_block_request(std::shared_ptr<RemoteFolder> origin, const 
 		if(!origin->am_choking() && origin->peer_interested()) {
 			origin->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
 		}
-	}catch(AbstractFolder::no_such_chunk& e){
+	}catch(ChunkStorage::no_such_chunk& e){
 		LOGW("Requested nonexistent block");
 	}
 }
@@ -74,7 +74,7 @@ blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
 	if(offset < chunk.size() && size <= chunk.size()-offset)
 		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
 	else
-		throw AbstractFolder::no_such_chunk();
+		throw ChunkStorage::no_such_chunk();
 }
 
 } /* namespace librevault */

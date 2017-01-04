@@ -27,14 +27,14 @@
  * files in the program, then also delete it here.
  */
 #include "OpenStorage.h"
-
 #include "control/FolderParams.h"
-#include "folder/AbstractFolder.h"
+#include "folder/chunk/ChunkStorage.h"
+#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/PathNormalizer.h"
-#include "folder/meta/Index.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include "util/readable.h"
 
 namespace librevault {
 
@@ -53,7 +53,7 @@ bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 }
 
 std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
-	LOGT("get_chunk(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
+	LOGT("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
 	auto metas_containing = meta_storage_.index->containing_chunk(ct_hash);
 
@@ -83,7 +83,7 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
 		}catch(const std::ios::failure& e){}
 	}
-	throw AbstractFolder::no_such_chunk();
+	throw ChunkStorage::no_such_chunk();
 }
 
 } /* namespace librevault */

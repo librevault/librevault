@@ -31,7 +31,6 @@
 #include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
-#include "folder/AbstractFolder.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 
@@ -68,12 +67,12 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 	try {
 		// Cache hit
 		return *mem_storage->get_chunk(ct_hash);
-	}catch(AbstractFolder::no_such_chunk& e) {
+	}catch(no_such_chunk& e) {
 		// Cache missed
 		std::shared_ptr<blob> block_ptr;
 		try {
 			block_ptr = enc_storage->get_chunk(ct_hash);
-		}catch(AbstractFolder::no_such_chunk& e) {
+		}catch(no_such_chunk& e) {
 			if(open_storage)
 				block_ptr = open_storage->get_chunk(ct_hash);
 			else

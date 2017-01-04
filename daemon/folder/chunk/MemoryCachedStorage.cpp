@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "MemoryCachedStorage.h"
-#include "folder/AbstractFolder.h"
+#include "ChunkStorage.h"
 
 namespace librevault {
 
@@ -40,7 +40,7 @@ bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 std::shared_ptr<blob> MemoryCachedStorage::get_chunk(const blob& ct_hash) const {
 	auto it = cache_iteraror_map_.find(ct_hash);
 	if(it == cache_iteraror_map_.end()) {
-		throw AbstractFolder::no_such_chunk();
+		throw ChunkStorage::no_such_chunk();
 	}else{
 		cache_list_.splice(cache_list_.begin(), cache_list_, it->second);
 		return it->second->second;

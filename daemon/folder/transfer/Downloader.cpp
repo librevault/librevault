@@ -30,7 +30,6 @@
 
 #include "control/Config.h"
 #include "control/FolderParams.h"
-#include "folder/AbstractFolder.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
@@ -247,7 +246,7 @@ void Downloader::notify_remote_meta(std::shared_ptr<RemoteFolder> remote, const 
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
 		remotes_.insert(remote);
 		download_queue_.set_overall_remotes_count(remotes_.size());
-	}catch(AbstractFolder::no_such_meta){
+	}catch(MetaStorage::no_such_meta){
 		LOGD("Expired Meta");
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.

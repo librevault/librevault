@@ -45,8 +45,7 @@ namespace librevault {
 FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
 		QObject(parent),
 		params_(std::move(params)),
-		state_collector_(state_collector),
-		serial_ios_(serial_ios) {
+		state_collector_(state_collector) {
 	LOGFUNC();
 
 	/* Creating directories */
@@ -90,7 +89,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector& state_collector, i
 	state_pusher_->start();
 
 	// Go through index
-	serial_ios_.dispatch([=]{
+	QTimer::singleShot(0, this, [=]{
 		for(auto& smeta : meta_storage_->index->get_meta())
 			handle_indexed_meta(smeta);
 	});
@@ -114,41 +113,31 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 
 // RemoteFolder actions
 void FolderGroup::handle_handshake(RemoteFolder* origin) {
-	origin->recv_choke.connect([=]{
-		downloader_->handle_choke(origin);
-	});
-	origin->recv_unchoke.connect([=]{
-		downloader_->handle_unchoke(origin);
-	});
-	origin->recv_interested.connect([=]{
-		uploader_->handle_interested(origin);
-	});
-	origin->recv_not_interested.connect([=]{
-		uploader_->handle_not_interested(origin);
-	});
+	connect(origin, &RemoteFolder::rcvdChoke, downloader_.get(), [=]{downloader_->handle_choke(origin);});
+	connect(origin, &RemoteFolder::rcvdUnchoke, downloader_.get(), [=]{downloader_->handle_unchoke(origin);});
+	connect(origin, &RemoteFolder::rcvdInterested, downloader_.get(), [=]{uploader_->handle_interested(origin);});
+	connect(origin, &RemoteFolder::rcvdNotInterested, downloader_.get(), [=]{uploader_->handle_not_interested(origin);});
 
-	origin->recv_have_meta.connect([=](const Meta::PathRevision& revision, const bitfield_type& bitfield){
+	connect(origin, &RemoteFolder::rcvdHaveMeta, meta_downloader_.get(), [=](Meta::PathRevision revision, bitfield_type bitfield){
 		meta_downloader_->handle_have_meta(origin, revision, bitfield);
 	});
-	origin->recv_have_chunk.connect([=](const blob& ct_hash){
+	connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_.get(), [=](const blob& ct_hash){
 		downloader_->notify_remote_chunk(origin, ct_hash);
 	});
-
-	origin->recv_meta_request.connect([=](Meta::PathRevision path_revision){
+	connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_.get(), [=](Meta::PathRevision path_revision){
 		meta_uploader_->handle_meta_request(origin, path_revision);
 	});
-	origin->recv_meta_reply.connect([=](const SignedMeta& smeta, const bitfield_type& bitfield){
+	connect(origin, &RemoteFolder::rcvdMetaReply, meta_downloader_.get(), [=](const SignedMeta& smeta, const bitfield_type& bitfield){
 		meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
 	});
-
-	origin->recv_block_request.connect([=](const blob& ct_hash, uint32_t offset, uint32_t size){
+	connect(origin, &RemoteFolder::rcvdBlockRequest, uploader_.get(), [=](const blob& ct_hash, uint32_t offset, uint32_t size){
 		uploader_->handle_block_request(origin, ct_hash, offset, size);
 	});
-	origin->recv_block_reply.connect([=](const blob& ct_hash, uint32_t offset, const blob& block){
+	connect(origin, &RemoteFolder::rcvdBlockReply, downloader_.get(), [=](const blob& ct_hash, uint32_t offset, const blob& block){
 		downloader_->put_block(ct_hash, offset, block, origin);
 	});
 
-	serial_ios_.post([=]{meta_uploader_->handle_handshake(origin);});
+	QTimer::singleShot(0, meta_uploader_.get(), [=]{meta_uploader_->handle_handshake(origin);});
 }
 
 void FolderGroup::attach(P2PFolder* remote_ptr) {
@@ -160,7 +149,7 @@ void FolderGroup::attach(P2PFolder* remote_ptr) {
 
 	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
 
-	remote_ptr->handshake_performed.connect([=]{handle_handshake(remote_ptr);});
+	connect(remote_ptr, &RemoteFolder::handshakePerformed, this, [=]{handle_handshake(remote_ptr);});
 
 	emit attached(remote_ptr);
 }

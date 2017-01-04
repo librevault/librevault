@@ -68,7 +68,7 @@ public:
 	const WSService::connection::role_type role() const {return conn_.role;}
 	const std::string& client_name() const {return client_name_;}
 	const std::string& user_agent() const {return user_agent_;}
-	std::shared_ptr<FolderGroup> folder_group() const {return std::shared_ptr<FolderGroup>(group_);}
+	FolderGroup* fgroup() const {return fgroup_;}
 	Json::Value collect_state();
 
 	/* RPC Actions */
@@ -97,7 +97,7 @@ public:
 
 protected:
 	const WSService::connection conn_;
-	std::weak_ptr<FolderGroup> group_;
+	FolderGroup* fgroup_;
 
 	void handle_message(const blob& message);
 

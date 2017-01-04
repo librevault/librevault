@@ -28,6 +28,8 @@
  */
 #include "P2PProvider.h"
 #include "P2PFolder.h"
+#include "control/Config.h"
+#include "control/Paths.h"
 #include "folder/FolderGroup.h"
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
@@ -43,6 +45,14 @@ P2PProvider::P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, Fo
 	ws_server_ = std::make_unique<WSServer>(ios_.ios(), *this, port_mapping, node_key, folder_service);
 	ws_client_ = std::make_unique<WSClient>(ios_.ios(), *this, node_key, folder_service);
 	LOGFUNCEND();
+
+	///
+	server_ = new QWebSocketServer(Version().user_agent(), QWebSocketServer::SecureMode, this);
+	server_->setSslConfiguration(getSslConfiguration());
+
+	connect(server_, &QWebSocketServer::newConnection, this, &P2PProvider::handleConnection);
+
+	server_->listen(QHostAddress::Any, Config::get()->global_get("p2p_listen").asUInt());
 }
 
 P2PProvider::~P2PProvider() {
@@ -51,25 +61,31 @@ P2PProvider::~P2PProvider() {
 	LOGFUNCEND();
 }
 
-void P2PProvider::add_node(DiscoveryResult node_cred, std::weak_ptr<FolderGroup> group_ptr) {
-	ios_.ios().dispatch([=]{
-		ws_client_->connect(node_cred, group_ptr);
-	});
+QSslConfiguration P2PProvider::getSslConfiguration() {
+	QSslConfiguration config;
+	config.setPeerVerifyMode(QSslSocket::VerifyPeer);
+	config.setPrivateKey(node_key_.privateKey());
+	config.setLocalCertificate(node_key_.certificate());
+	return config;
 }
 
 void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
-	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
 	loopback_blacklist_.emplace(endpoint);
 	LOGN("Marked " << endpoint << " as loopback");
 }
 
 bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
-	std::unique_lock<std::mutex> lk(loopback_blacklist_mtx_);
 	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
 }
 
 bool P2PProvider::is_loopback(const blob& pubkey) {
 	return node_key_.public_key() == pubkey;
+}
+
+void P2PProvider::handleConnection() {
+	while(server_->hasPendingConnections()) {
+		QWebSocket* connection = server_->nextPendingConnection();
+	}
 }
 
 } /* namespace librevault */

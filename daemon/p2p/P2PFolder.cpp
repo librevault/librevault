@@ -34,24 +34,25 @@
 #include "nodekey/NodeKey.h"
 #include "util/readable.h"
 #include <librevault/Tokens.h>
+#include <QByteArray>
 
 namespace librevault {
 
-P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
+P2PFolder::P2PFolder(P2PProvider* provider, WSService* ws_service, NodeKey* node_key, FolderService* folder_service, WSService::connection conn) :
 		conn_(std::move(conn)),
 		provider_(provider),
 		ws_service_(ws_service),
 		node_key_(node_key) {
 	LOGD("Created");
 
-	group_ = folder_service.get_group(conn_.hash);
+	group_ = folder_service->get_group(conn_.hash);
 
 	// Set up timers
 	ping_timer_ = new QTimer(this);
 	timeout_timer_ = new QTimer(this);
 
-	connect(ping_timer_, &QTimer::timeout, this, &P2PFolder::send_ping);
-	connect(timeout_timer_, &QTimer::timeout, this, [this]{ws_service_.close(conn_.connection_handle, "Connection timed out");});
+	connect(ping_timer_, &QTimer::timeout, socket_, [this]{socket_->ping();});
+	connect(timeout_timer_, &QTimer::timeout, socket_, [this]{socket_->close(QWebSocketProtocol::CloseCodeAbnormalDisconnection);});
 
 	// Start timers
 	ping_timer_->setInterval(20*1000);
@@ -71,6 +72,10 @@ QString P2PFolder::displayName() const {
 	return QString::fromStdString(os.str());
 }
 
+QByteArray P2PFolder::cert_digest() const {
+	return socket_->sslConfiguration().peerCertificate().digest();
+}
+
 Json::Value P2PFolder::collect_state() {
 	Json::Value state;
 
@@ -84,18 +89,22 @@ Json::Value P2PFolder::collect_state() {
 	return state;
 }
 
+blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
+	return derive_token(folder_group()->secret(), blob(digest.begin(), digest.end()));
+}
+
 blob P2PFolder::local_token() {
-	return derive_token(folder_group()->secret(), node_key_.public_key());
+	return derive_token_digest(folder_group()->secret(), node_key_->digest());
 }
 
 blob P2PFolder::remote_token() {
-	return derive_token(folder_group()->secret(), remote_pubkey());
+	return derive_token_digest(folder_group()->secret(), cert_digest());
 }
 
 void P2PFolder::send_message(const blob& message) {
 	counter_.add_up(message.size());
 	folder_group()->bandwidth_counter().add_up(message.size());
-	ws_service_.send_message(conn_.connection_handle, message);
+	socket_->sendBinaryMessage(QByteArray((char*)message.data(), message.size()));
 }
 
 void P2PFolder::perform_handshake() {
@@ -411,23 +420,9 @@ void P2PFolder::bump_timeout() {
 	timeout_timer_->setInterval(120*1000);
 }
 
-void P2PFolder::send_ping() {
-	auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
-	ws_service_.ping(conn_.connection_handle, std::to_string(ms_since_epoch.count()));
-}
-
-void P2PFolder::handle_ping(std::string payload) {
+void P2PFolder::handle_pong(quint64 rtt) {
 	bump_timeout();
-}
-
-void P2PFolder::handle_pong(std::string payload) {
-	bump_timeout();
-	try {
-		auto now = std::chrono::steady_clock::now().time_since_epoch();
-		std::chrono::milliseconds ms_payload(stol(payload));
-		if(now - ms_payload > std::chrono::milliseconds(0))
-			rtt_ = std::chrono::duration_cast<std::chrono::milliseconds>(now - ms_payload);
-	}catch(std::exception& e){}
+	rtt_ = std::chrono::milliseconds(rtt);
 }
 
 } /* namespace librevault */

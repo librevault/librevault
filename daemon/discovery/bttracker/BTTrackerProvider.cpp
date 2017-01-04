@@ -50,7 +50,7 @@ quint16 BTTrackerProvider::getExternalPort() const {
 }
 
 btcompat::peer_id BTTrackerProvider::getPeerId() const {
-	return btcompat::get_peer_id(node_key_->public_key());
+	return btcompat::get_peer_id(node_key_->digest());
 }
 
 void BTTrackerProvider::processDatagram() {

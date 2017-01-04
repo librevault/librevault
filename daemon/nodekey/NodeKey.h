@@ -30,6 +30,8 @@
 #include "util/blob.h"
 #include "util/log_scope.h"
 #include <QObject>
+#include <QSslCertificate>
+#include <QSslKey>
 
 namespace librevault {
 
@@ -41,6 +43,10 @@ public:
 	virtual ~NodeKey();
 
 	const blob& public_key() const {return public_key_;}
+
+	QByteArray digest() const;
+	QSslKey privateKey() const;
+	QSslCertificate certificate() const;
 
 private:
 	blob public_key_;

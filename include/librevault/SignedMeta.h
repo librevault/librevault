@@ -14,10 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <memory>
-#include "definitions.h"
 #include "Meta.h"
+#include <memory>
 
 namespace librevault {
 
@@ -29,19 +27,19 @@ public:
 
 	SignedMeta() {}
 	SignedMeta(Meta meta, const Secret& secret);
-	SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature = true);
+	SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature = true);
 
 	operator bool() const {return meta_ && raw_meta_ && signature_;}
 
 	// Getters
 	const Meta& meta() const {return *meta_;}
-	const blob& raw_meta() const {return *raw_meta_;}
-	const blob& signature() const {return *signature_;}
+	const std::vector<uint8_t>& raw_meta() const {return *raw_meta_;}
+	const std::vector<uint8_t>& signature() const {return *signature_;}
 private:
 	std::shared_ptr<Meta> meta_;
 
-	std::shared_ptr<blob> raw_meta_;
-	std::shared_ptr<blob> signature_;
+	std::shared_ptr<std::vector<uint8_t>> raw_meta_;
+	std::shared_ptr<std::vector<uint8_t>> signature_;
 };
 
 } /* namespace librevault */

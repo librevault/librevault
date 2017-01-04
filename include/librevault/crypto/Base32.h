@@ -10,34 +10,14 @@
  */
 #pragma once
 #include "Transformer.h"
-#include <cryptopp/base32.h>
 
 namespace librevault {
 namespace crypto {
 
 class Base32 : public TwoWayTransformer {
 public:
-	blob to(const blob& data) const {
-		std::string transformed;
-		CryptoPP::StringSource(data.data(), data.size(), true,
-				new CryptoPP::Base32Encoder(
-						new CryptoPP::StringSink(transformed)
-				)
-		);
-
-		return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-	}
-
-	blob from(const blob& data) const {
-		std::string transformed;
-		CryptoPP::StringSource(data.data(), data.size(), true,
-				new CryptoPP::Base32Decoder(
-						new CryptoPP::StringSink(transformed)
-				)
-		);
-
-		return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-	}
+	blob to(const blob& data) const;
+	blob from(const blob& data) const;
 };
 
 } /* namespace crypto */

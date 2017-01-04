@@ -10,9 +10,6 @@
  */
 #pragma once
 #include "Transformer.h"
-#include <cryptopp/aes.h>
-#include <cryptopp/ccm.h>
-#include <cryptopp/filters.h>
 #include <cryptopp/osrng.h>
 
 namespace librevault {
@@ -24,45 +21,20 @@ private:
 	const blob& iv;
 	bool padding;
 public:
-	AES_CBC(const blob& key, const blob& iv, bool padding = true) : key(key), iv(iv), padding(padding) {}
+	AES_CBC(const blob& key, const blob& iv, bool padding = true);
 	virtual ~AES_CBC() {};
 
-	blob encrypt(const blob& plaintext) const {
-		CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter(key.data(), key.size(), iv.data());
-
-		std::string ciphertext;
-		CryptoPP::StringSource(plaintext.data(), plaintext.size(), true,
-							   new CryptoPP::StreamTransformationFilter(filter,
-																		new CryptoPP::StringSink(ciphertext),
-																		padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-							   )
-		);
-
-		return blob(std::make_move_iterator(ciphertext.begin()), std::make_move_iterator(ciphertext.end()));
-	}
-
-	blob decrypt(const blob& ciphertext) const {
-		CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter(key.data(), key.size(), iv.data());
-
-		std::string plaintext;
-		CryptoPP::StringSource(ciphertext.data(), ciphertext.size(), true,
-							   new CryptoPP::StreamTransformationFilter(filter,
-																		new CryptoPP::StringSink(plaintext),
-																		padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-							   )
-		);
-
-		return blob(std::make_move_iterator(plaintext.begin()), std::make_move_iterator(plaintext.end()));
-	}
+	blob encrypt(const blob& plaintext) const;
+	blob decrypt(const blob& ciphertext) const;
 
 	static blob random_iv() {
 		blob random_iv(16);
-		CryptoPP::AutoSeededRandomPool rng; rng.GenerateBlock(random_iv.data(), random_iv.size());
+		CryptoPP::AutoSeededRandomPool().GenerateBlock(random_iv.data(), random_iv.size());
 		return random_iv;
 	}
 
-	virtual blob to(const blob& data) const {return encrypt(data);}
-	virtual blob from(const blob& data) const {return decrypt(data);}
+	blob to(const blob& data) const {return encrypt(data);}
+	blob from(const blob& data) const {return decrypt(data);}
 };
 
 } /* namespace crypto */

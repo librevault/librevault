@@ -9,30 +9,26 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #pragma once
-#include "Transformer.h"
-#include <cryptopp/crc.h>
-#include <cstdint>
-#include <string>
+#include <librevault/crypto/HMAC-SHA3.h>
+#include <cryptopp/sha3.h>
 
 namespace librevault {
 namespace crypto {
 
-class CRC32 : public OneWayTransformer {
-	mutable CryptoPP::CRC32 hasher;
-public:
-	virtual ~CRC32() {}
+blob HMAC_SHA3_224::compute(const blob& data) const {
+	CryptoPP::SHA3_224 hasher;
+	blob result(hasher.DigestSize());
 
-	uint32_t compute(const blob& data) const {
-		uint32_t crc32;
-		hasher.CalculateDigest(reinterpret_cast<uint8_t*>(&crc32), data.data(), data.size());
-		return crc32;
-	}
-	virtual blob to(const blob& data) const {
-		blob result(32/8);
-		hasher.CalculateDigest(result.data(), data.data(), data.size());
-		return result;
-	}
-};
+	hasher.Update(key_.data(), key_.size());
+	hasher.Update(data.data(), data.size());
+	hasher.Final(result.data());
+
+	return result;
+}
+
+blob HMAC_SHA3_224::to(const blob& data) const {
+	return compute(data);
+}
 
 } /* namespace crypto */
 } /* namespace librevault */

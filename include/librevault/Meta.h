@@ -15,7 +15,6 @@
  */
 #pragma once
 
-#include "definitions.h"
 #include "Secret.h"
 #include "util/AES_CBC_DATA.h"
 
@@ -27,16 +26,16 @@ public:
 	enum AlgorithmType : uint8_t {RABIN=0/*, RSYNC=1, RSYNC64=2*/};
 	enum StrongHashType : uint8_t {SHA3_224=0, SHA2_224=1};
 	struct Chunk {
-		blob ct_hash;
+		std::vector<uint8_t> ct_hash;
 		uint32_t size;
-		blob iv;
+		std::vector<uint8_t> iv;
 
-		blob pt_hmac;
+		std::vector<uint8_t> pt_hmac;
 
-		static blob encrypt(const blob& chunk, const blob& key, const blob& iv);
-		static blob decrypt(const blob& chunk, uint32_t size, const blob& key, const blob& iv);
+		static std::vector<uint8_t> encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
+		static std::vector<uint8_t> decrypt(const std::vector<uint8_t>& chunk, uint32_t size, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
 
-		static blob compute_strong_hash(const blob& chunk, StrongHashType type);
+		static std::vector<uint8_t> compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type);
 	};
 
 	struct RabinGlobalParams {
@@ -50,7 +49,7 @@ private:
 	/* Meta fields, must be serialized together and then signed */
 
 	/* Required data */
-	blob path_id_;
+	std::vector<uint8_t> path_id_;
 	AES_CBC_DATA path_;
 	Type meta_type_ = FILE;
 	int64_t revision_ = 0;	// timestamp of Meta modification
@@ -96,25 +95,25 @@ public:
 
 	/// Used for querying specific version of Meta
 	struct PathRevision {
-		blob path_id_;
+		std::vector<uint8_t> path_id_;
 		int64_t revision_;
 	};
 
 	/* Class methods */
 	Meta();
-	explicit Meta(const blob& meta_s);
+	explicit Meta(const std::vector<uint8_t>& meta_s);
 	virtual ~Meta();
 
 	/* Serialization */
-	blob serialize() const;
-	void parse(const blob& serialized_data);
+	std::vector<uint8_t> serialize() const;
+	void parse(const std::vector<uint8_t>& serialized_data);
 
 	/* Validation */
 	bool validate() const;
 	//bool validate(const Secret& secret) const;
 
 	/* Generators */
-	static blob make_path_id(const std::string& path, const Secret& secret);
+	static std::vector<uint8_t> make_path_id(const std::string& path, const Secret& secret);
 
 	/* Smart getters+setters */
 	PathRevision path_revision() const {return PathRevision{path_id(), revision()};}
@@ -137,8 +136,8 @@ public:
 	const AES_CBC_DATA& raw_rabin_global_params() const {return rabin_global_params_;}
 
 	// Dumb getters & setters
-	const blob& path_id() const {return path_id_;}
-	void set_path_id(const blob& path_id) {path_id_ = path_id;}
+	const std::vector<uint8_t>& path_id() const {return path_id_;}
+	void set_path_id(const std::vector<uint8_t>& path_id) {path_id_ = path_id;}
 
 	Type meta_type() const {return meta_type_;}
 	void set_meta_type(Type meta_type) {meta_type_ = meta_type;}

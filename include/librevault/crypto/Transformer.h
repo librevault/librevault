@@ -10,7 +10,6 @@
  */
 #pragma once
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,10 +33,6 @@ public:
 		return to(data.begin(), data.end());
 	}
 
-	virtual std::string to_string(const blob& data) const {
-		blob result = to(data);
-		return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
-	}
 	template <class InputIterator>
 	std::string to_string(InputIterator first, InputIterator last) const {
 		blob result = to(first, last);
@@ -76,10 +71,6 @@ public:
 	blob to(const blob& data) const {return nested.from(data);};
 	blob from(const blob& data) const {return nested.to(data);};
 };
-
-inline blob operator|(const blob& data, OneWayTransformer&& transformer) {
-	return transformer.to(data);
-}
 
 template <class Container>
 inline blob operator|(const Container& data, OneWayTransformer&& transformer) {

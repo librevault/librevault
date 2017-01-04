@@ -10,34 +10,14 @@
  */
 #pragma once
 #include "Transformer.h"
-#include <cryptopp/hex.h>
 
 namespace librevault {
 namespace crypto {
 
 class Hex : public TwoWayTransformer {
 public:
-	blob to(const blob& data) const {
-		std::string transformed;
-		CryptoPP::StringSource(data.data(), data.size(), true,
-				new CryptoPP::HexEncoder(
-						new CryptoPP::StringSink(transformed)
-				)
-		);
-
-		return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-	}
-
-	blob from(const blob& data) const {
-		std::string transformed;
-		CryptoPP::StringSource(data.data(), data.size(), true,
-				new CryptoPP::HexDecoder(
-						new CryptoPP::StringSink(transformed)
-				)
-		);
-
-		return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-	}
+	blob to(const blob& data) const;
+	blob from(const blob& data) const;
 };
 
 } /* namespace crypto */

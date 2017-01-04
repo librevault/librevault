@@ -14,13 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include "definitions.h"
 
 namespace librevault {
 

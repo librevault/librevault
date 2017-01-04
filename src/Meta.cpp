@@ -13,24 +13,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <include/librevault/Meta.h>
+#include <librevault/Meta.h>
 #include <Meta_s.pb.h>
-#include <include/librevault/crypto/AES_CBC.h>
-#include <include/librevault/crypto/SHA3.h>
-#include <include/librevault/crypto/SHA2.h>
-#include <include/librevault/crypto/HMAC-SHA3.h>
+#include <librevault/crypto/AES_CBC.h>
+#include <librevault/crypto/SHA3.h>
+#include <librevault/crypto/SHA2.h>
+#include <librevault/crypto/HMAC-SHA3.h>
 
 namespace librevault {
 
-blob Meta::Chunk::encrypt(const blob& chunk, const blob& key, const blob& iv) {
+std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
 	return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
 }
 
-blob Meta::Chunk::decrypt(const blob& chunk, uint32_t size, const blob& key, const blob& iv) {
+std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
 	return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
 }
 
-blob Meta::Chunk::compute_strong_hash(const blob& chunk, StrongHashType type) {
+std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
 	switch(type){
 		case SHA3_224: return chunk | crypto::SHA3(224);
 		case SHA2_224: return chunk | crypto::SHA2(224);
@@ -39,7 +39,7 @@ blob Meta::Chunk::compute_strong_hash(const blob& chunk, StrongHashType type) {
 }
 
 Meta::Meta() {}
-Meta::Meta(const blob& meta_s) {
+Meta::Meta(const std::vector<uint8_t>& meta_s) {
 	parse(meta_s);
 }
 Meta::~Meta() {}
@@ -93,20 +93,20 @@ uint64_t Meta::size() const {
 }
 
 std::string Meta::path(const Secret& secret) const {
-	blob result = path_.get_plain(secret);
+	std::vector<uint8_t> result = path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
 void Meta::set_path(std::string path, const Secret& secret) {
 	set_path_id(make_path_id(path, secret));
-	path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
+	path_.set_plain(std::vector<uint8_t>(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
 
 std::string Meta::symlink_path(const Secret& secret) const {
-	blob result = symlink_path_.get_plain(secret);
+	std::vector<uint8_t> result = symlink_path_.get_plain(secret);
 	return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
 }
 void Meta::set_symlink_path(std::string path, const Secret& secret) {
-	symlink_path_.set_plain(blob(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
+	symlink_path_.set_plain(std::vector<uint8_t>(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
 }
 
 Meta::RabinGlobalParams Meta::rabin_global_params(const Secret& secret) const {
@@ -131,13 +131,13 @@ void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params,
 	rabin_global_params_s.set_polynomial_shift(rabin_global_params.polynomial_shift);
 	rabin_global_params_s.set_avg_bits(rabin_global_params.avg_bits);
 
-	blob serialized(rabin_global_params_s.ByteSize());
+	std::vector<uint8_t> serialized(rabin_global_params_s.ByteSize());
 	rabin_global_params_s.SerializeToArray(serialized.data(), serialized.size());
 
 	rabin_global_params_.set_plain(serialized, secret);
 }
 
-blob Meta::serialize() const {
+std::vector<uint8_t> Meta::serialize() const {
 	serialization::Meta meta_s;
 
 	meta_s.set_path_id(path_id_.data(), path_id_.size());
@@ -179,12 +179,12 @@ blob Meta::serialize() const {
 		}
 	}
 
-	blob serialized_data(meta_s.ByteSize());
+	std::vector<uint8_t> serialized_data(meta_s.ByteSize());
 	meta_s.SerializeToArray(serialized_data.data(), serialized_data.size());
 	return serialized_data;
 }
 
-void Meta::parse(const blob &serialized_data) {
+void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 	serialization::Meta meta_s;
 
 	bool parsed_well = meta_s.ParseFromArray(serialized_data.data(), serialized_data.size());
@@ -232,7 +232,7 @@ void Meta::parse(const blob &serialized_data) {
 	}
 }
 
-blob Meta::make_path_id(const std::string& path, const Secret& secret) {
+std::vector<uint8_t> Meta::make_path_id(const std::string& path, const Secret& secret) {
 	return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
 }
 

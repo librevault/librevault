@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <include/librevault/SignedMeta.h>
+#include <librevault/SignedMeta.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/sha3.h>
@@ -24,19 +24,19 @@ namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 	meta_ = std::make_shared<Meta>(std::move(meta));
-	raw_meta_ = std::make_shared<blob>(meta.serialize());
+	raw_meta_ = std::make_shared<std::vector<uint8_t>>(meta.serialize());
 
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret.get_Private_Key().data(), secret.get_Private_Key().size()));
 
-	signature_ = std::make_shared<blob>(signer.SignatureLength());
+	signature_ = std::make_shared<std::vector<uint8_t>>(signer.SignatureLength());
 	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
 }
 
-SignedMeta::SignedMeta(blob raw_meta, blob signature, const Secret& secret, bool check_signature) :
-	raw_meta_(std::make_shared<blob>(std::move(raw_meta))),
-	signature_(std::make_shared<blob>(std::move(signature))) {
+SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature) :
+	raw_meta_(std::make_shared<std::vector<uint8_t>>(std::move(raw_meta))),
+	signature_(std::make_shared<std::vector<uint8_t>>(std::move(signature))) {
 
 	if(check_signature) {
 		try {

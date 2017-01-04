@@ -23,7 +23,7 @@ class V1Parser {
 public:
 	virtual ~V1Parser(){}
 
-	enum message_type : byte {
+	enum message_type : uint8_t {
 		HANDSHAKE = 0,
 
 		CHOKE = 1,
@@ -63,7 +63,7 @@ public:
 	}
 
 	struct Handshake {
-		blob auth_token;
+		std::vector<uint8_t> auth_token;
 		std::string device_name;
 		std::string user_agent;
 		std::vector<std::string> extensions;
@@ -73,7 +73,7 @@ public:
 		bitfield_type bitfield;
 	};
 	struct HaveChunk {
-		blob ct_hash;
+		std::vector<uint8_t> ct_hash;
 	};
 	struct MetaRequest {
 		Meta::PathRevision revision;
@@ -86,17 +86,17 @@ public:
 		Meta::PathRevision revision;
 	};
 	struct BlockRequest {
-		blob ct_hash;
+		std::vector<uint8_t> ct_hash;
 		uint32_t offset;
 		uint32_t length;
 	};
 	struct BlockReply {
-		blob ct_hash;
+		std::vector<uint8_t> ct_hash;
 		uint32_t offset;
-		blob content;
+		std::vector<uint8_t> content;
 	};
 	struct BlockCancel {
-		blob ct_hash;
+		std::vector<uint8_t> ct_hash;
 		uint32_t offset;
 		uint32_t length;
 	};
@@ -109,48 +109,48 @@ public:
 	// gen_* messages return messages in format <type=byte><payload>
 	// parse_* messages take argument in format <type=byte><payload>
 
-	message_type parse_MessageType(const blob& message_raw) {
+	message_type parse_MessageType(const std::vector<uint8_t>& message_raw) {
 		if(!message_raw.empty())
 			return (message_type)message_raw[0];
 		else throw parse_error();
 	}
 
-	blob gen_Handshake(const Handshake& message_struct);
-	Handshake parse_Handshake(const blob& message_raw);
+	std::vector<uint8_t> gen_Handshake(const Handshake& message_struct);
+	Handshake parse_Handshake(const std::vector<uint8_t>& message_raw);
 
-	blob gen_Choke() {return {CHOKE};}
-	blob gen_Unchoke() {return {UNCHOKE};}
-	blob gen_Interested() {return {INTERESTED};}
-	blob gen_NotInterested() {return {NOT_INTERESTED};}
+	std::vector<uint8_t> gen_Choke() {return {CHOKE};}
+	std::vector<uint8_t> gen_Unchoke() {return {UNCHOKE};}
+	std::vector<uint8_t> gen_Interested() {return {INTERESTED};}
+	std::vector<uint8_t> gen_NotInterested() {return {NOT_INTERESTED};}
 
-	blob gen_HaveMeta(const HaveMeta& message_struct);
-	HaveMeta parse_HaveMeta(const blob& message_raw);
+	std::vector<uint8_t> gen_HaveMeta(const HaveMeta& message_struct);
+	HaveMeta parse_HaveMeta(const std::vector<uint8_t>& message_raw);
 
-	blob gen_HaveChunk(const HaveChunk& message_struct);
-	HaveChunk parse_HaveChunk(const blob& message_raw);
+	std::vector<uint8_t> gen_HaveChunk(const HaveChunk& message_struct);
+	HaveChunk parse_HaveChunk(const std::vector<uint8_t>& message_raw);
 
-	blob gen_MetaRequest(const MetaRequest& message_struct);
-	MetaRequest parse_MetaRequest(const blob& message_raw);
+	std::vector<uint8_t> gen_MetaRequest(const MetaRequest& message_struct);
+	MetaRequest parse_MetaRequest(const std::vector<uint8_t>& message_raw);
 
-	blob gen_MetaReply(const MetaReply& message_struct);
-	MetaReply parse_MetaReply(const blob& message_raw, const Secret& secret_verifier);
+	std::vector<uint8_t> gen_MetaReply(const MetaReply& message_struct);
+	MetaReply parse_MetaReply(const std::vector<uint8_t>& message_raw, const Secret& secret_verifier);
 
-	blob gen_MetaCancel(const MetaCancel& message_struct);
-	MetaCancel parse_MetaCancel(const blob& message_raw);
+	std::vector<uint8_t> gen_MetaCancel(const MetaCancel& message_struct);
+	MetaCancel parse_MetaCancel(const std::vector<uint8_t>& message_raw);
 
-	blob gen_BlockRequest(const BlockRequest& message_struct);
-	BlockRequest parse_BlockRequest(const blob& message_raw);
+	std::vector<uint8_t> gen_BlockRequest(const BlockRequest& message_struct);
+	BlockRequest parse_BlockRequest(const std::vector<uint8_t>& message_raw);
 
-	blob gen_BlockReply(const BlockReply& message_struct);
-	BlockReply parse_BlockReply(const blob& message_raw);
+	std::vector<uint8_t> gen_BlockReply(const BlockReply& message_struct);
+	BlockReply parse_BlockReply(const std::vector<uint8_t>& message_raw);
 
-	blob gen_BlockCancel(const BlockCancel& message_struct);
-	BlockCancel parse_BlockCancel(const blob& message_raw);
+	std::vector<uint8_t> gen_BlockCancel(const BlockCancel& message_struct);
+	BlockCancel parse_BlockCancel(const std::vector<uint8_t>& message_raw);
 
 protected:
 	template <class ProtoMessageClass>
-	blob prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
-		blob message_raw(message_protobuf.ByteSize()+1);
+	std::vector<uint8_t> prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
+		std::vector<uint8_t> message_raw(message_protobuf.ByteSize()+1);
 		message_raw[0] = type;
 		message_protobuf.SerializeToArray(message_raw.data()+1, message_protobuf.ByteSize());
 

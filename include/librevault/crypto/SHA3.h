@@ -10,25 +10,18 @@
  */
 #pragma once
 #include "Transformer.h"
-#include <cryptopp/sha3.h>
 
 namespace librevault {
 namespace crypto {
 
 class SHA3 : public OneWayTransformer {
-	mutable CryptoPP::SHA3 hasher;
+	size_t size_;
 public:
-	SHA3(size_t size) : hasher(size/8) {}
+	SHA3(size_t size) : size_(size) {}
 	virtual ~SHA3() {}
 
-	blob compute(const blob& data) const {
-		blob result(hasher.DigestSize());
-		hasher.CalculateDigest(result.data(), data.data(), data.size());
-		return result;
-	}
-	blob to(const blob& data) const {
-		return compute(data);
-	}
+	blob compute(const blob& data) const;
+	blob to(const blob& data) const;
 };
 
 } /* namespace crypto */

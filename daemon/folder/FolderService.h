@@ -62,6 +62,7 @@ public:
 	void deinit_folder(const blob& folder_hash);
 
 	std::shared_ptr<FolderGroup> get_group(const blob& hash);
+	FolderGroup* getGroup(const QByteArray& folderid);
 
 signals:
 	void folderAdded(std::shared_ptr<FolderGroup> fgroup);
@@ -73,6 +74,7 @@ private:
 	StateCollector& state_collector_;
 
 	QMap<blob, std::shared_ptr<FolderGroup>> hash_group_;
+	QMap<QByteArray, FolderGroup*> groups_;
 };
 
 } /* namespace librevault */

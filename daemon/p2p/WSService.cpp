@@ -114,7 +114,7 @@ void WSService::on_open(websocketpp::connection_hdl hdl) {
 
 	try {
 		connection& conn = ws_assignment_[hdl];
-		auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn, ios_);
+		auto new_folder = std::make_shared<P2PFolder>(provider_, *this, node_key_, folder_service_, conn);
 		conn.folder = new_folder;
 
 		folder_service_.get_group(conn.hash)->attach(new_folder);

@@ -37,31 +37,32 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn, io_service& ios) :
+P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn) :
 		conn_(std::move(conn)),
 		provider_(provider),
 		ws_service_(ws_service),
-		node_key_(node_key),
-		ping_timer_(ios),
-		timeout_timer_(ios) {
+		node_key_(node_key) {
 	LOGD("Created");
 
 	group_ = folder_service.get_group(conn_.hash);
 
 	// Set up timers
-	// If there are crashes in these, then wrap the lambdas inside a ScopedAsyncQueue
-	ping_timer_.tick_signal.connect([this]{send_ping();});
-	timeout_timer_.tick_signal.connect([this]{ws_service_.close(conn_.connection_handle, "Connection timed out");});
+	ping_timer_ = new QTimer(this);
+	timeout_timer_ = new QTimer(this);
+
+	connect(ping_timer_, &QTimer::timeout, this, &P2PFolder::send_ping);
+	connect(timeout_timer_, &QTimer::timeout, this, [this]{ws_service_.close(conn_.connection_handle, "Connection timed out");});
 
 	// Start timers
-	ping_timer_.start(std::chrono::seconds(20), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
+	ping_timer_->setInterval(20*1000);
+	ping_timer_->start();
+
+	timeout_timer_->setSingleShot(true);
 	bump_timeout();
+	timeout_timer_->start();
 }
 
 P2PFolder::~P2PFolder() {
-	timeout_timer_.stop();
-	ping_timer_.stop();
-
 	LOGD("Destroyed");
 }
 
@@ -407,7 +408,7 @@ void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 }
 
 void P2PFolder::bump_timeout() {
-	timeout_timer_.start(std::chrono::seconds(120), ScopedTimer::RUN_DEFERRED, ScopedTimer::RESET_TIMER, ScopedTimer::SINGLESHOT);
+	timeout_timer_->setInterval(120*1000);
 }
 
 void P2PFolder::send_ping() {

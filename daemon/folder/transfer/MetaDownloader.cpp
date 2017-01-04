@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "MetaDownloader.h"
-
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
 #include "folder/RemoteFolder.h"

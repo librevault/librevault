@@ -31,10 +31,10 @@
 #include "p2p/P2PProvider.h"
 #include "p2p/WSService.h"
 #include "p2p/BandwidthCounter.h"
-#include "util/scoped_timer.h"
 #include <librevault/protocol/V1Parser.h>
 #include <json/json-forwards.h>
 #include <websocketpp/common/connection_hdl.hpp>
+#include <QTimer>
 
 namespace librevault {
 
@@ -57,7 +57,7 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn, io_service& ios);
+	P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node_key, FolderService& folder_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */
@@ -118,7 +118,8 @@ private:
 	std::string user_agent_;
 
 	/* Ping/pong and timeout handlers */
-	ScopedTimer ping_timer_, timeout_timer_;
+	QTimer* ping_timer_;
+	QTimer* timeout_timer_;
 
 	void bump_timeout();
 

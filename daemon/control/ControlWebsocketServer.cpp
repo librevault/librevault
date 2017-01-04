@@ -28,6 +28,7 @@
  */
 #include "ControlWebsocketServer.h"
 #include "util/log.h"
+#include <json/json.h>
 
 namespace librevault {
 
@@ -65,7 +66,7 @@ void ControlWebsocketServer::on_disconnect(websocketpp::connection_hdl hdl) {
 	ws_sessions_.erase(server_.get_con_from_hdl(hdl));
 }
 
-void ControlWebsocketServer::send_event(const std::string& type, Json::Value event) {
+void ControlWebsocketServer::send_event(const std::string& type, const Json::Value& event) {
 	Json::Value event_message;
 	event_message["id"] = Json::Value::UInt64(++id_);
 	event_message["type"] = type;

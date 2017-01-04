@@ -29,8 +29,8 @@
 #pragma once
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
+#include "util/blob.h"
 #include "util/network.h"
-#include "util/scoped_timer.h"
 
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
@@ -39,9 +39,7 @@
 #include <QObject>
 #include <QTimer>
 
-#include <boost/signals2/signal.hpp>
 #include <set>
-#include <mutex>
 
 namespace librevault {
 
@@ -64,6 +62,11 @@ class Downloader;
 class FolderGroup : public QObject {
 	Q_OBJECT
 	friend class ControlServer;
+
+signals:
+	void attached(std::shared_ptr<P2PFolder> remote_ptr);
+	void detached(std::shared_ptr<P2PFolder> remote_ptr);
+
 public:
 	struct error : std::runtime_error {
 		error(const char* what) : std::runtime_error(what) {}
@@ -80,9 +83,6 @@ public:
 	/* Membership management */
 	void attach(std::shared_ptr<P2PFolder> remote_ptr);
 	void detach(std::shared_ptr<P2PFolder> remote_ptr);
-
-	boost::signals2::signal<void(std::shared_ptr<P2PFolder>)> attached_signal;
-	boost::signals2::signal<void(std::shared_ptr<P2PFolder>)> detached_signal;
 
 	bool have_p2p_dir(const tcp_endpoint& endpoint);
 	bool have_p2p_dir(const blob& pubkey);
@@ -120,8 +120,6 @@ private:
 	QTimer* state_pusher_;
 
 	/* Members */
-	mutable std::mutex p2p_folders_mtx_;
-
 	std::set<std::shared_ptr<P2PFolder>> p2p_folders_;
 
 	// Member lookup optimization

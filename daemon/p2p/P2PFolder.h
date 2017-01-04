@@ -33,7 +33,6 @@
 #include "p2p/BandwidthCounter.h"
 #include <librevault/protocol/V1Parser.h>
 #include <json/json-forwards.h>
-#include <websocketpp/common/connection_hdl.hpp>
 #include <QTimer>
 #include <QWebSocket>
 
@@ -44,6 +43,7 @@ class P2PProvider;
 class WSService;
 
 class P2PFolder : public RemoteFolder {
+	Q_OBJECT
 	friend class P2PProvider;
 	friend class WSService;
 public:
@@ -58,14 +58,13 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider* provider, WSService* ws_service, NodeKey* node_key, FolderService* folder_service, WSService::connection conn);
+	P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service, WSService::connection conn);
 	~P2PFolder();
 
 	/* Getters */
 	QString displayName() const;
 	QByteArray digest() const;
-	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
-	const WSService::connection::role_type role() const {return conn_.role;}
+	tcp_endpoint remote_endpoint() const;
 	const std::string& client_name() const {return client_name_;}
 	const std::string& user_agent() const {return user_agent_;}
 	FolderGroup* fgroup() const {return fgroup_;}
@@ -102,8 +101,9 @@ protected:
 	void handle_message(const blob& message);
 
 private:
+	enum Role {SERVER, CLIENT} role_;
+
 	P2PProvider* provider_;
-	WSService* ws_service_;
 	NodeKey* node_key_;
 
 	QWebSocket* socket_;

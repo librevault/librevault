@@ -38,14 +38,16 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(P2PProvider* provider, WSService* ws_service, NodeKey* node_key, FolderService* folder_service, WSService::connection conn) :
+P2PFolder::P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service, WSService::connection conn) :
 		conn_(std::move(conn)),
 		provider_(provider),
-		ws_service_(ws_service),
 		node_key_(node_key) {
 	LOGD("Created");
 
-	fgroup_ = folder_service->get_group(conn_.hash).get();
+	role_ = (Role)conn.role;
+
+	QByteArray folderid((char*)conn_.hash.data(), conn_.hash.size());
+	fgroup_ = folder_service->getGroup(folderid);
 
 	// Set up timers
 	ping_timer_ = new QTimer(this);
@@ -68,12 +70,16 @@ P2PFolder::~P2PFolder() {
 }
 
 QString P2PFolder::displayName() const {
-	std::ostringstream os; os << conn_.remote_endpoint;
+	std::ostringstream os; os << remote_endpoint();
 	return QString::fromStdString(os.str());
 }
 
 QByteArray P2PFolder::digest() const {
 	return socket_->sslConfiguration().peerCertificate().digest();
+}
+
+tcp_endpoint P2PFolder::remote_endpoint() const {
+	return conn_.remote_endpoint;
 }
 
 Json::Value P2PFolder::collect_state() {
@@ -104,7 +110,7 @@ blob P2PFolder::remote_token() {
 void P2PFolder::send_message(const blob& message) {
 	counter_.add_up(message.size());
 	fgroup_->bandwidth_counter().add_up(message.size());
-	socket_->sendBinaryMessage(QByteArray((char*)message.data(), message.size()));
+	socket_->sendBinaryMessage(QByteArray::fromRawData((char*)message.data(), message.size()));
 }
 
 void P2PFolder::perform_handshake() {
@@ -278,7 +284,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 	// Checking authentication using token
 	if(message_struct.auth_token != remote_token()) throw auth_error();
 
-	if(conn_.role == WSService::connection::SERVER) perform_handshake();
+	if(role_ == SERVER) perform_handshake();
 
 	client_name_ = message_struct.device_name;
 	user_agent_ = message_struct.user_agent;

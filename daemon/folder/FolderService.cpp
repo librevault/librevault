@@ -75,9 +75,10 @@ void FolderService::init_folder(const FolderParams& params) {
 	LOGFUNC();
 	auto group_ptr = std::make_shared<FolderGroup>(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios(), this);
 	hash_group_[group_ptr->hash()] = group_ptr;
+	groups_[group_ptr->folderid()] = group_ptr.get();
 
 	emit folderAdded(group_ptr);
-	LOGD("Folder initialized: " << crypto::Hex().to_string(params.secret.get_Hash()));
+	LOGD("Folder initialized: " << group_ptr->folderid().toHex().toStdString());
 }
 
 void FolderService::deinit_folder(const blob& folder_hash) {
@@ -86,7 +87,10 @@ void FolderService::deinit_folder(const blob& folder_hash) {
 	emit folderRemoved(group_ptr);
 
 	hash_group_.remove(folder_hash);
-	LOGD("Folder deinitialized: " << crypto::Hex().to_string(folder_hash));
+
+	QByteArray folderid((char*)folder_hash.data(), folder_hash.size());
+	groups_.remove(folderid);
+	LOGD("Folder deinitialized: " << folderid.toHex().toStdString());
 }
 
 std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
@@ -94,6 +98,10 @@ std::shared_ptr<FolderGroup> FolderService::get_group(const blob& hash) {
 	if(it != hash_group_.end())
 		return it.value();
 	throw invalid_group();
+}
+
+FolderGroup* FolderService::getGroup(const QByteArray& folderid) {
+	return groups_.value(folderid, nullptr);
 }
 
 } /* namespace librevault */

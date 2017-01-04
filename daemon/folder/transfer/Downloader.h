@@ -33,8 +33,7 @@
 #include "util/file_util.h"
 #include "util/log.h"
 #include "util/network.h"
-#include "util/scoped_async_queue.h"
-#include "util/scoped_timer.h"
+#include <QTimer>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
@@ -142,10 +141,11 @@ public:
 	std::list<std::shared_ptr<MissingChunk>> chunks() const;
 };
 
-class Downloader {
+class Downloader : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("Downloader");
 public:
-	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage, io_service& ios);
+	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage);
 	~Downloader();
 
 	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
@@ -172,8 +172,7 @@ private:
 	size_t requests_overall() const;
 
 	/* Request process */
-	ScopedAsyncQueue maintain_queue_;
-	ScopedTimer maintain_timer_;
+	QTimer* maintain_timer_;
 
 	void maintain_requests();
 	bool request_one();

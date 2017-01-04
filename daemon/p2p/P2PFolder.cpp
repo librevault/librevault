@@ -32,7 +32,7 @@
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nodekey/NodeKey.h"
-
+#include "util/readable.h"
 #include <librevault/Tokens.h>
 
 namespace librevault {
@@ -44,8 +44,6 @@ P2PFolder::P2PFolder(P2PProvider& provider, WSService& ws_service, NodeKey& node
 		node_key_(node_key),
 		ping_timer_(ios),
 		timeout_timer_(ios) {
-	std::ostringstream os; os << conn_.remote_endpoint;
-	name_ = os.str();
 	LOGD("Created");
 
 	group_ = folder_service.get_group(conn_.hash);
@@ -65,6 +63,11 @@ P2PFolder::~P2PFolder() {
 	ping_timer_.stop();
 
 	LOGD("Destroyed");
+}
+
+QString P2PFolder::displayName() const {
+	std::ostringstream os; os << conn_.remote_endpoint;
+	return QString::fromStdString(os.str());
 }
 
 Json::Value P2PFolder::collect_state() {

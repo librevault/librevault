@@ -30,13 +30,13 @@
 
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
-#include "folder/AbstractFolder.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include "util/readable.h"
 
 namespace librevault {
 
@@ -70,13 +70,13 @@ FileAssembler::~FileAssembler() {
 }
 
 blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
-	LOGT("get_chunk_pt(" << AbstractFolder::ct_hash_readable(ct_hash) << ")");
+	LOGT("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
 	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
 	for(auto row : meta_storage_.index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
 		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), secret_.get_Encryption_Key(), row[1].as_blob());
 	}
-	throw AbstractFolder::no_such_chunk();
+	throw ChunkStorage::no_such_chunk();
 }
 
 void FileAssembler::queue_assemble(const Meta& meta) {

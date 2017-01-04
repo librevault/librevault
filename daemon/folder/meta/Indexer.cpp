@@ -29,9 +29,9 @@
 #include "Indexer.h"
 
 #include "Index.h"
+#include "MetaStorage.h"
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
-#include "folder/AbstractFolder.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/byte_convert.h"
@@ -78,7 +78,7 @@ void Indexer::index(const std::string& file_path) noexcept {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(fs::filesystem_error& e){
-		}catch(AbstractFolder::no_such_meta& e){
+		}catch(MetaStorage::no_such_meta& e){
 		}catch(Meta::error& e){
 			LOGW("Meta in DB is inconsistent, trying to reindex: " << e.what());
 		}
@@ -141,7 +141,7 @@ SignedMeta Indexer::make_Meta(const std::string& relpath) {
 	try {	// Tries to get old Meta from index. May throw if no such meta or if Meta is invalid (parsing failed).
 		auto old_smeta = index_.get_meta(new_meta.path_id());
 		old_meta = old_smeta.meta();
-	}catch(AbstractFolder::no_such_meta& e) {
+	}catch(MetaStorage::no_such_meta& e) {
 		if(new_meta.meta_type() == Meta::DELETED)
 			throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 	}

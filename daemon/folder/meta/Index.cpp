@@ -29,9 +29,10 @@
 #include "Index.h"
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
-#include "folder/AbstractFolder.h"
+#include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include "util/readable.h"
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {
@@ -79,7 +80,7 @@ Index::Index(const FolderParams& params, StateCollector& state_collector) : para
 bool Index::have_meta(const Meta::PathRevision& path_revision) noexcept {
 	try {
 		get_meta(path_revision);
-	}catch(AbstractFolder::no_such_meta& e){
+	}catch(MetaStorage::no_such_meta& e){
 		return false;
 	}
 	return true;
@@ -89,7 +90,7 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 	auto smeta = get_meta(path_revision.path_id_);
 	if(smeta.meta().revision() == path_revision.revision_)
 		return smeta;
-	else throw AbstractFolder::no_such_meta();
+	else throw MetaStorage::no_such_meta();
 }
 
 /* Meta manipulators */
@@ -128,9 +129,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << AbstractFolder::path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)
@@ -150,7 +151,7 @@ SignedMeta Index::get_meta(const blob& path_id){
 		{":path_id", path_id}
 	});
 
-	if(meta_list.empty()) throw AbstractFolder::no_such_meta();
+	if(meta_list.empty()) throw MetaStorage::no_such_meta();
 	return *meta_list.begin();
 }
 std::list<SignedMeta> Index::get_meta(){
@@ -168,7 +169,7 @@ std::list<SignedMeta> Index::get_incomplete_meta() {
 bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	try {
 		return get_meta(path_revision.path_id_).meta().revision() < path_revision.revision_;
-	}catch(AbstractFolder::no_such_meta& e){
+	}catch(MetaStorage::no_such_meta& e){
 		return true;
 	}
 }

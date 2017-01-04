@@ -33,22 +33,24 @@ namespace librevault {
 RemoteFolder::RemoteFolder() {}
 RemoteFolder::~RemoteFolder() {}
 
+std::string RemoteFolder::log_tag() const {
+	return std::string() + "[" + displayName().toStdString() + "] ";
+}
+
 /* InterestGuard */
-RemoteFolder::InterestGuard::InterestGuard(std::shared_ptr<RemoteFolder> remote) : remote_(remote) {
-	remote->interest();
+RemoteFolder::InterestGuard::InterestGuard(RemoteFolder* remote) : remote_(remote) {
+	remote_->interest();
 }
 
 RemoteFolder::InterestGuard::~InterestGuard() {
-	auto folder_ptr = remote_.lock();
-	if(folder_ptr)
-		folder_ptr->uninterest();
+	remote_->uninterest();
 }
 
 std::shared_ptr<RemoteFolder::InterestGuard> RemoteFolder::get_interest_guard() {
 	try {
 		return std::shared_ptr<InterestGuard>(interest_guard_);
 	}catch(std::bad_weak_ptr& e){
-		auto guard = std::make_shared<InterestGuard>(shared_from_this());
+		auto guard = std::make_shared<InterestGuard>(this);
 		interest_guard_ = guard;
 		return guard;
 	}

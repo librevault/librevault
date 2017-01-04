@@ -61,6 +61,7 @@ public:
 	~P2PFolder();
 
 	/* Getters */
+	QString displayName() const;
 	const blob& remote_pubkey() const {return conn_.remote_pubkey;}
 	const tcp_endpoint& remote_endpoint() const {return conn_.remote_endpoint;}
 	const WSService::connection::role_type role() const {return conn_.role;}

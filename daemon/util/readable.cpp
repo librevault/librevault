@@ -26,46 +26,17 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/blob.h"
-#include <QObject>
-#include <stdexcept>
-#include <string>
+#include "readable.h"
+#include <librevault/crypto/Base32.h>
 
 namespace librevault {
 
-class FolderGroup;
+std::string path_id_readable(const blob& path_id) {
+	return crypto::Base32().to_string(path_id);
+}
 
-class AbstractFolder : public QObject {
-	Q_OBJECT
-public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("Directory error") {}
-	};
-
-	struct no_such_meta : public error {
-		no_such_meta() : error("Requested Meta not found"){}
-	};
-
-	struct no_such_chunk : public error {
-		no_such_chunk() : error("Requested Chunk not found"){}
-	};
-
-	AbstractFolder();
-	virtual ~AbstractFolder();
-
-	// AbstractFolder properties
-	const std::string& name() const {return name_;}
-
-	// Other functions
-	static std::string path_id_readable(const blob& path_id);
-	static std::string ct_hash_readable(const blob& ct_hash);
-
-	inline std::string log_tag() {return std::string("[") + name_ + "] ";}
-
-protected:
-	std::string name_;
-};
+std::string ct_hash_readable(const blob& ct_hash) {
+	return crypto::Base32().to_string(ct_hash);
+}
 
 } /* namespace librevault */

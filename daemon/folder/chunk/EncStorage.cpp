@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "EncStorage.h"
-#include "folder/AbstractFolder.h"
+#include "ChunkStorage.h"
 #include "util/fs.h"
 #include "util/log.h"
 #include "util/file_util.h"
@@ -56,7 +56,7 @@ std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk_path = make_chunk_ct_path(ct_hash);
 
 		uint64_t chunksize = fs::file_size(chunk_path);
-		if(chunksize == static_cast<uintmax_t>(-1)) throw AbstractFolder::no_such_chunk();
+		if(chunksize == static_cast<uintmax_t>(-1)) throw ChunkStorage::no_such_chunk();
 
 		std::shared_ptr<blob> chunk = std::make_shared<blob>(chunksize);
 
@@ -66,9 +66,9 @@ std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
 
 		return chunk;
 	}catch(fs::filesystem_error& e) {
-		throw AbstractFolder::no_such_chunk();
+		throw ChunkStorage::no_such_chunk();
 	}catch(std::ios_base::failure& e) {
-		throw AbstractFolder::no_such_chunk();
+		throw ChunkStorage::no_such_chunk();
 	}
 }
 

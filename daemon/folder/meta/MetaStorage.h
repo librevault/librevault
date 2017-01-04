@@ -42,6 +42,10 @@ class StateCollector;
 
 class MetaStorage {
 public:
+	struct no_such_meta : public std::runtime_error {
+		no_such_meta() : std::runtime_error("Requested Meta not found"){}
+	};
+
 	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios);
 	virtual ~MetaStorage();
 

@@ -27,21 +27,20 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractFolder.h"
+#include "util/blob.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
+#include <QObject>
 #include <boost/signals2.hpp>
 
 namespace librevault {
 
-class RemoteFolder : public AbstractFolder, public std::enable_shared_from_this<RemoteFolder> {
+class RemoteFolder : public QObject, public std::enable_shared_from_this<RemoteFolder> {
 	Q_OBJECT
 	friend class FolderGroup;
-public:
-	RemoteFolder();
-	virtual ~RemoteFolder();
 
+public:
 //signals:
 	template <typename Func>
 	using signal = typename boost::signals2::signal_type<Func, boost::signals2::keywords::mutex_type<boost::signals2::dummy_mutex>>::type;
@@ -66,6 +65,12 @@ public:
 	signal<void(blob, uint32_t, uint32_t)> recv_block_cancel;
 
 public:
+	RemoteFolder();
+	virtual ~RemoteFolder();
+
+	virtual QString displayName() const = 0;
+	std::string log_tag() const;
+
 	/* Message senders */
 	virtual void choke() = 0;
 	virtual void unchoke() = 0;
@@ -85,10 +90,10 @@ public:
 
 	/* High-level RAII wrappers */
 	struct InterestGuard {
-		InterestGuard(std::shared_ptr<RemoteFolder> remote);
+		InterestGuard(RemoteFolder* remote);
 		~InterestGuard();
 	private:
-		std::weak_ptr<RemoteFolder> remote_;
+		RemoteFolder* remote_;
 	};
 	std::shared_ptr<InterestGuard> get_interest_guard();
 

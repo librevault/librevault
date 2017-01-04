@@ -40,8 +40,7 @@ namespace librevault {
 FolderService::FolderService(StateCollector& state_collector, QObject* parent) : QObject(parent),
 	bulk_ios_("FolderService_bulk"),
 	serial_ios_("FolderService_serial"),
-	state_collector_(state_collector),
-	init_queue_(serial_ios_.ios()) {
+	state_collector_(state_collector) {
 	LOGFUNC();
 }
 
@@ -55,28 +54,18 @@ void FolderService::run() {
 	serial_ios_.start(1);
 	bulk_ios_.start(std::max(std::thread::hardware_concurrency(), 1u));
 
-	init_queue_.post([this] {
+	QTimer::singleShot(0, this, [this] {
 		for(auto& folder_config : Config::get()->folders())
 			init_folder(folder_config.second);
 	});
 
-	connect(Config::get(), &Config::folderAdded, this, [this](Json::Value json_params){
-		init_queue_.post([this, json_params]{
-			init_folder(json_params);
-		});
-	});
-	connect(Config::get(), &Config::folderRemoved, this, [this](blob folderid){
-		init_queue_.post([this, folderid]{
-			deinit_folder(folderid);
-		});
-	});
+	connect(Config::get(), &Config::folderAdded, this, &FolderService::init_folder);
+	connect(Config::get(), &Config::folderRemoved, this, &FolderService::deinit_folder);
 }
 
 void FolderService::stop() {
 	for(auto& hash : hash_group_.keys())
 		deinit_folder(hash);
-
-	init_queue_.stop();
 
 	bulk_ios_.stop();
 	serial_ios_.stop();

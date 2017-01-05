@@ -41,21 +41,13 @@ MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup)
 
 	// Connecting signals
 	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
-	connect(provider_, &MulticastProvider::discovered, this, &MulticastGroup::useDiscoveredResult);
 }
-
-MulticastGroup::~MulticastGroup() {}
 
 void MulticastGroup::setEnabled(bool enabled) {
 	if(!timer_->isActive() && enabled)
 		timer_->start();
 	else if(timer_->isActive() && !enabled)
 		timer_->stop();
-}
-
-void MulticastGroup::useDiscoveredResult(QByteArray folderid, DiscoveryResult result) {
-	if(timer_->isActive() && folderid == fgroup_->folderid())
-		emit discovered(result);
 }
 
 QByteArray MulticastGroup::get_message() {

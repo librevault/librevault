@@ -56,6 +56,7 @@ private:
 	MLDHTProvider* provider_;
 
 	btcompat::info_hash info_hash_;
+	QByteArray folderid_;
 
 	bool enabled_ = false;
 };

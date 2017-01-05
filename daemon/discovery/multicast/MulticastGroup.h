@@ -40,15 +40,8 @@ class MulticastGroup : public QObject {
 
 public:
 	MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup);
-	virtual ~MulticastGroup();
 
 	void setEnabled(bool enabled);
-
-signals:
-	void discovered(DiscoveryResult result);
-
-public slots:
-	void useDiscoveredResult(QByteArray folderid, DiscoveryResult result);
 
 private:
 	MulticastProvider* provider_;

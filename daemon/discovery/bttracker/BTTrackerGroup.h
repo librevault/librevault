@@ -44,7 +44,6 @@ protected:
 	LOG_SCOPE("BTTrackerProvider");
 public:
 	BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup);
-	virtual ~BTTrackerGroup() {}
 
 	btcompat::info_hash getInfoHash() const {return ih_;}
 	void setEnabled(bool enabled);
@@ -55,6 +54,7 @@ signals:
 protected:
 	BTTrackerProvider* provider_;
 	btcompat::info_hash ih_;
+	QByteArray folderid_;
 	std::map<QUrl, std::unique_ptr<BTTrackerConnection>> connections_;
 };
 

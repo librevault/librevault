@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "discovery/btcompat.h"
+#include "discovery/DiscoveryResult.h"
 #include <QHostInfo>
 #include <QTimer>
 #include <QUdpSocket>
@@ -53,6 +54,7 @@ public:
 
 signals:
 	void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
+	void discovered(QByteArray folderid, DiscoveryResult result);
 
 public slots:
 	void addNode(tcp_endpoint endpoint);

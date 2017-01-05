@@ -32,10 +32,14 @@
 
 namespace librevault {
 
+class FolderGroup;
 class MulticastGroup;
 class NodeKey;
 class MulticastProvider : public QObject {
 	Q_OBJECT
+signals:
+	void discovered(QByteArray folderid, DiscoveryResult result);
+
 public:
 	explicit MulticastProvider(NodeKey* nodekey, QObject* parent);
 	virtual ~MulticastProvider();
@@ -48,9 +52,6 @@ public:
 	QUdpSocket* getSocketV6() {return socket6_;}
 
 	QByteArray getDigest() const;
-
-signals:
-	void discovered(QByteArray folderid, DiscoveryResult result);
 
 private:
 	NodeKey* nodekey_;

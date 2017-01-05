@@ -36,8 +36,9 @@
 
 namespace librevault {
 
-MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup) : provider_(provider) {
-	info_hash_ = btcompat::getInfoHash(fgroup->folderid());
+MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup) : provider_(provider),
+	info_hash_(btcompat::getInfoHash(fgroup->folderid())),
+	folderid_(fgroup->folderid()) {
 	connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent);
 }
 
@@ -77,7 +78,7 @@ void MLDHTGroup::handleEvent(int event, btcompat::info_hash ih, QByteArray value
 			result.source = "DHT";
 			result.address = QHostAddress(QString::fromStdString(endpoint.address().to_string()));
 			result.port = endpoint.port();
-			emit discovered(result);
+			emit provider_->discovered(folderid_, result);
 		}
 	}else if(event == DHT_EVENT_SEARCH_DONE) {
 		start_search(AF_INET);

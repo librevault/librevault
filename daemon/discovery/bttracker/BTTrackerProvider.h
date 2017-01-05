@@ -28,11 +28,13 @@
  */
 #pragma once
 #include "discovery/btcompat.h"
+#include "discovery/DiscoveryResult.h"
 #include <QUdpSocket>
 #include <unordered_map>
 
 namespace librevault {
 
+class FolderGroup;
 class NodeKey;
 class PortMappingService;
 class BTTrackerProvider : public QObject {
@@ -48,6 +50,7 @@ public:
 
 signals:
 	void receivedMessage(quint32 action, quint32 transaction_id, QByteArray message);
+	void discovered(QByteArray folderid, DiscoveryResult result);
 
 private:
 	QUdpSocket* socket_;

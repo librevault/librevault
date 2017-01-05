@@ -30,7 +30,9 @@
 #include "control/Config.h"
 #include "control/ControlServer.h"
 #include "control/StateCollector.h"
-#include "discovery/DiscoveryService.h"
+#include "discovery/bttracker/BTTrackerProvider.h"
+#include "discovery/mldht/MLDHTProvider.h"
+#include "discovery/multicast/MulticastProvider.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nat/PortMappingService.h"
@@ -46,7 +48,9 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMappingService(this);
-	discovery_ = new DiscoveryService(node_key_, portmanager_, state_collector_, this);
+	multicast_ = new MulticastProvider(node_key_, this);
+	bttracker_ = new BTTrackerProvider(node_key_, portmanager_, this);
+	mldht_ = new MLDHTProvider(portmanager_, state_collector_, this);
 	folder_service_ = new FolderService(state_collector_, this);
 	p2p_provider_ = new P2PProvider(*node_key_, *portmanager_, *folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);

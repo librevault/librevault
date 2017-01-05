@@ -36,9 +36,12 @@
 namespace librevault {
 
 /* Components */
+class BTTrackerProvider;
 class ControlServer;
 class DiscoveryService;
 class FolderService;
+class MLDHTProvider;
+class MulticastProvider;
 class NodeKey;
 class P2PProvider;
 class PortMappingService;
@@ -57,7 +60,9 @@ private:
 	StateCollector* state_collector_;
 	NodeKey* node_key_;
 	PortMappingService* portmanager_;
-	DiscoveryService* discovery_;
+	BTTrackerProvider* bttracker_;
+	MLDHTProvider* mldht_;
+	MulticastProvider* multicast_;
 	FolderService* folder_service_;
 	P2PProvider* p2p_provider_;
 	ControlServer* control_server_;

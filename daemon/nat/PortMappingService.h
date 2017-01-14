@@ -29,8 +29,6 @@
 #pragma once
 #include "util/log_scope.h"
 #include <QObject>
-#include <memory>
-#include <mutex>
 
 namespace librevault {
 

@@ -27,43 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#define EXIT_RESTART 451
-
-#include <QCoreApplication>
-#include <memory>
+#include "DiscoveryResult.h"
+#include <QObject>
 
 namespace librevault {
 
-/* Components */
-class ControlServer;
-class Discovery;
-class FolderService;
+class FolderGroup;
+
+class MulticastProvider;
+class BTTrackerProvider;
+class MLDHTProvider;
+
 class NodeKey;
-class P2PProvider;
 class PortMappingService;
 class StateCollector;
 
-class Client : public QCoreApplication {
+class Discovery : public QObject {
 	Q_OBJECT
+
+signals:
+	void discovered(QByteArray folderid, DiscoveryResult result);
+
 public:
-	Client(int argc, char** argv);
-	virtual ~Client();
+	Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+	virtual ~Discovery();
 
-	int run();
-	void restart();
-	void shutdown();
-private:
-	StateCollector* state_collector_;
-	NodeKey* node_key_;
-	PortMappingService* portmanager_;
-	Discovery* discovery_;
-	FolderService* folder_service_;
-	P2PProvider* p2p_provider_;
-	ControlServer* control_server_;
+public slots:
+	void addGroup(FolderGroup* fgroup);
 
-	/* Initialization */
-	inline const char* log_tag() {return "";}
+protected:
+	MulticastProvider* multicast_;
+	BTTrackerProvider* bttracker_;
+	MLDHTProvider* mldht_;
 };
 
 } /* namespace librevault */

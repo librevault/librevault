@@ -39,15 +39,21 @@ namespace librevault {
 MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup) : provider_(provider),
 	info_hash_(btcompat::getInfoHash(fgroup->folderid())),
 	folderid_(fgroup->folderid()) {
-	connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent);
+	timer_ = new QTimer(this);
+
+	timer_->setInterval(30*1000);
+
+	connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent, Qt::QueuedConnection);
+	connect(timer_, &QTimer::timeout, this, [=]{start_search(AF_INET);});
+	connect(timer_, &QTimer::timeout, this, [=]{start_search(AF_INET6);});
 }
 
 void MLDHTGroup::setEnabled(bool enable) {
 	if(enable && !enabled_) {
 		enabled_ = true;
-		start_search(AF_INET);
-		start_search(AF_INET6);
+		timer_->start();
 	}else if(!enable && enabled_) {
+		timer_->stop();
 		enabled_ = false;
 	}
 }
@@ -61,10 +67,11 @@ void MLDHTGroup::start_search(int af) {
 		<< " for: " << crypto::Hex().to_string(info_hash_)
 		<< (announce ? " on port: " : "") << (announce ? std::to_string(provider_->getExternalPort()) : std::string()));
 
-	dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, (MLDHTProvider*)&provider_);
+	dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, provider_);
 }
 
 void MLDHTGroup::handleEvent(int event, btcompat::info_hash ih, QByteArray values) {
+	if(!enabled_) return;
 	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
 		std::list<tcp_endpoint> endpoints;
 
@@ -80,10 +87,6 @@ void MLDHTGroup::handleEvent(int event, btcompat::info_hash ih, QByteArray value
 			result.port = endpoint.port();
 			emit provider_->discovered(folderid_, result);
 		}
-	}else if(event == DHT_EVENT_SEARCH_DONE) {
-		start_search(AF_INET);
-	}else if(event == DHT_EVENT_SEARCH_DONE6) {
-		start_search(AF_INET6);
 	}
 }
 

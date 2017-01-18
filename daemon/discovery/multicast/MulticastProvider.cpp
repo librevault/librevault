@@ -53,6 +53,9 @@ MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObjec
 	if(! socket6_->joinMulticastGroup(address_v6_))
 		qWarning() << "Could not join IPv6 multicast group: " << socket6_->errorString();
 
+	socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+	socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+
 	connect(socket4_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
 	connect(socket6_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
 }

@@ -37,6 +37,7 @@ class MulticastGroup;
 class NodeKey;
 class MulticastProvider : public QObject {
 	Q_OBJECT
+
 signals:
 	void discovered(QByteArray folderid, DiscoveryResult result);
 

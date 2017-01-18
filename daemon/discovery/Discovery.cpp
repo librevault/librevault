@@ -26,35 +26,42 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StaticGroup.h"
-#include "control/FolderParams.h"
+#include "Discovery.h"
+#include "discovery/StaticGroup.h"
+#include "discovery/bttracker/BTTrackerGroup.h"
+#include "discovery/bttracker/BTTrackerProvider.h"
+#include "discovery/multicast/MulticastGroup.h"
+#include "discovery/multicast/MulticastProvider.h"
+#include "discovery/mldht/MLDHTGroup.h"
+#include "discovery/mldht/MLDHTProvider.h"
 #include "folder/FolderGroup.h"
 
 namespace librevault {
 
-StaticGroup::StaticGroup(FolderGroup* fgroup) :
-	fgroup_(fgroup) {
-	timer_ = new QTimer(this);
-	timer_->setInterval(30*1000);
-	QTimer::singleShot(0, this, &StaticGroup::tick);
-	connect(timer_, &QTimer::timeout, this, &StaticGroup::tick);
+Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent) {
+	multicast_ = new MulticastProvider(node_key, this);
+	bttracker_ = new BTTrackerProvider(node_key, port_mapping, this);
+	mldht_ = new MLDHTProvider(port_mapping, state_collector, this);
+
+	connect(multicast_, &MulticastProvider::discovered, this, &Discovery::discovered);
+	connect(bttracker_, &BTTrackerProvider::discovered, this, &Discovery::discovered);
+	connect(mldht_, &MLDHTProvider::discovered, this, &Discovery::discovered);
 }
 
-void StaticGroup::setEnabled(bool enabled) {
-	if(!timer_->isActive() && enabled)
-		timer_->start();
-	else if(timer_->isActive() && !enabled)
-		timer_->stop();
-}
+Discovery::~Discovery() {}
 
-void StaticGroup::tick() {
-	QString source = QStringLiteral("Static");
-	for(const QUrl& node : fgroup_->params().nodes) {
-		DiscoveryResult result;
-		result.source = source;
-		result.url = node;
-		emit discovered(result);
-	}
+void Discovery::addGroup(FolderGroup* fgroup) {
+	auto bttracker_group = new BTTrackerGroup(bttracker_, fgroup);
+	auto mldht_group = new MLDHTGroup(mldht_, fgroup);
+	auto multicast_group = new MulticastGroup(multicast_, fgroup);
+	auto static_group = new StaticGroup(fgroup);
+
+	connect(static_group, &StaticGroup::discovered, this, [=](DiscoveryResult result){emit discovered(fgroup->folderid(), result);});
+
+	bttracker_group->setEnabled(true);
+	mldht_group->setEnabled(true);
+	multicast_group->setEnabled(true);
+	static_group->setEnabled(true);
 }
 
 } /* namespace librevault */

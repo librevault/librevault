@@ -30,7 +30,7 @@
 #include "discovery/btcompat.h"
 #include "discovery/DiscoveryResult.h"
 #include "util/log_scope.h"
-#include <QObject>
+#include <QTimer>
 
 namespace librevault {
 
@@ -54,6 +54,7 @@ public slots:
 
 private:
 	MLDHTProvider* provider_;
+	QTimer* timer_;
 
 	btcompat::info_hash info_hash_;
 	QByteArray folderid_;

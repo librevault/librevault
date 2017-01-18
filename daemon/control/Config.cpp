@@ -166,12 +166,8 @@ void Config::make_defaults() {
 	globals_defaults_["natpmp_lifetime"] = 3600;
 	globals_defaults_["upnp_enabled"] = true;
 	globals_defaults_["predef_repeat_interval"] = 30;
-	globals_defaults_["multicast4_enabled"] = true;
-	globals_defaults_["multicast4_group"] = "239.192.152.144:28914";
-	globals_defaults_["multicast4_repeat_interval"] = 30;
-	globals_defaults_["multicast6_enabled"] = true;
-	globals_defaults_["multicast6_group"] = "[ff08::BD02]:28914";
-	globals_defaults_["multicast6_repeat_interval"] = 30;
+	globals_defaults_["multicast_enabled"] = true;
+	globals_defaults_["multicast_repeat_interval"] = 30;
 	globals_defaults_["bttracker_enabled"] = true;
 	globals_defaults_["bttracker_num_want"] = 30;
 	globals_defaults_["bttracker_min_interval"] = 15;

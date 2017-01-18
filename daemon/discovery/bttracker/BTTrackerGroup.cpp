@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "BTTrackerGroup.h"
-#include "folder/FolderGroup.h"
 #include "BTTrackerConnection.h"
+#include "folder/FolderGroup.h"
 #include "util/log.h"
 
 namespace librevault {

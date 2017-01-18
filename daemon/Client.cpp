@@ -30,9 +30,7 @@
 #include "control/Config.h"
 #include "control/ControlServer.h"
 #include "control/StateCollector.h"
-#include "discovery/bttracker/BTTrackerProvider.h"
-#include "discovery/mldht/MLDHTProvider.h"
-#include "discovery/multicast/MulticastProvider.h"
+#include "discovery/Discovery.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nat/PortMappingService.h"
@@ -48,22 +46,24 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMappingService(this);
-	multicast_ = new MulticastProvider(node_key_, this);
-	bttracker_ = new BTTrackerProvider(node_key_, portmanager_, this);
-	mldht_ = new MLDHTProvider(portmanager_, state_collector_, this);
+	discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
 	folder_service_ = new FolderService(state_collector_, this);
-	p2p_provider_ = new P2PProvider(*node_key_, *portmanager_, *folder_service_, this);
+	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 
 	/* Connecting signals */
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](std::shared_ptr<FolderGroup> group){
+	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
 		control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
 	});
 	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](std::shared_ptr<FolderGroup> group){
 		control_server_->notify_folder_removed(group->hash());
 	});
+
+	connect(folder_service_, &FolderService::folderAdded, discovery_, &Discovery::addGroup);
+
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }

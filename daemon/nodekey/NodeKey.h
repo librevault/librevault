@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
 #include "util/log_scope.h"
 #include <QObject>
+#include <QFile>
 #include <QSslCertificate>
 #include <QSslKey>
 
@@ -42,13 +42,19 @@ public:
 	NodeKey(QObject* parent);
 	virtual ~NodeKey();
 
+	QCryptographicHash::Algorithm digestAlgorithm() const {return QCryptographicHash::Sha256;}
+
 	QByteArray digest() const;
-	QSslKey privateKey() const;
-	QSslCertificate certificate() const;
+	QSslKey privateKey() const {return private_key_;}
+	QSslCertificate certificate() const {return certificate_;}
 
 private:
 	void write_key();
 	void gen_certificate();
+
+	QFile cert_file_, private_key_file_;
+	QSslKey private_key_;
+	QSslCertificate certificate_;
 };
 
 } /* namespace librevault */

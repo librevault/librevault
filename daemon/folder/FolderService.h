@@ -58,22 +58,20 @@ public:
 	void stop();
 
 	/* FolderGroup nanagenent */
-	void init_folder(const FolderParams& params);
-	void deinit_folder(const blob& folder_hash);
+	void initFolder(const FolderParams& params);
+	void deinitFolder(const QByteArray& folderid);
 
-	std::shared_ptr<FolderGroup> get_group(const blob& hash);
 	FolderGroup* getGroup(const QByteArray& folderid);
 
 signals:
-	void folderAdded(std::shared_ptr<FolderGroup> fgroup);
-	void folderRemoved(std::shared_ptr<FolderGroup> fgroup);
+	void folderAdded(FolderGroup* fgroup);
+	void folderRemoved(FolderGroup* fgroup);
 
 private:
 	multi_io_service bulk_ios_;
 	multi_io_service serial_ios_;
 	StateCollector* state_collector_;
 
-	QMap<blob, std::shared_ptr<FolderGroup>> hash_group_;
 	QMap<QByteArray, FolderGroup*> groups_;
 };
 

@@ -54,11 +54,13 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	/* Connecting signals */
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
-	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](std::shared_ptr<FolderGroup> group){
+
 	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
+
+	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_added(group->hash(), Config::get()->folder_get(group->hash()));
 	});
-	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](std::shared_ptr<FolderGroup> group){
+	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_removed(group->hash());
 	});
 

@@ -35,26 +35,31 @@
 #include "util/readable.h"
 #include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
-#include <QByteArray>
 
 namespace librevault {
 
-P2PFolder::P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service) :
-		provider_(provider),
-		node_key_(node_key) {
-	LOGD("Created");
+P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, Role role) :
+	RemoteFolder(fgroup),
+	role_(role),
+	provider_(provider),
+	node_key_(node_key),
+	socket_(socket),
+	fgroup_(fgroup) {
+	LOGFUNC();
 
-	QByteArray folderid/*((char*)conn_.hash.data(), conn_.hash.size())*/;
-	fgroup_ = folder_service->getGroup(folderid);
+	socket->setParent(this);
+	this->setParent(fgroup);
 
 	// Set up timers
 	ping_timer_ = new QTimer(this);
 	timeout_timer_ = new QTimer(this);
 
+	// Connect signals
 	connect(ping_timer_, &QTimer::timeout, socket_, [this]{socket_->ping();});
 	connect(timeout_timer_, &QTimer::timeout, socket_, [this]{socket_->close(QWebSocketProtocol::CloseCodeAbnormalDisconnection);});
-	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handle_pong);
+	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
+	connect(socket_, &QWebSocket::stateChanged, this, &P2PFolder::handleWebSocketStateChanged);
 
 	// Start timers
 	ping_timer_->setInterval(20*1000);
@@ -65,8 +70,20 @@ P2PFolder::P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* fo
 	timeout_timer_->start();
 }
 
+P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
+	P2PFolder(socket, fgroup, provider, node_key, CLIENT) {
+
+	socket_->setSslConfiguration(provider_->getSslConfiguration());
+	socket_->open(url);
+}
+
+P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
+	P2PFolder(socket, fgroup, provider, node_key, SERVER) {
+
+}
+
 P2PFolder::~P2PFolder() {
-	LOGD("Destroyed");
+	LOGFUNC();
 }
 
 QString P2PFolder::displayName() const {
@@ -75,11 +92,15 @@ QString P2PFolder::displayName() const {
 }
 
 QByteArray P2PFolder::digest() const {
-	return socket_->sslConfiguration().peerCertificate().digest();
+	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
 tcp_endpoint P2PFolder::remote_endpoint() const {
-	return tcp_endpoint(address::from_string(socket_->peerAddress().toString().toStdString()), socket_->peerPort());
+	try {
+		return tcp_endpoint(address::from_string(socket_->peerAddress().toString().toStdString()), socket_->peerPort());
+	}catch(std::exception& e){
+		return tcp_endpoint();
+	}
 }
 
 Json::Value P2PFolder::collect_state() {
@@ -96,7 +117,7 @@ Json::Value P2PFolder::collect_state() {
 }
 
 blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
-	return derive_token(fgroup_->secret(), blob(digest.begin(), digest.end()));
+	return derive_token(secret, blob(digest.begin(), digest.end()));
 }
 
 blob P2PFolder::local_token() {
@@ -426,9 +447,19 @@ void P2PFolder::bump_timeout() {
 	timeout_timer_->setInterval(120*1000);
 }
 
-void P2PFolder::handle_pong(quint64 rtt) {
+void P2PFolder::handlePong(quint64 rtt) {
 	bump_timeout();
 	rtt_ = std::chrono::milliseconds(rtt);
+}
+
+void P2PFolder::handleWebSocketStateChanged(QAbstractSocket::SocketState state) {
+	LOGT("State changed: " << state);
+	if(state == QAbstractSocket::ConnectedState && role_ == CLIENT) {
+		sendHandshake();
+	}
+	if(state == QAbstractSocket::UnconnectedState) {
+		deleteLater();
+	}
 }
 
 } /* namespace librevault */

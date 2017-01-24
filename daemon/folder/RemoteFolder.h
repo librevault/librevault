@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-class RemoteFolder : public QObject, public std::enable_shared_from_this<RemoteFolder> {
+class RemoteFolder : public QObject {
 	Q_OBJECT
 	friend class FolderGroup;
 
@@ -60,7 +60,7 @@ signals:
 	void rcvdBlockCancel(blob, uint32_t, uint32_t);
 
 public:
-	RemoteFolder();
+	RemoteFolder(QObject* parent);
 	virtual ~RemoteFolder();
 
 	virtual QString displayName() const = 0;

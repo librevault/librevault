@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 			spdlog::register_logger(log);
 
 			log->set_level(log_level);
-			log->set_pattern("[%Y-%m-%d %T.%f] [T:%t] [%L] %v");
+			log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
 			log->flush_on(spdlog::level::warn);
 		}
 

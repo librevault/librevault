@@ -40,7 +40,7 @@ MetaUploader::MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storag
 	LOGFUNC();
 }
 
-void MetaUploader::broadcast_meta(std::set<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaUploader::broadcast_meta(QList<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	for(auto remote : remotes) {
 		remote->post_have_meta(revision, bitfield);
 	}

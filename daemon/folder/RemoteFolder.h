@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "util/blob.h"
+#include <json/json-forwards.h>
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
@@ -40,7 +41,8 @@ class RemoteFolder : public QObject {
 	friend class FolderGroup;
 
 signals:
-	void handshakePerformed();
+	void handshakeSuccess();
+	void handshakeFailed();
 
 	/* Message signals */
 	void rcvdChoke();
@@ -64,6 +66,7 @@ public:
 	virtual ~RemoteFolder();
 
 	virtual QString displayName() const = 0;
+	virtual Json::Value collect_state() = 0;
 	std::string log_tag() const;
 
 	/* Message senders */

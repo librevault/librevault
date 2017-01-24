@@ -43,7 +43,7 @@ class Uploader : public QObject {
 public:
 	Uploader(ChunkStorage& chunk_storage);
 
-	void broadcast_chunk(std::set<RemoteFolder*> remotes, const blob& ct_hash);
+	void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
 
 	/* Message handlers */
 	void handle_interested(RemoteFolder* remote);

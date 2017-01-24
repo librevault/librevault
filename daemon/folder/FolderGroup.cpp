@@ -141,15 +141,13 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 }
 
 void FolderGroup::attach(P2PFolder* remote_ptr) {
-	if(have_p2p_dir(remote_ptr->remote_endpoint()) || have_p2p_dir(remote_ptr->digest())) throw attach_error();
-
-	p2p_folders_.insert(remote_ptr);
+	remotes_.insert(remote_ptr);
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
 	p2p_folders_digests_.insert(remote_ptr->digest());
 
 	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
 
-	connect(remote_ptr, &RemoteFolder::handshakePerformed, this, [=]{handle_handshake(remote_ptr);});
+	connect(remote_ptr, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote_ptr);});
 
 	emit attached(remote_ptr);
 }
@@ -157,25 +155,21 @@ void FolderGroup::attach(P2PFolder* remote_ptr) {
 void FolderGroup::detach(P2PFolder* remote_ptr) {
 	downloader_->erase_remote(remote_ptr);
 
-	p2p_folders_digests_.erase(remote_ptr->digest());
-	p2p_folders_endpoints_.erase(remote_ptr->remote_endpoint());
-	p2p_folders_.erase(remote_ptr);
+	p2p_folders_digests_.remove(remote_ptr->digest());
+	p2p_folders_endpoints_.remove(remote_ptr->remote_endpoint());
+	remotes_.remove(remote_ptr);
 
 	LOGD("Detached remote " << remote_ptr->displayName().toStdString());
 
 	emit detached(remote_ptr);
 }
 
-bool FolderGroup::have_p2p_dir(const tcp_endpoint& endpoint) {
-	return p2p_folders_endpoints_.find(endpoint) != p2p_folders_endpoints_.end();
+bool FolderGroup::remotePresent(P2PFolder* folder) {
+	return p2p_folders_digests_.contains(folder->digest()) || p2p_folders_endpoints_.contains(folder->remote_endpoint());
 }
 
-bool FolderGroup::have_p2p_dir(const QByteArray& digest) {
-	return p2p_folders_digests_.find(digest) != p2p_folders_digests_.end();
-}
-
-std::set<RemoteFolder*> FolderGroup::remotes() const {
-	return std::set<RemoteFolder*>(p2p_folders_.begin(), p2p_folders_.end());
+QList<RemoteFolder*> FolderGroup::remotes() const {
+	return remotes_.toList();
 }
 
 std::string FolderGroup::log_tag() const {
@@ -185,7 +179,7 @@ std::string FolderGroup::log_tag() const {
 void FolderGroup::push_state() {
 	// peers
 	Json::Value peers_array;
-	for(auto& p2p_folder : p2p_folders_) {
+	for(auto& p2p_folder : remotes_) {
 		peers_array.append(p2p_folder->collect_state());
 	}
 	state_collector_->folder_state_set(params_.secret.get_Hash(), "peers", peers_array);

@@ -55,11 +55,12 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 	timeout_timer_ = new QTimer(this);
 
 	// Connect signals
-	connect(ping_timer_, &QTimer::timeout, socket_, [this]{socket_->ping();});
-	connect(timeout_timer_, &QTimer::timeout, socket_, [this]{socket_->close(QWebSocketProtocol::CloseCodeAbnormalDisconnection);});
+	connect(ping_timer_, &QTimer::timeout, this, [this]{socket_->ping();});
+	connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::deleteLater);
 	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
 	connect(socket_, &QWebSocket::stateChanged, this, &P2PFolder::handleWebSocketStateChanged);
+	connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::deleteLater);
 
 	// Start timers
 	ping_timer_->setInterval(20*1000);
@@ -80,36 +81,37 @@ P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvi
 P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
 	P2PFolder(socket, fgroup, provider, node_key, SERVER) {
 
+	handleWebSocketStateChanged(QAbstractSocket::ConnectedState);
 }
 
 P2PFolder::~P2PFolder() {
 	LOGFUNC();
+	fgroup_->detach(this);
 }
 
 QString P2PFolder::displayName() const {
-	std::ostringstream os; os << remote_endpoint();
-	return QString::fromStdString(os.str());
+	try {
+		std::ostringstream os; os << tcp_endpoint(address::from_string(socket_->peerAddress().toString().toStdString()), socket_->peerPort());;
+		return QString::fromStdString(os.str());
+	}catch(std::exception& e){
+		return "Unknown peer";
+	}
 }
 
 QByteArray P2PFolder::digest() const {
 	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
-tcp_endpoint P2PFolder::remote_endpoint() const {
-	try {
-		return tcp_endpoint(address::from_string(socket_->peerAddress().toString().toStdString()), socket_->peerPort());
-	}catch(std::exception& e){
-		return tcp_endpoint();
-	}
+QPair<QHostAddress, quint16> P2PFolder::remote_endpoint() const {
+	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
 Json::Value P2PFolder::collect_state() {
 	Json::Value state;
 
-	std::ostringstream os; os << remote_endpoint();
-	state["endpoint"] = os.str();
-	state["client_name"] = client_name();
-	state["user_agent"] = user_agent();
+	state["endpoint"] = displayName().toStdString();   //FIXME: Must be host:port
+	state["client_name"] = client_name().toStdString();
+	state["user_agent"] = user_agent().toStdString();
 	state["traffic_stats"] = counter_.heartbeat_json();
 	state["rtt"] = Json::Value::UInt64(rtt_.count());
 
@@ -299,21 +301,25 @@ void P2PFolder::handle_message(const QByteArray& message) {
 
 void P2PFolder::handle_Handshake(const blob& message_raw) {
 	LOGFUNC();
-	auto message_struct = V1Parser().parse_Handshake(message_raw);
-	LOGD("<== HANDSHAKE");
+	try {
+		auto message_struct = V1Parser().parse_Handshake(message_raw);
+		LOGD("<== HANDSHAKE");
 
-	// Checking authentication using token
-	if(message_struct.auth_token != remote_token()) throw auth_error();
+		// Checking authentication using token
+		if(message_struct.auth_token != remote_token()) throw auth_error();
 
-	if(role_ == SERVER) sendHandshake();
+		if(role_ == SERVER) sendHandshake();
 
-	client_name_ = message_struct.device_name;
-	user_agent_ = message_struct.user_agent;
+		client_name_ = QString::fromStdString(message_struct.device_name);
+		user_agent_ = QString::fromStdString(message_struct.user_agent);
 
-	LOGD("LV Handshake successful");
-	handshake_received_ = true;
+		LOGD("LV Handshake successful");
+		handshake_received_ = true;
 
-	emit handshakePerformed();
+		emit handshakeSuccess();
+	}catch(std::exception& e){
+		emit handshakeFailed();
+	}
 }
 
 void P2PFolder::handle_Choke(const blob& message_raw) {
@@ -454,8 +460,14 @@ void P2PFolder::handlePong(quint64 rtt) {
 
 void P2PFolder::handleWebSocketStateChanged(QAbstractSocket::SocketState state) {
 	LOGT("State changed: " << state);
-	if(state == QAbstractSocket::ConnectedState && role_ == CLIENT) {
-		sendHandshake();
+	if(state == QAbstractSocket::ConnectedState) {
+		if(!fgroup_->remotePresent(this)) {
+			fgroup_->attach(this);
+			if(role_ == CLIENT)
+				sendHandshake();
+		}else{
+			deleteLater();
+		}
 	}
 	if(state == QAbstractSocket::UnconnectedState) {
 		deleteLater();

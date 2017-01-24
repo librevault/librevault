@@ -30,7 +30,6 @@
 #include "folder/RemoteFolder.h"
 #include "p2p/P2PProvider.h"
 #include "p2p/BandwidthCounter.h"
-#include <json/json-forwards.h>
 #include <QTimer>
 #include <QWebSocket>
 
@@ -61,10 +60,9 @@ public:
 	/* Getters */
 	QString displayName() const;
 	QByteArray digest() const;
-	tcp_endpoint remote_endpoint() const;
-	const std::string& client_name() const {return client_name_;}
-	const std::string& user_agent() const {return user_agent_;}
-	FolderGroup* fgroup() const {return fgroup_;}
+	QPair<QHostAddress, quint16> remote_endpoint() const;
+	QString client_name() const {return client_name_;}
+	QString user_agent() const {return user_agent_;}
 	Json::Value collect_state();
 
 	/* RPC Actions */
@@ -108,8 +106,8 @@ private:
 	BandwidthCounter counter_;
 
 	/* These needed primarily for UI */
-	std::string client_name_;
-	std::string user_agent_;
+	QString client_name_;
+	QString user_agent_;
 
 	/* Ping/pong and timeout handlers */
 	QTimer* ping_timer_;

@@ -38,7 +38,7 @@ Uploader::Uploader(ChunkStorage& chunk_storage) :
 	LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(std::set<RemoteFolder*> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash) {
 	for(auto& remote : remotes) {
 		remote->post_have_chunk(ct_hash);
 	}

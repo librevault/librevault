@@ -31,15 +31,14 @@
 #include "p2p/BandwidthCounter.h"
 #include "util/blob.h"
 #include "util/network.h"
-
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
-
 #include <QObject>
 #include <QTimer>
-
+#include <QSet>
 #include <set>
+#include <QHostAddress>
 
 namespace librevault {
 
@@ -68,15 +67,6 @@ signals:
 	void detached(P2PFolder* remote_ptr);
 
 public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("FolderGroup error") {}
-	};
-
-	struct attach_error : error {
-		attach_error() : error("Could not attach remote to FolderGroup") {}
-	};
-
 	FolderGroup(FolderParams params, StateCollector* state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
 	virtual ~FolderGroup();
 
@@ -84,17 +74,16 @@ public:
 	void attach(P2PFolder* remote_ptr);
 	void detach(P2PFolder* remote_ptr);
 
-	bool have_p2p_dir(const tcp_endpoint& endpoint);
-	bool have_p2p_dir(const QByteArray& digest);
+	bool remotePresent(P2PFolder* folder);
 
 	/* Getters */
-	std::set<RemoteFolder*> remotes() const;
+	QList<RemoteFolder*> remotes() const;
 
 	inline const FolderParams& params() const {return params_;}
 
 	inline const Secret& secret() const {return params().secret;}
 	inline const blob& hash() const {return secret().get_Hash();}
-	QByteArray folderid() const {return QByteArray((char*)hash().data(), hash().size());}
+	QByteArray folderid() const {return QByteArray::fromRawData((char*)secret().get_Hash().data(), secret().get_Hash().size());}
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 
@@ -120,11 +109,11 @@ private:
 	QTimer* state_pusher_;
 
 	/* Members */
-	std::set<P2PFolder*> p2p_folders_;
+	QSet<RemoteFolder*> remotes_;
 
 	// Member lookup optimization
-	std::set<QByteArray> p2p_folders_digests_;
-	std::set<tcp_endpoint> p2p_folders_endpoints_;
+	QSet<QByteArray> p2p_folders_digests_;
+	QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
 
 private slots:
 	void push_state();

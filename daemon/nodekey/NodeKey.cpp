@@ -28,7 +28,6 @@
  */
 #include "NodeKey.h"
 #include "control/Paths.h"
-#include "util/file_util.h"
 #include "util/log.h"
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
@@ -36,16 +35,28 @@
 #include <cryptopp/osrng.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
-#include <librevault/crypto/Hex.h>
-#include <librevault/crypto/Base64.h>
-#include <QFile>
 
 namespace librevault {
 
 NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	LOGFUNC();
+	cert_file_.setFileName(QString::fromStdWString(Paths::get()->cert_path.wstring()));
+	private_key_file_.setFileName(QString::fromStdWString(Paths::get()->key_path.wstring()));
+
 	write_key();
 	gen_certificate();
+
+	private_key_file_.open(QIODevice::ReadOnly);
+	cert_file_.open(QIODevice::ReadOnly);
+
+	private_key_ = QSslKey(&private_key_file_, QSsl::Ec);
+	certificate_ = QSslCertificate(&cert_file_);
+
+	private_key_file_.close();
+	cert_file_.close();
+
+	LOGI("PeerID: " << digest().toHex().toStdString());
+
 	LOGFUNCEND();
 }
 
@@ -55,19 +66,7 @@ NodeKey::~NodeKey() {
 }
 
 QByteArray NodeKey::digest() const {
-	return certificate().digest();
-}
-
-QSslKey NodeKey::privateKey() const {
-	QFile ssl_key_file(QString::fromStdWString(Paths::get()->key_path.wstring()));
-	ssl_key_file.open(QIODevice::ReadOnly);
-	return QSslKey(&ssl_key_file);
-}
-
-QSslCertificate NodeKey::certificate() const {
-	QFile ssl_cert_file(QString::fromStdWString(Paths::get()->cert_path.wstring()));
-	ssl_cert_file.open(QIODevice::ReadOnly);
-	return QSslCertificate(&ssl_cert_file);
+	return certificate().digest(digestAlgorithm());
 }
 
 void NodeKey::write_key() {
@@ -76,19 +75,17 @@ void NodeKey::write_key() {
 
 	CryptoPP::AutoSeededRandomPool rng;
 	private_key.Initialize(rng, CryptoPP::ASN1::secp256r1());
-	CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
 
-	private_key.MakePublicKey(public_key);
-	public_key.AccessGroupParameters().SetPointCompression(true);
+//	std::string s;
+//	CryptoPP::StringSink ss(s);
+//	private_key.DEREncode(ss);
+//
+//	private_key_ = QSslKey(QByteArray::fromRawData(s.data(), s.size()), QSsl::Ec, QSsl::Der);
+//	private_key_file_.open(QIODevice::WriteOnly | QIODevice::Truncate);
+//	private_key_file_.write(private_key_.toPem());
+//	private_key_file_.close();
 
-	blob public_key_compressed(33);
-	public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), public_key_compressed.data());
-
-	LOGD("Public key: " << crypto::Hex().to_string(public_key_compressed));
-
-	/* Write to PEM */
-	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "w");
-	fputs("-----BEGIN EC PRIVATE KEY-----\n", f);
+	/* Write to DER buffer */
 	auto& group_params = private_key.GetGroupParameters();
 
 	bool old = group_params.GetEncodeAsOID();
@@ -97,8 +94,8 @@ void NodeKey::write_key() {
     CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> pkey;
 	private_key.MakePublicKey(pkey);
 
-    std::string s;
-    CryptoPP::StringSink ss(s);
+    std::string der_buffer;
+    CryptoPP::StringSink ss(der_buffer);
     CryptoPP::DERSequenceEncoder seq(ss);
     CryptoPP::DEREncodeUnsigned<CryptoPP::word32>(seq, 1);
 
@@ -131,39 +128,42 @@ void NodeKey::write_key() {
     // Sequence end
     seq.MessageEnd();
 
-    s = crypto::Base64().to_string(s);
-
-    for (unsigned i = 0; i < s.length(); i += 64) {
-		fputs(s.substr(i, 64).c_str(), f);
-		fputc('\n', f);
-    }
-
 	const_cast<CryptoPP::DL_GroupParameters_EC<CryptoPP::ECP>&>(group_params).SetEncodeAsOID(old);
-	fputs("-----END EC PRIVATE KEY-----", f);
-	fclose(f);
+
+	// Converting to PEM and writing to file
+	private_key_file_.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	QSslKey der_key(QByteArray::fromStdString(der_buffer), QSsl::Ec, QSsl::Der);
+	private_key_file_.write(der_key.toPem());
+	private_key_file_.close();
 }
 
 void NodeKey::gen_certificate() {
-	X509* x509_ = X509_new();
-	EVP_PKEY* openssl_pkey_ = EVP_PKEY_new();
+	std::unique_ptr<X509, decltype(&X509_free)> x509(X509_new(), &X509_free);
+	std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> openssl_pkey(EVP_PKEY_new(), &EVP_PKEY_free);
 
-	FILE * f = native_fopen(Paths::get()->key_path.c_str(), "r");
+	// Get private key
+	private_key_file_.open(QIODevice::ReadOnly);
+	QByteArray private_key_pem = private_key_file_.readAll();
+	private_key_file_.close();
 
-	PEM_read_PrivateKey(f, &openssl_pkey_, 0, 0);
-	fclose(f);
+	{   // Read private key from buffer
+		std::unique_ptr<BIO, decltype(&BIO_free)> private_key_bio(BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size()), &BIO_free);
+		EVP_PKEY* evp_pkey = openssl_pkey.get();
+		PEM_read_bio_PrivateKey(private_key_bio.get(), &evp_pkey, 0, 0);
+	}
 
 	/* Set the serial number. */
-	ASN1_INTEGER_set(X509_get_serialNumber(x509_), 1);
+	ASN1_INTEGER_set(X509_get_serialNumber(x509.get()), 1);
 
 	/* This certificate is valid from now until exactly one year from now. */
-	X509_gmtime_adj(X509_get_notBefore(x509_), 0);
-	X509_gmtime_adj(X509_get_notAfter(x509_), 31536000L);
+	X509_gmtime_adj(X509_get_notBefore(x509), 0);
+	X509_gmtime_adj(X509_get_notAfter(x509), 31536000L);
 
 	/* Set the public key for our certificate. */
-	X509_set_pubkey(x509_, openssl_pkey_);
+	X509_set_pubkey(x509.get(), openssl_pkey.get());
 
 	/* We want to copy the subject name to the issuer name. */
-	X509_NAME * name = X509_get_subject_name(x509_);
+	X509_NAME * name = X509_get_subject_name(x509.get());
 
 	/* Set the country code and common name. */
 	//X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *) "CA", -1, -1, 0);
@@ -171,26 +171,25 @@ void NodeKey::gen_certificate() {
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *) "Librevault", -1, -1, 0);	// Use some sort of user-agent
 
 	/* Now set the issuer name. */
-	X509_set_issuer_name(x509_, name);
+	X509_set_issuer_name(x509.get(), name);
 
 	/* Actually sign the certificate with our key. */
-	if (!X509_sign(x509_, openssl_pkey_, EVP_sha256())) {
-		X509_free(x509_);
+	if (!X509_sign(x509.get(), openssl_pkey.get(), EVP_sha256())) {
+		X509_free(x509.get());
 		throw std::runtime_error("Error signing certificate.");
 	}
 
-	/* Open the PEM file for writing the certificate to disk. */
-	FILE * x509_file = native_fopen(Paths::get()->cert_path.c_str(), "wb");
-	if (!x509_file) {
-		throw std::runtime_error("Unable to open \"cert.pem\" for writing.");
-	}
+	/* Write certificate to DER buffer */
+	QByteArray der_buffer(i2d_X509(x509.get(), nullptr), '\0');
+	uint8_t* data_ptr = (uint8_t*)der_buffer.data();
+	uint8_t** data_2ptr = &data_ptr;
+	i2d_X509(x509.get(), data_2ptr);
 
 	/* Write the certificate to disk. */
-	PEM_write_X509(x509_file, x509_);
-	fclose(x509_file);
-
-	EVP_PKEY_free(openssl_pkey_);
-	X509_free(x509_);
+	cert_file_.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	QSslCertificate der_cert(der_buffer, QSsl::Der);
+	cert_file_.write(der_cert.toPem());
+	cert_file_.close();
 }
 
 } /* namespace librevault */

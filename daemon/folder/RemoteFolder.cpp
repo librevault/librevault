@@ -30,7 +30,7 @@
 
 namespace librevault {
 
-RemoteFolder::RemoteFolder() {}
+RemoteFolder::RemoteFolder(QObject* parent) : QObject(parent) {}
 RemoteFolder::~RemoteFolder() {}
 
 std::string RemoteFolder::log_tag() const {

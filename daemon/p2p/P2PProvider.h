@@ -47,19 +47,26 @@ class P2PProvider : public QObject {
 	friend class ControlServer;
 	LOG_SCOPE("P2PProvider");
 public:
-	P2PProvider(NodeKey& node_key, PortMappingService& port_mapping, FolderService& folder_service, QObject* parent);
+	P2PProvider(NodeKey* node_key,
+	            PortMappingService* port_mapping,
+	            FolderService* folder_service,
+	            QObject* parent);
 	virtual ~P2PProvider();
 
-	QSslConfiguration getSslConfiguration();
-	P2PFolder* startConnection(DiscoveryResult result, FolderGroup* fgroup);
+	QSslConfiguration getSslConfiguration() const;
 
 	/* Loopback detection */
 	void mark_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const QByteArray& digest);
 
+public slots:
+	void handleDiscovered(QByteArray folderid, DiscoveryResult result);
+
 private:
-	NodeKey& node_key_;
+	NodeKey* node_key_;
+	PortMappingService* port_mapping_;
+	FolderService* folder_service_;
 
 	QWebSocketServer* server_;
 
@@ -68,6 +75,10 @@ private:
 
 private slots:
 	void handleConnection();
+	void handlePeerVerifyError(const QSslError& error);
+	void handleServerError(QWebSocketProtocol::CloseCode closeCode);
+	void handleSslErrors(const QList<QSslError>& errors);
+	void handleAcceptError(QAbstractSocket::SocketError socketError);
 };
 
 } /* namespace librevault */

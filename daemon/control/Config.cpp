@@ -107,7 +107,7 @@ void Config::folder_add(Json::Value folder_config) {
 }
 
 void Config::folder_remove(const blob& folderid) {
-	emit folderRemoved(folderid);
+	emit folderRemoved(QByteArray((const char*)folderid.data(), folderid.size()));
 	folders_custom_.erase(folderid);
 	save();
 }

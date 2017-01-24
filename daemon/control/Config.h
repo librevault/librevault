@@ -78,7 +78,7 @@ public:
 signals:
 	void configChanged(std::string key, Json::Value value);
 	void folderAdded(Json::Value fconfig);
-	void folderRemoved(blob folderid);
+	void folderRemoved(QByteArray folderid);
 
 protected:
 	Config();

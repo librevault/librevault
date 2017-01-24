@@ -54,7 +54,8 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(P2PProvider* provider, NodeKey* node_key, FolderService* folder_service);
+	P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
+	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
 	~P2PFolder();
 
 	/* Getters */
@@ -93,11 +94,14 @@ public:
 private:
 	enum Role {SERVER, CLIENT} role_;
 
+	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, Role role);
+
 	P2PProvider* provider_;
 	NodeKey* node_key_;
 	QWebSocket* socket_;
 	FolderGroup* fgroup_;
 
+	/* Handshake */
 	bool handshake_received_ = false;
 	bool handshake_sent_ = false;
 
@@ -117,8 +121,6 @@ private:
 	blob remote_token();
 
 	void bump_timeout();
-
-	void handle_pong(quint64 rtt);
 
 	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 
@@ -142,6 +144,10 @@ private:
 	void handle_BlockRequest(const blob& message_raw);
 	void handle_BlockReply(const blob& message_raw);
 	void handle_BlockCancel(const blob& message_raw);
+
+private slots:
+	void handlePong(quint64 rtt);
+	void handleWebSocketStateChanged(QAbstractSocket::SocketState state);
 };
 
 } /* namespace librevault */

@@ -58,7 +58,7 @@ void Archive::archive(const fs::path& from) {
 	auto file_type = fs::symlink_status(from).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_.prepare_assemble(path_normalizer_.normalize_path(from), Meta::DELETED);
+	meta_storage_.prepareAssemble(path_normalizer_.normalize_path(from), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(from)) // Okay, just remove this empty directory

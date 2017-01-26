@@ -32,6 +32,8 @@
 #include "util/fs.h"
 #include "util/network.h"
 #include <librevault/SignedMeta.h>
+#include <QString>
+#include <QObject>
 #include <boost/filesystem/path.hpp>
 #include <set>
 #include <atomic>
@@ -46,7 +48,8 @@ class Index;
 class IgnoreList;
 class PathNormalizer;
 class StateCollector;
-class Indexer {
+class Indexer : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("Indexer");
 public:
 	struct error : std::runtime_error {
@@ -76,6 +79,9 @@ public:
 
 	/* Getters */
 	bool is_indexing() const {return indexing_now_ != 0;}
+
+public slots:
+	void addIndexing(QString abspath) {}
 
 private:
 	const FolderParams& params_;

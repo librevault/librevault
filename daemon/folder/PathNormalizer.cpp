@@ -30,12 +30,54 @@
 #include "control/FolderParams.h"
 #include "util/fs.h"
 #include "util/make_relpath.h"
+#include <QDir>
 #include <boost/locale.hpp>
 #include <codecvt>
 
 namespace librevault {
 
 PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
+
+QByteArray PathNormalizer::normalizePath(QString abspath) {
+	QDir root_dir(QString::fromStdWString(params_.path.wstring()));
+
+	// Make it relative to root
+	QString normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));
+
+	// Convert directory separators
+	normpath = QDir::fromNativeSeparators(normpath);
+
+	// Apply NFC-normalization (if not explicitly disabled for somewhat reasons)
+	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
+		normpath = normpath.normalized(QString::NormalizationForm_C);
+
+	// Removing last '/' in directories
+	if(normpath.endsWith('/'))
+		normpath.chop(1);
+
+	// Convert to UTF-8
+	return normpath.toUtf8();
+}
+
+QString PathNormalizer::denormalizePath(QByteArray normpath) {
+	QDir root_dir(QString::fromStdWString(params_.path.wstring()));
+
+	// Convert from UTF-8
+	QString denormpath = QString::fromUtf8(normpath);
+
+	// Make it absolute
+	denormpath = root_dir.absoluteFilePath(denormpath);
+
+	// Use platform-dependent directory separators
+	denormpath = QDir::toNativeSeparators(denormpath);
+
+	// Use Mac-NFD normalization on macOS (weird Unicode 3.2 edition)
+#ifdef Q_OS_MAC
+	denormpath = denormpath.normalized(QString::NormalizationForm_D, QChar::Unicode_3_2);
+#endif
+
+	return denormpath;
+}
 
 std::string PathNormalizer::normalize_path(const fs::path& abspath) const {
 #ifdef LV_DEBUG_NORMALIZATION

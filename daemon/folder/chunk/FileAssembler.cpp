@@ -137,7 +137,7 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_.prepare_assemble(path_normalizer_.normalize_path(file_path), Meta::DELETED);
+	meta_storage_.prepareAssemble(path_normalizer_.normalize_path(file_path), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
@@ -174,7 +174,7 @@ bool FileAssembler::assemble_directory(const Meta& meta) {
 	bool create_new = true;
 	if(fs::status(file_path).type() != fs::file_type::directory_file)
 		create_new = !fs::remove(file_path);
-	meta_storage_.prepare_assemble(relpath, Meta::DIRECTORY, create_new);
+	meta_storage_.prepareAssemble(relpath, Meta::DIRECTORY, create_new);
 
 	if(create_new) fs::create_directories(file_path);
 
@@ -206,7 +206,7 @@ bool FileAssembler::assemble_file(const Meta& meta) {
 	fs::last_write_time(assembled_file, meta.mtime());
 
 	//dir_.ignore_list->add_ignored(relpath);
-	meta_storage_.prepare_assemble(relpath, Meta::FILE, fs::exists(file_path));
+	meta_storage_.prepareAssemble(relpath, Meta::FILE, fs::exists(file_path));
 
 	archive_.archive(file_path);
 	fs::rename(assembled_file, file_path);

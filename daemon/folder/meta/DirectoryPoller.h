@@ -27,65 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include "folder/PathNormalizer.h"
 #include "util/log_scope.h"
-#include "util/network.h"
-#include "util/scoped_async_queue.h"
-#include "util/scoped_timer.h"
 #include <librevault/Meta.h>
-#include <dir_monitor/dir_monitor.hpp>
-#include <mutex>
+#include <QTimer>
 
 namespace librevault {
 
-class Index;
-class Indexer;
+class FolderParams;
 class IgnoreList;
+class Index;
+class PathNormalizer;
 
-class AutoIndexer {
-	LOG_SCOPE("AutoIndexer");
+class DirectoryPoller : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("DirectoryPoller");
+signals:
+	void newPath(QString denormpath);
+
 public:
-	AutoIndexer(const FolderParams& params, Index& index, Indexer& indexer, IgnoreList& ignore_list, PathNormalizer& path_normalizer, io_service& ios);
-	virtual ~AutoIndexer();
+	DirectoryPoller(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	virtual ~DirectoryPoller();
 
-	// A VERY DIRTY HACK
-	void prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+public slots:
+	void setEnabled(bool enabled);
 
 private:
 	const FolderParams& params_;
-	Index& index_;
-	Indexer& indexer_;
-	IgnoreList& ignore_list_;
-	PathNormalizer& path_normalizer_;
+	Index* index_;
+	IgnoreList* ignore_list_;
+	PathNormalizer* path_normalizer_;
 
-	std::set<std::string> reindex_list();
+	QTimer* polling_timer_;
 
-	// Monitor
-	io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
-	std::thread monitor_ios_thread_;    // https://github.com/berkus/dir_monitor/issues/42
-	io_service::work monitor_ios_work_;
-	boost::asio::dir_monitor monitor_;
+	QList<QString> getReindexList();
 
-	std::multiset<std::string> prepared_assemble_;
-
-	// Full rescan operations
-	ScopedAsyncQueue scoped_async_queue_;
-	void rescan_operation();
-	ScopedTimer rescan_timer_;
-
-	// Monitor operations
-	void monitor_operation();
-	void monitor_handle(const boost::asio::dir_monitor_event& ev);
-
-	// Index queue
-	std::set<std::string> index_queue_;
-	std::mutex index_queue_mtx_;
-	void enqueue_files(const std::set<std::string>& relpath);
-	void enqueue_files(const std::string& relpath) {enqueue_files(std::set<std::string>({relpath}));}
-
-	void perform_index();
-	ScopedTimer index_event_timer_;
+	void addPathsToQueue();
 };
 
 } /* namespace librevault */

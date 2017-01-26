@@ -29,10 +29,12 @@
 #pragma once
 #include "util/network.h"
 #include <librevault/Meta.h>
+#include <QObject>
 
 namespace librevault {
 
-class AutoIndexer;
+class DirectoryPoller;
+class DirectoryWatcher;
 class FolderParams;
 class IgnoreList;
 class Index;
@@ -40,23 +42,25 @@ class Indexer;
 class PathNormalizer;
 class StateCollector;
 
-class MetaStorage {
+class MetaStorage : public QObject {
+	Q_OBJECT
 public:
 	struct no_such_meta : public std::runtime_error {
 		no_such_meta() : std::runtime_error("Requested Meta not found"){}
 	};
 
-	MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios);
+	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, io_service& ios, QObject* parent);
 	virtual ~MetaStorage();
 
 	bool is_indexing() const;
-	void prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+	void prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal = false);
 
 	std::unique_ptr<Index> index;
 
 private:
 	std::unique_ptr<Indexer> indexer_;
-	std::unique_ptr<AutoIndexer> auto_indexer_;
+	DirectoryPoller* poller_;
+	DirectoryWatcher* watcher_;
 };
 
 } /* namespace librevault */

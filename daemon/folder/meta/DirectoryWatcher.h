@@ -28,26 +28,60 @@
  */
 #pragma once
 #include "util/log_scope.h"
-#include <boost/filesystem/path.hpp>
-#include <QString>
+#include <dir_monitor/dir_monitor.hpp>
+#include <librevault/Meta.h>
+#include <QThread>
+#include <boost/asio/io_service.hpp>
 
 namespace librevault {
 
 class FolderParams;
+class IgnoreList;
+class PathNormalizer;
 
-class PathNormalizer {
-	LOG_SCOPE("PathNormalizer");
+class DirectoryWatcherThread : public QThread {
+	Q_OBJECT
+	LOG_SCOPE("DirectoryWatcherThread");
+signals:
+	void dirEvent(boost::asio::dir_monitor_event ev);
 
 public:
-	PathNormalizer(const FolderParams& params);
+	DirectoryWatcherThread(QString abspath, QObject* parent);
+	~DirectoryWatcherThread();
 
-	QByteArray normalizePath(QString abspath);
-	QString denormalizePath(QByteArray normpath);
-	std::string normalize_path(const boost::filesystem::path& abspath) const;
-	boost::filesystem::path absolute_path(const std::string& normpath) const;
+protected:
+	boost::asio::io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
+	boost::asio::dir_monitor monitor_;  // https://github.com/berkus/dir_monitor/issues/42
+
+	void run() override;
+
+	void monitorLoop();
+};
+
+class DirectoryWatcher : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("DirectoryWatcher");
+signals:
+	void newPath(QString abspath);
+
+public:
+	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	virtual ~DirectoryWatcher();
+
+	// A VERY DIRTY HACK
+	void prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal = false);
 
 private:
 	const FolderParams& params_;
+	IgnoreList* ignore_list_;
+	PathNormalizer* path_normalizer_;
+
+	DirectoryWatcherThread* watcher_thread_;
+
+	std::multiset<std::string> prepared_assemble_;
+
+private slots:
+	void handleDirEvent(boost::asio::dir_monitor_event ev);
 };
 
 } /* namespace librevault */

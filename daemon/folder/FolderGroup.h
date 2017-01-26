@@ -97,7 +97,7 @@ private:
 	std::unique_ptr<IgnoreList> ignore_list;
 
 	std::unique_ptr<ChunkStorage> chunk_storage;
-	std::unique_ptr<MetaStorage> meta_storage_;
+	MetaStorage* meta_storage_;
 
 	std::unique_ptr<Uploader> uploader_;
 	std::unique_ptr<Downloader> downloader_;

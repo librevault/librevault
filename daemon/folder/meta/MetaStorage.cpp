@@ -27,19 +27,28 @@
  * files in the program, then also delete it here.
  */
 #include "MetaStorage.h"
-#include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include "DirectoryPoller.h"
+#include "DirectoryWatcher.h"
 #include "Index.h"
 #include "Indexer.h"
-#include "AutoIndexer.h"
+#include "control/FolderParams.h"
+#include "folder/PathNormalizer.h"
 
 namespace librevault {
 
-MetaStorage::MetaStorage(const FolderParams& params, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios) {
-	index = std::make_unique<Index>(params, state_collector);
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, io_service& ios, QObject* parent) : QObject(parent) {
+	index = std::make_unique<Index>(params, *state_collector);
 	if(params.secret.get_type() <= Secret::Type::ReadWrite){
-		indexer_ = std::make_unique<Indexer>(params, *index, ignore_list, path_normalizer, state_collector, ios);
-		auto_indexer_ = std::make_unique<AutoIndexer>(params, *index, *indexer_, ignore_list, path_normalizer, ios);
+		indexer_ = std::make_unique<Indexer>(params, *index, *ignore_list, *path_normalizer, *state_collector, ios);
+	}
+	poller_ = new DirectoryPoller(params, index.get(), ignore_list, path_normalizer, this);
+	watcher_ = new DirectoryWatcher(params, ignore_list, path_normalizer, this);
+
+	if(params.secret.get_type() <= Secret::Type::ReadWrite){
+		connect(poller_, &DirectoryPoller::newPath, indexer_.get(), &Indexer::addIndexing);
+		connect(watcher_, &DirectoryWatcher::newPath, indexer_.get(), &Indexer::addIndexing);
+
+		poller_->setEnabled(true);
 	}
 };
 MetaStorage::~MetaStorage() {}
@@ -48,8 +57,8 @@ bool MetaStorage::is_indexing() const {
 	return (indexer_ && indexer_->is_indexing());
 }
 
-void MetaStorage::prepare_assemble(const std::string relpath, Meta::Type type, bool with_removal) {
-	if(auto_indexer_) auto_indexer_->prepare_assemble(relpath, type, with_removal);
+void MetaStorage::prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal) {
+	watcher_->prepareAssemble(relpath, type, with_removal);
 }
 
 } /* namespace librevault */

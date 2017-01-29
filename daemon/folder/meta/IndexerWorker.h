@@ -27,38 +27,68 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <string>
-#include <cstdint>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
+#include "util/blob.h"
+#include "util/log_scope.h"
+#include <librevault/SignedMeta.h>
+#include <QString>
+#include <QRunnable>
+#include <QObject>
+#include <map>
 
 namespace librevault {
 
-inline std::string size_to_string(double bytes) {
-	const double kib = 1024;
-	const double mib = 1024 * kib;
-	const double gib = 1024 * mib;
-	const double tib = 1024 * gib;
+class FolderParams;
+class Index;
+class IgnoreList;
+class PathNormalizer;
+class IndexerWorker : public QObject, public QRunnable {
+	Q_OBJECT
+	LOG_SCOPE("Indexer");
+signals:
+	void metaCreated(SignedMeta smeta);
 
-	const double kb = 1000;
-	const double mb = 1000 * kib;
-	const double gb = 1000 * mib;
-	const double tb = 1000 * gib;
+public:
+	struct error : std::runtime_error {
+		error(const char* what) : std::runtime_error(what) {}
+		error() : error("Indexer error") {}
+	};
 
-	std::ostringstream os; os << std::fixed << std::setprecision(2);
+	struct abort_index : error {
+		abort_index(const char* what) : error(what) {}
+	};
 
-	if(bytes < kb)
-		os << bytes << " B";
-	else if(bytes < mb)
-		os << (double)bytes/kib << " kB";
-	else if(bytes < gb)
-		os << (double)bytes/mib << " MB";
-	else if(bytes < tb)
-		os << (double)bytes/gib << " GB";
-	else
-		os << (double)bytes/tib << " TB";
-	return os.str();
-}
+	struct unsupported_filetype : abort_index {
+		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
+	};
+
+	IndexerWorker(QString abspath, const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer);
+	virtual ~IndexerWorker();
+
+	// Index manipulation
+	void run() noexcept override;
+
+private:
+	QString abspath_;
+	const FolderParams& params_;
+	Index& index_;
+	IgnoreList& ignore_list_;
+	PathNormalizer& path_normalizer_;
+
+	const Secret& secret_;
+
+	Meta new_meta_;
+	SignedMeta old_smeta_, new_smeta_;
+
+	/* Status */
+	bool active = true;
+
+	void make_Meta();
+
+	/* File analyzers */
+	Meta::Type get_type();
+	void update_fsattrib();
+	void update_chunks();
+	Meta::Chunk populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+};
 
 } /* namespace librevault */

@@ -57,15 +57,14 @@ public:
 		abort_index(QString what) : error(what) {}
 	};
 
-	struct unsupported_filetype : abort_index {
-		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
-	};
-
 	IndexerWorker(QString abspath, const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer);
 	virtual ~IndexerWorker();
 
 	// Index manipulation
 	void run() noexcept override;
+
+public slots:
+	void stop() {active_ = false;};
 
 private:
 	QString abspath_;
@@ -80,7 +79,7 @@ private:
 	SignedMeta old_smeta_, new_smeta_;
 
 	/* Status */
-	bool active = true;
+	std::atomic<bool> active_;
 
 	void make_Meta();
 

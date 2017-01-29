@@ -31,7 +31,6 @@
 #include "Index.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
-#include "control/StateCollector.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/byte_convert.h"
@@ -50,7 +49,8 @@ IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index&
 	index_(index),
 	ignore_list_(ignore_list),
 	path_normalizer_(path_normalizer),
-	secret_(params.secret) {}
+	secret_(params.secret),
+	active_(true) {}
 
 IndexerWorker::~IndexerWorker() {}
 
@@ -139,7 +139,7 @@ Meta::Type IndexerWorker::get_type() {
 		case boost::filesystem::directory_file: return Meta::DIRECTORY;
 		case boost::filesystem::symlink_file: return Meta::SYMLINK;
 		case boost::filesystem::file_not_found: return Meta::DELETED;
-		default: throw unsupported_filetype();
+		default: throw abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported");
 	}
 }
 
@@ -232,7 +232,7 @@ void IndexerWorker::update_chunks() {
 		throw abort_index("I/O error: " + f.errorString());
 
 	char byte;
-	while(f.getChar(&byte) && active) {
+	while(f.getChar(&byte) && active_) {
 		buffer.push_back(byte);
 		//size_t len = fread(buf, 1, sizeof(buf), stdin);
 		uint8_t *ptr = &buffer.back();
@@ -243,7 +243,7 @@ void IndexerWorker::update_chunks() {
 		}
 	}
 
-	if(!active)
+	if(!active_)
 		throw abort_index("Application is shutting down");
 
 	if(rabin_finalize(&hasher) != 0)

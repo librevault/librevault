@@ -35,11 +35,12 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/byte_convert.h"
-#include "util/file_util.h"
 #include "util/log.h"
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/AES_CBC.h>
 #include <rabin.h>
+#include <boost/filesystem.hpp>
+#include <QFile>
 
 namespace librevault {
 
@@ -226,12 +227,13 @@ void IndexerWorker::update_chunks() {
 	blob buffer;
 	buffer.reserve(hasher.maxsize);
 
-	file_wrapper f(abspath_.toStdString(), "rb");
+	QFile f(abspath_);
+	if(!f.open(QIODevice::ReadOnly))
+		throw abort_index("I/O error: " + f.errorString());
 
-	while(!f.ios().eof() && active) {
-		auto byte_read = f.ios().get(); if(byte_read == EOF) continue;
-
-		buffer.push_back(byte_read);
+	char byte;
+	while(f.getChar(&byte) && active) {
+		buffer.push_back(byte);
 		//size_t len = fread(buf, 1, sizeof(buf), stdin);
 		uint8_t *ptr = &buffer.back();
 

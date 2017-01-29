@@ -49,12 +49,12 @@ signals:
 
 public:
 	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
+		error(QString what) : std::runtime_error(what.toStdString()) {}
 		error() : error("Indexer error") {}
 	};
 
 	struct abort_index : error {
-		abort_index(const char* what) : error(what) {}
+		abort_index(QString what) : error(what) {}
 	};
 
 	struct unsupported_filetype : abort_index {

@@ -35,13 +35,14 @@
 #include <cryptopp/osrng.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
+#include <QDir>
 
 namespace librevault {
 
 NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	LOGFUNC();
-	cert_file_.setFileName(QString::fromStdWString(Paths::get()->cert_path.wstring()));
-	private_key_file_.setFileName(QString::fromStdWString(Paths::get()->key_path.wstring()));
+	cert_file_.setFileName(QDir::fromNativeSeparators(QString::fromStdWString(Paths::get()->cert_path.wstring())));
+	private_key_file_.setFileName(QDir::fromNativeSeparators(QString::fromStdWString(Paths::get()->key_path.wstring())));
 
 	write_key();
 	gen_certificate();

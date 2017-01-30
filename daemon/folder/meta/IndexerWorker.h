@@ -43,39 +43,35 @@ class IgnoreList;
 class PathNormalizer;
 class IndexerWorker : public QObject, public QRunnable {
 	Q_OBJECT
-	LOG_SCOPE("Indexer");
+	LOG_SCOPE("IndexerWorker");
 signals:
 	void metaCreated(SignedMeta smeta);
+	void metaFailed(QString errorString);
 
 public:
-	struct error : std::runtime_error {
-		error(QString what) : std::runtime_error(what.toStdString()) {}
-		error() : error("Indexer error") {}
+	struct abort_index : public std::runtime_error {
+		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
 	};
 
-	struct abort_index : error {
-		abort_index(QString what) : error(what) {}
-	};
-
-	IndexerWorker(QString abspath, const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer);
+	IndexerWorker(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
 	virtual ~IndexerWorker();
 
-	// Index manipulation
-	void run() noexcept override;
+	QString absolutePath() const {return abspath_;}
 
 public slots:
+	void run() noexcept override;
 	void stop() {active_ = false;};
 
 private:
 	QString abspath_;
 	const FolderParams& params_;
-	Index& index_;
-	IgnoreList& ignore_list_;
-	PathNormalizer& path_normalizer_;
+	Index* index_;
+	IgnoreList* ignore_list_;
+	PathNormalizer* path_normalizer_;
 
 	const Secret& secret_;
 
-	Meta new_meta_;
+	Meta old_meta_, new_meta_;
 	SignedMeta old_smeta_, new_smeta_;
 
 	/* Status */

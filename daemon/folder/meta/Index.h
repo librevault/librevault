@@ -42,6 +42,9 @@ class StateCollector;
 class Index : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("Index");
+signals:
+	void metaAdded(SignedMeta meta);
+
 public:
 	struct status_t {
 		uint64_t file_entries = 0;
@@ -52,7 +55,7 @@ public:
 
 	boost::signals2::signal<void(const Meta&)> assemble_meta_signal;
 
-	Index(const FolderParams& params, StateCollector& state_collector);
+	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
 	virtual ~Index() {}
 
 	/* Meta manipulators */
@@ -72,12 +75,9 @@ public:
 
 	status_t get_status();
 
-signals:
-	void metaAdded(SignedMeta meta);
-
 private:
 	const FolderParams& params_;
-	StateCollector& state_collector_;
+	StateCollector* state_collector_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 

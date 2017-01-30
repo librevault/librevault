@@ -28,7 +28,7 @@
  */
 #include "DirectoryPoller.h"
 #include "Index.h"
-#include "Indexer.h"
+#include "IndexerQueue.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
@@ -46,7 +46,7 @@ DirectoryPoller::DirectoryPoller(const FolderParams& params, Index* index, Ignor
 	path_normalizer_(path_normalizer) {
 
 	polling_timer_ = new QTimer(this);
-	polling_timer_->setInterval(params_.full_rescan_interval.count());
+	polling_timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(params_.full_rescan_interval).count());
 	polling_timer_->setTimerType(Qt::VeryCoarseTimer);
 
 	connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);
@@ -55,8 +55,10 @@ DirectoryPoller::DirectoryPoller(const FolderParams& params, Index* index, Ignor
 DirectoryPoller::~DirectoryPoller() {}
 
 void DirectoryPoller::setEnabled(bool enabled) {
-	if(enabled)
+	if(enabled) {
+		QTimer::singleShot(0, this, &DirectoryPoller::addPathsToQueue);
 		polling_timer_->start();
+	}
 	else
 		polling_timer_->stop();
 }

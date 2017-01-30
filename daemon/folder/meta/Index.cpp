@@ -37,7 +37,7 @@
 
 namespace librevault {
 
-Index::Index(const FolderParams& params, StateCollector& state_collector) : params_(params), state_collector_(state_collector) {
+Index::Index(const FolderParams& params, StateCollector* state_collector, QObject* parent) : QObject(parent), params_(params), state_collector_(state_collector) {
 	auto db_filepath = params_.system_path / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
@@ -217,7 +217,7 @@ void Index::notify_state() {
 	index_state["1"] = Json::UInt64(index_status.directory_entries);
 	index_state["2"] = Json::UInt64(index_status.symlink_entries);
 	index_state["255"] = Json::UInt64(index_status.deleted_entries);
-	state_collector_.folder_state_set(params_.secret.get_Hash(), "index", index_state);
+	state_collector_->folder_state_set(params_.secret.get_Hash(), "index", index_state);
 }
 
 } /* namespace librevault */

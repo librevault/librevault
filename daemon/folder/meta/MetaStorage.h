@@ -38,7 +38,7 @@ class DirectoryWatcher;
 class FolderParams;
 class IgnoreList;
 class Index;
-class Indexer;
+class IndexerQueue;
 class PathNormalizer;
 class StateCollector;
 
@@ -49,16 +49,15 @@ public:
 		no_such_meta() : std::runtime_error("Requested Meta not found"){}
 	};
 
-	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, io_service& ios, QObject* parent);
+	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
 	virtual ~MetaStorage();
 
-	bool is_indexing() const;
 	void prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal = false);
 
-	std::unique_ptr<Index> index;
+	Index* index;
 
 private:
-	std::unique_ptr<Indexer> indexer_;
+	IndexerQueue* indexer_;
 	DirectoryPoller* poller_;
 	DirectoryWatcher* watcher_;
 };

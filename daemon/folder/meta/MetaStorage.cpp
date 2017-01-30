@@ -30,32 +30,26 @@
 #include "DirectoryPoller.h"
 #include "DirectoryWatcher.h"
 #include "Index.h"
-#include "Indexer.h"
+#include "IndexerQueue.h"
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
 
 namespace librevault {
 
-MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, io_service& ios, QObject* parent) : QObject(parent) {
-	index = std::make_unique<Index>(params, *state_collector);
-	if(params.secret.get_type() <= Secret::Type::ReadWrite){
-		indexer_ = std::make_unique<Indexer>(params, *index, *ignore_list, *path_normalizer, *state_collector, ios);
-	}
-	poller_ = new DirectoryPoller(params, index.get(), ignore_list, path_normalizer, this);
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) : QObject(parent) {
+	index = new Index(params, state_collector, this);
+	indexer_ = new IndexerQueue(params, index, ignore_list, path_normalizer, state_collector, this);
+	poller_ = new DirectoryPoller(params, index, ignore_list, path_normalizer, this);
 	watcher_ = new DirectoryWatcher(params, ignore_list, path_normalizer, this);
 
 	if(params.secret.get_type() <= Secret::Type::ReadWrite){
-		connect(poller_, &DirectoryPoller::newPath, indexer_.get(), &Indexer::addIndexing);
-		connect(watcher_, &DirectoryWatcher::newPath, indexer_.get(), &Indexer::addIndexing);
+		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);
+		connect(watcher_, &DirectoryWatcher::newPath, indexer_, &IndexerQueue::addIndexing);
 
 		poller_->setEnabled(true);
 	}
 };
 MetaStorage::~MetaStorage() {}
-
-bool MetaStorage::is_indexing() const {
-	return (indexer_ && indexer_->is_indexing());
-}
 
 void MetaStorage::prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal) {
 	watcher_->prepareAssemble(relpath, type, with_removal);

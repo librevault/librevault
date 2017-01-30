@@ -43,7 +43,8 @@
 
 namespace librevault {
 
-IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer) :
+IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+	QObject(parent),
 	abspath_(abspath),
 	params_(params),
 	index_(index),
@@ -57,14 +58,15 @@ IndexerWorker::~IndexerWorker() {}
 void IndexerWorker::run() noexcept {
 	LOGFUNC() << abspath_.toStdString();
 
-	QByteArray normpath = path_normalizer_.normalizePath(abspath_);
+	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
 
 	try {
-		if(ignore_list_.is_ignored(abspath_.toStdString())) throw abort_index("File is ignored");
+		if(ignore_list_->is_ignored(abspath_.toStdString())) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = index_.get_meta(Meta::make_path_id(normpath.toStdString(), secret_));
-			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_smeta_.meta().mtime()) {
+			old_smeta_ = index_->get_meta(Meta::make_path_id(normpath.toStdString(), secret_));
+			old_meta_ = old_smeta_.meta();
+			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(boost::filesystem::filesystem_error& e){
@@ -86,15 +88,17 @@ void IndexerWorker::run() noexcept {
 		emit metaCreated(new_smeta_);
 	}catch(abort_index& e){
 		LOGN("Skipping " << abspath_.toStdString() << ". Reason: " << e.what());
+		emit metaFailed(e.what());
 	}catch(std::runtime_error& e){
 		LOGE("Skipping " << abspath_.toStdString() << ". Error: " << e.what());
+		emit metaFailed(e.what());
 	}
 }
 
 /* Actual indexing process */
 void IndexerWorker::make_Meta() {
 	QString abspath = abspath_;
-	QByteArray normpath = path_normalizer_.normalizePath(abspath);
+	QByteArray normpath = path_normalizer_->normalizePath(abspath);
 
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 
@@ -105,10 +109,10 @@ void IndexerWorker::make_Meta() {
 	if(!old_smeta_ && new_meta_.meta_type() == Meta::DELETED)
 		throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 
-	if(old_smeta_.meta().meta_type() == Meta::DIRECTORY && new_meta_.meta_type() == Meta::DIRECTORY)
+	if(old_meta_.meta_type() == Meta::DIRECTORY && new_meta_.meta_type() == Meta::DIRECTORY)
 		throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
 
-	if(old_smeta_.meta().meta_type() == Meta::DELETED && new_meta_.meta_type() == Meta::DELETED)
+	if(old_meta_.meta_type() == Meta::DELETED && new_meta_.meta_type() == Meta::DELETED)
 		throw abort_index("Old Meta is DELETED, new Meta is DELETED");
 
 	if(new_meta_.meta_type() == Meta::FILE)
@@ -147,10 +151,10 @@ void IndexerWorker::update_fsattrib() {
 	boost::filesystem::path babspath(abspath_.toStdWString());
 
 	// First, preserve old values of attributes
-	new_meta_.set_windows_attrib(old_smeta_.meta().windows_attrib());
-	new_meta_.set_mode(old_smeta_.meta().mode());
-	new_meta_.set_uid(old_smeta_.meta().uid());
-	new_meta_.set_gid(old_smeta_.meta().gid());
+	new_meta_.set_windows_attrib(old_meta_.windows_attrib());
+	new_meta_.set_mode(old_meta_.mode());
+	new_meta_.set_uid(old_meta_.uid());
+	new_meta_.set_gid(old_meta_.gid());
 
 	if(new_meta_.meta_type() != Meta::SYMLINK)
 		new_meta_.set_mtime(boost::filesystem::last_write_time(babspath));   // File/directory modification time
@@ -182,16 +186,16 @@ void IndexerWorker::update_fsattrib() {
 void IndexerWorker::update_chunks() {
 	Meta::RabinGlobalParams rabin_global_params;
 
-	if(old_smeta_.meta().meta_type() == Meta::FILE && old_smeta_.meta().validate()) {
-		new_meta_.set_algorithm_type(old_smeta_.meta().algorithm_type());
-		new_meta_.set_strong_hash_type(old_smeta_.meta().strong_hash_type());
+	if(old_meta_.meta_type() == Meta::FILE && old_meta_.validate()) {
+		new_meta_.set_algorithm_type(old_meta_.algorithm_type());
+		new_meta_.set_strong_hash_type(old_meta_.strong_hash_type());
 
-		new_meta_.set_max_chunksize(old_smeta_.meta().max_chunksize());
-		new_meta_.set_min_chunksize(old_smeta_.meta().min_chunksize());
+		new_meta_.set_max_chunksize(old_meta_.max_chunksize());
+		new_meta_.set_min_chunksize(old_meta_.min_chunksize());
 
-		new_meta_.raw_rabin_global_params() = old_smeta_.meta().raw_rabin_global_params();
+		new_meta_.raw_rabin_global_params() = old_meta_.raw_rabin_global_params();
 
-		rabin_global_params = old_smeta_.meta().rabin_global_params(secret_);
+		rabin_global_params = old_meta_.rabin_global_params(secret_);
 	}else{
 		new_meta_.set_algorithm_type(Meta::RABIN);
 		new_meta_.set_strong_hash_type(params_.chunk_strong_hash_type);
@@ -204,7 +208,7 @@ void IndexerWorker::update_chunks() {
 
 	// IV reuse
 	std::map<blob, blob> pt_hmac__iv;
-	for(auto& chunk : old_smeta_.meta().chunks()) {
+	for(auto& chunk : old_meta_.chunks()) {
 		pt_hmac__iv.insert({chunk.pt_hmac, chunk.iv});
 	}
 
@@ -244,7 +248,7 @@ void IndexerWorker::update_chunks() {
 	}
 
 	if(!active_)
-		throw abort_index("Application is shutting down");
+		throw abort_index("Indexing had been interruped");
 
 	if(rabin_finalize(&hasher) != 0)
 		chunks.push_back(populate_chunk(buffer, pt_hmac__iv));

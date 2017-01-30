@@ -32,8 +32,9 @@
 #include "util/fs.h"
 #include "util/network.h"
 #include <librevault/SignedMeta.h>
+#include <QMap>
 #include <QString>
-#include <QObject>
+#include <QThreadPool>
 #include <boost/filesystem/path.hpp>
 #include <set>
 #include <atomic>
@@ -48,62 +49,39 @@ class Index;
 class IgnoreList;
 class PathNormalizer;
 class StateCollector;
-class Indexer : public QObject {
+class IndexerWorker;
+class IndexerQueue : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("Indexer");
+	LOG_SCOPE("IndexerQueue");
+signals:
+	void aboutToStop();
+
+	void startedIndexing();
+	void finishedIndexing();
+
 public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("Indexer error") {}
-	};
-
-	struct abort_index : error {
-		abort_index(const char* what) : error(what) {}
-	};
-
-	struct unsupported_filetype : abort_index {
-		unsupported_filetype() : abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported") {}
-	};
-
-	Indexer(const FolderParams& params, Index& index, IgnoreList& ignore_list, PathNormalizer& path_normalizer, StateCollector& state_collector, io_service& ios);
-	virtual ~Indexer();
-
-	// Index manipulation
-	void index(const std::string& file_path) noexcept;
-
-	void async_index(const std::string& file_path);
-	void async_index(const std::set<std::string>& file_path);
-
-	// Meta functions
-	SignedMeta make_Meta(const std::string& relpath);
-
-	/* Getters */
-	bool is_indexing() const {return indexing_now_ != 0;}
+	IndexerQueue(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
+	virtual ~IndexerQueue();
 
 public slots:
-	void addIndexing(QString abspath) {}
+	void addIndexing(QString abspath);
 
 private:
 	const FolderParams& params_;
-	Index& index_;
-	IgnoreList& ignore_list_;
-	PathNormalizer& path_normalizer_;
-	StateCollector& state_collector_;
-	io_service& ios_;
+	Index* index_;
+	IgnoreList* ignore_list_;
+	PathNormalizer* path_normalizer_;
+	StateCollector* state_collector_;
+
+	QThreadPool* threadpool_;
 
 	const Secret& secret_;
 
-	/* Status */
-	std::atomic_uint indexing_now_;
-	std::map<std::string, std::future<void>> index_queue_;
-	std::mutex index_queue_mtx_;
-	bool active = true;
+	QMap<QString, IndexerWorker*> tasks_;
 
-	/* File analyzers */
-	Meta::Type get_type(const fs::path& path);
-	void update_fsattrib(const Meta& old_meta, Meta& new_meta, const fs::path& path);
-	void update_chunks(const Meta& old_meta, Meta& new_meta, const fs::path& path);
-	Meta::Chunk populate_chunk(const Meta& new_meta, const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+private slots:
+	void metaCreated(SignedMeta smeta);
+	void metaFailed(QString error_string);
 };
 
 } /* namespace librevault */

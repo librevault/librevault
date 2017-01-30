@@ -66,19 +66,19 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, i
 	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
 	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
 
-	meta_storage_ = new MetaStorage(params_, ignore_list.get(), path_normalizer_.get(), state_collector_, bulk_ios, this);
 	chunk_storage = std::make_unique<ChunkStorage>(params_, *meta_storage_, *path_normalizer_, bulk_ios, serial_ios);
+	meta_storage_ = new MetaStorage(params_, ignore_list.get(), path_normalizer_.get(), state_collector_, this);
 
-	uploader_ = std::make_unique<Uploader>(*chunk_storage);
-	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage);
-	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage);
+	uploader_ = std::make_unique<Uploader>(*chunk_storage_);
+	downloader_ = std::make_unique<Downloader>(params_, *meta_storage_, *chunk_storage_);
+	meta_uploader_ = std::make_unique<MetaUploader>(*meta_storage_, *chunk_storage_);
 	meta_downloader_ = std::make_unique<MetaDownloader>(*meta_storage_, *downloader_);
 
 	state_pusher_ = new QTimer(this);
 
 	// Connecting signals and slots
-	connect(meta_storage_->index.get(), &Index::metaAdded, this, &FolderGroup::handle_indexed_meta);
-	connect(chunk_storage.get(), &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
+	connect(meta_storage_->index, &Index::metaAdded, this, &FolderGroup::handle_indexed_meta);
+	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
 		downloader_->notify_local_chunk(ct_hash);
 		uploader_->broadcast_chunk(remotes(), ct_hash);
 	});
@@ -105,7 +105,7 @@ FolderGroup::~FolderGroup() {
 /* Actions */
 void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	Meta::PathRevision revision = smeta.meta().path_revision();
-	bitfield_type bitfield = chunk_storage->make_bitfield(smeta.meta());
+	bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
 	downloader_->notify_local_meta(smeta, bitfield);
 	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);

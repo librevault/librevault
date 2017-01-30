@@ -30,7 +30,7 @@
 #include "FolderGroup.h"
 #include "control/Config.h"
 #include "control/StateCollector.h"
-#include "folder/meta/Indexer.h"
+#include "folder/meta/IndexerQueue.h"
 #include "util/log.h"
 
 namespace librevault {

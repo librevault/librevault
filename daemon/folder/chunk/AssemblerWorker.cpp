@@ -26,7 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "FileAssembler.h"
+#include "AssemblerWorker.h"
 
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
@@ -40,36 +40,23 @@
 
 namespace librevault {
 
-FileAssembler::FileAssembler(const FolderParams& params,
-                             MetaStorage& meta_storage,
-                             ChunkStorage& chunk_storage,
-                             PathNormalizer& path_normalizer,
-                             Archive& archive,
-                             io_service& bulk_ios,
-                             io_service& serial_ios) :
+AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
+	                             MetaStorage& meta_storage,
+	                             ChunkStorage& chunk_storage,
+	                             PathNormalizer& path_normalizer,
+	                             Archive& archive) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
 	archive_(archive),
-	bulk_ios_(bulk_ios),
 	secret_(params_.secret),
-	assemble_timer_(serial_ios),
-	current_assemble_(0) {
+	smeta_(smeta),
+	meta_(smeta.meta()) {}
 
-	assemble_timer_.tick_signal.connect([this]{periodic_assemble_operation();});
-	assemble_timer_.start(std::chrono::seconds(30), ScopedTimer::RUN_IMMEDIATELY, ScopedTimer::RESET_TIMER, ScopedTimer::NOT_SINGLESHOT);
-}
+AssemblerWorker::~AssemblerWorker() {}
 
-FileAssembler::~FileAssembler() {
-	std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
-	assemble_queue_.clear();
-
-	while(current_assemble_ != 0)
-		std::this_thread::yield();
-}
-
-blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
+blob AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 	LOGT("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
 	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
@@ -79,61 +66,37 @@ blob FileAssembler::get_chunk_pt(const blob& ct_hash) const {
 	throw ChunkStorage::no_such_chunk();
 }
 
-void FileAssembler::queue_assemble(const Meta& meta) {
-	std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
-	if(assemble_queue_.find(meta.path_id()) == assemble_queue_.end()) {
-		assemble_queue_.insert(meta.path_id());
-
-		bulk_ios_.post([this, meta]() {
-			++current_assemble_;
-			assemble(meta);
-			--current_assemble_;
-
-			std::unique_lock<std::mutex> lk(assemble_queue_mtx_);
-			assemble_queue_.erase(meta.path_id());
-		});
-	}
-}
-
-void FileAssembler::periodic_assemble_operation() {
-	LOGFUNC();
-	LOGT("Performing periodic assemble");
-
-	for(auto smeta : meta_storage_.index->get_incomplete_meta())
-		queue_assemble(smeta.meta());
-}
-
-void FileAssembler::assemble(const Meta& meta){
+void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
 	try {
 		bool assembled = false;
-		switch(meta.meta_type()) {
-			case Meta::FILE: assembled = assemble_file(meta);
+		switch(meta_.meta_type()) {
+			case Meta::FILE: assembled = assemble_file();
 				break;
-			case Meta::DIRECTORY: assembled = assemble_directory(meta);
+			case Meta::DIRECTORY: assembled = assemble_directory();
 				break;
-			case Meta::SYMLINK: assembled = assemble_symlink(meta);
+			case Meta::SYMLINK: assembled = assemble_symlink();
 				break;
-			case Meta::DELETED: assembled = assemble_deleted(meta);
+			case Meta::DELETED: assembled = assemble_deleted();
 				break;
-			default: throw error(std::string("Unexpected meta type:") + std::to_string(meta.meta_type()));
+			default: throw error(std::string("Unexpected meta type:") + std::to_string(meta_.meta_type()));
 		}
 		if(assembled) {
-			if(meta.meta_type() != Meta::DELETED)
-				apply_attrib(meta);
+			if(meta_.meta_type() != Meta::DELETED)
+				apply_attrib();
 
-			meta_storage_.index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+			meta_storage_.index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 		}
-	}catch(std::runtime_error& e) {
-		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta.path(secret_) << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
+	}catch(std::exception& e) {
+		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(secret_) << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
-bool FileAssembler::assemble_deleted(const Meta& meta) {
+bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
@@ -155,20 +118,20 @@ bool FileAssembler::assemble_deleted(const Meta& meta) {
 	return true;    // Maybe, something else?
 }
 
-bool FileAssembler::assemble_symlink(const Meta& meta) {
+bool AssemblerWorker::assemble_symlink() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 	fs::remove_all(file_path);
-	fs::create_symlink(meta.symlink_path(secret_), file_path);
+	fs::create_symlink(meta_.symlink_path(secret_), file_path);
 
 	return true;    // Maybe, something else?
 }
 
-bool FileAssembler::assemble_directory(const Meta& meta) {
+bool AssemblerWorker::assemble_directory() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 	auto relpath = path_normalizer_.normalize_path(file_path);
 
 	bool create_new = true;
@@ -181,54 +144,52 @@ bool FileAssembler::assemble_directory(const Meta& meta) {
 	return true;    // Maybe, something else?
 }
 
-bool FileAssembler::assemble_file(const Meta& meta) {
+bool AssemblerWorker::assemble_file() {
 	LOGFUNC();
 
 	// Check if we have all needed chunks
-	if(!chunk_storage_.make_bitfield(meta).all())
+	if(!chunk_storage_.make_bitfield(meta_).all())
 		return false; // retreat!
 
 	//
-	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 	auto relpath = path_normalizer_.normalize_path(file_path);
 	auto assembled_file = params_.system_path / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
 
-	for(auto chunk : meta.chunks()) {
+	for(auto chunk : meta_.chunks()) {
 		blob chunk_pt = get_chunk_pt(chunk.ct_hash);
 		assembling_file.ios().write((const char*)chunk_pt.data(), chunk_pt.size());	// Writing to file
 	}
 
 	assembling_file.close();	// Closing file. Super!
 
-	fs::last_write_time(assembled_file, meta.mtime());
+	fs::last_write_time(assembled_file, meta_.mtime());
 
-	//dir_.ignore_list->add_ignored(relpath);
 	meta_storage_.prepareAssemble(relpath, Meta::FILE, fs::exists(file_path));
 
 	archive_.archive(file_path);
 	fs::rename(assembled_file, file_path);
-	//dir_.ignore_list->remove_ignored(relpath);
 
-	meta_storage_.index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta.path_id()}});
+	meta_storage_.index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 
-	chunk_storage_.cleanup(meta);
+	chunk_storage_.cleanup(meta_);
 
 	return true;
 }
 
-void FileAssembler::apply_attrib(const Meta& meta) {
-	fs::path file_path = path_normalizer_.absolute_path(meta.path(secret_));
+void AssemblerWorker::apply_attrib() {
+	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 
 #if BOOST_OS_UNIX
 	if(params_.preserve_unix_attrib) {
-		if(meta.meta_type() != Meta::SYMLINK) {
+		if(meta_.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
-			ec = chmod(file_path.c_str(), meta.mode());
+			ec = chmod(file_path.c_str(), meta_.mode());
 			if(ec) LOGW("Error applying mode to " << file_path);    // FIXME: full_path in logs may violate user's privacy.
-			ec = chown(file_path.c_str(), meta.uid(), meta.gid());
+			ec = chown(file_path.c_str(), meta_.uid(), meta_.gid());
 			if(ec) LOGW("Error applying uid/gid to " << file_path); // FIXME: full_path in logs may violate user's privacy.
 		}
 	}

@@ -31,6 +31,9 @@
 #include "util/blob.h"
 #include "util/network.h"
 #include "util/scoped_timer.h"
+#include <librevault/SignedMeta.h>
+#include <QTimer>
+#include <QThreadPool>
 #include <mutex>
 #include <set>
 
@@ -41,30 +44,32 @@ class PathNormalizer;
 class MetaStorage;
 class FolderParams;
 class ChunkStorage;
-class Meta;
 class Secret;
 
-class FileAssembler {
-	LOG_SCOPE("FileAssembler");
+class AssemblerQueue : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("AssemblerQueue");
+signals:
+	void aboutToStop();
+
+	void startedAssemble();
+	void finishedAssemble();
+
 public:
 	struct error : std::runtime_error {
 		error(const std::string& what) : std::runtime_error(what) {}
-		error() : error("FileAssembler error") {}
+		error() : error("AssemblerQueue error") {}
 	};
 
-	FileAssembler(const FolderParams& params,
+	AssemblerQueue(const FolderParams& params,
 	              MetaStorage& meta_storage,
 	              ChunkStorage& chunk_storage,
 	              PathNormalizer& path_normalizer,
-	              Archive& archive,
-	              io_service& bulk_ios,
-	              io_service& serial_ios);
-	virtual ~FileAssembler();
+	              Archive& archive, QObject* parent);
+	virtual ~AssemblerQueue();
 
-	blob get_chunk_pt(const blob& ct_hash) const;
-
-	// File assembler
-	void queue_assemble(const Meta& meta);
+public slots:
+	void addAssemble(SignedMeta smeta);
 
 private:
 	const FolderParams& params_;
@@ -72,25 +77,11 @@ private:
 	ChunkStorage& chunk_storage_;
 	PathNormalizer& path_normalizer_;
 	Archive& archive_;
-	io_service& bulk_ios_;
 
-	const Secret& secret_;
-
-	std::set<blob> assemble_queue_;
-	std::mutex assemble_queue_mtx_;
+	QThreadPool* threadpool_;
 
 	void periodic_assemble_operation();
-	ScopedTimer assemble_timer_;
-	std::atomic<unsigned> current_assemble_;
-
-	void assemble(const Meta& meta);
-
-	bool assemble_deleted(const Meta& meta);
-	bool assemble_symlink(const Meta& meta);
-	bool assemble_directory(const Meta& meta);
-	bool assemble_file(const Meta& meta);
-
-	void apply_attrib(const Meta& meta);
+	QTimer* assemble_timer_;
 };
 
 } /* namespace librevault */

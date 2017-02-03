@@ -45,7 +45,7 @@ class MemoryCachedStorage;
 class EncStorage;
 class OpenStorage;
 class Archive;
-class FileAssembler;
+class AssemblerQueue;
 
 class ChunkStorage : public QObject {
 	Q_OBJECT
@@ -54,7 +54,7 @@ public:
 		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios);
+	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -75,7 +75,7 @@ protected:
 	std::unique_ptr<EncStorage> enc_storage;
 	std::unique_ptr<OpenStorage> open_storage;
 	std::unique_ptr<Archive> archive;
-	std::unique_ptr<FileAssembler> file_assembler;
+	AssemblerQueue* file_assembler;
 };
 
 } /* namespace librevault */

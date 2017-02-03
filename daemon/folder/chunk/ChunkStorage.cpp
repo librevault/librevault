@@ -34,7 +34,7 @@
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 
-#include "FileAssembler.h"
+#include "AssemblerQueue.h"
 
 namespace librevault {
 
@@ -42,19 +42,19 @@ ChunkStorage::ChunkStorage(const FolderParams& params,
                            MetaStorage& meta_storage,
                            PathNormalizer& path_normalizer,
                            io_service& bulk_ios,
-                           io_service& serial_ios) : meta_storage_(meta_storage) {
+                           io_service& serial_ios,
+                           QObject* parent) :
+	QObject(parent),
+	meta_storage_(meta_storage) {
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
 	enc_storage = std::make_unique<EncStorage>(params, *this);
 	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
 		open_storage = std::make_unique<OpenStorage>(params, meta_storage_, path_normalizer, *this);
 		archive = std::make_unique<Archive>(params, meta_storage_, path_normalizer, serial_ios);
-		file_assembler = std::make_unique<FileAssembler>(params, meta_storage_,  *this, path_normalizer, *archive, bulk_ios, serial_ios);
+		file_assembler = new AssemblerQueue(params, meta_storage_,  *this, path_normalizer, *archive, this);
 	}
 
-	meta_storage_.index->assemble_meta_signal.connect([this](const Meta& meta){
-		if(open_storage && file_assembler)
-			file_assembler->queue_assemble(meta);
-	});
+	connect(meta_storage_.index, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
 ChunkStorage::~ChunkStorage() {}
@@ -85,9 +85,8 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 
 void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location) {
 	enc_storage->put_chunk(ct_hash, chunk_location);
-	if(open_storage && file_assembler)
-		for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
-			file_assembler->queue_assemble(smeta.meta());
+	for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
+		file_assembler->addAssemble(smeta);
 
 	emit chunkAdded(ct_hash);
 }
@@ -106,10 +105,9 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 }
 
 void ChunkStorage::cleanup(const Meta& meta) {
-	if(open_storage)
-		for(auto chunk : meta.chunks())
-			if(open_storage->have_chunk(chunk.ct_hash))
-				enc_storage->remove_chunk(chunk.ct_hash);
+	for(auto chunk : meta.chunks())
+		if(open_storage->have_chunk(chunk.ct_hash))
+			enc_storage->remove_chunk(chunk.ct_hash);
 }
 
 } /* namespace librevault */

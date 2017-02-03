@@ -58,7 +58,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	/* TABLE openfs */
 	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 	db_->exec("CREATE INDEX IF NOT EXISTS openfs_assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
-	db_->exec("CREATE INDEX IF NOT EXISTS openfs_path_id_fki ON openfs (path_id);");    // For faster FileAssembler::assemble_file
+	db_->exec("CREATE INDEX IF NOT EXISTS openfs_path_id_fki ON openfs (path_id);");    // For faster AssemblerQueue::assemble_file
 	db_->exec("CREATE IF NOT EXISTS INDEX openfs_ct_hash_fki ON openfs (ct_hash);");    // For faster Index::containing_chunk
 	//db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from it. Anyway, we can add it anytime later.
 
@@ -135,7 +135,7 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)
-		assemble_meta_signal(signed_meta.meta());
+		emit metaAddedExternal(signed_meta);
 
 	notify_state();
 }

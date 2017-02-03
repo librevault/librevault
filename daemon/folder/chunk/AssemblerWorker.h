@@ -27,62 +27,62 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "Archive.h"
 #include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/SQLiteWrapper.h"
+#include "util/network.h"
+#include "util/scoped_timer.h"
 #include <librevault/SignedMeta.h>
 #include <QObject>
+#include <QRunnable>
+#include <mutex>
+#include <set>
 
 namespace librevault {
 
+class PathNormalizer;
+
+class MetaStorage;
 class FolderParams;
-class StateCollector;
+class ChunkStorage;
+class Secret;
 
-class Index : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Index");
-signals:
-	void metaAdded(SignedMeta meta);
-	void metaAddedExternal(SignedMeta meta);
-
+class AssemblerWorker : public QObject, public QRunnable {
+	LOG_SCOPE("AssemblerWorker");
 public:
-	struct status_t {
-		uint64_t file_entries = 0;
-		uint64_t directory_entries = 0;
-		uint64_t symlink_entries = 0;
-		uint64_t deleted_entries = 0;
+	struct error : std::runtime_error {
+		error(const std::string& what) : std::runtime_error(what) {}
+		error() : error("AssemblerWorker error") {}
 	};
 
-	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
-	virtual ~Index() {}
+	AssemblerWorker(SignedMeta smeta,
+	                const FolderParams& params,
+					MetaStorage& meta_storage,
+					ChunkStorage& chunk_storage,
+					PathNormalizer& path_normalizer,
+					Archive& archive);
+	virtual ~AssemblerWorker();
 
-	/* Meta manipulators */
-	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta get_meta(const Meta::PathRevision& path_revision);
-	SignedMeta get_meta(const blob& path_id);
-	std::list<SignedMeta> get_meta();
-	std::list<SignedMeta> get_existing_meta();
-	std::list<SignedMeta> get_incomplete_meta();
-	void put_meta(const SignedMeta& signed_meta, bool fully_assembled = false);
-
-	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
-
-	/* Properties */
-	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
-	SQLiteDB& db() {return *db_;}
-
-	status_t get_status();
+	void run() noexcept override;
 
 private:
 	const FolderParams& params_;
-	StateCollector* state_collector_;
+	MetaStorage& meta_storage_;
+	ChunkStorage& chunk_storage_;
+	PathNormalizer& path_normalizer_;
+	Archive& archive_;
 
-	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+	const Secret& secret_;
+	SignedMeta smeta_;
+	const Meta& meta_;
 
-	std::list<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
-	void wipe();
+	bool assemble_deleted();
+	bool assemble_symlink();
+	bool assemble_directory();
+	bool assemble_file();
 
-	void notify_state();
+	void apply_attrib();
+
+	blob get_chunk_pt(const blob& ct_hash) const;
 };
 
 } /* namespace librevault */

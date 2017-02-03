@@ -96,7 +96,7 @@ private:
 	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;
 
-	std::unique_ptr<ChunkStorage> chunk_storage;
+	ChunkStorage* chunk_storage_;
 	MetaStorage* meta_storage_;
 
 	std::unique_ptr<Uploader> uploader_;

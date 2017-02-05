@@ -148,8 +148,8 @@ bool AssemblerWorker::assemble_file() {
 	LOGFUNC();
 
 	// Check if we have all needed chunks
-	if(!chunk_storage_.make_bitfield(meta_).all())
-		return false; // retreat!
+	for(auto b : chunk_storage_.make_bitfield(meta_))
+		if(!b) return false;    // retreat!
 
 	//
 	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));

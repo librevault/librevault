@@ -20,7 +20,7 @@
 
 namespace librevault {
 
-inline blob derive_token(const Secret& secret, const blob& pubkey) {
+inline std::vector<uint8_t> derive_token(const Secret& secret, const std::vector<uint8_t>& pubkey) {
 	return pubkey | crypto::HMAC_SHA3_224(secret.get_Public_Key());
 }
 

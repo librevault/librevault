@@ -21,8 +21,6 @@ namespace librevault {
 
 class V1Parser {
 public:
-	virtual ~V1Parser(){}
-
 	enum message_type : uint8_t {
 		HANDSHAKE = 0,
 

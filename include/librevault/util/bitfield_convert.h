@@ -14,31 +14,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "bit_reverse.h"
-#include <boost/dynamic_bitset.hpp>
+#include <vector>
 
 namespace librevault {
 
-using bitfield_type = boost::dynamic_bitset<uint8_t>;
+using bitfield_type = std::vector<bool>;
 
-inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bitfield) {
-	std::vector<uint8_t> converted_bitfield;
-	converted_bitfield.reserve(bitfield.size()/8);
-	boost::to_block_range(bitfield, std::back_inserter(converted_bitfield));
-	for(auto byte_it = converted_bitfield.begin(); byte_it < converted_bitfield.end(); ++byte_it) {  // Reverse each bit, because boost::dynamic_bitfield has 0 as LSB, and size() as MSB.
-		*byte_it = BitReverseTable256[*byte_it];
+inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bits) {
+	size_t byte_size = (bits.size() / 8) + ((bits.size() % 8) ? 1 : 0);
+	std::vector<uint8_t> bytes(byte_size);
+
+	for(size_t bitn = 0; bitn < bits.size(); bitn++) {
+		bytes[bitn/8] |= ((bits[bitn]?1:0) << (7-(bitn%8)));
 	}
-	std::reverse(converted_bitfield.begin(), converted_bitfield.end());
-	return converted_bitfield;
+
+	return bytes;
 }
 
-inline bitfield_type convert_bitfield(std::vector<uint8_t> bitfield) {
-	bitfield_type converted_bitfield(bitfield.size()*8);
-	for(auto& b : bitfield) {
-		b = BitReverseTable256[b];
+inline bitfield_type convert_bitfield(std::vector<uint8_t> bytes) {
+	bitfield_type bits(bytes.size()*8);
+	for(size_t byten = 0; byten < bytes.size(); byten++) {
+		for(size_t bitn = 0; bitn < 8; bitn++) {
+			bits[byten*8+bitn] = (bytes[byten] & (1<<(7-bitn)));
+		}
 	}
-	boost::from_block_range(bitfield.rbegin(), bitfield.rend(), converted_bitfield);
-	return converted_bitfield;
+	return bits;
 }
 
 }

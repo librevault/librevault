@@ -29,6 +29,7 @@
 #include "ControlWebsocketServer.h"
 #include "util/log.h"
 #include <json/json.h>
+#include <QJsonDocument>
 
 namespace librevault {
 
@@ -66,14 +67,17 @@ void ControlWebsocketServer::on_disconnect(websocketpp::connection_hdl hdl) {
 	ws_sessions_.erase(server_.get_con_from_hdl(hdl));
 }
 
-void ControlWebsocketServer::send_event(const std::string& type, const Json::Value& event) {
-	Json::Value event_message;
-	event_message["id"] = Json::Value::UInt64(++id_);
-	event_message["type"] = type;
-	event_message["event"] = event;
+void ControlWebsocketServer::send_event(QString type, QJsonObject event) {
+	QJsonObject event_o;
+	event_o["id"] = double(++id_);
+	event_o["type"] = type;
+	event_o["event"] = event;
 
+	QJsonDocument event_msg(event_o);
+
+	std::string event_msg_s = event_msg.toJson(QJsonDocument::Compact).toStdString();
 	for(auto session : ws_sessions_)
-		session->send(Json::FastWriter().write(event_message));
+		session->send(event_msg_s);
 }
 
 } /* namespace librevault */

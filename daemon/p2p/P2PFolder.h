@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "folder/RemoteFolder.h"
-#include "p2p/P2PProvider.h"
 #include "p2p/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
@@ -36,6 +35,7 @@
 namespace librevault {
 
 class FolderGroup;
+class NodeKey;
 class P2PProvider;
 
 class P2PFolder : public RemoteFolder {
@@ -63,7 +63,7 @@ public:
 	QPair<QHostAddress, quint16> remote_endpoint() const;
 	QString client_name() const {return client_name_;}
 	QString user_agent() const {return user_agent_;}
-	Json::Value collect_state();
+	QJsonObject collect_state();
 
 	/* RPC Actions */
 	void send_message(const blob& message);

@@ -33,6 +33,8 @@
 #include "util/log.h"
 #include <boost/algorithm/string/predicate.hpp>
 #include <librevault/crypto/Hex.h>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 namespace librevault {
 
@@ -167,7 +169,9 @@ void ControlHTTPServer::handle_globals_state(ControlServer::server::connection_p
 	if(conn->get_request().get_method() == "GET") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(state_collector_.global_state()));
+
+		QJsonDocument msg(state_collector_.global_state());
+		conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
 	}
 }
 
@@ -175,15 +179,18 @@ void ControlHTTPServer::handle_folders_state_all(ControlServer::server::connecti
 	conn->set_status(websocketpp::http::status_code::ok);
 	conn->append_header("Content-Type", "text/x-json");
 
-	conn->set_body(Json::FastWriter().write(state_collector_.folder_state()));
+	QJsonDocument msg(state_collector_.folder_state());
+	conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
 }
 
 void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	conn->append_header("Content-Type", "text/x-json");
 
-	blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
-	conn->set_body(Json::FastWriter().write(state_collector_.folder_state(folderid)));
+	QByteArray folderid = QByteArray::fromHex(QByteArray::fromStdString(matched[1].str()));
+
+	QJsonDocument msg(state_collector_.folder_state(folderid));
+	conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
 }
 
 std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {

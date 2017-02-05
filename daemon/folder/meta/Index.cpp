@@ -214,12 +214,12 @@ Index::status_t Index::get_status() {
 
 void Index::notify_state() {
 	status_t index_status = get_status();
-	Json::Value index_state;
-	index_state["0"] = Json::UInt64(index_status.file_entries);
-	index_state["1"] = Json::UInt64(index_status.directory_entries);
-	index_state["2"] = Json::UInt64(index_status.symlink_entries);
-	index_state["255"] = Json::UInt64(index_status.deleted_entries);
-	state_collector_->folder_state_set(params_.secret.get_Hash(), "index", index_state);
+	QJsonObject index_state;
+	index_state["0"] = (double)index_status.file_entries;
+	index_state["1"] = (double)index_status.directory_entries;
+	index_state["2"] = (double)index_status.symlink_entries;
+	index_state["255"] = (double)index_status.deleted_entries;
+	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "index", index_state);
 }
 
 } /* namespace librevault */

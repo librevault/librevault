@@ -32,6 +32,7 @@
 #include "util/log.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"
+#include <QJsonValue>
 #include <QObject>
 #include <unordered_set>
 
@@ -60,9 +61,9 @@ signals:
 	void restart();
 
 public slots:
-	void notify_global_config_changed(const std::string& key, Json::Value value);
-	void notify_global_state_changed(std::string key, Json::Value state);
-	void notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state);
+	void notify_global_config_changed(QString key, QJsonValue state);
+	void notify_global_state_changed(QString key, QJsonValue state);
+	void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
 
 	void notify_folder_added(const blob& folderid, Json::Value folder_params);
 	void notify_folder_removed(const blob& folderid);

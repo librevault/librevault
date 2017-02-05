@@ -66,7 +66,7 @@ public:
 	virtual ~RemoteFolder();
 
 	virtual QString displayName() const = 0;
-	virtual Json::Value collect_state() = 0;
+	virtual QJsonObject collect_state() = 0;
 	QString log_tag() const;
 
 	/* Message senders */

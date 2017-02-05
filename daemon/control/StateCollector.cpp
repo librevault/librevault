@@ -27,56 +27,50 @@
  * files in the program, then also delete it here.
  */
 #include "StateCollector.h"
-#include "util/log.h"
-#include <librevault/crypto/Hex.h>
+#include <QJsonArray>
 
 namespace librevault {
 
 StateCollector::StateCollector(QObject* parent) : QObject(parent) {}
 StateCollector::~StateCollector() {}
 
-void StateCollector::global_state_set(const std::string& key, Json::Value value) {
+void StateCollector::global_state_set(QString key, QJsonValue value) {
 	if(global_state_buffer[key] != value) {
 		global_state_buffer[key] = value;
-		LOGI("Global state \"" << QString::fromStdString(key) << "\" is set to \"" << QString::fromStdString(value.toStyledString()) << "\"");
+		LOGI("Global state var" << key << "set to" << value);
 		emit globalStateChanged(key, value);
 	}
 }
 
-void StateCollector::folder_state_set(const blob& folderid, const std::string& key, Json::Value value) {
-	Json::Value& folder_buffer = folder_state_buffers[folderid];
+void StateCollector::folder_state_set(QByteArray folderid, QString key, QJsonValue value) {
+	QJsonObject& folder_buffer = folder_state_buffers[folderid];
 	if(folder_buffer[key] != value) {
 		folder_buffer[key] = value;
-		LOGI("Folder state " << crypto::Hex().to_string(folderid).c_str() << " of \"" << key.c_str() << "\" is set to \"" << value.toStyledString().c_str() << "\"");
+		LOGI("State of folder" << folderid.toHex() << "var" << key << "set to" << value);
 		emit folderStateChanged(folderid, key, value);
 	}
 }
 
-void StateCollector::folder_state_purge(const blob& folderid) {
-	auto it = folder_state_buffers.find(folderid);
-	if(it != folder_state_buffers.end()) {
-		LOGI("Folder state " << crypto::Hex().to_string(folderid).c_str() << " purged");
-		folder_state_buffers.erase(it);
+void StateCollector::folder_state_purge(QByteArray folderid) {
+	if(folder_state_buffers.remove(folderid)) {
+		LOGI("Folder state" << folderid.toHex() << "purged");
 	}
 }
 
-Json::Value StateCollector::global_state() {
+QJsonObject StateCollector::global_state() {
 	return global_state_buffer;
 }
 
-Json::Value StateCollector::folder_state() {
-	Json::Value folder_state_all;
-	for(auto& state_pair : folder_state_buffers)
-		folder_state_all.append(state_pair.second);
+QJsonArray StateCollector::folder_state() {
+	QJsonArray folder_state_all;
+	foreach(const QJsonObject& state_o, folder_state_buffers.values()) {
+		folder_state_all << state_o;
+	}
 	return folder_state_all;
 }
 
-Json::Value StateCollector::folder_state(const blob& folderid) {
-	auto it = folder_state_buffers.find(folderid);
-	if(it != folder_state_buffers.end())
-		return it->second;
-	else
-		return Json::Value();
+QJsonObject StateCollector::folder_state(QByteArray folderid) {
+	return folder_state_buffers.value(folderid);
 }
 
 } /* namespace librevault */

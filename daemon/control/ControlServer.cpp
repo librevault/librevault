@@ -34,6 +34,7 @@
 #include "util/log.h"
 #include "util/parse_url.h"
 #include <librevault/crypto/Hex.h>
+#include <QJsonObject>
 
 namespace librevault {
 
@@ -70,7 +71,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at " << bind_url.toString().toStdString() << std::endl;
 
-	connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
+	//connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
 }
 
 ControlServer::~ControlServer() {
@@ -85,23 +86,23 @@ ControlServer::~ControlServer() {
 	LOGFUNCEND();
 }
 
-void ControlServer::notify_global_config_changed(const std::string& key, Json::Value value) {
-	Json::Value event;
+void ControlServer::notify_global_config_changed(QString key, QJsonValue value) {
+	QJsonObject event;
 	event["key"] = key;
 	event["value"] = value;
 	control_ws_server_->send_event("EVENT_GLOBAL_CONFIG_CHANGED", event);
 }
 
-void ControlServer::notify_global_state_changed(std::string key, Json::Value state) {
-	Json::Value event;
+void ControlServer::notify_global_state_changed(QString key, QJsonValue state) {
+	QJsonObject event;
 	event["key"] = key;
 	event["value"] = state;
 	control_ws_server_->send_event("EVENT_GLOBAL_STATE_CHANGED", event);
 }
 
-void ControlServer::notify_folder_state_changed(const blob& folderid, std::string key, Json::Value state) {
-	Json::Value event;
-	event["folderid"] = crypto::Hex().to_string(folderid);
+void ControlServer::notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state) {
+	QJsonObject event;
+	event["folderid"] = QString(folderid.toHex());
 	event["key"] = key;
 	event["value"] = state;
 	control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
@@ -111,13 +112,13 @@ void ControlServer::notify_folder_added(const blob& folderid, Json::Value folder
 	Json::Value event;
 	event["folderid"] = crypto::Hex().to_string(folderid);
 	event["folder_params"] = folder_params;
-	control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
+	//control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
 }
 
 void ControlServer::notify_folder_removed(const blob& folderid) {
 	Json::Value event;
 	event["folderid"] = crypto::Hex().to_string(folderid);
-	control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
+	//control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
 }
 
 bool ControlServer::check_origin(const std::string& origin) {

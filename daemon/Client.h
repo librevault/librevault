@@ -63,7 +63,7 @@ private:
 	ControlServer* control_server_;
 
 	/* Initialization */
-	inline const char* log_tag() {return "";}
+	inline QString log_tag() {return "";}
 };
 
 } /* namespace librevault */

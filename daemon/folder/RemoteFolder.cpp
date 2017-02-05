@@ -34,7 +34,7 @@ RemoteFolder::RemoteFolder(QObject* parent) : QObject(parent) {}
 RemoteFolder::~RemoteFolder() {}
 
 QString RemoteFolder::log_tag() const {
-	return "[" + displayName() + "] ";
+	return displayName();
 }
 
 /* InterestGuard */

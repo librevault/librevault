@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "BandwidthCounter.h"
-#include <json/json.h>
 
 namespace librevault {
 
@@ -53,17 +52,17 @@ BandwidthCounter::Stats BandwidthCounter::heartbeat() {
 	return stats;
 }
 
-Json::Value BandwidthCounter::heartbeat_json() {
+QJsonObject BandwidthCounter::heartbeat_json() {
 	BandwidthCounter::Stats traffic_stats = heartbeat();
-	Json::Value state_traffic_stats;
+	QJsonObject state_traffic_stats;
 	state_traffic_stats["up_bandwidth"] = traffic_stats.up_bandwidth_;
 	state_traffic_stats["up_bandwidth_blocks"] = traffic_stats.up_bandwidth_blocks_;
 	state_traffic_stats["down_bandwidth"] = traffic_stats.down_bandwidth_;
 	state_traffic_stats["down_bandwidth_blocks"] = traffic_stats.down_bandwidth_blocks_;
-	state_traffic_stats["up_bytes"] = Json::Value::UInt64(traffic_stats.up_bytes_);
-	state_traffic_stats["up_bytes_blocks"] = Json::Value::UInt64(traffic_stats.up_bytes_blocks_);
-	state_traffic_stats["down_bytes"] = Json::Value::UInt64(traffic_stats.down_bytes_);
-	state_traffic_stats["down_bytes_blocks"] = Json::Value::UInt64(traffic_stats.down_bytes_blocks_);
+	state_traffic_stats["up_bytes"] = qint64(traffic_stats.up_bytes_);
+	state_traffic_stats["up_bytes_blocks"] = qint64(traffic_stats.up_bytes_blocks_);
+	state_traffic_stats["down_bytes"] = qint64(traffic_stats.down_bytes_);
+	state_traffic_stats["down_bytes_blocks"] = qint64(traffic_stats.down_bytes_blocks_);
 	return state_traffic_stats;
 }
 

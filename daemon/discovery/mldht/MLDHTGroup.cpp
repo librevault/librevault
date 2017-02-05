@@ -73,7 +73,7 @@ void MLDHTGroup::start_search(int af) {
 void MLDHTGroup::handleEvent(int event, btcompat::info_hash ih, QByteArray values) {
 	if(!enabled_) return;
 	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
-		std::list<tcp_endpoint> endpoints;
+		std::list<btcompat::asio_endpoint> endpoints;
 
 		if(event == DHT_EVENT_VALUES)
 			endpoints = btcompat::parse_compact_endpoint4_list(values.data(), values.size());

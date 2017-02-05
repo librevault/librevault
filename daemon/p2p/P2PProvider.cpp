@@ -28,6 +28,7 @@
  */
 #include "P2PProvider.h"
 #include "P2PFolder.h"
+#include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"
 #include "folder/FolderGroup.h"
@@ -76,7 +77,7 @@ QSslConfiguration P2PProvider::getSslConfiguration() const {
 
 void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
 	loopback_blacklist_.emplace(endpoint);
-	LOGN("Marked " << endpoint << " as loopback");
+	//LOGN("Marked " << endpoint << " as loopback");
 }
 
 bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
@@ -96,7 +97,7 @@ void P2PProvider::handleConnection() {
 		QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
 		FolderGroup* fgroup = folder_service_->getGroup(folderid);
 
-		LOGD("New incoming connection: " << socket->requestUrl().toString().toStdString());
+		LOGD("New incoming connection: " << socket->requestUrl().toString());
 
 		P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_);
 		Q_UNUSED(folder);
@@ -104,7 +105,7 @@ void P2PProvider::handleConnection() {
 }
 
 void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) {
-	LOGT("Discovery event from: " << result.source.toStdString());
+	LOGT("Discovery event from: " << result.source);
 
 	FolderGroup* fgroup = folder_service_->getGroup(folderid);
 	if(!fgroup) {
@@ -119,7 +120,7 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 		ws_url.setPort(result.port);
 	}
 
-	LOGD("New connection: " << ws_url.toString().toStdString());
+	LOGD("New connection: " << ws_url.toString());
 
 	QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
 	P2PFolder* folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);

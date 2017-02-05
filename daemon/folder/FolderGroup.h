@@ -87,7 +87,7 @@ public:
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 
-	std::string log_tag() const;
+	QString log_tag() const;
 
 private:
 	const FolderParams params_;

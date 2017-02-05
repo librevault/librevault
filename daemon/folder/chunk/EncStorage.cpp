@@ -76,14 +76,14 @@ void EncStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) 
 	std::lock_guard<std::mutex> lk(storage_mtx_);
 	file_move(chunk_location, make_chunk_ct_path(ct_hash));
 
-	LOGD("Encrypted block " << make_chunk_ct_name(ct_hash) << " pushed into EncStorage");
+	LOGD("Encrypted block " << make_chunk_ct_name(ct_hash).c_str() << " pushed into EncStorage");
 }
 
 void EncStorage::remove_chunk(const blob& ct_hash) {
 	std::lock_guard<std::mutex> lk(storage_mtx_);
 	fs::remove(make_chunk_ct_path(ct_hash));
 
-	LOGD("Block " << make_chunk_ct_name(ct_hash) << " removed from EncStorage");
+	LOGD("Block " << make_chunk_ct_name(ct_hash).c_str() << " removed from EncStorage");
 }
 
 } /* namespace librevault */

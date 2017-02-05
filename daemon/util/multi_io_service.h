@@ -29,6 +29,7 @@
 #pragma once
 #include <boost/asio/io_service.hpp>
 #include <thread>
+#include <QString>
 
 namespace librevault {
 
@@ -51,7 +52,7 @@ protected:
 
 	void run_thread(unsigned worker_number);
 
-	std::string log_tag() const {return std::string("[pool:") + name_ + "] ";}
+	QString log_tag() const {return "[pool:" + QString::fromStdString(name_) + "] ";}
 };
 
 } /* namespace librevault */

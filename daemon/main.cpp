@@ -66,6 +66,32 @@ Options:
   --version               show version
 )";
 
+void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
+	auto logger = spdlog::get(Version::current().name().toStdString());
+	if(!logger) return;
+
+	switch(msg_type) {
+		case QtDebugMsg:
+			logger->debug(msg.toStdString());
+			break;
+		case QtWarningMsg:
+			logger->warn(msg.toStdString());
+			break;
+		case QtCriticalMsg:
+			logger->critical(msg.toStdString());
+			break;
+		case QtFatalMsg:
+			logger->emerg(msg.toStdString());
+			logger->flush();
+			abort();
+		case QtInfoMsg:
+			logger->info(msg.toStdString());
+			break;
+		default:
+			logger->info(msg.toStdString());
+	}
+}
+
 int main(int argc, char** argv) {
 	do {
 		// Global initialization
@@ -106,6 +132,9 @@ int main(int argc, char** argv) {
 			log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
 			log->flush_on(spdlog::level::warn);
 		}
+
+		// This overrides default Qt behavior, which is fine in many cases;
+		qInstallMessageHandler(spdlogMessageHandler);
 
 		// Initializing config
 		Config::get();

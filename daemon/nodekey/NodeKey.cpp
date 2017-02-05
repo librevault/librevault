@@ -56,7 +56,7 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	private_key_file_.close();
 	cert_file_.close();
 
-	LOGI("PeerID: " << digest().toHex().toStdString());
+	LOGI("PeerID: " << digest().toHex());
 
 	LOGFUNCEND();
 }

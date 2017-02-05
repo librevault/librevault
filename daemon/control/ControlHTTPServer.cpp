@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "ControlHTTPServer.h"
+#include "Version.h"
 #include "control/Config.h"
 #include "control/StateCollector.h"
 #include "util/log.h"

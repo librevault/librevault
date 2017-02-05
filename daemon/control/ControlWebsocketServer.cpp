@@ -47,7 +47,7 @@ bool ControlWebsocketServer::on_validate(websocketpp::connection_hdl hdl) {
 	auto connection_ptr = server_.get_con_from_hdl(hdl);
 	auto subprotocols = connection_ptr->get_requested_subprotocols();
 
-	LOGD("Incoming connection from " << connection_ptr->get_remote_endpoint() << " Origin: " << connection_ptr->get_origin());
+	LOGD("Incoming connection from " << connection_ptr->get_remote_endpoint().c_str() << " Origin: " << connection_ptr->get_origin().c_str());
 	if(!cs_.check_origin(connection_ptr->get_origin()))
 		return false;
 	// Detect loopback

@@ -34,6 +34,7 @@
 #include "util/log.h"
 #include "util/readable.h"
 #include <librevault/crypto/Hex.h>
+#include <thread>
 
 namespace librevault {
 
@@ -41,9 +42,9 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	auto db_filepath = params_.system_path / "librevault.db";
 
 	if(boost::filesystem::exists(db_filepath))
-		LOGD("Opening SQLite3 DB: " << db_filepath);
+		LOGD("Opening SQLite3 DB: " << db_filepath.c_str());
 	else
-		LOGD("Creating new SQLite3 DB: " << db_filepath);
+		LOGD("Creating new SQLite3 DB: " << db_filepath.c_str());
 	db_ = std::make_unique<SQLiteDB>(db_filepath);
 	db_->exec("PRAGMA foreign_keys = ON;");
 
@@ -129,9 +130,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()).c_str() << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()).c_str() << " t:" << signed_meta.meta().meta_type());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)

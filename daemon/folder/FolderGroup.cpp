@@ -57,8 +57,8 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, i
 
 	LOGD("New folder:"
 		<< " Key type=" << (char)params_.secret.get_type()
-		<< " Path" << (path_created ? " created" : "") << "=" << params_.path
-		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path);
+		<< " Path" << (path_created ? " created" : "") << "=" << params_.path.c_str()
+		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path.c_str());
 
 	state_collector_->folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
@@ -145,7 +145,7 @@ void FolderGroup::attach(P2PFolder* remote_ptr) {
 	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
 	p2p_folders_digests_.insert(remote_ptr->digest());
 
-	LOGD("Attached remote " << remote_ptr->displayName().toStdString());
+	LOGD("Attached remote " << remote_ptr->displayName());
 
 	connect(remote_ptr, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote_ptr);});
 
@@ -159,7 +159,7 @@ void FolderGroup::detach(P2PFolder* remote_ptr) {
 	p2p_folders_endpoints_.remove(remote_ptr->remote_endpoint());
 	remotes_.remove(remote_ptr);
 
-	LOGD("Detached remote " << remote_ptr->displayName().toStdString());
+	LOGD("Detached remote " << remote_ptr->displayName());
 
 	emit detached(remote_ptr);
 }
@@ -172,8 +172,8 @@ QList<RemoteFolder*> FolderGroup::remotes() const {
 	return remotes_.toList();
 }
 
-std::string FolderGroup::log_tag() const {
-	return std::string("[") + (!params_.path.empty() ? params_.path : params_.system_path).string() + "] ";
+QString FolderGroup::log_tag() const {
+	return "[" + QString::fromStdWString((!params_.path.empty() ? params_.path : params_.system_path).wstring()) + "] ";
 }
 
 void FolderGroup::push_state() {

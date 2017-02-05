@@ -226,14 +226,14 @@ void MLDHTProvider::periodic_request() {
 
 void MLDHTProvider::handle_resolve(const QHostInfo& host) {
 	if(host.error()) {
-		LOGE("Error resolving: " << host.hostName().toStdString() << " E: " << host.errorString().toStdString());
+		LOGE("Error resolving: " << host.hostName() << " E: " << host.errorString());
 		resolves_.remove(host.lookupId());
 	}else {
 		QHostAddress address = host.addresses().first();
 		quint16 port = resolves_.take(host.lookupId());
 
 		addNode(tcp_endpoint(address::from_string(address.toString().toStdString()), port));
-		LOGD("Added a DHT router: " << host.hostName().toStdString() << " Resolved: " << address.toString().toStdString());
+		LOGD("Added a DHT router: " << host.hostName() << " Resolved: " << address.toString());
 	}
 }
 

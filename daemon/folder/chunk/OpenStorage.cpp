@@ -53,7 +53,7 @@ bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 }
 
 std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
-	LOGT("get_chunk(" << ct_hash_readable(ct_hash) << ")");
+	LOGT("get_chunk(" << ct_hash_readable(ct_hash).c_str() << ")");
 
 	auto metas_containing = meta_storage_.index->containing_chunk(ct_hash);
 

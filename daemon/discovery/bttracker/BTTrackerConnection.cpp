@@ -73,10 +73,10 @@ void BTTrackerConnection::setEnabled(bool enabled) {
 void BTTrackerConnection::resolve() {
 	if(resolver_lookup_id_) {
 		QHostInfo::abortHostLookup(resolver_lookup_id_);
-		LOGD("Could not resolve IP address for: " << tracker_address_.host().toStdString());
+		LOGD("Could not resolve IP address for: " << tracker_address_.host());
 	}
 
-	LOGD("Resolving IP address for: " << tracker_address_.host().toStdString());
+	LOGD("Resolving IP address for: " << tracker_address_.host());
 	resolver_lookup_id_ = QHostInfo::lookupHost(tracker_address_.host(), this, SLOT(handle_resolve(QHostInfo)));
 }
 
@@ -161,7 +161,7 @@ void BTTrackerConnection::handle_message(quint32 action, quint32 transaction_id,
 void BTTrackerConnection::handle_resolve(const QHostInfo& host) {
 	resolver_lookup_id_ = 0;
 	if(host.error()) {
-		LOGD("Could not resolve IP address for: " << tracker_address_.host().toStdString() << " E:" << host.errorString().toStdString());
+		LOGD("Could not resolve IP address for: " << tracker_address_.host() << " E:" << host.errorString());
 		resolve();
 	}else{
 		addr_ = host.addresses().first();

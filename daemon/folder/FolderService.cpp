@@ -75,7 +75,7 @@ void FolderService::initFolder(const FolderParams& params) {
 	groups_[fgroup->folderid()] = fgroup;
 
 	emit folderAdded(fgroup);
-	LOGD("Folder initialized: " << fgroup->folderid().toHex().toStdString());
+	LOGD("Folder initialized: " << fgroup->folderid().toHex());
 }
 
 void FolderService::deinitFolder(const QByteArray& folderid) {
@@ -86,7 +86,7 @@ void FolderService::deinitFolder(const QByteArray& folderid) {
 	groups_.remove(folderid);
 
 	fgroup->deleteLater();
-	LOGD("Folder deinitialized: " << folderid.toHex().toStdString());
+	LOGD("Folder deinitialized: " << folderid.toHex());
 }
 
 FolderGroup* FolderService::getGroup(const QByteArray& folderid) {

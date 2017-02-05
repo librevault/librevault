@@ -123,7 +123,7 @@ void Archive::TrashArchive::maintain_cleanup() {
 
 void Archive::TrashArchive::archive(const fs::path& from) {
 	auto archived_path = archive_path_ / fs::path(parent_.path_normalizer_.normalize_path(from));
-	LOGD("Adding an archive item: " << archived_path);
+	LOGD("Adding an archive item: " << archived_path.c_str());
 	file_move(from, archived_path);
 	fs::last_write_time(archived_path, time(nullptr));
 }

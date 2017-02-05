@@ -33,6 +33,7 @@
 #include "nodekey/NodeKey.h"
 #include "util/log.h"
 #include "util/readable.h"
+#include "util/qbitarray_conv.h"
 #include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
 
@@ -190,7 +191,7 @@ void P2PFolder::post_have_meta(const Meta::PathRevision& revision, const bitfiel
 	LOGD("==> HAVE_META:"
 		<< " path_id=" << path_id_readable(message.revision.path_id_)
 		<< " revision=" << message.revision.revision_
-		<< " bits=" << message.bitfield);
+/*		<< " bits=" << conv_bitarray(message.bitfield)*/);
 }
 void P2PFolder::post_have_chunk(const blob& ct_hash) {
 	V1Parser::HaveChunk message;
@@ -219,7 +220,7 @@ void P2PFolder::post_meta(const SignedMeta& smeta, const bitfield_type& bitfield
 	LOGD("==> META_REPLY:"
 		<< " path_id=" << path_id_readable(smeta.meta().path_id())
 		<< " revision=" << smeta.meta().revision()
-		<< " bits=" << bitfield);
+/*		<< " bits=" << bitfield*/);
 }
 void P2PFolder::cancel_meta(const Meta::PathRevision& revision) {
 	V1Parser::MetaCancel message;
@@ -366,7 +367,7 @@ void P2PFolder::handle_HaveMeta(const blob& message_raw) {
 	LOGD("<== HAVE_META:"
 		<< " path_id=" << path_id_readable(message_struct.revision.path_id_)
 		<< " revision=" << message_struct.revision.revision_
-		<< " bits=" << message_struct.bitfield);
+/*		<< " bits=" << message_struct.bitfield*/);
 
 	emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
 }
@@ -396,7 +397,7 @@ void P2PFolder::handle_MetaReply(const blob& message_raw) {
 	LOGD("<== META_REPLY:"
 		<< " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
 		<< " revision=" << message_struct.smeta.meta().revision()
-		<< " bits=" << message_struct.bitfield);
+/*		<< " bits=" << message_struct.bitfield*/);
 
 	emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
 }

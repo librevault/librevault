@@ -144,7 +144,7 @@ class Downloader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("Downloader");
 public:
-	Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage);
+	Downloader(const FolderParams& params, MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 	~Downloader();
 
 	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
@@ -162,8 +162,8 @@ public:
 
 private:
 	const FolderParams& params_;
-	MetaStorage& meta_storage_;
-	ChunkStorage& chunk_storage_;
+	MetaStorage* meta_storage_;
+	ChunkStorage* chunk_storage_;
 
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
 	WeightedDownloadQueue download_queue_;

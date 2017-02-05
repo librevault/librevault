@@ -38,23 +38,18 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params,
-                           MetaStorage& meta_storage,
-                           PathNormalizer& path_normalizer,
-                           io_service& bulk_ios,
-                           io_service& serial_ios,
-                           QObject* parent) :
+ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, io_service& serial_ios, QObject* parent) :
 	QObject(parent),
 	meta_storage_(meta_storage) {
 	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
 	enc_storage = std::make_unique<EncStorage>(params, *this);
 	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
-		open_storage = std::make_unique<OpenStorage>(params, meta_storage_, path_normalizer, *this);
-		archive = std::make_unique<Archive>(params, meta_storage_, path_normalizer, serial_ios);
-		file_assembler = new AssemblerQueue(params, meta_storage_,  *this, path_normalizer, *archive, this);
+		open_storage = std::make_unique<OpenStorage>(params, *meta_storage_, *path_normalizer, *this);
+		archive = std::make_unique<Archive>(params, *meta_storage_, *path_normalizer, serial_ios);
+		file_assembler = new AssemblerQueue(params, *meta_storage_,  *this, *path_normalizer, *archive, this);
 	}
 
-	connect(meta_storage_.index, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
+	connect(meta_storage_->index, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
 ChunkStorage::~ChunkStorage() {}
@@ -85,7 +80,7 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 
 void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location) {
 	enc_storage->put_chunk(ct_hash, chunk_location);
-	for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash))
+	for(auto& smeta : meta_storage_->index->containing_chunk(ct_hash))
 		file_assembler->addAssemble(smeta);
 
 	emit chunkAdded(ct_hash);

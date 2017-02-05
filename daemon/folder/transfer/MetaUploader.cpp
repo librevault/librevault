@@ -35,7 +35,8 @@
 
 namespace librevault {
 
-MetaUploader::MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storage) :
+MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent) :
+	QObject(parent),
 	meta_storage_(meta_storage), chunk_storage_(chunk_storage) {
 	LOGFUNC();
 }
@@ -47,14 +48,14 @@ void MetaUploader::broadcast_meta(QList<RemoteFolder*> remotes, const Meta::Path
 }
 
 void MetaUploader::handle_handshake(RemoteFolder* remote) {
-	for(auto& meta : meta_storage_.index->get_meta()) {
-		remote->post_have_meta(meta.meta().path_revision(), chunk_storage_.make_bitfield(meta.meta()));
+	for(auto& meta : meta_storage_->index->get_meta()) {
+		remote->post_have_meta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
 	}
 }
 
 void MetaUploader::handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision) {
 	try {
-		remote->post_meta(meta_storage_.index->get_meta(revision), chunk_storage_.make_bitfield(meta_storage_.index->get_meta(revision).meta()));
+		remote->post_meta(meta_storage_->index->get_meta(revision), chunk_storage_->make_bitfield(meta_storage_->index->get_meta(revision).meta()));
 	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

@@ -46,6 +46,8 @@ MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, StateCollector* s
 	port_mapping_(port_mapping),
 	state_collector_(state_collector) {
 
+	qRegisterMetaType<btcompat::info_hash>("btcompat::info_hash");
+
 	socket_ = new QUdpSocket(this);
 	periodic_ = new QTimer(this);
 	periodic_->setSingleShot(true);
@@ -61,8 +63,6 @@ MLDHTProvider::~MLDHTProvider() {
 }
 
 void MLDHTProvider::init() {
-	deinit();
-
 	// We will restore our session from here
 	readSessionFile();
 

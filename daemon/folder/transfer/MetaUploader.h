@@ -43,7 +43,7 @@ class MetaUploader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("MetaUploader");
 public:
-	MetaUploader(MetaStorage& meta_storage, ChunkStorage& chunk_storage);
+	MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 
 	void broadcast_meta(QList<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
 
@@ -52,8 +52,8 @@ public:
 	void handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision);
 
 private:
-	MetaStorage& meta_storage_;
-	ChunkStorage& chunk_storage_;
+	MetaStorage* meta_storage_;
+	ChunkStorage* chunk_storage_;
 };
 
 } /* namespace librevault */

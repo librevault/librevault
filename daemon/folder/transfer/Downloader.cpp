@@ -169,10 +169,11 @@ std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
 }
 
 /* Downloader */
-Downloader::Downloader(const FolderParams& params, MetaStorage& meta_storage, ChunkStorage& chunk_storage) :
-		params_(params),
-		meta_storage_(meta_storage),
-		chunk_storage_(chunk_storage) {
+Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent) :
+	QObject(parent),
+	params_(params),
+	meta_storage_(meta_storage),
+	chunk_storage_(chunk_storage) {
 	LOGFUNC();
 	maintain_timer_ = new QTimer(this);
 	connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintain_requests);
@@ -223,7 +224,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 
 	// Mark all other chunks "clustered"
 	if(mark_clustered) {
-		for(auto& smeta : meta_storage_.index->containing_chunk(ct_hash)) {
+		for(auto& smeta : meta_storage_->index->containing_chunk(ct_hash)) {
 			for(auto& chunk : smeta.meta().chunks()) {
 				auto it = missing_chunks_.find(chunk.ct_hash);
 				if(it != missing_chunks_.end())
@@ -236,7 +237,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 void Downloader::notify_remote_meta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	LOGFUNC();
 	try {
-		auto chunks = meta_storage_.index->get_meta(revision).meta().chunks();
+		auto chunks = meta_storage_->index->get_meta(revision).meta().chunks();
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield[chunk_idx])
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
@@ -293,7 +294,7 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 			missing_chunk_it->second->put_block(offset, data);
 			if(missing_chunk_it->second->complete()) {
-				chunk_storage_.put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
+				chunk_storage_->put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
 			}   // TODO: catch "invalid hash" exception here
 
 			QTimer::singleShot(0, this, &Downloader::maintain_requests);

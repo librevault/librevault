@@ -99,10 +99,10 @@ private:
 	ChunkStorage* chunk_storage_;
 	MetaStorage* meta_storage_;
 
-	std::unique_ptr<Uploader> uploader_;
-	std::unique_ptr<Downloader> downloader_;
-	std::unique_ptr<MetaUploader> meta_uploader_;
-	std::unique_ptr<MetaDownloader> meta_downloader_;
+	Uploader* uploader_;
+	Downloader* downloader_;
+	MetaUploader* meta_uploader_;
+	MetaDownloader* meta_downloader_;
 
 	BandwidthCounter bandwidth_counter_;
 

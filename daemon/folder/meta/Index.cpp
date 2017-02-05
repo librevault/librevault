@@ -34,18 +34,19 @@
 #include "util/log.h"
 #include "util/readable.h"
 #include <librevault/crypto/Hex.h>
+#include <QFile>
 #include <thread>
 
 namespace librevault {
 
 Index::Index(const FolderParams& params, StateCollector* state_collector, QObject* parent) : QObject(parent), params_(params), state_collector_(state_collector) {
-	auto db_filepath = params_.system_path / "librevault.db";
+	auto db_filepath = params_.system_path + "/librevault.db";
 
-	if(boost::filesystem::exists(db_filepath))
-		LOGD("Opening SQLite3 DB: " << db_filepath.c_str());
+	if(QFile::exists(db_filepath))
+		LOGD("Opening SQLite3 DB: " << db_filepath);
 	else
-		LOGD("Creating new SQLite3 DB: " << db_filepath.c_str());
-	db_ = std::make_unique<SQLiteDB>(db_filepath);
+		LOGD("Creating new SQLite3 DB: " << db_filepath);
+	db_ = std::make_unique<SQLiteDB>(db_filepath.toStdString());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
 	/* TABLE meta */
@@ -64,16 +65,16 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	//db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from it. Anyway, we can add it anytime later.
 
 	/* Create a special hash-file */
-	auto hash_txt = params_.system_path / "hash.txt";
-	std::string hexhash_conf = crypto::Hex().to_string(params_.secret.get_Hash());
-	if(boost::filesystem::exists(hash_txt)) {
-		file_wrapper hexhash_f(hash_txt, "r");
-		std::string hexhash_file;
-		hexhash_f.ios() >> hexhash_file;
-		if(hexhash_file != hexhash_conf) wipe();
+	QFile hash_file(params_.system_path + "/hash.txt");
+	QByteArray hexhash_conf = QByteArray::fromStdString(crypto::Hex().to_string(params_.secret.get_Hash()));
+	if(hash_file.exists()) {
+		hash_file.open(QIODevice::ReadOnly);
+		if(hash_file.readAll() != hexhash_conf) wipe();
+		hash_file.close();
 	}
-	file_wrapper hexhash_f(hash_txt, "w");
-	hexhash_f.ios() << hexhash_conf;
+	hash_file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	hash_file.write(hexhash_conf);
+	hash_file.close();
 
 	notify_state();
 }

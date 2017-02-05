@@ -52,8 +52,8 @@ struct FolderParams {
 
 	/* Parameters */
 	Secret secret;
-	boost::filesystem::path path;
-	boost::filesystem::path system_path;
+	QString path;
+	QString system_path;
 	std::chrono::milliseconds index_event_timeout = std::chrono::milliseconds(1000);
 	bool preserve_unix_attrib = false;
 	bool preserve_windows_attrib = false;

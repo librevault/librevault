@@ -154,7 +154,7 @@ bool AssemblerWorker::assemble_file() {
 	//
 	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
 	auto relpath = path_normalizer_.normalize_path(file_path);
-	auto assembled_file = params_.system_path / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
+	auto assembled_file = fs::path(params_.system_path.toStdWString()) / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	file_wrapper assembling_file(assembled_file, "wb"); // Opening file

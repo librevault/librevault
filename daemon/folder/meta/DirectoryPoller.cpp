@@ -33,6 +33,7 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/log.h"
+#include <QDirIterator>
 #include <QSet>
 #include <boost/filesystem.hpp>
 
@@ -67,8 +68,9 @@ QList<QString> DirectoryPoller::getReindexList() {
 	QSet<QString> file_list;
 
 	// Files present in the file system
-	for(auto dir_entry_it = boost::filesystem::recursive_directory_iterator(params_.path); dir_entry_it != boost::filesystem::recursive_directory_iterator(); dir_entry_it++){
-		QString abspath = QString::fromStdWString(dir_entry_it->path().wstring());
+	QDirIterator dir_it(params_.path, params_.preserve_symlinks ? QDirIterator::Subdirectories : QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+	while(dir_it.hasNext()) {
+		QString abspath = dir_it.next();
 		QByteArray normpath = path_normalizer_->normalizePath(abspath);
 
 		if(!ignore_list_->is_ignored(normpath.toStdString())) file_list.insert(abspath);

@@ -28,12 +28,9 @@
  */
 #pragma once
 #include "discovery/DiscoveryResult.h"
-#include "util/multi_io_service.h"
-#include "util/network.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include <QObject>
 #include <QWebSocketServer>
-#include <set>
 
 namespace librevault {
 
@@ -56,8 +53,8 @@ public:
 	QSslConfiguration getSslConfiguration() const;
 
 	/* Loopback detection */
-	void mark_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const tcp_endpoint& endpoint);
+	//void mark_loopback(const tcp_endpoint& endpoint);
+	//bool is_loopback(const tcp_endpoint& endpoint);
 	bool is_loopback(const QByteArray& digest);
 
 public slots:
@@ -71,7 +68,7 @@ private:
 	QWebSocketServer* server_;
 
 	/* Loopback detection */
-	std::set<tcp_endpoint> loopback_blacklist_;
+	//std::set<tcp_endpoint> loopback_blacklist_;
 
 private slots:
 	void handleConnection();

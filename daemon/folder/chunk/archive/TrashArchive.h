@@ -27,73 +27,23 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/fs.h"
-#include "util/log_scope.h"
-#include "util/network.h"
-#include "util/scoped_async_queue.h"
-#include "util/scoped_timer.h"
-#include <boost/filesystem/path.hpp>
+#include "Archive.h"
 
 namespace librevault {
 
-class FolderParams;
-class MetaStorage;
-class PathNormalizer;
-
-class Archive {
-	friend class ArchiveStrategy;
-	LOG_SCOPE("Archive");
+class TrashArchive : public ArchiveStrategy {
+	Q_OBJECT
 public:
-	Archive(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& ios);
-	virtual ~Archive() {}
-
+	TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
 	void archive(const fs::path& from);
 
 private:
 	const FolderParams& params_;
-	MetaStorage& meta_storage_;
-	PathNormalizer& path_normalizer_;
-	io_service& ios_;
+	PathNormalizer* path_normalizer_;
 
-	struct ArchiveStrategy {
-	public:
-		virtual void archive(const fs::path& from) = 0;
-		virtual ~ArchiveStrategy(){}
+	const fs::path archive_path_;
 
-	protected:
-		LOG_SCOPE_PARENT(parent_);
-		ArchiveStrategy(Archive& parent) : parent_(parent) {}
-		Archive& parent_;
-	};
-	class NoArchive : public ArchiveStrategy {
-	public:
-		NoArchive(Archive& parent) : ArchiveStrategy(parent) {}
-		virtual ~NoArchive(){}
-		void archive(const fs::path& from);
-	};
-	class TrashArchive : public ArchiveStrategy {
-	public:
-		TrashArchive(Archive& parent);
-		virtual ~TrashArchive();
-		void archive(const fs::path& from);
-
-	private:
-		void maintain_cleanup();
-
-		const fs::path archive_path_;
-		ScopedAsyncQueue cleanup_queue_;
-		ScopedTimer cleanup_timer_;
-	};
-	class TimestampArchive : public ArchiveStrategy {
-	public:
-		TimestampArchive(Archive& parent);
-		virtual ~TimestampArchive(){}
-		void archive(const fs::path& from);
-
-	private:
-		const fs::path archive_path_;
-	};
-	std::unique_ptr<ArchiveStrategy> archive_strategy_;
+	void maintain_cleanup();
 };
 
 } /* namespace librevault */

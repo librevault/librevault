@@ -26,60 +26,52 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AssemblerQueue.h"
-#include "AssemblerWorker.h"
-#include "ChunkStorage.h"
+#include "TrashArchive.h"
 #include "control/FolderParams.h"
-#include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "folder/chunk/archive/Archive.h"
-#include "folder/meta/Index.h"
-#include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
-#include "util/log.h"
-#include "util/readable.h"
+#include <QDebug>
+#include <QTimer>
+#include <regex>
 
 namespace librevault {
 
-AssemblerQueue::AssemblerQueue(const FolderParams& params,
-                             MetaStorage* meta_storage,
-                             ChunkStorage* chunk_storage,
-                             PathNormalizer* path_normalizer,
-                             Archive* archive, QObject* parent) :
-	QObject(parent),
+TrashArchive::TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent) :
+	ArchiveStrategy(parent),
 	params_(params),
-	meta_storage_(meta_storage),
-	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
-	archive_(archive) {
+	archive_path_(fs::path(params_.system_path.toStdWString()) / "archive") {
 
-	threadpool_ = new QThreadPool(this);
-
-	assemble_timer_ = new QTimer(this);
-	assemble_timer_->setInterval(30*1000);
-	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
-	assemble_timer_->start();
+	fs::create_directory(archive_path_);
+	QTimer::singleShot(10*1000*60, this, &TrashArchive::maintain_cleanup); // Start after a small delay.
 }
 
-AssemblerQueue::~AssemblerQueue() {
-	LOGFUNC();
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	LOGFUNCEND();
+void TrashArchive::maintain_cleanup() {
+	qInfo() << "Starting archive cleanup";
+
+	std::list<fs::path> removed_paths;
+	try {
+		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
+			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
+			constexpr unsigned sec_per_day = 60*60*24;
+			if(time_since_archivation >= params_.archive_trash_ttl * sec_per_day && params_.archive_trash_ttl != 0)
+				removed_paths.push_back(it->path());
+		}
+
+		for(const fs::path& path : removed_paths)
+			fs::remove(path);
+
+		QTimer::singleShot(24*1000*60*60, this, &TrashArchive::maintain_cleanup); // A day.
+	}catch(std::exception& e) {
+		QTimer::singleShot(10*1000*60, this, &TrashArchive::maintain_cleanup);   // An error occured, retry in 10 min
+	}
 }
 
-void AssemblerQueue::addAssemble(SignedMeta smeta) {
-	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, meta_storage_, chunk_storage_, path_normalizer_, archive_);
-	worker->setAutoDelete(true);
-	threadpool_->start(worker);
-}
-
-void AssemblerQueue::periodic_assemble_operation() {
-	LOGFUNC();
-	LOGD("Performing periodic assemble");
-
-	for(auto smeta : meta_storage_->index->get_incomplete_meta())
-		addAssemble(smeta);
+void TrashArchive::archive(const fs::path& from) {
+	auto archived_path = archive_path_ / fs::path(path_normalizer_->normalize_path(from));
+	qDebug() << "Adding an archive item: " << archived_path.c_str();
+	file_move(from, archived_path);
+	fs::last_write_time(archived_path, time(nullptr));
 }
 
 } /* namespace librevault */

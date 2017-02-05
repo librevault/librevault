@@ -36,8 +36,6 @@
 namespace librevault {
 
 FolderService::FolderService(StateCollector* state_collector, QObject* parent) : QObject(parent),
-	bulk_ios_("FolderService_bulk"),
-	serial_ios_("FolderService_serial"),
 	state_collector_(state_collector) {
 	LOGFUNC();
 }
@@ -49,9 +47,6 @@ FolderService::~FolderService() {
 }
 
 void FolderService::run() {
-	serial_ios_.start(1);
-	bulk_ios_.start(std::max(std::thread::hardware_concurrency(), 1u));
-
 	QTimer::singleShot(0, this, [this] {
 		for(auto& folder_config : Config::get()->folders())
 			initFolder(folder_config.second);
@@ -64,14 +59,11 @@ void FolderService::run() {
 void FolderService::stop() {
 	for(auto& hash : groups_.keys())
 		deinitFolder(hash);
-
-	bulk_ios_.stop();
-	serial_ios_.stop();
 }
 
 void FolderService::initFolder(const FolderParams& params) {
 	LOGFUNC();
-	auto fgroup = new FolderGroup(params, state_collector_, bulk_ios_.ios(), serial_ios_.ios(), this);
+	auto fgroup = new FolderGroup(params, state_collector_, this);
 	groups_[fgroup->folderid()] = fgroup;
 
 	emit folderAdded(fgroup);

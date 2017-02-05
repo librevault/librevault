@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "ChunkStorage.h"
-
 #include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
+#include "folder/chunk/archive/Archive.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 
@@ -38,15 +38,15 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, io_service& serial_ios, QObject* parent) :
+ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
 	QObject(parent),
 	meta_storage_(meta_storage) {
-	mem_storage = std::make_unique<MemoryCachedStorage>(*this);
-	enc_storage = std::make_unique<EncStorage>(params, *this);
+	mem_storage = new MemoryCachedStorage(this);
+	enc_storage = new EncStorage(params, this);
 	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
-		open_storage = std::make_unique<OpenStorage>(params, *meta_storage_, *path_normalizer, *this);
-		archive = std::make_unique<Archive>(params, *meta_storage_, *path_normalizer, serial_ios);
-		file_assembler = new AssemblerQueue(params, *meta_storage_,  *this, *path_normalizer, *archive, this);
+		open_storage = new OpenStorage(params, meta_storage_, path_normalizer, this);
+		archive = new Archive(params, meta_storage_, path_normalizer, this);
+		file_assembler = new AssemblerQueue(params, meta_storage_,  this, path_normalizer, archive, this);
 	}
 
 	connect(meta_storage_->index, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);

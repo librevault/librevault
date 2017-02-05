@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log_scope.h"
-#include <QObject>
+#include "util/log.h"
+#include <QAbstractSocket>
 
 namespace librevault {
 
@@ -43,7 +43,7 @@ class PortMappingService : public QObject {
 public:
 	struct MappingDescriptor {
 		uint16_t port;
-		int protocol;
+		QAbstractSocket::SocketType protocol;
 	};
 
 	PortMappingService(QObject* parent);

@@ -29,7 +29,7 @@
 #pragma once
 #include "discovery/btcompat.h"
 #include "discovery/DiscoveryResult.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include <QObject>
 #include <set>
 

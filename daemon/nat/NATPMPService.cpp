@@ -45,7 +45,7 @@ void NATPMPService::start() {
 	if(!is_config_enabled()) return;
 
 	int natpmp_ec = initnatpmp(&natpmp, 0, 0);
-	LOGT("initnatpmp() = " << natpmp_ec);
+	LOGD("initnatpmp() = " << natpmp_ec);
 
 	if(natpmp_ec == 0) {
 		active = true;
@@ -95,18 +95,18 @@ NATPMPMapping::~NATPMPMapping() {
 void NATPMPMapping::sendPeriodicRequest() {
 	int natpmp_ec = sendnewportmappingrequest(
 		&parent_.natpmp,
-		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+		descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
 		Config::get()->global_get("natpmp_lifetime").asUInt()
 	);
-	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
+	LOGD("sendnewportmappingrequest() = " << natpmp_ec);
 
 	natpmpresp_t natpmp_resp;
 	do {
 		natpmp_ec = readnatpmpresponseorretry(&parent_.natpmp, &natpmp_resp);
 	}while(natpmp_ec == NATPMP_TRYAGAIN);
-	LOGT("readnatpmpresponseorretry() = " << natpmp_ec);
+	LOGD("readnatpmpresponseorretry() = " << natpmp_ec);
 
 	int next_request_sec;
 	if(natpmp_ec >= 0) {
@@ -123,12 +123,12 @@ void NATPMPMapping::sendPeriodicRequest() {
 void NATPMPMapping::sendZeroRequest() {
 	int natpmp_ec = sendnewportmappingrequest(
 		&parent_.natpmp,
-		descriptor_.protocol == SOCK_STREAM ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+		descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
 		0
 	);
-	LOGT("sendnewportmappingrequest() = " << natpmp_ec);
+	LOGD("sendnewportmappingrequest() = " << natpmp_ec);
 }
 
 } /* namespace librevault */

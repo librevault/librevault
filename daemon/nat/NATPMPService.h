@@ -28,9 +28,7 @@
  */
 #pragma once
 #include "PortMappingSubService.h"
-#include "util/log_scope.h"
-#include "util/scoped_async_queue.h"
-#include "util/scoped_timer.h"
+#include "util/log.h"
 #include <natpmp.h>
 #include <QTimer>
 

@@ -28,9 +28,8 @@
  */
 #pragma once
 #include "util/blob.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include "util/fs.h"
-#include "util/network.h"
 #include <librevault/SignedMeta.h>
 #include <QMap>
 #include <QString>

@@ -27,19 +27,20 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
 #include "control/FolderParams.h"
-#include "util/log_scope.h"
+#include "util/blob.h"
+#include "util/log.h"
+#include <QObject>
 #include <mutex>
 
 namespace librevault {
 
 class FSFolder;
-class EncStorage : public AbstractStorage {
+class EncStorage : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("EncStorage");
 public:
-	EncStorage(const FolderParams& params, ChunkStorage& chunk_storage);
-	virtual ~EncStorage() {}
+	EncStorage(const FolderParams& params, QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;

@@ -27,25 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include <librevault/Meta.h>
-#include <memory>
+#include "Archive.h"
 
 namespace librevault {
 
-class ChunkStorage;
-class AbstractStorage {
+class NoArchive : public ArchiveStrategy {
+	Q_OBJECT
 public:
-	AbstractStorage(ChunkStorage& chunk_storage);
-	virtual ~AbstractStorage() {};
-
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
-	}
-	virtual std::shared_ptr<blob> get_chunk(const blob& ct_hash) const = 0;
-
-protected:
-	ChunkStorage& chunk_storage_;
+	NoArchive(Archive* parent) : ArchiveStrategy(parent) {}
+	void archive(const fs::path& from);
 };
 
 } /* namespace librevault */

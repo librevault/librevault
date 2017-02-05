@@ -27,8 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
-#include <util/log_scope.h>
+#include "util/blob.h"
+#include "util/log.h"
+#include <librevault/Meta.h>
+#include <QObject>
+#include <memory>
 
 namespace librevault {
 
@@ -37,25 +40,23 @@ class Secret;
 class MetaStorage;
 class PathNormalizer;
 
-class OpenStorage : public AbstractStorage {
+class OpenStorage : public QObject {
+	Q_OBJECT
 	LOG_SCOPE("OpenStorage");
 public:
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("OpenStorage error") {}
-	};
-
-	OpenStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, ChunkStorage& chunk_storage);
-	virtual ~OpenStorage() {}
+	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
 
 private:
 	const FolderParams& params_;
-	const Secret& secret_;
-	MetaStorage& meta_storage_;
-	PathNormalizer& path_normalizer_;
+	MetaStorage* meta_storage_;
+	PathNormalizer* path_normalizer_;
+
+	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
+	}
 };
 
 } /* namespace librevault */

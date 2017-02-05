@@ -60,7 +60,7 @@ IgnoreNode::IgnoreNode(PathNormalizer& path_normalizer, std::string root) : path
 			}
 		}
 	}catch(std::exception& e){
-		LOGE("Error reading .lvignore file. e: " << e.what());
+		LOGW("Error reading .lvignore file. e: " << e.what());
 	}
 }
 

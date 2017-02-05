@@ -26,60 +26,55 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AssemblerQueue.h"
-#include "AssemblerWorker.h"
-#include "ChunkStorage.h"
+#include "TimestampArchive.h"
 #include "control/FolderParams.h"
-#include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "folder/chunk/archive/Archive.h"
-#include "folder/meta/Index.h"
-#include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
+#include "util/regex_escape.h"
 #include "util/log.h"
-#include "util/readable.h"
+#include <QTimer>
+#include <regex>
 
 namespace librevault {
 
-AssemblerQueue::AssemblerQueue(const FolderParams& params,
-                             MetaStorage* meta_storage,
-                             ChunkStorage* chunk_storage,
-                             PathNormalizer* path_normalizer,
-                             Archive* archive, QObject* parent) :
-	QObject(parent),
+TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent) :
+	ArchiveStrategy(parent),
 	params_(params),
-	meta_storage_(meta_storage),
-	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
-	archive_(archive) {
+	archive_path_(fs::path(params_.system_path.toStdWString()) / "archive") {
 
-	threadpool_ = new QThreadPool(this);
-
-	assemble_timer_ = new QTimer(this);
-	assemble_timer_->setInterval(30*1000);
-	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
-	assemble_timer_->start();
+	fs::create_directory(archive_path_);
 }
 
-AssemblerQueue::~AssemblerQueue() {
-	LOGFUNC();
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	LOGFUNCEND();
-}
+void TimestampArchive::archive(const fs::path& from) {
+	// Add a new entry
+	auto archived_path = archive_path_ / fs::path(path_normalizer_->normalize_path(from));
 
-void AssemblerQueue::addAssemble(SignedMeta smeta) {
-	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, meta_storage_, chunk_storage_, path_normalizer_, archive_);
-	worker->setAutoDelete(true);
-	threadpool_->start(worker);
-}
+	time_t mtime = fs::last_write_time(from);
+	std::vector<char> strftime_buf(16);
+	strftime(strftime_buf.data(), strftime_buf.size(), "%Y%m%d-%H%M%S", localtime(&mtime));
 
-void AssemblerQueue::periodic_assemble_operation() {
-	LOGFUNC();
-	LOGD("Performing periodic assemble");
+	std::string suffix = std::string("~")+strftime_buf.data();
 
-	for(auto smeta : meta_storage_->index->get_incomplete_meta())
-		addAssemble(smeta);
+	auto timestamped_path = archived_path.stem();
+	timestamped_path += boost::locale::conv::utf_to_utf<native_char_t>(suffix);
+	timestamped_path += archived_path.extension();
+	file_move(from, timestamped_path);
+
+	// Remove
+	std::map<std::string, fs::path> paths;
+	std::regex timestamp_regex(regex_escape(from.stem().generic_string()) + R"((~\d{8}-\d{6}))" + regex_escape(from.extension().generic_string()));
+	for(auto it = fs::directory_iterator(from.parent_path()); it != fs::directory_iterator(); it++) {
+		std::smatch match;
+		std::string generic_path = it->path().generic_string();	// To resolve stackoverflow.com/q/32164501
+		std::regex_match(generic_path, match, timestamp_regex);
+		if(!match.empty()) {
+			paths.insert({match[1].str(), from});
+		}
+	}
+	if(paths.size() > params_.archive_timestamp_count && params_.archive_timestamp_count != 0) {
+		fs::remove(paths.begin()->second);
+	}
 }
 
 } /* namespace librevault */

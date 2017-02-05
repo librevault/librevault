@@ -40,6 +40,11 @@
 #include <rabin.h>
 #include <boost/filesystem.hpp>
 #include <QFile>
+#ifdef Q_OS_UNIX
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <unistd.h>
+#endif
 
 namespace librevault {
 
@@ -87,10 +92,10 @@ void IndexerWorker::run() noexcept {
 
 		emit metaCreated(new_smeta_);
 	}catch(abort_index& e){
-		LOGN("Skipping " << abspath_ << ". Reason: " << e.what());
+		LOGI("Skipping " << abspath_ << ". Reason: " << e.what());
 		emit metaFailed(e.what());
 	}catch(std::runtime_error& e){
-		LOGE("Skipping " << abspath_ << ". Error: " << e.what());
+		LOGW("Skipping " << abspath_ << ". Error: " << e.what());
 		emit metaFailed(e.what());
 	}
 }

@@ -26,11 +26,22 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AbstractStorage.h"
-#include "ChunkStorage.h"
+#pragma once
+#include "Archive.h"
 
 namespace librevault {
 
-AbstractStorage::AbstractStorage(ChunkStorage& chunk_storage) : chunk_storage_(chunk_storage) {};
+class TimestampArchive : public ArchiveStrategy {
+	Q_OBJECT
+public:
+	TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
+	void archive(const fs::path& from);
+
+private:
+	const FolderParams& params_;
+	PathNormalizer* path_normalizer_;
+
+	const fs::path archive_path_;
+};
 
 } /* namespace librevault */

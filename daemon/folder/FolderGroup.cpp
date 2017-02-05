@@ -43,7 +43,7 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent) :
+FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent) :
 		QObject(parent),
 		params_(std::move(params)),
 		state_collector_(state_collector) {
@@ -68,7 +68,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, i
 	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
 
 	meta_storage_ = new MetaStorage(params_, ignore_list.get(), path_normalizer_.get(), state_collector_, this);
-	chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_.get(), serial_ios, this);
+	chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_.get(), this);
 
 	uploader_ = new Uploader(chunk_storage_, this);
 	downloader_ = new Downloader(params_, meta_storage_, chunk_storage_, this);

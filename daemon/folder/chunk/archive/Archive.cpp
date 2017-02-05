@@ -26,60 +26,62 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AssemblerQueue.h"
-#include "AssemblerWorker.h"
-#include "ChunkStorage.h"
+#include "Archive.h"
+#include "NoArchive.h"
+#include "TimestampArchive.h"
+#include "TrashArchive.h"
 #include "control/FolderParams.h"
-#include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "folder/chunk/archive/Archive.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
 #include "util/log.h"
-#include "util/readable.h"
+#include <QTimer>
+#include <regex>
 
 namespace librevault {
 
-AssemblerQueue::AssemblerQueue(const FolderParams& params,
-                             MetaStorage* meta_storage,
-                             ChunkStorage* chunk_storage,
-                             PathNormalizer* path_normalizer,
-                             Archive* archive, QObject* parent) :
+Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
 	QObject(parent),
-	params_(params),
 	meta_storage_(meta_storage),
-	chunk_storage_(chunk_storage),
-	path_normalizer_(path_normalizer),
-	archive_(archive) {
+	path_normalizer_(path_normalizer) {
 
-	threadpool_ = new QThreadPool(this);
-
-	assemble_timer_ = new QTimer(this);
-	assemble_timer_->setInterval(30*1000);
-	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
-	assemble_timer_->start();
+	switch(params.archive_type) {
+		case FolderParams::ArchiveType::NO_ARCHIVE:
+			archive_strategy_ = new NoArchive(this);
+			break;
+		case FolderParams::ArchiveType::TIMESTAMP_ARCHIVE:
+			archive_strategy_ = new TimestampArchive(params, path_normalizer_, this);
+			break;
+		case FolderParams::ArchiveType::TRASH_ARCHIVE:
+			archive_strategy_ = new TrashArchive(params, path_normalizer_, this);
+			break;
+//		case FolderParams::ArchiveType::BLOCK_ARCHIVE:
+//			archive_strategy_ = new NoArchive(this);
+//			break;
+		default: throw std::runtime_error("Wrong Archive type");
+	}
 }
 
-AssemblerQueue::~AssemblerQueue() {
-	LOGFUNC();
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	LOGFUNCEND();
-}
+void Archive::archive(const fs::path& from) {
+	auto file_type = fs::symlink_status(from).type();
 
-void AssemblerQueue::addAssemble(SignedMeta smeta) {
-	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, meta_storage_, chunk_storage_, path_normalizer_, archive_);
-	worker->setAutoDelete(true);
-	threadpool_->start(worker);
-}
+	// Suppress unnecessary events on dir_monitor.
+	meta_storage_->prepareAssemble(path_normalizer_->normalize_path(from), Meta::DELETED);
 
-void AssemblerQueue::periodic_assemble_operation() {
-	LOGFUNC();
-	LOGD("Performing periodic assemble");
-
-	for(auto smeta : meta_storage_->index->get_incomplete_meta())
-		addAssemble(smeta);
+	if(file_type == fs::directory_file) {
+		if(fs::is_empty(from)) // Okay, just remove this empty directory
+			fs::remove(from);
+		else {  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
+			for(auto it = fs::directory_iterator(from); it != fs::directory_iterator(); it++)
+				archive(it->path()); // TODO: Okay, this is a horrible solution
+			fs::remove(from);
+		}
+	}else if(file_type == fs::regular_file) {
+		archive_strategy_->archive(from);
+	}else if(file_type == fs::symlink_file || file_type == fs::file_not_found) {
+		fs::remove(from);
+	}
+	// TODO: else
 }
 
 } /* namespace librevault */

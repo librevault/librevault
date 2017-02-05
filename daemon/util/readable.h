@@ -28,11 +28,16 @@
  */
 #pragma once
 #include "blob.h"
-#include <string>
+#include <QString>
 
 namespace librevault {
 
-std::string path_id_readable(const blob& path_id);
-std::string ct_hash_readable(const blob& ct_hash);
+inline QString path_id_readable(const blob& path_id) {
+	return conv_bytearray(path_id).toHex();
+}
+
+inline QString ct_hash_readable(const blob& ct_hash) {
+	return conv_bytearray(ct_hash).toHex();
+}
 
 } /* namespace librevault */

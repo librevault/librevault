@@ -27,17 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "AbstractStorage.h"
+#include "util/blob.h"
+#include <QObject>
 #include <map>
 #include <list>
+#include <memory>
 
 namespace librevault {
 
 // Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
-class MemoryCachedStorage : public AbstractStorage {
+class MemoryCachedStorage : public QObject {
+	Q_OBJECT
 public:
-	MemoryCachedStorage(ChunkStorage& chunk_storage);
-	virtual ~MemoryCachedStorage() {}
+	MemoryCachedStorage(QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;

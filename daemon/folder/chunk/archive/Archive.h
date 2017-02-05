@@ -27,10 +27,39 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QString>
+#include "util/fs.h"
+#include "util/log.h"
+#include <QObject>
+#include <boost/filesystem/path.hpp>
 
-#define LOG_SCOPE(SCOPE) \
-inline QString log_tag() const {return QStringLiteral("[" SCOPE "] ");}
+namespace librevault {
 
-#define LOG_SCOPE_PARENT(PARENT) \
-inline QString log_tag() const {return PARENT.log_tag();}
+class FolderParams;
+class MetaStorage;
+class PathNormalizer;
+
+struct ArchiveStrategy : public QObject {
+	Q_OBJECT
+public:
+	virtual void archive(const fs::path& from) = 0;
+
+protected:
+	ArchiveStrategy(QObject* parent) : QObject(parent) {}
+};
+
+class Archive : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("Archive");
+public:
+	Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+
+	void archive(const fs::path& from);
+
+private:
+	MetaStorage* meta_storage_;
+	PathNormalizer* path_normalizer_;
+
+	ArchiveStrategy* archive_strategy_;
+};
+
+} /* namespace librevault */

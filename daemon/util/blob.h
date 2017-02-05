@@ -29,9 +29,18 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <QByteArray>
 
 namespace librevault {
 
 using blob = std::vector<uint8_t>;
+
+inline QByteArray conv_bytearray(const blob& bl) {
+	return QByteArray((const char*)bl.data(), bl.size());
+}
+
+inline blob conv_bytearray(const QByteArray& ba) {
+	return blob(ba.begin(), ba.end());
+}
 
 } /* namespace librevault */

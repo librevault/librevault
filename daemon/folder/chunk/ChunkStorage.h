@@ -29,7 +29,6 @@
 #pragma once
 #include "util/blob.h"
 #include "util/fs.h"
-#include "util/network.h"
 #include <librevault/Meta.h>
 #include <librevault/util/bitfield_convert.h>
 #include <QObject>
@@ -54,7 +53,7 @@ public:
 		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, io_service& serial_ios, QObject* parent);
+	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -71,10 +70,10 @@ signals:
 protected:
 	MetaStorage* meta_storage_;
 
-	std::unique_ptr<MemoryCachedStorage> mem_storage;
-	std::unique_ptr<EncStorage> enc_storage;
-	std::unique_ptr<OpenStorage> open_storage;
-	std::unique_ptr<Archive> archive;
+	MemoryCachedStorage* mem_storage;
+	EncStorage* enc_storage;
+	OpenStorage* open_storage;
+	Archive* archive;
 	AssemblerQueue* file_assembler;
 };
 

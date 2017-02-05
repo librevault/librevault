@@ -27,11 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "log_scope.h"
 #include <QtDebug>
 
-#define LOGT(ARGS) \
-qDebug() << log_tag() << ARGS
+#define LOG_SCOPE(SCOPE) \
+inline QString log_tag() const {return QStringLiteral("[" SCOPE "] ");}
 
 #define LOGD(ARGS) \
 qDebug() << log_tag() << ARGS
@@ -39,20 +38,11 @@ qDebug() << log_tag() << ARGS
 #define LOGI(ARGS) \
 qInfo() << log_tag() << ARGS
 
-#define LOGN(ARGS) \
-qInfo() << log_tag() << ARGS
-
 #define LOGW(ARGS) \
 qWarning() << log_tag() << ARGS
 
-#define LOGE(ARGS) \
-qWarning() << log_tag() << ARGS
-
-#define LOGEM(ARGS) \
-qFatal() << log_tag() << ARGS
-
 #define LOGFUNC() \
-LOGT(BOOST_CURRENT_FUNCTION) << " "
+LOGD(BOOST_CURRENT_FUNCTION) << " "
 
 #define LOGFUNCEND() \
-LOGT(BOOST_CURRENT_FUNCTION << " -- end ")
+LOGD(BOOST_CURRENT_FUNCTION << " -- end ")

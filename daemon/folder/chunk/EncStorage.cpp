@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-EncStorage::EncStorage(const FolderParams& params, ChunkStorage& chunk_storage) : AbstractStorage(chunk_storage), params_(params) {}
+EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
 	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);

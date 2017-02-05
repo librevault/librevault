@@ -38,24 +38,23 @@
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, ChunkStorage& chunk_storage) :
-	AbstractStorage(chunk_storage),
+OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+	QObject(parent),
 	params_(params),
-	secret_(params_.secret),
 	meta_storage_(meta_storage),
 	path_normalizer_(path_normalizer) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
-	auto sql_result = meta_storage_.index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
+	auto sql_result = meta_storage_->index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
 			{":ct_hash", ct_hash}
 	});
 	return sql_result.have_rows();
 }
 
 std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
-	LOGT("get_chunk(" << ct_hash_readable(ct_hash).c_str() << ")");
+	LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
-	auto metas_containing = meta_storage_.index->containing_chunk(ct_hash);
+	auto metas_containing = meta_storage_->index->containing_chunk(ct_hash);
 
 	for(auto smeta : metas_containing) {
 		// Search for chunk offset and index
@@ -72,13 +71,13 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		file_wrapper f(path_normalizer_.absolute_path(smeta.meta().path(secret_)), "rb");
+		file_wrapper f(path_normalizer_->absolute_path(smeta.meta().path(params_.secret)), "rb");
 		f.ios().exceptions(std::ios::failbit | std::ios::badbit);
 		try {
 			f.ios().seekg(offset);
 			f.ios().read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size);
 
-			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(chunk_pt, secret_.get_Encryption_Key(), chunk.iv));
+			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv));
 			// Check
 			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
 		}catch(const std::ios::failure& e){}

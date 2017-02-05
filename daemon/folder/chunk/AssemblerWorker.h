@@ -27,10 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Archive.h"
 #include "util/blob.h"
-#include "util/network.h"
-#include "util/scoped_timer.h"
+#include "util/log.h"
 #include <librevault/SignedMeta.h>
 #include <QObject>
 #include <QRunnable>
@@ -41,6 +39,7 @@ namespace librevault {
 
 class PathNormalizer;
 
+class Archive;
 class MetaStorage;
 class FolderParams;
 class ChunkStorage;
@@ -56,22 +55,21 @@ public:
 
 	AssemblerWorker(SignedMeta smeta,
 	                const FolderParams& params,
-					MetaStorage& meta_storage,
-					ChunkStorage& chunk_storage,
-					PathNormalizer& path_normalizer,
-					Archive& archive);
+					MetaStorage* meta_storage,
+					ChunkStorage* chunk_storage,
+					PathNormalizer* path_normalizer,
+					Archive* archive);
 	virtual ~AssemblerWorker();
 
 	void run() noexcept override;
 
 private:
 	const FolderParams& params_;
-	MetaStorage& meta_storage_;
-	ChunkStorage& chunk_storage_;
-	PathNormalizer& path_normalizer_;
-	Archive& archive_;
+	MetaStorage* meta_storage_;
+	ChunkStorage* chunk_storage_;
+	PathNormalizer* path_normalizer_;
+	Archive* archive_;
 
-	const Secret& secret_;
 	SignedMeta smeta_;
 	const Meta& meta_;
 

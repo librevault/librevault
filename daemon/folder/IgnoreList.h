@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "control/Config.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include <boost/optional.hpp>
 #include <mutex>
 #include <regex>

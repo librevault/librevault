@@ -32,36 +32,39 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
+#include "folder/chunk/archive/Archive.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
 #include "util/log.h"
 #include "util/readable.h"
+#ifdef Q_OS_UNIX
+#   include <sys/stat.h>
+#endif
 
 namespace librevault {
 
 AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
-	                             MetaStorage& meta_storage,
-	                             ChunkStorage& chunk_storage,
-	                             PathNormalizer& path_normalizer,
-	                             Archive& archive) :
+	                             MetaStorage* meta_storage,
+	                             ChunkStorage* chunk_storage,
+	                             PathNormalizer* path_normalizer,
+	                             Archive* archive) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
 	path_normalizer_(path_normalizer),
 	archive_(archive),
-	secret_(params_.secret),
 	smeta_(smeta),
 	meta_(smeta.meta()) {}
 
 AssemblerWorker::~AssemblerWorker() {}
 
 blob AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-	LOGT("get_chunk_pt(" << ct_hash_readable(ct_hash).c_str() << ")");
-	blob chunk = chunk_storage_.get_chunk(ct_hash);
+	LOGD("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
+	blob chunk = chunk_storage_->get_chunk(ct_hash);
 
-	for(auto row : meta_storage_.index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
-		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), secret_.get_Encryption_Key(), row[1].as_blob());
+	for(auto row : meta_storage_->index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
+		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());
 	}
 	throw ChunkStorage::no_such_chunk();
 }
@@ -86,21 +89,21 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.meta_type() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_.index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
+			meta_storage_->index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 		}
 	}catch(std::exception& e) {
-		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(secret_).c_str() << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
+		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(params_.secret).c_str() << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
 bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
+	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_.prepareAssemble(path_normalizer_.normalize_path(file_path), Meta::DELETED);
+	meta_storage_->prepareAssemble(path_normalizer_->normalize_path(file_path), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
@@ -112,7 +115,7 @@ bool AssemblerWorker::assemble_deleted() {
 	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
 	else if(file_type == fs::regular_file)
-		archive_.archive(file_path);
+		archive_->archive(file_path);
 	// TODO: else
 
 	return true;    // Maybe, something else?
@@ -121,9 +124,9 @@ bool AssemblerWorker::assemble_deleted() {
 bool AssemblerWorker::assemble_symlink() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
+	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
 	fs::remove_all(file_path);
-	fs::create_symlink(meta_.symlink_path(secret_), file_path);
+	fs::create_symlink(meta_.symlink_path(params_.secret), file_path);
 
 	return true;    // Maybe, something else?
 }
@@ -131,13 +134,13 @@ bool AssemblerWorker::assemble_symlink() {
 bool AssemblerWorker::assemble_directory() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
-	auto relpath = path_normalizer_.normalize_path(file_path);
+	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
+	auto relpath = path_normalizer_->normalize_path(file_path);
 
 	bool create_new = true;
 	if(fs::status(file_path).type() != fs::file_type::directory_file)
 		create_new = !fs::remove(file_path);
-	meta_storage_.prepareAssemble(relpath, Meta::DIRECTORY, create_new);
+	meta_storage_->prepareAssemble(relpath, Meta::DIRECTORY, create_new);
 
 	if(create_new) fs::create_directories(file_path);
 
@@ -148,12 +151,12 @@ bool AssemblerWorker::assemble_file() {
 	LOGFUNC();
 
 	// Check if we have all needed chunks
-	for(auto b : chunk_storage_.make_bitfield(meta_))
+	for(auto b : chunk_storage_->make_bitfield(meta_))
 		if(!b) return false;    // retreat!
 
 	//
-	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
-	auto relpath = path_normalizer_.normalize_path(file_path);
+	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
+	auto relpath = path_normalizer_->normalize_path(file_path);
 	auto assembled_file = fs::path(params_.system_path.toStdWString()) / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
@@ -168,20 +171,20 @@ bool AssemblerWorker::assemble_file() {
 
 	fs::last_write_time(assembled_file, meta_.mtime());
 
-	meta_storage_.prepareAssemble(relpath, Meta::FILE, fs::exists(file_path));
+	meta_storage_->prepareAssemble(relpath, Meta::FILE, fs::exists(file_path));
 
-	archive_.archive(file_path);
+	archive_->archive(file_path);
 	fs::rename(assembled_file, file_path);
 
-	meta_storage_.index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
+	meta_storage_->index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 
-	chunk_storage_.cleanup(meta_);
+	chunk_storage_->cleanup(meta_);
 
 	return true;
 }
 
 void AssemblerWorker::apply_attrib() {
-	fs::path file_path = path_normalizer_.absolute_path(meta_.path(secret_));
+	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
 
 #if BOOST_OS_UNIX
 	if(params_.preserve_unix_attrib) {

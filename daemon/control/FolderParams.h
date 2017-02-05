@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/parse_url.h"
 #include <json/json-forwards.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>

@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/blob.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include "util/SQLiteWrapper.h"
 #include <librevault/SignedMeta.h>
 #include <QObject>

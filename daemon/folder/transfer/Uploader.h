@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log_scope.h"
+#include "util/log.h"
 #include "util/blob.h"
 #include <QObject>
 #include <set>

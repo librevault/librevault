@@ -31,7 +31,7 @@
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(ChunkStorage& chunk_storage) : AbstractStorage(chunk_storage) {}
+MemoryCachedStorage::MemoryCachedStorage(QObject* parent) : QObject(parent) {}
 
 bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return cache_iteraror_map_.find(ct_hash) != cache_iteraror_map_.end();

@@ -27,10 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "websocket_config.h"
 #include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/parse_url.h"
-#include "p2p/websocket_config.h"
+#include "util/log.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"
 #include <QObject>

@@ -71,10 +71,10 @@ void MLDHTProvider::init() {
 
 	int rc = dht_init(socket_->socketDescriptor(), socket_->socketDescriptor(), own_id.data(), nullptr);
 	if(rc < 0)
-		LOGE("Could not initialize DHT: Internal DHT error");
+		LOGW("Could not initialize DHT: Internal DHT error");
 
 	// Map port
-	port_mapping_->add_port_mapping("mldht", {getPort(), SOCK_DGRAM}, "Librevault DHT");
+	port_mapping_->add_port_mapping("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
 
 	// Init routers
 	auto routers = Config::get()->global_get("mainline_dht_routers");
@@ -191,7 +191,7 @@ void MLDHTProvider::addNode(tcp_endpoint endpoint) {
 }
 
 void MLDHTProvider::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
-	LOGT(BOOST_CURRENT_FUNCTION << " event: " << event);
+	LOGD(BOOST_CURRENT_FUNCTION << " event: " << event);
 
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
@@ -226,7 +226,7 @@ void MLDHTProvider::periodic_request() {
 
 void MLDHTProvider::handle_resolve(const QHostInfo& host) {
 	if(host.error()) {
-		LOGE("Error resolving: " << host.hostName() << " E: " << host.errorString());
+		LOGW("Error resolving: " << host.hostName() << " E: " << host.errorString());
 		resolves_.remove(host.lookupId());
 	}else {
 		QHostAddress address = host.addresses().first();

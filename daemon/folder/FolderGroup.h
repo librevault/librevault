@@ -30,7 +30,6 @@
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
 #include "util/blob.h"
-#include "util/network.h"
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>
@@ -67,7 +66,7 @@ signals:
 	void detached(P2PFolder* remote_ptr);
 
 public:
-	FolderGroup(FolderParams params, StateCollector* state_collector, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
+	FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
 	virtual ~FolderGroup();
 
 	/* Membership management */

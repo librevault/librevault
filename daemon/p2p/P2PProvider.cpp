@@ -59,7 +59,7 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 		qWarning() << "Librevault failed to bind on port. E: " << server_->errorString();
 	}
 	qDebug() << server_->errorString();
-	port_mapping_->add_port_mapping("main", {server_->serverPort(), SOCK_STREAM}, "Librevault");
+	port_mapping_->add_port_mapping("main", {server_->serverPort(), QAbstractSocket::TcpSocket}, "Librevault");
 }
 
 P2PProvider::~P2PProvider() {
@@ -75,14 +75,14 @@ QSslConfiguration P2PProvider::getSslConfiguration() const {
 	return ssl_config;
 }
 
-void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
-	loopback_blacklist_.emplace(endpoint);
-	//LOGN("Marked " << endpoint << " as loopback");
-}
+//void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
+//	loopback_blacklist_.emplace(endpoint);
+	//LOGI("Marked " << endpoint << " as loopback");
+//}
 
-bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
-	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
-}
+//bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
+//	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
+//}
 
 bool P2PProvider::is_loopback(const QByteArray& digest) {
 	return node_key_->digest() == digest;
@@ -105,7 +105,7 @@ void P2PProvider::handleConnection() {
 }
 
 void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) {
-	LOGT("Discovery event from: " << result.source);
+	LOGD("Discovery event from: " << result.source);
 
 	FolderGroup* fgroup = folder_service_->getGroup(folderid);
 	if(!fgroup) {

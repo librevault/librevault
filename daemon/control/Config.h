@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/blob.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include <json/json.h>
 #include <QObject>
 

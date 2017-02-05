@@ -28,8 +28,8 @@
  */
 #pragma once
 #include "ControlServer.h"
-#include "p2p/websocket_config.h"
-#include "util/log_scope.h"
+#include "websocket_config.h"
+#include "util/log.h"
 #include "util/network.h"
 #include <regex>
 

@@ -131,9 +131,9 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()).c_str() << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()).c_str() << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)

@@ -28,9 +28,7 @@
  */
 #pragma once
 #include "util/blob.h"
-#include "util/log_scope.h"
-#include "util/multi_io_service.h"
-#include "util/scoped_async_queue.h"
+#include "util/log.h"
 #include <json/json.h>
 #include <QObject>
 #include <QMap>
@@ -68,8 +66,6 @@ signals:
 	void folderRemoved(FolderGroup* fgroup);
 
 private:
-	multi_io_service bulk_ios_;
-	multi_io_service serial_ios_;
 	StateCollector* state_collector_;
 
 	QMap<QByteArray, FolderGroup*> groups_;

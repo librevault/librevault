@@ -32,6 +32,7 @@
 #include "ControlWebsocketServer.h"
 #include "control/Config.h"
 #include "util/log.h"
+#include "util/parse_url.h"
 #include <librevault/crypto/Hex.h>
 
 namespace librevault {

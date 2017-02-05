@@ -29,7 +29,7 @@
 #pragma once
 //#include <miniupnpc/miniupnpc.h>
 #include "PortMappingSubService.h"
-#include "util/log_scope.h"
+#include "util/log.h"
 #include <boost/asio/io_service.hpp>
 #include <mutex>
 
@@ -75,7 +75,7 @@ protected:
 		std::string id_;
 		MappingDescriptor descriptor_;
 
-		const char* get_literal_protocol(int protocol) const {return protocol == SOCK_STREAM ? "TCP" : "UDP";}
+		const char* get_literal_protocol(int protocol) const {return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";}
 	};
 	friend class PortMapping;
 	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;

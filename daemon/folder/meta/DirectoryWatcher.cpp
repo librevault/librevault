@@ -58,7 +58,7 @@ void DirectoryWatcherThread::monitorLoop() {
 			return;
 
 		emit dirEvent(ev);
-		QTimer::singleShot(0, this, &DirectoryWatcherThread::monitorLoop);
+		monitorLoop();
 	});
 }
 

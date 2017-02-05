@@ -33,7 +33,8 @@
 
 namespace librevault {
 
-Uploader::Uploader(ChunkStorage& chunk_storage) :
+Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
+	QObject(parent),
 	chunk_storage_(chunk_storage) {
 	LOGFUNC();
 }
@@ -68,7 +69,7 @@ void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, u
 }
 
 blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
-	auto chunk = chunk_storage_.get_chunk(ct_hash);
+	auto chunk = chunk_storage_->get_chunk(ct_hash);
 	if(offset < chunk.size() && size <= chunk.size()-offset)
 		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
 	else

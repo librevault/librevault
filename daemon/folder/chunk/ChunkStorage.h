@@ -54,7 +54,7 @@ public:
 		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, MetaStorage& meta_storage, PathNormalizer& path_normalizer, io_service& bulk_ios, io_service& serial_ios, QObject* parent);
+	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, io_service& serial_ios, QObject* parent);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
@@ -69,7 +69,7 @@ signals:
 	void chunkAdded(blob ct_hash);
 
 protected:
-	MetaStorage& meta_storage_;
+	MetaStorage* meta_storage_;
 
 	std::unique_ptr<MemoryCachedStorage> mem_storage;
 	std::unique_ptr<EncStorage> enc_storage;

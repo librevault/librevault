@@ -41,7 +41,7 @@ class Uploader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("Uploader");
 public:
-	Uploader(ChunkStorage& chunk_storage);
+	Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
 	void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
 
@@ -52,7 +52,7 @@ public:
 	void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
-	ChunkStorage& chunk_storage_;
+	ChunkStorage* chunk_storage_;
 
 	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };

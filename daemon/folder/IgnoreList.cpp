@@ -39,7 +39,7 @@ namespace librevault {
 
 IgnoreNode::IgnoreNode(PathNormalizer& path_normalizer, std::string root) : path_normalizer_(path_normalizer) {
 	boost::filesystem::path lvignore_path = path_normalizer_.absolute_path(root) / ".lvignore";
-	LOGD("Reading ignore file \"" << lvignore_path << "\" for root: \"" << root << "\"");
+	LOGD("Reading ignore file \"" << lvignore_path.c_str() << "\" for root: \"" << root.c_str() << "\"");
 
 	try {
 		file_wrapper lvignore(lvignore_path, "r");
@@ -93,7 +93,7 @@ boost::optional<std::regex> IgnoreNode::parse_ignore_line(size_t line_number, st
 	boost::algorithm::trim_left(ignore_line);
 	if(!ignore_line.empty() && ignore_line[0] != '#') {
 		std::string ignore_regex = wildcard_to_regex(ignore_line) + R"((?:\/.*)?$)";
-		LOGD("Parsed line " << line_number << " as " << "\"" << ignore_regex << "\"");
+		LOGD("Parsed line " << line_number << " as " << "\"" << ignore_regex.c_str() << "\"");
 		return std::regex(ignore_regex, std::regex::icase | std::regex::optimize | std::regex::collate);
 	}
 	return boost::none;
@@ -126,7 +126,7 @@ void IgnoreList::add_ignored(const std::string& relpath) {
 	if(!relpath.empty()) {
 		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
 		ignored_paths_.push_back(std::move(relpath_regex));
-		LOGD("Added to IgnoreList: " << relpath);
+		LOGD("Added to IgnoreList: " << relpath.c_str());
 	}
 }
 

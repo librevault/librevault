@@ -26,12 +26,13 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <librevault/crypto/Hex.h>
 #include "ControlServer.h"
+#include "Version.h"
 #include "ControlHTTPServer.h"
 #include "ControlWebsocketServer.h"
 #include "control/Config.h"
 #include "util/log.h"
+#include <librevault/crypto/Hex.h>
 
 namespace librevault {
 

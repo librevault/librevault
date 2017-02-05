@@ -56,7 +56,7 @@ IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index*
 IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
-	LOGFUNC() << abspath_.toStdString();
+	LOGFUNC() << abspath_;
 
 	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
 
@@ -80,17 +80,17 @@ void IndexerWorker::run() noexcept {
 		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		LOGD("Updated index entry in " << time_spent << "s (" << size_to_string((double)new_smeta_.meta().size()/time_spent) << "/s)"
-			<< " Path=" << abspath_.toStdString()
+		LOGD("Updated index entry in " << time_spent << "s (" << size_to_string((double)new_smeta_.meta().size()/time_spent).c_str() << "/s)"
+			<< " Path=" << abspath_
 			<< " Rev=" << new_smeta_.meta().revision()
 			<< " Chk=" << new_smeta_.meta().chunks().size());
 
 		emit metaCreated(new_smeta_);
 	}catch(abort_index& e){
-		LOGN("Skipping " << abspath_.toStdString() << ". Reason: " << e.what());
+		LOGN("Skipping " << abspath_ << ". Reason: " << e.what());
 		emit metaFailed(e.what());
 	}catch(std::runtime_error& e){
-		LOGE("Skipping " << abspath_.toStdString() << ". Error: " << e.what());
+		LOGE("Skipping " << abspath_ << ". Error: " << e.what());
 		emit metaFailed(e.what());
 	}
 }

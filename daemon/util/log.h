@@ -28,37 +28,28 @@
  */
 #pragma once
 #include "log_scope.h"
-#include "Version.h"
-#include <spdlog/spdlog.h>
-
-#define LOGGER spdlog::get(Version::current().name().toStdString())
+#include <QtDebug>
 
 #define LOGT(ARGS) \
-LOGGER->trace() << log_tag() << ARGS
+qDebug() << log_tag() << ARGS
 
 #define LOGD(ARGS) \
-LOGGER->debug() << log_tag() << ARGS
+qDebug() << log_tag() << ARGS
 
 #define LOGI(ARGS) \
-LOGGER->info() << log_tag() << ARGS
+qInfo() << log_tag() << ARGS
 
 #define LOGN(ARGS) \
-LOGGER->notice() << log_tag() << ARGS
+qInfo() << log_tag() << ARGS
 
 #define LOGW(ARGS) \
-LOGGER->warn() << log_tag() << ARGS
+qWarning() << log_tag() << ARGS
 
 #define LOGE(ARGS) \
-LOGGER->error() << log_tag() << ARGS
-
-#define LOGC(ARGS) \
-LOGGER->critical() << log_tag() << ARGS
-
-#define LOGA(ARGS) \
-LOGGER->alert() << log_tag() << ARGS
+qWarning() << log_tag() << ARGS
 
 #define LOGEM(ARGS) \
-LOGGER->emerg() << log_tag() << ARGS
+qFatal() << log_tag() << ARGS
 
 #define LOGFUNC() \
 LOGT(BOOST_CURRENT_FUNCTION) << " "

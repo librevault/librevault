@@ -57,7 +57,7 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 AssemblerWorker::~AssemblerWorker() {}
 
 blob AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-	LOGT("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
+	LOGT("get_chunk_pt(" << ct_hash_readable(ct_hash).c_str() << ")");
 	blob chunk = chunk_storage_.get_chunk(ct_hash);
 
 	for(auto row : meta_storage_.index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
@@ -89,7 +89,7 @@ void AssemblerWorker::run() noexcept {
 			meta_storage_.index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 		}
 	}catch(std::exception& e) {
-		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(secret_) << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
+		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(secret_).c_str() << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
 	}
 }
 
@@ -188,9 +188,9 @@ void AssemblerWorker::apply_attrib() {
 		if(meta_.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
 			ec = chmod(file_path.c_str(), meta_.mode());
-			if(ec) LOGW("Error applying mode to " << file_path);    // FIXME: full_path in logs may violate user's privacy.
+			if(ec) LOGW("Error applying mode to " << file_path.c_str());    // FIXME: full_path in logs may violate user's privacy.
 			ec = chown(file_path.c_str(), meta_.uid(), meta_.gid());
-			if(ec) LOGW("Error applying uid/gid to " << file_path); // FIXME: full_path in logs may violate user's privacy.
+			if(ec) LOGW("Error applying uid/gid to " << file_path.c_str()); // FIXME: full_path in logs may violate user's privacy.
 		}
 	}
 #elif BOOST_OS_WINDOWS

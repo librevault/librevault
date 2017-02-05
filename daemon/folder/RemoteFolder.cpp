@@ -33,8 +33,8 @@ namespace librevault {
 RemoteFolder::RemoteFolder(QObject* parent) : QObject(parent) {}
 RemoteFolder::~RemoteFolder() {}
 
-std::string RemoteFolder::log_tag() const {
-	return std::string() + "[" + displayName().toStdString() + "] ";
+QString RemoteFolder::log_tag() const {
+	return "[" + displayName() + "] ";
 }
 
 /* InterestGuard */

@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <string>
+#include <QString>
 
 #define LOG_SCOPE(SCOPE) \
-inline std::string log_tag() const {return "[" SCOPE "] ";}
+inline QString log_tag() const {return QStringLiteral("[" SCOPE "] ");}
 
 #define LOG_SCOPE_PARENT(PARENT) \
-inline std::string log_tag() const {return PARENT.log_tag();}
+inline QString log_tag() const {return PARENT.log_tag();}

@@ -43,7 +43,7 @@ Config::Config() {
 	load();
 
 	connect(this, &Config::configChanged, this, [this](std::string key, Json::Value value){
-		LOGI("Global \"" << key << "\" is set to \"" << value << "\"");
+		LOGI("Global \"" << key.c_str() << "\" is set to \"" << value.toStyledString().c_str() << "\"");
 	});
 	connect(this, &Config::configChanged, this, &Config::save);
 }

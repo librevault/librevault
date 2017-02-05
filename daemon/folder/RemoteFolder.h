@@ -67,7 +67,7 @@ public:
 
 	virtual QString displayName() const = 0;
 	virtual Json::Value collect_state() = 0;
-	std::string log_tag() const;
+	QString log_tag() const;
 
 	/* Message senders */
 	virtual void choke() = 0;

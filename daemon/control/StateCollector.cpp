@@ -38,7 +38,7 @@ StateCollector::~StateCollector() {}
 void StateCollector::global_state_set(const std::string& key, Json::Value value) {
 	if(global_state_buffer[key] != value) {
 		global_state_buffer[key] = value;
-		LOGI("Global state \"" << key << "\" is set to \"" << value << "\"");
+		LOGI("Global state \"" << QString::fromStdString(key) << "\" is set to \"" << QString::fromStdString(value.toStyledString()) << "\"");
 		emit globalStateChanged(key, value);
 	}
 }
@@ -47,7 +47,7 @@ void StateCollector::folder_state_set(const blob& folderid, const std::string& k
 	Json::Value& folder_buffer = folder_state_buffers[folderid];
 	if(folder_buffer[key] != value) {
 		folder_buffer[key] = value;
-		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " of \"" << key << "\" is set to \"" << value << "\"");
+		LOGI("Folder state " << crypto::Hex().to_string(folderid).c_str() << " of \"" << key.c_str() << "\" is set to \"" << value.toStyledString().c_str() << "\"");
 		emit folderStateChanged(folderid, key, value);
 	}
 }
@@ -55,7 +55,7 @@ void StateCollector::folder_state_set(const blob& folderid, const std::string& k
 void StateCollector::folder_state_purge(const blob& folderid) {
 	auto it = folder_state_buffers.find(folderid);
 	if(it != folder_state_buffers.end()) {
-		LOGI("Folder state " << crypto::Hex().to_string(folderid) << " purged");
+		LOGI("Folder state " << crypto::Hex().to_string(folderid).c_str() << " purged");
 		folder_state_buffers.erase(it);
 	}
 }

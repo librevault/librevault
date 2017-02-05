@@ -84,7 +84,7 @@ void Archive::NoArchive::archive(const fs::path& from) {
 // TrashArchive
 Archive::TrashArchive::TrashArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent.params_.system_path / "archive"),
+	archive_path_(fs::path(parent.params_.system_path.toStdWString()) / "archive"),
 	cleanup_queue_(parent.ios_),
 	cleanup_timer_(parent.ios_) {
 
@@ -131,7 +131,7 @@ void Archive::TrashArchive::archive(const fs::path& from) {
 // TimestampArchive
 Archive::TimestampArchive::TimestampArchive(Archive& parent) :
 	ArchiveStrategy(parent),
-	archive_path_(parent.params_.system_path / "archive") {
+	archive_path_(fs::path(parent.params_.system_path.toStdWString()) / "archive") {
 
 	fs::create_directory(archive_path_);
 }

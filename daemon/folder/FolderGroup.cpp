@@ -39,6 +39,7 @@
 #include "folder/transfer/Uploader.h"
 #include "folder/transfer/Downloader.h"
 #include "p2p/P2PFolder.h"
+#include <QDir>
 
 namespace librevault {
 
@@ -49,16 +50,16 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, i
 	LOGFUNC();
 
 	/* Creating directories */
-	bool path_created = fs::create_directories(params_.path);
-	bool system_path_created = fs::create_directories(params_.system_path);
-#if BOOST_OS_WINDOWS
-	SetFileAttributes(params_.system_path.c_str(), FILE_ATTRIBUTE_HIDDEN);
+	QDir().mkpath(params_.path);
+	QDir().mkpath(params_.system_path);
+#ifdef Q_OS_WIN
+	SetFileAttributes(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
 	LOGD("New folder:"
 		<< " Key type=" << (char)params_.secret.get_type()
-		<< " Path" << (path_created ? " created" : "") << "=" << params_.path.c_str()
-		<< " System path" << (system_path_created ? " created" : "") << "=" << params_.system_path.c_str());
+		<< " Path=" << params_.path
+		<< " System path=" << params_.system_path);
 
 	state_collector_->folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
@@ -173,7 +174,7 @@ QList<RemoteFolder*> FolderGroup::remotes() const {
 }
 
 QString FolderGroup::log_tag() const {
-	return "[" + QString::fromStdWString((!params_.path.empty() ? params_.path : params_.system_path).wstring()) + "] ";
+	return "[" + (!params_.path.isEmpty() ? params_.path : params_.system_path) + "] ";
 }
 
 void FolderGroup::push_state() {

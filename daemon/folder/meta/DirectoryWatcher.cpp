@@ -69,7 +69,7 @@ DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignor
 	path_normalizer_(path_normalizer) {
 	qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
 
-	watcher_thread_ = new DirectoryWatcherThread(QString::fromStdWString(params_.path.wstring()), this);
+	watcher_thread_ = new DirectoryWatcherThread(params_.path, this);
 	connect(watcher_thread_, &DirectoryWatcherThread::dirEvent, this, &DirectoryWatcher::handleDirEvent, Qt::QueuedConnection);
 }
 

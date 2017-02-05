@@ -39,7 +39,7 @@ namespace librevault {
 PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
 
 QByteArray PathNormalizer::normalizePath(QString abspath) {
-	QDir root_dir(QString::fromStdWString(params_.path.wstring()));
+	QDir root_dir(params_.path);
 
 	// Make it relative to root
 	QString normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));
@@ -60,16 +60,13 @@ QByteArray PathNormalizer::normalizePath(QString abspath) {
 }
 
 QString PathNormalizer::denormalizePath(QByteArray normpath) {
-	QDir root_dir(QString::fromStdWString(params_.path.wstring()));
+	QDir root_dir(params_.path);
 
 	// Convert from UTF-8
 	QString denormpath = QString::fromUtf8(normpath);
 
 	// Make it absolute
 	denormpath = root_dir.absoluteFilePath(denormpath);
-
-	// Use platform-dependent directory separators
-	denormpath = QDir::toNativeSeparators(denormpath);
 
 	// Use Mac-NFD normalization on macOS (weird Unicode 3.2 edition)
 #ifdef Q_OS_MAC
@@ -85,7 +82,7 @@ std::string PathNormalizer::normalize_path(const fs::path& abspath) const {
 #endif
 
 	// Relative path in platform-independent format
-	fs::path rel_path = ::librevault::make_relpath(abspath, params_.path);
+	fs::path rel_path = ::librevault::make_relpath(abspath, params_.path.toStdString());
 
 	std::string normpath = rel_path.generic_string(std::codecvt_utf8_utf16<wchar_t>());
 	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
@@ -113,7 +110,7 @@ fs::path PathNormalizer::absolute_path(const std::string& normpath) const {
 #else
 	const std::string& osnormpath(normpath);
 #endif
-	fs::path abspath = params_.path / osnormpath;
+	fs::path abspath = fs::path(params_.path.toStdWString()) / osnormpath;
 
 #ifdef LV_DEBUG_NORMALIZATION
 	LOGFUNC() << abspath;

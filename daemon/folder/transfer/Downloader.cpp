@@ -201,7 +201,7 @@ void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type&
 			/* Compute encrypted chunk size */
 			uint32_t padded_chunksize = chunk.size % 16 == 0 ? chunk.size : ((chunk.size / 16) + 1) * 16;
 
-			auto missing_chunk = std::make_shared<MissingChunk>(params_.system_path, ct_hash, padded_chunksize);
+			auto missing_chunk = std::make_shared<MissingChunk>(fs::path(params_.system_path.toStdWString()), ct_hash, padded_chunksize);
 			missing_chunks_.insert({ct_hash, missing_chunk});
 
 			/* Add to download queue */

@@ -42,7 +42,7 @@ std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
 }
 
 fs::path EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
-	return params_.system_path / make_chunk_ct_name(ct_hash);
+	return fs::path(params_.system_path.toStdWString()) / make_chunk_ct_name(ct_hash);
 }
 
 bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {

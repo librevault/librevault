@@ -104,7 +104,7 @@ IgnoreList::IgnoreList(const FolderParams& params, PathNormalizer& path_normaliz
 
 	ignored_paths_.reserve(params.ignore_paths.size()+1);
 
-	add_ignored(regex_escape(path_normalizer_.normalize_path(params.system_path)) + R"((?:\/.*)?$)");
+	add_ignored(regex_escape(path_normalizer_.normalize_path(params.system_path.toStdString())) + R"((?:\/.*)?$)");
 	for(auto path : params.ignore_paths)
 		add_ignored(path);
 

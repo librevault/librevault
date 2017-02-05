@@ -47,7 +47,7 @@ public:
 
 	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
 
-	uint_least32_t node_count() const;
+	int node_count() const;
 
 	quint16 getPort();
 	quint16 getExternalPort();
@@ -57,7 +57,7 @@ signals:
 	void discovered(QByteArray folderid, DiscoveryResult result);
 
 public slots:
-	void addNode(tcp_endpoint endpoint);
+	void addNode(btcompat::asio_endpoint endpoint);
 
 private:
 	PortMappingService* port_mapping_;

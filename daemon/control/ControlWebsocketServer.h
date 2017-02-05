@@ -31,6 +31,7 @@
 #include "websocket_config.h"
 #include "util/log.h"
 #include "util/network.h"
+#include <QJsonObject>
 
 namespace librevault {
 
@@ -50,7 +51,7 @@ public:
 	void on_disconnect(websocketpp::connection_hdl hdl);
 
 	//
-	void send_event(const std::string& type, const Json::Value& event);
+	void send_event(QString type, QJsonObject event);
 
 private:
 	ControlServer& cs_;

@@ -29,15 +29,21 @@
 #pragma once
 #include "control/Config.h"
 #include "util/blob.h"
-#include "util/network.h"
 #include <QByteArray>
 #include <QHostAddress>
 #include <QtEndian>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ip/address_v4.hpp>
+#include <boost/asio/ip/address_v6.hpp>
 #include <boost/endian/arithmetic.hpp>
 #include <array>
 
 namespace librevault {
 namespace btcompat {
+
+using asio_endpoint = boost::asio::ip::tcp::endpoint;
+using asio_address_v4 = boost::asio::ip::address_v4;
+using asio_address_v6 = boost::asio::ip::address_v6;
 
 using info_hash = std::array<uint8_t, 20>;
 using peer_id = std::array<uint8_t, 20>;
@@ -58,52 +64,47 @@ static_assert(sizeof(compact_endpoint4) == 6, "compact_endpoint4 size is incorre
 static_assert(sizeof(compact_endpoint6) == 18, "compact_endpoint6 size is incorrect");
 
 // Function declaration
-inline info_hash get_info_hash(const blob& dir_hash) {
-	info_hash ih; std::copy(dir_hash.begin(), dir_hash.begin()+std::min(ih.size(), dir_hash.size()), ih.begin());
-	return ih;
-}
-
 inline info_hash getInfoHash(const QByteArray& folderid) {
 	info_hash ih; std::copy(folderid.begin(), folderid.begin()+std::min(ih.size(), (size_t)folderid.size()), ih.begin());
 	return ih;
 }
 
-inline peer_id get_peer_id(QByteArray node_pubkey) {
+inline peer_id get_peer_id(QByteArray digest) {
 	peer_id pid;
 
 	std::string az_id = Config::get()->global_get("bttracker_azureus_id").asString();
 	az_id.resize(8);
 
-	node_pubkey = node_pubkey.leftJustified(pid.size() - az_id.size(), 0, true);
+	digest = digest.leftJustified(pid.size() - az_id.size(), 0, true);
 
 	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(node_pubkey.begin(), node_pubkey.end(), pid.begin() + az_id.size());
+	std::copy(digest.begin(), digest.end(), pid.begin() + az_id.size());
 
 	return pid;
 }
 
-inline tcp_endpoint parse_compact_endpoint(const compact_endpoint4& compact_endpoint) {
-	return tcp_endpoint(address_v4(compact_endpoint.ip4), compact_endpoint.port);
+inline asio_endpoint parse_compact_endpoint(const compact_endpoint4& compact_endpoint) {
+	return asio_endpoint(asio_address_v4(compact_endpoint.ip4), compact_endpoint.port);
 };
-inline tcp_endpoint parse_compact_endpoint(const compact_endpoint6& compact_endpoint) {
-	return tcp_endpoint(address_v6(compact_endpoint.ip6), compact_endpoint.port);
+inline asio_endpoint parse_compact_endpoint(const compact_endpoint6& compact_endpoint) {
+	return asio_endpoint(asio_address_v6(compact_endpoint.ip6), compact_endpoint.port);
 };
-inline tcp_endpoint parse_compact_endpoint4(const void* data) {
+inline asio_endpoint parse_compact_endpoint4(const void* data) {
 	return btcompat::parse_compact_endpoint(*(reinterpret_cast<const btcompat::compact_endpoint4*>(data)));
 };
-inline tcp_endpoint parse_compact_endpoint6(const void* data) {
+inline asio_endpoint parse_compact_endpoint6(const void* data) {
 	return btcompat::parse_compact_endpoint(*(reinterpret_cast<const btcompat::compact_endpoint6*>(data)));
 };
 
-inline std::list<tcp_endpoint> parse_compact_endpoint4_list(const void* data, size_t size) {
-	std::list<tcp_endpoint> endpoints;
+inline std::list<asio_endpoint> parse_compact_endpoint4_list(const void* data, size_t size) {
+	std::list<asio_endpoint> endpoints;
 	for(const uint8_t* data_cur = (const uint8_t*)data; data_cur+6 <= ((const uint8_t*)data+size); data_cur += 6)
 		endpoints.push_back(parse_compact_endpoint4(data));
 	return endpoints;
 }
 
-inline std::list<tcp_endpoint> parse_compact_endpoint6_list(const void* data, size_t size) {
-	std::list<tcp_endpoint> endpoints;
+inline std::list<asio_endpoint> parse_compact_endpoint6_list(const void* data, size_t size) {
+	std::list<asio_endpoint> endpoints;
 	for(const uint8_t* data_cur = (const uint8_t*)data; data_cur+18 <= ((const uint8_t*)data+size); data_cur += 18)
 		endpoints.push_back(parse_compact_endpoint6(data));
 	return endpoints;

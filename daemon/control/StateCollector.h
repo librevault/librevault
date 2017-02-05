@@ -29,7 +29,6 @@
 #pragma once
 #include "util/blob.h"
 #include "util/log.h"
-#include <json/json.h>
 #include <QObject>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -43,23 +42,21 @@ public:
 	StateCollector(QObject* parent);
 	~StateCollector();
 
-	void global_state_set(const std::string& key, Json::Value value);
-	void folder_state_set(const blob& folderid, const std::string& key, Json::Value value);
-	void folder_state_purge(const blob& folderid);
+	void global_state_set(QString key, QJsonValue value);
+	void folder_state_set(QByteArray folderid, QString key, QJsonValue value);
+	void folder_state_purge(QByteArray folderid);
 
-	Json::Value global_state();
-	Json::Value folder_state();
-	Json::Value folder_state(const blob& folderid);
+	QJsonObject global_state();
+	QJsonArray folder_state();
+	QJsonObject folder_state(QByteArray folderid);
 
 signals:
-	void globalStateChanged(std::string key, Json::Value value);
-	void folderStateChanged(blob folderid, std::string key, Json::Value value);
+	void globalStateChanged(QString key, QJsonValue value);
+	void folderStateChanged(QByteArray folderid, QString key, QJsonValue value);
 
 private:
-	Json::Value global_state_buffer;
-	std::map<blob, Json::Value> folder_state_buffers;
-
-	QJsonObject global_state_buffer_;
+	QJsonObject global_state_buffer;
+	QMap<QByteArray, QJsonObject> folder_state_buffers;
 };
 
 } /* namespace librevault */

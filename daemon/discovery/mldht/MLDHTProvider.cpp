@@ -31,12 +31,12 @@
 #include "control/Paths.h"
 #include "control/StateCollector.h"
 #include "nat/PortMappingService.h"
-#include "util/log.h"
 #include "util/file_util.h"
 #include "util/parse_url.h"
 #include <MLDHTSessionFile.pb.h>
 #include <dht.h>
 #include <cryptopp/osrng.h>
+#include <QFile>
 
 namespace librevault {
 
@@ -112,13 +112,13 @@ void MLDHTProvider::readSessionFile() {
 		CryptoPP::AutoSeededRandomPool().GenerateBlock(own_id.data(), own_id.size());
 	}
 
-	std::vector<tcp_endpoint> nodes;
+	std::vector<btcompat::asio_endpoint> nodes;
 	nodes.reserve(session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size());
 
 	LOGI("Loading " << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << " nodes from session file");
 	for(auto& compact_node4 : session_pb.compact_endpoints4()) {
 		if(compact_node4.size() != sizeof(btcompat::compact_endpoint4)) continue;
-		nodes.push_back(btcompat::parse_compact_endpoint6(compact_node4.data()));
+		nodes.push_back(btcompat::parse_compact_endpoint4(compact_node4.data()));
 	}
 	for(auto& compact_node6 : session_pb.compact_endpoints6()) {
 		if(compact_node6.size() != sizeof(btcompat::compact_endpoint6)) continue;
@@ -162,7 +162,7 @@ void MLDHTProvider::writeSessionFile() {
 	session_pb.SerializeToOstream(&session_file.ios());
 }
 
-uint_least32_t MLDHTProvider::node_count() const {
+int MLDHTProvider::node_count() const {
 	int good6 = 0;
 	int dubious6 = 0;
 	int cached6 = 0;
@@ -186,7 +186,7 @@ quint16 MLDHTProvider::getExternalPort() {
 	return port_mapping_->get_port_mapping("main");
 }
 
-void MLDHTProvider::addNode(tcp_endpoint endpoint) {
+void MLDHTProvider::addNode(btcompat::asio_endpoint endpoint) {
 	dht_ping_node(endpoint.data(), endpoint.size());
 }
 
@@ -207,7 +207,7 @@ void MLDHTProvider::processDatagram() {
 	quint16 port;
 	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_, &address, &port);
 
-	tcp_endpoint endpoint(address::from_string(address.toString().toStdString()), port);
+	btcompat::asio_endpoint endpoint(address::from_string(address.toString().toStdString()), port);
 
 	time_t tosleep;
 	dht_periodic(datagram_buffer, datagram_size, endpoint.data(), (int)endpoint.size(), &tosleep, lv_dht_callback_glue, this);
@@ -232,7 +232,7 @@ void MLDHTProvider::handle_resolve(const QHostInfo& host) {
 		QHostAddress address = host.addresses().first();
 		quint16 port = resolves_.take(host.lookupId());
 
-		addNode(tcp_endpoint(address::from_string(address.toString().toStdString()), port));
+		addNode(btcompat::asio_endpoint(address::from_string(address.toString().toStdString()), port));
 		LOGD("Added a DHT router: " << host.hostName() << " Resolved: " << address.toString());
 	}
 }

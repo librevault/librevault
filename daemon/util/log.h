@@ -30,16 +30,16 @@
 #include <QtDebug>
 
 #define LOG_SCOPE(SCOPE) \
-inline QString log_tag() const {return QStringLiteral("[" SCOPE "] ");}
+inline QString log_tag() const {return QStringLiteral(SCOPE);}
 
 #define LOGD(ARGS) \
-qDebug() << log_tag() << ARGS
+qDebug() << log_tag().toStdString().c_str() << "|" << ARGS
 
 #define LOGI(ARGS) \
-qInfo() << log_tag() << ARGS
+qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
 
 #define LOGW(ARGS) \
-qWarning() << log_tag() << ARGS
+qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
 
 #define LOGFUNC() \
 LOGD(BOOST_CURRENT_FUNCTION) << " "

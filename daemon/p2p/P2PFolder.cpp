@@ -27,12 +27,12 @@
  * files in the program, then also delete it here.
  */
 #include "P2PFolder.h"
+#include "P2PProvider.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nodekey/NodeKey.h"
-#include "util/log.h"
 #include "util/readable.h"
 #include "util/qbitarray_conv.h"
 #include <librevault/Tokens.h>
@@ -110,14 +110,14 @@ QPair<QHostAddress, quint16> P2PFolder::remote_endpoint() const {
 	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
-Json::Value P2PFolder::collect_state() {
-	Json::Value state;
+QJsonObject P2PFolder::collect_state() {
+	QJsonObject state;
 
-	state["endpoint"] = displayName().toStdString();   //FIXME: Must be host:port
-	state["client_name"] = client_name().toStdString();
-	state["user_agent"] = user_agent().toStdString();
+	state["endpoint"] = displayName();   //FIXME: Must be host:port
+	state["client_name"] = client_name();
+	state["user_agent"] = user_agent();
 	state["traffic_stats"] = counter_.heartbeat_json();
-	state["rtt"] = Json::Value::UInt64(rtt_.count());
+	state["rtt"] = double(rtt_.count());
 
 	return state;
 }

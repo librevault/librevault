@@ -51,7 +51,7 @@ public:
 	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
 	virtual ~MetaStorage();
 
-	void prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
 
 	Index* index;
 

@@ -27,13 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/log.h"
 #include <librevault/SignedMeta.h>
 #include <QTimer>
 #include <QThreadPool>
-#include <mutex>
-#include <set>
 
 namespace librevault {
 
@@ -47,7 +43,6 @@ class Secret;
 
 class AssemblerQueue : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("AssemblerQueue");
 signals:
 	void aboutToStop();
 

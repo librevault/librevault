@@ -31,6 +31,9 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include <MulticastDiscovery.pb.h>
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(log_multicast)
 
 namespace librevault {
 
@@ -73,9 +76,9 @@ QByteArray MulticastGroup::get_message() {
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
 	if(socket->writeDatagram(get_message(), addr, port))
-		qDebug() << "===> Multicast message sent to: " << addr << ":" << port;
+		qCDebug(log_multicast) << "===> Multicast message sent to: " << addr << ":" << port;
 	else
-		qDebug() << "=X=> Multicast message not sent to: " << addr << ":" << port << " E:" << socket->errorString();
+		qCDebug(log_multicast) << "=X=> Multicast message not sent to: " << addr << ":" << port << " E:" << socket->errorString();
 }
 
 void MulticastGroup::sendMulticasts() {

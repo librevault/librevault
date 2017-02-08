@@ -27,19 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
 #include "util/log.h"
-#include "util/fs.h"
 #include <librevault/SignedMeta.h>
 #include <QMap>
 #include <QString>
 #include <QThreadPool>
-#include <boost/filesystem/path.hpp>
-#include <set>
-#include <atomic>
-#include <mutex>
-#include <map>
-#include <future>
 
 namespace librevault {
 

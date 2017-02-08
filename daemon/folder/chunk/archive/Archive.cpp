@@ -66,7 +66,7 @@ void Archive::archive(const fs::path& from) {
 	auto file_type = fs::symlink_status(from).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(path_normalizer_->normalize_path(from), Meta::DELETED);
+	meta_storage_->prepareAssemble(path_normalizer_->normalizePath(QString::fromStdWString(from.wstring())), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(from)) // Okay, just remove this empty directory
@@ -82,6 +82,10 @@ void Archive::archive(const fs::path& from) {
 		fs::remove(from);
 	}
 	// TODO: else
+}
+
+void Archive::archive(QString denormpath) {
+	archive(denormpath.toStdWString());
 }
 
 } /* namespace librevault */

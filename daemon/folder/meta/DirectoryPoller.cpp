@@ -68,12 +68,12 @@ QList<QString> DirectoryPoller::getReindexList() {
 	QSet<QString> file_list;
 
 	// Files present in the file system
-	QDirIterator dir_it(params_.path, params_.preserve_symlinks ? QDirIterator::Subdirectories : QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+	QDirIterator dir_it(params_.path, QDir::NoDotAndDotDot, params_.preserve_symlinks ? QDirIterator::Subdirectories : QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
 	while(dir_it.hasNext()) {
 		QString abspath = dir_it.next();
 		QByteArray normpath = path_normalizer_->normalizePath(abspath);
 
-		if(!ignore_list_->is_ignored(normpath.toStdString())) file_list.insert(abspath);
+		if(!ignore_list_->isIgnored(normpath)) file_list.insert(abspath);
 	}
 
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
@@ -88,7 +88,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 		QByteArray normpath = QByteArray::fromStdString(smeta.meta().path(params_.secret));
 		QString denormpath = path_normalizer_->denormalizePath(normpath);
 
-		if(!ignore_list_->is_ignored(normpath.toStdString())) file_list.insert(denormpath);
+		if(!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
 	}
 
 	return file_list.toList();

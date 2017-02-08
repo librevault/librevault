@@ -51,8 +51,8 @@ MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, Pa
 };
 MetaStorage::~MetaStorage() {}
 
-void MetaStorage::prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal) {
-	watcher_->prepareAssemble(relpath, type, with_removal);
+void MetaStorage::prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal) {
+	watcher_->prepareAssemble(normpath, type, with_removal);
 }
 
 } /* namespace librevault */

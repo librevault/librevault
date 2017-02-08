@@ -100,10 +100,13 @@ bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
 
 	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
+	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
+	QString denormpath = path_normalizer_->denormalizePath(normpath);
+
 	auto file_type = fs::symlink_status(file_path).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(path_normalizer_->normalize_path(file_path), Meta::DELETED);
+	meta_storage_->prepareAssemble(normpath, Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
 		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
@@ -115,7 +118,7 @@ bool AssemblerWorker::assemble_deleted() {
 	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
 		fs::remove(file_path);
 	else if(file_type == fs::regular_file)
-		archive_->archive(file_path);
+		archive_->archive(denormpath);
 	// TODO: else
 
 	return true;    // Maybe, something else?
@@ -125,6 +128,9 @@ bool AssemblerWorker::assemble_symlink() {
 	LOGFUNC();
 
 	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
+	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
+	QString denormpath = path_normalizer_->denormalizePath(normpath);
+
 	fs::remove_all(file_path);
 	fs::create_symlink(meta_.symlink_path(params_.secret), file_path);
 
@@ -137,10 +143,13 @@ bool AssemblerWorker::assemble_directory() {
 	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
 	auto relpath = path_normalizer_->normalize_path(file_path);
 
+	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
+	QString denormpath = path_normalizer_->denormalizePath(normpath);
+
 	bool create_new = true;
 	if(fs::status(file_path).type() != fs::file_type::directory_file)
 		create_new = !fs::remove(file_path);
-	meta_storage_->prepareAssemble(relpath, Meta::DIRECTORY, create_new);
+	meta_storage_->prepareAssemble(normpath, Meta::DIRECTORY, create_new);
 
 	if(create_new) fs::create_directories(file_path);
 
@@ -159,6 +168,9 @@ bool AssemblerWorker::assemble_file() {
 	auto relpath = path_normalizer_->normalize_path(file_path);
 	auto assembled_file = fs::path(params_.system_path.toStdWString()) / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
+	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
+	QString denormpath = path_normalizer_->denormalizePath(normpath);
+
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
 
@@ -171,9 +183,9 @@ bool AssemblerWorker::assemble_file() {
 
 	fs::last_write_time(assembled_file, meta_.mtime());
 
-	meta_storage_->prepareAssemble(relpath, Meta::FILE, fs::exists(file_path));
+	meta_storage_->prepareAssemble(normpath, Meta::FILE, fs::exists(file_path));
 
-	archive_->archive(file_path);
+	archive_->archive(denormpath);
 	fs::rename(assembled_file, file_path);
 
 	meta_storage_->index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});

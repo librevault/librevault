@@ -69,7 +69,7 @@ public:
 	virtual ~DirectoryWatcher();
 
 	// A VERY DIRTY HACK
-	void prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
 
 private:
 	const FolderParams& params_;
@@ -78,7 +78,7 @@ private:
 
 	DirectoryWatcherThread* watcher_thread_;
 
-	std::multiset<std::string> prepared_assemble_;
+	std::multiset<QString> prepared_assemble_;
 
 private slots:
 	void handleDirEvent(boost::asio::dir_monitor_event ev);

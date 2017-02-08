@@ -29,112 +29,92 @@
 #include "IgnoreList.h"
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
-#include "util/file_util.h"
-#include "util/log.h"
-#include "util/regex_escape.h"
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/filesystem.hpp>
+#include <QDirIterator>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 
 namespace librevault {
 
-IgnoreNode::IgnoreNode(PathNormalizer& path_normalizer, std::string root) : path_normalizer_(path_normalizer) {
-	boost::filesystem::path lvignore_path = path_normalizer_.absolute_path(root) / ".lvignore";
-	LOGD("Reading ignore file \"" << lvignore_path.c_str() << "\" for root: \"" << root.c_str() << "\"");
+IgnoreList::IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer) : params_(params), path_normalizer_(path_normalizer), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) {
+	lazyRebuildIgnores();
+}
 
-	try {
-		file_wrapper lvignore(lvignore_path, "r");
-		size_t line_num = 1;
-		for(std::string line; std::getline(lvignore.ios(), line); line_num++) {
-			auto ignore_regex = parse_ignore_line(line_num, line);
-			if(ignore_regex)
-				ignore_entries_.push_back(*ignore_regex);
-		}
-	}catch(std::exception& e){/* no .lvignore */}
+bool IgnoreList::isIgnored(QByteArray normpath) {
+	lazyRebuildIgnores();
 
-	try {
-		for(auto it = boost::filesystem::directory_iterator(path_normalizer_.absolute_path(root)); it != boost::filesystem::directory_iterator(); it++) {
-			if(it->status().type() == boost::filesystem::directory_file) {
-				std::string filename = it->path().filename().generic_string();
-				std::string new_root = root.empty() ? filename : root+"/"+filename;
-				subnodes_.insert(std::make_pair(filename, std::make_unique<IgnoreNode>(path_normalizer_, new_root)));
+	QReadLocker lk(&ignorelist_mtx);
+	return QDir::match(filters_wildcard_, QString::fromUtf8(normpath));
+}
+
+void IgnoreList::lazyRebuildIgnores() {
+	QWriteLocker lk(&ignorelist_mtx);
+	if(last_rebuild_.msecsTo(QDateTime::currentDateTimeUtc()) > 10*1000) {
+		rebuildIgnores();
+		last_rebuild_ = QDateTime::currentDateTimeUtc();
+	}
+}
+
+void IgnoreList::rebuildIgnores() {
+	filters_wildcard_.clear();
+
+	// System folder
+	addIgnorePattern(".librevault");
+
+	QDirIterator dir_it(params_.path, QStringList() << ".lvignore", QDir::Files | QDir::Hidden | QDir::Readable, QDirIterator::Subdirectories);
+	qCDebug(log_ignorelist) << "Rebuilding ignore list";
+	while(dir_it.hasNext()) {
+		QString ignorefile_path = dir_it.next();
+		qCDebug(log_ignorelist) << "Found ignore file:" << ignorefile_path;
+
+		// Compute "root" for current ignore file
+		QString ignore_prefix = QString::fromUtf8(path_normalizer_.normalizePath(ignorefile_path));
+		ignore_prefix.chop(QStringLiteral(".lvignore").size());
+		qCDebug(log_ignorelist) << "Ignore file prefix:" << (ignore_prefix.isEmpty() ? "(root)" : ignore_prefix);
+
+		// Read ignore file
+		QFile ignorefile(ignorefile_path);
+		if(ignorefile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			QTextStream stream(&ignorefile);
+			stream.setCodec("UTF-8");
+			while(!stream.atEnd()) {
+				parseLine(ignore_prefix, stream.readLine());
 			}
-		}
-	}catch(std::exception& e){
-		LOGW("Error reading .lvignore file. e: " << e.what());
+		}else
+			qCWarning(log_ignorelist) << "Could not open ignore file:" << ignorefile_path;
 	}
 }
 
-bool IgnoreNode::is_ignored(const std::string& relpath) const {
-	for(auto& ignored_path : ignore_entries_) {
-		if(std::regex_match(relpath, ignored_path)) return true;
+void IgnoreList::parseLine(QString prefix, QString line) {
+	if(line.size() == 0)
+		return;
+	if(line.left(1) == "#")
+		return; // comment encountered
+	if(line.left(2) == R"(\#)")
+		line = line.mid(1); // escape hash
+
+	// This is not a comment
+	if(! QDir::isRelativePath(line)) {
+		qCWarning(log_ignorelist) << "Ignored path is not relative:" << line;
+		return;
 	}
 
-	auto subnode_it = subnodes_.find(get_first_element(relpath));
-	if(subnode_it != subnodes_.end())
-		return subnode_it->second->is_ignored(remove_first_element(relpath));
-
-	return false;
-}
-
-std::string IgnoreNode::get_first_element(std::string relpath) const {
-	relpath.erase(std::find(relpath.begin(), relpath.end(), '/'), relpath.end());
-	return relpath;
-}
-
-std::string IgnoreNode::remove_first_element(std::string relpath) const {
-	auto next_it = std::find(relpath.begin(), relpath.end(), '/');
-	if(next_it != relpath.end())
-		next_it++;
-	relpath.erase(relpath.begin(), next_it);
-	return relpath;
-}
-
-boost::optional<std::regex> IgnoreNode::parse_ignore_line(size_t line_number, std::string ignore_line) const {
-	boost::algorithm::trim_left(ignore_line);
-	if(!ignore_line.empty() && ignore_line[0] != '#') {
-		std::string ignore_regex = wildcard_to_regex(ignore_line) + R"((?:\/.*)?$)";
-		LOGD("Parsed line " << line_number << " as " << "\"" << ignore_regex.c_str() << "\"");
-		return std::regex(ignore_regex, std::regex::icase | std::regex::optimize | std::regex::collate);
-	}
-	return boost::none;
-}
-
-IgnoreList::IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer) : path_normalizer_(path_normalizer) {
-	ignore_file_tree_created_ = std::chrono::steady_clock::now()-std::chrono::minutes(1);
-
-	ignored_paths_.reserve(params.ignore_paths.size()+1);
-
-	add_ignored(regex_escape(path_normalizer_.normalize_path(params.system_path.toStdString())) + R"((?:\/.*)?$)");
-	for(auto path : params.ignore_paths)
-		add_ignored(path.toStdString());
-
-	LOGD("IgnoreList initialized");
-}
-
-bool IgnoreList::is_ignored(const std::string& relpath) const {
-	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
-	for(auto& ignored_path : ignored_paths_) {
-		if(std::regex_match(relpath, ignored_path)) return true;
+	line = QDir::cleanPath(line);
+	if(line.left(2) == "..") {
+		qCWarning(log_ignorelist) << "Ignored path does not support \"..\"";
+		return;
 	}
 
-	maybe_renew_ignore_file();
-	return ignore_file_tree_->is_ignored(relpath);
+	addIgnorePattern(prefix + line);
 }
 
-void IgnoreList::add_ignored(const std::string& relpath) {
-	std::unique_lock<std::mutex> lk(ignored_paths_mtx_);
-	if(!relpath.empty()) {
-		std::regex relpath_regex(relpath, std::regex::icase | std::regex::optimize | std::regex::collate);
-		ignored_paths_.push_back(std::move(relpath_regex));
-		LOGD("Added to IgnoreList: " << relpath.c_str());
-	}
-}
-
-void IgnoreList::maybe_renew_ignore_file() const {
-	//std::lock_guard<std::mutex> lk(ignored_paths_mtx_);
-	if(std::chrono::steady_clock::now() - ignore_file_tree_created_ > std::chrono::seconds(10)) {
-		ignore_file_tree_created_ = std::chrono::steady_clock::now();
-		ignore_file_tree_ = std::make_unique<IgnoreNode>(path_normalizer_, "");
+void IgnoreList::addIgnorePattern(QString pattern, bool can_be_dir) {
+	filters_wildcard_ << pattern;
+	qCDebug(log_ignorelist) << "Added ignore pattern:" << pattern;
+	if(can_be_dir) {
+		QString pattern_directory = pattern + "/*";   // If it is a directory, then ignore all files inside!
+		filters_wildcard_ << pattern_directory;
+		qCDebug(log_ignorelist) << "Added helper directory ignore pattern:" << pattern_directory;
 	}
 }
 

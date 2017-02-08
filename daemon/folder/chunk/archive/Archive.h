@@ -54,6 +54,7 @@ public:
 	Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
 	void archive(const fs::path& from);
+	void archive(QString denormpath);
 
 private:
 	MetaStorage* meta_storage_;

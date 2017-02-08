@@ -51,9 +51,6 @@ endif()
 ### Threads
 target_link_libraries(lvcommon PUBLIC threads)
 
-### Boost
-target_link_libraries(lvcommon PUBLIC boost)
-
 ### Protobuf
 target_link_libraries(lvcommon PUBLIC protobuf)
 

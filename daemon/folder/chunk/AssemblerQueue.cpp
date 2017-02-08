@@ -28,16 +28,8 @@
  */
 #include "AssemblerQueue.h"
 #include "AssemblerWorker.h"
-#include "ChunkStorage.h"
-#include "control/FolderParams.h"
-#include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
-#include "folder/chunk/archive/Archive.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/file_util.h"
-#include "util/log.h"
-#include "util/readable.h"
 
 namespace librevault {
 
@@ -62,10 +54,10 @@ AssemblerQueue::AssemblerQueue(const FolderParams& params,
 }
 
 AssemblerQueue::~AssemblerQueue() {
-	LOGFUNC();
+	qDebug() << "Stopping assembler queue";
 	emit aboutToStop();
 	threadpool_->waitForDone();
-	LOGFUNCEND();
+	qDebug() << "Assembler queue stopped";
 }
 
 void AssemblerQueue::addAssemble(SignedMeta smeta) {
@@ -75,8 +67,7 @@ void AssemblerQueue::addAssemble(SignedMeta smeta) {
 }
 
 void AssemblerQueue::periodic_assemble_operation() {
-	LOGFUNC();
-	LOGD("Performing periodic assemble");
+	qDebug() << "Performing periodic assemble";
 
 	for(auto smeta : meta_storage_->index->get_incomplete_meta())
 		addAssemble(smeta);

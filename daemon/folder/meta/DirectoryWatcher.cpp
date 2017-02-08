@@ -75,7 +75,7 @@ DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignor
 
 DirectoryWatcher::~DirectoryWatcher() {}
 
-void DirectoryWatcher::prepareAssemble(const std::string relpath, Meta::Type type, bool with_removal) {
+void DirectoryWatcher::prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal) {
 	unsigned skip_events = 0;
 	if(with_removal || type == Meta::Type::DELETED) skip_events++;
 
@@ -90,7 +90,7 @@ void DirectoryWatcher::prepareAssemble(const std::string relpath, Meta::Type typ
 	}
 
 	for(unsigned i = 0; i < skip_events; i++)
-		prepared_assemble_.insert(relpath);
+		prepared_assemble_.insert(normpath);
 }
 
 void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
@@ -102,7 +102,8 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 	case boost::asio::dir_monitor_event::removed:
 	case boost::asio::dir_monitor_event::null:
 	{
-		std::string normpath = path_normalizer_->normalize_path(ev.path);
+		QString abspath = QString::fromStdWString(ev.path.wstring());
+		QByteArray normpath = path_normalizer_->normalizePath(abspath);
 
 		auto prepared_assemble_it = prepared_assemble_.find(normpath);
 		if(prepared_assemble_it != prepared_assemble_.end()) {
@@ -111,8 +112,8 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 			// FIXME: "prepares" is a dirty hack. It must be EXTERMINATED!
 		}
 
-		if(!ignore_list_->is_ignored(normpath));
-			emit newPath(QString::fromStdWString(ev.path.wstring()));
+		if(!ignore_list_->isIgnored(normpath));
+			emit newPath(abspath);
 	}
 	default: break;
 	}

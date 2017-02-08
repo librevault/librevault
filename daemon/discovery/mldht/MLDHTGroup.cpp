@@ -61,11 +61,11 @@ void MLDHTGroup::setEnabled(bool enable) {
 void MLDHTGroup::start_search(int af) {
 	bool announce = true;
 
-	LOGD("Starting "
-		<< (af == AF_INET6 ? "IPv6" : "IPv4") << " "
+	LOGD("Starting"
+		<< (af == AF_INET6 ? "IPv6" : "IPv4")
 		<< (announce ? "announce" : "search")
-		<< " for: " << crypto::Hex().to_string(info_hash_).c_str()
-		<< (announce ? " on port: " : "") << (announce ? QString::number(provider_->getExternalPort()) : QString()));
+		<< "for: " << crypto::Hex().to_string(info_hash_).c_str()
+		<< (announce ? "on port:" : "") << (announce ? QString::number(provider_->getExternalPort()) : QString()));
 
 	dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, provider_);
 }

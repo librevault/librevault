@@ -27,57 +27,32 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "control/Config.h"
-#include "util/log.h"
-#include <boost/optional.hpp>
-#include <mutex>
-#include <regex>
+#include <QReadWriteLock>
+#include <QDateTime>
 
 namespace librevault {
 
 class FolderParams;
 class PathNormalizer;
 
-class IgnoreNode {
-	LOG_SCOPE("IgnoreNode");
-
-public:
-	IgnoreNode(PathNormalizer& path_normalizer, std::string root);
-
-	bool is_ignored(const std::string& relpath) const;
-
-private:
-	std::map<std::string, std::unique_ptr<IgnoreNode>> subnodes_;
-	PathNormalizer& path_normalizer_;
-	std::vector<std::regex> ignore_entries_;
-
-	std::string get_first_element(std::string relpath) const;
-	std::string remove_first_element(std::string relpath) const;
-	boost::optional<std::regex> parse_ignore_line(size_t line_number, std::string ignore_line) const;
-};
-
 class IgnoreList {
-	LOG_SCOPE("IgnoreList");
-
 public:
 	IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer);
-	virtual ~IgnoreList() {}
 
-	bool is_ignored(const std::string& relpath) const;
+	bool isIgnored(QByteArray normpath);
 
 private:
+	const FolderParams& params_;
 	PathNormalizer& path_normalizer_;
+	QStringList filters_wildcard_;
 
-	mutable std::mutex ignored_paths_mtx_;
-	std::vector<std::regex> ignored_paths_;
+	QReadWriteLock ignorelist_mtx;
+	QDateTime last_rebuild_;
 
-	mutable std::unique_ptr<IgnoreNode> ignore_file_tree_;
-	mutable std::chrono::steady_clock::time_point ignore_file_tree_created_;
-
-	// ignore management
-	void add_ignored(const std::string& relpath);
-
-	void maybe_renew_ignore_file() const;
+	void lazyRebuildIgnores();
+	void rebuildIgnores();  // not thread-safe!
+	void parseLine(QString prefix, QString line);
+	void addIgnorePattern(QString pattern, bool can_be_dir = true);
 };
 
 } /* namespace librevault */

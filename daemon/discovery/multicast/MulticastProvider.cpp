@@ -30,6 +30,9 @@
 #include "MulticastGroup.h"
 #include "nodekey/NodeKey.h"
 #include <MulticastDiscovery.pb.h>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(log_multicast, "discovery.multicast")
 
 namespace librevault {
 
@@ -44,14 +47,14 @@ MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObjec
 	socket6_ = new QUdpSocket(this);
 
 	if(! socket4_->bind(QHostAddress::AnyIPv4, port_))
-		qWarning() << "Could not bind MulticastProvider's IPv4 socket: " << socket4_->errorString();
+		qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv4 socket: " << socket4_->errorString();
 	if(! socket6_->bind(QHostAddress::AnyIPv6, port_))
-		qWarning() << "Could not bind MulticastProvider's IPv6 socket: " << socket6_->errorString();
+		qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv6 socket: " << socket6_->errorString();
 
 	if(! socket4_->joinMulticastGroup(address_v4_))
-		qWarning() << "Could not join IPv4 multicast group: " << socket4_->errorString();
+		qCWarning(log_multicast) << "Could not join IPv4 multicast group: " << socket4_->errorString();
 	if(! socket6_->joinMulticastGroup(address_v6_))
-		qWarning() << "Could not join IPv6 multicast group: " << socket6_->errorString();
+		qCWarning(log_multicast) << "Could not join IPv6 multicast group: " << socket6_->errorString();
 
 	socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 	socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
@@ -95,11 +98,11 @@ void MulticastProvider::processDatagram() {
 		result.digest = QByteArray(message.digest().data(), message.digest().size());
 
 		QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
-		qDebug() << "<=== Multicast message received from: " << address << ":" << port;
+		qCDebug(log_multicast) << "<=== Multicast message received from: " << address << ":" << port;
 
 		emit discovered(folderid, result);
 	}else{
-		qDebug() << "<=X= Malformed multicast message from: " << address << ":" << port;
+		qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << address << ":" << port;
 	}
 }
 

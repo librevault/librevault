@@ -72,23 +72,23 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
 
 	switch(msg_type) {
 		case QtDebugMsg:
-			logger->debug(msg.toStdString());
+			logger->debug() << ctx.category << " | " << msg.toStdString();
 			break;
 		case QtWarningMsg:
-			logger->warn(msg.toStdString());
+			logger->warn() << ctx.category << " | " << msg.toStdString();
 			break;
 		case QtCriticalMsg:
-			logger->critical(msg.toStdString());
+			logger->critical() << ctx.category << " | " << msg.toStdString();
 			break;
 		case QtFatalMsg:
-			logger->emerg(msg.toStdString());
+			logger->emerg() << ctx.category << " | " << msg.toStdString();
 			logger->flush();
 			abort();
 		case QtInfoMsg:
-			logger->info(msg.toStdString());
+			logger->info() << ctx.category << " | " << msg.toStdString();
 			break;
 		default:
-			logger->info(msg.toStdString());
+			logger->info() << ctx.category << " | " << msg.toStdString();
 	}
 }
 

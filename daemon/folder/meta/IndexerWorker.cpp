@@ -41,9 +41,7 @@
 #include <boost/filesystem.hpp>
 #include <QFile>
 #ifdef Q_OS_UNIX
-#   include <sys/types.h>
 #   include <sys/stat.h>
-#   include <unistd.h>
 #endif
 
 namespace librevault {
@@ -61,12 +59,11 @@ IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index*
 IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
-	LOGFUNC() << abspath_;
-
 	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
+	qDebug() << "Started indexing:" << normpath;
 
 	try {
-		if(ignore_list_->is_ignored(abspath_.toStdString())) throw abort_index("File is ignored");
+		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
 			old_smeta_ = index_->get_meta(Meta::make_path_id(normpath.toStdString(), secret_));
@@ -92,10 +89,10 @@ void IndexerWorker::run() noexcept {
 
 		emit metaCreated(new_smeta_);
 	}catch(abort_index& e){
-		LOGI("Skipping " << abspath_ << ". Reason: " << e.what());
+		LOGI("Skipping " << abspath_ << "Reason:" << e.what());
 		emit metaFailed(e.what());
 	}catch(std::runtime_error& e){
-		LOGW("Skipping " << abspath_ << ". Error: " << e.what());
+		LOGW("Skipping " << abspath_ << "Error:" << e.what());
 		emit metaFailed(e.what());
 	}
 }

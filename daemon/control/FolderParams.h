@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <json/json-forwards.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
 #include <QList>
+#include <QJsonObject>
 #include <QString>
 #include <QUrl>
 #include <boost/filesystem/path.hpp>
@@ -46,26 +46,25 @@ struct FolderParams {
 		BLOCK_ARCHIVE
 	};
 
-	FolderParams(){}
-	FolderParams(const Json::Value& json_params);
+	FolderParams(QJsonObject json_params);
 
 	/* Parameters */
 	Secret secret;
 	QString path;
 	QString system_path;
-	std::chrono::milliseconds index_event_timeout = std::chrono::milliseconds(1000);
-	bool preserve_unix_attrib = false;
-	bool preserve_windows_attrib = false;
-	bool preserve_symlinks = true;
-	bool normalize_unicode = true;
-	Meta::StrongHashType chunk_strong_hash_type = Meta::StrongHashType::SHA3_224;
-	std::chrono::seconds full_rescan_interval = std::chrono::seconds(600);
-	std::vector<std::string> ignore_paths;
+	std::chrono::milliseconds index_event_timeout;
+	bool preserve_unix_attrib;
+	bool preserve_windows_attrib;
+	bool preserve_symlinks;
+	bool normalize_unicode;
+	Meta::StrongHashType chunk_strong_hash_type;
+	std::chrono::seconds full_rescan_interval;
+	QStringList ignore_paths;
 	QList<QUrl> nodes;
-	ArchiveType archive_type = ArchiveType::TRASH_ARCHIVE;
-	unsigned archive_trash_ttl = 30;
-	unsigned archive_timestamp_count = 5;
-	bool mainline_dht_enabled = true;
+	ArchiveType archive_type;
+	unsigned archive_trash_ttl;
+	unsigned archive_timestamp_count;
+	bool mainline_dht_enabled;
 };
 
 } /* namespace librevault */

@@ -48,8 +48,9 @@ FolderService::~FolderService() {
 
 void FolderService::run() {
 	QTimer::singleShot(0, this, [this] {
-		for(auto& folder_config : Config::get()->folders())
-			initFolder(folder_config.second);
+		foreach(const QJsonObject& folder_config, Config::get()->folders()) {
+			initFolder(folder_config);
+		}
 	});
 
 	connect(Config::get(), &Config::folderAdded, this, &FolderService::initFolder);
@@ -57,7 +58,7 @@ void FolderService::run() {
 }
 
 void FolderService::stop() {
-	for(auto& hash : groups_.keys())
+	foreach(const QByteArray hash, groups_.keys())
 		deinitFolder(hash);
 }
 

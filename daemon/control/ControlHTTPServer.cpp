@@ -114,28 +114,33 @@ void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_
 	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(Config::get()->export_globals()));
+
+		QJsonDocument msg(Config::get()->export_globals());
+		conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
 	}else if(conn->get_request().get_method() == "PUT" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 
-		Json::Value new_value;
-		Json::Reader().parse(conn->get_request_body(), new_value);
+		QJsonDocument new_config = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body()));
 
-		Config::get()->import_globals(new_value);
+		Config::get()->import_globals(new_config.object());
 	}else if(conn->get_request().get_method() == "GET" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(Config::get()->global_get(matched[1].str())));
+
+		QJsonObject o;
+		o["key"] = QString::fromStdString(matched[1].str());
+		o["value"] = QJsonValue::fromVariant(Config::get()->global_get(QString::fromStdString(matched[1].str())));
+
+		conn->set_body(QJsonDocument(o).toJson().toStdString());
 	}else if(conn->get_request().get_method() == "PUT" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 
-		Json::Value new_value;
-		Json::Reader().parse(conn->get_request_body(), new_value);
+		QJsonObject o = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
 
-		Config::get()->global_set(matched[1].str(), new_value);
+		Config::get()->global_set(QString::fromStdString(matched[1].str()), o["value"].toVariant());
 	}else if(conn->get_request().get_method() == "DELETE" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
-		Config::get()->global_unset(matched[1].str());
+		Config::get()->global_unset(QString::fromStdString(matched[1].str()));
 	}
 }
 
@@ -143,20 +148,20 @@ void ControlHTTPServer::handle_folders_config_all(ControlServer::server::connect
 	if(conn->get_request().get_method() == "GET") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(Config::get()->export_folders()));
+
+		conn->set_body(QJsonDocument(Config::get()->export_folders()).toJson().toStdString());
 	}
 }
 
 void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	blob folderid = matched[1].str() | crypto::De<crypto::Hex>();
+	QByteArray folderid = QByteArray::fromHex(QByteArray::fromStdString(matched[1].str()));
 	if(conn->get_request().get_method() == "GET") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(Json::FastWriter().write(Config::get()->folder_get(folderid)));
+		conn->set_body(QJsonDocument(Config::get()->folder_get(folderid)).toJson().toStdString());
 	}else if(conn->get_request().get_method() == "PUT") {
 		conn->set_status(websocketpp::http::status_code::ok);
-		Json::Value new_value;
-		Json::Reader().parse(conn->get_request_body(), new_value);
+		QJsonObject new_value = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
 
 		Config::get()->folder_add(new_value);
 	}else if(conn->get_request().get_method() == "DELETE") {
@@ -194,10 +199,10 @@ void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connecti
 }
 
 std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {
-	Json::Value error_json;
-	error_json["error_code"] = code.empty() ? "UNKNOWN" : code;
-	error_json["description"] = description;
-	return Json::FastWriter().write(error_json);
+	//Json::Value error_json;
+	//error_json["error_code"] = code.empty() ? "UNKNOWN" : code;
+	//error_json["description"] = description;
+	return std::string();//Json::FastWriter().write(error_json);
 }
 
 } /* namespace librevault */

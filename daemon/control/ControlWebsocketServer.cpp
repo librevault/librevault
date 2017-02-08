@@ -28,7 +28,6 @@
  */
 #include "ControlWebsocketServer.h"
 #include "util/log.h"
-#include <json/json.h>
 #include <QJsonDocument>
 
 namespace librevault {

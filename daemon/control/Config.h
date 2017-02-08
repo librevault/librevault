@@ -29,7 +29,7 @@
 #pragma once
 #include "util/blob.h"
 #include "util/log.h"
-#include <json/json.h>
+#include <QJsonObject>
 #include <QObject>
 
 namespace librevault {
@@ -56,28 +56,28 @@ public:
 	}
 
 	/* Global configuration */
-	Json::Value global_get(const std::string& name);
-	void global_set(const std::string& name, Json::Value value);
-	void global_unset(const std::string& name);
+	QVariant global_get(QString name);
+	void global_set(QString name, QVariant value);
+	void global_unset(QString name);
 
-	Json::Value export_globals_custom() const;
-	Json::Value export_globals() const;
-	void import_globals(Json::Value globals_conf);
+	QJsonObject export_globals_custom() const;
+	QJsonObject export_globals() const;
+	void import_globals(QJsonObject globals_conf);
 
 	/* Folder configuration */
-	void folder_add(Json::Value folder_config);
-	void folder_remove(const blob& folderid);
+	void folder_add(QJsonObject folder_config);
+	void folder_remove(QByteArray folderid);
 
-	Json::Value folder_get(const blob& folderid);
-	std::map<blob, Json::Value> folders() const;
+	QJsonObject folder_get(QByteArray folderid);
+	QMap<QByteArray, QJsonObject> folders() const;
 
-	Json::Value export_folders_custom() const;
-	Json::Value export_folders() const;
-	void import_folders(Json::Value folders_conf);
+	QJsonArray export_folders_custom() const;
+	QJsonArray export_folders() const;
+	void import_folders(QJsonArray folders_conf);
 
 signals:
-	void configChanged(std::string key, Json::Value value);
-	void folderAdded(Json::Value fconfig);
+	void configChanged(QString key, QVariant value);
+	void folderAdded(QJsonObject fconfig);
 	void folderRemoved(QByteArray folderid);
 
 protected:
@@ -86,12 +86,12 @@ protected:
 	static Config* instance_;
 
 private:
-	Json::Value globals_custom_, globals_defaults_, folders_defaults_;
-	std::map<blob, Json::Value> folders_custom_;
+	QJsonObject globals_custom_, globals_defaults_, folders_defaults_;
+	QMap<QByteArray, QJsonObject> folders_custom_;
 
 	void make_defaults();
 
-	Json::Value make_merged(const Json::Value& custom_value, const Json::Value& default_value) const;
+	QJsonObject make_merged(QJsonObject custom_value, QJsonObject default_value) const;
 
 	// File config
 	void load();

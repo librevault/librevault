@@ -37,7 +37,7 @@ namespace librevault {
 MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup) :
 	provider_(provider), fgroup_(fgroup) {
 	timer_ = new QTimer(this);
-	timer_->setInterval(Config::get()->global_get("multicast_repeat_interval").asUInt64()*1000);
+	timer_->setInterval(Config::get()->global_get("multicast_repeat_interval").toInt()*1000);
 
 	// Connecting signals
 	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
@@ -55,7 +55,7 @@ QByteArray MulticastGroup::get_message() {
 		protocol::MulticastDiscovery message;
 
 		// Port
-		message.set_port(Config::get()->global_get("p2p_listen").asUInt());
+		message.set_port(Config::get()->global_get("p2p_listen").toUInt());
 
 		// FolderID
 		QByteArray folderid = fgroup_->folderid();

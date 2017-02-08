@@ -15,7 +15,6 @@ Third-party libraries
 - rabin-cdc - Simplified BSD License
 
 - spdlog - MIT
-- jsoncpp - MIT/Public Domain (dual-licensed, using under the terms of MIT License)
 - Sparkle - MIT
 - WinSparkle - MIT
 - dht - MIT

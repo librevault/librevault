@@ -27,33 +27,31 @@
  * files in the program, then also delete it here.
  */
 #include "FolderParams.h"
-#include <json/json.h>
+#include <QJsonArray>
 
 namespace librevault {
 
-FolderParams::FolderParams(const Json::Value& json_params) {
-	FolderParams defaults;
-
+FolderParams::FolderParams(QJsonObject json_params) {
 	// Necessary
-	secret = json_params["secret"].asString();
-	path = QString::fromStdString(json_params["path"].asString());
+	secret = json_params["secret"].toString().toStdString();
+	path = json_params["path"].toString();
 
 	// Optional
-	system_path = QString::fromStdString(json_params.get("system_path", (path + "/.librevault").toStdString()).asString());
-	index_event_timeout = std::chrono::milliseconds(json_params.get("index_event_timeout", Json::Value::UInt64(defaults.index_event_timeout.count())).asUInt64());
-	preserve_unix_attrib = json_params.get("preserve_unix_attrib", defaults.preserve_unix_attrib).asBool();
-	preserve_windows_attrib = json_params.get("preserve_windows_attrib", defaults.preserve_windows_attrib).asBool();
-	preserve_symlinks = json_params.get("preserve_symlinks", defaults.preserve_symlinks).asBool();
-	normalize_unicode = json_params.get("normalize_unicode", defaults.normalize_unicode).asBool();
-	chunk_strong_hash_type = Meta::StrongHashType(json_params.get("chunk_strong_hash_type", defaults.chunk_strong_hash_type).asUInt());
-	full_rescan_interval = std::chrono::seconds(json_params.get("full_rescan_interval", Json::Value::UInt64(defaults.full_rescan_interval.count())).asUInt64());
+	system_path = json_params["system_path"].toString(path + "/.librevault");
+	index_event_timeout = std::chrono::milliseconds(json_params["index_event_timeout"].toInt());
+	preserve_unix_attrib = json_params["preserve_unix_attrib"].toBool();
+	preserve_windows_attrib = json_params["preserve_windows_attrib"].toBool();
+	preserve_symlinks = json_params["preserve_symlinks"].toBool();
+	normalize_unicode = json_params["normalize_unicode"].toBool();
+	chunk_strong_hash_type = Meta::StrongHashType(json_params["chunk_strong_hash_type"].toInt());
+	full_rescan_interval = std::chrono::seconds(json_params["full_rescan_interval"].toInt());
 
-	for(auto ignore_path : json_params["ignore_paths"])
-		ignore_paths.push_back(ignore_path.asString());
-	for(auto node : json_params["nodes"])
-		nodes.push_back(QString::fromStdString(node.asString()));
+	foreach(const QJsonValue& ignore_path, json_params["ignore_paths"].toArray())
+		ignore_paths.push_back(ignore_path.toString());
+	foreach(const QJsonValue& node, json_params["nodes"].toArray())
+		nodes.push_back(node.toString());
 
-	auto archive_type_str = json_params.get("archive_type", "trash").asString();
+	QString archive_type_str = json_params["archive_type"].toString();
 	if(archive_type_str == "none")
 		archive_type = ArchiveType::NO_ARCHIVE;
 	if(archive_type_str == "trash")
@@ -63,9 +61,9 @@ FolderParams::FolderParams(const Json::Value& json_params) {
 	if(archive_type_str == "block")
 		archive_type = ArchiveType::BLOCK_ARCHIVE;
 
-	archive_trash_ttl = json_params.get("archive_trash_ttl", defaults.archive_trash_ttl).asUInt();
-	archive_timestamp_count = json_params.get("archive_timestamp_count", defaults.archive_timestamp_count).asUInt();
-	mainline_dht_enabled = json_params.get("mainline_dht_enabled", defaults.mainline_dht_enabled).asBool();
+	archive_trash_ttl = json_params["archive_trash_ttl"].toInt();
+	archive_timestamp_count = json_params["archive_timestamp_count"].toInt();
+	mainline_dht_enabled = json_params["mainline_dht_enabled"].toBool();
 }
 
 } /* namespace librevault */

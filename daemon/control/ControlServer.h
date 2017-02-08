@@ -61,12 +61,12 @@ signals:
 	void restart();
 
 public slots:
-	void notify_global_config_changed(QString key, QJsonValue state);
+	void notify_global_config_changed(QString key, QVariant state);
 	void notify_global_state_changed(QString key, QJsonValue state);
 	void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
 
-	void notify_folder_added(const blob& folderid, Json::Value folder_params);
-	void notify_folder_removed(const blob& folderid);
+	void notify_folder_added(QByteArray folderid, QJsonObject folder_params);
+	void notify_folder_removed(QByteArray folderid);
 
 private:
 	multi_io_service ios_;

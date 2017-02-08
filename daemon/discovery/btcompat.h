@@ -72,7 +72,7 @@ inline info_hash getInfoHash(const QByteArray& folderid) {
 inline peer_id get_peer_id(QByteArray digest) {
 	peer_id pid;
 
-	std::string az_id = Config::get()->global_get("bttracker_azureus_id").asString();
+	std::string az_id = Config::get()->global_get("bttracker_azureus_id").toString().toStdString();
 	az_id.resize(8);
 
 	digest = digest.leftJustified(pid.size() - az_id.size(), 0, true);

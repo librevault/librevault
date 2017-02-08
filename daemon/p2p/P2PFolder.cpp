@@ -143,7 +143,7 @@ void P2PFolder::send_message(const blob& message) {
 void P2PFolder::sendHandshake() {
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
-	message_struct.device_name = Config::get()->global_get("client_name").asString();
+	message_struct.device_name = Config::get()->global_get("client_name").toString().toStdString();
 	message_struct.user_agent = Version::current().user_agent().toStdString();
 
 	send_message(V1Parser().gen_Handshake(message_struct));

@@ -1,0 +1,6 @@
+<RCC>
+	<qresource prefix="config">
+		<file>folders.json</file>
+		<file>globals.json</file>
+	</qresource>
+</RCC>

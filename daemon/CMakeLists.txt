@@ -16,6 +16,7 @@ set(CMAKE_AUTORCC ON)
 # Main sources
 file(GLOB_RECURSE MAIN_SRCS "*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "*.h")
+file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
 # Platform-dependent sources
 if(NOT OS_WIN)
@@ -40,7 +41,7 @@ endif()
 
 list(APPEND SRCS ${MAIN_SRCS})
 list(APPEND SRCS ${MAIN_HEADERS})
-list(APPEND SRCS ${MAIN_OBJCXX})
+list(APPEND SRCS ${MAIN_QRCS})
 
 #============================================================================
 # Compile targets
@@ -61,12 +62,16 @@ target_link_libraries(librevault-daemon natpmp)
 target_link_libraries(librevault-daemon libminiupnpc)
 target_link_libraries(librevault-daemon rabin)
 target_link_libraries(librevault-daemon dht)
-target_link_libraries(librevault-daemon jsoncpp)
 target_link_libraries(librevault-daemon sqlite3)
 target_link_libraries(librevault-daemon websocketpp)
-target_link_libraries(librevault-daemon Qt5::WebSockets)
 
 ##### External libraries #####
+
+## Boost
+target_link_libraries(librevault-daemon boost)
+
+## Qt5
+target_link_libraries(librevault-daemon Qt5::WebSockets)
 
 ## Protobuf
 file(GLOB_RECURSE PROTO_LIST "*.proto")

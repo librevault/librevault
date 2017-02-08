@@ -29,11 +29,10 @@
 #include "Config.h"
 #include "Paths.h"
 #include "util/file_util.h"
-#include "util/log.h"
-#include "util/parse_url.h"
 #include <librevault/Secret.h>
-#include <boost/asio/ip/host_name.hpp>
-#include <boost/range/adaptor/map.hpp>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QFile>
 #include <codecvt>
 
 namespace librevault {
@@ -42,8 +41,8 @@ Config::Config() {
 	make_defaults();
 	load();
 
-	connect(this, &Config::configChanged, this, [this](std::string key, Json::Value value){
-		LOGI("Global \"" << key.c_str() << "\" is set to \"" << value.toStyledString().c_str() << "\"");
+	connect(this, &Config::configChanged, this, [this](QString key, QVariant value){
+		LOGI("Global var" << key << "is set to" << value);
 	});
 	connect(this, &Config::configChanged, this, &Config::save);
 }
@@ -54,188 +53,162 @@ Config::~Config() {
 
 Config* Config::instance_ = nullptr;
 
-Json::Value Config::global_get(const std::string& name) {
-	return globals_custom_.get(name, globals_defaults_[name]);
+QVariant Config::global_get(QString name) {
+	return (globals_custom_.contains(name) ? globals_custom_[name] : globals_defaults_[name]).toVariant();
 }
 
-void Config::global_set(const std::string& name, Json::Value value) {
-	globals_custom_[name] = value;
+void Config::global_set(QString name, QVariant value) {
+	globals_custom_[name] = QJsonValue::fromVariant(value);
 	emit configChanged(name, value);
 }
 
-void Config::global_unset(const std::string& name) {
-	globals_custom_.removeMember(name);
+void Config::global_unset(QString name) {
+	globals_custom_.remove(name);
 	emit configChanged(name, global_get(name));
 }
 
-Json::Value Config::export_globals_custom() const {
+QJsonObject Config::export_globals_custom() const {
 	return globals_custom_;
 }
 
-Json::Value Config::export_globals() const {
+QJsonObject Config::export_globals() const {
 	return make_merged(globals_custom_, globals_defaults_);
 }
 
-void Config::import_globals(Json::Value globals_conf) {
-	std::set<std::pair<std::string, Json::Value>> old_globals, new_globals;
-	std::list<std::pair<std::string, Json::Value>> diff;
-	for(auto& name : globals_custom_.getMemberNames())
-		old_globals.insert({name, globals_custom_[name]});
-	for(auto& name : globals_conf.getMemberNames())
-		new_globals.insert({name, globals_conf[name]});
-	std::set_difference(old_globals.begin(), old_globals.end(), new_globals.begin(), new_globals.end(), diff.begin());
+void Config::import_globals(QJsonObject globals_conf) {
+	QStringList all_keys = globals_custom_.keys() + globals_conf.keys();
+	QSet<QString> changed_keys;
+
+	foreach(const QString& key, all_keys) {
+		if(globals_custom_.value(key) != globals_conf.value(key)) {
+			changed_keys.insert(key);
+		}
+	}
 
 	globals_custom_ = globals_conf;
 
-	// FIXME: Fixup config schema
-	Json::Value p2p_listen = globals_custom_["p2p_listen"];
-	if(p2p_listen.isString())
-		globals_custom_["p2p_listen"] = parse_url(p2p_listen.asString()).port;
-
 	// Notify other components
-	for(auto& diff_val : diff)
-		emit configChanged(diff_val.first, global_get(diff_val.first));
+	foreach(const QString& key, all_keys) {
+		emit configChanged(key, global_get(key));
+	}
 }
 
-void Config::folder_add(Json::Value folder_config) {
-	auto folderid = Secret(folder_config["secret"].asString()).get_Hash();
-	if(folders_custom_.find(folderid) != folders_custom_.end())
+void Config::folder_add(QJsonObject folder_config) {
+	QByteArray folderid = conv_bytearray(Secret(folder_config["secret"].toString().toStdString()).get_Hash());
+	if(folders_custom_.contains(folderid))
 		throw samekey_error();
-	folders_custom_.insert({folderid, folder_config});
+	folders_custom_.insert(folderid, folder_config);
 	emit folderAdded(make_merged(folder_config, folders_defaults_));
 	save();
 }
 
-void Config::folder_remove(const blob& folderid) {
+void Config::folder_remove(QByteArray folderid) {
 	emit folderRemoved(QByteArray((const char*)folderid.data(), folderid.size()));
-	folders_custom_.erase(folderid);
+	folders_custom_.remove(folderid);
 	save();
 }
 
-Json::Value Config::folder_get(const blob& folderid) {
-	auto it = folders_custom_.find(folderid);
-	if(it != folders_custom_.end())
-		return make_merged(folders_custom_[folderid], folders_defaults_);
-	else
-		return Json::Value();
+QJsonObject Config::folder_get(QByteArray folderid) {
+	return folders_custom_.contains(folderid) ? folders_custom_[folderid] : QJsonObject();
 }
 
-std::map<blob, Json::Value> Config::folders() const {
-	std::map<blob, Json::Value> folders_merged;
-	for(auto& folder_pair : folders_custom_)
-		folders_merged[folder_pair.first] = make_merged(folder_pair.second, folders_defaults_);
+QMap<QByteArray, QJsonObject> Config::folders() const {
+	QMap<QByteArray, QJsonObject> folders_merged;
+	foreach(const QByteArray& folderid, folders_custom_.keys()) {
+		folders_merged[folderid] = make_merged(folders_custom_[folderid], folders_defaults_);
+	}
 	return folders_merged;
 }
 
-Json::Value Config::export_folders_custom() const {
-	Json::Value folders_merged;
-	for(auto& folder_pair : folders_custom_)
-		folders_merged.append(folder_pair.second);
+QJsonArray Config::export_folders_custom() const {
+	QJsonArray folders_merged;
+	foreach(const QJsonObject& folder_params, folders_custom_.values()) {
+		folders_merged.append(folder_params);
+	}
 	return folders_merged;
 }
 
-Json::Value Config::export_folders() const {
-	Json::Value folders_merged;
-	for(auto& folder_pair : folders())
-		folders_merged.append(folder_pair.second);
+QJsonArray Config::export_folders() const {
+	QJsonArray folders_merged;
+	foreach(const QJsonObject& folder_params, folders().values()) {
+		folders_merged.append(folder_params);
+	}
 	return folders_merged;
 }
 
-void Config::import_folders(Json::Value folders_conf) {
-	std::set<blob> folderids;
-	for(auto& folderid : folders_custom_ | boost::adaptors::map_keys)
-		folderids.insert(folderid);
-
-	for(auto& folderid : folderids)
+void Config::import_folders(QJsonArray folders_conf) {
+	foreach(const QByteArray& folderid, folders_custom_.keys()) {
 		folder_remove(folderid);
-
-	for(auto& folder_json : folders_conf)
-		folder_add(folder_json);
+	}
+	foreach(const QJsonValue& folder_params_v, folders_conf) {
+		folder_add(folder_params_v.toObject());
+	}
 }
 
 void Config::make_defaults() {
-	/* globals_defaults_ */
-	globals_defaults_.clear();
-	globals_defaults_["client_name"] = boost::asio::ip::host_name();
-	globals_defaults_["control_listen"] = 42346;
-	globals_defaults_["p2p_listen"] = 42345;
-	globals_defaults_["p2p_download_slots"] = 10;
-	globals_defaults_["p2p_request_timeout"] = 10;
-	globals_defaults_["p2p_block_size"] = 32768;
-	globals_defaults_["natpmp_enabled"] = true;
-	globals_defaults_["natpmp_lifetime"] = 3600;
-	globals_defaults_["upnp_enabled"] = true;
-	globals_defaults_["predef_repeat_interval"] = 30;
-	globals_defaults_["multicast_enabled"] = true;
-	globals_defaults_["multicast_repeat_interval"] = 30;
-	globals_defaults_["bttracker_enabled"] = true;
-	globals_defaults_["bttracker_num_want"] = 30;
-	globals_defaults_["bttracker_min_interval"] = 15;
-	globals_defaults_["bttracker_azureus_id"] = "-LV0001-";
-	globals_defaults_["bttracker_reconnect_interval"] = 30;
-	globals_defaults_["bttracker_packet_timeout"] = 10;
-	globals_defaults_["mainline_dht_enabled"] = true;
-	globals_defaults_["mainline_dht_port"] = 42347;
+	QJsonDocument globals_defaults, folders_defaults;
 
-	//globals_defaults_["mainline_dht_routers"].append("discovery-mldht.librevault.com:6881");    // TODO: Soon, guys!
-	globals_defaults_["mainline_dht_routers"].append("router.utorrent.com:6881");
-	globals_defaults_["mainline_dht_routers"].append("router.bittorrent.com:6881");
-	globals_defaults_["mainline_dht_routers"].append("dht.transmissionbt.com:6881");
-	globals_defaults_["mainline_dht_routers"].append("router.bitcomet.com:6881");
-	globals_defaults_["mainline_dht_routers"].append("dht.aelitis.com:6881");
+	{
+		QFile globals_defaults_f(":/config/globals.json");
+		globals_defaults_f.open(QIODevice::ReadOnly);
 
-	//globals_defaults_["bttracker_discovery_trackers"].append("udp://discovery-bt.librevault.com:42340");  // TODO: Really soon, guys!
-	globals_defaults_["bttracker_trackers"].append("udp://tracker.openbittorrent.com:80");
-	globals_defaults_["bttracker_trackers"].append("udp://open.demonii.com:1337");
-	globals_defaults_["bttracker_trackers"].append("udp://tracker.coppersurfer.tk:6969");
-	globals_defaults_["bttracker_trackers"].append("udp://tracker.leechers-paradise.org:6969");
-	globals_defaults_["bttracker_trackers"].append("udp://tracker.opentrackr.org:1337");
+		globals_defaults = QJsonDocument::fromJson(globals_defaults_f.readAll());
+		Q_ASSERT(!globals_defaults.isEmpty());
+	}
 
-	/* folders_defaults_ */
-	folders_defaults_.clear();
-	folders_defaults_["index_event_timeout"] = 1000;
-	folders_defaults_["preserve_unix_attrib"] = false;
-	folders_defaults_["preserve_windows_attrib"] = false;
-	folders_defaults_["preserve_symlinks"] = false;
-	folders_defaults_["normalize_unicode"] = true;
-	folders_defaults_["chunk_strong_hash_type"] = 0;
-	folders_defaults_["full_rescan_interval"] = 600;
-	folders_defaults_["archive_type"] = "trash";
-	folders_defaults_["archive_trash_ttl"] = 30;
-	folders_defaults_["archive_timestamp_count"] = 5;
-	folders_defaults_["mainline_dht_enabled"] = true;
+	{
+		QFile folders_defaults_f(":/config/folders.json");
+		folders_defaults_f.open(QIODevice::ReadOnly);
+
+		folders_defaults = QJsonDocument::fromJson(folders_defaults_f.readAll());
+		Q_ASSERT(!folders_defaults.isEmpty());
+	}
+
+	globals_defaults_ = globals_defaults.object();
+	globals_defaults_["client_name"] = QSysInfo::machineHostName();
+
+	folders_defaults_ = folders_defaults.object();
 }
 
-Json::Value Config::make_merged(const Json::Value& custom_value, const Json::Value& default_value) const {
-	Json::Value merged;
-	for(auto& name : default_value.getMemberNames())
-		merged[name] = custom_value.get(name, default_value[name]);
-	for(auto& name : custom_value.getMemberNames())
-		if(!merged.isMember(name))
-			merged[name] = custom_value[name];
+QJsonObject Config::make_merged(QJsonObject custom_value, QJsonObject default_value) const {
+	QStringList all_keys = custom_value.keys() + default_value.keys();
+	all_keys.removeDuplicates();
+
+	QJsonObject merged;
+	foreach(const QString& key, all_keys) {
+		merged[key] = custom_value.contains(key) ? custom_value[key] : default_value[key];
+	}
 	return merged;
 }
 
 void Config::load() {
-	file_wrapper globals_f(Paths::get()->client_config_path, "rb");
-	file_wrapper folders_f(Paths::get()->folders_config_path, "rb");
+	QFile globals_f(QString::fromStdWString(Paths::get()->client_config_path.wstring()));
+	if(globals_f.open(QIODevice::ReadOnly)) {
+		QJsonObject globals_load = QJsonDocument::fromJson(globals_f.readAll()).object();
+		qDebug() << "Loading global configuration from:" << globals_f.fileName();
+		import_globals(globals_load);
+	}
 
-	Json::Value globals_load, folders_load;
-
-	Json::Reader r;
-	r.parse(globals_f.ios(), globals_load);
-	r.parse(folders_f.ios(), folders_load);
-
-	import_globals(globals_load);
-	import_folders(folders_load);
+	QFile folders_f(QString::fromStdWString(Paths::get()->folders_config_path.wstring()));
+	if(folders_f.open(QIODevice::ReadOnly)) {
+		QJsonArray folders_load = QJsonDocument::fromJson(folders_f.readAll()).array();
+		qDebug() << "Loading folder configuration from:" << folders_f.fileName();
+		import_folders(folders_load);
+	}
 }
 
 void Config::save() {
-	file_wrapper globals_f(Paths::get()->client_config_path, "wb");
-	file_wrapper folders_f(Paths::get()->folders_config_path, "wb");
+	QFile globals_f(QString::fromStdWString(Paths::get()->client_config_path.wstring()));
+	if(globals_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		qDebug() << "Saving global configuration to:" << globals_f.fileName();
+		globals_f.write(QJsonDocument(export_globals_custom()).toJson(QJsonDocument::Compact));
+	}
 
-	globals_f.ios() << export_globals_custom().toStyledString();
-	folders_f.ios() << export_folders_custom().toStyledString();
+	QFile folders_f(QString::fromStdWString(Paths::get()->folders_config_path.wstring()));
+	if(globals_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		qDebug() << "Saving folder configuration to:" << folders_f.fileName();
+		folders_f.write(QJsonDocument(export_folders_custom()).toJson(QJsonDocument::Compact));
+	}
 }
 
 } /* namespace librevault */

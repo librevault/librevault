@@ -31,9 +31,7 @@
 #include "ControlHTTPServer.h"
 #include "ControlWebsocketServer.h"
 #include "control/Config.h"
-#include "util/log.h"
 #include "util/parse_url.h"
-#include <librevault/crypto/Hex.h>
 #include <QJsonObject>
 
 namespace librevault {
@@ -46,7 +44,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	QUrl bind_url;
 	bind_url.setScheme("http");
 	bind_url.setHost("::");
-	bind_url.setPort(Config::get()->global_get("control_listen").asUInt());
+	bind_url.setPort(Config::get()->global_get("control_listen").toUInt());
 	tcp_endpoint local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host().toStdString()), bind_url.port());
 
 	/* WebSockets server initialization */
@@ -71,7 +69,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at " << bind_url.toString().toStdString() << std::endl;
 
-	//connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
+	connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
 }
 
 ControlServer::~ControlServer() {
@@ -86,10 +84,10 @@ ControlServer::~ControlServer() {
 	LOGFUNCEND();
 }
 
-void ControlServer::notify_global_config_changed(QString key, QJsonValue value) {
+void ControlServer::notify_global_config_changed(QString key, QVariant value) {
 	QJsonObject event;
 	event["key"] = key;
-	event["value"] = value;
+	event["value"] = QJsonValue::fromVariant(value);
 	control_ws_server_->send_event("EVENT_GLOBAL_CONFIG_CHANGED", event);
 }
 
@@ -108,17 +106,17 @@ void ControlServer::notify_folder_state_changed(QByteArray folderid, QString key
 	control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
 }
 
-void ControlServer::notify_folder_added(const blob& folderid, Json::Value folder_params) {
-	Json::Value event;
-	event["folderid"] = crypto::Hex().to_string(folderid);
+void ControlServer::notify_folder_added(QByteArray folderid, QJsonObject folder_params) {
+	QJsonObject event;
+	event["folderid"] = QString(folderid.toHex());
 	event["folder_params"] = folder_params;
-	//control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
+	control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
 }
 
-void ControlServer::notify_folder_removed(const blob& folderid) {
-	Json::Value event;
-	event["folderid"] = crypto::Hex().to_string(folderid);
-	//control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
+void ControlServer::notify_folder_removed(QByteArray folderid) {
+	QJsonObject event;
+	event["folderid"] = QString(folderid.toHex());
+	control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
 }
 
 bool ControlServer::check_origin(const std::string& origin) {

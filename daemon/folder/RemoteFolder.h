@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "util/blob.h"
-#include <json/json-forwards.h>
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/bitfield_convert.h>

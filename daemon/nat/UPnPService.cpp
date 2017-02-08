@@ -41,7 +41,7 @@ UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(par
 UPnPService::~UPnPService() {stop();}
 
 bool UPnPService::is_config_enabled() {
-	return Config::get()->global_get("upnp_enabled").asBool();
+	return Config::get()->global_get("upnp_enabled").toBool();
 }
 
 void UPnPService::start() {

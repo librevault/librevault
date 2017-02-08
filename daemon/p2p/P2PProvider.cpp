@@ -53,7 +53,7 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 	connect(server_, &QWebSocketServer::sslErrors, this, &P2PProvider::handleSslErrors);
 	connect(server_, &QWebSocketServer::acceptError, this, &P2PProvider::handleAcceptError);
 
-	if(server_->listen(QHostAddress::Any, Config::get()->global_get("p2p_listen").asUInt())) {
+	if(server_->listen(QHostAddress::Any, Config::get()->global_get("p2p_listen").toUInt())) {
 		qInfo() << "Librevault is listening on port: " << server_->serverPort();
 	}else{
 		qWarning() << "Librevault failed to bind on port. E: " << server_->errorString();

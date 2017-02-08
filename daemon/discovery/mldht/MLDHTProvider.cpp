@@ -77,13 +77,10 @@ void MLDHTProvider::init() {
 	port_mapping_->add_port_mapping("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
 
 	// Init routers
-	auto routers = Config::get()->global_get("mainline_dht_routers");
-	if(routers.isArray()) {
-		for(auto& router_value : routers) {
-			url router_url(router_value.asString());
-			int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
-			resolves_[id] = router_url.port;
-		}
+	foreach(const QString& router_value, Config::get()->global_get("mainline_dht_routers").toStringList()) {
+		url router_url(router_value.toStdString());
+		int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
+		resolves_[id] = router_url.port;
 	}
 
 	periodic_->start();
@@ -179,7 +176,7 @@ int MLDHTProvider::node_count() const {
 }
 
 quint16 MLDHTProvider::getPort() {
-	return (quint16)Config::get()->global_get("mainline_dht_port").asUInt();
+	return (quint16)Config::get()->global_get("mainline_dht_port").toUInt();
 }
 
 quint16 MLDHTProvider::getExternalPort() {

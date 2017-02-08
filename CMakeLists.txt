@@ -163,20 +163,6 @@ if(NOT docopt_FOUND)
 	add_subdirectory(contrib/docopt)
 endif()
 
-## JsonCpp
-find_package(jsoncpp QUIET)
-if(JSONCPP_FOUND)
-	add_library(jsoncpp UNKNOWN IMPORTED)
-	if(BUILD_STATIC)
-		target_link_libraries(jsoncpp jsoncpp_lib_static)
-	else()
-		target_link_libraries(jsoncpp jsoncpp_lib)
-	endif()
-else()
-	add_library(jsoncpp STATIC contrib/jsoncpp/jsoncpp.cpp)
-	target_include_directories(jsoncpp PUBLIC "contrib/jsoncpp")
-endif()
-
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
 if(NOT libnatpmp_LIBRARIES)

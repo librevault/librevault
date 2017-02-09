@@ -100,7 +100,7 @@ void IgnoreList::parseLine(QString prefix, QString line) {
 	}
 
 	line = QDir::cleanPath(line);
-	if(line.left(2) == "..") {
+	if(line.left(2) == "../" || line == "..") {
 		qCWarning(log_ignorelist) << "Ignored path does not support \"..\"";
 		return;
 	}

@@ -70,10 +70,10 @@ public:
 	virtual ~FolderGroup();
 
 	/* Membership management */
-	void attach(P2PFolder* remote_ptr);
-	void detach(P2PFolder* remote_ptr);
+	void attach(P2PFolder* remote);
+	void detach(P2PFolder* remote);
 
-	bool remotePresent(P2PFolder* folder);
+	bool remotePresent(P2PFolder* remote);
 
 	/* Getters */
 	QList<RemoteFolder*> remotes() const;

@@ -72,7 +72,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 	chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_.get(), this);
 
 	uploader_ = new Uploader(chunk_storage_, this);
-	downloader_ = new Downloader(params_, meta_storage_, chunk_storage_, this);
+	downloader_ = new Downloader(params_, meta_storage_, this);
 	meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
 	meta_downloader_ = new MetaDownloader(meta_storage_, downloader_, this);
 
@@ -143,32 +143,34 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});
 }
 
-void FolderGroup::attach(P2PFolder* remote_ptr) {
-	remotes_.insert(remote_ptr);
-	p2p_folders_endpoints_.insert(remote_ptr->remote_endpoint());
-	p2p_folders_digests_.insert(remote_ptr->digest());
+void FolderGroup::attach(P2PFolder* remote) {
+	remotes_.insert(remote);
+	p2p_folders_endpoints_.insert(remote->remote_endpoint());
+	p2p_folders_digests_.insert(remote->digest());
 
-	LOGD("Attached remote " << remote_ptr->displayName());
+	downloader_->trackRemote(remote);
 
-	connect(remote_ptr, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote_ptr);});
+	LOGD("Attached remote " << remote->displayName());
 
-	emit attached(remote_ptr);
+	connect(remote, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
+
+	emit attached(remote);
 }
 
-void FolderGroup::detach(P2PFolder* remote_ptr) {
-	downloader_->erase_remote(remote_ptr);
+void FolderGroup::detach(P2PFolder* remote) {
+	downloader_->untrackRemote(remote);
 
-	p2p_folders_digests_.remove(remote_ptr->digest());
-	p2p_folders_endpoints_.remove(remote_ptr->remote_endpoint());
-	remotes_.remove(remote_ptr);
+	p2p_folders_digests_.remove(remote->digest());
+	p2p_folders_endpoints_.remove(remote->remote_endpoint());
+	remotes_.remove(remote);
 
-	LOGD("Detached remote " << remote_ptr->displayName());
+	LOGD("Detached remote " << remote->displayName());
 
-	emit detached(remote_ptr);
+	emit detached(remote);
 }
 
-bool FolderGroup::remotePresent(P2PFolder* folder) {
-	return p2p_folders_digests_.contains(folder->digest()) || p2p_folders_endpoints_.contains(folder->remote_endpoint());
+bool FolderGroup::remotePresent(P2PFolder* remote) {
+	return p2p_folders_digests_.contains(remote->digest()) || p2p_folders_endpoints_.contains(remote->remote_endpoint());
 }
 
 QList<RemoteFolder*> FolderGroup::remotes() const {

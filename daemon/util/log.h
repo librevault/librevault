@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <QtDebug>
+#include <boost/current_function.hpp>
 
 #define LOG_SCOPE(SCOPE) \
 inline QString log_tag() const {return QStringLiteral(SCOPE);}

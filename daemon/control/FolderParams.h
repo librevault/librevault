@@ -33,7 +33,6 @@
 #include <QJsonObject>
 #include <QString>
 #include <QUrl>
-#include <boost/filesystem/path.hpp>
 #include <chrono>
 
 namespace librevault {

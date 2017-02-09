@@ -33,7 +33,6 @@
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/fs.h"
 #include <librevault/crypto/Base32.h>
 #include <boost/range/adaptor/map.hpp>
 
@@ -294,7 +293,10 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 			missing_chunk_it->second->put_block(offset, data);
 			if(missing_chunk_it->second->complete()) {
-				chunk_storage_->put_chunk(ct_hash, missing_chunk_it->second->release_chunk());
+				fs::path chunk_loc = missing_chunk_it->second->release_chunk();
+				QFile* chunk_f = new QFile(QString::fromStdWString(chunk_loc.wstring()), this);
+
+				emit chunkDownloaded(ct_hash, chunk_f);
 			}   // TODO: catch "invalid hash" exception here
 
 			QTimer::singleShot(0, this, &Downloader::maintain_requests);

@@ -58,9 +58,9 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 #endif
 
 	LOGD("New folder:"
-		<< " Key type=" << (char)params_.secret.get_type()
-		<< " Path=" << params_.path
-		<< " System path=" << params_.system_path);
+		<< "Key type=" << (char)params_.secret.get_type()
+		<< "Path=" << params_.path
+		<< "System path=" << params_.system_path);
 
 	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "secret", QString::fromStdString(params_.secret.string()));
 
@@ -84,6 +84,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 		downloader_->notify_local_chunk(ct_hash);
 		uploader_->broadcast_chunk(remotes(), ct_hash);
 	});
+	connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
 	connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);
 
 	// Set up state pusher

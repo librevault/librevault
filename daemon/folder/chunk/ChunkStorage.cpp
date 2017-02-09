@@ -30,6 +30,7 @@
 #include "MemoryCachedStorage.h"
 #include "EncStorage.h"
 #include "OpenStorage.h"
+#include "control/FolderParams.h"
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
@@ -78,8 +79,8 @@ blob ChunkStorage::get_chunk(const blob& ct_hash) {
 	}
 }
 
-void ChunkStorage::put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location) {
-	enc_storage->put_chunk(ct_hash, chunk_location);
+void ChunkStorage::put_chunk(blob ct_hash, QFile* chunk_f) {
+	enc_storage->put_chunk(ct_hash, chunk_f);
 	for(auto& smeta : meta_storage_->index->containing_chunk(ct_hash))
 		file_assembler->addAssemble(smeta);
 

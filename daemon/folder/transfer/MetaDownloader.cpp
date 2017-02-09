@@ -32,7 +32,6 @@
 #include "folder/RemoteFolder.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/log.h"
 
 namespace librevault {
 

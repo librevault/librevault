@@ -28,62 +28,52 @@
  */
 #include "EncStorage.h"
 #include "ChunkStorage.h"
-#include "util/fs.h"
-#include "util/log.h"
-#include "util/file_util.h"
+#include "control/FolderParams.h"
+#include "util/readable.h"
 #include <librevault/crypto/Base32.h>
 
 namespace librevault {
 
 EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
-std::string EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
-	return std::string("chunk-") + crypto::Base32().to_string(ct_hash);
+QString EncStorage::make_chunk_ct_name(const blob& ct_hash) const noexcept {
+	return "chunk-" + QString::fromStdString(crypto::Base32().to_string(ct_hash));
 }
 
-fs::path EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
-	return fs::path(params_.system_path.toStdWString()) / make_chunk_ct_name(ct_hash);
+QString EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
+	return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
 }
 
 bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {
-	std::lock_guard<std::mutex> lk(storage_mtx_);
-	return fs::exists(make_chunk_ct_path(ct_hash));
+	QReadLocker lk(&storage_mtx_);
+	return QFile::exists(make_chunk_ct_path(ct_hash));
 }
 
 std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
-	std::lock_guard<std::mutex> lk(storage_mtx_);
-	try {
-		auto chunk_path = make_chunk_ct_path(ct_hash);
+	QReadLocker lk(&storage_mtx_);
 
-		uint64_t chunksize = fs::file_size(chunk_path);
-		if(chunksize == static_cast<uintmax_t>(-1)) throw ChunkStorage::no_such_chunk();
-
-		std::shared_ptr<blob> chunk = std::make_shared<blob>(chunksize);
-
-		file_wrapper chunk_file(chunk_path, "rb");
-		chunk_file.ios().exceptions(std::ios_base::failbit | std::ios_base::badbit);
-		chunk_file.ios().read(reinterpret_cast<char*>(chunk->data()), chunksize);
-
-		return chunk;
-	}catch(fs::filesystem_error& e) {
+	QFile chunk_file(make_chunk_ct_path(ct_hash));
+	if(!chunk_file.open(QIODevice::ReadOnly))
 		throw ChunkStorage::no_such_chunk();
-	}catch(std::ios_base::failure& e) {
-		throw ChunkStorage::no_such_chunk();
-	}
+
+	return std::make_shared<blob>(conv_bytearray(chunk_file.readAll()));
 }
 
-void EncStorage::put_chunk(const blob& ct_hash, const fs::path& chunk_location) {
-	std::lock_guard<std::mutex> lk(storage_mtx_);
-	file_move(chunk_location, make_chunk_ct_path(ct_hash));
+void EncStorage::put_chunk(const blob& ct_hash, QFile* chunk_f) {
+	QWriteLocker lk(&storage_mtx_);
 
-	LOGD("Encrypted block " << make_chunk_ct_name(ct_hash).c_str() << " pushed into EncStorage");
+	chunk_f->setParent(this);
+	chunk_f->rename(make_chunk_ct_path(ct_hash));
+	chunk_f->deleteLater();
+
+	LOGD("Encrypted block " << ct_hash_readable(ct_hash) << " pushed into EncStorage");
 }
 
 void EncStorage::remove_chunk(const blob& ct_hash) {
-	std::lock_guard<std::mutex> lk(storage_mtx_);
-	fs::remove(make_chunk_ct_path(ct_hash));
+	QWriteLocker lk(&storage_mtx_);
+	QFile::remove(make_chunk_ct_path(ct_hash));
 
-	LOGD("Block " << make_chunk_ct_name(ct_hash).c_str() << " removed from EncStorage");
+	LOGD("Block " << ct_hash_readable(ct_hash) << " removed from EncStorage");
 }
 
 } /* namespace librevault */

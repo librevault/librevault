@@ -32,6 +32,7 @@
 #include "util/blob.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include <QCache>
 #include <QFile>
 #include <QTimer>
 #include <boost/bimap.hpp>
@@ -60,23 +61,18 @@ public:
 		return instance;
 	}
 
-	std::shared_ptr<file_wrapper> get_file(const boost::filesystem::path& chunk_path);
-	void release_file(const boost::filesystem::path& chunk_path);
+	QFile* getFile(QString path, bool release = false);
 
 private:
-	std::map<boost::filesystem::path, std::weak_ptr<file_wrapper>> cache_;
-	std::list<std::shared_ptr<file_wrapper>> opened_files_;
-
-	void retain_file(boost::filesystem::path chunk_path, std::shared_ptr<file_wrapper> retained_file);
-	bool overflow() {return opened_files_.size() > 100;}    // TODO: in config
+	QCache<QString, QFile> opened_files_;
 };
 
 /* MissingChunk constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 struct MissingChunk {
-	MissingChunk(const boost::filesystem::path& system_path, blob ct_hash, uint32_t size);
+	MissingChunk(QString system_path, blob ct_hash, uint32_t size);
 
 	// File-related accessors
-	boost::filesystem::path release_chunk();
+	QFile* release_chunk();
 
 	// Content-related accessors
 	void put_block(uint32_t offset, const blob& content);
@@ -86,8 +82,6 @@ struct MissingChunk {
 	bool complete() const {return file_map_.full();}
 
 	// AvailabilityMap accessors
-	AvailabilityMap<uint32_t>::const_iterator begin() {return file_map_.begin();}
-	AvailabilityMap<uint32_t>::const_iterator end() {return file_map_.end();}
 	const AvailabilityMap<uint32_t>& file_map() const {return file_map_;}
 
 	/* Request-oriented functions */
@@ -97,13 +91,13 @@ struct MissingChunk {
 		std::chrono::steady_clock::time_point started;
 	};
 	std::unordered_multimap<RemoteFolder*, BlockRequest> requests;
-	std::unordered_map<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
+	QHash<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
 	const blob ct_hash_;
 
 private:
 	AvailabilityMap<uint32_t> file_map_;
-	boost::filesystem::path this_chunk_path_;
+	QString chunk_location_;
 };
 
 class WeightedDownloadQueue {
@@ -150,9 +144,10 @@ signals:
 	void chunkDownloaded(blob ct_hash, QFile* chunk_f);
 
 public:
-	Downloader(const FolderParams& params, MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
+	Downloader(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 	~Downloader();
 
+public slots:
 	void notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
 	void notify_local_chunk(const blob& ct_hash, bool mark_clustered = true);
 
@@ -164,12 +159,12 @@ public:
 
 	void put_block(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
 
-	void erase_remote(RemoteFolder* remote);
+	void trackRemote(RemoteFolder* remote);
+	void untrackRemote(RemoteFolder* remote);
 
 private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
 
 	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
 	WeightedDownloadQueue download_queue_;
@@ -184,7 +179,7 @@ private:
 	RemoteFolder* find_node_for_request(std::shared_ptr<MissingChunk> chunk);
 
 	/* Node management */
-	std::set<RemoteFolder*> remotes_;
+	QSet<RemoteFolder*> remotes_;
 };
 
 } /* namespace librevault */

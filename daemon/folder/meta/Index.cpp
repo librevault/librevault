@@ -142,8 +142,8 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	notify_state();
 }
 
-std::list<SignedMeta> Index::get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values){
-	std::list<SignedMeta> result_list;
+QList<SignedMeta> Index::get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values){
+	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list.push_back(SignedMeta(row[0], row[1], params_.secret));
 	return result_list;
@@ -156,15 +156,15 @@ SignedMeta Index::get_meta(const blob& path_id){
 	if(meta_list.empty()) throw MetaStorage::no_such_meta();
 	return *meta_list.begin();
 }
-std::list<SignedMeta> Index::get_meta(){
+QList<SignedMeta> Index::get_meta(){
 	return get_meta("SELECT meta, signature FROM meta");
 }
 
-std::list<SignedMeta> Index::get_existing_meta() {
+QList<SignedMeta> Index::get_existing_meta() {
 	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
 }
 
-std::list<SignedMeta> Index::get_incomplete_meta() {
+QList<SignedMeta> Index::get_incomplete_meta() {
 	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
 }
 
@@ -176,7 +176,7 @@ bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
 	}
 }
 
-std::list<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
+QList<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
 	return get_meta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
 		{{":ct_hash", ct_hash}});
 }

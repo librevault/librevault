@@ -32,6 +32,7 @@
 #include "util/blob.h"
 #include "util/file_util.h"
 #include "util/log.h"
+#include <QFile>
 #include <QTimer>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
@@ -145,6 +146,9 @@ public:
 class Downloader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("Downloader");
+signals:
+	void chunkDownloaded(blob ct_hash, QFile* chunk_f);
+
 public:
 	Downloader(const FolderParams& params, MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 	~Downloader();

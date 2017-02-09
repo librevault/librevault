@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "util/blob.h"
+#include <QMutex>
 #include <QObject>
 #include <map>
 #include <list>
@@ -47,6 +48,7 @@ public:
 	void remove_chunk(const blob& ct_hash) noexcept;
 
 private:
+	mutable QMutex cache_lock_;
 	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
 	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
 

@@ -31,8 +31,7 @@
 #include "util/fs.h"
 #include <librevault/Meta.h>
 #include <librevault/util/bitfield_convert.h>
-#include <QObject>
-#include <boost/filesystem/path.hpp>
+#include <QFile>
 
 namespace librevault {
 
@@ -58,7 +57,7 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept ;
 	blob get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(const blob& ct_hash, const fs::path& chunk_location);
+	void put_chunk(blob ct_hash, QFile* chunk_f);
 
 	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
 

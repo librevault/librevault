@@ -54,21 +54,20 @@ public:
 	};
 
 	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
-	virtual ~Index() {}
 
 	/* Meta manipulators */
 	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
 	SignedMeta get_meta(const Meta::PathRevision& path_revision);
 	SignedMeta get_meta(const blob& path_id);
-	std::list<SignedMeta> get_meta();
-	std::list<SignedMeta> get_existing_meta();
-	std::list<SignedMeta> get_incomplete_meta();
+	QList<SignedMeta> get_meta();
+	QList<SignedMeta> get_existing_meta();
+	QList<SignedMeta> get_incomplete_meta();
 	void put_meta(const SignedMeta& signed_meta, bool fully_assembled = false);
 
 	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
 
 	/* Properties */
-	std::list<SignedMeta> containing_chunk(const blob& ct_hash);
+	QList<SignedMeta> containing_chunk(const blob& ct_hash);
 	SQLiteDB& db() {return *db_;}
 
 	status_t get_status();
@@ -79,7 +78,7 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	std::list<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
+	QList<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 	void wipe();
 
 	void notify_state();

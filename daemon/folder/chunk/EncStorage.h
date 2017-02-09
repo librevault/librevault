@@ -27,15 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "control/FolderParams.h"
 #include "util/blob.h"
 #include "util/log.h"
-#include <QObject>
-#include <mutex>
+#include <QFile>
+#include <QReadWriteLock>
+#include <memory>
 
 namespace librevault {
 
-class FSFolder;
+class FolderParams;
 class EncStorage : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("EncStorage");
@@ -44,15 +44,15 @@ public:
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
 	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, const boost::filesystem::path& chunk_location);
+	void put_chunk(const blob& ct_hash, QFile* chunk_f);
 	void remove_chunk(const blob& ct_hash);
 
 private:
 	const FolderParams& params_;
-	mutable std::mutex storage_mtx_;
+	mutable QReadWriteLock storage_mtx_;
 
-	std::string make_chunk_ct_name(const blob& ct_hash) const noexcept;
-	boost::filesystem::path make_chunk_ct_path(const blob& ct_hash) const noexcept;
+	QString make_chunk_ct_name(const blob& ct_hash) const noexcept;
+	QString make_chunk_ct_path(const blob& ct_hash) const noexcept;
 };
 
 } /* namespace librevault */

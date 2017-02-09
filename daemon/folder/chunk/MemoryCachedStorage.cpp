@@ -38,6 +38,8 @@ bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
 }
 
 std::shared_ptr<blob> MemoryCachedStorage::get_chunk(const blob& ct_hash) const {
+	QMutexLocker lk(&cache_lock_);
+
 	auto it = cache_iteraror_map_.find(ct_hash);
 	if(it == cache_iteraror_map_.end()) {
 		throw ChunkStorage::no_such_chunk();
@@ -48,6 +50,8 @@ std::shared_ptr<blob> MemoryCachedStorage::get_chunk(const blob& ct_hash) const 
 }
 
 void MemoryCachedStorage::put_chunk(const blob& ct_hash, std::shared_ptr<blob> data) {
+	QMutexLocker lk(&cache_lock_);
+
 	auto it = cache_iteraror_map_.find(ct_hash);
 	if(it != cache_iteraror_map_.end()) {
 		cache_list_.erase(it->second);
@@ -66,6 +70,8 @@ void MemoryCachedStorage::put_chunk(const blob& ct_hash, std::shared_ptr<blob> d
 }
 
 void MemoryCachedStorage::remove_chunk(const blob& ct_hash) noexcept {
+	QMutexLocker lk(&cache_lock_);
+
 	auto iterator_to_iterator = cache_iteraror_map_.find(ct_hash);
 	if(iterator_to_iterator != cache_iteraror_map_.end()) {
 		cache_list_.erase(iterator_to_iterator->second);

@@ -43,7 +43,7 @@ public:
 	EncStorage(const FolderParams& params, QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	QByteArray get_chunk(const blob& ct_hash) const;
 	void put_chunk(const blob& ct_hash, QFile* chunk_f);
 	void remove_chunk(const blob& ct_hash);
 

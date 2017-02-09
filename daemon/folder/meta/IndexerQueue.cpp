@@ -98,7 +98,7 @@ void IndexerQueue::metaFailed(QString error_string) {
 	if(tasks_.size() == 0)
 		emit finishedIndexing();
 
-	LOGW("Skipping " << worker->absolutePath() << " Reason: " << error_string);
+	LOGW("Skipping" << worker->absolutePath() << "Reason:" << error_string);
 }
 
 } /* namespace librevault */

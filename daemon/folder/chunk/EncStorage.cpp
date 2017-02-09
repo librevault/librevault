@@ -49,14 +49,14 @@ bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return QFile::exists(make_chunk_ct_path(ct_hash));
 }
 
-std::shared_ptr<blob> EncStorage::get_chunk(const blob& ct_hash) const {
+QByteArray EncStorage::get_chunk(const blob& ct_hash) const {
 	QReadLocker lk(&storage_mtx_);
 
 	QFile chunk_file(make_chunk_ct_path(ct_hash));
 	if(!chunk_file.open(QIODevice::ReadOnly))
 		throw ChunkStorage::no_such_chunk();
 
-	return std::make_shared<blob>(conv_bytearray(chunk_file.readAll()));
+	return chunk_file.readAll();
 }
 
 void EncStorage::put_chunk(const blob& ct_hash, QFile* chunk_f) {

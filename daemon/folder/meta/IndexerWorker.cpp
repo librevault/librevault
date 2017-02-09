@@ -88,11 +88,7 @@ void IndexerWorker::run() noexcept {
 			<< " Chk=" << new_smeta_.meta().chunks().size());
 
 		emit metaCreated(new_smeta_);
-	}catch(abort_index& e){
-		LOGI("Skipping " << abspath_ << "Reason:" << e.what());
-		emit metaFailed(e.what());
 	}catch(std::runtime_error& e){
-		LOGW("Skipping " << abspath_ << "Error:" << e.what());
 		emit metaFailed(e.what());
 	}
 }

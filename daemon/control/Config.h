@@ -27,16 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/log.h"
 #include <QJsonObject>
 #include <QObject>
+#include <QVariant>
 
 namespace librevault {
 
 class Config : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("Config");
 public:
 	~Config();
 

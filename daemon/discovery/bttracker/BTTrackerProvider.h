@@ -29,6 +29,7 @@
 #pragma once
 #include "discovery/btcompat.h"
 #include "discovery/DiscoveryResult.h"
+#include "util/log.h"
 #include <QUdpSocket>
 #include <unordered_map>
 

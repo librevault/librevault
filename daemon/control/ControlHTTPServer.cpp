@@ -199,10 +199,10 @@ void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connecti
 }
 
 std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {
-	//Json::Value error_json;
-	//error_json["error_code"] = code.empty() ? "UNKNOWN" : code;
-	//error_json["description"] = description;
-	return std::string();//Json::FastWriter().write(error_json);
+	QJsonObject error_json;
+	error_json["error_code"] = code.empty() ? "UNKNOWN" : QString::fromStdString(code);
+	error_json["description"] = QString::fromStdString(description);
+	return QJsonDocument(error_json).toJson().toStdString();
 }
 
 } /* namespace librevault */

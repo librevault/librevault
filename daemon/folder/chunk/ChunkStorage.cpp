@@ -59,23 +59,23 @@ bool ChunkStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
 }
 
-blob ChunkStorage::get_chunk(const blob& ct_hash) {
+QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
 	try {
 		// Cache hit
-		return *mem_storage->get_chunk(ct_hash);
+		return mem_storage->get_chunk(ct_hash);
 	}catch(no_such_chunk& e) {
 		// Cache missed
-		std::shared_ptr<blob> block_ptr;
+		QByteArray chunk;
 		try {
-			block_ptr = enc_storage->get_chunk(ct_hash);
+			chunk = enc_storage->get_chunk(ct_hash);
 		}catch(no_such_chunk& e) {
 			if(open_storage)
-				block_ptr = open_storage->get_chunk(ct_hash);
+				chunk = open_storage->get_chunk(ct_hash);
 			else
 				throw;
 		}
-		mem_storage->put_chunk(ct_hash, block_ptr); // Put into cache
-		return *block_ptr;
+		mem_storage->put_chunk(ct_hash, chunk); // Put into cache
+		return chunk;
 	}
 }
 

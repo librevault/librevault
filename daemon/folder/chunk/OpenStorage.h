@@ -47,7 +47,7 @@ public:
 	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
+	QByteArray get_chunk(const blob& ct_hash) const;
 
 private:
 	const FolderParams& params_;

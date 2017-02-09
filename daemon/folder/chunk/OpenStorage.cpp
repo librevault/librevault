@@ -51,7 +51,7 @@ bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
 	return sql_result.have_rows();
 }
 
-std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
+QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 	LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
 	auto metas_containing = meta_storage_->index->containing_chunk(ct_hash);
@@ -79,7 +79,7 @@ std::shared_ptr<blob> OpenStorage::get_chunk(const blob& ct_hash) const {
 
 			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv));
 			// Check
-			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
+			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return conv_bytearray(*chunk_ct);
 		}catch(const std::ios::failure& e){}
 	}
 	throw ChunkStorage::no_such_chunk();

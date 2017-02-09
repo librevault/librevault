@@ -61,7 +61,7 @@ AssemblerWorker::~AssemblerWorker() {}
 
 blob AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 	LOGD("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
-	blob chunk = chunk_storage_->get_chunk(ct_hash);
+	blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
 
 	for(auto row : meta_storage_->index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
 		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());

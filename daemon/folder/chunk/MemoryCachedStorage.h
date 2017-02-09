@@ -28,34 +28,26 @@
  */
 #pragma once
 #include "util/blob.h"
+#include <QByteArray>
+#include <QCache>
 #include <QMutex>
 #include <QObject>
-#include <map>
-#include <list>
-#include <memory>
 
 namespace librevault {
 
-// Cache implemented as a simple LRU structure over doubly-linked list and associative container (std::map, in this case)
 class MemoryCachedStorage : public QObject {
 	Q_OBJECT
 public:
 	MemoryCachedStorage(QObject* parent);
 
 	bool have_chunk(const blob& ct_hash) const noexcept;
-	std::shared_ptr<blob> get_chunk(const blob& ct_hash) const;
-	void put_chunk(const blob& ct_hash, std::shared_ptr<blob> data);
+	QByteArray get_chunk(const blob& ct_hash) const;
+	void put_chunk(const blob& ct_hash, QByteArray data);
 	void remove_chunk(const blob& ct_hash) noexcept;
 
 private:
 	mutable QMutex cache_lock_;
-	using ct_hash_data_type = std::pair<blob, std::shared_ptr<blob>>;
-	using list_iterator_type = std::list<ct_hash_data_type>::iterator;
-
-	mutable std::list<ct_hash_data_type> cache_list_;
-	std::map<blob, list_iterator_type> cache_iteraror_map_;
-
-	bool overflow() const;
+	QCache<QByteArray, QByteArray> cache_;
 };
 
 } /* namespace librevault */

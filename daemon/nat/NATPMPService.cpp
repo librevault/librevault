@@ -38,7 +38,7 @@ NATPMPService::NATPMPService(PortMappingService& parent) : PortMappingSubService
 NATPMPService::~NATPMPService() {stop();}
 
 bool NATPMPService::is_config_enabled() {
-	return Config::get()->global_get("natpmp_enabled").toBool();
+	return Config::get()->getGlobal("natpmp_enabled").toBool();
 }
 
 void NATPMPService::start() {
@@ -98,7 +98,7 @@ void NATPMPMapping::sendPeriodicRequest() {
 		descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
 		descriptor_.port,
 		descriptor_.port,
-		Config::get()->global_get("natpmp_lifetime").toUInt()
+		Config::get()->getGlobal("natpmp_lifetime").toUInt()
 	);
 	LOGD("sendnewportmappingrequest() = " << natpmp_ec);
 
@@ -114,7 +114,7 @@ void NATPMPMapping::sendPeriodicRequest() {
 		next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
 	}else{
 		LOGD("Could not set up port mapping");
-		next_request_sec = Config::get()->global_get("natpmp_lifetime").toUInt();
+		next_request_sec = Config::get()->getGlobal("natpmp_lifetime").toUInt();
 	}
 
 	timer_->setInterval(next_request_sec*1000);

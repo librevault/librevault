@@ -145,7 +145,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 
 void FolderGroup::attach(P2PFolder* remote) {
 	remotes_.insert(remote);
-	p2p_folders_endpoints_.insert(remote->remote_endpoint());
+	p2p_folders_endpoints_.insert(remote->endpoint());
 	p2p_folders_digests_.insert(remote->digest());
 
 	downloader_->trackRemote(remote);
@@ -161,7 +161,7 @@ void FolderGroup::detach(P2PFolder* remote) {
 	downloader_->untrackRemote(remote);
 
 	p2p_folders_digests_.remove(remote->digest());
-	p2p_folders_endpoints_.remove(remote->remote_endpoint());
+	p2p_folders_endpoints_.remove(remote->endpoint());
 	remotes_.remove(remote);
 
 	LOGD("Detached remote " << remote->displayName());
@@ -170,7 +170,7 @@ void FolderGroup::detach(P2PFolder* remote) {
 }
 
 bool FolderGroup::remotePresent(P2PFolder* remote) {
-	return p2p_folders_digests_.contains(remote->digest()) || p2p_folders_endpoints_.contains(remote->remote_endpoint());
+	return p2p_folders_digests_.contains(remote->digest()) || p2p_folders_endpoints_.contains(remote->endpoint());
 }
 
 QList<RemoteFolder*> FolderGroup::remotes() const {

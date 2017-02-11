@@ -309,6 +309,7 @@ endif()
 #============================================================================
 
 add_subdirectory("lvproto")
+add_subdirectory("common")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

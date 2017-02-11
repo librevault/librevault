@@ -44,10 +44,10 @@ Config::Config() {
 	make_defaults();
 	load();
 
-	connect(this, &Config::configChanged, this, [this](QString key, QVariant value){
+	connect(this, &Config::globalChanged, this, [this](QString key, QVariant value){
 		qCInfo(log_config) << "Global var" << key << "is set to" << value;
 	});
-	connect(this, &Config::configChanged, this, &Config::save);
+	connect(this, &Config::globalChanged, this, &Config::save);
 }
 
 Config::~Config() {
@@ -56,95 +56,92 @@ Config::~Config() {
 
 Config* Config::instance_ = nullptr;
 
-QVariant Config::global_get(QString name) {
+QVariant Config::getGlobal(QString name) {
 	return (globals_custom_.contains(name) ? globals_custom_[name] : globals_defaults_[name]).toVariant();
 }
 
-void Config::global_set(QString name, QVariant value) {
+void Config::setGlobal(QString name, QVariant value) {
 	globals_custom_[name] = QJsonValue::fromVariant(value);
-	emit configChanged(name, value);
+	emit globalChanged(name, value);
 }
 
-void Config::global_unset(QString name) {
+void Config::removeGlobal(QString name) {
 	globals_custom_.remove(name);
-	emit configChanged(name, global_get(name));
+	emit globalChanged(name, getGlobal(name));
 }
 
-QJsonObject Config::export_globals_custom() const {
-	return globals_custom_;
+QJsonDocument Config::exportUserGlobals() {
+	return QJsonDocument(globals_custom_);
 }
 
-QJsonObject Config::export_globals() const {
-	return make_merged(globals_custom_, globals_defaults_);
+QJsonDocument Config::exportGlobals() {
+	return QJsonDocument(make_merged(globals_custom_, globals_defaults_));
 }
 
-void Config::import_globals(QJsonObject globals_conf) {
-	QStringList all_keys = globals_custom_.keys() + globals_conf.keys();
+void Config::importGlobals(QJsonDocument globals_conf) {
+	QStringList all_keys = globals_custom_.keys() + globals_conf.object().keys();
 	QSet<QString> changed_keys;
 
 	foreach(const QString& key, all_keys) {
-		if(globals_custom_.value(key) != globals_conf.value(key)) {
+		if(globals_custom_.value(key) != globals_conf.object().value(key)) {
 			changed_keys.insert(key);
 		}
 	}
 
-	globals_custom_ = globals_conf;
+	globals_custom_ = globals_conf.object();
 
 	// Notify other components
 	foreach(const QString& key, all_keys) {
-		emit configChanged(key, global_get(key));
+		emit globalChanged(key, getGlobal(key));
 	}
 }
 
-void Config::folder_add(QJsonObject folder_config) {
-	QByteArray folderid = conv_bytearray(Secret(folder_config["secret"].toString().toStdString()).get_Hash());
+void Config::addFolder(QVariantMap fconfig) {
+	QByteArray folderid = conv_bytearray(Secret(fconfig["secret"].toString().toStdString()).get_Hash());
 	if(folders_custom_.contains(folderid))
 		throw samekey_error();
-	folders_custom_.insert(folderid, folder_config);
-	emit folderAdded(make_merged(folder_config, folders_defaults_));
+	folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));
+	qDebug() << "Hello, world!" << folders_defaults_;
+	emit folderAdded(make_merged(QJsonObject::fromVariantMap(fconfig), folders_defaults_).toVariantMap());
 	save();
 }
 
-void Config::folder_remove(QByteArray folderid) {
+void Config::removeFolder(QByteArray folderid) {
 	emit folderRemoved(QByteArray((const char*)folderid.data(), folderid.size()));
 	folders_custom_.remove(folderid);
 	save();
 }
 
-QJsonObject Config::folder_get(QByteArray folderid) {
-	return folders_custom_.contains(folderid) ? folders_custom_[folderid] : QJsonObject();
+QVariantMap Config::getFolder(QByteArray folderid) {
+	return folders_custom_.contains(folderid) ? make_merged(folders_custom_[folderid], folders_defaults_).toVariantMap() : QVariantMap();
 }
 
-QMap<QByteArray, QJsonObject> Config::folders() const {
-	QMap<QByteArray, QJsonObject> folders_merged;
-	foreach(const QByteArray& folderid, folders_custom_.keys()) {
-		folders_merged[folderid] = make_merged(folders_custom_[folderid], folders_defaults_);
-	}
-	return folders_merged;
+QList<QByteArray> Config::listFolders() {
+	return folders_custom_.keys();
 }
 
-QJsonArray Config::export_folders_custom() const {
+QJsonDocument Config::exportUserFolders() {
 	QJsonArray folders_merged;
 	foreach(const QJsonObject& folder_params, folders_custom_.values()) {
 		folders_merged.append(folder_params);
 	}
-	return folders_merged;
+	return QJsonDocument(folders_merged);
 }
 
-QJsonArray Config::export_folders() const {
+QJsonDocument Config::exportFolders() {
 	QJsonArray folders_merged;
-	foreach(const QJsonObject& folder_params, folders().values()) {
-		folders_merged.append(folder_params);
+	foreach(QByteArray folderid, listFolders()) {
+		folders_merged.append(QJsonValue::fromVariant(getFolder(folderid)));
 	}
-	return folders_merged;
+	return QJsonDocument(folders_merged);
 }
 
-void Config::import_folders(QJsonArray folders_conf) {
-	foreach(const QByteArray& folderid, folders_custom_.keys()) {
-		folder_remove(folderid);
+void Config::importFolders(QJsonDocument folders_conf) {
+	foreach(QByteArray folderid, folders_custom_.keys()) {
+		removeFolder(folderid);
 	}
-	foreach(const QJsonValue& folder_params_v, folders_conf) {
-		folder_add(folder_params_v.toObject());
+	foreach(const QJsonValue& folder_params_v, folders_conf.array()) {
+		addFolder(folder_params_v.toObject().toVariantMap());
 	}
 }
 
@@ -185,29 +182,27 @@ QJsonObject Config::make_merged(QJsonObject custom_value, QJsonObject default_va
 }
 
 void Config::load() {
-	QFile globals_f(QString::fromStdWString(Paths::get()->client_config_path.wstring()));
+	QFile globals_f(Paths::get()->client_config_path);
 	if(globals_f.open(QIODevice::ReadOnly)) {
-		QJsonObject globals_load = QJsonDocument::fromJson(globals_f.readAll()).object();
 		qCDebug(log_config) << "Loading global configuration from:" << globals_f.fileName();
-		import_globals(globals_load);
+		importGlobals(QJsonDocument::fromJson(globals_f.readAll()));
 	}else
 		qCWarning(log_config) << "Could not load global configuration from:" << globals_f.fileName();
 
-	QFile folders_f(QString::fromStdWString(Paths::get()->folders_config_path.wstring()));
+	QFile folders_f(Paths::get()->folders_config_path);
 	if(folders_f.open(QIODevice::ReadOnly)) {
-		QJsonArray folders_load = QJsonDocument::fromJson(folders_f.readAll()).array();
 		qCDebug(log_config) << "Loading folder configuration from:" << folders_f.fileName();
-		import_folders(folders_load);
+		importFolders(QJsonDocument::fromJson(folders_f.readAll()));
 	}else
 		qCWarning(log_config) << "Could not load folder configuration from:" << folders_f.fileName();
 }
 
 void Config::save() {
 	{
-		QSaveFile globals_f(QString::fromStdWString(Paths::get()->client_config_path.wstring()));
+		QSaveFile globals_f(Paths::get()->client_config_path);
 		if(globals_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
 			qCDebug(log_config) << "Saving global configuration to:" << globals_f.fileName();
-			globals_f.write(QJsonDocument(export_globals_custom()).toJson(QJsonDocument::Compact));
+			globals_f.write(exportUserGlobals().toJson(QJsonDocument::Compact));
 		}
 		if(globals_f.isOpen() && globals_f.commit())
 			qCDebug(log_config) << "Saved global configuration to:" << globals_f.fileName();
@@ -216,10 +211,10 @@ void Config::save() {
 	}
 
 	{
-		QSaveFile folders_f(QString::fromStdWString(Paths::get()->folders_config_path.wstring()));
+		QSaveFile folders_f(Paths::get()->folders_config_path);
 		if(folders_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
 			qCDebug(log_config) << "Saving folder configuration to:" << folders_f.fileName();
-			folders_f.write(QJsonDocument(export_folders_custom()).toJson(QJsonDocument::Compact));
+			folders_f.write(exportUserFolders().toJson(QJsonDocument::Compact));
 		}
 		if(folders_f.isOpen() && folders_f.commit())
 			qCDebug(log_config) << "Saved folder configuration to:" << folders_f.fileName();

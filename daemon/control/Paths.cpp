@@ -27,19 +27,19 @@
  * files in the program, then also delete it here.
  */
 #include "Paths.h"
-#include <boost/filesystem.hpp>
+#include <QDir>
 
 namespace librevault {
 
 Paths::Paths(const boost::filesystem::path& appdata_path) :
-	appdata_path(appdata_path.empty() ? default_appdata_path() : appdata_path),
-	client_config_path(this->appdata_path / "globals.json"),
-	folders_config_path(this->appdata_path / "folders.json"),
-	log_path(this->appdata_path / "librevault.log"),
-	key_path(this->appdata_path / "key.pem"),
-	cert_path(this->appdata_path / "cert.pem"),
-	dht_session_path(this->appdata_path / "mldht_session.bin") {
-	boost::filesystem::create_directories(this->appdata_path);
+	appdata_path(QString::fromStdWString(appdata_path.empty() ? default_appdata_path().wstring() : appdata_path.wstring())),
+	client_config_path(this->appdata_path + "/globals.json"),
+	folders_config_path(this->appdata_path + "/folders.json"),
+	log_path(this->appdata_path + "/librevault.log"),
+	key_path(this->appdata_path + "/key.pem"),
+	cert_path(this->appdata_path + "/cert.pem"),
+	dht_session_path(this->appdata_path + "/mldht_session.bin") {
+	QDir().mkpath(this->appdata_path);
 }
 
 Paths* Paths::instance_ = nullptr;

@@ -48,8 +48,8 @@ FolderService::~FolderService() {
 
 void FolderService::run() {
 	QTimer::singleShot(0, this, [this] {
-		foreach(const QJsonObject& folder_config, Config::get()->folders()) {
-			initFolder(folder_config);
+		foreach(QByteArray folderid, Config::get()->listFolders()) {
+			initFolder(Config::get()->getFolder(folderid));
 		}
 	});
 

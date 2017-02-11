@@ -41,8 +41,8 @@ namespace librevault {
 
 NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	LOGFUNC();
-	cert_file_.setFileName(QDir::fromNativeSeparators(QString::fromStdWString(Paths::get()->cert_path.wstring())));
-	private_key_file_.setFileName(QDir::fromNativeSeparators(QString::fromStdWString(Paths::get()->key_path.wstring())));
+	cert_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->cert_path));
+	private_key_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->key_path));
 
 	write_key();
 	gen_certificate();
@@ -56,7 +56,7 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	private_key_file_.close();
 	cert_file_.close();
 
-	LOGI("PeerID: " << digest().toHex());
+	LOGI("PeerID:" << digest().toHex());
 
 	LOGFUNCEND();
 }

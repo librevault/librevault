@@ -106,7 +106,7 @@ QByteArray P2PFolder::digest() const {
 	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
-QPair<QHostAddress, quint16> P2PFolder::remote_endpoint() const {
+QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
 	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
@@ -143,7 +143,7 @@ void P2PFolder::send_message(const blob& message) {
 void P2PFolder::sendHandshake() {
 	V1Parser::Handshake message_struct;
 	message_struct.auth_token = local_token();
-	message_struct.device_name = Config::get()->global_get("client_name").toString().toStdString();
+	message_struct.device_name = Config::get()->getGlobal("client_name").toString().toStdString();
 	message_struct.user_agent = Version::current().user_agent().toStdString();
 
 	send_message(V1Parser().gen_Handshake(message_struct));
@@ -465,7 +465,7 @@ void P2PFolder::handlePong(quint64 rtt) {
 void P2PFolder::handleWebSocketStateChanged(QAbstractSocket::SocketState state) {
 	LOGD("State changed: " << state);
 	if(state == QAbstractSocket::ConnectedState) {
-		if(!fgroup_->remotePresent(this)) {
+		if(!fgroup_->remotePresent(this) && !provider_->checkLoopback(digest())) {
 			fgroup_->attach(this);
 			if(role_ == CLIENT)
 				sendHandshake();

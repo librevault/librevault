@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
 			std::vector<spdlog::sink_ptr> sinks;
 			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
-			auto& log_path = Paths::get()->log_path;
+			boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
 			sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
 				(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
 				log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));

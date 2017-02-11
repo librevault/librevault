@@ -53,7 +53,7 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 	connect(server_, &QWebSocketServer::sslErrors, this, &P2PProvider::handleSslErrors);
 	connect(server_, &QWebSocketServer::acceptError, this, &P2PProvider::handleAcceptError);
 
-	if(server_->listen(QHostAddress::Any, Config::get()->global_get("p2p_listen").toUInt())) {
+	if(server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
 		qInfo() << "Librevault is listening on port: " << server_->serverPort();
 	}else{
 		qWarning() << "Librevault failed to bind on port. E: " << server_->errorString();
@@ -75,16 +75,7 @@ QSslConfiguration P2PProvider::getSslConfiguration() const {
 	return ssl_config;
 }
 
-//void P2PProvider::mark_loopback(const tcp_endpoint& endpoint) {
-//	loopback_blacklist_.emplace(endpoint);
-	//LOGI("Marked " << endpoint << " as loopback");
-//}
-
-//bool P2PProvider::is_loopback(const tcp_endpoint& endpoint) {
-//	return loopback_blacklist_.find(endpoint) != loopback_blacklist_.end();
-//}
-
-bool P2PProvider::is_loopback(const QByteArray& digest) {
+bool P2PProvider::checkLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 

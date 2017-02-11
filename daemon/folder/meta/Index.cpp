@@ -30,11 +30,10 @@
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/file_util.h"
-#include "util/log.h"
 #include "util/readable.h"
 #include <librevault/crypto/Hex.h>
 #include <QFile>
+#include <sstream>
 #include <thread>
 
 namespace librevault {
@@ -66,10 +65,10 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 
 	/* Create a special hash-file */
 	QFile hash_file(params_.system_path + "/hash.txt");
-	QByteArray hexhash_conf = QByteArray::fromStdString(crypto::Hex().to_string(params_.secret.get_Hash()));
+	QByteArray hexhash_conf = conv_bytearray(params_.secret.get_Hash());
 	if(hash_file.exists()) {
 		hash_file.open(QIODevice::ReadOnly);
-		if(hash_file.readAll() != hexhash_conf) wipe();
+		if(hash_file.readAll().toLower() != hexhash_conf.toLower()) wipe();
 		hash_file.close();
 	}
 	hash_file.open(QIODevice::WriteOnly | QIODevice::Truncate);

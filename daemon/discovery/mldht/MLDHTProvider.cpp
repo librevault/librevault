@@ -38,6 +38,8 @@
 #include <cryptopp/osrng.h>
 #include <QFile>
 
+Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
+
 namespace librevault {
 
 using namespace boost::asio::ip;
@@ -71,13 +73,13 @@ void MLDHTProvider::init() {
 
 	int rc = dht_init(socket_->socketDescriptor(), socket_->socketDescriptor(), own_id.data(), nullptr);
 	if(rc < 0)
-		LOGW("Could not initialize DHT: Internal DHT error");
+		qCWarning(log_dht) << "Could not initialize DHT: Internal DHT error";
 
 	// Map port
 	port_mapping_->add_port_mapping("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
 
 	// Init routers
-	foreach(const QString& router_value, Config::get()->global_get("mainline_dht_routers").toStringList()) {
+	foreach(const QString& router_value, Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
 		url router_url(router_value.toStdString());
 		int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
 		resolves_[id] = router_url.port;
@@ -99,8 +101,10 @@ void MLDHTProvider::deinit() {
 
 void MLDHTProvider::readSessionFile() {
 	MLDHTSessionFile session_pb;
-	file_wrapper session_file(Paths::get()->dht_session_path, "r");
-	if(!session_pb.ParseFromIstream(&session_file.ios())) throw;
+	QFile session_f(Paths::get()->dht_session_path);
+	if(session_f.open(QIODevice::ReadOnly) && session_pb.ParseFromFileDescriptor(session_f.handle())) {
+		qCDebug(log_dht) << "DHT session file loaded";
+	}
 
 	// Init id
 	if(session_pb.id().size() == own_id.size()) {
@@ -112,7 +116,7 @@ void MLDHTProvider::readSessionFile() {
 	std::vector<btcompat::asio_endpoint> nodes;
 	nodes.reserve(session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size());
 
-	LOGI("Loading " << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << " nodes from session file");
+	qCInfo(log_dht) << "Loading" << session_pb.compact_endpoints6().size()+session_pb.compact_endpoints4().size() << "nodes from session file";
 	for(auto& compact_node4 : session_pb.compact_endpoints4()) {
 		if(compact_node4.size() != sizeof(btcompat::compact_endpoint4)) continue;
 		nodes.push_back(btcompat::parse_compact_endpoint4(compact_node4.data()));
@@ -138,7 +142,7 @@ void MLDHTProvider::writeSessionFile() {
 
 	dht_get_nodes(sa4, &sa4_count, sa6, &sa6_count);
 
-	LOGI("Saving " << sa4_count + sa6_count << " nodes to session file");
+	qCInfo(log_dht) << "Saving" << sa4_count + sa6_count << "nodes to session file";
 
 	for(auto i=0; i < sa6_count; i++) {
 		btcompat::compact_endpoint6 endpoint6;
@@ -155,8 +159,11 @@ void MLDHTProvider::writeSessionFile() {
 		std::copy((const char*)&endpoint4, ((const char*)&endpoint4)+sizeof(btcompat::compact_endpoint4), std::back_inserter(*endpoint_str));
 	}
 
-	file_wrapper session_file(Paths::get()->dht_session_path, "w");
-	session_pb.SerializeToOstream(&session_file.ios());
+	QFile session_f(Paths::get()->dht_session_path);
+	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_pb.SerializeToFileDescriptor(session_f.handle()))
+		qCDebug(log_dht) << "DHT session saved";
+	else
+		qCWarning(log_dht) << "DHT session not saved";
 }
 
 int MLDHTProvider::node_count() const {
@@ -176,7 +183,7 @@ int MLDHTProvider::node_count() const {
 }
 
 quint16 MLDHTProvider::getPort() {
-	return (quint16)Config::get()->global_get("mainline_dht_port").toUInt();
+	return (quint16)Config::get()->getGlobal("mainline_dht_port").toUInt();
 }
 
 quint16 MLDHTProvider::getExternalPort() {
@@ -188,7 +195,7 @@ void MLDHTProvider::addNode(btcompat::asio_endpoint endpoint) {
 }
 
 void MLDHTProvider::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
-	LOGD(BOOST_CURRENT_FUNCTION << " event: " << event);
+	qCDebug(log_dht) << BOOST_CURRENT_FUNCTION << " event: " << event;
 
 	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
@@ -223,14 +230,14 @@ void MLDHTProvider::periodic_request() {
 
 void MLDHTProvider::handle_resolve(const QHostInfo& host) {
 	if(host.error()) {
-		LOGW("Error resolving: " << host.hostName() << " E: " << host.errorString());
+		qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
 		resolves_.remove(host.lookupId());
 	}else {
 		QHostAddress address = host.addresses().first();
 		quint16 port = resolves_.take(host.lookupId());
 
 		addNode(btcompat::asio_endpoint(address::from_string(address.toString().toStdString()), port));
-		LOGD("Added a DHT router: " << host.hostName() << " Resolved: " << address.toString());
+		qCDebug(log_dht) << "Added a DHT router:" << host.hostName() << "Resolved:" << address.toString();
 	}
 }
 

@@ -30,7 +30,7 @@
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
 #include <QList>
-#include <QJsonObject>
+#include <QVariantMap>
 #include <QString>
 #include <QUrl>
 #include <chrono>
@@ -45,7 +45,7 @@ struct FolderParams {
 		BLOCK_ARCHIVE
 	};
 
-	FolderParams(QJsonObject json_params);
+	FolderParams(QVariantMap fconfig);
 
 	/* Parameters */
 	Secret secret;

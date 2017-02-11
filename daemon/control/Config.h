@@ -27,13 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "AbstractConfig.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
 
 namespace librevault {
 
-class Config : public QObject {
+class Config : public AbstractConfig {
 	Q_OBJECT
 public:
 	~Config();
@@ -54,29 +55,25 @@ public:
 	}
 
 	/* Global configuration */
-	QVariant global_get(QString name);
-	void global_set(QString name, QVariant value);
-	void global_unset(QString name);
-
-	QJsonObject export_globals_custom() const;
-	QJsonObject export_globals() const;
-	void import_globals(QJsonObject globals_conf);
+	QVariant getGlobal(QString name) override;
+	void setGlobal(QString name, QVariant value) override;
+	void removeGlobal(QString name) override;
 
 	/* Folder configuration */
-	void folder_add(QJsonObject folder_config);
-	void folder_remove(QByteArray folderid);
+	void addFolder(QVariantMap fconfig) override;
+	void removeFolder(QByteArray folderid) override;
 
-	QJsonObject folder_get(QByteArray folderid);
-	QMap<QByteArray, QJsonObject> folders() const;
+	QVariantMap getFolder(QByteArray folderid) override;
+	QList<QByteArray> listFolders() override;
 
-	QJsonArray export_folders_custom() const;
-	QJsonArray export_folders() const;
-	void import_folders(QJsonArray folders_conf);
+	/* Export/Import */
+	QJsonDocument exportUserGlobals() override;
+	QJsonDocument exportGlobals() override;
+	void importGlobals(QJsonDocument globals_conf) override;
 
-signals:
-	void configChanged(QString key, QVariant value);
-	void folderAdded(QJsonObject fconfig);
-	void folderRemoved(QByteArray folderid);
+	QJsonDocument exportUserFolders() override;
+	QJsonDocument exportFolders() override;
+	void importFolders(QJsonDocument folders_conf) override;
 
 protected:
 	Config();

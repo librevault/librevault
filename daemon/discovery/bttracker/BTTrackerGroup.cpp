@@ -39,7 +39,7 @@ BTTrackerGroup::BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup)
 
 void BTTrackerGroup::setEnabled(bool enabled) {
 	if(enabled) {
-		foreach(const QString& tracker, Config::get()->global_get("bttracker_trackers").toStringList()) {
+		foreach(const QString& tracker, Config::get()->getGlobal("bttracker_trackers").toStringList()) {
 			QUrl tracker_address(tracker);
 			connections_[tracker_address] = std::make_unique<BTTrackerConnection>(tracker_address, this, provider_);
 			LOGD("Added BitTorrent tracker: " << tracker_address.toString());

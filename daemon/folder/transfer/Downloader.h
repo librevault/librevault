@@ -30,16 +30,15 @@
 #include "folder/RemoteFolder.h"
 #include "util/AvailabilityMap.h"
 #include "util/blob.h"
-#include "util/file_util.h"
 #include "util/log.h"
 #include <QCache>
 #include <QFile>
+#include <QList>
 #include <QTimer>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <chrono>
-#include <unordered_map>
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f
@@ -90,7 +89,7 @@ struct MissingChunk {
 		uint32_t size;
 		std::chrono::steady_clock::time_point started;
 	};
-	std::unordered_multimap<RemoteFolder*, BlockRequest> requests;
+	QMultiHash<RemoteFolder*, BlockRequest> requests;
 	QHash<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
 	const blob ct_hash_;
@@ -134,7 +133,7 @@ public:
 	void mark_clustered(std::shared_ptr<MissingChunk> chunk);
 	void mark_immediate(std::shared_ptr<MissingChunk> chunk);
 
-	std::list<std::shared_ptr<MissingChunk>> chunks() const;
+	QList<std::shared_ptr<MissingChunk>> chunks() const;
 };
 
 class Downloader : public QObject {

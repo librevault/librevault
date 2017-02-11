@@ -43,7 +43,7 @@ BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* b
 
 	// Connect loop
 	connect_timer_ = new QTimer(this);
-	connect_timer_->setInterval(Config::get()->global_get("bttracker_min_interval").toInt()*1000);
+	connect_timer_->setInterval(Config::get()->getGlobal("bttracker_min_interval").toInt()*1000);
 	connect(connect_timer_, &QTimer::timeout, this, &BTTrackerConnection::btconnect);
 
 	// Announcer loop
@@ -112,7 +112,7 @@ void BTTrackerConnection::announce() {
 	//request.uploaded_;
 	request4.event_ = quint32(announced_times_++ == 0 ? bttracker::Event::EVENT_STARTED : bttracker::Event::EVENT_NONE);
 	request4.key_ = gen_transaction_id();
-	request4.num_want_ = Config::get()->global_get("bttracker_num_want").toUInt();
+	request4.num_want_ = Config::get()->getGlobal("bttracker_num_want").toUInt();
 	request4.port_ = provider_->getExternalPort();
 	QByteArray message4(reinterpret_cast<char*>(&request4), sizeof(request4));
 
@@ -134,7 +134,7 @@ void BTTrackerConnection::announce() {
 	//request.uploaded_;
 	request6.event_ = quint32(announced_times_++ == 0 ? bttracker::Event::EVENT_STARTED : bttracker::Event::EVENT_NONE);
 	request6.key_ = gen_transaction_id();
-	request6.num_want_ = Config::get()->global_get("bttracker_num_want").toUInt();
+	request6.num_want_ = Config::get()->getGlobal("bttracker_num_want").toUInt();
 	request6.port_ = provider_->getExternalPort();
 	QByteArray message6(reinterpret_cast<char*>(&request6), sizeof(request6));
 
@@ -204,7 +204,7 @@ void BTTrackerConnection::handle_announce(QByteArray message) {
 			emit discovered(result);
 		}
 
-		announce_timer_->setInterval(std::max(Config::get()->global_get("bttracker_min_interval").toUInt()*1000, (quint32)message_s->interval_)*1000);
+		announce_timer_->setInterval(std::max(Config::get()->getGlobal("bttracker_min_interval").toUInt()*1000, (quint32)message_s->interval_)*1000);
 	}
 }
 

@@ -30,6 +30,7 @@
 #include "discovery/DiscoveryResult.h"
 #include "util/log.h"
 #include <QObject>
+#include <QSet>
 #include <QWebSocketServer>
 
 namespace librevault {
@@ -53,9 +54,7 @@ public:
 	QSslConfiguration getSslConfiguration() const;
 
 	/* Loopback detection */
-	//void mark_loopback(const tcp_endpoint& endpoint);
-	//bool is_loopback(const tcp_endpoint& endpoint);
-	bool is_loopback(const QByteArray& digest);
+	bool checkLoopback(QByteArray digest);
 
 public slots:
 	void handleDiscovered(QByteArray folderid, DiscoveryResult result);
@@ -66,9 +65,6 @@ private:
 	FolderService* folder_service_;
 
 	QWebSocketServer* server_;
-
-	/* Loopback detection */
-	//std::set<tcp_endpoint> loopback_blacklist_;
 
 private slots:
 	void handleConnection();

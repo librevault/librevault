@@ -44,7 +44,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	QUrl bind_url;
 	bind_url.setScheme("http");
 	bind_url.setHost("::");
-	bind_url.setPort(Config::get()->global_get("control_listen").toUInt());
+	bind_url.setPort(Config::get()->getGlobal("control_listen").toUInt());
 	tcp_endpoint local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host().toStdString()), bind_url.port());
 
 	/* WebSockets server initialization */
@@ -69,7 +69,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	// So, change it carefully, preserving the compatibility.
 	std::cout << "[CONTROL] Librevault Client API is listening at " << bind_url.toString().toStdString() << std::endl;
 
-	connect(Config::get(), &Config::configChanged, this, &ControlServer::notify_global_config_changed);
+	connect(Config::get(), &Config::globalChanged, this, &ControlServer::notify_global_config_changed);
 }
 
 ControlServer::~ControlServer() {
@@ -106,10 +106,10 @@ void ControlServer::notify_folder_state_changed(QByteArray folderid, QString key
 	control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
 }
 
-void ControlServer::notify_folder_added(QByteArray folderid, QJsonObject folder_params) {
+void ControlServer::notify_folder_added(QByteArray folderid, QVariantMap fconfig) {
 	QJsonObject event;
 	event["folderid"] = QString(folderid.toHex());
-	event["folder_params"] = folder_params;
+	event["folder_params"] = QJsonObject::fromVariantMap(fconfig);
 	control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
 }
 

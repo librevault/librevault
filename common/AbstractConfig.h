@@ -27,54 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "websocket_config.h"
-#include "util/blob.h"
-#include "util/log.h"
-#include "control/FolderParams.h"
-#include "util/multi_io_service.h"
-#include <QVariantMap>
+#include <QJsonDocument>
 #include <QObject>
-#include <unordered_set>
+#include <QVariant>
 
 namespace librevault {
 
-class Client;
-class StateCollector;
-class ControlWebsocketServer;
-class ControlHTTPServer;
-
-class ControlServer : public QObject {
+class AbstractConfig : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("ControlServer");
-public:
-	using server = websocketpp::server<asio_notls>;
-
-	ControlServer(StateCollector* state_collector, QObject* parent);
-	virtual ~ControlServer();
-
-	void run() {ios_.start(1);}
-
-	bool check_origin(const std::string& origin);
 
 signals:
-	void shutdown();
-	void restart();
+	void globalChanged(QString key, QVariant value);
+	void folderAdded(QVariantMap fconfig);
+	void folderRemoved(QByteArray folderid);
 
-public slots:
-	void notify_global_config_changed(QString key, QVariant state);
-	void notify_global_state_changed(QString key, QJsonValue state);
-	void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
+public:
+	/* Global configuration */
+	virtual QVariant getGlobal(QString name) = 0;
+	virtual void setGlobal(QString name, QVariant value) = 0;
+	virtual void removeGlobal(QString name) = 0;
 
-	void notify_folder_added(QByteArray folderid, QVariantMap fconfig);
-	void notify_folder_removed(QByteArray folderid);
+	/* Folder configuration */
+	virtual void addFolder(QVariantMap fconfig) = 0;
+	virtual void removeFolder(QByteArray folderid) = 0;
 
-private:
-	multi_io_service ios_;
+	virtual QVariantMap getFolder(QByteArray folderid) = 0;
+	virtual QList<QByteArray> listFolders() = 0;
 
-	server ws_server_;
+	/* Export/Import */
+	virtual QJsonDocument exportUserGlobals() = 0;
+	virtual QJsonDocument exportGlobals() = 0;
+	virtual void importGlobals(QJsonDocument globals_conf) = 0;
 
-	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
-	std::unique_ptr<ControlHTTPServer> control_http_server_;
+	virtual QJsonDocument exportUserFolders() = 0;
+	virtual QJsonDocument exportFolders() = 0;
+	virtual void importFolders(QJsonDocument folders_conf) = 0;
 };
 
 } /* namespace librevault */

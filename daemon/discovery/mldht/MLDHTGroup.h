@@ -29,7 +29,6 @@
 #pragma once
 #include "discovery/btcompat.h"
 #include "discovery/DiscoveryResult.h"
-#include "util/log.h"
 #include <QTimer>
 
 namespace librevault {
@@ -39,7 +38,6 @@ class FolderGroup;
 
 class MLDHTGroup : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("MLDHTGroup");
 public:
 	MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
 

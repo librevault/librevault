@@ -140,18 +140,16 @@ bool AssemblerWorker::assemble_symlink() {
 bool AssemblerWorker::assemble_directory() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
-	auto relpath = path_normalizer_->normalize_path(file_path);
-
 	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
 	QString denormpath = path_normalizer_->denormalizePath(normpath);
+	fs::path bdenormpath(denormpath.toStdString());
 
 	bool create_new = true;
-	if(fs::status(file_path).type() != fs::file_type::directory_file)
-		create_new = !fs::remove(file_path);
+	if(fs::status(bdenormpath).type() != fs::file_type::directory_file)
+		create_new = !fs::remove(bdenormpath);
 	meta_storage_->prepareAssemble(normpath, Meta::DIRECTORY, create_new);
 
-	if(create_new) fs::create_directories(file_path);
+	if(create_new) fs::create_directories(bdenormpath);
 
 	return true;    // Maybe, something else?
 }
@@ -164,12 +162,11 @@ bool AssemblerWorker::assemble_file() {
 		if(!b) return false;    // retreat!
 
 	//
-	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
-	auto relpath = path_normalizer_->normalize_path(file_path);
 	auto assembled_file = fs::path(params_.system_path.toStdWString()) / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
 
 	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
 	QString denormpath = path_normalizer_->denormalizePath(normpath);
+	fs::path bdenormpath(denormpath.toStdString());
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
@@ -183,10 +180,10 @@ bool AssemblerWorker::assemble_file() {
 
 	fs::last_write_time(assembled_file, meta_.mtime());
 
-	meta_storage_->prepareAssemble(normpath, Meta::FILE, fs::exists(file_path));
+	meta_storage_->prepareAssemble(normpath, Meta::FILE, fs::exists(bdenormpath));
 
 	archive_->archive(denormpath);
-	fs::rename(assembled_file, file_path);
+	fs::rename(assembled_file, bdenormpath);
 
 	meta_storage_->index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 

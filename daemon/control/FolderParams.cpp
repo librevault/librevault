@@ -28,30 +28,32 @@
  */
 #include "FolderParams.h"
 #include <QJsonArray>
+#include <QtDebug>
 
 namespace librevault {
 
-FolderParams::FolderParams(QJsonObject json_params) {
+FolderParams::FolderParams(QVariantMap fconfig) {
+	qDebug() << fconfig;
 	// Necessary
-	secret = json_params["secret"].toString().toStdString();
-	path = json_params["path"].toString();
+	secret = fconfig["secret"].toString().toStdString();
+	path = fconfig["path"].toString();
 
 	// Optional
-	system_path = json_params["system_path"].toString(path + "/.librevault");
-	index_event_timeout = std::chrono::milliseconds(json_params["index_event_timeout"].toInt());
-	preserve_unix_attrib = json_params["preserve_unix_attrib"].toBool();
-	preserve_windows_attrib = json_params["preserve_windows_attrib"].toBool();
-	preserve_symlinks = json_params["preserve_symlinks"].toBool();
-	normalize_unicode = json_params["normalize_unicode"].toBool();
-	chunk_strong_hash_type = Meta::StrongHashType(json_params["chunk_strong_hash_type"].toInt());
-	full_rescan_interval = std::chrono::seconds(json_params["full_rescan_interval"].toInt());
+	system_path = fconfig["system_path"].isValid() ? fconfig["system_path"].toString() : path + "/.librevault";
+	index_event_timeout = std::chrono::milliseconds(fconfig["index_event_timeout"].toInt());
+	preserve_unix_attrib = fconfig["preserve_unix_attrib"].toBool();
+	preserve_windows_attrib = fconfig["preserve_windows_attrib"].toBool();
+	preserve_symlinks = fconfig["preserve_symlinks"].toBool();
+	normalize_unicode = fconfig["normalize_unicode"].toBool();
+	chunk_strong_hash_type = Meta::StrongHashType(fconfig["chunk_strong_hash_type"].toInt());
+	full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
 
-	foreach(const QJsonValue& ignore_path, json_params["ignore_paths"].toArray())
+	foreach(const QVariant& ignore_path, fconfig["ignore_paths"].toStringList())
 		ignore_paths.push_back(ignore_path.toString());
-	foreach(const QJsonValue& node, json_params["nodes"].toArray())
+	foreach(const QVariant& node, fconfig["nodes"].toStringList())
 		nodes.push_back(node.toString());
 
-	QString archive_type_str = json_params["archive_type"].toString();
+	QString archive_type_str = fconfig["archive_type"].toString();
 	if(archive_type_str == "none")
 		archive_type = ArchiveType::NO_ARCHIVE;
 	if(archive_type_str == "trash")
@@ -61,9 +63,9 @@ FolderParams::FolderParams(QJsonObject json_params) {
 	if(archive_type_str == "block")
 		archive_type = ArchiveType::BLOCK_ARCHIVE;
 
-	archive_trash_ttl = json_params["archive_trash_ttl"].toInt();
-	archive_timestamp_count = json_params["archive_timestamp_count"].toInt();
-	mainline_dht_enabled = json_params["mainline_dht_enabled"].toBool();
+	archive_trash_ttl = fconfig["archive_trash_ttl"].toInt();
+	archive_timestamp_count = fconfig["archive_timestamp_count"].toInt();
+	mainline_dht_enabled = fconfig["mainline_dht_enabled"].toBool();
 }
 
 } /* namespace librevault */

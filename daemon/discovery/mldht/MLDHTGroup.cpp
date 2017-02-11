@@ -30,7 +30,6 @@
 #include "MLDHTProvider.h"
 #include "dht_glue.h"
 #include "folder/FolderGroup.h"
-#include "util/log.h"
 #include <dht.h>
 #include <librevault/crypto/Hex.h>
 
@@ -61,11 +60,12 @@ void MLDHTGroup::setEnabled(bool enable) {
 void MLDHTGroup::start_search(int af) {
 	bool announce = true;
 
-	LOGD("Starting"
+	qCDebug(log_dht)
+		<< "Starting"
 		<< (af == AF_INET6 ? "IPv6" : "IPv4")
 		<< (announce ? "announce" : "search")
 		<< "for: " << crypto::Hex().to_string(info_hash_).c_str()
-		<< (announce ? "on port:" : "") << (announce ? QString::number(provider_->getExternalPort()) : QString()));
+		<< (announce ? "on port:" : "") << (announce ? QString::number(provider_->getExternalPort()) : QString());
 
 	dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, provider_);
 }

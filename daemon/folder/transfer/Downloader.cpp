@@ -30,10 +30,10 @@
 
 #include "control/Config.h"
 #include "control/FolderParams.h"
-#include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include <librevault/crypto/Base32.h>
+#include <QMutableMapIterator>
 #include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
@@ -145,10 +145,11 @@ void WeightedDownloadQueue::mark_immediate(std::shared_ptr<MissingChunk> chunk) 
 	reweight_chunk(chunk, weight);
 }
 
-std::list<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
-	std::list<std::shared_ptr<MissingChunk>> chunk_list;
+QList<std::shared_ptr<MissingChunk>> WeightedDownloadQueue::chunks() const {
+	QList<std::shared_ptr<MissingChunk>> chunk_list;
+	chunk_list.reserve(weight_ordered_chunks_.right.size());
 	for(auto& chunk_ptr : boost::adaptors::values(weight_ordered_chunks_.right))
-		chunk_list.push_back(chunk_ptr);
+		chunk_list << chunk_ptr;
 	return chunk_list;
 }
 
@@ -160,7 +161,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 	LOGFUNC();
 	maintain_timer_ = new QTimer(this);
 	connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintain_requests);
-	maintain_timer_->setInterval(Config::get()->global_get("p2p_request_timeout").toInt()*1000);
+	maintain_timer_->setInterval(Config::get()->getGlobal("p2p_request_timeout").toInt()*1000);
 	maintain_timer_->setTimerType(Qt::VeryCoarseTimer);
 	maintain_timer_->start();
 }
@@ -250,7 +251,7 @@ void Downloader::handle_choke(RemoteFolder* remote) {
 
 	/* Remove requests to this node */
 	for(auto& missing_chunk : missing_chunks_)
-		missing_chunk.second->requests.erase(remote);
+		missing_chunk.second->requests.remove(remote);
 
 	QTimer::singleShot(0, this, &Downloader::maintain_requests);
 }
@@ -265,16 +266,14 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
-	auto& requests = missing_chunk_it->second->requests;
-	for(auto request_it = requests.begin(); request_it != requests.end();) {
-		bool incremented_already = false;
+	QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk_it->second->requests);
+	while(request_it.hasNext()) {
+		request_it.next();
 
-		if(request_it->second.offset == offset          // Chunk position incorrect
-			&& request_it->second.size == data.size()   // Chunk size incorrect
-			&& request_it->first == from) {     // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
-
-			incremented_already = true;
-			request_it = requests.erase(request_it);
+		if(request_it.value().offset == offset      // Chunk position incorrect
+		&& request_it.value().size == data.size()   // Chunk size incorrect
+		&& request_it.key() == from) {              // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
+			request_it.remove();
 
 			missing_chunk_it->second->put_block(offset, data);
 			if(missing_chunk_it->second->complete()) {
@@ -286,8 +285,6 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 
 			QTimer::singleShot(0, this, &Downloader::maintain_requests);
 		}
-
-		if(!incremented_already) ++request_it;
 	}
 }
 
@@ -300,7 +297,7 @@ void Downloader::untrackRemote(RemoteFolder* remote) {
 	LOGFUNC();
 
 	for(auto& missing_chunk : missing_chunks_ | boost::adaptors::map_values) {
-		missing_chunk->requests.erase(remote);
+		missing_chunk->requests.remove(remote);
 		missing_chunk->owned_by.remove(remote);
 		download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
 	}
@@ -311,21 +308,19 @@ void Downloader::untrackRemote(RemoteFolder* remote) {
 void Downloader::maintain_requests() {
 	LOGFUNC();
 
-	auto request_timeout = std::chrono::seconds(Config::get()->global_get("p2p_request_timeout").toUInt());
+	auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
 
 	// Prune old requests by timeout
 	for(auto& missing_chunk : missing_chunks_) {
-		auto& requests = missing_chunk.second->requests; // We should lock a mutex on this
-		for(auto request = requests.begin(); request != requests.end(); ) {
-			if(request->second.started + request_timeout < std::chrono::steady_clock::now())
-				request = requests.erase(request);
-			else
-				++request;
+		QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk.second->requests);
+		while(request_it.hasNext()) {
+			if(request_it.next().value().started + request_timeout < std::chrono::steady_clock::now())
+				request_it.remove();
 		}
 	}
 
 	// Make new requests
-	for(size_t i = requests_overall(); i < Config::get()->global_get("p2p_download_slots").toUInt(); i++) {
+	for(size_t i = requests_overall(); i < Config::get()->getGlobal("p2p_download_slots").toUInt(); i++) {
 		bool requested = request_one();
 		if(!requested) break;
 	}
@@ -341,18 +336,18 @@ bool Downloader::request_one() {
 
 		// Rebuild request map to determine, which block to download now.
 		AvailabilityMap<uint32_t> request_map = missing_chunk->file_map();
-		for(auto& request : missing_chunk->requests)
-			request_map.insert({request.second.offset, request.second.size});
+		foreach(auto& request, missing_chunk->requests.values())
+			request_map.insert({request.offset, request.size});
 
 		// Request, actually
 		if(!request_map.full()) {
 			MissingChunk::BlockRequest request;
 			request.offset = request_map.begin()->first;
-			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->global_get("p2p_block_size").toUInt()));
+			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
 			request.started = std::chrono::steady_clock::now();
 
 			remote->request_block(missing_chunk->ct_hash_, request.offset, request.size);
-			missing_chunk->requests.insert({remote, request});
+			missing_chunk->requests.insert(remote, request);
 			return true;
 		}
 	}
@@ -360,8 +355,6 @@ bool Downloader::request_one() {
 }
 
 RemoteFolder* Downloader::find_node_for_request(std::shared_ptr<MissingChunk> chunk) {
-	//LOGFUNC();
-
 	auto missing_chunk_it = missing_chunks_.find(chunk->ct_hash_);
 	if(missing_chunk_it == missing_chunks_.end()) return nullptr;
 

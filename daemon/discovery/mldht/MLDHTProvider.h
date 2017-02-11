@@ -29,11 +29,13 @@
 #pragma once
 #include "discovery/btcompat.h"
 #include "discovery/DiscoveryResult.h"
-#include "util/log.h"
+#include <QLoggingCategory>
 #include <QHostInfo>
 #include <QTimer>
 #include <QUdpSocket>
 #include <mutex>
+
+Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
 namespace librevault {
 
@@ -41,7 +43,6 @@ class PortMappingService;
 class StateCollector;
 class MLDHTProvider : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("MLDHTProvider");
 public:
 	MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
 	virtual ~MLDHTProvider();

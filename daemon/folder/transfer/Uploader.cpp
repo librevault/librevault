@@ -70,7 +70,7 @@ void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, u
 
 blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
 	auto chunk = chunk_storage_->get_chunk(ct_hash);
-	if(offset < chunk.size() && size <= chunk.size()-offset)
+	if((int)offset < chunk.size() && (int)size <= chunk.size()-(int)offset)
 		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
 	else
 		throw ChunkStorage::no_such_chunk();

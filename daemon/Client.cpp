@@ -58,7 +58,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
 
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_added(group->folderid(), Config::get()->folder_get(group->folderid()));
+		control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
 	});
 	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_removed(group->folderid());

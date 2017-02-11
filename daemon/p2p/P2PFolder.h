@@ -60,7 +60,7 @@ public:
 	/* Getters */
 	QString displayName() const;
 	QByteArray digest() const;
-	QPair<QHostAddress, quint16> remote_endpoint() const;
+	QPair<QHostAddress, quint16> endpoint() const;
 	QString client_name() const {return client_name_;}
 	QString user_agent() const {return user_agent_;}
 	QJsonObject collect_state();

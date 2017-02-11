@@ -115,21 +115,21 @@ void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
 
-		QJsonDocument msg(Config::get()->export_globals());
+		QJsonDocument msg(Config::get()->exportGlobals());
 		conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
 	}else if(conn->get_request().get_method() == "PUT" && !matched[1].matched) {
 		conn->set_status(websocketpp::http::status_code::ok);
 
 		QJsonDocument new_config = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body()));
 
-		Config::get()->import_globals(new_config.object());
+		Config::get()->importGlobals(new_config);
 	}else if(conn->get_request().get_method() == "GET" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
 
 		QJsonObject o;
 		o["key"] = QString::fromStdString(matched[1].str());
-		o["value"] = QJsonValue::fromVariant(Config::get()->global_get(QString::fromStdString(matched[1].str())));
+		o["value"] = QJsonValue::fromVariant(Config::get()->getGlobal(QString::fromStdString(matched[1].str())));
 
 		conn->set_body(QJsonDocument(o).toJson().toStdString());
 	}else if(conn->get_request().get_method() == "PUT" && matched[1].matched){
@@ -137,10 +137,10 @@ void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_
 
 		QJsonObject o = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
 
-		Config::get()->global_set(QString::fromStdString(matched[1].str()), o["value"].toVariant());
+		Config::get()->setGlobal(QString::fromStdString(matched[1].str()), o["value"].toVariant());
 	}else if(conn->get_request().get_method() == "DELETE" && matched[1].matched){
 		conn->set_status(websocketpp::http::status_code::ok);
-		Config::get()->global_unset(QString::fromStdString(matched[1].str()));
+		Config::get()->removeGlobal(QString::fromStdString(matched[1].str()));
 	}
 }
 
@@ -149,7 +149,7 @@ void ControlHTTPServer::handle_folders_config_all(ControlServer::server::connect
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
 
-		conn->set_body(QJsonDocument(Config::get()->export_folders()).toJson().toStdString());
+		conn->set_body(QJsonDocument(Config::get()->exportFolders()).toJson().toStdString());
 	}
 }
 
@@ -158,15 +158,15 @@ void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connect
 	if(conn->get_request().get_method() == "GET") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(QJsonDocument(Config::get()->folder_get(folderid)).toJson().toStdString());
+		conn->set_body(QJsonDocument(QJsonObject::fromVariantMap(Config::get()->getFolder(folderid))).toJson().toStdString());
 	}else if(conn->get_request().get_method() == "PUT") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		QJsonObject new_value = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
 
-		Config::get()->folder_add(new_value);
+		Config::get()->addFolder(new_value.toVariantMap());
 	}else if(conn->get_request().get_method() == "DELETE") {
 		conn->set_status(websocketpp::http::status_code::ok);
-		Config::get()->folder_remove(folderid);
+		Config::get()->removeFolder(folderid);
 	}
 }
 

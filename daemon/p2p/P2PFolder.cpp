@@ -34,7 +34,7 @@
 #include "folder/FolderService.h"
 #include "nodekey/NodeKey.h"
 #include "util/readable.h"
-#include "util/qbitarray_conv.h"
+#include "util/conv_bitarray.h"
 #include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
 #include <boost/asio/ip/address.hpp>

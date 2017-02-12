@@ -27,8 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include <boost/filesystem/path.hpp>
 #include <QString>
 
 namespace librevault {
@@ -36,15 +34,11 @@ namespace librevault {
 class FolderParams;
 
 class PathNormalizer {
-	LOG_SCOPE("PathNormalizer");
-
 public:
 	PathNormalizer(const FolderParams& params);
 
 	QByteArray normalizePath(QString abspath);
 	QString denormalizePath(QByteArray normpath);
-	std::string normalize_path(const boost::filesystem::path& abspath) const;
-	boost::filesystem::path absolute_path(const std::string& normpath) const;
 
 private:
 	const FolderParams& params_;

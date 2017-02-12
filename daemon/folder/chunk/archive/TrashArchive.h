@@ -35,13 +35,13 @@ class TrashArchive : public ArchiveStrategy {
 	Q_OBJECT
 public:
 	TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
-	void archive(const fs::path& from);
+	void archive(QString denormpath);
 
 private:
 	const FolderParams& params_;
 	PathNormalizer* path_normalizer_;
 
-	const fs::path archive_path_;
+	QString archive_path_;
 
 	void maintain_cleanup();
 };

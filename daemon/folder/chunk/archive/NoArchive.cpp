@@ -27,12 +27,13 @@
  * files in the program, then also delete it here.
  */
 #include "NoArchive.h"
+#include "util/conv_fspath.h"
 #include <boost/filesystem.hpp>
 
 namespace librevault {
 
-void NoArchive::archive(const fs::path& from) {
-	fs::remove(from);
+void NoArchive::archive(QString denormpath) {
+	fs::remove(conv_fspath(denormpath));
 }
 
 } /* namespace librevault */

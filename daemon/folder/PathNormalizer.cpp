@@ -28,11 +28,7 @@
  */
 #include "PathNormalizer.h"
 #include "control/FolderParams.h"
-#include "util/fs.h"
-#include "util/make_relpath.h"
 #include <QDir>
-#include <boost/locale.hpp>
-#include <codecvt>
 
 namespace librevault {
 
@@ -74,48 +70,6 @@ QString PathNormalizer::denormalizePath(QByteArray normpath) {
 #endif
 
 	return denormpath;
-}
-
-std::string PathNormalizer::normalize_path(const fs::path& abspath) const {
-#ifdef LV_DEBUG_NORMALIZATION
-	LOGFUNC() << abspath;
-#endif
-
-	// Relative path in platform-independent format
-	fs::path rel_path = ::librevault::make_relpath(abspath, params_.path.toStdString());
-
-	std::string normpath = rel_path.generic_string(std::codecvt_utf8_utf16<wchar_t>());
-	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
-		normpath = boost::locale::normalize(normpath, boost::locale::norm_nfc);
-
-	// Removing last '/' in directories
-	if(normpath.size() > 0 && normpath.back() == '/')
-		normpath.pop_back();
-
-#ifdef LV_DEBUG_NORMALIZATION
-	LOGFUNC() << normpath;
-#endif
-	return normpath;
-}
-
-fs::path PathNormalizer::absolute_path(const std::string& normpath) const {
-#ifdef LV_DEBUG_NORMALIZATION
-	LOGFUNC() << normpath;
-#endif
-
-#if BOOST_OS_WINDOWS
-	std::wstring osnormpath = boost::locale::conv::utf_to_utf<wchar_t>(normpath);
-#elif BOOST_OS_MACOS
-	std::string osnormpath = boost::locale::normalize(normpath, boost::locale::norm_nfd);
-#else
-	const std::string& osnormpath(normpath);
-#endif
-	fs::path abspath = fs::path(params_.path.toStdWString()) / osnormpath;
-
-#ifdef LV_DEBUG_NORMALIZATION
-	LOGFUNC() << abspath;
-#endif
-	return abspath;
 }
 
 } /* namespace librevault */

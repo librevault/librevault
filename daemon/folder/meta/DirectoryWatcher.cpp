@@ -31,6 +31,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
+#include "util/conv_fspath.h"
 #include <QTimer>
 
 namespace librevault {
@@ -101,7 +102,7 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 	case boost::asio::dir_monitor_event::removed:
 	case boost::asio::dir_monitor_event::null:
 	{
-		QString abspath = QString::fromStdWString(ev.path.wstring());
+		QString abspath = conv_fspath(ev.path);
 		QByteArray normpath = path_normalizer_->normalizePath(abspath);
 
 		auto prepared_assemble_it = prepared_assemble_.find(normpath);
@@ -111,7 +112,7 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 			// FIXME: "prepares" is a dirty hack. It must be EXTERMINATED!
 		}
 
-		if(!ignore_list_->isIgnored(normpath));
+		if(!ignore_list_->isIgnored(normpath))
 			emit newPath(abspath);
 	}
 	default: break;

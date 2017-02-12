@@ -41,7 +41,6 @@ class PathNormalizer;
 
 class DirectoryWatcherThread : public QThread {
 	Q_OBJECT
-	LOG_SCOPE("DirectoryWatcherThread");
 signals:
 	void dirEvent(boost::asio::dir_monitor_event ev);
 
@@ -60,7 +59,6 @@ protected:
 
 class DirectoryWatcher : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("DirectoryWatcher");
 signals:
 	void newPath(QString abspath);
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,21 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Archive.h"
+#include <QString>
+#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
-class TimestampArchive : public ArchiveStrategy {
-	Q_OBJECT
-public:
-	TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
-	void archive(QString denormpath);
+inline QString conv_fspath(const boost::filesystem::path& path) {
+	return QString::fromStdWString(path.wstring());
+}
 
-private:
-	const FolderParams& params_;
-	PathNormalizer* path_normalizer_;
-
-	QString archive_path_;
-};
+inline boost::filesystem::path conv_fspath(const QString& path) {
+	return boost::filesystem::path(path.toStdWString());
+}
 
 } /* namespace librevault */

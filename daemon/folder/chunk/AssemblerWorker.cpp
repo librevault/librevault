@@ -35,8 +35,9 @@
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/file_util.h"
+#include "util/conv_fspath.h"
 #include "util/readable.h"
+#include <boost/filesystem.hpp>
 #include <QDir>
 #include <QLoggingCategory>
 #include <QSaveFile>
@@ -167,7 +168,7 @@ bool AssemblerWorker::assemble_file() {
 		if(!b) return false;    // retreat!
 
 	//
-	QString assembly_path = params_.system_path + "/" + QString::fromStdWString(fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%").wstring());
+	QString assembly_path = params_.system_path + "/" + conv_fspath(fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	QSaveFile assembly_f(assembly_path); // Opening file

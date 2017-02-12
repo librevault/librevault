@@ -249,7 +249,7 @@ endif()
 if(BUILD_STATIC)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
-find_package(Boost REQUIRED COMPONENTS system filesystem iostreams locale thread)
+find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 
 add_library(boost INTERFACE)
 target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})

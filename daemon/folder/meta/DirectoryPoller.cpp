@@ -65,7 +65,12 @@ QList<QString> DirectoryPoller::getReindexList() {
 	QSet<QString> file_list;
 
 	// Files present in the file system
-	QDirIterator dir_it(params_.path, QDir::NoDotAndDotDot, params_.preserve_symlinks ? QDirIterator::Subdirectories : QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+	qDebug() << params_.path;
+	QDirIterator dir_it(
+		params_.path,
+		QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
+		params_.preserve_symlinks ? (QDirIterator::Subdirectories) : (QDirIterator::Subdirectories | QDirIterator::FollowSymlinks)
+	);
 	while(dir_it.hasNext()) {
 		QString abspath = dir_it.next();
 		QByteArray normpath = path_normalizer_->normalizePath(abspath);

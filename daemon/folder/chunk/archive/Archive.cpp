@@ -33,6 +33,7 @@
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
 #include "folder/meta/MetaStorage.h"
+#include "util/conv_fspath.h"
 #include <QTimer>
 #include <boost/filesystem.hpp>
 #include <regex>
@@ -61,30 +62,29 @@ Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, PathNorm
 	}
 }
 
-void Archive::archive(const fs::path& from) {
-	auto file_type = fs::symlink_status(from).type();
+bool Archive::archive(QString denormpath) {
+	fs::path denormpath_fs = conv_fspath(denormpath);
+	auto file_type = fs::symlink_status(denormpath_fs).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(path_normalizer_->normalizePath(QString::fromStdWString(from.wstring())), Meta::DELETED);
+	meta_storage_->prepareAssemble(path_normalizer_->normalizePath(conv_fspath(denormpath_fs)), Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
-		if(fs::is_empty(from)) // Okay, just remove this empty directory
-			fs::remove(from);
+		if(fs::is_empty(denormpath_fs)) // Okay, just remove this empty directory
+			fs::remove(denormpath_fs);
 		else {  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
-			for(auto it = fs::directory_iterator(from); it != fs::directory_iterator(); it++)
-				archive(it->path()); // TODO: Okay, this is a horrible solution
-			fs::remove(from);
+			for(auto it = fs::directory_iterator(denormpath_fs); it != fs::directory_iterator(); it++)
+				archive(conv_fspath(it->path())); // TODO: Okay, this is a horrible solution
+			fs::remove(denormpath_fs);
 		}
 	}else if(file_type == fs::regular_file) {
-		archive_strategy_->archive(from);
+		archive_strategy_->archive(denormpath);
 	}else if(file_type == fs::symlink_file || file_type == fs::file_not_found) {
-		fs::remove(from);
+		fs::remove(denormpath_fs);
+	}else{
+		qWarning() << "Unknown file type, nunable to archive:" << denormpath;
 	}
-	// TODO: else
-}
 
-bool Archive::archive(QString denormpath) {
-	archive(denormpath.toStdWString());
 	return true;    // FIXME: handle errors
 }
 

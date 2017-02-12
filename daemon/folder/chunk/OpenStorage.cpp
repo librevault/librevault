@@ -32,7 +32,6 @@
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/PathNormalizer.h"
-#include "util/file_util.h"
 #include "util/readable.h"
 
 namespace librevault {
@@ -70,16 +69,15 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		file_wrapper f(path_normalizer_->absolute_path(smeta.meta().path(params_.secret)), "rb");
-		f.ios().exceptions(std::ios::failbit | std::ios::badbit);
-		try {
-			f.ios().seekg(offset);
-			f.ios().read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size);
+		QFile f(path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret))));
+		if(! f.open(QIODevice::ReadOnly)) continue;
+		if(! f.seek(offset)) continue;
+		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
 
-			std::shared_ptr<blob> chunk_ct = std::make_shared<blob>(Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv));
-			// Check
-			if(verify_chunk(ct_hash, *chunk_ct, smeta.meta().strong_hash_type())) return conv_bytearray(*chunk_ct);
-		}catch(const std::ios::failure& e){}
+		blob chunk_ct = Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv);
+
+		// Check
+		if(verify_chunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return conv_bytearray(chunk_ct);
 	}
 	throw ChunkStorage::no_such_chunk();
 }

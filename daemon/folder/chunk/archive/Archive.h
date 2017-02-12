@@ -41,7 +41,7 @@ class PathNormalizer;
 struct ArchiveStrategy : public QObject {
 	Q_OBJECT
 public:
-	virtual void archive(const fs::path& from) = 0;
+	virtual void archive(QString denormpath) = 0;
 
 protected:
 	ArchiveStrategy(QObject* parent) : QObject(parent) {}
@@ -60,8 +60,6 @@ private:
 	PathNormalizer* path_normalizer_;
 
 	ArchiveStrategy* archive_strategy_;
-
-	void archive(const fs::path& from);
 };
 
 } /* namespace librevault */

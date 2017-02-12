@@ -29,10 +29,10 @@
 #include "TrashArchive.h"
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
-#include "util/file_util.h"
-#include <QDebug>
+#include "util/conv_fspath.h"
+#include <QDir>
 #include <QTimer>
-#include <regex>
+#include <boost/filesystem.hpp>
 
 namespace librevault {
 
@@ -40,9 +40,9 @@ TrashArchive::TrashArchive(const FolderParams& params, PathNormalizer* path_norm
 	ArchiveStrategy(parent),
 	params_(params),
 	path_normalizer_(path_normalizer),
-	archive_path_(fs::path(params_.system_path.toStdWString()) / "archive") {
+	archive_path_(params_.system_path + "/archive") {
 
-	fs::create_directory(archive_path_);
+	QDir().mkpath(archive_path_);
 	QTimer::singleShot(10*1000*60, this, &TrashArchive::maintain_cleanup); // Start after a small delay.
 }
 
@@ -51,7 +51,7 @@ void TrashArchive::maintain_cleanup() {
 
 	std::list<fs::path> removed_paths;
 	try {
-		for(auto it = fs::recursive_directory_iterator(archive_path_); it != fs::recursive_directory_iterator(); it++) {
+		for(auto it = fs::recursive_directory_iterator(conv_fspath(archive_path_)); it != fs::recursive_directory_iterator(); it++) {
 			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
 			constexpr unsigned sec_per_day = 60*60*24;
 			if(time_since_archivation >= params_.archive_trash_ttl * sec_per_day && params_.archive_trash_ttl != 0)
@@ -67,11 +67,11 @@ void TrashArchive::maintain_cleanup() {
 	}
 }
 
-void TrashArchive::archive(const fs::path& from) {
-	auto archived_path = archive_path_ / fs::path(path_normalizer_->normalize_path(from));
-	qDebug() << "Adding an archive item: " << archived_path.c_str();
-	file_move(from, archived_path);
-	fs::last_write_time(archived_path, time(nullptr));
+void TrashArchive::archive(QString denormpath) {
+	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
+	qDebug() << "Adding an archive item: " << archived_path;
+	QFile::rename(denormpath, archived_path);
+	fs::last_write_time(conv_fspath(archived_path), time(nullptr));
 }
 
 } /* namespace librevault */

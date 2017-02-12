@@ -29,9 +29,12 @@
 #include "TimestampArchive.h"
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
-#include "util/file_util.h"
+#include "util/conv_fspath.h"
 #include "util/regex_escape.h"
+#include <QDateTime>
+#include <QDir>
 #include <QTimer>
+#include <boost/filesystem.hpp>
 #include <regex>
 
 namespace librevault {
@@ -40,35 +43,34 @@ TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* p
 	ArchiveStrategy(parent),
 	params_(params),
 	path_normalizer_(path_normalizer),
-	archive_path_(fs::path(params_.system_path.toStdWString()) / "archive") {
+	archive_path_(params_.system_path + "archive") {
 
-	fs::create_directory(archive_path_);
+	QDir().mkpath(archive_path_);
 }
 
-void TimestampArchive::archive(const fs::path& from) {
+void TimestampArchive::archive(QString denormpath) {
+	fs::path denormpath_fs = conv_fspath(denormpath);
 	// Add a new entry
-	auto archived_path = archive_path_ / fs::path(path_normalizer_->normalize_path(from));
+	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
 
-	time_t mtime = fs::last_write_time(from);
-	std::vector<char> strftime_buf(16);
-	strftime(strftime_buf.data(), strftime_buf.size(), "%Y%m%d-%H%M%S", localtime(&mtime));
+	qint64 mtime = fs::last_write_time(denormpath_fs);
+	QString suffix = "~" + QDateTime::fromMSecsSinceEpoch(mtime*1000).toString("yyyyMMdd-HHmmss");
 
-	std::string suffix = std::string("~")+strftime_buf.data();
-
-	auto timestamped_path = archived_path.stem();
-	timestamped_path += boost::locale::conv::utf_to_utf<native_char_t>(suffix);
-	timestamped_path += archived_path.extension();
-	file_move(from, timestamped_path);
+	QFileInfo archived_info(archived_path);
+	QString timestamped_path = archived_info.baseName();
+	timestamped_path += suffix;
+	timestamped_path += archived_info.completeSuffix();
+	QFile::rename(denormpath, timestamped_path);
 
 	// Remove
 	std::map<std::string, fs::path> paths;
-	std::regex timestamp_regex(regex_escape(from.stem().generic_string()) + R"((~\d{8}-\d{6}))" + regex_escape(from.extension().generic_string()));
-	for(auto it = fs::directory_iterator(from.parent_path()); it != fs::directory_iterator(); it++) {
+	std::regex timestamp_regex(regex_escape(archived_info.baseName().toStdString()) + R"((~\d{8}-\d{6}))" + regex_escape(archived_info.completeSuffix().toStdString()));
+	for(auto it = fs::directory_iterator(denormpath_fs.parent_path()); it != fs::directory_iterator(); it++) {
 		std::smatch match;
 		std::string generic_path = it->path().generic_string();	// To resolve stackoverflow.com/q/32164501
 		std::regex_match(generic_path, match, timestamp_regex);
 		if(!match.empty()) {
-			paths.insert({match[1].str(), from});
+			paths.insert({match[1].str(), denormpath_fs});
 		}
 	}
 	if(paths.size() > params_.archive_timestamp_count && params_.archive_timestamp_count != 0) {

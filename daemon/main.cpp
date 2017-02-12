@@ -94,10 +94,6 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
 
 int main(int argc, char** argv) {
 	do {
-		// Global initialization
-		std::locale::global(boost::locale::generator().generate(""));
-		boost::filesystem::path::imbue(std::locale());
-
 		// Argument parsing
 		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
 

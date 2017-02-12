@@ -46,6 +46,8 @@ Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateC
 	connect(multicast_, &MulticastProvider::discovered, this, &Discovery::discovered);
 	connect(bttracker_, &BTTrackerProvider::discovered, this, &Discovery::discovered);
 	connect(mldht_, &MLDHTProvider::discovered, this, &Discovery::discovered);
+
+	connect(this, &Discovery::discovered, mldht_, [=](QByteArray, DiscoveryResult result){mldht_->addNode(result.address, result.port);});
 }
 
 Discovery::~Discovery() {}

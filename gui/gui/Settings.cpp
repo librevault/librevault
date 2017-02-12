@@ -96,34 +96,34 @@ void Settings::reset_ui_states() {
 	}
 
 	/* Daemon settings */
-	ui_pane_general_.line_device->setText(daemon_->config()->getGlobalValue("client_name").toString()); // client_name
+	ui_pane_general_.line_device->setText(daemon_->config()->getGlobal("client_name").toString()); // client_name
 
 	// p2p_download_slots
-	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobalValue("p2p_download_slots").toInt());
+	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobal("p2p_download_slots").toInt());
 
 	// p2p_listen
-	unsigned short p2p_listen = daemon_->config()->getGlobalValue("p2p_listen").toInt();
+	unsigned short p2p_listen = daemon_->config()->getGlobal("p2p_listen").toInt();
 	ui_pane_network_.box_port_random->setChecked(p2p_listen == 0);
 	ui_pane_network_.spin_port->setEnabled(p2p_listen != 0);
 	ui_pane_network_.spin_port->setValue(p2p_listen);
 
 	// natpmp_enabled
-	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobalValue("natpmp_enabled").toBool());
+	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobal("natpmp_enabled").toBool());
 
 	// upnp_enabled
-	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobalValue("upnp_enabled").toBool());
+	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobal("upnp_enabled").toBool());
 
 	// bttracker_enabled
-	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobalValue("bttracker_enabled").toBool());
+	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobal("bttracker_enabled").toBool());
 
 	// multicast4_enabled || multicast6_enabled
 	ui_pane_network_.local_discovery_box->setChecked(
-		daemon_->config()->getGlobalValue("multicast4_enabled").toBool() ||
-		daemon_->config()->getGlobalValue("multicast6_enabled").toBool()
+		daemon_->config()->getGlobal("multicast4_enabled").toBool() ||
+		daemon_->config()->getGlobal("multicast6_enabled").toBool()
 	);
 
 	// mainline_dht_enabled
-	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
+	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobal("mainline_dht_enabled").toBool());
 }
 
 void Settings::process_ui_states() {
@@ -136,29 +136,29 @@ void Settings::process_ui_states() {
 
 	/* Daemon settings */
 	// client_name
-	daemon_->config()->setGlobalValue("client_name", ui_pane_general_.line_device->text());
+	daemon_->config()->setGlobal("client_name", ui_pane_general_.line_device->text());
 
 	// p2p_download_slots
-	daemon_->config()->setGlobalValue("p2p_download_slots", ui_pane_network_.spin_down_slots->value());
+	daemon_->config()->setGlobal("p2p_download_slots", ui_pane_network_.spin_down_slots->value());
 
 	// p2p_listen
-	daemon_->config()->setGlobalValue("p2p_listen", ui_pane_network_.box_port_random->isChecked() ? 0 : ui_pane_network_.spin_port->value());
+	daemon_->config()->setGlobal("p2p_listen", ui_pane_network_.box_port_random->isChecked() ? 0 : ui_pane_network_.spin_port->value());
 
 	// natpmp_enabled
-	daemon_->config()->setGlobalValue("natpmp_enabled", ui_pane_network_.natpmp_box->isChecked());
+	daemon_->config()->setGlobal("natpmp_enabled", ui_pane_network_.natpmp_box->isChecked());
 
 	// upnp_enabled
-	daemon_->config()->setGlobalValue("upnp_enabled", ui_pane_network_.upnp_box->isChecked());
+	daemon_->config()->setGlobal("upnp_enabled", ui_pane_network_.upnp_box->isChecked());
 
 	// bttracker_enabled
-	daemon_->config()->setGlobalValue("bttracker_enabled", ui_pane_network_.global_discovery_box->isChecked());
+	daemon_->config()->setGlobal("bttracker_enabled", ui_pane_network_.global_discovery_box->isChecked());
 
 	// multicast4_enabled || multicast6_enabled
-	daemon_->config()->setGlobalValue("multicast4_enabled", ui_pane_network_.local_discovery_box->isChecked());
-	daemon_->config()->setGlobalValue("multicast6_enabled", ui_pane_network_.local_discovery_box->isChecked());
+	daemon_->config()->setGlobal("multicast4_enabled", ui_pane_network_.local_discovery_box->isChecked());
+	daemon_->config()->setGlobal("multicast6_enabled", ui_pane_network_.local_discovery_box->isChecked());
 
 	// mainline_dht_enabled
-	daemon_->config()->setGlobalValue("mainline_dht_enabled", ui_pane_network_.dht_discovery_box->isChecked());
+	daemon_->config()->setGlobal("mainline_dht_enabled", ui_pane_network_.dht_discovery_box->isChecked());
 }
 
 void Settings::okayPressed() {

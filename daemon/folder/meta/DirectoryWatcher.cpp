@@ -31,7 +31,6 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "util/log.h"
 #include <QTimer>
 
 namespace librevault {

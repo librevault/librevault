@@ -28,7 +28,7 @@
  */
 #include "Config.h"
 #include "Paths.h"
-#include "util/blob.h"
+#include "blob.h"
 #include <librevault/Secret.h>
 #include <QFile>
 #include <QJsonArray>

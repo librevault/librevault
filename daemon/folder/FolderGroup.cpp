@@ -54,7 +54,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 	QDir().mkpath(params_.path);
 	QDir().mkpath(params_.system_path);
 #ifdef Q_OS_WIN
-	SetFileAttributes(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
+	SetFileAttributesW(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
 	LOGD("New folder:"

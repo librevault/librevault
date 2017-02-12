@@ -69,7 +69,7 @@ StatusBar::~StatusBar() {}
 
 void StatusBar::refresh() {
 	/* Refresh DHT */
-	if(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool()) {
+	if(daemon_->config()->getGlobal("mainline_dht_enabled").toBool()) {
 		dht_label_->setText(tr("DHT: %n nodes", "DHT", daemon_->state()->getGlobalValue("dht_nodes_count").toInt()));
 	}else{
 		dht_label_->setText(tr("DHT: disabled", "DHT"));
@@ -107,8 +107,8 @@ void StatusBar::showDHTMenu(const QPoint& pos) {
 
 	QAction dht_enabled(tr("Enable DHT"), bar_);
 	dht_enabled.setCheckable(true);
-	dht_enabled.setChecked(daemon_->config()->getGlobalValue("mainline_dht_enabled").toBool());
-	connect(&dht_enabled, &QAction::toggled, [this](bool checked){daemon_->config()->setGlobalValue("mainline_dht_enabled", checked);});
+	dht_enabled.setChecked(daemon_->config()->getGlobal("mainline_dht_enabled").toBool());
+	connect(&dht_enabled, &QAction::toggled, [this](bool checked){daemon_->config()->setGlobal("mainline_dht_enabled", checked);});
 	context_menu.addAction(&dht_enabled);
 
 	context_menu.exec(dht_label_->mapToGlobal(pos));

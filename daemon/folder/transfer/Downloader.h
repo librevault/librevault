@@ -29,7 +29,7 @@
 #pragma once
 #include "folder/RemoteFolder.h"
 #include "util/AvailabilityMap.h"
-#include "util/blob.h"
+#include "blob.h"
 #include "util/log.h"
 #include <QCache>
 #include <QFile>

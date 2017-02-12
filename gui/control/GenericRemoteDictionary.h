@@ -30,7 +30,7 @@
 #include <QObject>
 #include <QJsonValue>
 #include <QJsonObject>
-#include <QtNetwork/QNetworkAccessManager>
+#include <QNetworkAccessManager>
 
 class Daemon;
 
@@ -41,7 +41,7 @@ public:
 	explicit GenericRemoteDictionary(Daemon* daemon, QString globals_request, QString folders_request, QString global_event, QString folder_event);
 	~GenericRemoteDictionary() {}
 
-	QJsonValue getGlobalValue(QString key);
+	QVariant getGlobalValue(QString key);
 	QJsonValue getFolderValue(QByteArray folderid, QString key);
 	QList<QByteArray> folderList();
 

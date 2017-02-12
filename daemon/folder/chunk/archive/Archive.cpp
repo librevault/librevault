@@ -33,9 +33,8 @@
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/file_util.h"
-#include "util/log.h"
 #include <QTimer>
+#include <boost/filesystem.hpp>
 #include <regex>
 
 namespace librevault {
@@ -84,8 +83,9 @@ void Archive::archive(const fs::path& from) {
 	// TODO: else
 }
 
-void Archive::archive(QString denormpath) {
+bool Archive::archive(QString denormpath) {
 	archive(denormpath.toStdWString());
+	return true;    // FIXME: handle errors
 }
 
 } /* namespace librevault */

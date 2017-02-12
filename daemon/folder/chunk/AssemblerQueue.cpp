@@ -30,6 +30,9 @@
 #include "AssemblerWorker.h"
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(log_assembler)
 
 namespace librevault {
 
@@ -54,10 +57,10 @@ AssemblerQueue::AssemblerQueue(const FolderParams& params,
 }
 
 AssemblerQueue::~AssemblerQueue() {
-	qDebug() << "Stopping assembler queue";
+	qCDebug(log_assembler) << "Stopping assembler queue";
 	emit aboutToStop();
 	threadpool_->waitForDone();
-	qDebug() << "Assembler queue stopped";
+	qCDebug(log_assembler) << "Assembler queue stopped";
 }
 
 void AssemblerQueue::addAssemble(SignedMeta smeta) {
@@ -67,7 +70,7 @@ void AssemblerQueue::addAssemble(SignedMeta smeta) {
 }
 
 void AssemblerQueue::periodic_assemble_operation() {
-	qDebug() << "Performing periodic assemble";
+	qCDebug(log_assembler) << "Performing periodic assemble";
 
 	for(auto smeta : meta_storage_->index->get_incomplete_meta())
 		addAssemble(smeta);

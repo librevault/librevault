@@ -43,7 +43,7 @@ qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
 qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
 
 #define LOGFUNC() \
-LOGD(BOOST_CURRENT_FUNCTION) << " "
+qDebug() << BOOST_CURRENT_FUNCTION
 
 #define LOGFUNCEND() \
-LOGD(BOOST_CURRENT_FUNCTION << " -- end ")
+qDebug() << "~" << BOOST_CURRENT_FUNCTION

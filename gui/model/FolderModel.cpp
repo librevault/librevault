@@ -96,7 +96,7 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 void FolderModel::refresh() {
 	QSet<QByteArray> config_folders, new_folders, cleanup_folders;
 
-	config_folders = daemon_->config()->folderList().toSet();
+	config_folders = daemon_->config()->listFolders().toSet();
 	new_folders = config_folders - folders_all_.toSet();
 	cleanup_folders = folders_all_.toSet() - config_folders;
 

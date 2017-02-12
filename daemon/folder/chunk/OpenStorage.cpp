@@ -33,7 +33,6 @@
 #include "folder/meta/MetaStorage.h"
 #include "folder/PathNormalizer.h"
 #include "util/file_util.h"
-#include "util/log.h"
 #include "util/readable.h"
 
 namespace librevault {

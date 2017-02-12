@@ -27,13 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
+#include "blob.h"
 #include "util/log.h"
 #include <librevault/SignedMeta.h>
 #include <QObject>
 #include <QRunnable>
-#include <mutex>
-#include <set>
 
 namespace librevault {
 
@@ -48,9 +46,8 @@ class Secret;
 class AssemblerWorker : public QObject, public QRunnable {
 	LOG_SCOPE("AssemblerWorker");
 public:
-	struct error : std::runtime_error {
-		error(const std::string& what) : std::runtime_error(what) {}
-		error() : error("AssemblerWorker error") {}
+	struct abort_assembly : std::runtime_error {
+		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
 	};
 
 	AssemblerWorker(SignedMeta smeta,
@@ -73,6 +70,9 @@ private:
 	SignedMeta smeta_;
 	const Meta& meta_;
 
+	QByteArray normpath_;
+	QString denormpath_;
+
 	bool assemble_deleted();
 	bool assemble_symlink();
 	bool assemble_directory();
@@ -80,7 +80,7 @@ private:
 
 	void apply_attrib();
 
-	blob get_chunk_pt(const blob& ct_hash) const;
+	QByteArray get_chunk_pt(const blob& ct_hash) const;
 };
 
 } /* namespace librevault */

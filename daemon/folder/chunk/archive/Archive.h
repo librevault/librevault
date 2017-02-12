@@ -53,14 +53,15 @@ class Archive : public QObject {
 public:
 	Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
-	void archive(const fs::path& from);
-	void archive(QString denormpath);
+	bool archive(QString denormpath);
 
 private:
 	MetaStorage* meta_storage_;
 	PathNormalizer* path_normalizer_;
 
 	ArchiveStrategy* archive_strategy_;
+
+	void archive(const fs::path& from);
 };
 
 } /* namespace librevault */

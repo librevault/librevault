@@ -59,7 +59,7 @@ signals:
 	void discovered(QByteArray folderid, DiscoveryResult result);
 
 public slots:
-	void addNode(btcompat::asio_endpoint endpoint);
+	void addNode(QHostAddress addr, quint16 port);
 
 private:
 	PortMappingService* port_mapping_;

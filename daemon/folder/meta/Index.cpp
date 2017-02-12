@@ -31,10 +31,7 @@
 #include "control/StateCollector.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/readable.h"
-#include <librevault/crypto/Hex.h>
 #include <QFile>
-#include <sstream>
-#include <thread>
 
 namespace librevault {
 
@@ -98,8 +95,9 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 
 void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	LOGFUNC();
-	std::ostringstream transaction_name; transaction_name << "put_Meta_" << std::this_thread::get_id();
-	SQLiteSavepoint raii_transaction(*db_, transaction_name.str()); // Begin transaction
+	qsrand(time(nullptr));
+	QString transaction_name = QStringLiteral("put_Meta_$1").arg(qrand());
+	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
 			{":path_id", signed_meta.meta().path_id()},

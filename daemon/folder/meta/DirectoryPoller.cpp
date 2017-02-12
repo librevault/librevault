@@ -32,10 +32,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "util/log.h"
 #include <QDirIterator>
-#include <QSet>
-#include <boost/filesystem.hpp>
 
 namespace librevault {
 

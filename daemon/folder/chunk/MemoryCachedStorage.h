@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
+#include "blob.h"
 #include <QByteArray>
 #include <QCache>
 #include <QMutex>

@@ -51,7 +51,7 @@ void AddFolder::accept() {
 	auto secret = ui.line_Secret->text();
 	auto path = ui.line_Folder->text();
 
-	QJsonObject folder_config;
+	QVariantMap folder_config;
 	folder_config["secret"] = secret;
 	folder_config["path"] = path;
 	daemon_->config()->addFolder(folder_config);

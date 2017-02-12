@@ -39,8 +39,8 @@ GenericRemoteDictionary::GenericRemoteDictionary(Daemon* daemon, QString globals
 	connect(daemon_, &Daemon::eventReceived, this, &GenericRemoteDictionary::handleEvent);
 }
 
-QJsonValue GenericRemoteDictionary::getGlobalValue(QString key) {
-	return global_cache_[key];
+QVariant GenericRemoteDictionary::getGlobalValue(QString key) {
+	return global_cache_[key].toVariant();
 }
 
 QJsonValue GenericRemoteDictionary::getFolderValue(QByteArray folderid, QString key) {

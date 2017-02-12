@@ -54,11 +54,10 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 	connect(server_, &QWebSocketServer::acceptError, this, &P2PProvider::handleAcceptError);
 
 	if(server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
-		qInfo() << "Librevault is listening on port: " << server_->serverPort();
+		qInfo() << "Librevault is listening on port:" << server_->serverPort();
 	}else{
-		qWarning() << "Librevault failed to bind on port. E: " << server_->errorString();
+		qWarning() << "Librevault failed to bind on port:" << server_->serverPort() << "E:" << server_->errorString();
 	}
-	qDebug() << server_->errorString();
 	port_mapping_->add_port_mapping("main", {server_->serverPort(), QAbstractSocket::TcpSocket}, "Librevault");
 }
 
@@ -119,22 +118,18 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 }
 
 void P2PProvider::handlePeerVerifyError(const QSslError& error) {
-	LOGFUNC();
 	qDebug() << "PeerVerifyError: " << error.errorString();
 }
 
 void P2PProvider::handleServerError(QWebSocketProtocol::CloseCode closeCode) {
-	LOGFUNC();
 	qDebug() << "ServerError: " << server_->errorString();
 }
 
 void P2PProvider::handleSslErrors(const QList<QSslError>& errors) {
-	LOGFUNC();
 	qDebug() << "SSL errors: " << errors;
 }
 
 void P2PProvider::handleAcceptError(QAbstractSocket::SocketError socketError) {
-	LOGFUNC();
 	qDebug() << "Accept error: " << socketError;
 }
 

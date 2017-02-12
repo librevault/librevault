@@ -36,11 +36,15 @@
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/file_util.h"
-#include "util/log.h"
 #include "util/readable.h"
+#include <QDir>
+#include <QLoggingCategory>
+#include <QSaveFile>
 #ifdef Q_OS_UNIX
 #   include <sys/stat.h>
 #endif
+
+Q_LOGGING_CATEGORY(log_assembler, "folder.chunk.assembler")
 
 namespace librevault {
 
@@ -59,18 +63,22 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 
 AssemblerWorker::~AssemblerWorker() {}
 
-blob AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-	LOGD("get_chunk_pt(" << ct_hash_readable(ct_hash) << ")");
+QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 	blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
 
 	for(auto row : meta_storage_->index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
-		return Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());
+		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());
+		return QByteArray::fromRawData((const char*)chunk_pt_v.data(), chunk_pt_v.size());
 	}
+	qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
 	throw ChunkStorage::no_such_chunk();
 }
 
 void AssemblerWorker::run() noexcept {
 	LOGFUNC();
+
+	normpath_ = QByteArray::fromStdString(meta_.path(params_.secret));
+	denormpath_ = path_normalizer_->denormalizePath(normpath_);
 
 	try {
 		bool assembled = false;
@@ -83,7 +91,9 @@ void AssemblerWorker::run() noexcept {
 				break;
 			case Meta::DELETED: assembled = assemble_deleted();
 				break;
-			default: throw error(std::string("Unexpected meta type:") + std::to_string(meta_.meta_type()));
+			default:
+				qWarning() << QString("Unexpected meta type: %1").arg(meta_.meta_type());
+				throw abort_assembly();
 		}
 		if(assembled) {
 			if(meta_.meta_type() != Meta::DELETED)
@@ -91,34 +101,32 @@ void AssemblerWorker::run() noexcept {
 
 			meta_storage_->index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 		}
+	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
-		LOGW(BOOST_CURRENT_FUNCTION << " path:" << meta_.path(params_.secret).c_str() << " e:" << e.what()); // FIXME: Plaintext path in logs may violate user's privacy.
+		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).c_str() << "E:" << e.what();    // FIXME: #83
 	}
 }
 
 bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
+	fs::path denormpath_fs(denormpath_.toStdWString());
 
-	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
-	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
-	QString denormpath = path_normalizer_->denormalizePath(normpath);
-
-	auto file_type = fs::symlink_status(file_path).type();
+	auto file_type = fs::symlink_status(denormpath_fs).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(normpath, Meta::DELETED);
+	meta_storage_->prepareAssemble(normpath_, Meta::DELETED);
 
 	if(file_type == fs::directory_file) {
-		if(fs::is_empty(file_path)) // Okay, just remove this empty directory
-			fs::remove(file_path);
+		if(fs::is_empty(denormpath_fs)) // Okay, just remove this empty directory
+			fs::remove(denormpath_fs);
 		else  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
-			fs::remove_all(file_path);  // TODO: Okay, this is a horrible solution
+			fs::remove_all(denormpath_fs);  // TODO: Okay, this is a horrible solution
 	}
 
 	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
-		fs::remove(file_path);
+		fs::remove(denormpath_fs);
 	else if(file_type == fs::regular_file)
-		archive_->archive(denormpath);
+		archive_->archive(denormpath_);
 	// TODO: else
 
 	return true;    // Maybe, something else?
@@ -127,12 +135,10 @@ bool AssemblerWorker::assemble_deleted() {
 bool AssemblerWorker::assemble_symlink() {
 	LOGFUNC();
 
-	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
-	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
-	QString denormpath = path_normalizer_->denormalizePath(normpath);
+	fs::path denormpath_fs(denormpath_.toStdWString());
 
-	fs::remove_all(file_path);
-	fs::create_symlink(meta_.symlink_path(params_.secret), file_path);
+	fs::remove_all(denormpath_fs);
+	fs::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
 
 	return true;    // Maybe, something else?
 }
@@ -140,16 +146,15 @@ bool AssemblerWorker::assemble_symlink() {
 bool AssemblerWorker::assemble_directory() {
 	LOGFUNC();
 
-	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
-	QString denormpath = path_normalizer_->denormalizePath(normpath);
-	fs::path bdenormpath(denormpath.toStdString());
+	fs::path denormpath_fs(denormpath_.toStdWString());
 
 	bool create_new = true;
-	if(fs::status(bdenormpath).type() != fs::file_type::directory_file)
-		create_new = !fs::remove(bdenormpath);
-	meta_storage_->prepareAssemble(normpath, Meta::DIRECTORY, create_new);
+	if(fs::status(denormpath_fs).type() != fs::file_type::directory_file)
+		create_new = !fs::remove(denormpath_fs);
+	meta_storage_->prepareAssemble(normpath_, Meta::DIRECTORY, create_new);
 
-	if(create_new) fs::create_directories(bdenormpath);
+	if(create_new)
+		QDir().mkpath(denormpath_);
 
 	return true;    // Maybe, something else?
 }
@@ -162,28 +167,42 @@ bool AssemblerWorker::assemble_file() {
 		if(!b) return false;    // retreat!
 
 	//
-	auto assembled_file = fs::path(params_.system_path.toStdWString()) / fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%");
-
-	QByteArray normpath = QByteArray::fromStdString(meta_.path(params_.secret));
-	QString denormpath = path_normalizer_->denormalizePath(normpath);
-	fs::path bdenormpath(denormpath.toStdString());
+	QString assembly_path = params_.system_path + "/" + QString::fromStdWString(fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%").wstring());
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
-	file_wrapper assembling_file(assembled_file, "wb"); // Opening file
-
-	for(auto chunk : meta_.chunks()) {
-		blob chunk_pt = get_chunk_pt(chunk.ct_hash);
-		assembling_file.ios().write((const char*)chunk_pt.data(), chunk_pt.size());	// Writing to file
+	QSaveFile assembly_f(assembly_path); // Opening file
+	if(! assembly_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		qCWarning(log_assembler) << "File cannot be opened:" << assembly_path << "E:" << assembly_f.errorString();  // FIXME: #83
+		throw abort_assembly();
 	}
 
-	assembling_file.close();	// Closing file. Super!
+	for(auto chunk : meta_.chunks()) {
+		assembly_f.write(get_chunk_pt(chunk.ct_hash)); // Writing to file
+	}
 
-	fs::last_write_time(assembled_file, meta_.mtime());
+	if(!assembly_f.commit()) {
+		qCWarning(log_assembler) << "File cannot be written:" << assembly_path << "E:" << assembly_f.errorString(); // FIXME: #83
+		throw abort_assembly();
+	}
 
-	meta_storage_->prepareAssemble(normpath, Meta::FILE, fs::exists(bdenormpath));
+	{
+		boost::system::error_code ec;
+		fs::last_write_time(fs::path(assembly_path.toStdWString()), meta_.mtime(), ec);
+		if(ec) {
+			qCWarning(log_assembler) << "Could not set mtime on file:" << assembly_path << "E:" << QString::fromStdString(ec.message());    // FIXME: #83
+		}
+	}
 
-	archive_->archive(denormpath);
-	fs::rename(assembled_file, bdenormpath);
+	meta_storage_->prepareAssemble(normpath_, Meta::FILE, fs::exists(fs::path(denormpath_.toStdWString())));
+
+	if(! archive_->archive(denormpath_)) {
+		qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83
+		throw abort_assembly();
+	}
+	if(! QFile::rename(assembly_path, denormpath_)) {
+		qCWarning(log_assembler) << "File cannot be moved to its final location:" << denormpath_ << "Current location:" << assembly_path;   // FIXME: #83
+		throw abort_assembly();
+	}
 
 	meta_storage_->index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
 
@@ -193,19 +212,22 @@ bool AssemblerWorker::assemble_file() {
 }
 
 void AssemblerWorker::apply_attrib() {
-	fs::path file_path = path_normalizer_->absolute_path(meta_.path(params_.secret));
-
-#if BOOST_OS_UNIX
+#if defined(Q_OS_UNIX)
 	if(params_.preserve_unix_attrib) {
 		if(meta_.meta_type() != Meta::SYMLINK) {
 			int ec = 0;
-			ec = chmod(file_path.c_str(), meta_.mode());
-			if(ec) LOGW("Error applying mode to " << file_path.c_str());    // FIXME: full_path in logs may violate user's privacy.
-			ec = chown(file_path.c_str(), meta_.uid(), meta_.gid());
-			if(ec) LOGW("Error applying uid/gid to " << file_path.c_str()); // FIXME: full_path in logs may violate user's privacy.
+			ec = chmod(QFile::encodeName(denormpath_), meta_.mode());
+			if(ec) {
+				qCWarning(log_assembler) << "Error applying mode to" << denormpath_;    // FIXME: #83
+			}
+
+			ec = chown(QFile::encodeName(denormpath_), meta_.uid(), meta_.gid());
+			if(ec) {
+				qCWarning(log_assembler) << "Error applying uid/gid to" << denormpath_;
+			}
 		}
 	}
-#elif BOOST_OS_WINDOWS
+#elif defined(Q_OS_WIN)
 	// Apply Windows attrib here.
 #endif
 }

@@ -30,16 +30,16 @@
 #include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"
-#include <librevault/Secret.h>
-#include <boost/locale.hpp>
 #include <docopt.h>
+#include <librevault/Secret.h>
 #include <spdlog/spdlog.h>
+#include <boost/filesystem/path.hpp>
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
 ///////////////////////////////////////////////////////////////////////80 chars/
 static const char* USAGE =
-R"(Librevault command-line interface.
+R"(Librevault synchronization daemon.
 
 Librevault is an open source peer-to-peer file synchronization solution with
 an optional centralized cloud storage, that can be used as a traditional cloud
@@ -48,16 +48,9 @@ storage.
 See on: https://librevault.com
 
 Usage:
-  librevault [-v | -vv] [--data=<dir>]
-  librevault gen-secret
-  librevault derive <secret> <type>
-  librevault (-h | --help)
-  librevault --version
-
-Commands:
-  gen-secret              generate new Owner Secret (type A)
-  derive <secret> <type>  derive Secret with less permissions from existing
-                          (i.e. type C from A)
+  librevault-daemon [-v | -vv] [--data=<dir>]
+  librevault-daemon (-h | --help)
+  librevault-daemon --version
 
 Options:
   --data=<dir>            set application data path
@@ -98,9 +91,9 @@ int main(int argc, char** argv) {
 		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
 
 		// Initializing paths
-		boost::filesystem::path appdata_path;
+		QString appdata_path;
 		if(args["--data"].isString())
-			appdata_path = args["--data"].asString();
+			appdata_path = QString::fromStdString(args["--data"].asString());
 		Paths::get(appdata_path);
 
 		// Initializing log

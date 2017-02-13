@@ -38,8 +38,8 @@ namespace librevault {
 
 ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) : QObject(parent),
                                                                                  ios_("ControlServer") {
-	control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_, ios_.ios());
-	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, *state_collector, ios_.ios());
+	control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_);
+	control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, *state_collector);
 
 	QUrl bind_url;
 	bind_url.setScheme("http");

@@ -31,16 +31,15 @@
 #endif
 
 #include "Paths.h"
-#include "Version.h"
 #include <Foundation/Foundation.h>
 
 namespace librevault {
 
-boost::filesystem::path Paths::default_appdata_path() {
+QString Paths::default_appdata_path() {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
 	NSString *applicationSupportDirectory = [paths firstObject];
 
-	return boost::filesystem::path([applicationSupportDirectory UTF8String]) / Version::current().name().toStdString();
+	return QString::fromNSString(applicationSupportDirectory) + "/Librevault";
 }
 
 } /* namespace librevault */

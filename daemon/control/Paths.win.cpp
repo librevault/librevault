@@ -32,10 +32,10 @@
 
 namespace librevault {
 
-boost::filesystem::path Paths::default_appdata_path() {
+QString Paths::default_appdata_path() {
 	PWSTR appdata_path;
 	SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path);
-	boost::filesystem::path folder_path = boost::filesystem::path(appdata_path) / Version::current().name().toStdString();
+	QString folder_path = QString::fromStdWString(*appdata_path) + "/Librevault";
 	CoTaskMemFree(appdata_path);
 
 	return folder_path;

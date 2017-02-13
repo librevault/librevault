@@ -28,13 +28,12 @@
  */
 #pragma once
 #include <QString>
-#include <boost/filesystem/path.hpp>
 
 namespace librevault {
 
 class Paths {
 public:
-	static Paths* get(const boost::filesystem::path& appdata_path = boost::filesystem::path()) {
+	static Paths* get(QString appdata_path = QString()) {
 		if(!instance_) {
 			instance_ = new Paths(appdata_path);
 		}
@@ -47,8 +46,8 @@ public:
 
 	const QString appdata_path, client_config_path, folders_config_path, log_path, key_path, cert_path, dht_session_path;
 private:
-	Paths(const boost::filesystem::path& appdata_path);
-	boost::filesystem::path default_appdata_path();
+	Paths(QString appdata_path);
+	QString default_appdata_path();
 
 	static Paths* instance_;
 };

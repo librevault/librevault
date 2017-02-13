@@ -28,49 +28,38 @@
  */
 #pragma once
 #include "ControlServer.h"
-#include "websocket_config.h"
+#include "control/websocket_config.h"
 #include "util/log.h"
 #include "util/network.h"
-#include <regex>
+#include <QJsonObject>
 
 namespace librevault {
 
 class Client;
 class ControlServer;
 
-class ControlHTTPServer {
-	LOG_SCOPE("ControlHTTPServer");
+class ControlWebsocketServer {
+	LOG_SCOPE("ControlWebsocketServer");
 public:
-	ControlHTTPServer(ControlServer& cs, ControlServer::server& server, StateCollector& state_collector, io_service& ios);
-	virtual ~ControlHTTPServer();
+	ControlWebsocketServer(ControlServer& cs, ControlServer::server& server);
+	virtual ~ControlWebsocketServer();
 
-	void on_http(websocketpp::connection_hdl hdl);
+	void stop();
+
+	bool on_validate(websocketpp::connection_hdl hdl);
+	void on_open(websocketpp::connection_hdl hdl);
+	void on_disconnect(websocketpp::connection_hdl hdl);
+
+	//
+	void send_event(QString type, QJsonObject event);
 
 private:
 	ControlServer& cs_;
 	ControlServer::server& server_;
-	StateCollector& state_collector_;
-	io_service& ios_;
 
-	std::vector<std::pair<std::regex, std::function<void(ControlServer::server::connection_ptr, std::smatch)>>> handlers_;
+	std::atomic<uint64_t> id_;
 
-	// config
-	void handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_config_all(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_config_one(ControlServer::server::connection_ptr conn, std::smatch matched);
-
-	// state
-	void handle_globals_state(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_state_all(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_folders_state_one(ControlServer::server::connection_ptr conn, std::smatch matched);
-
-	// daemon
-	void handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched);
-	void handle_version(ControlServer::server::connection_ptr conn, std::smatch matched);
-
-	/* Error handling */
-	std::string make_error_body(const std::string& code, const std::string& description);
+	std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
 };
 
 } /* namespace librevault */

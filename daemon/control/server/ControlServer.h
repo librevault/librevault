@@ -27,39 +27,54 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "ControlServer.h"
-#include "websocket_config.h"
+#include "control/websocket_config.h"
+#include "blob.h"
 #include "util/log.h"
-#include "util/network.h"
-#include <QJsonObject>
+#include "control/FolderParams.h"
+#include "util/multi_io_service.h"
+#include <QVariantMap>
+#include <QObject>
+#include <unordered_set>
 
 namespace librevault {
 
 class Client;
-class ControlServer;
+class StateCollector;
+class ControlWebsocketServer;
+class ControlHTTPServer;
 
-class ControlWebsocketServer {
-	LOG_SCOPE("ControlWebsocketServer");
+class ControlServer : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("ControlServer");
 public:
-	ControlWebsocketServer(ControlServer& cs, ControlServer::server& server, io_service& ios);
-	virtual ~ControlWebsocketServer();
+	using server = websocketpp::server<asio_notls>;
 
-	void stop();
+	ControlServer(StateCollector* state_collector, QObject* parent);
+	virtual ~ControlServer();
 
-	bool on_validate(websocketpp::connection_hdl hdl);
-	void on_open(websocketpp::connection_hdl hdl);
-	void on_disconnect(websocketpp::connection_hdl hdl);
+	void run() {ios_.start(1);}
 
-	//
-	void send_event(QString type, QJsonObject event);
+	bool check_origin(const std::string& origin);
+
+signals:
+	void shutdown();
+	void restart();
+
+public slots:
+	void notify_global_config_changed(QString key, QVariant state);
+	void notify_global_state_changed(QString key, QJsonValue state);
+	void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
+
+	void notify_folder_added(QByteArray folderid, QVariantMap fconfig);
+	void notify_folder_removed(QByteArray folderid);
 
 private:
-	ControlServer& cs_;
-	ControlServer::server& server_;
+	multi_io_service ios_;
 
-	std::atomic<uint64_t> id_;
+	server ws_server_;
 
-	std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
+	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
+	std::unique_ptr<ControlHTTPServer> control_http_server_;
 };
 
 } /* namespace librevault */

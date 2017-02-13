@@ -32,7 +32,7 @@
 
 namespace librevault {
 
-ControlWebsocketServer::ControlWebsocketServer(ControlServer& cs, ControlServer::server& server, io_service& ios) :
+ControlWebsocketServer::ControlWebsocketServer(ControlServer& cs, ControlServer::server& server) :
 		cs_(cs), server_(server), id_(0) {}
 ControlWebsocketServer::~ControlWebsocketServer() {}
 

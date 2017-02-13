@@ -28,7 +28,7 @@
  */
 #include "Client.h"
 #include "control/Config.h"
-#include "control/ControlServer.h"
+#include "control/server/ControlServer.h"
 #include "control/StateCollector.h"
 #include "discovery/Discovery.h"
 #include "folder/FolderGroup.h"
@@ -42,6 +42,8 @@ namespace librevault {
 
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	setApplicationName("Librevault");
+	setOrganizationDomain("librevault.com");
+
 	// Initializing components
 	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
@@ -70,7 +72,15 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }
 
-Client::~Client() {}
+Client::~Client() {
+	delete control_server_;
+	delete p2p_provider_;
+	delete folder_service_;
+	delete discovery_;
+	delete portmanager_;
+	delete node_key_;
+	delete state_collector_;
+}
 
 int Client::run() {
 	folder_service_->run();

@@ -30,19 +30,15 @@
 #include "Version.h"
 #include "control/Config.h"
 #include "control/StateCollector.h"
-#include "util/log.h"
-#include <boost/algorithm/string/predicate.hpp>
-#include <librevault/crypto/Hex.h>
 #include <QJsonArray>
-#include <QJsonDocument>
 
 namespace librevault {
 
 #define ADD_HANDLER(REGEX, HANDLER) \
-handlers_.push_back(std::make_pair(std::regex(REGEX), [this](ControlServer::server::connection_ptr conn, std::smatch matched){HANDLER(conn, matched);}))
+handlers_ << qMakePair(QRegularExpression(REGEX), [this](pconn conn, QRegularExpressionMatch match){HANDLER(conn, match);})
 
-ControlHTTPServer::ControlHTTPServer(ControlServer& cs, ControlServer::server& server, StateCollector& state_collector_, io_service& ios) :
-		cs_(cs), server_(server), state_collector_(state_collector_), ios_(ios) {
+ControlHTTPServer::ControlHTTPServer(ControlServer& cs, ControlServer::server& server, StateCollector& state_collector_) :
+		cs_(cs), server_(server), state_collector_(state_collector_) {
 
 	// config
 	ADD_HANDLER(R"(^\/v1\/globals(?:\/(\w+?))?\/?$)", handle_globals_config);
@@ -76,15 +72,16 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 
 	// URI handlers
 	try {
-		const std::string& uri = conn->get_request().get_uri();
-		std::smatch uri_match;
-		for(auto& handler : handlers_) {
-			if(std::regex_match(uri, uri_match, handler.first)) {
-				handler.second(conn, uri_match);
+		QString uri = QString::fromStdString(conn->get_request().get_uri());
+		QRegularExpressionMatch match;
+		foreach(const auto& handler, handlers_) {
+				match = handler.first.match(uri);
+			if(match.hasMatch()) {
+				handler.second(conn, match);
 				break;
 			}
 		}
-		if(uri_match.empty()) {
+		if(!match.hasMatch()) {
 			conn->set_status(websocketpp::http::status_code::not_implemented);
 			conn->set_body(make_error_body("", "Handler is not implemented"));
 		}
@@ -94,71 +91,59 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	}
 }
 
-void ControlHTTPServer::handle_version(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	conn->set_status(websocketpp::http::status_code::ok);
-	conn->append_header("Content-Type", "text/plain");
-	conn->set_body(Version::current().version_string().toStdString());
+void ControlHTTPServer::handle_version(pconn conn, QRegularExpressionMatch match) {
+	QJsonObject o;
+	o["version"] = Version::current().version_string();
+
+	sendJson(QJsonDocument(o), http_code::ok, conn);
 }
 
-void ControlHTTPServer::handle_restart(ControlServer::server::connection_ptr conn, std::smatch matched) {
+void ControlHTTPServer::handle_restart(pconn conn, QRegularExpressionMatch match) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	emit cs_.restart();
 }
 
-void ControlHTTPServer::handle_shutdown(ControlServer::server::connection_ptr conn, std::smatch matched) {
+void ControlHTTPServer::handle_shutdown(pconn conn, QRegularExpressionMatch match) {
 	conn->set_status(websocketpp::http::status_code::ok);
 	emit cs_.shutdown();
 }
 
-void ControlHTTPServer::handle_globals_config(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET" && !matched[1].matched) {
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
-
-		QJsonDocument msg(Config::get()->exportGlobals());
-		conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
-	}else if(conn->get_request().get_method() == "PUT" && !matched[1].matched) {
+void ControlHTTPServer::handle_globals_config(pconn conn, QRegularExpressionMatch match) {
+	if(conn->get_request().get_method() == "GET" && match.captured(1).isNull()) {
+		sendJson(Config::get()->exportGlobals(), http_code::ok, conn);
+	}else if(conn->get_request().get_method() == "PUT" && match.captured(1).isNull()) {
 		conn->set_status(websocketpp::http::status_code::ok);
 
 		QJsonDocument new_config = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body()));
 
 		Config::get()->importGlobals(new_config);
-	}else if(conn->get_request().get_method() == "GET" && matched[1].matched){
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
-
+	}else if(conn->get_request().get_method() == "GET" && !match.captured(1).isNull()){
 		QJsonObject o;
-		o["key"] = QString::fromStdString(matched[1].str());
-		o["value"] = QJsonValue::fromVariant(Config::get()->getGlobal(QString::fromStdString(matched[1].str())));
+		o["key"] = match.captured(1);
+		o["value"] = QJsonValue::fromVariant(Config::get()->getGlobal(match.captured(1)));
 
-		conn->set_body(QJsonDocument(o).toJson().toStdString());
-	}else if(conn->get_request().get_method() == "PUT" && matched[1].matched){
+		sendJson(QJsonDocument(o), http_code::ok, conn);
+	}else if(conn->get_request().get_method() == "PUT" && !match.captured(1).isNull()){
 		conn->set_status(websocketpp::http::status_code::ok);
 
 		QJsonObject o = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
 
-		Config::get()->setGlobal(QString::fromStdString(matched[1].str()), o["value"].toVariant());
-	}else if(conn->get_request().get_method() == "DELETE" && matched[1].matched){
+		Config::get()->setGlobal(match.captured(1), o["value"].toVariant());
+	}else if(conn->get_request().get_method() == "DELETE" && !match.captured(1).isNull()){
 		conn->set_status(websocketpp::http::status_code::ok);
-		Config::get()->removeGlobal(QString::fromStdString(matched[1].str()));
+		Config::get()->removeGlobal(match.captured(1));
 	}
 }
 
-void ControlHTTPServer::handle_folders_config_all(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET") {
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
-
-		conn->set_body(QJsonDocument(Config::get()->exportFolders()).toJson().toStdString());
-	}
+void ControlHTTPServer::handle_folders_config_all(pconn conn, QRegularExpressionMatch match) {
+	if(conn->get_request().get_method() == "GET")
+		sendJson(Config::get()->exportFolders(), http_code::ok, conn);
 }
 
-void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	QByteArray folderid = QByteArray::fromHex(QByteArray::fromStdString(matched[1].str()));
+void ControlHTTPServer::handle_folders_config_one(pconn conn, QRegularExpressionMatch match) {
+	QByteArray folderid = QByteArray::fromHex(match.captured(1).toLatin1());
 	if(conn->get_request().get_method() == "GET") {
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
-		conn->set_body(QJsonDocument(QJsonObject::fromVariantMap(Config::get()->getFolder(folderid))).toJson().toStdString());
+		sendJson(QJsonDocument(QJsonObject::fromVariantMap(Config::get()->getFolder(folderid))), http_code::ok, conn);
 	}else if(conn->get_request().get_method() == "PUT") {
 		conn->set_status(websocketpp::http::status_code::ok);
 		QJsonObject new_value = QJsonDocument::fromJson(QByteArray::fromStdString(conn->get_request_body())).object();
@@ -170,32 +155,18 @@ void ControlHTTPServer::handle_folders_config_one(ControlServer::server::connect
 	}
 }
 
-void ControlHTTPServer::handle_globals_state(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	if(conn->get_request().get_method() == "GET") {
-		conn->set_status(websocketpp::http::status_code::ok);
-		conn->append_header("Content-Type", "text/x-json");
-
-		QJsonDocument msg(state_collector_.global_state());
-		conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
-	}
+void ControlHTTPServer::handle_globals_state(pconn conn, QRegularExpressionMatch match) {
+	sendJson(QJsonDocument(state_collector_.global_state()), http_code::ok, conn);
 }
 
-void ControlHTTPServer::handle_folders_state_all(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	conn->set_status(websocketpp::http::status_code::ok);
-	conn->append_header("Content-Type", "text/x-json");
-
-	QJsonDocument msg(state_collector_.folder_state());
-	conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
+void ControlHTTPServer::handle_folders_state_all(pconn conn, QRegularExpressionMatch match) {
+	sendJson(QJsonDocument(state_collector_.folder_state()), http_code::ok, conn);
 }
 
-void ControlHTTPServer::handle_folders_state_one(ControlServer::server::connection_ptr conn, std::smatch matched) {
-	conn->set_status(websocketpp::http::status_code::ok);
-	conn->append_header("Content-Type", "text/x-json");
+void ControlHTTPServer::handle_folders_state_one(pconn conn, QRegularExpressionMatch match) {
+	QByteArray folderid = QByteArray::fromHex(match.captured(1).toLatin1());
 
-	QByteArray folderid = QByteArray::fromHex(QByteArray::fromStdString(matched[1].str()));
-
-	QJsonDocument msg(state_collector_.folder_state(folderid));
-	conn->set_body(msg.toJson(QJsonDocument::Compact).toStdString());
+	sendJson(QJsonDocument(state_collector_.folder_state(folderid)), http_code::ok, conn);
 }
 
 std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {
@@ -203,6 +174,12 @@ std::string ControlHTTPServer::make_error_body(const std::string& code, const st
 	error_json["error_code"] = code.empty() ? "UNKNOWN" : QString::fromStdString(code);
 	error_json["description"] = QString::fromStdString(description);
 	return QJsonDocument(error_json).toJson().toStdString();
+}
+
+void ControlHTTPServer::sendJson(QJsonDocument json, http_code code, pconn conn) {
+	conn->set_status(code);
+	conn->append_header("Content-Type", "text/x-json");
+	conn->set_body(json.toJson(QJsonDocument::Compact).toStdString());
 }
 
 } /* namespace librevault */

@@ -107,8 +107,8 @@ void MLDHTProvider::readSessionFile() {
 	}
 
 	// Init id
-	if(session_json["id"].isString() && session_json["id"].toString().size() == (int)own_id.size()) {
-		QByteArray own_id_arr = session_json["id"].toString().toLatin1();
+	QByteArray own_id_arr = session_json["id"].isString() ? QByteArray::fromBase64(session_json["id"].toString().toLatin1()) : QByteArray();
+	if(own_id_arr.size() == (int)own_id.size()) {
 		std::copy(own_id_arr.begin(), own_id_arr.end(), own_id.begin());
 	}else{  // Invalid data
 		CryptoPP::AutoSeededRandomPool().GenerateBlock(own_id.data(), own_id.size());
@@ -152,7 +152,7 @@ void MLDHTProvider::writeSessionFile() {
 	}
 
 	json_object["nodes"] = nodes;
-	json_object["id"] = QString::fromLatin1(own_id_arr);
+	json_object["id"] = QString::fromLatin1(own_id_arr.toBase64());
 
 	QFile session_f(Paths::get()->dht_session_path);
 	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Compact)))

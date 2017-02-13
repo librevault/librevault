@@ -90,7 +90,8 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 
 P2PFolder::~P2PFolder() {
 	LOGFUNC();
-	fgroup_->detach(this);
+	if(fgroup_->remotePresent(this))    // To prevent double detachment
+		fgroup_->detach(this);
 }
 
 QString P2PFolder::displayName() const {

@@ -33,6 +33,7 @@
 #include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include <librevault/crypto/Base32.h>
+#include <QFile>
 #include <QMutableMapIterator>
 #include <boost/range/adaptor/map.hpp>
 
@@ -266,6 +267,8 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
+	QList<QPair<blob, QFile*>> downloaded_chunks;
+
 	QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk_it->second->requests);
 	while(request_it.hasNext()) {
 		request_it.next();
@@ -280,12 +283,16 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 				QFile* chunk_f = missing_chunk_it->second->release_chunk();
 				chunk_f->setParent(this);
 
-				emit chunkDownloaded(ct_hash, chunk_f);
+				downloaded_chunks << qMakePair(ct_hash, chunk_f);
 			}   // TODO: catch "invalid hash" exception here
-
-			QTimer::singleShot(0, this, &Downloader::maintain_requests);
 		}
 	}
+
+	for(QPair<blob, QFile*> chunk : downloaded_chunks) {
+		emit chunkDownloaded(chunk.first, chunk.second);
+	}
+
+	QTimer::singleShot(0, this, &Downloader::maintain_requests);
 }
 
 void Downloader::trackRemote(RemoteFolder* remote) {

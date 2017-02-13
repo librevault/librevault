@@ -27,17 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
-#include "util/log.h"
 #include <QObject>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QMap>
 
 namespace librevault {
 
 class StateCollector : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("StateCollector");
 public:
 	StateCollector(QObject* parent);
 	~StateCollector();

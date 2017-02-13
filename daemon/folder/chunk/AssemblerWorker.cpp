@@ -69,7 +69,7 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 
 	for(auto row : meta_storage_->index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
 		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());
-		return QByteArray::fromRawData((const char*)chunk_pt_v.data(), chunk_pt_v.size());
+		return QByteArray((const char*)chunk_pt_v.data(), chunk_pt_v.size());
 	}
 	qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
 	throw ChunkStorage::no_such_chunk();

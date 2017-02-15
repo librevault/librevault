@@ -37,7 +37,6 @@ namespace librevault {
 /* Folder info */
 class FolderGroup;
 class FolderParams;
-class Secret;
 class StateCollector;
 
 class FolderService : public QObject {

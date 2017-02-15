@@ -313,6 +313,8 @@ void Downloader::trackRemote(RemoteFolder* remote) {
 void Downloader::untrackRemote(RemoteFolder* remote) {
 	SCOPELOG(log_downloader);
 
+	if(! remotes_.contains(remote)) return;
+
 	foreach(auto& missing_chunk, missing_chunks_.values()) {
 		missing_chunk->requests.remove(remote);
 		missing_chunk->owned_by.remove(remote);

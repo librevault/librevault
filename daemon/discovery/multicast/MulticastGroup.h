@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/DiscoveryResult.h"
 #include <QTimer>
 #include <QUdpSocket>
 

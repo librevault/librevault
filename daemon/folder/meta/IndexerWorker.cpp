@@ -43,7 +43,7 @@
 #   include <sys/stat.h>
 #endif
 
-Q_DECLARE_LOGGING_CATEGORY(log_indexerworker)
+Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
@@ -61,7 +61,7 @@ IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
 	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
-	qCDebug(log_indexerworker) << "Started indexing:" << normpath;
+	qCDebug(log_indexer) << "Started indexing:" << normpath;
 
 	try {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
@@ -75,15 +75,15 @@ void IndexerWorker::run() noexcept {
 		}catch(boost::filesystem::filesystem_error& e){
 		}catch(MetaStorage::no_such_meta& e){
 		}catch(Meta::error& e){
-			qCDebug(log_indexerworker) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
+			qCDebug(log_indexer) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
 		}
 
-		std::chrono::high_resolution_clock::time_point before_index = std::chrono::high_resolution_clock::now();  // Starting timer
+		QElapsedTimer timer_; timer_.start();   // Starting timer
 		make_Meta();   // Actual indexing
-		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
-		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
+		qreal time_spent = qreal(timer_.elapsed())/1000;
+		qreal bandwidth = qreal(new_smeta_.meta().size())/time_spent;
 
-		qCDebug(log_indexerworker) << "Updated index entry in" << time_spent << "s (" << human_bandwidth((double)new_smeta_.meta().size()/time_spent) << ")"
+		qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << human_bandwidth(bandwidth) << ")"
 			<< "Path=" << abspath_
 			<< "Rev=" << new_smeta_.meta().revision()
 			<< "Chk=" << new_smeta_.meta().chunks().size();
@@ -256,7 +256,7 @@ void IndexerWorker::update_chunks() {
 }
 
 Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
-	qCDebug(log_indexerworker) << "New chunk size:" << data.size();
+	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
 	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 

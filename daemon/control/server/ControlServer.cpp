@@ -45,7 +45,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent) :
 	bind_url.setScheme("http");
 	bind_url.setHost("::");
 	bind_url.setPort(Config::get()->getGlobal("control_listen").toUInt());
-	tcp_endpoint local_endpoint_ = tcp_endpoint(address::from_string(bind_url.host().toStdString()), bind_url.port());
+	boost::asio::ip::tcp::endpoint local_endpoint_ = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(bind_url.host().toStdString()), bind_url.port());
 
 	/* WebSockets server initialization */
 	// General parameters

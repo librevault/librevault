@@ -33,7 +33,6 @@
 #include <QHostInfo>
 #include <QTimer>
 #include <QUdpSocket>
-#include <mutex>
 
 Q_DECLARE_LOGGING_CATEGORY(log_dht)
 

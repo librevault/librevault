@@ -37,8 +37,6 @@
 #include "util/conv_bitarray.h"
 #include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/ip/tcp.hpp>
 
 namespace librevault {
 
@@ -52,7 +50,7 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 	LOGFUNC();
 
 	socket->setParent(this);
-	this->setParent(fgroup);
+	this->setParent(fgroup_);
 
 	// Set up timers
 	ping_timer_ = new QTimer(this);
@@ -63,7 +61,9 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 	connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::deleteLater);
 	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
-	connect(socket_, &QWebSocket::stateChanged, this, &P2PFolder::handleWebSocketStateChanged);
+	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
+	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
+	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::deleteLater);
 	connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::deleteLater);
 
 	// Start timers
@@ -85,21 +85,22 @@ P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvi
 P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
 	P2PFolder(socket, fgroup, provider, node_key, SERVER) {
 
-	handleWebSocketStateChanged(QAbstractSocket::ConnectedState);
+	handleConnected();
 }
 
 P2PFolder::~P2PFolder() {
 	LOGFUNC();
-	if(fgroup_->remotePresent(this))    // To prevent double detachment
-		fgroup_->detach(this);
+	fgroup_->detach(this);
 }
 
 QString P2PFolder::displayName() const {
-	try {
-		std::ostringstream os; os << boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(socket_->peerAddress().toString().toStdString()), socket_->peerPort());
-		return QString::fromStdString(os.str());
-	}catch(std::exception& e){
-		return "Unknown peer";
+	switch(socket_->peerAddress().protocol()) {
+		case QAbstractSocket::IPv4Protocol:
+			return QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
+		case QAbstractSocket::IPv6Protocol:
+			return QString("[%1]:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
+		default:
+			return "Unknown peer";
 	}
 }
 
@@ -124,7 +125,7 @@ QJsonObject P2PFolder::collect_state() {
 }
 
 blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
-	return derive_token(secret, blob(digest.begin(), digest.end()));
+	return derive_token(secret, conv_bytearray(digest));
 }
 
 blob P2PFolder::local_token() {
@@ -297,7 +298,7 @@ void P2PFolder::handle_message(const QByteArray& message) {
 			case V1Parser::BLOCK_REQUEST: handle_BlockRequest(message_raw); break;
 			case V1Parser::BLOCK_REPLY: handle_BlockReply(message_raw); break;
 			case V1Parser::BLOCK_CANCEL: handle_BlockCancel(message_raw); break;
-			default: throw protocol_error();
+			default: socket_->close(QWebSocketProtocol::CloseCodeProtocolError);
 		}
 	}else{
 		handle_Handshake(message_raw);
@@ -463,20 +464,12 @@ void P2PFolder::handlePong(quint64 rtt) {
 	rtt_ = std::chrono::milliseconds(rtt);
 }
 
-void P2PFolder::handleWebSocketStateChanged(QAbstractSocket::SocketState state) {
-	LOGD("State changed: " << state);
-	if(state == QAbstractSocket::ConnectedState) {
-		if(!fgroup_->remotePresent(this) && !provider_->checkLoopback(digest())) {
-			fgroup_->attach(this);
-			if(role_ == CLIENT)
-				sendHandshake();
-		}else{
-			deleteLater();
-		}
-	}
-	if(state == QAbstractSocket::UnconnectedState) {
-		deleteLater();
-	}
+void P2PFolder::handleConnected() {
+	if(!provider_->isLoopback(digest()) && fgroup_->attach(this)) {
+		if(role_ == CLIENT)
+			sendHandshake();
+	}else
+		socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
 }
 
 } /* namespace librevault */

@@ -30,7 +30,6 @@
 #include "ControlServer.h"
 #include "control/websocket_config.h"
 #include "util/log.h"
-#include "util/network.h"
 #include <QJsonObject>
 
 namespace librevault {

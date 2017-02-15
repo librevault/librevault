@@ -29,7 +29,7 @@
 #pragma once
 #include "blob.h"
 #include <librevault/Meta.h>
-#include <librevault/util/bitfield_convert.h>
+#include <librevault/util/conv_bitfield.h>
 #include <QFile>
 
 namespace librevault {

@@ -30,12 +30,13 @@
 #include "P2PFolder.h"
 #include "Version.h"
 #include "control/Config.h"
-#include "control/Paths.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
-#include "util/log.h"
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
 namespace librevault {
 
@@ -54,9 +55,9 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 	connect(server_, &QWebSocketServer::acceptError, this, &P2PProvider::handleAcceptError);
 
 	if(server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
-		qInfo() << "Librevault is listening on port:" << server_->serverPort();
+		qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
 	}else{
-		qWarning() << "Librevault failed to bind on port:" << server_->serverPort() << "E:" << server_->errorString();
+		qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort() << "E:" << server_->errorString();
 	}
 	port_mapping_->add_port_mapping("main", {server_->serverPort(), QAbstractSocket::TcpSocket}, "Librevault");
 }
@@ -74,20 +75,19 @@ QSslConfiguration P2PProvider::getSslConfiguration() const {
 	return ssl_config;
 }
 
-bool P2PProvider::checkLoopback(QByteArray digest) {
+bool P2PProvider::isLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 
 /* Here are where new QWebSocket created */
 void P2PProvider::handleConnection() {
-	LOGFUNC();
 	while(server_->hasPendingConnections()) {
 		QWebSocket* socket = server_->nextPendingConnection();
 		QUrl ws_url = socket->requestUrl();
 		QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
 		FolderGroup* fgroup = folder_service_->getGroup(folderid);
 
-		LOGD("New incoming connection:" << socket->requestUrl().toString());
+		qCDebug(log_p2p) << "New incoming connection:" << socket->requestUrl().toString();
 
 		P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_);
 		Q_UNUSED(folder);
@@ -95,7 +95,7 @@ void P2PProvider::handleConnection() {
 }
 
 void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) {
-	LOGD("Discovery event from:" << result.source);
+	qCDebug(log_p2p) << "Discovery event from:" << result.source;
 
 	FolderGroup* fgroup = folder_service_->getGroup(folderid);
 	if(!fgroup) {
@@ -110,7 +110,7 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 		ws_url.setPort(result.port);
 	}
 
-	LOGD("New connection:" << ws_url.toString());
+	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
 	QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
 	P2PFolder* folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);
@@ -118,19 +118,19 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 }
 
 void P2PProvider::handlePeerVerifyError(const QSslError& error) {
-	qDebug() << "PeerVerifyError:" << error.errorString();
+	qCDebug(log_p2p) << "PeerVerifyError:" << error.errorString();
 }
 
 void P2PProvider::handleServerError(QWebSocketProtocol::CloseCode closeCode) {
-	qDebug() << "ServerError:" << server_->errorString();
+	qCDebug(log_p2p) << "ServerError:" << server_->errorString();
 }
 
 void P2PProvider::handleSslErrors(const QList<QSslError>& errors) {
-	qDebug() << "SSL errors:" << errors;
+	qCDebug(log_p2p) << "SSL errors:" << errors;
 }
 
 void P2PProvider::handleAcceptError(QAbstractSocket::SocketError socketError) {
-	qDebug() << "Accept error:" << socketError;
+	qCDebug(log_p2p) << "Accept error:" << socketError;
 }
 
 } /* namespace librevault */

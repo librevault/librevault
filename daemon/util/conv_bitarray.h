@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/util/bitfield_convert.h>
+#include <librevault/util/conv_bitfield.h>
 #include <QBitArray>
 
 namespace librevault {

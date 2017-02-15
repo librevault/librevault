@@ -32,7 +32,7 @@
 #include "blob.h"
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>
-#include <librevault/util/bitfield_convert.h>
+#include <librevault/util/conv_bitfield.h>
 #include <QObject>
 #include <QTimer>
 #include <QSet>
@@ -70,10 +70,8 @@ public:
 	virtual ~FolderGroup();
 
 	/* Membership management */
-	void attach(P2PFolder* remote);
+	bool attach(P2PFolder* remote);
 	void detach(P2PFolder* remote);
-
-	bool remotePresent(P2PFolder* remote);
 
 	/* Getters */
 	QList<RemoteFolder*> remotes() const;
@@ -81,8 +79,7 @@ public:
 	inline const FolderParams& params() const {return params_;}
 
 	inline const Secret& secret() const {return params().secret;}
-	inline const blob& hash() const {return secret().get_Hash();}
-	QByteArray folderid() const {return conv_bytearray(hash());}
+	QByteArray folderid() const {return conv_bytearray(secret().get_Hash());}
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 
@@ -109,6 +106,7 @@ private:
 
 	/* Members */
 	QSet<RemoteFolder*> remotes_;
+	QSet<RemoteFolder*> remotes_ready_;
 
 	// Member lookup optimization
 	QSet<QByteArray> p2p_folders_digests_;

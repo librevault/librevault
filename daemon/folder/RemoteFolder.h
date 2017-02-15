@@ -30,7 +30,7 @@
 #include "blob.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
-#include <librevault/util/bitfield_convert.h>
+#include <librevault/util/conv_bitfield.h>
 #include <QObject>
 
 namespace librevault {

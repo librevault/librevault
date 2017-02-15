@@ -27,9 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <cstdint>
 #include <atomic>
-#include <chrono>
+#include <QElapsedTimer>
 #include <QJsonObject>
 
 namespace librevault {
@@ -38,18 +37,18 @@ class BandwidthCounter {
 public:
 	struct Stats {
 		// Download
-		uint64_t down_bytes_;
-		uint64_t down_bytes_blocks_;
+		quint64 down_bytes_;
+		quint64 down_bytes_blocks_;
 
-		float down_bandwidth_;
-		float down_bandwidth_blocks_;
+		qreal down_bandwidth_;
+		qreal down_bandwidth_blocks_;
 
 		// Upload
-		uint64_t up_bytes_;
-		uint64_t up_bytes_blocks_;
+		quint64 up_bytes_;
+		quint64 up_bytes_blocks_;
 
-		float up_bandwidth_;
-		float up_bandwidth_blocks_;
+		qreal up_bandwidth_;
+		qreal up_bandwidth_blocks_;
 	};
 
 	BandwidthCounter();
@@ -57,26 +56,26 @@ public:
 	Stats heartbeat();
 	QJsonObject heartbeat_json();
 
-	void add_down(uint64_t bytes);
-	void add_down_blocks(uint64_t bytes);
-	void add_up(uint64_t bytes);
-	void add_up_blocks(uint64_t bytes);
+	void add_down(quint64 bytes);
+	void add_down_blocks(quint64 bytes);
+	void add_up(quint64 bytes);
+	void add_up_blocks(quint64 bytes);
 private:
-	std::chrono::high_resolution_clock::time_point last_heartbeat = std::chrono::high_resolution_clock::now();
+	QElapsedTimer last_heartbeat_;
 
 	// Download
-	std::atomic<uint64_t> down_bytes_;
-	std::atomic<uint64_t> down_bytes_blocks_;
+	std::atomic<quint64> down_bytes_;
+	std::atomic<quint64> down_bytes_blocks_;
 
-	std::atomic<uint64_t> down_bytes_last_;
-	std::atomic<uint64_t> down_bytes_blocks_last_;
+	std::atomic<quint64> down_bytes_last_;
+	std::atomic<quint64> down_bytes_blocks_last_;
 
 	// Upload
-	std::atomic<uint64_t> up_bytes_;
-	std::atomic<uint64_t> up_bytes_blocks_;
+	std::atomic<quint64> up_bytes_;
+	std::atomic<quint64> up_bytes_blocks_;
 
-	std::atomic<uint64_t> up_bytes_last_;
-	std::atomic<uint64_t> up_bytes_blocks_last_;
+	std::atomic<quint64> up_bytes_last_;
+	std::atomic<quint64> up_bytes_blocks_last_;
 };
 
 } /* namespace librevault */

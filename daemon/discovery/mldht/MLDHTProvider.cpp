@@ -32,8 +32,9 @@
 #include "control/StateCollector.h"
 #include "nat/PortMappingService.h"
 #include "util/parse_url.h"
-#include <dht.h>
 #include <cryptopp/osrng.h>
+#include <dht.h>
+#include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
 
@@ -155,7 +156,7 @@ void MLDHTProvider::writeSessionFile() {
 	json_object["id"] = QString::fromLatin1(own_id_arr.toBase64());
 
 	QFile session_f(Paths::get()->dht_session_path);
-	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Compact)))
+	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
 		qCDebug(log_dht) << "DHT session saved";
 	else
 		qCWarning(log_dht) << "DHT session not saved";
@@ -252,16 +253,15 @@ int dht_blacklisted(const struct sockaddr *sa, int salen) {
 }
 
 void dht_hash(void *hash_return, int hash_size, const void *v1, int len1, const void *v2, int len2, const void *v3, int len3) {
-	constexpr unsigned sha1_size = 20;
+	std::fill((char*)hash_return, (char*)hash_return + hash_size, 0);
 
-	if(hash_size > (int)sha1_size)
-		std::fill((uint8_t*)hash_return, (uint8_t*)hash_return + sha1_size, 0);
+	QCryptographicHash hasher(QCryptographicHash::Sha1);
+	hasher.addData((const char*)v1, len1);
+	hasher.addData((const char*)v2, len2);
+	hasher.addData((const char*)v3, len3);
+	QByteArray result = hasher.result();
 
-	CryptoPP::SHA1 sha1;
-	sha1.Update((const uint8_t*)v1, len1);
-	sha1.Update((const uint8_t*)v2, len2);
-	sha1.Update((const uint8_t*)v3, len3);
-	sha1.TruncatedFinal((uint8_t*)hash_return, std::min(sha1.DigestSize(), sha1_size));
+	std::copy(result.begin(), result.begin()+qMin(result.size(), hash_size), (char*)hash_return);
 }
 
 int dht_random_bytes(void *buf, size_t size) {

@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "discovery/DiscoveryResult.h"
-#include "util/log.h"
 #include <QObject>
 #include <QSet>
 #include <QWebSocketServer>
@@ -42,8 +41,6 @@ class P2PFolder;
 class PortMappingService;
 class P2PProvider : public QObject {
 	Q_OBJECT
-	friend class ControlServer;
-	LOG_SCOPE("P2PProvider");
 public:
 	P2PProvider(NodeKey* node_key,
 	            PortMappingService* port_mapping,
@@ -54,7 +51,7 @@ public:
 	QSslConfiguration getSslConfiguration() const;
 
 	/* Loopback detection */
-	bool checkLoopback(QByteArray digest);
+	bool isLoopback(QByteArray digest);
 
 public slots:
 	void handleDiscovered(QByteArray folderid, DiscoveryResult result);

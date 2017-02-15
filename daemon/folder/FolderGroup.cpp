@@ -116,6 +116,9 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 
 // RemoteFolder actions
 void FolderGroup::handle_handshake(RemoteFolder* origin) {
+	remotes_ready_.insert(origin);
+	downloader_->trackRemote(origin);
+
 	connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=]{downloader_->handle_choke(origin);});
 	connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=]{downloader_->handle_unchoke(origin);});
 	connect(origin, &RemoteFolder::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
@@ -143,34 +146,40 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});
 }
 
-void FolderGroup::attach(P2PFolder* remote) {
+bool FolderGroup::attach(P2PFolder* remote) {
+	if(remotes_.contains(remote)
+		|| p2p_folders_digests_.contains(remote->digest())
+		|| p2p_folders_endpoints_.contains(remote->endpoint()) ) {
+		return false;
+	}
+
 	remotes_.insert(remote);
 	p2p_folders_endpoints_.insert(remote->endpoint());
 	p2p_folders_digests_.insert(remote->digest());
-
-	downloader_->trackRemote(remote);
 
 	LOGD("Attached remote " << remote->displayName());
 
 	connect(remote, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
 
 	emit attached(remote);
+
+	return true;
 }
 
 void FolderGroup::detach(P2PFolder* remote) {
+	if(! remotes_.contains(remote))
+		return;
+
+	emit detached(remote);
 	downloader_->untrackRemote(remote);
 
 	p2p_folders_digests_.remove(remote->digest());
 	p2p_folders_endpoints_.remove(remote->endpoint());
+
 	remotes_.remove(remote);
+	remotes_ready_.remove(remote);
 
 	LOGD("Detached remote " << remote->displayName());
-
-	emit detached(remote);
-}
-
-bool FolderGroup::remotePresent(P2PFolder* remote) {
-	return p2p_folders_digests_.contains(remote->digest()) || p2p_folders_endpoints_.contains(remote->endpoint());
 }
 
 QList<RemoteFolder*> FolderGroup::remotes() const {

@@ -47,10 +47,10 @@ FolderParams::FolderParams(QVariantMap fconfig) {
 	chunk_strong_hash_type = Meta::StrongHashType(fconfig["chunk_strong_hash_type"].toInt());
 	full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
 
-	foreach(const QVariant& ignore_path, fconfig["ignore_paths"].toStringList())
-		ignore_paths.push_back(ignore_path.toString());
-	foreach(const QVariant& node, fconfig["nodes"].toStringList())
-		nodes.push_back(node.toString());
+	foreach(const QString& ignore_path, fconfig["ignore_paths"].toStringList())
+		ignore_paths.push_back(ignore_path);
+	foreach(const QString& node, fconfig["nodes"].toStringList())
+		nodes.push_back(node);
 
 	QString archive_type_str = fconfig["archive_type"].toString();
 	if(archive_type_str == "none")

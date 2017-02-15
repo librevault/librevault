@@ -31,6 +31,7 @@
 #include "p2p/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
+#include <chrono>
 
 namespace librevault {
 
@@ -145,7 +146,7 @@ private:
 
 private slots:
 	void handlePong(quint64 rtt);
-	void handleWebSocketStateChanged(QAbstractSocket::SocketState state);
+	void handleConnected();
 };
 
 } /* namespace librevault */

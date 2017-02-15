@@ -31,23 +31,23 @@
 namespace librevault {
 
 BandwidthCounter::BandwidthCounter() : down_bytes_(0), down_bytes_blocks_(0), down_bytes_last_(0), down_bytes_blocks_last_(0),
-    up_bytes_(0), up_bytes_blocks_(0), up_bytes_last_(0), up_bytes_blocks_last_(0) {}
+    up_bytes_(0), up_bytes_blocks_(0), up_bytes_last_(0), up_bytes_blocks_last_(0) {
+	last_heartbeat_.start();
+}
 
 BandwidthCounter::Stats BandwidthCounter::heartbeat() {
 	Stats stats;
 
-	std::chrono::duration<float> since_last = std::chrono::high_resolution_clock::now() - last_heartbeat;
-	stats.down_bandwidth_ = float(down_bytes_last_.exchange(0)) / since_last.count();
-	stats.down_bandwidth_blocks_ = float(down_bytes_blocks_last_.exchange(0)) / since_last.count();
-	stats.up_bandwidth_ = float(up_bytes_last_.exchange(0)) / since_last.count();
-	stats.up_bandwidth_blocks_ = float(up_bytes_blocks_last_.exchange(0)) / since_last.count();
+	qreal period = qreal(last_heartbeat_.restart())/1000;
+	stats.down_bandwidth_ = qreal(down_bytes_last_.exchange(0)) / period;
+	stats.down_bandwidth_blocks_ = qreal(down_bytes_blocks_last_.exchange(0)) / period;
+	stats.up_bandwidth_ = qreal(up_bytes_last_.exchange(0)) / period;
+	stats.up_bandwidth_blocks_ = qreal(up_bytes_blocks_last_.exchange(0)) / period;
 
 	stats.down_bytes_ = down_bytes_;
 	stats.down_bytes_blocks_ = down_bytes_blocks_;
 	stats.up_bytes_ = up_bytes_;
 	stats.up_bytes_blocks_ = up_bytes_blocks_;
-
-	last_heartbeat = std::chrono::high_resolution_clock::now();
 
 	return stats;
 }
@@ -66,22 +66,22 @@ QJsonObject BandwidthCounter::heartbeat_json() {
 	return state_traffic_stats;
 }
 
-void BandwidthCounter::add_down(uint64_t bytes) {
+void BandwidthCounter::add_down(quint64 bytes) {
 	down_bytes_ += bytes;
 	down_bytes_last_ += bytes;
 }
 
-void BandwidthCounter::add_down_blocks(uint64_t bytes) {
+void BandwidthCounter::add_down_blocks(quint64 bytes) {
 	down_bytes_blocks_ += bytes;
 	down_bytes_blocks_last_ += bytes;
 }
 
-void BandwidthCounter::add_up(uint64_t bytes) {
+void BandwidthCounter::add_up(quint64 bytes) {
 	up_bytes_ += bytes;
 	up_bytes_last_ += bytes;
 }
 
-void BandwidthCounter::add_up_blocks(uint64_t bytes) {
+void BandwidthCounter::add_up_blocks(quint64 bytes) {
 	up_bytes_blocks_ += bytes;
 	up_bytes_blocks_last_ += bytes;
 }

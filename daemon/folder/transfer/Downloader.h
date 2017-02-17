@@ -139,7 +139,6 @@ public:
 
 class Downloader : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("Downloader");
 signals:
 	void chunkDownloaded(blob ct_hash, QFile* chunk_f);
 

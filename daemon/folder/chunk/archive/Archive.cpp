@@ -63,24 +63,24 @@ Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, PathNorm
 }
 
 bool Archive::archive(QString denormpath) {
-	fs::path denormpath_fs = conv_fspath(denormpath);
-	auto file_type = fs::symlink_status(denormpath_fs).type();
+	boost::filesystem::path denormpath_fs = conv_fspath(denormpath);
+	auto file_type = boost::filesystem::symlink_status(denormpath_fs).type();
 
 	// Suppress unnecessary events on dir_monitor.
 	meta_storage_->prepareAssemble(path_normalizer_->normalizePath(conv_fspath(denormpath_fs)), Meta::DELETED);
 
-	if(file_type == fs::directory_file) {
-		if(fs::is_empty(denormpath_fs)) // Okay, just remove this empty directory
-			fs::remove(denormpath_fs);
+	if(file_type == boost::filesystem::directory_file) {
+		if(boost::filesystem::is_empty(denormpath_fs)) // Okay, just remove this empty directory
+			boost::filesystem::remove(denormpath_fs);
 		else {  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
-			for(auto it = fs::directory_iterator(denormpath_fs); it != fs::directory_iterator(); it++)
+			for(auto it = boost::filesystem::directory_iterator(denormpath_fs); it != boost::filesystem::directory_iterator(); it++)
 				archive(conv_fspath(it->path())); // TODO: Okay, this is a horrible solution
-			fs::remove(denormpath_fs);
+			boost::filesystem::remove(denormpath_fs);
 		}
-	}else if(file_type == fs::regular_file) {
+	}else if(file_type == boost::filesystem::regular_file) {
 		archive_strategy_->archive(denormpath);
-	}else if(file_type == fs::symlink_file || file_type == fs::file_not_found) {
-		fs::remove(denormpath_fs);
+	}else if(file_type == boost::filesystem::symlink_file || file_type == boost::filesystem::file_not_found) {
+		boost::filesystem::remove(denormpath_fs);
 	}else{
 		qWarning() << "Unknown file type, nunable to archive:" << denormpath;
 	}

@@ -110,23 +110,23 @@ void AssemblerWorker::run() noexcept {
 
 bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
-	fs::path denormpath_fs(denormpath_.toStdWString());
+	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
-	auto file_type = fs::symlink_status(denormpath_fs).type();
+	auto file_type = boost::filesystem::symlink_status(denormpath_fs).type();
 
 	// Suppress unnecessary events on dir_monitor.
 	meta_storage_->prepareAssemble(normpath_, Meta::DELETED);
 
-	if(file_type == fs::directory_file) {
-		if(fs::is_empty(denormpath_fs)) // Okay, just remove this empty directory
-			fs::remove(denormpath_fs);
+	if(file_type == boost::filesystem::directory_file) {
+		if(boost::filesystem::is_empty(denormpath_fs)) // Okay, just remove this empty directory
+			boost::filesystem::remove(denormpath_fs);
 		else  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
-			fs::remove_all(denormpath_fs);  // TODO: Okay, this is a horrible solution
+			boost::filesystem::remove_all(denormpath_fs);  // TODO: Okay, this is a horrible solution
 	}
 
-	if(file_type == fs::symlink_file || file_type == fs::file_not_found)
-		fs::remove(denormpath_fs);
-	else if(file_type == fs::regular_file)
+	if(file_type == boost::filesystem::symlink_file || file_type == boost::filesystem::file_not_found)
+		boost::filesystem::remove(denormpath_fs);
+	else if(file_type == boost::filesystem::regular_file)
 		archive_->archive(denormpath_);
 	// TODO: else
 
@@ -136,10 +136,10 @@ bool AssemblerWorker::assemble_deleted() {
 bool AssemblerWorker::assemble_symlink() {
 	LOGFUNC();
 
-	fs::path denormpath_fs(denormpath_.toStdWString());
+	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
-	fs::remove_all(denormpath_fs);
-	fs::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
+	boost::filesystem::remove_all(denormpath_fs);
+	boost::filesystem::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
 
 	return true;    // Maybe, something else?
 }
@@ -147,11 +147,11 @@ bool AssemblerWorker::assemble_symlink() {
 bool AssemblerWorker::assemble_directory() {
 	LOGFUNC();
 
-	fs::path denormpath_fs(denormpath_.toStdWString());
+	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
 	bool create_new = true;
-	if(fs::status(denormpath_fs).type() != fs::file_type::directory_file)
-		create_new = !fs::remove(denormpath_fs);
+	if(boost::filesystem::status(denormpath_fs).type() != boost::filesystem::file_type::directory_file)
+		create_new = !boost::filesystem::remove(denormpath_fs);
 	meta_storage_->prepareAssemble(normpath_, Meta::DIRECTORY, create_new);
 
 	if(create_new)
@@ -168,7 +168,7 @@ bool AssemblerWorker::assemble_file() {
 		if(!b) return false;    // retreat!
 
 	//
-	QString assembly_path = params_.system_path + "/" + conv_fspath(fs::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
+	QString assembly_path = params_.system_path + "/" + conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
 
 	// TODO: Check for assembled chunk and try to extract them and push into encstorage.
 	QSaveFile assembly_f(assembly_path); // Opening file
@@ -188,13 +188,13 @@ bool AssemblerWorker::assemble_file() {
 
 	{
 		boost::system::error_code ec;
-		fs::last_write_time(fs::path(assembly_path.toStdWString()), meta_.mtime(), ec);
+		boost::filesystem::last_write_time(conv_fspath(assembly_path), meta_.mtime(), ec);
 		if(ec) {
 			qCWarning(log_assembler) << "Could not set mtime on file:" << assembly_path << "E:" << QString::fromStdString(ec.message());    // FIXME: #83
 		}
 	}
 
-	meta_storage_->prepareAssemble(normpath_, Meta::FILE, fs::exists(fs::path(denormpath_.toStdWString())));
+	meta_storage_->prepareAssemble(normpath_, Meta::FILE, boost::filesystem::exists(conv_fspath(denormpath_)));
 
 	if(! archive_->archive(denormpath_)) {
 		qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83

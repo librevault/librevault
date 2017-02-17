@@ -49,11 +49,11 @@ TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* p
 }
 
 void TimestampArchive::archive(QString denormpath) {
-	fs::path denormpath_fs = conv_fspath(denormpath);
+	boost::filesystem::path denormpath_fs = conv_fspath(denormpath);
 	// Add a new entry
 	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
 
-	qint64 mtime = fs::last_write_time(denormpath_fs);
+	qint64 mtime = boost::filesystem::last_write_time(denormpath_fs);
 	QString suffix = "~" + QDateTime::fromMSecsSinceEpoch(mtime*1000).toString("yyyyMMdd-HHmmss");
 
 	QFileInfo archived_info(archived_path);
@@ -63,9 +63,9 @@ void TimestampArchive::archive(QString denormpath) {
 	QFile::rename(denormpath, timestamped_path);
 
 	// Remove
-	std::map<std::string, fs::path> paths;
+	std::map<std::string, boost::filesystem::path> paths;
 	std::regex timestamp_regex(regex_escape(archived_info.baseName().toStdString()) + R"((~\d{8}-\d{6}))" + regex_escape(archived_info.completeSuffix().toStdString()));
-	for(auto it = fs::directory_iterator(denormpath_fs.parent_path()); it != fs::directory_iterator(); it++) {
+	for(auto it = boost::filesystem::directory_iterator(denormpath_fs.parent_path()); it != boost::filesystem::directory_iterator(); it++) {
 		std::smatch match;
 		std::string generic_path = it->path().generic_string();	// To resolve stackoverflow.com/q/32164501
 		std::regex_match(generic_path, match, timestamp_regex);
@@ -74,7 +74,7 @@ void TimestampArchive::archive(QString denormpath) {
 		}
 	}
 	if(paths.size() > params_.archive_timestamp_count && params_.archive_timestamp_count != 0) {
-		fs::remove(paths.begin()->second);
+		boost::filesystem::remove(paths.begin()->second);
 	}
 }
 

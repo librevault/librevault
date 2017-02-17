@@ -34,7 +34,8 @@
 #include "control/StateCollector.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "util/log.h"
+
+Q_LOGGING_CATEGORY(log_indexerworker, "folder.meta.indexer")
 
 namespace librevault {
 
@@ -56,10 +57,10 @@ IndexerQueue::IndexerQueue(const FolderParams& params, Index* index, IgnoreList*
 }
 
 IndexerQueue::~IndexerQueue() {
-	LOGFUNC();
+	qCDebug(log_indexerworker) << "~IndexerQueue";
 	emit aboutToStop();
 	threadpool_->waitForDone();
-	LOGFUNCEND();
+	qCDebug(log_indexerworker) << "!~IndexerQueue";
 }
 
 void IndexerQueue::addIndexing(QString abspath) {
@@ -98,7 +99,7 @@ void IndexerQueue::metaFailed(QString error_string) {
 	if(tasks_.size() == 0)
 		emit finishedIndexing();
 
-	LOGW("Skipping" << worker->absolutePath() << "Reason:" << error_string);
+	qCWarning(log_indexerworker) << "Skipping" << worker->absolutePath() << "Reason:" << error_string;
 }
 
 } /* namespace librevault */

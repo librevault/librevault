@@ -27,25 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <boost/filesystem.hpp>
 
-namespace librevault {
+#include <QtCore>
 
-fs::path make_relpath(const fs::path& path, const fs::path& rel_to) {
-	auto abspath = fs::absolute(path);
+inline QString human_size(uintmax_t size) {
+	qreal num = size;
 
-	fs::path relpath;
-	auto path_elem_it = abspath.begin();
-	for(auto dir_elem : rel_to){
-		if(dir_elem != *(path_elem_it++))
-			return fs::path();
-	}
-	for(; path_elem_it != abspath.end(); path_elem_it++){
-		if(*path_elem_it == "." || *path_elem_it == "..")
-			return fs::path();
-		relpath /= *path_elem_it;
-	}
-	return relpath;
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%n bytes", 0, size);
+	num /= 1024.0;
+
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
+	num /= 1024.0;
+
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
+
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
+
+	return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
 }
 
-} /* namespace librevault */
+inline QString human_bandwidth(qreal bandwidth) {
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
+	bandwidth /= 1024.0;
+
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
+
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
+
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
+
+	return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
+}

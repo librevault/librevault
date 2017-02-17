@@ -82,6 +82,7 @@ struct MissingChunk {
 
 	// AvailabilityMap accessors
 	const AvailabilityMap<uint32_t>& file_map() const {return file_map_;}
+	AvailabilityMap<uint32_t> request_map();
 
 	/* Request-oriented functions */
 	struct BlockRequest {
@@ -165,7 +166,7 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 
-	std::map<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
+	QMap<blob, std::shared_ptr<MissingChunk>> missing_chunks_;
 	WeightedDownloadQueue download_queue_;
 
 	size_t requests_overall() const;

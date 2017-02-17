@@ -76,6 +76,13 @@ void MissingChunk::put_block(uint32_t offset, const blob& content) {
 	}
 }
 
+AvailabilityMap<uint32_t> MissingChunk::request_map() {
+	AvailabilityMap<uint32_t> request_map = file_map_;
+		foreach(auto& request, requests.values())
+			request_map.insert({request.offset, request.size});
+	return request_map;
+}
+
 /* WeightedDownloadQueue */
 float WeightedDownloadQueue::Weight::value() const {
 	float weight_value = 0;
@@ -190,7 +197,7 @@ void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type&
 			uint32_t padded_chunksize = chunk.size % 16 == 0 ? chunk.size : ((chunk.size / 16) + 1) * 16;
 
 			auto missing_chunk = std::make_shared<MissingChunk>(params_.system_path, ct_hash, padded_chunksize);
-			missing_chunks_.insert({ct_hash, missing_chunk});
+			missing_chunks_.insert(ct_hash, missing_chunk);
 
 			/* Add to download queue */
 			download_queue_.add_chunk(missing_chunk);
@@ -206,7 +213,7 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 	// Remove from missing
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it != missing_chunks_.end()) {
-		download_queue_.remove_chunk(missing_chunk_it->second);
+		download_queue_.remove_chunk(missing_chunk_it.value());
 		missing_chunks_.erase(missing_chunk_it);
 	}
 
@@ -214,9 +221,9 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 	if(mark_clustered) {
 		for(auto& smeta : meta_storage_->index->containing_chunk(ct_hash)) {
 			for(auto& chunk : smeta.meta().chunks()) {
-				auto it = missing_chunks_.find(chunk.ct_hash);
-				if(it != missing_chunks_.end())
-					download_queue_.mark_clustered(it->second);
+				auto chunk_ptr = missing_chunks_.value(chunk.ct_hash);
+				if(chunk_ptr)
+					download_queue_.mark_clustered(chunk_ptr);
 			}
 		}
 	}
@@ -240,7 +247,7 @@ void Downloader::notify_remote_chunk(RemoteFolder* remote, const blob& ct_hash) 
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
-	auto missing_chunk = missing_chunk_it->second;
+	auto missing_chunk = missing_chunk_it.value();
 	missing_chunk->owned_by.insert(remote, remote->get_interest_guard());
 	download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
 
@@ -251,8 +258,8 @@ void Downloader::handle_choke(RemoteFolder* remote) {
 	LOGFUNC();
 
 	/* Remove requests to this node */
-	for(auto& missing_chunk : missing_chunks_)
-		missing_chunk.second->requests.remove(remote);
+	foreach(auto& missing_chunk, missing_chunks_)
+		missing_chunk->requests.remove(remote);
 
 	QTimer::singleShot(0, this, &Downloader::maintain_requests);
 }
@@ -264,12 +271,12 @@ void Downloader::handle_unchoke(RemoteFolder* remote) {
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from) {
 	LOGFUNC();
-	auto missing_chunk_it = missing_chunks_.find(ct_hash);
-	if(missing_chunk_it == missing_chunks_.end()) return;
+	auto missing_chunk = missing_chunks_.value(ct_hash);
+	if(! missing_chunk) return;
 
 	QList<QPair<blob, QFile*>> downloaded_chunks;
 
-	QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk_it->second->requests);
+	QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk->requests);
 	while(request_it.hasNext()) {
 		request_it.next();
 
@@ -278,9 +285,9 @@ void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& dat
 		&& request_it.key() == from) {              // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
 			request_it.remove();
 
-			missing_chunk_it->second->put_block(offset, data);
-			if(missing_chunk_it->second->complete()) {
-				QFile* chunk_f = missing_chunk_it->second->release_chunk();
+			missing_chunk->put_block(offset, data);
+			if(missing_chunk->complete()) {
+				QFile* chunk_f = missing_chunk->release_chunk();
 				chunk_f->setParent(this);
 
 				downloaded_chunks << qMakePair(ct_hash, chunk_f);
@@ -303,7 +310,7 @@ void Downloader::trackRemote(RemoteFolder* remote) {
 void Downloader::untrackRemote(RemoteFolder* remote) {
 	LOGFUNC();
 
-	for(auto& missing_chunk : missing_chunks_ | boost::adaptors::map_values) {
+	foreach(auto& missing_chunk, missing_chunks_.values()) {
 		missing_chunk->requests.remove(remote);
 		missing_chunk->owned_by.remove(remote);
 		download_queue_.set_chunk_remotes_count(missing_chunk, missing_chunk->owned_by.size());
@@ -318,8 +325,8 @@ void Downloader::maintain_requests() {
 	auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
 
 	// Prune old requests by timeout
-	for(auto& missing_chunk : missing_chunks_) {
-		QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk.second->requests);
+	foreach(const auto& missing_chunk, missing_chunks_.values()) {
+		QMutableHashIterator<RemoteFolder*, MissingChunk::BlockRequest> request_it(missing_chunk->requests);
 		while(request_it.hasNext()) {
 			if(request_it.next().value().started + request_timeout < std::chrono::steady_clock::now())
 				request_it.remove();
@@ -336,15 +343,13 @@ void Downloader::maintain_requests() {
 bool Downloader::request_one() {
 	LOGFUNC();
 	// Try to choose chunk to request
-	for(auto missing_chunk : download_queue_.chunks()) {
+	for(auto& missing_chunk : download_queue_.chunks()) {
 		// Try to choose a remote to request this block from
 		auto remote = find_node_for_request(missing_chunk);
-		if(remote == nullptr) continue;
+		if(! remote) continue;
 
 		// Rebuild request map to determine, which block to download now.
-		AvailabilityMap<uint32_t> request_map = missing_chunk->file_map();
-		foreach(auto& request, missing_chunk->requests.values())
-			request_map.insert({request.offset, request.size});
+		AvailabilityMap<uint32_t> request_map = missing_chunk->request_map();
 
 		// Request, actually
 		if(!request_map.full()) {
@@ -362,12 +367,10 @@ bool Downloader::request_one() {
 }
 
 RemoteFolder* Downloader::find_node_for_request(std::shared_ptr<MissingChunk> chunk) {
-	auto missing_chunk_it = missing_chunks_.find(chunk->ct_hash_);
-	if(missing_chunk_it == missing_chunks_.end()) return nullptr;
+	if(! missing_chunks_.contains(chunk->ct_hash_))
+		return nullptr;
 
-	auto missing_chunk_ptr = missing_chunk_it->second;
-
-	foreach(RemoteFolder* owner_remote, missing_chunk_ptr->owned_by.keys())
+	foreach(RemoteFolder* owner_remote, chunk->owned_by.keys())
 		if(owner_remote->ready() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;
@@ -375,8 +378,8 @@ RemoteFolder* Downloader::find_node_for_request(std::shared_ptr<MissingChunk> ch
 
 size_t Downloader::requests_overall() const {
 	size_t requests_overall_result = 0;
-	for(auto& missing_chunk : missing_chunks_)
-		requests_overall_result += missing_chunk.second->requests.size();
+	foreach(auto& missing_chunk, missing_chunks_.values())
+		requests_overall_result += missing_chunk->requests.size();
 	return requests_overall_result;
 }
 

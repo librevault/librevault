@@ -28,11 +28,11 @@
  */
 #pragma once
 #include "blob.h"
-#include "util/log.h"
 #include <librevault/SignedMeta.h>
-#include <QString>
-#include <QRunnable>
+#include <QLoggingCategory>
 #include <QObject>
+#include <QRunnable>
+#include <QString>
 #include <map>
 
 namespace librevault {
@@ -43,7 +43,6 @@ class IgnoreList;
 class PathNormalizer;
 class IndexerWorker : public QObject, public QRunnable {
 	Q_OBJECT
-	LOG_SCOPE("IndexerWorker");
 signals:
 	void metaCreated(SignedMeta smeta);
 	void metaFailed(QString errorString);

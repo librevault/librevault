@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include <librevault/SignedMeta.h>
 #include <QMap>
 #include <QString>
@@ -43,7 +42,6 @@ class StateCollector;
 class IndexerWorker;
 class IndexerQueue : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("IndexerQueue");
 signals:
 	void aboutToStop();
 

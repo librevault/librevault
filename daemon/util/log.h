@@ -42,6 +42,15 @@ qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
 #define LOGW(ARGS) \
 qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
 
+#define SCOPELOG(category) \
+class ScopeLog { \
+	QString scope_; \
+public: \
+	ScopeLog(const char* scope) : scope_(scope) {qCDebug(category) << scope_;} \
+	~ScopeLog() {qCDebug(category) << (QString("!") + scope_);} \
+}; \
+ScopeLog scopelog(BOOST_CURRENT_FUNCTION)
+
 #define LOGFUNC() \
 qDebug() << BOOST_CURRENT_FUNCTION
 

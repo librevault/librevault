@@ -27,13 +27,12 @@
  * files in the program, then also delete it here.
  */
 #include "NoArchive.h"
-#include "util/conv_fspath.h"
-#include <boost/filesystem.hpp>
+#include <QFile>
 
 namespace librevault {
 
 void NoArchive::archive(QString denormpath) {
-	fs::remove(conv_fspath(denormpath));
+	QFile::remove(denormpath);
 }
 
 } /* namespace librevault */

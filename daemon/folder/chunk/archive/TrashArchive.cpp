@@ -49,17 +49,17 @@ TrashArchive::TrashArchive(const FolderParams& params, PathNormalizer* path_norm
 void TrashArchive::maintain_cleanup() {
 	qInfo() << "Starting archive cleanup";
 
-	std::list<fs::path> removed_paths;
+	std::list<boost::filesystem::path> removed_paths;
 	try {
-		for(auto it = fs::recursive_directory_iterator(conv_fspath(archive_path_)); it != fs::recursive_directory_iterator(); it++) {
-			time_t time_since_archivation = time(nullptr) - fs::last_write_time(it->path());
+		for(auto it = boost::filesystem::recursive_directory_iterator(conv_fspath(archive_path_)); it != boost::filesystem::recursive_directory_iterator(); it++) {
+			time_t time_since_archivation = time(nullptr) - boost::filesystem::last_write_time(it->path());
 			constexpr unsigned sec_per_day = 60*60*24;
 			if(time_since_archivation >= params_.archive_trash_ttl * sec_per_day && params_.archive_trash_ttl != 0)
 				removed_paths.push_back(it->path());
 		}
 
-		for(const fs::path& path : removed_paths)
-			fs::remove(path);
+		for(const boost::filesystem::path& path : removed_paths)
+			boost::filesystem::remove(path);
 
 		QTimer::singleShot(24*1000*60*60, this, &TrashArchive::maintain_cleanup); // A day.
 	}catch(std::exception& e) {
@@ -71,7 +71,7 @@ void TrashArchive::archive(QString denormpath) {
 	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
 	qDebug() << "Adding an archive item: " << archived_path;
 	QFile::rename(denormpath, archived_path);
-	fs::last_write_time(conv_fspath(archived_path), time(nullptr));
+	boost::filesystem::last_write_time(conv_fspath(archived_path), time(nullptr));
 }
 
 } /* namespace librevault */

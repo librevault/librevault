@@ -28,53 +28,10 @@
  */
 #pragma once
 #include <websocketpp/config/asio.hpp>
-#include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/server.hpp>
-#include <websocketpp/client.hpp>
 #include <websocketpp/logger/stub.hpp>
 
 namespace librevault {
-
-/// Client config with asio transport and TLS enabled, but with logging disabled
-struct asio_tls_client : public websocketpp::config::core_client {
-	using type = asio_tls_client;
-	using base = websocketpp::config::core_client;
-
-	using concurrency_type = base::concurrency_type;
-
-	using request_type = base::request_type;
-	using response_type = base::response_type;
-
-	using message_type = base::message_type;
-	using con_msg_manager_type = base::con_msg_manager_type;
-	using endpoint_msg_manager_type = base::endpoint_msg_manager_type;
-
-#ifndef LV_DEBUG_WEBSOCKETPP
-	using alog_type = websocketpp::log::stub;
-	using elog_type = websocketpp::log::stub;
-#else
-	using alog_type = base::alog_type;
-	using elog_type = type::elog_type;
-#endif
-
-	using rng_type = base::rng_type;
-
-	struct transport_config : public base::transport_config {
-		using concurrency_type = type::concurrency_type;
-#ifndef LV_DEBUG_WEBSOCKETPP
-		using alog_type = websocketpp::log::stub;
-		using elog_type = websocketpp::log::stub;
-#else
-		using alog_type = type::alog_type;
-		using elog_type = type::elog_type;
-#endif
-		using request_type = type::request_type;
-		using response_type = type::response_type;
-		using socket_type = websocketpp::transport::asio::tls_socket::endpoint;
-	};
-
-	using transport_type = websocketpp::transport::asio::endpoint<transport_config>;
-};
 
 /// Server config with asio transport and TLS enabled
 struct asio_tls : public websocketpp::config::core {

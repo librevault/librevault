@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/fs.h"
+//#include "util/fs.h"
 #include "util/log.h"
 #include <QObject>
 #include <boost/filesystem/path.hpp>

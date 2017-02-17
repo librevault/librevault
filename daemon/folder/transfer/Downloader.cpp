@@ -34,8 +34,11 @@
 #include "folder/meta/MetaStorage.h"
 #include <librevault/crypto/Base32.h>
 #include <QFile>
+#include <QLoggingCategory>
 #include <QMutableMapIterator>
 #include <boost/range/adaptor/map.hpp>
+
+Q_LOGGING_CATEGORY(log_downloader, "folder.downloader")
 
 namespace librevault {
 
@@ -47,7 +50,7 @@ QFile* GlobalFilePool::getFile(QString path, bool release) {
 
 	f = new QFile(path);
 	if(! f->open(QIODevice::ReadWrite))
-		qWarning() << "Could not open" << path << "Error:" << f->errorString();
+		qCWarning(log_downloader) << "Could not open" << path << "Error:" << f->errorString();
 	opened_files_.insert(path, f);
 
 	return f;
@@ -177,7 +180,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 Downloader::~Downloader() {}
 
 void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type& bitfield) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 
 	Q_ASSERT(bitfield.size() == smeta.meta().chunks().size());
 
@@ -208,7 +211,7 @@ void Downloader::notify_local_meta(const SignedMeta& smeta, const bitfield_type&
 }
 
 void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 
 	// Remove from missing
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
@@ -230,20 +233,20 @@ void Downloader::notify_local_chunk(const blob& ct_hash, bool mark_clustered) {
 }
 
 void Downloader::notify_remote_meta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 	try {
 		auto chunks = meta_storage_->index->get_meta(revision).meta().chunks();
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield[chunk_idx])
 				notify_remote_chunk(remote, chunks[chunk_idx].ct_hash);
 	}catch(MetaStorage::no_such_meta){
-		LOGD("Expired Meta");
+		qCDebug(log_downloader) << "Expired Meta";
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
 	}
 }
 void Downloader::notify_remote_chunk(RemoteFolder* remote, const blob& ct_hash) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 	auto missing_chunk_it = missing_chunks_.find(ct_hash);
 	if(missing_chunk_it == missing_chunks_.end()) return;
 
@@ -255,7 +258,7 @@ void Downloader::notify_remote_chunk(RemoteFolder* remote, const blob& ct_hash) 
 }
 
 void Downloader::handle_choke(RemoteFolder* remote) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 
 	/* Remove requests to this node */
 	foreach(auto& missing_chunk, missing_chunks_)
@@ -265,12 +268,12 @@ void Downloader::handle_choke(RemoteFolder* remote) {
 }
 
 void Downloader::handle_unchoke(RemoteFolder* remote) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 	QTimer::singleShot(0, this, &Downloader::maintain_requests);
 }
 
 void Downloader::put_block(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 	auto missing_chunk = missing_chunks_.value(ct_hash);
 	if(! missing_chunk) return;
 
@@ -308,7 +311,7 @@ void Downloader::trackRemote(RemoteFolder* remote) {
 }
 
 void Downloader::untrackRemote(RemoteFolder* remote) {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 
 	foreach(auto& missing_chunk, missing_chunks_.values()) {
 		missing_chunk->requests.remove(remote);
@@ -320,7 +323,7 @@ void Downloader::untrackRemote(RemoteFolder* remote) {
 }
 
 void Downloader::maintain_requests() {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 
 	auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
 
@@ -341,7 +344,7 @@ void Downloader::maintain_requests() {
 }
 
 bool Downloader::request_one() {
-	LOGFUNC();
+	SCOPELOG(log_downloader);
 	// Try to choose chunk to request
 	for(auto& missing_chunk : download_queue_.chunks()) {
 		// Try to choose a remote to request this block from

@@ -33,8 +33,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "util/byte_convert.h"
-#include "util/log.h"
+#include "human_size.h"
 #include <librevault/crypto/HMAC-SHA3.h>
 #include <librevault/crypto/AES_CBC.h>
 #include <rabin.h>
@@ -43,6 +42,8 @@
 #ifdef Q_OS_UNIX
 #   include <sys/stat.h>
 #endif
+
+Q_DECLARE_LOGGING_CATEGORY(log_indexerworker)
 
 namespace librevault {
 
@@ -60,7 +61,7 @@ IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
 	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
-	qDebug() << "Started indexing:" << normpath;
+	qCDebug(log_indexerworker) << "Started indexing:" << normpath;
 
 	try {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
@@ -74,7 +75,7 @@ void IndexerWorker::run() noexcept {
 		}catch(boost::filesystem::filesystem_error& e){
 		}catch(MetaStorage::no_such_meta& e){
 		}catch(Meta::error& e){
-			LOGW("Meta in DB is inconsistent, trying to reindex: " << e.what());
+			qCDebug(log_indexerworker) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
 		}
 
 		std::chrono::high_resolution_clock::time_point before_index = std::chrono::high_resolution_clock::now();  // Starting timer
@@ -82,10 +83,10 @@ void IndexerWorker::run() noexcept {
 		std::chrono::high_resolution_clock::time_point after_index = std::chrono::high_resolution_clock::now();   // Stopping timer
 		float time_spent = std::chrono::duration<float, std::chrono::seconds::period>(after_index - before_index).count();
 
-		LOGD("Updated index entry in " << time_spent << "s (" << size_to_string((double)new_smeta_.meta().size()/time_spent).c_str() << "/s)"
-			<< " Path=" << abspath_
-			<< " Rev=" << new_smeta_.meta().revision()
-			<< " Chk=" << new_smeta_.meta().chunks().size());
+		qCDebug(log_indexerworker) << "Updated index entry in" << time_spent << "s (" << human_bandwidth((double)new_smeta_.meta().size()/time_spent) << ")"
+			<< "Path=" << abspath_
+			<< "Rev=" << new_smeta_.meta().revision()
+			<< "Chk=" << new_smeta_.meta().chunks().size();
 
 		emit metaCreated(new_smeta_);
 	}catch(std::runtime_error& e){
@@ -255,7 +256,7 @@ void IndexerWorker::update_chunks() {
 }
 
 Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
-	LOGD("New chunk size: " << data.size());
+	qCDebug(log_indexerworker) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
 	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 

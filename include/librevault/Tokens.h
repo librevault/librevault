@@ -20,8 +20,8 @@
 
 namespace librevault {
 
-inline std::vector<uint8_t> derive_token(const Secret& secret, const std::vector<uint8_t>& pubkey) {
-	return pubkey | crypto::HMAC_SHA3_224(secret.get_Public_Key());
+inline std::vector<uint8_t> derive_token(const Secret& secret, const std::vector<uint8_t>& cert_digest) {
+	return cert_digest | crypto::HMAC_SHA3_224(secret.get_Public_Key());
 }
 
 } /* namespace librevault */

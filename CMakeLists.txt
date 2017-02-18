@@ -256,21 +256,19 @@ target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
 target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 
 ## Qt5
-if(BUILD_GUI OR BUILD_CLI)
-	set(Qt_COMPONENTS
-			LinguistTools
-			Svg
-			Widgets
-			WebSockets
-			)
-	if(OS_WIN)
-		list(APPEND Qt_COMPONENTS WinExtras)
-	elseif(OS_MAC)
-		list(APPEND Qt_COMPONENTS MacExtras)
-	endif()
-	find_package(Qt5 5.3 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+set(Qt_COMPONENTS
+		LinguistTools
+		Svg
+		Widgets
+		WebSockets
+		)
+if(OS_WIN)
+	list(APPEND Qt_COMPONENTS WinExtras)
+elseif(OS_MAC)
+	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-#add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
+find_package(Qt5 5.6 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)

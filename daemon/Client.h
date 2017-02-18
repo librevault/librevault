@@ -61,9 +61,6 @@ private:
 	FolderService* folder_service_;
 	P2PProvider* p2p_provider_;
 	ControlServer* control_server_;
-
-	/* Initialization */
-	inline QString log_tag() {return "";}
 };
 
 } /* namespace librevault */

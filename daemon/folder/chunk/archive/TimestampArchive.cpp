@@ -33,9 +33,9 @@
 #include "util/regex_escape.h"
 #include <QDateTime>
 #include <QDir>
+#include <QRegularExpression>
 #include <QTimer>
 #include <boost/filesystem.hpp>
-#include <regex>
 
 namespace librevault {
 
@@ -63,18 +63,15 @@ void TimestampArchive::archive(QString denormpath) {
 	QFile::rename(denormpath, timestamped_path);
 
 	// Remove
-	std::map<std::string, boost::filesystem::path> paths;
-	std::regex timestamp_regex(regex_escape(archived_info.baseName().toStdString()) + R"((~\d{8}-\d{6}))" + regex_escape(archived_info.completeSuffix().toStdString()));
+	QMap<QString, boost::filesystem::path> paths;
+	QRegularExpression timestamp_regex(regex_escape(archived_info.baseName()) + R"((~\d{8}-\d{6}))" + regex_escape(archived_info.completeSuffix()));
 	for(auto it = boost::filesystem::directory_iterator(denormpath_fs.parent_path()); it != boost::filesystem::directory_iterator(); it++) {
-		std::smatch match;
-		std::string generic_path = it->path().generic_string();	// To resolve stackoverflow.com/q/32164501
-		std::regex_match(generic_path, match, timestamp_regex);
-		if(!match.empty()) {
-			paths.insert({match[1].str(), denormpath_fs});
-		}
+		QRegularExpressionMatch match = timestamp_regex.match(conv_fspath(it->path()));
+		if(match.hasMatch())
+			paths.insert(match.captured(1), denormpath_fs);
 	}
-	if(paths.size() > params_.archive_timestamp_count && params_.archive_timestamp_count != 0) {
-		boost::filesystem::remove(paths.begin()->second);
+	if(paths.size() > (int)params_.archive_timestamp_count && params_.archive_timestamp_count != 0) {
+		boost::filesystem::remove(paths.first());
 	}
 }
 

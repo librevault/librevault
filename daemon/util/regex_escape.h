@@ -27,35 +27,26 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <string>
-#include <boost/algorithm/string/replace.hpp>
+#include <QString>
 
 namespace librevault {
 
-inline std::string regex_escape(std::string str_to_escape) {
-	boost::replace_all(str_to_escape, "\\", "\\\\");
-	boost::replace_all(str_to_escape, "^", "\\^");
-	boost::replace_all(str_to_escape, ".", "\\.");
-	boost::replace_all(str_to_escape, "$", "\\$");
-	boost::replace_all(str_to_escape, "|", "\\|");
-	boost::replace_all(str_to_escape, "(", "\\(");
-	boost::replace_all(str_to_escape, ")", "\\)");
-	boost::replace_all(str_to_escape, "[", "\\[");
-	boost::replace_all(str_to_escape, "]", "\\]");
-	boost::replace_all(str_to_escape, "*", "\\*");
-	boost::replace_all(str_to_escape, "+", "\\+");
-	boost::replace_all(str_to_escape, "?", "\\?");
-	boost::replace_all(str_to_escape, "/", "\\/");
+inline QString regex_escape(QString escaped) {
+	escaped.replace("\\", "\\\\");
+	escaped.replace("^", "\\^");
+	escaped.replace(".", "\\.");
+	escaped.replace("$", "\\$");
+	escaped.replace("|", "\\|");
+	escaped.replace("(", "\\(");
+	escaped.replace(")", "\\)");
+	escaped.replace("[", "\\[");
+	escaped.replace("]", "\\]");
+	escaped.replace("*", "\\*");
+	escaped.replace("+", "\\+");
+	escaped.replace("?", "\\?");
+	escaped.replace("/", "\\/");
 
-	return str_to_escape;
-}
-
-inline std::string wildcard_to_regex(std::string str_to_escape) {
-	str_to_escape = regex_escape(str_to_escape);
-	boost::replace_all(str_to_escape, "\\?", ".");
-	boost::replace_all(str_to_escape, "\\*", ".*");
-
-	return str_to_escape;
+	return escaped;
 }
 
 } /* namespace librevault */

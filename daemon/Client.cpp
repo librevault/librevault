@@ -36,7 +36,6 @@
 #include "nat/PortMappingService.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/P2PProvider.h"
-#include "util/log.h"
 
 namespace librevault {
 
@@ -90,12 +89,12 @@ int Client::run() {
 }
 
 void Client::restart() {
-	LOGI("Restarting...");
+	qInfo() << "Restarting...";
 	this->exit(EXIT_RESTART);
 }
 
 void Client::shutdown(){
-	LOGI("Exiting...");
+	qInfo() << "Exiting...";
 	this->exit();
 }
 

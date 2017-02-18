@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QReadWriteLock>
 #include <QDateTime>
+#include <QReadWriteLock>
+#include <QStringList>
 
 namespace librevault {
 

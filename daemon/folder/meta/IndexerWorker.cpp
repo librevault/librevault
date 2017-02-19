@@ -28,7 +28,6 @@
  */
 #include "IndexerWorker.h"
 
-#include "Index.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
@@ -47,11 +46,11 @@ Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
-IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
 	QObject(parent),
 	abspath_(abspath),
 	params_(params),
-	index_(index),
+	meta_storage_(meta_storage),
 	ignore_list_(ignore_list),
 	path_normalizer_(path_normalizer),
 	secret_(params.secret),
@@ -67,7 +66,7 @@ void IndexerWorker::run() noexcept {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = index_->get_meta(Meta::make_path_id(normpath.toStdString(), secret_));
+			old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath.toStdString(), secret_));
 			old_meta_ = old_smeta_.meta();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");

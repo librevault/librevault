@@ -29,7 +29,6 @@
 #include "OpenStorage.h"
 #include "control/FolderParams.h"
 #include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/PathNormalizer.h"
 #include "util/readable.h"
@@ -43,18 +42,13 @@ OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, 
 	path_normalizer_(path_normalizer) {}
 
 bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
-	auto sql_result = meta_storage_->index->db().exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
-			{":ct_hash", ct_hash}
-	});
-	return sql_result.have_rows();
+	return meta_storage_->isChunkAssembled(ct_hash);
 }
 
 QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 	LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
-	auto metas_containing = meta_storage_->index->containing_chunk(ct_hash);
-
-	for(auto smeta : metas_containing) {
+	foreach(auto& smeta, meta_storage_->containingChunk(ct_hash)) {
 		// Search for chunk offset and index
 		uint64_t offset = 0;
 		unsigned chunk_idx = 0;

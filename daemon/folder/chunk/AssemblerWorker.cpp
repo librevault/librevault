@@ -33,7 +33,6 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "folder/chunk/archive/Archive.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
 #include "util/readable.h"
@@ -67,12 +66,14 @@ AssemblerWorker::~AssemblerWorker() {}
 QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 	blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
 
-	for(auto row : meta_storage_->index->db().exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
-		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, row[0].as_uint(), params_.secret.get_Encryption_Key(), row[1].as_blob());
-		return QByteArray((const char*)chunk_pt_v.data(), chunk_pt_v.size());
+	try {
+		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
+		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(), conv_bytearray(size_iv.second));
+		return conv_bytearray(chunk_pt_v);
+	}catch(std::exception& e){
+		qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
+		throw ChunkStorage::no_such_chunk();
 	}
-	qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
-	throw ChunkStorage::no_such_chunk();
 }
 
 void AssemblerWorker::run() noexcept {
@@ -100,7 +101,8 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.meta_type() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_->index->db().exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
+			meta_storage_->markAssembled(meta_.path_id());
+			chunk_storage_->cleanup(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
@@ -110,27 +112,8 @@ void AssemblerWorker::run() noexcept {
 
 bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
-	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
-	auto file_type = boost::filesystem::symlink_status(denormpath_fs).type();
-
-	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(normpath_, Meta::DELETED);
-
-	if(file_type == boost::filesystem::directory_file) {
-		if(boost::filesystem::is_empty(denormpath_fs)) // Okay, just remove this empty directory
-			boost::filesystem::remove(denormpath_fs);
-		else  // Oh, damn, this is very NOT RIGHT! So, we have DELETED directory with NOT DELETED files in it
-			boost::filesystem::remove_all(denormpath_fs);  // TODO: Okay, this is a horrible solution
-	}
-
-	if(file_type == boost::filesystem::symlink_file || file_type == boost::filesystem::file_not_found)
-		boost::filesystem::remove(denormpath_fs);
-	else if(file_type == boost::filesystem::regular_file)
-		archive_->archive(denormpath_);
-	// TODO: else
-
-	return true;    // Maybe, something else?
+	return archive_->archive(denormpath_);   // Maybe, something else?
 }
 
 bool AssemblerWorker::assemble_symlink() {
@@ -204,10 +187,6 @@ bool AssemblerWorker::assemble_file() {
 		qCWarning(log_assembler) << "File cannot be moved to its final location:" << denormpath_ << "Current location:" << assembly_path;   // FIXME: #83
 		throw abort_assembly();
 	}
-
-	meta_storage_->index->db().exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", meta_.path_id()}});
-
-	chunk_storage_->cleanup(meta_);
 
 	return true;
 }

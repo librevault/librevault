@@ -27,58 +27,60 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
-#include <librevault/SignedMeta.h>
-#include <QObject>
-#include <QRunnable>
+#include <QList>
+#include <boost/bimap.hpp>
+#include <boost/bimap/multiset_of.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
+
+#define CLUSTERED_COEFFICIENT 10.0f
+#define IMMEDIATE_COEFFICIENT 20.0f
+#define RARITY_COEFFICIENT 25.0f
+
+inline std::size_t hash_value(const QByteArray& val) {
+	return qHash(val);
+}
 
 namespace librevault {
 
-class PathNormalizer;
-
-class Archive;
-class MetaStorage;
 class FolderParams;
+class MetaStorage;
 class ChunkStorage;
-class Secret;
 
-class AssemblerWorker : public QObject, public QRunnable {
-public:
-	struct abort_assembly : std::runtime_error {
-		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
+class WeightedChunkQueue {
+	struct Weight {
+		bool clustered = false;
+		bool immediate = false;
+
+		int owned_by = 0;
+		int remotes_count = 0;
+
+		float value() const;
+		bool operator<(const Weight& b) const {return value() > b.value();}
+		bool operator==(const Weight& b) const {return value() == b.value();}
+		bool operator!=(const Weight& b) const {return !(*this == b);}
 	};
+	using weight_ordered_chunks_t = boost::bimap<
+		boost::bimaps::unordered_set_of<QByteArray>,
+		boost::bimaps::multiset_of<Weight>
+	>;
+	using queue_left_value = weight_ordered_chunks_t::left_value_type;
+	using queue_right_value = weight_ordered_chunks_t::right_value_type;
+	weight_ordered_chunks_t weight_ordered_chunks_;
 
-	AssemblerWorker(SignedMeta smeta,
-	                const FolderParams& params,
-					MetaStorage* meta_storage,
-					ChunkStorage* chunk_storage,
-					PathNormalizer* path_normalizer,
-					Archive* archive);
-	virtual ~AssemblerWorker();
+	Weight getCurrentWeight(QByteArray chunk);
+	void reweightChunk(QByteArray chunk, Weight new_weight);
 
-	void run() noexcept override;
+public:
+	void addChunk(QByteArray chunk);
+	void removeChunk(QByteArray chunk);
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
-	PathNormalizer* path_normalizer_;
-	Archive* archive_;
+	void setRemotesCount(int count);
+	void setRemotesCount(QByteArray chunk, int count);
 
-	SignedMeta smeta_;
-	const Meta& meta_;
+	void markClustered(QByteArray chunk);
+	void markImmediate(QByteArray chunk);
 
-	QByteArray normpath_;
-	QString denormpath_;
-
-	bool assemble_deleted();
-	bool assemble_symlink();
-	bool assemble_directory();
-	bool assemble_file();
-
-	void apply_attrib();
-
-	QByteArray get_chunk_pt(const blob& ct_hash) const;
+	QList<QByteArray> chunks() const;
 };
 
 } /* namespace librevault */

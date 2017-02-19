@@ -35,7 +35,7 @@
 namespace librevault {
 
 class FolderParams;
-class Index;
+class MetaStorage;
 class IgnoreList;
 class PathNormalizer;
 class StateCollector;
@@ -49,7 +49,7 @@ signals:
 	void finishedIndexing();
 
 public:
-	IndexerQueue(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
+	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
 	virtual ~IndexerQueue();
 
 public slots:
@@ -57,7 +57,7 @@ public slots:
 
 private:
 	const FolderParams& params_;
-	Index* index_;
+	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
 	PathNormalizer* path_normalizer_;
 	StateCollector* state_collector_;

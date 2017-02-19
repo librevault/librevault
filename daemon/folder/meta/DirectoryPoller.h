@@ -35,7 +35,7 @@ namespace librevault {
 
 class FolderParams;
 class IgnoreList;
-class Index;
+class MetaStorage;
 class PathNormalizer;
 
 class DirectoryPoller : public QObject {
@@ -45,7 +45,7 @@ signals:
 	void newPath(QString denormpath);
 
 public:
-	DirectoryPoller(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, MetaStorage* parent);
 	virtual ~DirectoryPoller();
 
 public slots:
@@ -53,7 +53,7 @@ public slots:
 
 private:
 	const FolderParams& params_;
-	Index* index_;
+	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
 	PathNormalizer* path_normalizer_;
 

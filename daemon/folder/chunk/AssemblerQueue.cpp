@@ -28,7 +28,6 @@
  */
 #include "AssemblerQueue.h"
 #include "AssemblerWorker.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include <QLoggingCategory>
 
@@ -72,7 +71,7 @@ void AssemblerQueue::addAssemble(SignedMeta smeta) {
 void AssemblerQueue::periodic_assemble_operation() {
 	qCDebug(log_assembler) << "Performing periodic assemble";
 
-	for(auto smeta : meta_storage_->index->get_incomplete_meta())
+	for(auto smeta : meta_storage_->getIncompleteMeta())
 		addAssemble(smeta);
 }
 

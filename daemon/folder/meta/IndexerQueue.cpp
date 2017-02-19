@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "IndexerQueue.h"
-#include "Index.h"
 #include "IndexerWorker.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
@@ -39,10 +38,10 @@ Q_LOGGING_CATEGORY(log_indexer, "folder.meta.indexer")
 
 namespace librevault {
 
-IndexerQueue::IndexerQueue(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) :
+IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	index_(index),
+	meta_storage_(qobject_cast<MetaStorage*>(parent)),
 	ignore_list_(ignore_list),
 	path_normalizer_(path_normalizer),
 	state_collector_(state_collector),
@@ -69,7 +68,7 @@ void IndexerQueue::addIndexing(QString abspath) {
 		threadpool_->cancel(worker);
 		worker->stop();
 	}
-	IndexerWorker* worker = new IndexerWorker(abspath, params_, index_, ignore_list_, path_normalizer_, this);
+	IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
 	worker->setAutoDelete(false);
 	connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
 	connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);
@@ -88,7 +87,7 @@ void IndexerQueue::metaCreated(SignedMeta smeta) {
 	if(tasks_.size() == 0)
 		emit finishedIndexing();
 
-	index_->put_meta(smeta, true);
+	meta_storage_->putMeta(smeta, true);
 }
 
 void IndexerQueue::metaFailed(QString error_string) {

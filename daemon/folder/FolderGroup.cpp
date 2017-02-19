@@ -32,7 +32,6 @@
 #include "PathNormalizer.h"
 #include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/transfer/MetaDownloader.h"
 #include "folder/transfer/MetaUploader.h"
@@ -79,9 +78,9 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 	state_pusher_ = new QTimer(this);
 
 	// Connecting signals and slots
-	connect(meta_storage_->index, &Index::metaAdded, this, &FolderGroup::handle_indexed_meta);
+	connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
 	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
-		downloader_->notify_local_chunk(ct_hash);
+		downloader_->notifyLocalChunk(ct_hash);
 		uploader_->broadcast_chunk(remotes(), ct_hash);
 	});
 	connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
@@ -93,7 +92,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 
 	// Go through index
 	QTimer::singleShot(0, this, [=]{
-		for(auto& smeta : meta_storage_->index->get_meta())
+		for(auto& smeta : meta_storage_->getMeta())
 			handle_indexed_meta(smeta);
 	});
 }
@@ -110,7 +109,7 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	Meta::PathRevision revision = smeta.meta().path_revision();
 	bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
-	downloader_->notify_local_meta(smeta, bitfield);
+	downloader_->notifyLocalMeta(smeta, bitfield);
 	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
 }
 
@@ -119,8 +118,8 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 	remotes_ready_.insert(origin);
 	downloader_->trackRemote(origin);
 
-	connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=]{downloader_->handle_choke(origin);});
-	connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=]{downloader_->handle_unchoke(origin);});
+	connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
+	connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
 	connect(origin, &RemoteFolder::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
 	connect(origin, &RemoteFolder::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
 
@@ -128,7 +127,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 		meta_downloader_->handle_have_meta(origin, revision, bitfield);
 	});
 	connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
-		downloader_->notify_remote_chunk(origin, ct_hash);
+		downloader_->notifyRemoteChunk(origin, ct_hash);
 	});
 	connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
 		meta_uploader_->handle_meta_request(origin, path_revision);
@@ -140,7 +139,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 		uploader_->handle_block_request(origin, ct_hash, offset, size);
 	});
 	connect(origin, &RemoteFolder::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
-		downloader_->put_block(ct_hash, offset, block, origin);
+		downloader_->putBlock(ct_hash, offset, block, origin);
 	});
 
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});

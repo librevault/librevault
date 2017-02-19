@@ -27,58 +27,46 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/AvailabilityMap.h"
 #include "blob.h"
-#include <librevault/SignedMeta.h>
-#include <QObject>
-#include <QRunnable>
+#include <QCache>
+#include <QFile>
 
 namespace librevault {
 
-class PathNormalizer;
-
-class Archive;
-class MetaStorage;
-class FolderParams;
-class ChunkStorage;
-class Secret;
-
-class AssemblerWorker : public QObject, public QRunnable {
+/* ChunkFileBuilderFdPool is a singleton class, used to open/close files automatically to reduce simultaneously open file descriptors */
+class ChunkFileBuilderFdPool {
 public:
-	struct abort_assembly : std::runtime_error {
-		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
-	};
+	static ChunkFileBuilderFdPool* get_instance() {
+		static ChunkFileBuilderFdPool* instance;
+		if(!instance)
+			instance = new ChunkFileBuilderFdPool();
+		return instance;
+	}
 
-	AssemblerWorker(SignedMeta smeta,
-	                const FolderParams& params,
-					MetaStorage* meta_storage,
-					ChunkStorage* chunk_storage,
-					PathNormalizer* path_normalizer,
-					Archive* archive);
-	virtual ~AssemblerWorker();
-
-	void run() noexcept override;
+	QFile* getFile(QString path, bool release = false);
 
 private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
-	PathNormalizer* path_normalizer_;
-	Archive* archive_;
+	QCache<QString, QFile> opened_files_;
+};
 
-	SignedMeta smeta_;
-	const Meta& meta_;
+/* ChunkFileBuilder constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
+class ChunkFileBuilder {
+public:
+	ChunkFileBuilder(QString system_path, QByteArray ct_hash, quint32 size);
+	~ChunkFileBuilder();
 
-	QByteArray normpath_;
-	QString denormpath_;
+	QFile* release_chunk();
+	void put_block(quint32 offset, const QByteArray& content);
 
-	bool assemble_deleted();
-	bool assemble_symlink();
-	bool assemble_directory();
-	bool assemble_file();
+	uint64_t size() const {return file_map_.size_original();}
+	bool complete() const {return file_map_.full();}
 
-	void apply_attrib();
+	const AvailabilityMap<quint32>& file_map() const {return file_map_;}
 
-	QByteArray get_chunk_pt(const blob& ct_hash) const;
+private:
+	AvailabilityMap<quint32> file_map_;
+	QString chunk_location_;
 };
 
 } /* namespace librevault */

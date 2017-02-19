@@ -57,7 +57,7 @@ void Uploader::handle_not_interested(RemoteFolder* remote) {
 	remote->choke();
 }
 
-void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) {
+void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
 	try {
 		if(!remote->am_choking() && remote->peer_interested()) {
 			remote->post_block(ct_hash, offset, get_block(ct_hash, offset, size));

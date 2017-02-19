@@ -27,7 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/Meta.h>
+#include "blob.h"
+#include <librevault/SignedMeta.h>
 #include <QObject>
 
 namespace librevault {
@@ -43,6 +44,10 @@ class StateCollector;
 
 class MetaStorage : public QObject {
 	Q_OBJECT
+signals:
+	void metaAdded(SignedMeta meta);
+	void metaAddedExternal(SignedMeta meta);
+
 public:
 	struct no_such_meta : public std::runtime_error {
 		no_such_meta() : std::runtime_error("Requested Meta not found"){}
@@ -51,11 +56,26 @@ public:
 	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
 	virtual ~MetaStorage();
 
+	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
+	SignedMeta getMeta(const Meta::PathRevision& path_revision);
+	SignedMeta getMeta(const blob& path_id);
+	QList<SignedMeta> getMeta();
+	QList<SignedMeta> getExistingMeta();
+	QList<SignedMeta> getIncompleteMeta();
+	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
+	QList<SignedMeta> containingChunk(const blob& ct_hash);
+	QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+
+	// Assembled index
+	void markAssembled(blob path_id);
+	bool isChunkAssembled(blob ct_hash);
+
+	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+
 	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
 
-	Index* index;
-
 private:
+	Index* index_;
 	IndexerQueue* indexer_;
 	DirectoryPoller* poller_;
 	DirectoryWatcher* watcher_;

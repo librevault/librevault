@@ -32,7 +32,6 @@
 #include "OpenStorage.h"
 #include "control/FolderParams.h"
 #include "folder/chunk/archive/Archive.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 
 #include "AssemblerQueue.h"
@@ -50,7 +49,7 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
 		file_assembler = new AssemblerQueue(params, meta_storage_,  this, path_normalizer, archive, this);
 	}
 
-	connect(meta_storage_->index, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
+	connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
 ChunkStorage::~ChunkStorage() {}
@@ -79,12 +78,12 @@ QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
 	}
 }
 
-void ChunkStorage::put_chunk(blob ct_hash, QFile* chunk_f) {
+void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	enc_storage->put_chunk(ct_hash, chunk_f);
-	for(auto& smeta : meta_storage_->index->containing_chunk(ct_hash))
+	for(auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash)))
 		file_assembler->addAssemble(smeta);
 
-	emit chunkAdded(ct_hash);
+	emit chunkAdded(conv_bytearray(ct_hash));
 }
 
 bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {

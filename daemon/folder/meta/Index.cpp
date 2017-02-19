@@ -39,16 +39,16 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	auto db_filepath = params_.system_path + "/librevault.db";
 
 	if(QFile::exists(db_filepath))
-		LOGD("Opening SQLite3 DB: " << db_filepath);
+		LOGD("Opening SQLite3 DB:" << db_filepath);
 	else
-		LOGD("Creating new SQLite3 DB: " << db_filepath);
+		LOGD("Creating new SQLite3 DB:" << db_filepath);
 	db_ = std::make_unique<SQLiteDB>(db_filepath.toStdString());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
 	/* TABLE meta */
 	db_->exec("CREATE TABLE IF NOT EXISTS meta (path_id BLOB PRIMARY KEY NOT NULL, meta BLOB NOT NULL, signature BLOB NOT NULL, type INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 	db_->exec("CREATE INDEX IF NOT EXISTS meta_type_idx ON meta (type);");   // For making "COUNT(*) ... WHERE type=x" way faster
-	db_->exec("CREATE INDEX IF NOT EXISTS meta_not_deleted_idx ON meta(type<>255);");   // For faster Index::get_existing_meta
+	db_->exec("CREATE INDEX IF NOT EXISTS meta_not_deleted_idx ON meta(type<>255);");   // For faster Index::getExistingMeta
 
 	/* TABLE chunk */
 	db_->exec("CREATE TABLE IF NOT EXISTS chunk (ct_hash BLOB NOT NULL PRIMARY KEY, size INTEGER NOT NULL, iv BLOB NOT NULL);");
@@ -57,7 +57,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	db_->exec("CREATE TABLE IF NOT EXISTS openfs (ct_hash BLOB NOT NULL REFERENCES chunk (ct_hash) ON DELETE CASCADE ON UPDATE CASCADE, path_id BLOB NOT NULL REFERENCES meta (path_id) ON DELETE CASCADE ON UPDATE CASCADE, [offset] INTEGER NOT NULL, assembled BOOLEAN DEFAULT (0) NOT NULL);");
 	db_->exec("CREATE INDEX IF NOT EXISTS openfs_assembled_idx ON openfs (ct_hash, assembled) WHERE assembled = 1;");    // For faster OpenStorage::have_chunk
 	db_->exec("CREATE INDEX IF NOT EXISTS openfs_path_id_fki ON openfs (path_id);");    // For faster AssemblerQueue::assemble_file
-	db_->exec("CREATE IF NOT EXISTS INDEX openfs_ct_hash_fki ON openfs (ct_hash);");    // For faster Index::containing_chunk
+	db_->exec("CREATE IF NOT EXISTS INDEX openfs_ct_hash_fki ON openfs (ct_hash);");    // For faster Index::containingChunk
 	//db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from it. Anyway, we can add it anytime later.
 
 	/* Create a special hash-file */
@@ -72,20 +72,20 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 	hash_file.write(hexhash_conf);
 	hash_file.close();
 
-	notify_state();
+	notifyState();
 }
 
-bool Index::have_meta(const Meta::PathRevision& path_revision) noexcept {
+bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 	try {
-		get_meta(path_revision);
+		getMeta(path_revision);
 	}catch(MetaStorage::no_such_meta& e){
 		return false;
 	}
 	return true;
 }
 
-SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
-	auto smeta = get_meta(path_revision.path_id_);
+SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
+	auto smeta = getMeta(path_revision.path_id_);
 	if(smeta.meta().revision() == path_revision.revision_)
 		return smeta;
 	else throw MetaStorage::no_such_meta();
@@ -93,10 +93,10 @@ SignedMeta Index::get_meta(const Meta::PathRevision& path_revision) {
 
 /* Meta manipulators */
 
-void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
+void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	LOGFUNC();
 	qsrand(time(nullptr));
-	QString transaction_name = QStringLiteral("put_Meta_$1").arg(qrand());
+	QString transaction_name = QStringLiteral("put_Meta_%1").arg(qrand());
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
@@ -136,45 +136,64 @@ void Index::put_meta(const SignedMeta& signed_meta, bool fully_assembled) {
 	if(!fully_assembled)
 		emit metaAddedExternal(signed_meta);
 
-	notify_state();
+	notifyState();
 }
 
-QList<SignedMeta> Index::get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values){
+QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list.push_back(SignedMeta(row[0], row[1], params_.secret));
+		result_list << SignedMeta(row[0], row[1], params_.secret);
 	return result_list;
 }
-SignedMeta Index::get_meta(const blob& path_id){
-	auto meta_list = get_meta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
+SignedMeta Index::getMeta(const blob& path_id){
+	auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
 		{":path_id", path_id}
 	});
 
 	if(meta_list.empty()) throw MetaStorage::no_such_meta();
 	return *meta_list.begin();
 }
-QList<SignedMeta> Index::get_meta(){
-	return get_meta("SELECT meta, signature FROM meta");
+QList<SignedMeta> Index::getMeta(){
+	return getMeta("SELECT meta, signature FROM meta");
 }
 
-QList<SignedMeta> Index::get_existing_meta() {
-	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
+QList<SignedMeta> Index::getExistingMeta() {
+	return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
 }
 
-QList<SignedMeta> Index::get_incomplete_meta() {
-	return get_meta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
+QList<SignedMeta> Index::getIncompleteMeta() {
+	return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
 }
 
-bool Index::put_allowed(const Meta::PathRevision& path_revision) noexcept {
+bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
 	try {
-		return get_meta(path_revision.path_id_).meta().revision() < path_revision.revision_;
+		return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
 	}catch(MetaStorage::no_such_meta& e){
 		return true;
 	}
 }
 
-QList<SignedMeta> Index::containing_chunk(const blob& ct_hash) {
-	return get_meta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
+void Index::setAssembled(blob path_id) {
+	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
+	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
+}
+
+bool Index::isAssembledChunk(blob ct_hash) {
+	auto sql_result = db_->exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
+		{":ct_hash", ct_hash}
+	});
+	return sql_result.have_rows();
+}
+
+QPair<quint32, QByteArray> Index::getChunkSizeIv(blob ct_hash) {
+	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
+		return qMakePair(row[0].as_uint(), conv_bytearray(row[1].as_blob()));
+	}
+	throw MetaStorage::no_such_meta();
+};
+
+QList<SignedMeta> Index::containingChunk(const blob& ct_hash) {
+	return getMeta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
 		{{":ct_hash", ct_hash}});
 }
 
@@ -187,36 +206,12 @@ void Index::wipe() {
 	db_->exec("VACUUM");
 }
 
-Index::status_t Index::get_status() {
-	auto sql_result = db_->exec("SELECT COUNT(*) FROM meta WHERE type=0 "
-		"UNION ALL "
-		"SELECT COUNT(*) FROM meta WHERE type=1 "
-		"UNION ALL "
-		"SELECT COUNT(*) FROM meta WHERE type=2 "
-		"UNION ALL "
-		"SELECT COUNT(*) FROM meta WHERE type=255");
-
-	auto it = sql_result.begin();
-
-	status_t s;
-	s.file_entries = it[0].as_uint();
-	++it;
-	s.directory_entries = it[0].as_uint();
-	++it;
-	s.symlink_entries = it[0].as_uint();
-	++it;
-	s.deleted_entries = it[0].as_uint();
-	return s;
-}
-
-void Index::notify_state() {
-	status_t index_status = get_status();
-	QJsonObject index_state;
-	index_state["0"] = (double)index_status.file_entries;
-	index_state["1"] = (double)index_status.directory_entries;
-	index_state["2"] = (double)index_status.symlink_entries;
-	index_state["255"] = (double)index_status.deleted_entries;
-	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "index", index_state);
+void Index::notifyState() {
+	QJsonObject entries;
+	for(auto row : db_->exec("SELECT type, COUNT(*) AS entries FROM meta GROUP BY type")) {
+		entries[QString::number(row[0].as_uint())] = (double)row[1].as_uint();
+	}
+	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "index", entries);
 }
 
 } /* namespace librevault */

@@ -28,7 +28,6 @@
  */
 #include "MetaUploader.h"
 #include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/Index.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/RemoteFolder.h"
 
@@ -47,14 +46,14 @@ void MetaUploader::broadcast_meta(QList<RemoteFolder*> remotes, const Meta::Path
 }
 
 void MetaUploader::handle_handshake(RemoteFolder* remote) {
-	for(auto& meta : meta_storage_->index->get_meta()) {
+	for(auto& meta : meta_storage_->getMeta()) {
 		remote->post_have_meta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
 	}
 }
 
 void MetaUploader::handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision) {
 	try {
-		remote->post_meta(meta_storage_->index->get_meta(revision), chunk_storage_->make_bitfield(meta_storage_->index->get_meta(revision).meta()));
+		remote->post_meta(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
 	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

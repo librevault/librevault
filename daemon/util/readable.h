@@ -36,8 +36,16 @@ inline QString path_id_readable(const blob& path_id) {
 	return conv_bytearray(path_id).toHex();
 }
 
+inline QString path_id_readable(QByteArray path_id) {
+	return path_id.toHex();
+}
+
 inline QString ct_hash_readable(const blob& ct_hash) {
 	return conv_bytearray(ct_hash).toHex();
+}
+
+inline QString ct_hash_readable(QByteArray ct_hash) {
+	return ct_hash.toHex();
 }
 
 } /* namespace librevault */

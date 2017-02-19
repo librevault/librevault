@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DirectoryPoller.h"
-#include "Index.h"
+#include "MetaStorage.h"
 #include "IndexerQueue.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
@@ -36,10 +36,10 @@
 
 namespace librevault {
 
-DirectoryPoller::DirectoryPoller(const FolderParams& params, Index* index, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, MetaStorage* parent) :
 	QObject(parent),
 	params_(params),
-	index_(index),
+	meta_storage_(parent),
 	ignore_list_(ignore_list),
 	path_normalizer_(path_normalizer) {
 
@@ -80,13 +80,13 @@ QList<QString> DirectoryPoller::getReindexList() {
 
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
 	// They can still be indexed by monitor, though.
-	for(auto& smeta : index_->get_incomplete_meta()) {
+	for(auto& smeta : meta_storage_->getIncompleteMeta()) {
 		QString denormpath = path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret)));
 		file_list.remove(denormpath);
 	}
 
 	// Files present in index (files added from here will be marked as DELETED)
-	for(auto& smeta : index_->get_existing_meta()) {
+	for(auto& smeta : meta_storage_->getExistingMeta()) {
 		QByteArray normpath = QByteArray::fromStdString(smeta.meta().path(params_.secret));
 		QString denormpath = path_normalizer_->denormalizePath(normpath);
 

@@ -46,31 +46,25 @@ signals:
 	void metaAddedExternal(SignedMeta meta);
 
 public:
-	struct status_t {
-		uint64_t file_entries = 0;
-		uint64_t directory_entries = 0;
-		uint64_t symlink_entries = 0;
-		uint64_t deleted_entries = 0;
-	};
-
 	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
 
 	/* Meta manipulators */
-	bool have_meta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta get_meta(const Meta::PathRevision& path_revision);
-	SignedMeta get_meta(const blob& path_id);
-	QList<SignedMeta> get_meta();
-	QList<SignedMeta> get_existing_meta();
-	QList<SignedMeta> get_incomplete_meta();
-	void put_meta(const SignedMeta& signed_meta, bool fully_assembled = false);
+	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
+	SignedMeta getMeta(const Meta::PathRevision& path_revision);
+	SignedMeta getMeta(const blob& path_id);
+	QList<SignedMeta> getMeta();
+	QList<SignedMeta> getExistingMeta();
+	QList<SignedMeta> getIncompleteMeta();
+	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
 
-	bool put_allowed(const Meta::PathRevision& path_revision) noexcept;
+	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+
+	void setAssembled(blob path_id);
+	bool isAssembledChunk(blob ct_hash);
+	QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
 
 	/* Properties */
-	QList<SignedMeta> containing_chunk(const blob& ct_hash);
-	SQLiteDB& db() {return *db_;}
-
-	status_t get_status();
+	QList<SignedMeta> containingChunk(const blob& ct_hash);
 
 private:
 	const FolderParams& params_;
@@ -78,10 +72,10 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	QList<SignedMeta> get_meta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
+	QList<SignedMeta> getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 	void wipe();
 
-	void notify_state();
+	void notifyState();
 };
 
 } /* namespace librevault */

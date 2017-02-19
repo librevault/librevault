@@ -26,59 +26,56 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "blob.h"
-#include <librevault/SignedMeta.h>
-#include <QObject>
-#include <QRunnable>
+#include "ChunkFileBuilder.h"
+#include <librevault/crypto/Base32.h>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class PathNormalizer;
+Q_DECLARE_LOGGING_CATEGORY(log_downloader)
 
-class Archive;
-class MetaStorage;
-class FolderParams;
-class ChunkStorage;
-class Secret;
+/* ChunkFileBuilderFdPool */
+QFile* ChunkFileBuilderFdPool::getFile(QString path, bool release) {
+	QFile* f = !release ? opened_files_[path] : opened_files_.take(path);
+	if(f)
+		return f;
 
-class AssemblerWorker : public QObject, public QRunnable {
-public:
-	struct abort_assembly : std::runtime_error {
-		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
-	};
+	f = new QFile(path);
+	if(! f->open(QIODevice::ReadWrite))
+		qCWarning(log_downloader) << "Could not open" << path << "Error:" << f->errorString();
+	opened_files_.insert(path, f);
 
-	AssemblerWorker(SignedMeta smeta,
-	                const FolderParams& params,
-					MetaStorage* meta_storage,
-					ChunkStorage* chunk_storage,
-					PathNormalizer* path_normalizer,
-					Archive* archive);
-	virtual ~AssemblerWorker();
+	return f;
+}
 
-	void run() noexcept override;
+/* ChunkFileBuilder */
+ChunkFileBuilder::ChunkFileBuilder(QString system_path, QByteArray ct_hash, quint32 size) : file_map_(size) {
+	chunk_location_ = system_path + "/incomplete-" + conv_bytearray(ct_hash | crypto::Base32());
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
-	PathNormalizer* path_normalizer_;
-	Archive* archive_;
+	QFile f(chunk_location_);
+	f.open(QIODevice::WriteOnly | QIODevice::Truncate);
+	f.resize(size);
+}
 
-	SignedMeta smeta_;
-	const Meta& meta_;
+ChunkFileBuilder::~ChunkFileBuilder() {
+	if(! chunk_location_.isEmpty())
+		QFile::remove(chunk_location_);
+}
 
-	QByteArray normpath_;
-	QString denormpath_;
+QFile* ChunkFileBuilder::release_chunk() {
+	QFile* f = ChunkFileBuilderFdPool::get_instance()->getFile(chunk_location_, true);
+	chunk_location_.clear();
+	return f;
+}
 
-	bool assemble_deleted();
-	bool assemble_symlink();
-	bool assemble_directory();
-	bool assemble_file();
-
-	void apply_attrib();
-
-	QByteArray get_chunk_pt(const blob& ct_hash) const;
-};
+void ChunkFileBuilder::put_block(quint32 offset, const QByteArray& content) {
+	auto inserted = file_map_.insert({offset, content.size()}).second;
+	if(inserted) {
+		QFile* f = ChunkFileBuilderFdPool::get_instance()->getFile(chunk_location_);
+		if(f->pos() != offset)
+			f->seek(offset);
+		f->write(content);
+	}
+}
 
 } /* namespace librevault */

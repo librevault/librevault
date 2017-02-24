@@ -31,6 +31,7 @@
 #include "PortMappingSubService.h"
 #include "util/log.h"
 #include <boost/asio/io_service.hpp>
+#include <array>
 #include <mutex>
 
 struct UPNPUrls;

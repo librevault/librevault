@@ -54,7 +54,7 @@ DaemonProcess::~DaemonProcess() {
 }
 
 void DaemonProcess::launch() {
-	connect(this, static_cast<void(QProcess::*)(QProcess::ProcessError)>(&QProcess::error), this, &DaemonProcess::handleError);
+	connect(this, &QProcess::errorOccurred, this, &DaemonProcess::handleError);
 	connect(this, &QProcess::readyReadStandardOutput, this, &DaemonProcess::handleStandardOutput);
 	start();
 }

@@ -40,6 +40,9 @@
 #include "p2p/P2PFolder.h"
 #include <QDir>
 #include <QJsonArray>
+#ifdef Q_OS_WIN
+#   include <windows.h>
+#endif
 
 namespace librevault {
 

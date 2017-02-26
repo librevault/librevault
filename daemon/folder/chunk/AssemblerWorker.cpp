@@ -43,6 +43,9 @@
 #ifdef Q_OS_UNIX
 #   include <sys/stat.h>
 #endif
+#ifdef Q_OS_WIN
+#   include <windows.h>
+#endif
 
 Q_LOGGING_CATEGORY(log_assembler, "folder.chunk.assembler")
 

@@ -49,7 +49,7 @@ if(WIN32)
 endif()
 
 ### Threads
-target_link_libraries(lvcommon PUBLIC threads)
+target_link_libraries(lvcommon PUBLIC Threads::Threads)
 
 ### Protobuf
 target_link_libraries(lvcommon PUBLIC protobuf)

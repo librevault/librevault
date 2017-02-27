@@ -89,13 +89,7 @@ target_link_libraries(librevault-daemon cryptopp)
 ## OpenSSL
 target_link_libraries(librevault-daemon openssl)
 
-## ICU
-target_link_libraries(librevault-daemon icu)
-
 ##### System libraries #####
-
-## Threads
-target_link_libraries(librevault-daemon threads)
 
 ## WinSock
 if(OS_WIN)
@@ -111,8 +105,4 @@ endif()
 
 if(BUILD_STATIC AND OS_LINUX)
 	target_link_libraries(librevault-daemon dl)
-endif()
-
-if(USE_COTIRE)
-	cotire(librevault-daemon)
 endif()

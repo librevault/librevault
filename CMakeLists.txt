@@ -150,10 +150,6 @@ endif()
 ##### Bundled libraries #####
 
 ## Dir_monitor
-#find_package(dir_monitor QUIET)
-#if(NOT dir_monitor_FOUND)
-#	add_subdirectory("contrib/dir_monitor")
-#endif()
 add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
@@ -197,8 +193,8 @@ add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 
 ## QtSingleApplication
-if(BUILD_CLI OR BUILD_GUI)
-add_subdirectory("contrib/qtsingleapplication")
+if(BUILD_GUI)
+	add_subdirectory("contrib/qtsingleapplication")
 endif()
 
 ## Spdlog
@@ -289,17 +285,8 @@ target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
 if(OS_WIN)
 	target_link_libraries(openssl INTERFACE ws2_32)
-endif()
-if(OS_LINUX)
+elseif(OS_LINUX)
 	target_link_libraries(openssl INTERFACE dl)
-endif()
-
-## ICU (needed for boost::locale and Qt)
-add_library(icu INTERFACE)
-if(OS_LINUX)
-	find_package(ICU REQUIRED COMPONENTS i18n io uc data)
-	target_link_libraries(icu INTERFACE ICU::ICU)
-	target_link_libraries(icu INTERFACE dl)
 endif()
 
 #============================================================================

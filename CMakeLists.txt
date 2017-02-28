@@ -8,7 +8,6 @@ project(librevault)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
 include(OSDetection)
-include(cotire)
 
 #============================================================================
 # Settable options
@@ -29,7 +28,6 @@ option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
-option(USE_COTIRE "Use cotire to speed up builds (probably)" ON)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)

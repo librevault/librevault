@@ -38,8 +38,4 @@ target_include_directories(librevault-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(librevault-common lvcommon)
 
 ## Qt5
-target_link_libraries(librevault-common Qt5::WebSockets)
-
-if(USE_COTIRE)
-	cotire(librevault-common)
-endif()
+target_link_libraries(librevault-common Qt5::Core)

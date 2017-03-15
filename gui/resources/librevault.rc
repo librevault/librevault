@@ -8,7 +8,7 @@
 
 LANGUAGE 0, SUBLANG_NEUTRAL
 appicon ICON "librevault.ico"
-1 24 "visualstyle.manifest"
+1 24 "librevault.manifest"
 
 LANGUAGE 0, SUBLANG_NEUTRAL
 1 VERSIONINFO

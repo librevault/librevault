@@ -8,7 +8,6 @@ project(librevault)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
 include(OSDetection)
-include(cotire)
 
 #============================================================================
 # Settable options
@@ -16,20 +15,14 @@ include(cotire)
 
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
-if((OS_WIN AND OS_32bit) OR NOT OS_WIN)
-	set(DEFAULT_BUILD_TOOLS ON)
-else()
-	set(DEFAULT_BUILD_TOOLS OFF)
-endif()
-option(BUILD_GUI "Build GUI" ${DEFAULT_BUILD_TOOLS})
-option(BUILD_CLI "Build CLI" ${DEFAULT_BUILD_TOOLS})
+option(BUILD_GUI "Build GUI" ON)
+option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
-option(USE_COTIRE "Use cotire to speed up builds (probably)" ON)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
@@ -254,6 +247,7 @@ target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 ## Qt5
 set(Qt_COMPONENTS
 		LinguistTools
+#		Sql
 		Svg
 		Widgets
 		WebSockets

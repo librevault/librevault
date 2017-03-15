@@ -28,23 +28,7 @@
  */
 #include "DaemonProcess.h"
 #include <QCoreApplication>
-#include <windows.h>
-
-BOOL Is64BitWindows() {
-#	if defined(_WIN64)
-	return TRUE;
-#	elif defined(_WIN32)
-	BOOL f64 = FALSE;
-    return IsWow64Process(GetCurrentProcess(), &f64) && f64;
-#	else
-	return FALSE;
-#	endif
-}
-
 
 QString DaemonProcess::get_executable_path() const {
-	if(Is64BitWindows())
-		return QCoreApplication::applicationDirPath() + "/x64/librevault-daemon.exe";
-	else
-		return QCoreApplication::applicationDirPath() + "/x32/librevault-daemon.exe";
+	return QCoreApplication::applicationDirPath() + "/librevault-daemon.exe";
 }

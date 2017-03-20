@@ -1,10 +1,10 @@
 install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
-macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
+function(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION DEPENDENCY_RESOLVE_PATHS)
 	install(CODE "
 		include(GetPrerequisites)
 		foreach(INSTALLED_BINARY ${INDEPENDENT_BINARIES})
-			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"\")
+			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"${DEPENDENCY_RESOLVE_PATHS}\")
 			foreach(dependency \${dependencies})
 				gp_resolve_item(\"\${INSTALLED_BINARY}\" \"\${dependency}\" \"\" \"\" resolved_file)
 				get_filename_component(resolved_file \${resolved_file} ABSOLUTE)
@@ -19,7 +19,7 @@ macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
 			file(INSTALL \${PREREQUISITE_LIB} DESTINATION ${INSTALL_LOCATION})
 		endforeach()
 	")
-endmacro()
+endfunction()
 
 if(OS_WINDOWS)
 	if(BUILD_DAEMON)
@@ -44,7 +44,7 @@ if(OS_WINDOWS)
 
 	list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
-	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}")
+	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}" "")
 elseif(OS_LINUX)
 	if(INSTALL_BUNDLE)
 		set(CMAKE_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/opt/librevault/bin/elf)
@@ -84,7 +84,7 @@ elseif(OS_LINUX)
 		list(APPEND DEPENDENCY_RESOLVE_PATHS "/usr/lib")
 
 		# Dependencies of targets and plugins
-		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" "${DEPENDENCY_RESOLVE_PATHS}")
 
 		# qt.conf
 		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})

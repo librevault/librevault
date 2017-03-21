@@ -1,10 +1,10 @@
 install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
-function(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION DEPENDENCY_RESOLVE_PATHS)
+function(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION DEPENDENCY_RESOLVE_PATHS EXCLUDE_SYSTEM)
 	install(CODE "
 		include(GetPrerequisites)
 		foreach(INSTALLED_BINARY ${INDEPENDENT_BINARIES})
-			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"${DEPENDENCY_RESOLVE_PATHS}\")
+			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies ${EXCLUDE_SYSTEM} 1 \"\" \"${DEPENDENCY_RESOLVE_PATHS}\")
 			foreach(dependency \${dependencies})
 				gp_resolve_item(\"\${INSTALLED_BINARY}\" \"\${dependency}\" \"\" \"\" resolved_file)
 				get_filename_component(resolved_file \${resolved_file} ABSOLUTE)
@@ -44,7 +44,7 @@ if(OS_WINDOWS)
 
 	list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
-	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}" "")
+	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}" "" 1)
 elseif(OS_LINUX)
 	if(INSTALL_BUNDLE)
 		set(CMAKE_INSTALL_BINDIR opt/librevault/bin/elf)
@@ -81,10 +81,9 @@ elseif(OS_LINUX)
 
 		list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 		list(APPEND DEPENDENCY_RESOLVE_PATHS "${Qt5_DIR}/../..")
-		list(APPEND DEPENDENCY_RESOLVE_PATHS "/usr/lib")
 
 		# Dependencies of targets and plugins
-		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" "${DEPENDENCY_RESOLVE_PATHS}")
+		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" "${DEPENDENCY_RESOLVE_PATHS}" 0)
 
 		# qt.conf
 		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})

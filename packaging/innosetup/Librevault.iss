@@ -7,7 +7,7 @@ AppId=com.librevault.desktop
 AppVersion=@librevault_VERSION@
 AppPublisher=Librevault Team
 AppPublisherURL=https://librevault.com
-VersionInfoVersion=@librevault_VERSION@
+VersionInfoVersion=@librevault_versioninfo@
 
 DisableWelcomePage=no
 DisableProgramGroupPage=yes
@@ -19,7 +19,7 @@ DefaultDirName={userpf}\Librevault
 SetupIconFile=librevault.ico
 UninstallDisplayIcon={app}\librevault-gui.exe
 OutputDir=.
-OutputBaseFilename=librevault_@LV_APPVER@
+OutputBaseFilename=librevault_@librevault_versionstring@
 PrivilegesRequired=lowest
 ShowLanguageDialog=no
 

@@ -26,45 +26,54 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/log.h"
-#include <QAbstractSocket>
+#include "PortMapper.h"
+#include "NATPMPService.h"
+#include "UPnPService.h"
 
 namespace librevault {
 
-class NATPMPService;
-class UPnPService;
-class PortMappingSubService;
+Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
 
-class PortMappingService : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("PortMappingService");
-	friend class PortMappingSubService;
-public:
-	struct MappingDescriptor {
-		uint16_t port;
-		QAbstractSocket::SocketType protocol;
+PortMapper::PortMapper(QObject* parent) : QObject(parent) {
+	natpmp_service_ = new NATPMPService(*this);
+	upnp_service_ = new UPnPService(*this);
+
+	auto port_callback = [this](QString id, quint16 port) {
+		qCInfo(log_portmapping) << "Port mapped:" << mappings_[id].orig_port << "->" << port;
+		mappings_[id].mapped_port = port;
 	};
+	connect(natpmp_service_, &NATPMPService::portMapped, port_callback);
+	connect(upnp_service_, &UPnPService::portMapped, port_callback);
+}
 
-	PortMappingService(QObject* parent);
-	virtual ~PortMappingService();
+PortMapper::~PortMapper() {
+	mappings_.clear();
+}
 
-	void add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(std::string id);
-	uint16_t get_port_mapping(const std::string& id);
+void PortMapper::addPort(QString id, quint16 port, QAbstractSocket::SocketType protocol, QString description) {
+	Mapping m;
+	m.orig_port = port;
+	m.protocol = protocol;
+	m.description = description;
+	mappings_[id] = m;
 
-private:
-	struct Mapping {
-		MappingDescriptor descriptor;
-		std::string description;
-		uint16_t port;
-	};
-	std::map<std::string, Mapping> mappings_;
+	natpmp_service_->addPort(id, m);
+	upnp_service_->addPort(id, m);
+}
 
-	NATPMPService* natpmp_service_;
-	UPnPService* upnp_service_;
+void PortMapper::removePort(QString id) {
+	upnp_service_->removePort(id);
+	natpmp_service_->removePort(id);
 
-	void add_existing_mappings(PortMappingSubService* subservice);
-};
+	mappings_.remove(id);
+}
+
+quint16 PortMapper::getOriginalPort(QString id) {
+	return mappings_.contains(id) ? mappings_[id].orig_port : 0;
+}
+
+quint16 PortMapper::getMappedPort(QString id) {
+	return (mappings_.contains(id) && mappings_[id].mapped_port != 0) ? mappings_[id].mapped_port : getOriginalPort(id);
+}
 
 } /* namespace librevault */

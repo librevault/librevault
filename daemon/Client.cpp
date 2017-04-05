@@ -33,7 +33,7 @@
 #include "discovery/Discovery.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
-#include "nat/PortMappingService.h"
+#include "PortMapper.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/P2PProvider.h"
 
@@ -46,7 +46,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	// Initializing components
 	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
-	portmanager_ = new PortMappingService(this);
+	portmanager_ = new PortMapper(this);
 	discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
 	folder_service_ = new FolderService(state_collector_, this);
 	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);

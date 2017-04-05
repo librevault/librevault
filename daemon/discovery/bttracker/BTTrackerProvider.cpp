@@ -28,14 +28,14 @@
  */
 #include "BTTrackerProvider.h"
 #include "folder/FolderGroup.h"
-#include "nat/PortMappingService.h"
+#include "PortMapper.h"
 #include "nodekey/NodeKey.h"
 #include "util/log.h"
 #include <QtEndian>
 
 namespace librevault {
 
-BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMappingService* portmapping, QObject* parent) : QObject(parent),
+BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMapper* portmapping, QObject* parent) : QObject(parent),
 	node_key_(node_key), portmapping_(portmapping) {
 	socket_ = new QUdpSocket();
 	socket_->bind();
@@ -46,7 +46,7 @@ BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMappingService* port
 BTTrackerProvider::~BTTrackerProvider() {}
 
 quint16 BTTrackerProvider::getExternalPort() const {
-	return portmapping_->get_port_mapping("BT");
+	return portmapping_->getMappedPort("BT");
 }
 
 btcompat::peer_id BTTrackerProvider::getPeerId() const {

@@ -289,6 +289,7 @@ endif()
 
 add_subdirectory("lvproto")
 add_subdirectory("common")
+add_subdirectory("components/portmapping")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

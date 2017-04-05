@@ -41,7 +41,7 @@ class Discovery;
 class FolderService;
 class NodeKey;
 class P2PProvider;
-class PortMappingService;
+class PortMapper;
 class StateCollector;
 
 class Client : public QCoreApplication {
@@ -56,7 +56,7 @@ public:
 private:
 	StateCollector* state_collector_;
 	NodeKey* node_key_;
-	PortMappingService* portmanager_;
+	PortMapper* portmanager_;
 	Discovery* discovery_;
 	FolderService* folder_service_;
 	P2PProvider* p2p_provider_;

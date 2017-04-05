@@ -28,11 +28,10 @@
  */
 #pragma once
 //#include <miniupnpc/miniupnpc.h>
-#include "PortMappingSubService.h"
-#include "util/log.h"
-#include <boost/asio/io_service.hpp>
+#include "PortMapper.h"
+#include <QString>
 #include <array>
-#include <mutex>
+#include <memory>
 
 struct UPNPUrls;
 struct IGDdatas;
@@ -40,46 +39,26 @@ struct UPNPDev;
 
 namespace librevault {
 
-class UPnPService : public PortMappingSubService {
-	LOG_SCOPE("UPnPService");
+Q_DECLARE_LOGGING_CATEGORY(log_upnp)
+
+class PortMapping;
+class UPnPService : public QObject {
+	Q_OBJECT
+signals:
+	void portMapped(QString id, quint16 mapped);
+
 public:
-	UPnPService(PortMappingService& parent);
+	UPnPService(PortMapper& parent);
 	~UPnPService();
 
-	void reload_config();
-
-	void start();
-	void stop();
-
-	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(const std::string& id);
+public slots:
+	void addPort(QString id, Mapping mapping);
+	void removePort(QString id);
 
 protected:
-	std::mutex state_changing_mtx_;
-
 	// RAII wrappers
-	struct DevListWrapper : boost::noncopyable {
-		DevListWrapper();
-		~DevListWrapper();
-
-		UPNPDev* devlist;
-	};
-
-	class PortMapping {
-		LOG_SCOPE("UPnPService");
-	public:
-		PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description);
-		virtual ~PortMapping();
-
-	private:
-		UPnPService& parent_;
-		std::string id_;
-		MappingDescriptor descriptor_;
-
-		const char* get_literal_protocol(int protocol) const {return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";}
-	};
 	friend class PortMapping;
-	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
+	QMap<QString, std::shared_ptr<PortMapping>> mappings_;
 
 	// Config values
 	std::unique_ptr<UPNPUrls> upnp_urls;
@@ -87,7 +66,29 @@ protected:
 	std::array<char, 16> lanaddr;
 
 	bool active = false;
-	bool is_config_enabled();
+};
+
+struct DevListWrapper {
+	DevListWrapper();
+	~DevListWrapper();
+
+	UPNPDev* devlist;
+};
+
+class PortMapping : public QObject {
+	Q_OBJECT
+signals:
+	void portMapped(quint16 mapped);
+
+public:
+	PortMapping(UPnPService& parent, Mapping mapping);
+	virtual ~PortMapping();
+
+private:
+	UPnPService& parent_;
+	Mapping mapping_;
+
+	inline const char* get_literal_protocol(int protocol) const {return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";}
 };
 
 } /* namespace librevault */

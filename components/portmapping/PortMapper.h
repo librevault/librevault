@@ -27,55 +27,42 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortMappingSubService.h"
-#include "util/log.h"
-#include <natpmp.h>
-#include <QTimer>
+#include <QAbstractSocket>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class P2PProvider;
-class NATPMPMapping;
-class NATPMPService : public PortMappingSubService {
-	LOG_SCOPE("NATPMPService");
-	friend class NATPMPMapping;
-public:
-	NATPMPService(PortMappingService& parent);
-	virtual ~NATPMPService();
+Q_DECLARE_LOGGING_CATEGORY(log_portmapping)
 
-	void reload_config();
+class NATPMPService;
+class UPnPService;
 
-	void start();
-	void stop();
-
-	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(const std::string& id);
-
-protected:
-	bool is_config_enabled();
-	bool active = false;
-	natpmp_t natpmp;
-
-	std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
+struct Mapping {
+	quint16 orig_port = 0;
+	quint16 mapped_port = 0;
+	QAbstractSocket::SocketType protocol;
+	QString description;
 };
 
-class NATPMPMapping : public QObject {
-Q_OBJECT
-	LOG_SCOPE("NATPMPService")
+class PortMapper : public QObject {
+	Q_OBJECT
+
 public:
-	NATPMPMapping(NATPMPService& parent, std::string id, PortMappingService::MappingDescriptor descriptor);
-	~NATPMPMapping();
+	PortMapper(QObject* parent);
+	virtual ~PortMapper();
+
+	void addPort(QString id, quint16 port, QAbstractSocket::SocketType protocol, QString description);
+	void removePort(QString id);
+	quint16 getOriginalPort(QString id);
+	quint16 getMappedPort(QString id);
+
+	inline QMap<QString, Mapping> getMappings() {return mappings_;};
 
 private:
-	NATPMPService& parent_;
-	std::string id_;
-	PortMappingService::MappingDescriptor descriptor_;
+	QMap<QString, Mapping> mappings_;
 
-	QTimer* timer_;
-
-private slots:
-	void sendPeriodicRequest();
-	void sendZeroRequest();
+	NATPMPService* natpmp_service_;
+	UPnPService* upnp_service_;
 };
 
 } /* namespace librevault */

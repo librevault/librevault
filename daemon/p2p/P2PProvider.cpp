@@ -32,7 +32,7 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
-#include "nat/PortMappingService.h"
+#include "PortMapper.h"
 #include "nodekey/NodeKey.h"
 #include <QLoggingCategory>
 
@@ -41,7 +41,7 @@ Q_LOGGING_CATEGORY(log_p2p, "p2p")
 namespace librevault {
 
 P2PProvider::P2PProvider(NodeKey* node_key,
-                         PortMappingService* port_mapping,
+                         PortMapper* port_mapping,
                          FolderService* folder_service,
                          QObject* parent) : QObject(parent),
 	node_key_(node_key), port_mapping_(port_mapping), folder_service_(folder_service) {
@@ -59,11 +59,11 @@ P2PProvider::P2PProvider(NodeKey* node_key,
 	}else{
 		qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort() << "E:" << server_->errorString();
 	}
-	port_mapping_->add_port_mapping("main", {server_->serverPort(), QAbstractSocket::TcpSocket}, "Librevault");
+	port_mapping_->addPort("main", server_->serverPort(), QAbstractSocket::TcpSocket, "Librevault");
 }
 
 P2PProvider::~P2PProvider() {
-	port_mapping_->remove_port_mapping("main");
+	port_mapping_->removePort("main");
 }
 
 QSslConfiguration P2PProvider::getSslConfiguration() const {

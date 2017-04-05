@@ -37,12 +37,12 @@ namespace librevault {
 
 class FolderGroup;
 class NodeKey;
-class PortMappingService;
+class PortMapper;
 class BTTrackerProvider : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("BTTrackerProvider");
 public:
-	BTTrackerProvider(NodeKey* node_key, PortMappingService* portmapping, QObject* parent);
+	BTTrackerProvider(NodeKey* node_key, PortMapper* portmapping, QObject* parent);
 	virtual ~BTTrackerProvider();
 
 	quint16 getExternalPort() const;
@@ -56,7 +56,7 @@ signals:
 private:
 	QUdpSocket* socket_;
 	NodeKey* node_key_;
-	PortMappingService* portmapping_;
+	PortMapper* portmapping_;
 
 	static constexpr size_t buffer_size_ = 65535;
 

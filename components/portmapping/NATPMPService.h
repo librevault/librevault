@@ -27,25 +27,58 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortMappingService.h"
-#include <boost/signals2/signal.hpp>
+#include "PortMapper.h"
+#include <natpmp.h>
+#include <QTimer>
+#include <memory>
+#include <chrono>
 
 namespace librevault {
 
-class PortMappingSubService {
+Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
+
+class NATPMPMapping;
+class NATPMPService : public QObject {
+	Q_OBJECT
+signals:
+	void portMapped(QString id, quint16 mapped);
+
 public:
-	PortMappingSubService(PortMappingService& parent) : parent_(parent) {}
+	NATPMPService(PortMapper& parent);
+	virtual ~NATPMPService();
 
-	using MappingDescriptor = PortMappingService::MappingDescriptor;
-	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
+	inline natpmp_t* getNATPMPHandle() {return &natpmp;}
+	inline std::chrono::seconds getNATPMPLifetime() {return natpmp_lifetime;}
 
-	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
-	virtual void remove_port_mapping(const std::string& id) = 0;
+public slots:
+	void addPort(QString id, Mapping mapping);
+	void removePort(QString id);
 
 protected:
-	PortMappingService& parent_;
+	natpmp_t natpmp;
+	std::chrono::seconds natpmp_lifetime = std::chrono::seconds(3600);
 
-	inline void add_existing_mappings() {parent_.add_existing_mappings(this);}
+	std::map<QString, std::unique_ptr<NATPMPMapping>> mappings_;
+};
+
+class NATPMPMapping : public QObject {
+	Q_OBJECT
+signals:
+	void portMapped(quint16 mapped);
+
+public:
+	NATPMPMapping(NATPMPService& parent, Mapping mapping);
+	~NATPMPMapping();
+
+private:
+	NATPMPService& parent_;
+	Mapping mapping_;
+
+	QTimer* timer_;
+
+private slots:
+	void sendPeriodicRequest();
+	void sendZeroRequest();
 };
 
 } /* namespace librevault */

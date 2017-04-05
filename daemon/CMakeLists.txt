@@ -55,12 +55,11 @@ add_executable(librevault-daemon ${SRCS})
 
 ##### Bundled libraries #####
 target_link_libraries(librevault-daemon lvcommon)
+target_link_libraries(librevault-daemon portmapping)
 target_link_libraries(librevault-daemon librevault-common)
 target_link_libraries(librevault-daemon dir_monitor)
 target_link_libraries(librevault-daemon spdlog)
 target_link_libraries(librevault-daemon docopt_s)
-target_link_libraries(librevault-daemon natpmp)
-target_link_libraries(librevault-daemon libminiupnpc)
 target_link_libraries(librevault-daemon rabin)
 target_link_libraries(librevault-daemon dht)
 target_link_libraries(librevault-daemon sqlite3)

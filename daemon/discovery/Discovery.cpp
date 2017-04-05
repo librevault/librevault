@@ -38,7 +38,7 @@
 
 namespace librevault {
 
-Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent) {
+Discovery::Discovery(NodeKey* node_key, PortMapper* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent) {
 	multicast_ = new MulticastProvider(node_key, this);
 	bttracker_ = new BTTrackerProvider(node_key, port_mapping, this);
 	mldht_ = new MLDHTProvider(port_mapping, state_collector, this);

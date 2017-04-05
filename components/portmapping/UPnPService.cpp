@@ -27,47 +27,29 @@
  * files in the program, then also delete it here.
  */
 #include "UPnPService.h"
-#include "control/Config.h"
-#include "util/log.h"
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
 #include <QTimer>
 
 namespace librevault {
 
-UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) {
-	//Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config, this));
-}
-UPnPService::~UPnPService() {stop();}
+Q_LOGGING_CATEGORY(log_upnp, "portmapping.upnp")
 
-bool UPnPService::is_config_enabled() {
-	return Config::get()->getGlobal("upnp_enabled").toBool();
-}
-
-void UPnPService::start() {
+UPnPService::UPnPService(PortMapper& parent) {
 	upnp_urls = std::make_unique<UPNPUrls>();
 	upnp_data = std::make_unique<IGDdatas>();
 
-	if(!is_config_enabled()) return;
-
-	active = true;
-
-	/* Discovering IGD */
 	DevListWrapper devlist;
 
 	if(!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
-		LOGD("IGD not found. e: " << strerror(errno));
-		return;
+		qCDebug(log_upnp) << "IGD not found. e:" << strerror(errno);
+		throw std::runtime_error("IGD not found");
 	}
 
-	LOGD("Found IGD: " << upnp_urls->controlURL);
-
-	add_existing_mappings();
+	qCDebug(log_upnp) << "Found IGD:" << upnp_urls->controlURL;
 }
 
-void UPnPService::stop() {
-	active = false;
-
+UPnPService::~UPnPService() {
 	mappings_.clear();
 
 	FreeUPNPUrls(upnp_urls.get());
@@ -75,26 +57,17 @@ void UPnPService::stop() {
 	upnp_data.reset();
 }
 
-void UPnPService::reload_config() {
-	bool config_enabled = is_config_enabled();
-
-	if(config_enabled && !active)
-		start();
-	else if(!config_enabled && active)
-		stop();
+void UPnPService::addPort(QString id, Mapping mapping) {
+	mappings_[id] = std::make_shared<PortMapping>(*this, mapping);
+	connect(mappings_[id].get(), &PortMapping::portMapped, [this, id](quint16 mapped){emit portMapped(id, mapped);});
 }
 
-void UPnPService::add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) {
-	mappings_.erase(id);
-	mappings_[id] = std::make_shared<PortMapping>(*this, id, descriptor, description);
+void UPnPService::removePort(QString id) {
+	mappings_.remove(id);
 }
 
-void UPnPService::remove_port_mapping(const std::string& id) {
-	mappings_.erase(id);
-}
-
-/* UPnPService::DevListWrapper */
-UPnPService::DevListWrapper::DevListWrapper() {
+/* DevListWrapper */
+DevListWrapper::DevListWrapper() {
 	int error = UPNPDISCOVER_SUCCESS;
 #if MINIUPNPC_API_VERSION >= 14
 	devlist = upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error);
@@ -106,37 +79,37 @@ UPnPService::DevListWrapper::DevListWrapper() {
 	}
 }
 
-UPnPService::DevListWrapper::~DevListWrapper() {
+DevListWrapper::~DevListWrapper() {
 	freeUPNPDevlist(devlist);
 }
 
-/* UPnPService::PortMapping */
-UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description) : parent_(parent), id_(id), descriptor_(descriptor) {
+/* PortMapping */
+PortMapping::PortMapping(UPnPService& parent, Mapping mapping) : parent_(parent), mapping_(mapping) {
 	int err = UPNP_AddPortMapping(parent_.upnp_urls->controlURL,
 		parent_.upnp_data->first.servicetype,
-		std::to_string(descriptor.port).c_str(),
-		std::to_string(descriptor.port).c_str(),
+		std::to_string(mapping.orig_port).c_str(),
+		std::to_string(mapping.orig_port).c_str(),
 		parent_.lanaddr.data(),
-		description.data(),
-		get_literal_protocol(descriptor.protocol),
+		mapping.description.toUtf8().data(),
+		get_literal_protocol(mapping.protocol),
 		nullptr,
 		nullptr);
 	if(!err)
-		parent_.port_signal(id, descriptor.port);
+		emit portMapped(mapping.mapped_port);
 	else
-		LOGD("UPnP port forwarding failed: Error " << err);
+		qCDebug(log_upnp) << "UPnP port forwarding failed: Error" << err;
 }
 
-UPnPService::PortMapping::~PortMapping() {
+PortMapping::~PortMapping() {
 	auto err = UPNP_DeletePortMapping(
 		parent_.upnp_urls->controlURL,
 		parent_.upnp_data->first.servicetype,
-		std::to_string(descriptor_.port).c_str(),
-		get_literal_protocol(descriptor_.protocol),
+		std::to_string(mapping_.orig_port).c_str(),
+		get_literal_protocol(mapping_.protocol),
 		nullptr
 	);
 	if(err)
-		LOGD(get_literal_protocol(descriptor_.protocol) << " port " << descriptor_.port << " de-forwarding failed: Error " << err);
+		qCDebug(log_upnp) << get_literal_protocol(mapping_.protocol) << "port" << mapping_.orig_port << "de-forwarding failed: Error" << err;
 }
 
 } /* namespace librevault */

@@ -39,7 +39,7 @@ class BTTrackerProvider;
 class MLDHTProvider;
 
 class NodeKey;
-class PortMappingService;
+class PortMapper;
 class StateCollector;
 
 class Discovery : public QObject {
@@ -49,7 +49,7 @@ signals:
 	void discovered(QByteArray folderid, DiscoveryResult result);
 
 public:
-	Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+	Discovery(NodeKey* node_key, PortMapper* port_mapping, StateCollector* state_collector, QObject* parent);
 	virtual ~Discovery();
 
 public slots:

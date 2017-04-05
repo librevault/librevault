@@ -38,12 +38,12 @@ class FolderGroup;
 class FolderService;
 class NodeKey;
 class P2PFolder;
-class PortMappingService;
+class PortMapper;
 class P2PProvider : public QObject {
 	Q_OBJECT
 public:
 	P2PProvider(NodeKey* node_key,
-	            PortMappingService* port_mapping,
+	            PortMapper* port_mapping,
 	            FolderService* folder_service,
 	            QObject* parent);
 	virtual ~P2PProvider();
@@ -58,7 +58,7 @@ public slots:
 
 private:
 	NodeKey* node_key_;
-	PortMappingService* port_mapping_;
+	PortMapper* port_mapping_;
 	FolderService* folder_service_;
 
 	QWebSocketServer* server_;

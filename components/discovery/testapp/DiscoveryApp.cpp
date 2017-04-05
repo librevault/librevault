@@ -37,6 +37,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QTimer>
+#include <chrono>
 
 namespace librevault {
 
@@ -52,10 +53,11 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
 	discovery->setAnnounceLANPort(12345);
 	discovery->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
 	dgroup->setMulticastEnabled(true);
+	dgroup->setMulticastInterval(std::chrono::seconds(5));
 }
 
 void DiscoveryApp::handleDiscovered(QHostAddress addr, quint16 port) {
-	qStdOut() << "Discovered: " << addr.toString() << " " << port;
+	qDebug() << "Discovered: " << addr.toString() << " " << port;
 }
 
 } /* namespace librevault */

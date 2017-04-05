@@ -56,6 +56,10 @@ void MulticastGroup::setEnabled(bool enabled) {
 		timer_->stop();
 }
 
+void MulticastGroup::setInterval(std::chrono::seconds interval) {
+	timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(interval).count());
+}
+
 QByteArray MulticastGroup::get_message() {
 	QJsonObject message;
 	message["port"] = provider_->getAnnouncePort();

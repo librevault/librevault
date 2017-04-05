@@ -30,6 +30,7 @@
 #include <QObject>
 #include <QHostAddress>
 #include <QUrl>
+#include <chrono>
 
 namespace librevault {
 
@@ -54,6 +55,7 @@ public:
 
 public slots:
 	void setMulticastEnabled(bool enabled);
+	void setMulticastInterval(std::chrono::seconds interval);
 
 protected:
 	MulticastGroup* multicast_group_;

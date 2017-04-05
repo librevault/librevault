@@ -48,11 +48,6 @@ private:
 	Discovery* discovery;
 	DiscoveryGroup* dgroup;
 
-	static QTextStream& qStdOut() {
-		static QTextStream ts(stdout);
-		return ts;
-	}
-
 private slots:
 	void handleDiscovered(QHostAddress addr, quint16 port);
 };

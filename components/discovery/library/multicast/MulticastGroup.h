@@ -29,6 +29,7 @@
 #pragma once
 #include <QTimer>
 #include <QUdpSocket>
+#include <chrono>
 
 namespace librevault {
 
@@ -42,6 +43,7 @@ signals:
 public:
 	MulticastGroup(MulticastProvider* provider, QByteArray id);
 	void setEnabled(bool enabled);
+	void setInterval(std::chrono::seconds interval);
 
 private:
 	MulticastProvider* provider_;

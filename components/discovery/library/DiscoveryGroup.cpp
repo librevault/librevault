@@ -50,4 +50,8 @@ void DiscoveryGroup::setMulticastEnabled(bool enabled){
 	multicast_group_->setEnabled(enabled);
 }
 
+void DiscoveryGroup::setMulticastInterval(std::chrono::seconds interval) {
+	multicast_group_->setInterval(interval);
+}
+
 } /* namespace librevault */

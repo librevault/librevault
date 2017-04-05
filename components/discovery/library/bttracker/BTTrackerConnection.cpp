@@ -30,12 +30,16 @@
 #include "BTTrackerMessages.h"
 #include "BTTrackerProvider.h"
 #include "BTTrackerGroup.h"
-#include "util/log.h"
 #include <cryptopp/osrng.h>
+
+#define NUM_WANT 30
+#define MIN_INTERVAL 5
 
 namespace librevault {
 
 BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider) : tracker_address_(tracker_address) {
+	socket_ = tracker_provider->getSocket();
+
 	// Resolve loop
 	resolver_timer_ = new QTimer(this);
 	resolver_timer_->setInterval(30*1000);
@@ -43,7 +47,7 @@ BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* b
 
 	// Connect loop
 	connect_timer_ = new QTimer(this);
-	connect_timer_->setInterval(Config::get()->getGlobal("bttracker_min_interval").toInt()*1000);
+	connect_timer_->setInterval(MIN_INTERVAL*1000);
 	connect(connect_timer_, &QTimer::timeout, this, &BTTrackerConnection::btconnect);
 
 	// Announcer loop
@@ -55,9 +59,7 @@ BTTrackerConnection::BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* b
 	connect(this, &BTTrackerConnection::discovered, btgroup_, &BTTrackerGroup::discovered);
 }
 
-BTTrackerConnection::~BTTrackerConnection() {
-	LOGD("BTTrackerConnection Removed");
-}
+BTTrackerConnection::~BTTrackerConnection() {}
 
 void BTTrackerConnection::setEnabled(bool enabled) {
 	if(enabled) {
@@ -73,10 +75,10 @@ void BTTrackerConnection::setEnabled(bool enabled) {
 void BTTrackerConnection::resolve() {
 	if(resolver_lookup_id_) {
 		QHostInfo::abortHostLookup(resolver_lookup_id_);
-		LOGD("Could not resolve IP address for: " << tracker_address_.host());
+		qCWarning(log_bt) << "Could not resolve IP address for:" << tracker_address_.host();
 	}
 
-	LOGD("Resolving IP address for: " << tracker_address_.host());
+	qCDebug(log_bt) << "Resolving IP address for:" << tracker_address_.host();
 	resolver_lookup_id_ = QHostInfo::lookupHost(tracker_address_.host(), this, SLOT(handle_resolve(QHostInfo)));
 }
 
@@ -112,8 +114,8 @@ void BTTrackerConnection::announce() {
 	//request.uploaded_;
 	request4.event_ = quint32(announced_times_++ == 0 ? bttracker::Event::EVENT_STARTED : bttracker::Event::EVENT_NONE);
 	request4.key_ = gen_transaction_id();
-	request4.num_want_ = Config::get()->getGlobal("bttracker_num_want").toUInt();
-	request4.port_ = provider_->getExternalPort();
+	request4.num_want_ = NUM_WANT;
+	request4.port_ = provider_->getAnnounceWANPort();
 	QByteArray message4(reinterpret_cast<char*>(&request4), sizeof(request4));
 
 	socket_->writeDatagram(message4, addr_, port_);
@@ -134,8 +136,8 @@ void BTTrackerConnection::announce() {
 	//request.uploaded_;
 	request6.event_ = quint32(announced_times_++ == 0 ? bttracker::Event::EVENT_STARTED : bttracker::Event::EVENT_NONE);
 	request6.key_ = gen_transaction_id();
-	request6.num_want_ = Config::get()->getGlobal("bttracker_num_want").toUInt();
-	request6.port_ = provider_->getExternalPort();
+	request6.num_want_ = NUM_WANT;
+	request6.port_ = provider_->getAnnounceWANPort();
 	QByteArray message6(reinterpret_cast<char*>(&request6), sizeof(request6));
 
 	socket_->writeDatagram(message6, addr_, port_);
@@ -161,7 +163,7 @@ void BTTrackerConnection::handle_message(quint32 action, quint32 transaction_id,
 void BTTrackerConnection::handle_resolve(const QHostInfo& host) {
 	resolver_lookup_id_ = 0;
 	if(host.error()) {
-		LOGD("Could not resolve IP address for: " << tracker_address_.host() << " E:" << host.errorString());
+		qCDebug(log_bt) << "Could not resolve IP address for:" << tracker_address_.host() << "E:" << host.errorString();
 		resolve();
 	}else{
 		addr_ = host.addresses().first();
@@ -198,13 +200,10 @@ void BTTrackerConnection::handle_announce(QByteArray message) {
 		}
 
 		foreach(auto& endpoint, endpoint_list) {
-			DiscoveryResult result;
-			result.address = endpoint.first;
-			result.port = endpoint.second;
-			emit discovered(result);
+			emit discovered(endpoint.first, endpoint.second);
 		}
 
-		announce_timer_->setInterval(std::max(Config::get()->getGlobal("bttracker_min_interval").toUInt()*1000, (quint32)message_s->interval_)*1000);
+		announce_timer_->setInterval(std::max(MIN_INTERVAL*1000, (quint32)message_s->interval_)*1000);
 	}
 }
 

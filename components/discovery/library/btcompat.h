@@ -26,35 +26,33 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "StaticGroup.h"
-#include "control/FolderParams.h"
-#include "folder/FolderGroup.h"
+#pragma once
+#include <QByteArray>
+#include <QHostAddress>
+#include <QtEndian>
+#include <array>
 
 namespace librevault {
+namespace btcompat {
 
-StaticGroup::StaticGroup(FolderGroup* fgroup) :
-	fgroup_(fgroup) {
-	timer_ = new QTimer(this);
-	timer_->setInterval(30*1000);
-	QTimer::singleShot(0, this, &StaticGroup::tick);
-	connect(timer_, &QTimer::timeout, this, &StaticGroup::tick);
-}
+// Function declaration
+QPair<QHostAddress, quint16> unpackEndpoint4(QByteArray packed) {
+	packed = packed.leftJustified(6, 0, true);
 
-void StaticGroup::setEnabled(bool enabled) {
-	if(!timer_->isActive() && enabled)
-		timer_->start();
-	else if(timer_->isActive() && !enabled)
-		timer_->stop();
-}
+	QHostAddress addr = QHostAddress(*reinterpret_cast<quint32*>(packed.mid(0, 4).data()));
+	quint16 port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(4, 2).data()));
 
-void StaticGroup::tick() {
-	QString source = QStringLiteral("Static");
-	for(const QUrl& node : fgroup_->params().nodes) {
-		DiscoveryResult result;
-		result.source = source;
-		result.url = node;
-		emit discovered(result);
-	}
-}
+	return {addr, port};
+};
 
+QPair<QHostAddress, quint16> unpackEndpoint6(QByteArray packed) {
+	packed = packed.leftJustified(18, 0, true);
+
+	QHostAddress addr = QHostAddress(*reinterpret_cast<quint8*>(packed.mid(0, 16).data()));
+	quint16 port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(16, 2).data()));
+
+	return {addr, port};
+};
+
+} /* namespace btcompat */
 } /* namespace librevault */

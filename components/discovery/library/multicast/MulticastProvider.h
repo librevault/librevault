@@ -27,23 +27,50 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QString>
-#include <QUrl>
-#include <QHostAddress>
-#include <QByteArray>
+#include <QUdpSocket>
 
 namespace librevault {
 
-class DiscoveryResult {
+class FolderGroup;
+class MulticastGroup;
+class MulticastProvider : public QObject {
+	Q_OBJECT
+
+signals:
+	void discovered(QByteArray id, QHostAddress addr, quint16 port);
+
 public:
-	QString source;
+	explicit MulticastProvider(QObject* parent);
+	virtual ~MulticastProvider();
 
-	QUrl url;
+	quint16 getAnnouncePort() const {return announce_port_;}
+	quint16 getMulticastPort4() const {return multicast_port4_;}
+	quint16 getMulticastPort6() const {return multicast_port4_;}
 
-	QHostAddress address;
-	quint16 port;
+	QHostAddress getAddress4() const {return addr4_;}
+	QHostAddress getAddress6() const {return addr6_;}
 
-	QByteArray digest;
+	QUdpSocket* getSocket4() {return socket4_;}
+	QUdpSocket* getSocket6() {return socket6_;}
+
+public slots:
+	void start(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6);
+	void stop();
+	void setAnnouncePort(quint16 port) {announce_port_ = port;}
+
+private:
+	QHostAddress addr4_;
+	QHostAddress addr6_;
+
+	quint16 announce_port_, multicast_port4_, multicast_port6_;
+
+	QUdpSocket* socket4_;
+	QUdpSocket* socket6_;
+
+	static constexpr size_t buffer_size_ = 65535;
+
+private slots:
+	void processDatagram(QUdpSocket* socket);
 };
 
 } /* namespace librevault */

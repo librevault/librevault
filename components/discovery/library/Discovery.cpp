@@ -26,42 +26,43 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include "util/log.h"
-#include <QUdpSocket>
-#include <unordered_map>
+#include "Discovery.h"
+#include "DiscoveryGroup.h"
+//#include "bttracker/BTTrackerGroup.h"
+//#include "bttracker/BTTrackerProvider.h"
+#include "multicast/MulticastGroup.h"
+#include "multicast/MulticastProvider.h"
+//#include "mldht/MLDHTGroup.h"
+//#include "mldht/MLDHTProvider.h"
 
 namespace librevault {
 
-class FolderGroup;
-class NodeKey;
-class PortMapper;
-class BTTrackerProvider : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("BTTrackerProvider");
-public:
-	BTTrackerProvider(NodeKey* node_key, PortMapper* portmapping, QObject* parent);
-	virtual ~BTTrackerProvider();
+Discovery::Discovery(QObject* parent) : QObject(parent) {
+	multicast_ = new MulticastProvider(this);
+	//bttracker_ = new BTTrackerProvider(portmapper, this);
+	//mldht_ = new MLDHTProvider(portmapper, this);
+}
 
-	quint16 getExternalPort() const;
-	btcompat::peer_id getPeerId() const;
-	QUdpSocket* getSocket() {return socket_;}
+Discovery::~Discovery() {}
 
-signals:
-	void receivedMessage(quint32 action, quint32 transaction_id, QByteArray message);
-	void discovered(QByteArray folderid, DiscoveryResult result);
+DiscoveryGroup* Discovery::createGroup(QByteArray id) {
+	return new DiscoveryGroup(id, multicast_, this);
+}
 
-private:
-	QUdpSocket* socket_;
-	NodeKey* node_key_;
-	PortMapper* portmapping_;
+void Discovery::setAnnounceLANPort(quint16 port) {
+	multicast_->setAnnouncePort(port);
+}
 
-	static constexpr size_t buffer_size_ = 65535;
+void Discovery::setAnnounceWANPort(quint16 port) {
 
-private slots:
-	void processDatagram();
-};
+}
+
+void Discovery::startMulticast(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6) {
+	multicast_->start(addr4, port4, addr6, port6);
+}
+
+void Discovery::stopMulticast() {
+	multicast_->stop();
+}
 
 } /* namespace librevault */

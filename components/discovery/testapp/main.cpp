@@ -26,30 +26,26 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "DiscoveryResult.h"
-#include <QTimer>
+#include "DiscoveryApp.h"
 
-namespace librevault {
+using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
-class FolderGroup;
-class StaticGroup : public QObject {
-	Q_OBJECT
-public:
-	StaticGroup(FolderGroup* fgroup);
-	virtual ~StaticGroup() {}
+///////////////////////////////////////////////////////////////////////80 chars/
+static const char* USAGE =
+R"(Librevault command-line interface.
 
-	void setEnabled(bool enabled);
+Librevault is an open source peer-to-peer file synchronization
+solution with an optional centralized cloud storage, that can be used as a traditional cloud storage.
 
-signals:
-	void discovered(DiscoveryResult result);
+See on: https://librevault.com
+GitHub: https://github.com/Librevault/librevault
 
-private:
-	FolderGroup* fgroup_;
-	QTimer* timer_;
+Usage:
+  discovery-testapp <id>
+  discovery-testapp (-h | --help)
+)";
 
-private slots:
-	void tick();
-};
-
-} /* namespace librevault */
+int main(int argc, char** argv) {
+	DiscoveryApp app(argc, argv, USAGE);
+	return app.exec();
+}

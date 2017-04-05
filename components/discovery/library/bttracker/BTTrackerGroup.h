@@ -26,45 +26,40 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "BTTrackerProvider.h"
-#include "folder/FolderGroup.h"
-#include "PortMapper.h"
-#include "nodekey/NodeKey.h"
-#include "util/log.h"
-#include <QtEndian>
+#pragma once
+#include "../btcompat.h"
+#include <QObject>
+#include <QUrl>
+#include <QLoggingCategory>
+#include <set>
 
 namespace librevault {
 
-BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMapper* portmapping, QObject* parent) : QObject(parent),
-	node_key_(node_key), portmapping_(portmapping) {
-	socket_ = new QUdpSocket();
-	socket_->bind();
+Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
-	connect(socket_, &QUdpSocket::readyRead, this, &BTTrackerProvider::processDatagram);
-}
+class BTTrackerConnection;
+class BTTrackerProvider;
+class BTTrackerGroup : public QObject {
+	Q_OBJECT
 
-BTTrackerProvider::~BTTrackerProvider() {}
+signals:
+	void discovered(QHostAddress addr, quint16 port);
 
-quint16 BTTrackerProvider::getExternalPort() const {
-	return portmapping_->getMappedPort("BT");
-}
+public:
+	BTTrackerGroup(BTTrackerProvider* provider, QByteArray id);
 
-btcompat::peer_id BTTrackerProvider::getPeerId() const {
-	return btcompat::get_peer_id(node_key_->digest());
-}
+	QByteArray getInfoHash() const {return id_;}
 
-void BTTrackerProvider::processDatagram() {
-	char datagram_buffer[buffer_size_];
-	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_);
+public slots:
+	void setEnabled(bool enabled);
+	void setTrackerList(QList<QUrl> trackers);
 
-	QByteArray message(datagram_buffer, datagram_size);
-	if(message.size() >= 8) {
-		quint32 action, transaction_id;
-		std::copy(message.data()+0, message.data()+4, reinterpret_cast<char*>(&action));
-		std::copy(message.data()+4, message.data()+8, reinterpret_cast<char*>(&transaction_id));
+protected:
+	BTTrackerProvider* provider_;
+	QByteArray id_;
+	std::map<QUrl, std::unique_ptr<BTTrackerConnection>> connections_;
 
-		emit receivedMessage(qFromBigEndian(action), transaction_id, message);
-	}
-}
+	bool enabled_ = false;
+};
 
 } /* namespace librevault */

@@ -27,38 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "DiscoveryResult.h"
-#include <QObject>
+#include "../btcompat.h"
+#include <QUdpSocket>
+#include <QLoggingCategory>
+#include <unordered_map>
 
 namespace librevault {
 
+Q_DECLARE_LOGGING_CATEGORY(log_bt)
+
 class FolderGroup;
-
-class MulticastProvider;
-class BTTrackerProvider;
-class MLDHTProvider;
-
 class NodeKey;
 class PortMapper;
-class StateCollector;
-
-class Discovery : public QObject {
+class Discovery;
+class BTTrackerProvider : public QObject {
 	Q_OBJECT
 
 signals:
-	void discovered(QByteArray folderid, DiscoveryResult result);
+	void receivedMessage(quint32 action, quint32 transaction_id, QByteArray message);
 
 public:
-	Discovery(NodeKey* node_key, PortMapper* port_mapping, StateCollector* state_collector, QObject* parent);
-	virtual ~Discovery();
+	BTTrackerProvider(PortMapper* portmapping, Discovery* parent);
+	virtual ~BTTrackerProvider();
+
+	quint16 getAnnounceWANPort() const;
+	btcompat::peer_id getPeerId() const;
+	QUdpSocket* getSocket() {return socket_;}
 
 public slots:
-	void addGroup(FolderGroup* fgroup);
+	void setIDPrefix(QByteArray peer_id_prefix) {peer_id_prefix_ = peer_id_prefix;};
 
-protected:
-	MulticastProvider* multicast_;
-	BTTrackerProvider* bttracker_;
-	MLDHTProvider* mldht_;
+private:
+	Discovery* parent_;
+	QUdpSocket* socket_;
+	NodeKey* node_key_;
+	PortMapper* portmapping_;
+
+	static constexpr size_t buffer_size_ = 65535;
+
+	QByteArray peer_id_prefix_;
+	QByteArray peer_id_;
+
+private slots:
+	void processDatagram();
 };
 
 } /* namespace librevault */

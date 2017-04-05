@@ -27,71 +27,36 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include "util/log.h"
-#include <QHostInfo>
-#include <QTimer>
-#include <QUdpSocket>
+#include <QObject>
+#include <QHostAddress>
 #include <QUrl>
 
 namespace librevault {
 
+class MulticastProvider;
 class BTTrackerProvider;
-class BTTrackerGroup;
-class FolderGroup;
+class MLDHTProvider;
 
-// BEP-0015 partial implementation (without scrape mechanism)
-class BTTrackerConnection : public QObject {
+class MulticastGroup;
+
+class PortMapper;
+class Discovery;
+
+class DiscoveryGroup : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("BTTrackerConnection");
-public:
-	BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider);
-	virtual ~BTTrackerConnection();
-
-	void setEnabled(bool enabled);
 
 signals:
-	void discovered(DiscoveryResult result);
+	void discovered(QHostAddress addr, quint16 port);
 
-private:
-	BTTrackerProvider* provider_;
-	BTTrackerGroup* btgroup_;
+public:
+	DiscoveryGroup(QByteArray id, MulticastProvider* multicast, Discovery* parent);
+	virtual ~DiscoveryGroup();
 
-	QUrl tracker_address_;
+public slots:
+	void setMulticastEnabled(bool enabled);
 
-	unsigned int announced_times_ = 0;
-
-	QUdpSocket* socket_;
-
-	// Tracker address
-	QHostAddress addr_;
-	quint16 port_;
-
-	// Connection state
-	quint64 connection_id_ = 0;
-	quint32 transaction_id_connect_ = 0;
-	quint32 transaction_id_announce4_ = 0;
-	quint32 transaction_id_announce6_ = 0;
-
-	// Timers
-	QTimer* resolver_timer_;
-	QTimer* connect_timer_;
-	QTimer* announce_timer_;
-	int resolver_lookup_id_ = 0;
-
-	quint32 gen_transaction_id();
-
-	void resolve();
-	void btconnect();
-	void announce();
-
-private slots:
-	void handle_message(quint32 action, quint32 transaction_id, QByteArray message);
-
-	void handle_resolve(const QHostInfo& host);
-	void handle_connect(QByteArray message);
-	void handle_announce(QByteArray message);
+protected:
+	MulticastGroup* multicast_group_;
 };
 
 } /* namespace librevault */

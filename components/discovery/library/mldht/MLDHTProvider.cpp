@@ -27,16 +27,17 @@
  * files in the program, then also delete it here.
  */
 #include "MLDHTProvider.h"
-#include "discovery/mldht/dht_glue.h"
-#include "control/Paths.h"
-#include "control/StateCollector.h"
+#include "dht_glue.h"
 #include "PortMapper.h"
-#include "util/parse_url.h"
+#include "Discovery.h"
+#include "rand.h"
 #include <cryptopp/osrng.h>
 #include <dht.h>
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
 
@@ -44,9 +45,11 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTProvider::MLDHTProvider(PortMapper* port_mapping, StateCollector* state_collector, QObject* parent) : QObject(parent),
+MLDHTProvider::MLDHTProvider(PortMapper* port_mapping, StateCollector* state_collector, Discovery* parent) :
+	QObject(parent),
 	port_mapping_(port_mapping),
-	state_collector_(state_collector) {
+	state_collector_(state_collector),
+	parent_(parent) {
 
 	qRegisterMetaType<btcompat::info_hash>("btcompat::info_hash");
 
@@ -56,63 +59,45 @@ MLDHTProvider::MLDHTProvider(PortMapper* port_mapping, StateCollector* state_col
 
 	connect(socket_, &QUdpSocket::readyRead, this, &MLDHTProvider::processDatagram);
 	connect(periodic_, &QTimer::timeout, this, &MLDHTProvider::periodic_request);
-
-	init();
 }
 
 MLDHTProvider::~MLDHTProvider() {
-	deinit();
+	stop();
 }
 
-void MLDHTProvider::init() {
-	// We will restore our session from here
-	readSessionFile();
+void MLDHTProvider::start(quint16 port) {
+	// Initialize id
+	own_id_ = getRandomArray(20);
 
 	// Init sockets
-	socket_->bind(getPort());
+	socket_->bind(port);
 
-	int rc = dht_init(socket_->socketDescriptor(), socket_->socketDescriptor(), own_id.data(), nullptr);
+	int rc = dht_init(socket_->socketDescriptor(), socket_->socketDescriptor(), (const uint8_t*)own_id_.data(), nullptr);
 	if(rc < 0)
 		qCWarning(log_dht) << "Could not initialize DHT: Internal DHT error";
 
 	// Map port
-	port_mapping_->addPort("mldht", getPort(), QAbstractSocket::UdpSocket, "Librevault DHT");
-
-	// Init routers
-	foreach(const QString& router_value, Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
-		url router_url(router_value.toStdString());
-		int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
-		resolves_[id] = router_url.port;
-	}
+	port_mapping_->addPort("mldht", port, QAbstractSocket::UdpSocket, "Librevault DHT");
 
 	periodic_->start();
 }
 
-void MLDHTProvider::deinit() {
+void MLDHTProvider::stop() {
 	periodic_->stop();
 
-	writeSessionFile();
+	port_mapping_->removePort("mldht");
+
 	dht_uninit();
 
 	socket_->close();
-
-	port_mapping_->removePort("mldht");
 }
 
-void MLDHTProvider::readSessionFile() {
+void MLDHTProvider::readSessionFile(QString path) {
 	QJsonObject session_json;
-	QFile session_f(Paths::get()->dht_session_path);
+	QFile session_f(path);
 	if(session_f.open(QIODevice::ReadOnly)) {
 		session_json = QJsonDocument::fromJson(session_f.readAll()).object();
 		qCDebug(log_dht) << "DHT session file loaded";
-	}
-
-	// Init id
-	QByteArray own_id_arr = session_json["id"].isString() ? QByteArray::fromBase64(session_json["id"].toString().toLatin1()) : QByteArray();
-	if(own_id_arr.size() == (int)own_id.size()) {
-		std::copy(own_id_arr.begin(), own_id_arr.end(), own_id.begin());
-	}else{  // Invalid data
-		CryptoPP::AutoSeededRandomPool().GenerateBlock(own_id.data(), own_id.size());
 	}
 
 	QJsonArray nodes = session_json["nodes"].toArray();
@@ -123,9 +108,7 @@ void MLDHTProvider::readSessionFile() {
 	}
 }
 
-void MLDHTProvider::writeSessionFile() {
-	QByteArray own_id_arr((char*)own_id.data(), own_id.size());
-
+void MLDHTProvider::writeSessionFile(QString path) {
 	struct sockaddr_in6 sa6[300];
 	struct sockaddr_in sa4[300];
 
@@ -153,16 +136,15 @@ void MLDHTProvider::writeSessionFile() {
 	}
 
 	json_object["nodes"] = nodes;
-	json_object["id"] = QString::fromLatin1(own_id_arr.toBase64());
 
-	QFile session_f(Paths::get()->dht_session_path);
+	QFile session_f(path);
 	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
 		qCDebug(log_dht) << "DHT session saved";
 	else
 		qCWarning(log_dht) << "DHT session not saved";
 }
 
-int MLDHTProvider::node_count() const {
+int MLDHTProvider::getNodeCount() const {
 	int good6 = 0;
 	int dubious6 = 0;
 	int cached6 = 0;
@@ -178,12 +160,13 @@ int MLDHTProvider::node_count() const {
 	return good6+good4 + dubious6+dubious4;
 }
 
-quint16 MLDHTProvider::getPort() {
-	return (quint16)Config::get()->getGlobal("mainline_dht_port").toUInt();
+quint16 MLDHTProvider::getExternalPort() {
+	return parent_->getAnnounceWANPort();
 }
 
-quint16 MLDHTProvider::getExternalPort() {
-	return port_mapping_->getMappedPort("main");
+void MLDHTProvider::addRouter(QString host, quint16 port) {
+	int id = QHostInfo::lookupHost(host, this, SLOT(handle_resolve(QHostInfo)));
+	resolves_[id] = port;
 }
 
 void MLDHTProvider::addNode(QHostAddress addr, quint16 port) {
@@ -214,7 +197,7 @@ void MLDHTProvider::processDatagram() {
 
 	time_t tosleep;
 	dht_periodic(datagram_buffer, datagram_size, endpoint.data(), (int)endpoint.size(), &tosleep, lv_dht_callback_glue, this);
-	state_collector_->global_state_set("dht_nodes_count", node_count());
+	emit nodeCountChanged(getNodeCount());
 
 	periodic_->setInterval(tosleep*1000);
 }
@@ -222,7 +205,7 @@ void MLDHTProvider::processDatagram() {
 void MLDHTProvider::periodic_request() {
 	time_t tosleep;
 	dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
-	state_collector_->global_state_set("dht_nodes_count", node_count());
+	emit nodeCountChanged(getNodeCount());
 
 	periodic_->setInterval(tosleep*1000);
 }

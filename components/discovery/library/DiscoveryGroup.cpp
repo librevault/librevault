@@ -26,36 +26,28 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QTimer>
-#include <QUdpSocket>
+#include "DiscoveryGroup.h"
+#include "Discovery.h"
+//#include "bttracker/BTTrackerGroup.h"
+//#include "bttracker/BTTrackerProvider.h"
+#include "multicast/MulticastGroup.h"
+#include "multicast/MulticastProvider.h"
+//#include "mldht/MLDHTGroup.h"
+//#include "mldht/MLDHTProvider.h"
 
 namespace librevault {
 
-class FolderGroup;
-class MulticastProvider;
-class MulticastGroup : public QObject {
-	Q_OBJECT
+DiscoveryGroup::DiscoveryGroup(QByteArray id, MulticastProvider* multicast, Discovery* parent) :
+	QObject(parent) {
+	multicast_group_ = new MulticastGroup(multicast, id);
 
-public:
-	MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup);
+	connect(multicast_group_, &MulticastGroup::discovered, this, &DiscoveryGroup::discovered);
+}
 
-	void setEnabled(bool enabled);
+DiscoveryGroup::~DiscoveryGroup() {}
 
-private:
-	MulticastProvider* provider_;
-	FolderGroup* fgroup_;
-
-	QTimer* timer_;
-	bool enabled_ = false;
-
-	QByteArray message_;
-
-	QByteArray get_message();
-	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
-
-private slots:
-	void sendMulticasts();
-};
+void DiscoveryGroup::setMulticastEnabled(bool enabled){
+	multicast_group_->setEnabled(enabled);
+}
 
 } /* namespace librevault */

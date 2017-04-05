@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,37 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include <QTimer>
+#include <QByteArray>
+#include <random>
+#include <climits>
+#include <algorithm>
+#include <functional>
 
-namespace librevault {
+void fillRandomBuf(void* buf, size_t size) {
+	std::independent_bits_engine<std::default_random_engine, CHAR_BIT, uint8_t> engine;
+	std::generate(buf, buf+size, std::ref(engine));
+}
 
-class MLDHTProvider;
-class FolderGroup;
-
-class MLDHTGroup : public QObject {
-	Q_OBJECT
-public:
-	MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
-
-	void setEnabled(bool enable);
-	void start_search(int af);
-
-signals:
-	void discovered(DiscoveryResult result);
-
-public slots:
-	void handleEvent(int event, btcompat::info_hash ih, QByteArray values);
-
-private:
-	MLDHTProvider* provider_;
-	QTimer* timer_;
-
-	btcompat::info_hash info_hash_;
-	QByteArray folderid_;
-
-	bool enabled_ = false;
-};
-
-} /* namespace librevault */
+QByteArray getRandomArray(int size) {
+	QByteArray arr(size, 0);
+	fillRandomBuf(arr.data(), size);
+	return arr;
+}

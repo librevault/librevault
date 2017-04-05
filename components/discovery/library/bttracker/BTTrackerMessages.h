@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
+#include "../btcompat.h"
 #include <QtGlobal>
 #include <boost/endian/arithmetic.hpp>
 

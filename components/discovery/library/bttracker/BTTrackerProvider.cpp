@@ -26,48 +26,47 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "discovery/DiscoveryResult.h"
-#include <QUdpSocket>
+#include "BTTrackerProvider.h"
+#include "Discovery.h"
+#include "rand.h"
+#include <QtEndian>
 
 namespace librevault {
 
-class FolderGroup;
-class MulticastGroup;
-class NodeKey;
-class MulticastProvider : public QObject {
-	Q_OBJECT
+BTTrackerProvider::BTTrackerProvider(PortMapper* portmapping, Discovery* parent) : QObject(parent),
+	portmapping_(portmapping), parent_(parent) {
+	socket_ = new QUdpSocket();
+	socket_->bind();
 
-signals:
-	void discovered(QByteArray folderid, DiscoveryResult result);
+	connect(socket_, &QUdpSocket::readyRead, this, &BTTrackerProvider::processDatagram);
 
-public:
-	explicit MulticastProvider(NodeKey* nodekey, QObject* parent);
-	virtual ~MulticastProvider();
+	// Generate new peer id
+	peer_id_ = peer_id_prefix_ + getRandomArray(20);
+	peer_id_.resize(20);
+}
 
-	quint16 getPort() const {return port_;}
-	QHostAddress getAddressV4() const {return address_v4_;}
-	QHostAddress getAddressV6() const {return address_v6_;}
+BTTrackerProvider::~BTTrackerProvider() {}
 
-	QUdpSocket* getSocketV4() {return socket4_;}
-	QUdpSocket* getSocketV6() {return socket6_;}
+quint16 BTTrackerProvider::getAnnounceWANPort() const {
+	return parent_->getAnnounceWANPort();
+}
 
-	QByteArray getDigest() const;
+btcompat::peer_id BTTrackerProvider::getPeerId() const {
+	return btcompat::get_peer_id(peer_id_);
+}
 
-private:
-	NodeKey* nodekey_;
+void BTTrackerProvider::processDatagram() {
+	char datagram_buffer[buffer_size_];
+	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_);
 
-	QHostAddress address_v4_;
-	QHostAddress address_v6_;
-	quint16 port_;
+	QByteArray message(datagram_buffer, datagram_size);
+	if(message.size() >= 8) {
+		quint32 action, transaction_id;
+		std::copy(message.data()+0, message.data()+4, reinterpret_cast<char*>(&action));
+		std::copy(message.data()+4, message.data()+8, reinterpret_cast<char*>(&transaction_id));
 
-	QUdpSocket* socket4_;
-	QUdpSocket* socket6_;
-
-	static constexpr size_t buffer_size_ = 65535;
-
-private slots:
-	void processDatagram();
-};
+		emit receivedMessage(qFromBigEndian(action), transaction_id, message);
+	}
+}
 
 } /* namespace librevault */

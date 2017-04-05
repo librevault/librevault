@@ -28,62 +28,52 @@
  */
 #include "MulticastGroup.h"
 #include "MulticastProvider.h"
-#include "control/Config.h"
-#include "folder/FolderGroup.h"
-#include <MulticastDiscovery.pb.h>
 #include <QLoggingCategory>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 Q_DECLARE_LOGGING_CATEGORY(log_multicast)
 
 namespace librevault {
 
-MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup) :
-	provider_(provider), fgroup_(fgroup) {
+MulticastGroup::MulticastGroup(MulticastProvider* provider, QByteArray id) :
+	provider_(provider), id_(id) {
 	timer_ = new QTimer(this);
-	timer_->setInterval(Config::get()->getGlobal("multicast_repeat_interval").toInt()*1000);
+	timer_->setInterval(30*1000);
 
 	// Connecting signals
 	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
+	connect(provider_, &MulticastProvider::discovered, this, [=](QByteArray id, QHostAddress addr, quint16 port){
+		if(id == id_) emit discovered(addr, port);
+	});
 }
 
 void MulticastGroup::setEnabled(bool enabled) {
-	if(!timer_->isActive() && enabled)
+	if(!timer_->isActive() && enabled) {
+		sendMulticasts();
 		timer_->start();
-	else if(timer_->isActive() && !enabled)
+	}else if(timer_->isActive() && !enabled)
 		timer_->stop();
 }
 
 QByteArray MulticastGroup::get_message() {
-	if(message_.isEmpty()) {
-		protocol::MulticastDiscovery message;
+	QJsonObject message;
+	message["port"] = provider_->getAnnouncePort();
+	message["id"] = QString::fromLatin1(id_.toBase64());
 
-		// Port
-		message.set_port(Config::get()->getGlobal("p2p_listen").toUInt());
-
-		// FolderID
-		QByteArray folderid = fgroup_->folderid();
-		message.set_folderid(folderid.data(), folderid.size());
-
-		// PeerID
-		QByteArray digest = provider_->getDigest();
-		message.set_digest(digest.data(), digest.size());
-
-		message_.resize(message.ByteSize());
-		message.SerializeToArray(message_.data(), message_.size());
-	}
-	return message_;
+	return QJsonDocument(message).toJson(QJsonDocument::Compact);
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
 	if(socket->writeDatagram(get_message(), addr, port))
-		qCDebug(log_multicast) << "===> Multicast message sent to: " << addr << ":" << port;
+		qCDebug(log_multicast) << "===> Multicast message sent to:" << addr << ":" << port;
 	else
-		qCDebug(log_multicast) << "=X=> Multicast message not sent to: " << addr << ":" << port << " E:" << socket->errorString();
+		qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << addr << ":" << port << "E:" << socket->errorString();
 }
 
 void MulticastGroup::sendMulticasts() {
-	sendMulticast(provider_->getSocketV4(), provider_->getAddressV4(), provider_->getPort());
-	sendMulticast(provider_->getSocketV6(), provider_->getAddressV6(), provider_->getPort());
+	sendMulticast(provider_->getSocket4(), provider_->getAddress4(), provider_->getMulticastPort4());
+	sendMulticast(provider_->getSocket6(), provider_->getAddress6(), provider_->getMulticastPort6());
 }
 
 } /* namespace librevault */

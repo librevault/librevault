@@ -26,67 +26,36 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include <QLoggingCategory>
-#include <QHostInfo>
+#include "DiscoveryApp.h"
+#include "Discovery.h"
+#include "DiscoveryGroup.h"
+#include <QDebug>
+#include <QtGlobal>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QIODevice>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QTimer>
-#include <QUdpSocket>
-
-Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
 namespace librevault {
 
-class PortMapper;
-class StateCollector;
-class MLDHTProvider : public QObject {
-	Q_OBJECT
-public:
-	MLDHTProvider(PortMapper* port_mapping, StateCollector* state_collector, QObject* parent);
-	virtual ~MLDHTProvider();
+DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreApplication(argc, argv) {
+	args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true);
 
-	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
+	QByteArray id = QByteArray::fromHex(QByteArray::fromStdString(args["<id>"].asString()));
+	discovery = new Discovery(this);
+	dgroup = discovery->createGroup(id);
 
-	int node_count() const;
+	connect(dgroup, &DiscoveryGroup::discovered, this, &DiscoveryApp::handleDiscovered);
 
-	quint16 getPort();
-	quint16 getExternalPort();
+	discovery->setAnnounceLANPort(12345);
+	discovery->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
+	dgroup->setMulticastEnabled(true);
+}
 
-signals:
-	void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
-	void discovered(QByteArray folderid, DiscoveryResult result);
-
-public slots:
-	void addNode(QHostAddress addr, quint16 port);
-
-private:
-	PortMapper* port_mapping_;
-	StateCollector* state_collector_;
-
-	using dht_id = btcompat::info_hash;
-	dht_id own_id;
-
-	// Sockets
-	QUdpSocket* socket_;
-	QTimer* periodic_;
-
-	// Initialization
-	void init();
-	void readSessionFile();
-
-	void deinit();
-	void writeSessionFile();
-
-	static constexpr size_t buffer_size_ = 65535;
-	void processDatagram();
-
-	void periodic_request();
-
-	QMap<int, quint16> resolves_;
-
-private slots:
-	void handle_resolve(const QHostInfo& host);
-};
+void DiscoveryApp::handleDiscovered(QHostAddress addr, quint16 port) {
+	qStdOut() << "Discovered: " << addr.toString() << " " << port;
+}
 
 } /* namespace librevault */

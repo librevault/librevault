@@ -27,35 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include "util/log.h"
-#include <QObject>
-#include <set>
+#include "../btcompat.h"
+#include <QTimer>
 
 namespace librevault {
 
-class BTTrackerConnection;
-class BTTrackerProvider;
+class MLDHTProvider;
 class FolderGroup;
-class BTTrackerGroup : public QObject {
-protected:
-	Q_OBJECT
-	LOG_SCOPE("BTTrackerProvider");
-public:
-	BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup);
 
-	btcompat::info_hash getInfoHash() const {return ih_;}
-	void setEnabled(bool enabled);
+class MLDHTGroup : public QObject {
+	Q_OBJECT
+public:
+	MLDHTGroup(MLDHTProvider* provider, QByteArray id);
+
+	void setEnabled(bool enable);
 
 signals:
-	void discovered(DiscoveryResult result);
+	void discovered(QHostAddress addr, quint16 port);
 
-protected:
-	BTTrackerProvider* provider_;
-	btcompat::info_hash ih_;
-	QByteArray folderid_;
-	std::map<QUrl, std::unique_ptr<BTTrackerConnection>> connections_;
+public slots:
+	void handleEvent(int event, QByteArray ih, QByteArray values);
+	void startSearch(int af);
+
+private:
+	MLDHTProvider* provider_;
+	QTimer* timer_;
+
+	QByteArray info_hash_;
+	QByteArray id_;
+
+	bool enabled_ = false;
+
+	inline QByteArray getInfoHash() {return id_.leftJustified(20, 0, true);}
 };
 
 } /* namespace librevault */

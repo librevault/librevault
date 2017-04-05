@@ -26,27 +26,33 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "BTTrackerGroup.h"
-#include "BTTrackerConnection.h"
-#include "folder/FolderGroup.h"
-#include "util/log.h"
+#pragma once
+#include <QTimer>
+#include <QUdpSocket>
 
 namespace librevault {
 
-BTTrackerGroup::BTTrackerGroup(BTTrackerProvider* provider, FolderGroup* fgroup) : provider_(provider),
-	ih_(btcompat::getInfoHash(fgroup->folderid())),
-	folderid_(fgroup->folderid()) {}
+class MulticastProvider;
+class MulticastGroup : public QObject {
+	Q_OBJECT
 
-void BTTrackerGroup::setEnabled(bool enabled) {
-	if(enabled) {
-		foreach(const QString& tracker, Config::get()->getGlobal("bttracker_trackers").toStringList()) {
-			QUrl tracker_address(tracker);
-			connections_[tracker_address] = std::make_unique<BTTrackerConnection>(tracker_address, this, provider_);
-			LOGD("Added BitTorrent tracker: " << tracker_address.toString());
-		}
-	}else{
-		connections_.clear();
-	}
-}
+signals:
+	void discovered(QHostAddress addr, quint16 port);
+
+public:
+	MulticastGroup(MulticastProvider* provider, QByteArray id);
+	void setEnabled(bool enabled);
+
+private:
+	MulticastProvider* provider_;
+	QTimer* timer_;
+	QByteArray id_;
+
+	QByteArray get_message();
+	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
+
+private slots:
+	void sendMulticasts();
+};
 
 } /* namespace librevault */

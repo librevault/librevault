@@ -33,12 +33,12 @@
 #include <algorithm>
 #include <functional>
 
-void fillRandomBuf(void* buf, size_t size) {
+inline void fillRandomBuf(void* buf, size_t size) {
 	std::independent_bits_engine<std::default_random_engine, CHAR_BIT, uint8_t> engine;
-	std::generate(buf, buf+size, std::ref(engine));
+	std::generate((char*)buf, (char*)buf+size, std::ref(engine));
 }
 
-QByteArray getRandomArray(int size) {
+inline QByteArray getRandomArray(int size) {
 	QByteArray arr(size, 0);
 	fillRandomBuf(arr.data(), size);
 	return arr;

@@ -60,7 +60,7 @@ void MulticastGroup::setInterval(std::chrono::seconds interval) {
 	timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(interval).count());
 }
 
-QByteArray MulticastGroup::get_message() {
+QByteArray MulticastGroup::getMessage() {
 	QJsonObject message;
 	message["port"] = provider_->getAnnouncePort();
 	message["id"] = QString::fromLatin1(id_.toBase64());
@@ -69,7 +69,7 @@ QByteArray MulticastGroup::get_message() {
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
-	if(socket->writeDatagram(get_message(), addr, port))
+	if(socket->writeDatagram(getMessage(), addr, port))
 		qCDebug(log_multicast) << "===> Multicast message sent to:" << addr << ":" << port;
 	else
 		qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << addr << ":" << port << "E:" << socket->errorString();

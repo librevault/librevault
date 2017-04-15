@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,38 +26,38 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "DiscoveryGroup.h"
-#include "Discovery.h"
-#include "multicast/MulticastGroup.h"
-#include "multicast/MulticastProvider.h"
-#include "mldht/MLDHTGroup.h"
-#include "mldht/MLDHTProvider.h"
-//#include "bttracker/BTTrackerGroup.h"
-//#include "bttracker/BTTrackerProvider.h"
+#pragma once
+#include <QHostAddress>
+#include <QtEndian>
+#ifdef Q_OS_WIN
+#   include <winsock2.h>
+#else
+#   include <sys/socket.h>
+#   include <netinet/ip.h>
+#endif
 
-namespace librevault {
-
-DiscoveryGroup::DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, Discovery* parent) :
-	QObject(parent) {
-	multicast_group_ = new MulticastGroup(multicast, id);
-	dht_group_ = new MLDHTGroup(dht, id);
-
-	connect(multicast_group_, &MulticastGroup::discovered, this, &DiscoveryGroup::discovered);
-	connect(dht_group_, &MLDHTGroup::discovered, this, &DiscoveryGroup::discovered);
+inline sockaddr_storage convertSockaddr(QHostAddress addr, quint16 port) {
+	sockaddr_storage sa;
+	std::fill(reinterpret_cast<char*>(&sa), reinterpret_cast<char*>(&sa)+sizeof(sa), 0);
+	if(addr.protocol() == QAbstractSocket::IPv4Protocol) {
+		sockaddr_in* sa4 = (sockaddr_in*)&sa;
+		sa4->sin_family = AF_INET;
+		sa4->sin_port = qToBigEndian(port);
+		sa4->sin_addr.s_addr = addr.toIPv4Address();
+	}else if(addr.protocol() == QAbstractSocket::IPv6Protocol) {
+		sockaddr_in6* sa6 = (sockaddr_in6*)&sa;
+		sa6->sin6_family = AF_INET6;
+		sa6->sin6_port = qToBigEndian(port);
+		Q_IPV6ADDR addr6 = addr.toIPv6Address();
+		std::copy((const char*)&addr6, (const char*)&addr6+16, (char*)&sa6->sin6_addr);
+	}
+	return sa;
 }
 
-DiscoveryGroup::~DiscoveryGroup() {}
-
-void DiscoveryGroup::setMulticastEnabled(bool enabled){
-	multicast_group_->setEnabled(enabled);
+inline size_t getSockaddrSize(const sockaddr_storage& sa) {
+	if(sa.ss_family == AF_INET)
+		return sizeof(sockaddr_in);
+	if(sa.ss_family == AF_INET6)
+		return sizeof(sockaddr_in6);
+	return sizeof(sockaddr_storage);
 }
-
-void DiscoveryGroup::setMulticastInterval(std::chrono::seconds interval) {
-	multicast_group_->setInterval(interval);
-}
-
-void DiscoveryGroup::setDHTEnabled(bool enabled) {
-	dht_group_->setEnabled(enabled);
-}
-
-} /* namespace librevault */

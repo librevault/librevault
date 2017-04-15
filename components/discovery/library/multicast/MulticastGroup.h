@@ -50,7 +50,7 @@ private:
 	QTimer* timer_;
 	QByteArray id_;
 
-	QByteArray get_message();
+	QByteArray getMessage();
 	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
 
 private slots:

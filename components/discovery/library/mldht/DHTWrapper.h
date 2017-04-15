@@ -27,12 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "MLDHTProvider.h"
+#include "btcompat.h"
+#include <QByteArray>
+#include <QTimer>
+#include <QUdpSocket>
 
-extern "C" {
+namespace librevault {
 
-static void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
-	((librevault::MLDHTProvider*)closure)->pass_callback(closure, event, info_hash, (const uint8_t*)data, data_len);
-}
+class DHTWrapper : public QObject {
+	Q_OBJECT
 
-} /* extern "C" */
+public:
+	using EndpointList = QList<QPair<QHostAddress, quint16>>;
+
+signals:
+	void searchDone(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
+	void foundNodes(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
+	void nodeCountChanged(int node_count);
+
+public:
+	DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent);
+	~DHTWrapper();
+
+	void nodeCount(int& good_return, int& dubious_return, int& cached_return, int& incoming_return);
+	int goodNodeCount();
+
+	EndpointList getNodes();
+
+public slots:
+	void pingNode(QHostAddress addr, quint16 port);
+	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+
+	void enable() {periodic_->start();}
+	void disable() {periodic_->stop();}
+
+private:
+	QTimer* periodic_;
+
+	int convertAF(QAbstractSocket::NetworkLayerProtocol qaf);
+	bool enabled() {return periodic_->isActive();}
+
+private slots:
+	void processDatagram(QUdpSocket* socket);
+	void periodicRequest();
+};
+
+} /* namespace librevault */

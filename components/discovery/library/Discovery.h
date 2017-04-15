@@ -41,6 +41,9 @@ class DiscoveryGroup;
 class Discovery : public QObject {
 	Q_OBJECT
 
+signals:
+	void DHTnodeCountChanged(int count);
+
 public:
 	Discovery(QObject* parent);
 	virtual ~Discovery();
@@ -56,14 +59,14 @@ public slots:
 	void stopMulticast();
 
 	// DHT
-	//void startDHT();
-	//void stopDHT();
-	//void addDHTHint(QHostAddress addr, quint16 port);
+	void startDHT(quint16 port);
+	void stopDHT();
+	void addDHTRouter(QString host, quint16 port);
 
 protected:
 	MulticastProvider* multicast_;
+	MLDHTProvider* mldht_;
 	//BTTrackerProvider* bttracker_;
-	//MLDHTProvider* mldht_;
 };
 
 } /* namespace librevault */

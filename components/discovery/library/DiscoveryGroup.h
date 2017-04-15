@@ -39,8 +39,8 @@ class BTTrackerProvider;
 class MLDHTProvider;
 
 class MulticastGroup;
+class MLDHTGroup;
 
-class PortMapper;
 class Discovery;
 
 class DiscoveryGroup : public QObject {
@@ -50,15 +50,18 @@ signals:
 	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	DiscoveryGroup(QByteArray id, MulticastProvider* multicast, Discovery* parent);
+	DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, Discovery* parent);
 	virtual ~DiscoveryGroup();
 
 public slots:
 	void setMulticastEnabled(bool enabled);
 	void setMulticastInterval(std::chrono::seconds interval);
 
+	void setDHTEnabled(bool enabled);
+
 protected:
 	MulticastGroup* multicast_group_;
+	MLDHTGroup* dht_group_;
 };
 
 } /* namespace librevault */

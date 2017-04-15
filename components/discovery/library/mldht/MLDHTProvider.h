@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../btcompat.h"
+#include "btcompat.h"
 #include <QLoggingCategory>
 #include <QHostInfo>
 #include <QTimer>
@@ -37,56 +37,52 @@ Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
 namespace librevault {
 
-class PortMapper;
-class StateCollector;
 class Discovery;
+class DHTWrapper;
 class MLDHTProvider : public QObject {
 	Q_OBJECT
-public:
-	MLDHTProvider(PortMapper* port_mapping, StateCollector* state_collector, Discovery* parent);
-	virtual ~MLDHTProvider();
-
-	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
-
-	int getNodeCount() const;
-
-	quint16 getExternalPort();
 
 signals:
+	void discovered(QByteArray ih, QHostAddress addr, quint16 port);
 	void nodeCountChanged(int count);
-	void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
+
+public:
+	MLDHTProvider(Discovery* parent);
+	virtual ~MLDHTProvider();
+
+	// Start/Stop
+	void start(quint16 port);
+	void stop();
+
+	int getNodeCount() const;
+	quint16 getAnnouncePort() const {return announce_port_;}
 
 public slots:
 	void addRouter(QString host, quint16 port);
 	void addNode(QHostAddress addr, quint16 port);
+	void setAnnouncePort(quint16 port) {announce_port_ = port;}
+
+	// internal
+	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
 
 private:
-	PortMapper* port_mapping_;
-	StateCollector* state_collector_;
 	Discovery* parent_;
+	DHTWrapper* dht_wrapper_ = nullptr;
 
-	QByteArray own_id_;
+	quint16 announce_port_;
 
 	// Sockets
 	QUdpSocket* socket_;
-	QTimer* periodic_;
 
 	// Initialization
-	void start(quint16 port);
-	void stop();
-
 	void readSessionFile(QString path);
 	void writeSessionFile(QString path);
-
-	static constexpr size_t buffer_size_ = 65535;
-	void processDatagram();
-
-	void periodic_request();
 
 	QMap<int, quint16> resolves_;
 
 private slots:
-	void handle_resolve(const QHostInfo& host);
+	void handleResolve(const QHostInfo& host);
+	void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes);
 };
 
 } /* namespace librevault */

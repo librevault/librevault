@@ -28,61 +28,43 @@
  */
 #include "MLDHTGroup.h"
 #include "MLDHTProvider.h"
-#include "dht_glue.h"
-#include <dht.h>
+#ifdef Q_OS_WIN
+#   include <winsock2.h>
+#else
+#   include <sys/socket.h>
+#endif
 
 namespace librevault {
 
 MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, QByteArray id) :
 	provider_(provider),
-	info_hash_(id_.leftJustified(20, 0, true)),
 	id_(id) {
 	timer_ = new QTimer(this);
 
-	timer_->setInterval(30*1000);
+	timer_->setInterval(5*1000);
 
-	connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent, Qt::QueuedConnection);
-	connect(timer_, &QTimer::timeout, this, [=]{startSearch(AF_INET);});
-	connect(timer_, &QTimer::timeout, this, [=]{startSearch(AF_INET6);});
+	connect(provider_, &MLDHTProvider::discovered, this, &MLDHTGroup::handleDiscovered);
+	connect(timer_, &QTimer::timeout, this, &MLDHTGroup::startSearches);
 }
 
 void MLDHTGroup::setEnabled(bool enable) {
-	if(enable && !enabled_) {
-		enabled_ = true;
+	if(enable)
 		timer_->start();
-	}else if(!enable && enabled_) {
+	else
 		timer_->stop();
-		enabled_ = false;
-	}
 }
 
-void MLDHTGroup::startSearch(int af) {
-	bool announce = true;
+void MLDHTGroup::startSearches() {
+	QByteArray ih = getInfoHash();
 
-	qCDebug(log_dht)
-		<< "Starting"
-		<< (af == AF_INET6 ? "IPv6" : "IPv4")
-		<< (announce ? "announce" : "search")
-		<< "for: " << info_hash_.toHex()
-		<< (announce ? "on port:" : "") << (announce ? QString::number(provider_->getExternalPort()) : QString());
-
-	dht_search((const uint8_t*)info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, provider_);
+	qCDebug(log_dht) << "Starting DHT searches for:" << ih.toHex() << "on port:" << provider_->getAnnouncePort();
+	provider_->startSearch(ih, QAbstractSocket::IPv4Protocol, provider_->getAnnouncePort());
+	provider_->startSearch(ih, QAbstractSocket::IPv6Protocol, provider_->getAnnouncePort());
 }
 
-void MLDHTGroup::handleEvent(int event, QByteArray ih, QByteArray values) {
-	if(!enabled_ || ih != getInfoHash()) return;
-	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
-		std::list<btcompat::asio_endpoint> endpoints;
-
-		if(event == DHT_EVENT_VALUES)
-			endpoints = btcompat::parse_compact_endpoint4_list(values.data(), values.size());
-		else if(event == DHT_EVENT_VALUES6)
-			endpoints = btcompat::parse_compact_endpoint6_list(values.data(), values.size());
-
-		for(auto& endpoint : endpoints) {
-			emit discovered(QHostAddress(QString::fromStdString(endpoint.address().to_string())), endpoint.port());
-		}
-	}
+void MLDHTGroup::handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port) {
+	if(!enabled() || ih != getInfoHash()) return;
+	emit discovered(addr, port);
 }
 
 } /* namespace librevault */

@@ -27,11 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "MLDHTProvider.h"
-#include "dht_glue.h"
-#include "PortMapper.h"
+#include "DHTWrapper.h"
 #include "Discovery.h"
 #include "rand.h"
-#include <cryptopp/osrng.h>
+#include "nativeaddr.h"
 #include <dht.h>
 #include <QCryptographicHash>
 #include <QFile>
@@ -43,22 +42,11 @@ Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
 
 namespace librevault {
 
-using namespace boost::asio::ip;
-
-MLDHTProvider::MLDHTProvider(PortMapper* port_mapping, StateCollector* state_collector, Discovery* parent) :
+MLDHTProvider::MLDHTProvider(Discovery* parent) :
 	QObject(parent),
-	port_mapping_(port_mapping),
-	state_collector_(state_collector),
 	parent_(parent) {
 
-	qRegisterMetaType<btcompat::info_hash>("btcompat::info_hash");
-
 	socket_ = new QUdpSocket(this);
-	periodic_ = new QTimer(this);
-	periodic_->setSingleShot(true);
-
-	connect(socket_, &QUdpSocket::readyRead, this, &MLDHTProvider::processDatagram);
-	connect(periodic_, &QTimer::timeout, this, &MLDHTProvider::periodic_request);
 }
 
 MLDHTProvider::~MLDHTProvider() {
@@ -66,29 +54,21 @@ MLDHTProvider::~MLDHTProvider() {
 }
 
 void MLDHTProvider::start(quint16 port) {
-	// Initialize id
-	own_id_ = getRandomArray(20);
+	stop(); // Cleanup if initialized
 
-	// Init sockets
 	socket_->bind(port);
-
-	int rc = dht_init(socket_->socketDescriptor(), socket_->socketDescriptor(), (const uint8_t*)own_id_.data(), nullptr);
-	if(rc < 0)
-		qCWarning(log_dht) << "Could not initialize DHT: Internal DHT error";
-
-	// Map port
-	port_mapping_->addPort("mldht", port, QAbstractSocket::UdpSocket, "Librevault DHT");
-
-	periodic_->start();
+	dht_wrapper_ = new DHTWrapper(socket_, socket_, getRandomArray(20), this);
+	connect(dht_wrapper_, &DHTWrapper::nodeCountChanged, this, &MLDHTProvider::nodeCountChanged);
+	connect(dht_wrapper_, &DHTWrapper::foundNodes, this, &MLDHTProvider::handleSearch);
+	connect(dht_wrapper_, &DHTWrapper::searchDone, this, &MLDHTProvider::handleSearch);
+	dht_wrapper_->enable();
 }
 
 void MLDHTProvider::stop() {
-	periodic_->stop();
+	if(dht_wrapper_) dht_wrapper_->disable();
 
-	port_mapping_->removePort("mldht");
-
-	dht_uninit();
-
+	delete dht_wrapper_;
+	dht_wrapper_ = nullptr;
 	socket_->close();
 }
 
@@ -109,33 +89,19 @@ void MLDHTProvider::readSessionFile(QString path) {
 }
 
 void MLDHTProvider::writeSessionFile(QString path) {
-	struct sockaddr_in6 sa6[300];
-	struct sockaddr_in sa4[300];
-
-	int sa6_count = 300;
-	int sa4_count = 300;
-
-	dht_get_nodes(sa4, &sa4_count, sa6, &sa6_count);
-
-	qCInfo(log_dht) << "Saving" << sa4_count + sa6_count << "nodes to session file";
+	QList<QPair<QHostAddress, quint16>> nodes = dht_wrapper_->getNodes();
+	qCInfo(log_dht) << "Saving" << nodes.count() << "nodes to session file";
 
 	QJsonObject json_object;
 
-	QJsonArray nodes;
-	for(auto i=0; i < sa6_count; i++) {
-		QJsonObject node;
-		node["ip"] = QHostAddress((sockaddr*) &sa6[i]).toString();
-		node["port"] = qFromBigEndian(sa6[i].sin6_port);
-		nodes.append(node);
+	QJsonArray nodes_j;
+	for(auto& node : nodes) {
+		QJsonObject node_j;
+		node_j["ip"] = node.first.toString();
+		node_j["port"] = node.second;
+		nodes_j.append(node_j);
 	}
-	for(auto i=0; i < sa4_count; i++) {
-		QJsonObject node;
-		node["ip"] = QHostAddress((sockaddr*) &sa4[i]).toString();
-		node["port"] = qFromBigEndian(sa4[i].sin_port);
-		nodes.append(node);
-	}
-
-	json_object["nodes"] = nodes;
+	json_object["nodes"] = nodes_j;
 
 	QFile session_f(path);
 	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
@@ -145,72 +111,23 @@ void MLDHTProvider::writeSessionFile(QString path) {
 }
 
 int MLDHTProvider::getNodeCount() const {
-	int good6 = 0;
-	int dubious6 = 0;
-	int cached6 = 0;
-	int incoming6 = 0;
-	int good4 = 0;
-	int dubious4 = 0;
-	int cached4 = 0;
-	int incoming4 = 0;
-
-	dht_nodes(AF_INET6, &good6, &dubious6, &cached6, &incoming6);
-	dht_nodes(AF_INET, &good4, &dubious4, &cached4, &incoming4);
-
-	return good6+good4 + dubious6+dubious4;
-}
-
-quint16 MLDHTProvider::getExternalPort() {
-	return parent_->getAnnounceWANPort();
+	return dht_wrapper_->goodNodeCount();
 }
 
 void MLDHTProvider::addRouter(QString host, quint16 port) {
-	int id = QHostInfo::lookupHost(host, this, SLOT(handle_resolve(QHostInfo)));
+	int id = QHostInfo::lookupHost(host, this, SLOT(handleResolve(QHostInfo)));
 	resolves_[id] = port;
 }
 
 void MLDHTProvider::addNode(QHostAddress addr, quint16 port) {
-	if(addr.isNull()) return;
-	btcompat::asio_endpoint endpoint(boost::asio::ip::address::from_string(addr.toString().toStdString()), port);
-	dht_ping_node(endpoint.data(), endpoint.size());
+	dht_wrapper_->pingNode(addr, port);
 }
 
-void MLDHTProvider::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len) {
-	qCDebug(log_dht) << BOOST_CURRENT_FUNCTION << "event:" << event;
-
-	btcompat::info_hash ih; std::copy(info_hash, info_hash + ih.size(), ih.begin());
-
-	if(event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6)
-		emit eventReceived(event, ih, QByteArray((char*)data, data_len));
-	else if(event == DHT_EVENT_SEARCH_DONE || event == DHT_EVENT_SEARCH_DONE6)
-		emit eventReceived(event, ih, QByteArray());
+void MLDHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
+	dht_wrapper_->startSearch(id, af, port);
 }
 
-void MLDHTProvider::processDatagram() {
-	char datagram_buffer[buffer_size_];
-	QHostAddress address;
-	quint16 port;
-	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_, &address, &port);
-	datagram_buffer[datagram_size] = '\0';  // Message must be null-terminated
-
-	btcompat::asio_endpoint endpoint(address::from_string(address.toString().toStdString()), port);
-
-	time_t tosleep;
-	dht_periodic(datagram_buffer, datagram_size, endpoint.data(), (int)endpoint.size(), &tosleep, lv_dht_callback_glue, this);
-	emit nodeCountChanged(getNodeCount());
-
-	periodic_->setInterval(tosleep*1000);
-}
-
-void MLDHTProvider::periodic_request() {
-	time_t tosleep;
-	dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
-	emit nodeCountChanged(getNodeCount());
-
-	periodic_->setInterval(tosleep*1000);
-}
-
-void MLDHTProvider::handle_resolve(const QHostInfo& host) {
+void MLDHTProvider::handleResolve(const QHostInfo& host) {
 	if(host.error()) {
 		qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
 		resolves_.remove(host.lookupId());
@@ -223,33 +140,9 @@ void MLDHTProvider::handle_resolve(const QHostInfo& host) {
 	}
 }
 
+void MLDHTProvider::handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes) {
+	for(auto& endpoint : qAsConst(nodes))
+		emit discovered(id, endpoint.first, endpoint.second);
+}
+
 } /* namespace librevault */
-
-// DHT library overrides
-extern "C" {
-
-int dht_blacklisted(const struct sockaddr *sa, int salen) {
-//	for(int i = 0; i < salen; i++) {
-//		QHostAddress peer_addr(sa+i);
-//	}
-	return 0;
-}
-
-void dht_hash(void *hash_return, int hash_size, const void *v1, int len1, const void *v2, int len2, const void *v3, int len3) {
-	std::fill((char*)hash_return, (char*)hash_return + hash_size, 0);
-
-	QCryptographicHash hasher(QCryptographicHash::Sha1);
-	hasher.addData((const char*)v1, len1);
-	hasher.addData((const char*)v2, len2);
-	hasher.addData((const char*)v3, len3);
-	QByteArray result = hasher.result();
-
-	std::copy(result.begin(), result.begin()+qMin(result.size(), hash_size), (char*)hash_return);
-}
-
-int dht_random_bytes(void *buf, size_t size) {
-	CryptoPP::AutoSeededRandomPool().GenerateBlock((uint8_t*)buf, size);
-	return size;
-}
-
-} /* extern "C" */

@@ -28,25 +28,26 @@
  */
 #include "Discovery.h"
 #include "DiscoveryGroup.h"
-//#include "bttracker/BTTrackerGroup.h"
-//#include "bttracker/BTTrackerProvider.h"
 #include "multicast/MulticastGroup.h"
 #include "multicast/MulticastProvider.h"
-//#include "mldht/MLDHTGroup.h"
-//#include "mldht/MLDHTProvider.h"
+#include "mldht/MLDHTGroup.h"
+#include "mldht/MLDHTProvider.h"
+//#include "bttracker/BTTrackerGroup.h"
+//#include "bttracker/BTTrackerProvider.h"
 
 namespace librevault {
 
 Discovery::Discovery(QObject* parent) : QObject(parent) {
 	multicast_ = new MulticastProvider(this);
 	//bttracker_ = new BTTrackerProvider(portmapper, this);
-	//mldht_ = new MLDHTProvider(portmapper, this);
+	mldht_ = new MLDHTProvider(this);
+	connect(mldht_, &MLDHTProvider::nodeCountChanged, this, &Discovery::DHTnodeCountChanged);
 }
 
 Discovery::~Discovery() {}
 
 DiscoveryGroup* Discovery::createGroup(QByteArray id) {
-	return new DiscoveryGroup(id, multicast_, this);
+	return new DiscoveryGroup(id, multicast_, mldht_, this);
 }
 
 void Discovery::setAnnounceLANPort(quint16 port) {
@@ -54,15 +55,29 @@ void Discovery::setAnnounceLANPort(quint16 port) {
 }
 
 void Discovery::setAnnounceWANPort(quint16 port) {
-
+	mldht_->setAnnouncePort(port);
 }
 
+// Multicast
 void Discovery::startMulticast(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6) {
 	multicast_->start(addr4, port4, addr6, port6);
 }
 
 void Discovery::stopMulticast() {
 	multicast_->stop();
+}
+
+// DHT
+void Discovery::startDHT(quint16 port) {
+	mldht_->start(port);
+}
+
+void Discovery::stopDHT() {
+	mldht_->stop();
+}
+
+void Discovery::addDHTRouter(QString host, quint16 port) {
+	mldht_->addRouter(host, port);
 }
 
 } /* namespace librevault */

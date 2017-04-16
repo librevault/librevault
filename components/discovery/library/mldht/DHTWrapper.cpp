@@ -95,6 +95,7 @@ DHTWrapper::DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_
 	Q_ASSERT(rc != 0);
 
 	periodic_ = new QTimer(this);
+	periodic_->setTimerType(Qt::VeryCoarseTimer);
 	connect(periodic_, &QTimer::timeout, this, &DHTWrapper::periodicRequest);
 	periodic_->start();
 

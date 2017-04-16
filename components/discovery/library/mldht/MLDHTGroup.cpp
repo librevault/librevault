@@ -42,6 +42,7 @@ MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, QByteArray id) :
 	timer_ = new QTimer(this);
 
 	timer_->setInterval(60*1000);
+	timer_->setTimerType(Qt::VeryCoarseTimer);
 
 	connect(provider_, &MLDHTProvider::discovered, this, &MLDHTGroup::handleDiscovered);
 	connect(timer_, &QTimer::timeout, this, &MLDHTGroup::startSearches);

@@ -64,7 +64,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
 	QByteArray id = QByteArray::fromHex(QByteArray::fromStdString(args["<id>"].asString()));
 	dgroup = discovery->createGroup(id);
 	dgroup->setMulticastEnabled(true);
-	dgroup->setMulticastInterval(std::chrono::seconds(5));
+	dgroup->setMulticastInterval(std::chrono::seconds(30));
 	dgroup->setDHTEnabled(true);
 
 	connect(dgroup, &DiscoveryGroup::discovered, this, &DiscoveryApp::handleDiscovered);

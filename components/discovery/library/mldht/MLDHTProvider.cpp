@@ -131,7 +131,7 @@ void MLDHTProvider::handleResolve(const QHostInfo& host) {
 	if(host.error()) {
 		qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
 		resolves_.remove(host.lookupId());
-	}else {
+	}else{
 		QHostAddress address = host.addresses().first();
 		quint16 port = resolves_.take(host.lookupId());
 

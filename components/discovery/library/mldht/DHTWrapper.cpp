@@ -113,9 +113,14 @@ void DHTWrapper::pingNode(QHostAddress addr, quint16 port) {
 	dht_ping_node((const sockaddr*)&sa, getSockaddrSize(sa));
 }
 
-void DHTWrapper::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
+void DHTWrapper::startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
 	if(!enabled()) return;
 	dht_search((const uint8_t*)id.data(), port, convertAF(af), lv_dht_callback_wrapper, this);
+}
+
+void DHTWrapper::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af) {
+	if(!enabled()) return;
+	dht_search((const uint8_t*)id.data(), 0, convertAF(af), lv_dht_callback_wrapper, this);
 }
 
 void DHTWrapper::nodeCount(int& good_return, int& dubious_return, int& cached_return, int& incoming_return) {
@@ -185,7 +190,7 @@ void DHTWrapper::processDatagram(QUdpSocket* socket) {
 
 	time_t tosleep;
 	dht_periodic(buffer.data(), buffer.size()+1, (sockaddr*)&sa, getSockaddrSize(sa), &tosleep, lv_dht_callback_wrapper, this);
-	emit nodeCountChanged(goodNodeCount());
+	updateNodeCount();
 
 	periodic_->setInterval(tosleep*1000);
 }
@@ -195,9 +200,17 @@ void DHTWrapper::periodicRequest() {
 
 	time_t tosleep;
 	dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_wrapper, this);
-	emit nodeCountChanged(goodNodeCount());
+	updateNodeCount();
 
 	periodic_->setInterval(tosleep*1000);
+}
+
+void DHTWrapper::updateNodeCount() {
+	int new_node_count = goodNodeCount();
+	if(last_node_count_ != new_node_count) {
+		last_node_count_ = new_node_count;
+		emit nodeCountChanged(new_node_count);
+	}
 }
 
 } /* namespace librevault */

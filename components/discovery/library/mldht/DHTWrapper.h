@@ -56,13 +56,15 @@ public:
 
 public slots:
 	void pingNode(QHostAddress addr, quint16 port);
-	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
 
 	void enable() {periodic_->start();}
 	void disable() {periodic_->stop();}
 
 private:
 	QTimer* periodic_;
+	int last_node_count_ = 0;
 
 	int convertAF(QAbstractSocket::NetworkLayerProtocol qaf);
 	bool enabled() {return periodic_->isActive();}
@@ -70,6 +72,7 @@ private:
 private slots:
 	void processDatagram(QUdpSocket* socket);
 	void periodicRequest();
+	void updateNodeCount();
 };
 
 } /* namespace librevault */

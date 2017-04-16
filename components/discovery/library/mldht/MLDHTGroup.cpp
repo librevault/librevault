@@ -41,16 +41,17 @@ MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, QByteArray id) :
 	id_(id) {
 	timer_ = new QTimer(this);
 
-	timer_->setInterval(5*1000);
+	timer_->setInterval(60*1000);
 
 	connect(provider_, &MLDHTProvider::discovered, this, &MLDHTGroup::handleDiscovered);
 	connect(timer_, &QTimer::timeout, this, &MLDHTGroup::startSearches);
 }
 
 void MLDHTGroup::setEnabled(bool enable) {
-	if(enable)
+	if(enable) {
+		QTimer::singleShot(0, this, &MLDHTGroup::startSearches);
 		timer_->start();
-	else
+	}else
 		timer_->stop();
 }
 
@@ -58,8 +59,8 @@ void MLDHTGroup::startSearches() {
 	QByteArray ih = getInfoHash();
 
 	qCDebug(log_dht) << "Starting DHT searches for:" << ih.toHex() << "on port:" << provider_->getAnnouncePort();
-	provider_->startSearch(ih, QAbstractSocket::IPv4Protocol, provider_->getAnnouncePort());
-	provider_->startSearch(ih, QAbstractSocket::IPv6Protocol, provider_->getAnnouncePort());
+	provider_->startAnnounce(ih, QAbstractSocket::IPv4Protocol, provider_->getAnnouncePort());
+	provider_->startAnnounce(ih, QAbstractSocket::IPv6Protocol, provider_->getAnnouncePort());
 }
 
 void MLDHTGroup::handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port) {

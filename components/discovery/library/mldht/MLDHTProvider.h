@@ -57,13 +57,16 @@ public:
 	int getNodeCount() const;
 	quint16 getAnnouncePort() const {return announce_port_;}
 
+	QList<QPair<QHostAddress, quint16>> getNodes();
+
 public slots:
 	void addRouter(QString host, quint16 port);
 	void addNode(QHostAddress addr, quint16 port);
 	void setAnnouncePort(quint16 port) {announce_port_ = port;}
 
 	// internal
-	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
 
 private:
 	Discovery* parent_;
@@ -72,7 +75,8 @@ private:
 	quint16 announce_port_;
 
 	// Sockets
-	QUdpSocket* socket_;
+	QUdpSocket* socket4_;
+	QUdpSocket* socket6_;
 
 	// Initialization
 	void readSessionFile(QString path);

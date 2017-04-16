@@ -50,6 +50,10 @@ DiscoveryGroup* Discovery::createGroup(QByteArray id) {
 	return new DiscoveryGroup(id, multicast_, mldht_, this);
 }
 
+QList<QPair<QHostAddress, quint16>> Discovery::getDHTNodes() {
+	return mldht_->getNodes();
+};
+
 void Discovery::setAnnounceLANPort(quint16 port) {
 	multicast_->setAnnouncePort(port);
 }
@@ -78,6 +82,10 @@ void Discovery::stopDHT() {
 
 void Discovery::addDHTRouter(QString host, quint16 port) {
 	mldht_->addRouter(host, port);
+}
+
+void Discovery::addDHTNode(QHostAddress addr, quint16 port) {
+	mldht_->addNode(addr, port);
 }
 
 } /* namespace librevault */

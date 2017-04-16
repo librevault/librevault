@@ -49,6 +49,7 @@ public:
 	virtual ~Discovery();
 
 	DiscoveryGroup* createGroup(QByteArray id);
+	QList<QPair<QHostAddress, quint16>> getDHTNodes();
 
 public slots:
 	void setAnnounceLANPort(quint16 port);
@@ -62,6 +63,7 @@ public slots:
 	void startDHT(quint16 port);
 	void stopDHT();
 	void addDHTRouter(QString host, quint16 port);
+	void addDHTNode(QHostAddress addr, quint16 port);
 
 protected:
 	MulticastProvider* multicast_;

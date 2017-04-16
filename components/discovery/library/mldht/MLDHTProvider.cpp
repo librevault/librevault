@@ -31,7 +31,6 @@
 #include "Discovery.h"
 #include "rand.h"
 #include "nativeaddr.h"
-#include <dht.h>
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
@@ -46,7 +45,8 @@ MLDHTProvider::MLDHTProvider(Discovery* parent) :
 	QObject(parent),
 	parent_(parent) {
 
-	socket_ = new QUdpSocket(this);
+	socket4_ = new QUdpSocket(this);
+	socket6_ = new QUdpSocket(this);
 }
 
 MLDHTProvider::~MLDHTProvider() {
@@ -56,8 +56,9 @@ MLDHTProvider::~MLDHTProvider() {
 void MLDHTProvider::start(quint16 port) {
 	stop(); // Cleanup if initialized
 
-	socket_->bind(port);
-	dht_wrapper_ = new DHTWrapper(socket_, socket_, getRandomArray(20), this);
+	socket4_->bind(QHostAddress::AnyIPv4, port);
+	socket6_->bind(QHostAddress::AnyIPv6, port);
+	dht_wrapper_ = new DHTWrapper(socket4_, socket6_, getRandomArray(20), this);
 	connect(dht_wrapper_, &DHTWrapper::nodeCountChanged, this, &MLDHTProvider::nodeCountChanged);
 	connect(dht_wrapper_, &DHTWrapper::foundNodes, this, &MLDHTProvider::handleSearch);
 	connect(dht_wrapper_, &DHTWrapper::searchDone, this, &MLDHTProvider::handleSearch);
@@ -69,7 +70,8 @@ void MLDHTProvider::stop() {
 
 	delete dht_wrapper_;
 	dht_wrapper_ = nullptr;
-	socket_->close();
+	socket4_->close();
+	socket6_->close();
 }
 
 void MLDHTProvider::readSessionFile(QString path) {
@@ -114,6 +116,10 @@ int MLDHTProvider::getNodeCount() const {
 	return dht_wrapper_->goodNodeCount();
 }
 
+QList<QPair<QHostAddress, quint16>> MLDHTProvider::getNodes() {
+	return dht_wrapper_->getNodes();
+}
+
 void MLDHTProvider::addRouter(QString host, quint16 port) {
 	int id = QHostInfo::lookupHost(host, this, SLOT(handleResolve(QHostInfo)));
 	resolves_[id] = port;
@@ -123,8 +129,12 @@ void MLDHTProvider::addNode(QHostAddress addr, quint16 port) {
 	dht_wrapper_->pingNode(addr, port);
 }
 
-void MLDHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
-	dht_wrapper_->startSearch(id, af, port);
+void MLDHTProvider::startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
+	dht_wrapper_->startAnnounce(id, af, port);
+}
+
+void MLDHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af) {
+	dht_wrapper_->startSearch(id, af);
 }
 
 void MLDHTProvider::handleResolve(const QHostInfo& host) {

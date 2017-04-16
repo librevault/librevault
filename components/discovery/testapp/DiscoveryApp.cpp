@@ -57,6 +57,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
 
 	connect(discovery, &Discovery::DHTnodeCountChanged, this, [=](int count){
 		qDebug() << "DHT node count:" << count;
+		qDebug() << discovery->getDHTNodes();
 	});
 
 	// Group

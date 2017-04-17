@@ -29,16 +29,10 @@
 #include "DiscoveryApp.h"
 #include "Discovery.h"
 #include "DiscoveryGroup.h"
-#include <QDebug>
-#include <QtGlobal>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QIODevice>
 #include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QTimer>
-#include <chrono>
-#include "rand.h"
 
 namespace librevault {
 
@@ -76,7 +70,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
 }
 
 void DiscoveryApp::handleDiscovered(QHostAddress addr, quint16 port) {
-	qInfo() << "Discovered: " << addr.toString() << " " << port;
+	qInfo() << "Discovered:" << addr.toString() << port;
 }
 
 } /* namespace librevault */

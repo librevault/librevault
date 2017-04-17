@@ -70,16 +70,9 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
 	dgroup->setBTEnabled(true);
 	dgroup->setBTTrackers({
 		QUrl("udp://discovery.librevault.com:6969/announce"),
-		//QUrl("udp://tracker.openbittorrent.com:80/announce"),
-		//QUrl("udp://tracker.opentrackr.org:1337/announce"),
-		//QUrl("udp://tracker.coppersurfer.tk:6969/announce"),
 	});
 
 	connect(dgroup, &DiscoveryGroup::discovered, this, &DiscoveryApp::handleDiscovered);
-
-	qDebug() << getRandomArray(10).toHex();
-	qDebug() << getRandomArray(10).toHex();
-	qDebug() << getRandomArray(10).toHex();
 }
 
 void DiscoveryApp::handleDiscovered(QHostAddress addr, quint16 port) {

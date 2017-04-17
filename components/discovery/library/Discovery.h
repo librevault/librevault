@@ -33,8 +33,8 @@
 namespace librevault {
 
 class MulticastProvider;
-class BTTrackerProvider;
 class MLDHTProvider;
+class BTProvider;
 
 class DiscoveryGroup;
 
@@ -68,7 +68,7 @@ public slots:
 protected:
 	MulticastProvider* multicast_;
 	MLDHTProvider* mldht_;
-	//BTTrackerProvider* bttracker_;
+	BTProvider* bt_;
 };
 
 } /* namespace librevault */

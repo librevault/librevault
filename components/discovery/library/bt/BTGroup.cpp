@@ -26,40 +26,27 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "../btcompat.h"
-#include <QObject>
-#include <QUrl>
-#include <QLoggingCategory>
-#include <set>
+#include "BTGroup.h"
+#include "BTConnection.h"
 
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_bt)
+BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id) :
+	provider_(provider),
+	discovery_id_(discovery_id) {}
 
-class BTTrackerConnection;
-class BTTrackerProvider;
-class BTTrackerGroup : public QObject {
-	Q_OBJECT
+void BTGroup::setEnabled(bool enabled) {
+	enabled_ = enabled;
+	for(auto& i : connections_)
+		i.second->setEnabled(enabled_);
+}
 
-signals:
-	void discovered(QHostAddress addr, quint16 port);
-
-public:
-	BTTrackerGroup(BTTrackerProvider* provider, QByteArray id);
-
-	QByteArray getInfoHash() const {return id_;}
-
-public slots:
-	void setEnabled(bool enabled);
-	void setTrackerList(QList<QUrl> trackers);
-
-protected:
-	BTTrackerProvider* provider_;
-	QByteArray id_;
-	std::map<QUrl, std::unique_ptr<BTTrackerConnection>> connections_;
-
-	bool enabled_ = false;
-};
+void BTGroup::setTrackerList(QList<QUrl> trackers) {
+	connections_.clear();
+	for(QUrl tracker : qAsConst(trackers)) {
+		connections_[tracker] = std::make_unique<BTConnection>(tracker, this, provider_);
+		connections_[tracker]->setEnabled(enabled_);
+	}
+}
 
 } /* namespace librevault */

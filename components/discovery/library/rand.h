@@ -34,7 +34,8 @@
 #include <functional>
 
 inline void fillRandomBuf(void* buf, size_t size) {
-	std::independent_bits_engine<std::default_random_engine, CHAR_BIT, uint8_t> engine;
+	std::independent_bits_engine<std::random_device, CHAR_BIT, uint8_t> rd;
+	std::independent_bits_engine<std::mt19937, CHAR_BIT, uint8_t> engine(rd());
 	std::generate((char*)buf, (char*)buf+size, std::ref(engine));
 }
 

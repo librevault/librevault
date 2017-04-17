@@ -10,12 +10,8 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 
-file(GLOB_RECURSE multicast_SOURCES "library/multicast/*.cpp")
-file(GLOB_RECURSE multicast_HEADERS "library/multicast/*.h")
-file(GLOB_RECURSE mldht_SOURCES "library/mldht/*.cpp")
-file(GLOB_RECURSE mldht_HEADERS "library/mldht/*.h")
-file(GLOB discovery_SOURCES "library/*.cpp")
-file(GLOB discovery_HEADERS "library/*.h")
+file(GLOB_RECURSE discovery_SOURCES "library/*.cpp")
+file(GLOB_RECURSE discovery_HEADERS "library/*.h")
 
 file(GLOB_RECURSE discovery_testapp_SOURCES "testapp/*.cpp")
 file(GLOB_RECURSE discovery_testapp_HEADERS "testapp/*.h")

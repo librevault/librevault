@@ -35,11 +35,12 @@
 namespace librevault {
 
 class MulticastProvider;
-class BTTrackerProvider;
 class MLDHTProvider;
+class BTProvider;
 
 class MulticastGroup;
 class MLDHTGroup;
+class BTGroup;
 
 class Discovery;
 
@@ -50,7 +51,7 @@ signals:
 	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, Discovery* parent);
+	DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, BTProvider* bt, Discovery* parent);
 	virtual ~DiscoveryGroup();
 
 public slots:
@@ -59,9 +60,13 @@ public slots:
 
 	void setDHTEnabled(bool enabled);
 
+	void setBTEnabled(bool enabled);
+	void setBTTrackers(QList<QUrl> trackers);
+
 protected:
 	MulticastGroup* multicast_group_;
 	MLDHTGroup* dht_group_;
+	BTGroup* bt_group_;
 };
 
 } /* namespace librevault */

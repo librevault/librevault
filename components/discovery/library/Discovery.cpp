@@ -28,26 +28,23 @@
  */
 #include "Discovery.h"
 #include "DiscoveryGroup.h"
-#include "multicast/MulticastGroup.h"
 #include "multicast/MulticastProvider.h"
-#include "mldht/MLDHTGroup.h"
 #include "mldht/MLDHTProvider.h"
-//#include "bttracker/BTTrackerGroup.h"
-//#include "bttracker/BTTrackerProvider.h"
+#include "bt/BTProvider.h"
 
 namespace librevault {
 
 Discovery::Discovery(QObject* parent) : QObject(parent) {
 	multicast_ = new MulticastProvider(this);
-	//bttracker_ = new BTTrackerProvider(portmapper, this);
 	mldht_ = new MLDHTProvider(this);
+	bt_ = new BTProvider(this);
 	connect(mldht_, &MLDHTProvider::nodeCountChanged, this, &Discovery::DHTnodeCountChanged);
 }
 
 Discovery::~Discovery() {}
 
 DiscoveryGroup* Discovery::createGroup(QByteArray id) {
-	return new DiscoveryGroup(id, multicast_, mldht_, this);
+	return new DiscoveryGroup(id, multicast_, mldht_, bt_, this);
 }
 
 QList<QPair<QHostAddress, quint16>> Discovery::getDHTNodes() {
@@ -60,6 +57,7 @@ void Discovery::setAnnounceLANPort(quint16 port) {
 
 void Discovery::setAnnounceWANPort(quint16 port) {
 	mldht_->setAnnouncePort(port);
+	bt_->setAnnouncePort(port);
 }
 
 // Multicast

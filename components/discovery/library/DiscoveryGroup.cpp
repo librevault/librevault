@@ -32,18 +32,20 @@
 #include "multicast/MulticastProvider.h"
 #include "mldht/MLDHTGroup.h"
 #include "mldht/MLDHTProvider.h"
-//#include "bttracker/BTTrackerGroup.h"
-//#include "bttracker/BTTrackerProvider.h"
+#include "bt/BTGroup.h"
+#include "bt/BTProvider.h"
 
 namespace librevault {
 
-DiscoveryGroup::DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, Discovery* parent) :
+DiscoveryGroup::DiscoveryGroup(QByteArray id, MulticastProvider* multicast, MLDHTProvider* dht, BTProvider* bt, Discovery* parent) :
 	QObject(parent) {
 	multicast_group_ = new MulticastGroup(multicast, id);
 	dht_group_ = new MLDHTGroup(dht, id);
+	bt_group_ = new BTGroup(bt, id);
 
 	connect(multicast_group_, &MulticastGroup::discovered, this, &DiscoveryGroup::discovered);
 	connect(dht_group_, &MLDHTGroup::discovered, this, &DiscoveryGroup::discovered);
+	connect(bt_group_, &BTGroup::discovered, this, &DiscoveryGroup::discovered);
 }
 
 DiscoveryGroup::~DiscoveryGroup() {}
@@ -58,6 +60,14 @@ void DiscoveryGroup::setMulticastInterval(std::chrono::seconds interval) {
 
 void DiscoveryGroup::setDHTEnabled(bool enabled) {
 	dht_group_->setEnabled(enabled);
+}
+
+void DiscoveryGroup::setBTEnabled(bool enabled) {
+	bt_group_->setEnabled(enabled);
+}
+
+void DiscoveryGroup::setBTTrackers(QList<QUrl> trackers) {
+	bt_group_->setTrackerList(trackers);
 }
 
 } /* namespace librevault */

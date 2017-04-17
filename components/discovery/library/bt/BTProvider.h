@@ -27,71 +27,50 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../btcompat.h"
-#include <QHostInfo>
-#include <QTimer>
+#include "btcompat.h"
 #include <QUdpSocket>
-#include <QUrl>
 #include <QLoggingCategory>
+#include <unordered_map>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
-class BTTrackerProvider;
-class BTTrackerGroup;
 class FolderGroup;
-
-// BEP-0015 partial implementation (without scrape mechanism)
-class BTTrackerConnection : public QObject {
+class NodeKey;
+class PortMapper;
+class Discovery;
+class BTProvider : public QObject {
 	Q_OBJECT
-public:
-	BTTrackerConnection(QUrl tracker_address, BTTrackerGroup* btgroup_, BTTrackerProvider* tracker_provider);
-	virtual ~BTTrackerConnection();
-
-	void setEnabled(bool enabled);
 
 signals:
-	void discovered(QHostAddress addr, quint16 port);
+	void receivedConnect(quint32 transaction_id, quint64 connection_id);
+	void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+	void receivedError(quint32 transaction_id, QString error_message);
+
+public:
+	BTProvider(Discovery* parent);
+	virtual ~BTProvider();
+
+	quint16 getAnnouncePort() const {return announce_port_;}
+	QByteArray getPeerId() const {return peer_id_;}
+	QUdpSocket* getSocket() {return socket_;}
+
+public slots:
+	void setAnnouncePort(quint16 port) {announce_port_ = port;}
+	void setIDPrefix(QByteArray peer_id_prefix = QByteArray());
 
 private:
-	BTTrackerProvider* provider_;
-	BTTrackerGroup* btgroup_;
-
-	QUrl tracker_address_;
-
-	unsigned int announced_times_ = 0;
-
+	Discovery* parent_;
 	QUdpSocket* socket_;
 
-	// Tracker address
-	QHostAddress addr_;
-	quint16 port_;
+	quint16 announce_port_ = 0;
 
-	// Connection state
-	quint64 connection_id_ = 0;
-	quint32 transaction_id_connect_ = 0;
-	quint32 transaction_id_announce4_ = 0;
-	quint32 transaction_id_announce6_ = 0;
-
-	// Timers
-	QTimer* resolver_timer_;
-	QTimer* connect_timer_;
-	QTimer* announce_timer_;
-	int resolver_lookup_id_ = 0;
-
-	quint32 gen_transaction_id();
-
-	void resolve();
-	void btconnect();
-	void announce();
+	QByteArray peer_id_prefix_;
+	QByteArray peer_id_;
 
 private slots:
-	void handle_message(quint32 action, quint32 transaction_id, QByteArray message);
-
-	void handle_resolve(const QHostInfo& host);
-	void handle_connect(QByteArray message);
-	void handle_announce(QByteArray message);
+	void processDatagram();
 };
 
 } /* namespace librevault */

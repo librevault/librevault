@@ -26,47 +26,61 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "BTTrackerProvider.h"
-#include "Discovery.h"
-#include "rand.h"
-#include <QtEndian>
+#pragma once
+#include "btcompat.h"
+#include <QHostInfo>
+#include <QTimer>
+#include <QUdpSocket>
+#include <QUrl>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-BTTrackerProvider::BTTrackerProvider(PortMapper* portmapping, Discovery* parent) : QObject(parent),
-	portmapping_(portmapping), parent_(parent) {
-	socket_ = new QUdpSocket();
-	socket_->bind();
+Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
-	connect(socket_, &QUdpSocket::readyRead, this, &BTTrackerProvider::processDatagram);
+class BTProvider;
+class BTGroup;
 
-	// Generate new peer id
-	peer_id_ = peer_id_prefix_ + getRandomArray(20);
-	peer_id_.resize(20);
-}
+// BEP-0015 partial implementation (without scrape mechanism)
+class BTConnection : public QObject {
+	Q_OBJECT
+public:
+	BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
+	virtual ~BTConnection();
 
-BTTrackerProvider::~BTTrackerProvider() {}
+	void setEnabled(bool enabled);
 
-quint16 BTTrackerProvider::getAnnounceWANPort() const {
-	return parent_->getAnnounceWANPort();
-}
+signals:
+	void discovered(QHostAddress addr, quint16 port);
 
-btcompat::peer_id BTTrackerProvider::getPeerId() const {
-	return btcompat::get_peer_id(peer_id_);
-}
+private:
+	BTProvider* provider_;
+	BTGroup* btgroup_;
 
-void BTTrackerProvider::processDatagram() {
-	char datagram_buffer[buffer_size_];
-	qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_);
+	// Tracker address
+	QUrl tracker_unresolved_;
+	QPair<QHostAddress, quint16> tracker_resolved_;
 
-	QByteArray message(datagram_buffer, datagram_size);
-	if(message.size() >= 8) {
-		quint32 action, transaction_id;
-		std::copy(message.data()+0, message.data()+4, reinterpret_cast<char*>(&action));
-		std::copy(message.data()+4, message.data()+8, reinterpret_cast<char*>(&transaction_id));
+	// Connection state
+	quint64 conn_id_;
+	quint32 transaction_id_;
 
-		emit receivedMessage(qFromBigEndian(action), transaction_id, message);
-	}
-}
+	// Timers
+	QTimer* resolver_timer_;
+	QTimer* connect_timer_;
+	QTimer* announce_timer_;
+	int resolver_lookup_id_ = 0;
+
+	void resolve();
+	void btconnect();
+	void announce();
+
+	quint32 startTransaction();
+
+private slots:
+	void handleResolve(const QHostInfo& host);
+	void handleConnect(quint32 transaction_id, quint64 connection_id);
+	void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+};
 
 } /* namespace librevault */

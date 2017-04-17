@@ -27,49 +27,40 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../btcompat.h"
-#include <QUdpSocket>
+#include "btcompat.h"
+#include <QObject>
+#include <QUrl>
 #include <QLoggingCategory>
-#include <unordered_map>
+#include <memory>
+#include <set>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
-class FolderGroup;
-class NodeKey;
-class PortMapper;
-class Discovery;
-class BTTrackerProvider : public QObject {
+class BTConnection;
+class BTProvider;
+class BTGroup : public QObject {
 	Q_OBJECT
 
 signals:
-	void receivedMessage(quint32 action, quint32 transaction_id, QByteArray message);
+	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	BTTrackerProvider(PortMapper* portmapping, Discovery* parent);
-	virtual ~BTTrackerProvider();
-
-	quint16 getAnnounceWANPort() const;
-	btcompat::peer_id getPeerId() const;
-	QUdpSocket* getSocket() {return socket_;}
+	BTGroup(BTProvider* provider, QByteArray discovery_id);
+	QByteArray getDiscoveryID() {return discovery_id_;}
+	QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
 
 public slots:
-	void setIDPrefix(QByteArray peer_id_prefix) {peer_id_prefix_ = peer_id_prefix;};
+	void setEnabled(bool enabled);
+	void setTrackerList(QList<QUrl> trackers);
 
-private:
-	Discovery* parent_;
-	QUdpSocket* socket_;
-	NodeKey* node_key_;
-	PortMapper* portmapping_;
+protected:
+	BTProvider* provider_;
+	QByteArray discovery_id_;
+	std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
 
-	static constexpr size_t buffer_size_ = 65535;
-
-	QByteArray peer_id_prefix_;
-	QByteArray peer_id_;
-
-private slots:
-	void processDatagram();
+	bool enabled_ = false;
 };
 
 } /* namespace librevault */

@@ -85,6 +85,7 @@ QUrl P2PProvider::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) 
 	url.setPath("/" + folderid.toHex());
 	url.setHost(addr.toString());
 	url.setPort(port);
+	return url;
 }
 
 /* Here are where new QWebSocket created */

@@ -41,6 +41,7 @@ PortMapper::PortMapper(QObject* parent) : QObject(parent) {
 	auto port_callback = [this](QString id, quint16 port) {
 		qCInfo(log_portmapping) << "Port mapped:" << mappings_[id].orig_port << "->" << port;
 		mappings_[id].mapped_port = port;
+		emit portMapped(id, port);
 	};
 	connect(natpmp_service_, &NATPMPService::portMapped, port_callback);
 	connect(upnp_service_, &UPnPService::portMapped, port_callback);

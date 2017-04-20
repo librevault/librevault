@@ -47,6 +47,9 @@ struct Mapping {
 class PortMapper : public QObject {
 	Q_OBJECT
 
+signals:
+	void portMapped(QString id, quint16 mapped);
+
 public:
 	PortMapper(QObject* parent);
 	virtual ~PortMapper();

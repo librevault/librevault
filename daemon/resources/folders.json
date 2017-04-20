@@ -9,5 +9,7 @@
 	"archive_type": "trash",
 	"archive_trash_ttl": 30,
 	"archive_timestamp_count": 5,
-	"mainline_dht_enabled": true
+	"mainline_dht_enabled": true,
+	"bt_enabled": true,
+	"bt_trackers": ["udp://discovery.librevault.com:6969/announce"]
 }

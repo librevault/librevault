@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/DiscoveryResult.h"
 #include <QObject>
 #include <QSet>
 #include <QWebSocketServer>
@@ -54,7 +53,7 @@ public:
 	bool isLoopback(QByteArray digest);
 
 public slots:
-	void handleDiscovered(QByteArray folderid, DiscoveryResult result);
+	void handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port);
 
 private:
 	NodeKey* node_key_;
@@ -62,6 +61,8 @@ private:
 	FolderService* folder_service_;
 
 	QWebSocketServer* server_;
+
+	static QUrl makeUrl(QHostAddress addr, quint16 port, QByteArray folderid);
 
 private slots:
 	void handleConnection();

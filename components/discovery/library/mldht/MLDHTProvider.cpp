@@ -113,11 +113,11 @@ void MLDHTProvider::writeSessionFile(QString path) {
 }
 
 int MLDHTProvider::getNodeCount() const {
-	return dht_wrapper_->goodNodeCount();
+	return (dht_wrapper_) ? dht_wrapper_->goodNodeCount() : 0;
 }
 
 QList<QPair<QHostAddress, quint16>> MLDHTProvider::getNodes() {
-	return dht_wrapper_->getNodes();
+	return (dht_wrapper_) ? dht_wrapper_->getNodes() : QList<QPair<QHostAddress, quint16>>();
 }
 
 void MLDHTProvider::addRouter(QString host, quint16 port) {
@@ -126,15 +126,18 @@ void MLDHTProvider::addRouter(QString host, quint16 port) {
 }
 
 void MLDHTProvider::addNode(QHostAddress addr, quint16 port) {
-	dht_wrapper_->pingNode(addr, port);
+	if(dht_wrapper_)
+		dht_wrapper_->pingNode(addr, port);
 }
 
 void MLDHTProvider::startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
-	dht_wrapper_->startAnnounce(id, af, port);
+	if(dht_wrapper_)
+		dht_wrapper_->startAnnounce(id, af, port);
 }
 
 void MLDHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af) {
-	dht_wrapper_->startSearch(id, af);
+	if(dht_wrapper_)
+		dht_wrapper_->startSearch(id, af);
 }
 
 void MLDHTProvider::handleResolve(const QHostInfo& host) {

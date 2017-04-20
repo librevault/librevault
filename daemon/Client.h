@@ -37,7 +37,7 @@ namespace librevault {
 
 /* Components */
 class ControlServer;
-class Discovery;
+class DiscoveryAdapter;
 class FolderService;
 class NodeKey;
 class P2PProvider;
@@ -57,7 +57,7 @@ private:
 	StateCollector* state_collector_;
 	NodeKey* node_key_;
 	PortMapper* portmanager_;
-	Discovery* discovery_;
+	DiscoveryAdapter* discovery_;
 	FolderService* folder_service_;
 	P2PProvider* p2p_provider_;
 	ControlServer* control_server_;

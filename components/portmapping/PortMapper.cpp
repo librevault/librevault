@@ -70,7 +70,7 @@ void PortMapper::removePort(QString id) {
 }
 
 quint16 PortMapper::getOriginalPort(QString id) {
-	return mappings_.contains(id) ? mappings_[id].orig_port : 0;
+	return mappings_.contains(id) ? mappings_[id].orig_port : (quint16)0;
 }
 
 quint16 PortMapper::getMappedPort(QString id) {

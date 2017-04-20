@@ -30,7 +30,7 @@
 #include "control/Config.h"
 #include "control/server/ControlServer.h"
 #include "control/StateCollector.h"
-#include "discovery/Discovery.h"
+#include "adapters/DiscoveryAdapter.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
 #include "PortMapper.h"
@@ -47,7 +47,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMapper(this);
-	discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
+	discovery_ = new DiscoveryAdapter(portmanager_, this);
 	folder_service_ = new FolderService(state_collector_, this);
 	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
@@ -56,7 +56,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
 
-	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
+	connect(discovery_, &DiscoveryAdapter::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
 
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
@@ -65,7 +65,8 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 		control_server_->notify_folder_removed(group->folderid());
 	});
 
-	connect(folder_service_, &FolderService::folderAdded, discovery_, &Discovery::addGroup);
+	connect(folder_service_, &FolderService::folderAdded, discovery_, [=](FolderGroup* fgroup){discovery_->addGroup(fgroup->folderid());});
+	connect(folder_service_, &FolderService::folderRemoved, discovery_, [=](FolderGroup* fgroup){discovery_->removeGroup(fgroup->folderid());});
 
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);

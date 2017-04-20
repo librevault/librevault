@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,68 +27,33 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "btcompat.h"
-#include <QLoggingCategory>
-#include <QHostInfo>
-#include <QTimer>
-#include <QUdpSocket>
-
-Q_DECLARE_LOGGING_CATEGORY(log_dht)
+#include <Discovery.h>
+#include <PortMapper.h>
+#include <memory>
 
 namespace librevault {
 
-class Discovery;
-class DHTWrapper;
-class MLDHTProvider : public QObject {
+class DiscoveryAdapter : public QObject {
 	Q_OBJECT
 
 signals:
-	void discovered(QByteArray ih, QHostAddress addr, quint16 port);
-	void nodeCountChanged(int count);
+	void discovered(QByteArray folderid, QHostAddress addr, quint16 port);
 
 public:
-	MLDHTProvider(Discovery* parent);
-	virtual ~MLDHTProvider();
-
-	// Start/Stop
-	void start(quint16 port);
-	void stop();
-
-	int getNodeCount() const;
-	quint16 getAnnouncePort() const {return announce_port_;}
-
-	QList<QPair<QHostAddress, quint16>> getNodes();
-
-	bool isEnabled() {return socket4_->isValid() || socket6_->isValid();}
+	DiscoveryAdapter(PortMapper* portmapper, QObject* parent);
+	virtual ~DiscoveryAdapter();
 
 public slots:
-	void addRouter(QString host, quint16 port);
-	void addNode(QHostAddress addr, quint16 port);
-	void setAnnouncePort(quint16 port) {announce_port_ = port;}
-
-	// internal
-	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
-	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+	void addGroup(QByteArray folderid);
+	void removeGroup(QByteArray folderid);
 
 private:
-	Discovery* parent_;
-	DHTWrapper* dht_wrapper_ = nullptr;
+	PortMapper* portmapper_;
+	Discovery* discovery_;
 
-	quint16 announce_port_;
+	QMap<QByteArray, DiscoveryGroup*> groups_;
 
-	// Sockets
-	QUdpSocket* socket4_;
-	QUdpSocket* socket6_;
-
-	// Initialization
-	void readSessionFile(QString path);
-	void writeSessionFile(QString path);
-
-	QMap<int, quint16> resolves_;
-
-private slots:
-	void handleResolve(const QHostInfo& host);
-	void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes);
+	void initDiscovery();
 };
 
 } /* namespace librevault */

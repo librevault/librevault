@@ -79,6 +79,14 @@ bool P2PProvider::isLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 
+QUrl P2PProvider::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) {
+	QUrl url;
+	url.setScheme("wss");
+	url.setPath("/" + folderid.toHex());
+	url.setHost(addr.toString());
+	url.setPort(port);
+}
+
 /* Here are where new QWebSocket created */
 void P2PProvider::handleConnection() {
 	while(server_->hasPendingConnections()) {
@@ -94,21 +102,15 @@ void P2PProvider::handleConnection() {
 	}
 }
 
-void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) {
-	qCDebug(log_p2p) << "Discovery event from:" << result.source;
+void P2PProvider::handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port) {
+	qCDebug(log_p2p) << "Discovery event about:" << addr << port;
 
 	FolderGroup* fgroup = folder_service_->getGroup(folderid);
 	if(!fgroup) {
 		return; // Maybe, we have received a multicast not for us?
 	}
 
-	QUrl ws_url = result.url;
-	ws_url.setScheme("wss");
-	ws_url.setPath(QString("/")+fgroup->folderid().toHex());
-	if(!ws_url.isValid()) {
-		ws_url.setHost(result.address.toString());
-		ws_url.setPort(result.port);
-	}
+	QUrl ws_url = makeUrl(addr, port, folderid);
 
 	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 

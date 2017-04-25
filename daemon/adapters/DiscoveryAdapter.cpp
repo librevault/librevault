@@ -30,6 +30,7 @@
 #include "control/Config.h"
 #include <DiscoveryGroup.h>
 #include <QUrl>
+#include <folder/FolderGroup.h>
 
 namespace librevault {
 
@@ -71,6 +72,8 @@ void DiscoveryAdapter::addGroup(QByteArray folderid) {
 
 		dgroup->setBTTrackers(trackers);
 	}
+
+	connect(dgroup, &DiscoveryGroup::discovered, this, [=](QHostAddress addr, quint16 port){emit discovered(folderid, addr, port);});
 }
 
 void DiscoveryAdapter::removeGroup(QByteArray folderid) {

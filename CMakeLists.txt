@@ -267,7 +267,7 @@ target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
 
 ## CryptoPP
-find_package(CryptoPP 5.6.2 REQUIRED MODULE)
+find_package(CryptoPP 5.6.4 REQUIRED MODULE)
 add_library(cryptopp INTERFACE)
 target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
 target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})

@@ -53,6 +53,8 @@ public:
 	QUdpSocket* getSocket4() {return socket4_;}
 	QUdpSocket* getSocket6() {return socket6_;}
 
+	bool isEnabled() {return socket4_->isValid() || socket6_->isValid();}
+
 public slots:
 	void start(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6);
 	void stop();

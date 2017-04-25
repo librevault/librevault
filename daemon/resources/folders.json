@@ -11,5 +11,6 @@
 	"archive_timestamp_count": 5,
 	"mainline_dht_enabled": true,
 	"bt_enabled": true,
-	"bt_trackers": ["udp://discovery.librevault.com:6969/announce"]
+	"bt_trackers": ["udp://discovery.librevault.com:6969/announce"],
+	"multicast_enabled": true
 }

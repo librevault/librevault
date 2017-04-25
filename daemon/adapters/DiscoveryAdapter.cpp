@@ -61,6 +61,7 @@ void DiscoveryAdapter::addGroup(QByteArray folderid) {
 	dgroup->setDHTEnabled(dht_enabled);
 	dgroup->setBTEnabled(bt_enabled);
 	dgroup->setMulticastEnabled(multicast_enabled);
+	dgroup->setMulticastInterval(std::chrono::seconds(30));
 
 	if(bt_enabled) {
 		QStringList bt_trackers = Config::get()->getGlobal("bt_trackers").toStringList();
@@ -90,7 +91,7 @@ void DiscoveryAdapter::initDiscovery() {
 		discovery_->addDHTRouter("dht.libtorrent.org", 25401);
 	}
 
-	bool multicast_enabled = Config::get()->getGlobal("multicast_enbled").toBool();
+	bool multicast_enabled = Config::get()->getGlobal("multicast_enabled").toBool();
 	if(multicast_enabled) {
 		discovery_->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
 	}

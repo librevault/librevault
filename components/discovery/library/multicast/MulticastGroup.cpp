@@ -69,6 +69,7 @@ QByteArray MulticastGroup::getMessage() {
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
+	if(! provider_->isEnabled()) return;
 	if(socket->writeDatagram(getMessage(), addr, port))
 		qCDebug(log_multicast) << "===> Multicast message sent to:" << addr << ":" << port;
 	else

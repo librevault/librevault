@@ -30,8 +30,16 @@
 
 namespace librevault {
 
-BandwidthCounter::BandwidthCounter() : down_bytes_(0), down_bytes_blocks_(0), down_bytes_last_(0), down_bytes_blocks_last_(0),
-    up_bytes_(0), up_bytes_blocks_(0), up_bytes_last_(0), up_bytes_blocks_last_(0) {
+BandwidthCounter::BandwidthCounter(BandwidthCounter* parent_counter) :
+	parent_counter_(parent_counter),
+	down_bytes_(0),
+	down_bytes_blocks_(0),
+	down_bytes_last_(0),
+	down_bytes_blocks_last_(0),
+    up_bytes_(0),
+	up_bytes_blocks_(0),
+	up_bytes_last_(0),
+	up_bytes_blocks_last_(0) {
 	last_heartbeat_.start();
 }
 
@@ -69,21 +77,29 @@ QJsonObject BandwidthCounter::heartbeat_json() {
 void BandwidthCounter::add_down(quint64 bytes) {
 	down_bytes_ += bytes;
 	down_bytes_last_ += bytes;
+	if(parent_counter_)
+		parent_counter_->add_down(bytes);
 }
 
 void BandwidthCounter::add_down_blocks(quint64 bytes) {
 	down_bytes_blocks_ += bytes;
 	down_bytes_blocks_last_ += bytes;
+	if(parent_counter_)
+		parent_counter_->add_down_blocks(bytes);
 }
 
 void BandwidthCounter::add_up(quint64 bytes) {
 	up_bytes_ += bytes;
 	up_bytes_last_ += bytes;
+	if(parent_counter_)
+		parent_counter_->add_up(bytes);
 }
 
 void BandwidthCounter::add_up_blocks(quint64 bytes) {
 	up_bytes_blocks_ += bytes;
 	up_bytes_blocks_last_ += bytes;
+	if(parent_counter_)
+		parent_counter_->add_up_blocks(bytes);
 }
 
 } /* namespace librevault */

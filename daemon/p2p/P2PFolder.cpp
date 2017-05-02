@@ -138,7 +138,6 @@ blob P2PFolder::remote_token() {
 
 void P2PFolder::send_message(const blob& message) {
 	counter_.add_up(message.size());
-	fgroup_->bandwidth_counter().add_up(message.size());
 	socket_->sendBinaryMessage(QByteArray::fromRawData((char*)message.data(), message.size()));
 }
 
@@ -257,7 +256,6 @@ void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& blo
 	send_message(V1Parser().gen_BlockReply(message));
 
 	counter_.add_up_blocks(block.size());
-	fgroup_->bandwidth_counter().add_up_blocks(block.size());
 
 	LOGD("==> BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
@@ -280,7 +278,6 @@ void P2PFolder::handle_message(const QByteArray& message) {
 	V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
 
 	counter_.add_down(message_raw.size());
-	fgroup_->bandwidth_counter().add_down(message_raw.size());
 
 	bump_timeout();
 
@@ -438,7 +435,6 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
 		<< " offset=" << message_struct.offset);
 
 	counter_.add_down_blocks(message_struct.content.size());
-	fgroup_->bandwidth_counter().add_down_blocks(message_struct.content.size());
 
 	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }

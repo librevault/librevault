@@ -51,7 +51,7 @@ public:
 		qreal up_bandwidth_blocks_;
 	};
 
-	BandwidthCounter();
+	BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
 
 	Stats heartbeat();
 	QJsonObject heartbeat_json();
@@ -61,6 +61,7 @@ public:
 	void add_up(quint64 bytes);
 	void add_up_blocks(quint64 bytes);
 private:
+	BandwidthCounter* parent_counter_;
 	QElapsedTimer last_heartbeat_;
 
 	// Download

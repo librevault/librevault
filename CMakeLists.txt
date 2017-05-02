@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.2)
 project(librevault)
 
+if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+	conan_basic_setup()
+endif()
+
 #============================================================================
 # CMake modules
 #============================================================================
@@ -238,7 +243,7 @@ endif()
 if(BUILD_STATIC)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
-find_package(Boost REQUIRED COMPONENTS system filesystem thread)
+find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem thread)
 
 add_library(boost INTERFACE)
 target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
@@ -261,7 +266,7 @@ find_package(Qt5 5.6 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
 
 ## Protobuf
-find_package(Protobuf REQUIRED)
+find_package(Protobuf 3.0 REQUIRED)
 add_library(protobuf INTERFACE)
 target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
@@ -273,7 +278,7 @@ target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
 target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
 
 ## OpenSSL
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL 1.0.2 REQUIRED)
 add_library(openssl INTERFACE)
 target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
 target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})

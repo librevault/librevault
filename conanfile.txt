@@ -1,0 +1,14 @@
+[requires]
+Protobuf/3.0.2@sourcedelica/testing
+OpenSSL/1.0.2g@lasote/stable
+Boost/1.64.0@inexorgame/stable
+Qt/5.7.1@osechet/stable
+sqlite3/3.18.0@jgsogo/stable
+cryptopp/5.6.5@riebl/testing
+
+[generators]
+cmake
+
+[options]
+Qt:websockets=True
+Protobuf:shared=True

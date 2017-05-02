@@ -40,9 +40,9 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, Role role) :
+P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, QSslConfiguration ssl_conf) :
 	RemoteFolder(fgroup),
-	role_(role),
+	role_(socket->state() == QAbstractSocket::ConnectedState ? Role::SERVER : Role::CLIENT),
 	provider_(provider),
 	node_key_(node_key),
 	socket_(socket),
@@ -73,24 +73,21 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 	timeout_timer_->setSingleShot(true);
 	bump_timeout();
 	timeout_timer_->start();
-}
 
-P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
-	P2PFolder(socket, fgroup, provider, node_key, CLIENT) {
-
-	socket_->setSslConfiguration(provider_->getSslConfiguration());
-	socket_->open(url);
-}
-
-P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key) :
-	P2PFolder(socket, fgroup, provider, node_key, SERVER) {
-
-	handleConnected();
+	if(socket_->state() != QAbstractSocket::ConnectedState) {
+		socket_->setSslConfiguration(ssl_conf);
+	}else{
+		handleConnected();
+	}
 }
 
 P2PFolder::~P2PFolder() {
 	LOGFUNC();
 	fgroup_->detach(this);
+}
+
+void P2PFolder::open(QUrl url) {
+	socket_->open(url);
 }
 
 QString P2PFolder::displayName() const {

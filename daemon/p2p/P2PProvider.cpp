@@ -98,7 +98,7 @@ void P2PProvider::handleConnection() {
 
 		qCDebug(log_p2p) << "New incoming connection:" << socket->requestUrl().toString();
 
-		P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_);
+		P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_, getSslConfiguration());
 		Q_UNUSED(folder);
 	}
 }
@@ -116,7 +116,8 @@ void P2PProvider::handleDiscovered(QByteArray folderid, QHostAddress addr, quint
 	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
 	QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
-	P2PFolder* folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);
+	P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_, getSslConfiguration());
+	folder->open(ws_url);
 	Q_UNUSED(folder);
 }
 

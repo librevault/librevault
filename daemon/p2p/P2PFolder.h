@@ -54,9 +54,10 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
-	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
+	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, QSslConfiguration ssl_conf);
 	~P2PFolder();
+
+	void open(QUrl url);
 
 	/* Getters */
 	QString displayName() const;
@@ -92,8 +93,6 @@ public:
 
 private:
 	enum Role {SERVER, CLIENT} role_;
-
-	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, Role role);
 
 	P2PProvider* provider_;
 	NodeKey* node_key_;

@@ -42,6 +42,7 @@ class RemoteFolder : public QObject {
 signals:
 	void handshakeSuccess();
 	void handshakeFailed();
+	void disconnected();
 
 	/* Message signals */
 	void rcvdChoke();

@@ -32,14 +32,14 @@
 
 namespace librevault {
 
-QBitArray conv_bitarray(bitfield_type bitfield) {
+inline QBitArray conv_bitarray(bitfield_type bitfield) {
 	QBitArray bitarray(bitfield.size());
 	for(size_t i = 0; i < bitfield.size(); i++)
 		bitarray.setBit(i, bitfield[i]);
 	return bitarray;
 }
 
-bitfield_type conv_bitarray(QBitArray bitarray) {
+inline bitfield_type conv_bitarray(QBitArray bitarray) {
 	bitfield_type bitfield(bitarray.size());
 	for(int i = 0; i < bitarray.size(); i++)
 		bitfield[i] = bitarray[i];

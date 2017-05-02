@@ -28,6 +28,7 @@
  */
 #include "P2PFolder.h"
 #include "P2PProvider.h"
+#include "HandshakeHandler.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
@@ -47,6 +48,10 @@ P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	LOGFUNC();
 
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
+
+	handshake_handler_ = new HandshakeHandler(fgroup_->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
+	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &P2PFolder::handshakeSuccess);
+	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &P2PFolder::handshakeFailed);
 
 	// Internal signal interconnection
 	connect(this, &P2PFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
@@ -128,6 +133,14 @@ QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
 	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
+QString P2PFolder::clientName() const {
+	return handshake_handler_->clientName();
+}
+
+QString P2PFolder::userAgent() const {
+	return handshake_handler_->userAgent();
+}
+
 QJsonObject P2PFolder::collectState() {
 	QJsonObject state;
 
@@ -140,19 +153,9 @@ QJsonObject P2PFolder::collectState() {
 	return state;
 }
 
-blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
-	return derive_token(secret, conv_bytearray(digest));
+bool P2PFolder::isValid() const {
+	return handshake_handler_->isValid();
 }
-
-blob P2PFolder::local_token() {
-	return derive_token_digest(fgroup_->params().secret, node_key_->digest());
-}
-
-blob P2PFolder::remote_token() {
-	return derive_token_digest(fgroup_->params().secret, digest());
-}
-
-
 
 /* InterestGuard */
 P2PFolder::InterestGuard::InterestGuard(P2PFolder* remote) : remote_(remote) {
@@ -181,17 +184,6 @@ void P2PFolder::sendMessage(const QByteArray& message) {
 
 void P2PFolder::sendMessage(const blob& message) {
 	sendMessage(QByteArray::fromRawData((char*)message.data(), message.size()));
-}
-
-void P2PFolder::sendHandshake() {
-	V1Parser::Handshake message_struct;
-	message_struct.auth_token = local_token();
-	message_struct.device_name = Config::get()->getGlobal("client_name").toString().toStdString();
-	message_struct.user_agent = Version::current().user_agent().toStdString();
-
-	sendMessage(V1Parser().gen_Handshake(message_struct));
-	handshake_sent_ = true;
-	LOGD("==> HANDSHAKE");
 }
 
 void P2PFolder::sendChoke() {
@@ -322,7 +314,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 
 	bumpTimeout();
 
-	if(isValid()) {
+	if(handshake_handler_->isValid()) {
 		switch(message_type) {
 			case V1Parser::CHOKE: handleChoke(message_raw); break;
 			case V1Parser::UNCHOKE: handleUnchoke(message_raw); break;
@@ -339,30 +331,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 			default: socket_->close(QWebSocketProtocol::CloseCodeProtocolError);
 		}
 	}else{
-		handleHandshake(message_raw);
-	}
-}
-
-void P2PFolder::handleHandshake(const blob& message_raw) {
-	LOGFUNC();
-	try {
-		auto message_struct = V1Parser().parse_Handshake(message_raw);
-		LOGD("<== HANDSHAKE");
-
-		// Checking authentication using token
-		if(message_struct.auth_token != remote_token()) throw auth_error();
-
-		if(role_ == SERVER) sendHandshake();
-
-		client_name_ = QString::fromStdString(message_struct.device_name);
-		user_agent_ = QString::fromStdString(message_struct.user_agent);
-
-		LOGD("LV Handshake successful");
-		handshake_received_ = true;
-
-		emit handshakeSuccess();
-	}catch(std::exception& e){
-		emit handshakeFailed();
+		handshake_handler_->handleMesssage(message);
 	}
 }
 
@@ -505,7 +474,7 @@ void P2PFolder::handleConnected() {
 	startPinger();
 
 	if(fgroup_->attach(this)) {
-		if(role_ == CLIENT) sendHandshake();
+		handshake_handler_->handleEstablishedConnection(HandshakeHandler::Role(role_), node_key_->digest(), digest());
 	}else
 		socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
 }

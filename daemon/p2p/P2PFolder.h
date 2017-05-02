@@ -42,6 +42,7 @@ namespace librevault {
 class FolderGroup;
 class NodeKey;
 class P2PProvider;
+class HandshakeHandler;
 
 #define DECLARE_MESSAGE(message_name, fields...) \
 public: \
@@ -53,7 +54,6 @@ private: \
 
 class P2PFolder : public QObject {
 	Q_OBJECT
-	friend class P2PProvider;
 
 signals:
 	void disconnected();
@@ -80,14 +80,14 @@ public:
 	QString displayName() const;
 	QByteArray digest() const;
 	QPair<QHostAddress, quint16> endpoint() const;
-	QString clientName() const {return client_name_;}
-	QString userAgent() const {return user_agent_;}
+	QString clientName() const;
+	QString userAgent() const;
 	QJsonObject collectState();
 
-	bool isValid() const {return handshakePassed();}
+	bool isValid() const;
 
 private:
-	enum Role {SERVER, CLIENT} role_;
+	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2} role_ = Role::UNDEFINED;
 
 	QString log_tag() const {return displayName();}
 
@@ -97,18 +97,8 @@ private:
 
 	BandwidthCounter counter_;
 
-	/* These needed primarily for UI */
-	QString client_name_;
-	QString user_agent_;
-
 	// Underlying socket management
 	void resetUnderlyingSocket(QWebSocket* socket);
-
-/* Token generators */
-private:
-	static blob derive_token_digest(const Secret& secret, QByteArray digest);
-	blob local_token();
-	blob remote_token();
 
 /* Timeout */
 private:
@@ -157,8 +147,6 @@ private slots:
 	void handleConnected();
 
 /////////////// Message processing
-DECLARE_MESSAGE(Handshake);
-
 DECLARE_MESSAGE(Choke);
 DECLARE_MESSAGE(Unchoke);
 DECLARE_MESSAGE(Interested);
@@ -176,13 +164,12 @@ DECLARE_MESSAGE(BlockReply, const blob& ct_hash, uint32_t offset, const blob& bl
 DECLARE_MESSAGE(BlockCancel, const blob& ct_hash, uint32_t offset, uint32_t size);
 
 /* Handshake */
-private:
-	bool handshake_received_ = false, handshake_sent_ = false;
-	bool handshakePassed() const {return handshake_sent_ && handshake_received_;}
-
 signals:
 	void handshakeSuccess();
-	void handshakeFailed();
+	void handshakeFailed(QString error);
+
+private:
+	HandshakeHandler* handshake_handler_;
 
 /* Message processing */
 private slots:

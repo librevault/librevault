@@ -47,8 +47,6 @@ public:
 	            QObject* parent);
 	virtual ~P2PProvider();
 
-
-
 	/* Loopback detection */
 	bool isLoopback(QByteArray digest);
 

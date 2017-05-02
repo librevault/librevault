@@ -37,9 +37,9 @@ class HandshakeHandler : public QObject {
 	Q_OBJECT
 
 public:
-	enum Role {UNDEFINED, SERVER, CLIENT};
+	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2};
 
-	HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QList<QString> extensions, QObject* parent);
+	HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QList<QString> extensions, QObject* parent = nullptr);
 
 	Q_SIGNAL void handshakeSuccess();
 	Q_SIGNAL void handshakeFailed(QString error);
@@ -57,7 +57,7 @@ public:
 
 private:
 	FolderParams params_;
-	Role role_ = UNDEFINED;
+	Role role_ = Role::UNDEFINED;
 
 	/* Handshake fields */
 	QString local_client_name_, remote_client_name_;

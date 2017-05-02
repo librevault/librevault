@@ -76,20 +76,20 @@ void HandshakeHandler::sendHandshake() {
 }
 
 void HandshakeHandler::handleEstablishedConnection(Role role, QByteArray local_digest, QByteArray remote_digest) {
-	Q_ASSERT(role_ != UNDEFINED);
+	Q_ASSERT(role_ != Role::UNDEFINED);
 
 	role_ = role;
 	local_digest_ = local_digest;
 	remote_digest_ = remote_digest;
 
-	if(role_ == CLIENT) sendHandshake();
+	if(role_ == Role::CLIENT) sendHandshake();
 }
 
 void HandshakeHandler::handleMesssage(QByteArray msg) {
 	Q_ASSERT(!handshake_received_);
-	Q_ASSERT(role_ != UNDEFINED);
+	Q_ASSERT(role_ != Role::UNDEFINED);
 
-	if(role_ == CLIENT && !handshake_sent_) {
+	if(role_ == Role::CLIENT && !handshake_sent_) {
 		// We are expected to send handshake first
 		emit handshakeFailed("Unexpected handshake message from server (client must send its message first)");
 		return;
@@ -120,7 +120,7 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 
 	emit handshakeSuccess();
 
-	if(role_ == SERVER) sendHandshake();
+	if(role_ == Role::SERVER) sendHandshake();
 }
 
 } /* namespace librevault */

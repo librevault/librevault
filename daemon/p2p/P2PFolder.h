@@ -30,7 +30,6 @@
 #include "util/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
-#include <chrono>
 #include "blob.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
@@ -41,8 +40,8 @@ namespace librevault {
 
 class FolderGroup;
 class NodeKey;
-class P2PProvider;
 class HandshakeHandler;
+class PingHandler;
 
 #define DECLARE_MESSAGE(message_name, fields...) \
 public: \
@@ -66,9 +65,9 @@ public:
 	void open(QUrl url);
 
 	/* Getters */
-	QString displayName() const;
 	QByteArray digest() const;
 	QPair<QHostAddress, quint16> endpoint() const;
+	QString endpointString() const;
 	QString clientName() const;
 	QString userAgent() const;
 	QJsonObject collectState();
@@ -78,7 +77,7 @@ public:
 private:
 	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2} role_ = Role::UNDEFINED;
 
-	QString log_tag() const {return displayName();}
+	QString log_tag() const {return endpointString();}
 
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
@@ -95,14 +94,7 @@ private:
 	void startTimeout();
 	void bumpTimeout();
 
-/* Pinger */
-private:
-	QTimer* ping_timer_;
-	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
-	void startPinger();
-
-private slots:
-	void handlePong(quint64 rtt);
+	PingHandler* ping_handler_;
 
 /* Choking status */
 public:

@@ -159,7 +159,7 @@ bool FolderGroup::attach(P2PFolder* remote) {
 	p2p_folders_endpoints_.insert(remote->endpoint());
 	p2p_folders_digests_.insert(remote->digest());
 
-	LOGD("Attached remote " << remote->displayName());
+	LOGD("Attached remote " << remote->endpointString());
 
 	connect(remote, &P2PFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
 
@@ -181,7 +181,7 @@ void FolderGroup::detach(P2PFolder* remote) {
 	remotes_.remove(remote);
 	remotes_ready_.remove(remote);
 
-	LOGD("Detached remote " << remote->displayName());
+	LOGD("Detached remote " << remote->endpointString());
 }
 
 QList<P2PFolder*> FolderGroup::remotes() const {

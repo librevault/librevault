@@ -29,14 +29,13 @@
 #include "P2PFolder.h"
 #include "P2PProvider.h"
 #include "HandshakeHandler.h"
+#include "PingHandler.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
 #include "nodekey/NodeKey.h"
 #include "util/readable.h"
 #include "util/conv_bitarray.h"
-#include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
 
 namespace librevault {
@@ -54,6 +53,8 @@ P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &P2PFolder::handshakeFailed);
 	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&P2PFolder::sendMessage));
 
+	ping_handler_ = new PingHandler();
+
 	// Internal signal interconnection
 	connect(this, &P2PFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
 }
@@ -68,7 +69,9 @@ void P2PFolder::resetUnderlyingSocket(QWebSocket* socket) {
 	socket_ = socket;
 	socket_->setParent(this);
 
-	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
+	connect(ping_handler_, &PingHandler::sendPing, socket_, &QWebSocket::ping);
+	connect(socket_, &QWebSocket::pong, ping_handler_, &PingHandler::handlePong);
+	connect(socket_, &QWebSocket::pong, this, &P2PFolder::bumpTimeout);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handleMessage);
 	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
 	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
@@ -94,16 +97,6 @@ void P2PFolder::open(QUrl url) {
 	socket_->open(url);
 }
 
-void P2PFolder::startPinger() {
-	if(ping_timer_) ping_timer_->deleteLater();
-	ping_timer_ = new QTimer();
-
-	ping_timer_->setInterval(20*1000);
-	ping_timer_->start();
-
-	connect(ping_timer_, &QTimer::timeout, this, [this]{socket_->ping();});
-}
-
 void P2PFolder::startTimeout() {
 	if(timeout_timer_) timeout_timer_->deleteLater();
 	timeout_timer_ = new QTimer();
@@ -115,7 +108,15 @@ void P2PFolder::startTimeout() {
 	timeout_timer_->start();
 }
 
-QString P2PFolder::displayName() const {
+QByteArray P2PFolder::digest() const {
+	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
+}
+
+QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
+	return {socket_->peerAddress(), socket_->peerPort()};
+}
+
+QString P2PFolder::endpointString() const {
 	switch(socket_->peerAddress().protocol()) {
 		case QAbstractSocket::IPv4Protocol:
 			return QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
@@ -124,14 +125,6 @@ QString P2PFolder::displayName() const {
 		default:
 			return "";
 	}
-}
-
-QByteArray P2PFolder::digest() const {
-	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
-}
-
-QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
-	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
 QString P2PFolder::clientName() const {
@@ -145,11 +138,11 @@ QString P2PFolder::userAgent() const {
 QJsonObject P2PFolder::collectState() {
 	QJsonObject state;
 
-	state["endpoint"] = displayName();   //FIXME: Must be host:port
+	state["endpoint"] = endpointString();   //FIXME: Must be host:port
 	state["client_name"] = clientName();
 	state["user_agent"] = userAgent();
 	state["traffic_stats"] = counter_.heartbeat_json();
-	state["rtt"] = double(rtt_.count());
+	state["rtt"] = double(ping_handler_->getRtt().count());
 
 	return state;
 }
@@ -466,13 +459,8 @@ void P2PFolder::bumpTimeout() {
 	timeout_timer_->setInterval(120*1000);
 }
 
-void P2PFolder::handlePong(quint64 rtt) {
-	bumpTimeout();
-	rtt_ = std::chrono::milliseconds(rtt);
-}
-
 void P2PFolder::handleConnected() {
-	startPinger();
+	ping_handler_->startPinger();
 
 	if(fgroup_->attach(this)) {
 		handshake_handler_->handleEstablishedConnection(HandshakeHandler::Role(role_), node_key_->digest(), digest());

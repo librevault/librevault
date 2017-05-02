@@ -43,10 +43,6 @@ class FolderService : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("FolderService");
 public:
-	struct invalid_group : std::runtime_error {
-		invalid_group() : std::runtime_error("Folder group not found") {}
-	};
-
 	explicit FolderService(StateCollector* state_collector, QObject* parent);
 	virtual ~FolderService();
 

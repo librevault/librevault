@@ -52,6 +52,7 @@ P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	handshake_handler_ = new HandshakeHandler(fgroup_->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
 	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &P2PFolder::handshakeSuccess);
 	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &P2PFolder::handshakeFailed);
+	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&P2PFolder::sendMessage));
 
 	// Internal signal interconnection
 	connect(this, &P2PFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
@@ -177,7 +178,7 @@ std::shared_ptr<P2PFolder::InterestGuard> P2PFolder::get_interest_guard() {
 }
 
 /* RPC Actions */
-void P2PFolder::sendMessage(const QByteArray& message) {
+void P2PFolder::sendMessage(QByteArray message) {
 	counter_.add_up(message.size());
 	socket_->sendBinaryMessage(message);
 }

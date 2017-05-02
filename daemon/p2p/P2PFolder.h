@@ -59,17 +59,6 @@ signals:
 	void disconnected();
 
 public:
-	/* Errors */
-	struct error : public std::runtime_error {
-		error(const char* what) : std::runtime_error(what){}
-	};
-	struct protocol_error : public error {
-		protocol_error() : error("Protocol error") {}
-	};
-	struct auth_error : public error {
-		auth_error() : error("Remote node couldn't verify its authenticity") {}
-	};
-
 	P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
 	~P2PFolder();
 
@@ -173,7 +162,7 @@ private:
 
 /* Message processing */
 private slots:
-	void sendMessage(const QByteArray& message);
+	void sendMessage(QByteArray message);
 	void sendMessage(const blob& message);
 	void handleMessage(const QByteArray& message);
 };

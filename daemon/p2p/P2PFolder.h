@@ -43,6 +43,14 @@ class FolderGroup;
 class NodeKey;
 class P2PProvider;
 
+#define DECLARE_MESSAGE(message_name, fields...) \
+public: \
+	Q_SIGNAL void rcvd##message_name(fields); \
+public: \
+	void send##message_name(fields); \
+private: \
+	Q_SLOT void handle##message_name(const blob& message);
+
 class P2PFolder : public QObject {
 	Q_OBJECT
 	friend class P2PProvider;
@@ -72,11 +80,11 @@ public:
 	QString displayName() const;
 	QByteArray digest() const;
 	QPair<QHostAddress, quint16> endpoint() const;
-	QString client_name() const {return client_name_;}
-	QString user_agent() const {return user_agent_;}
-	QJsonObject collect_state();
+	QString clientName() const {return client_name_;}
+	QString userAgent() const {return user_agent_;}
+	QJsonObject collectState();
 
-	bool ready() const {return handshake_sent_ && handshake_received_;}
+	bool isValid() const {return handshakePassed();}
 
 private:
 	enum Role {SERVER, CLIENT} role_;
@@ -86,10 +94,6 @@ private:
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
 	FolderGroup* fgroup_;
-
-	/* Handshake */
-	bool handshake_received_ = false;
-	bool handshake_sent_ = false;
 
 	BandwidthCounter counter_;
 
@@ -153,72 +157,38 @@ private slots:
 	void handleConnected();
 
 /////////////// Message processing
+DECLARE_MESSAGE(Handshake);
 
-/* Message signals */
+DECLARE_MESSAGE(Choke);
+DECLARE_MESSAGE(Unchoke);
+DECLARE_MESSAGE(Interested);
+DECLARE_MESSAGE(NotInterested);
+
+DECLARE_MESSAGE(HaveMeta, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+DECLARE_MESSAGE(HaveChunk, const blob& ct_hash);
+
+DECLARE_MESSAGE(MetaRequest, const Meta::PathRevision& revision);
+DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, const bitfield_type& bitfield);
+DECLARE_MESSAGE(MetaCancel, const Meta::PathRevision& revision);
+
+DECLARE_MESSAGE(BlockRequest, const blob& ct_hash, uint32_t offset, uint32_t size);
+DECLARE_MESSAGE(BlockReply, const blob& ct_hash, uint32_t offset, const blob& block);
+DECLARE_MESSAGE(BlockCancel, const blob& ct_hash, uint32_t offset, uint32_t size);
+
+/* Handshake */
+private:
+	bool handshake_received_ = false, handshake_sent_ = false;
+	bool handshakePassed() const {return handshake_sent_ && handshake_received_;}
+
 signals:
 	void handshakeSuccess();
 	void handshakeFailed();
 
-	void rcvdChoke();
-	void rcvdUnchoke();
-	void rcvdInterested();
-	void rcvdNotInterested();
-
-	void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
-	void rcvdHaveChunk(blob);
-
-	void rcvdMetaRequest(Meta::PathRevision);
-	void rcvdMetaReply(SignedMeta, bitfield_type);
-	void rcvdMetaCancel(Meta::PathRevision);
-
-	void rcvdBlockRequest(blob, uint32_t, uint32_t);
-	void rcvdBlockReply(blob, uint32_t, blob);
-	void rcvdBlockCancel(blob, uint32_t, uint32_t);
-
-/* Message senders */
-private:
+/* Message processing */
+private slots:
 	void sendMessage(const QByteArray& message);
 	void sendMessage(const blob& message);
-	void sendHandshake();
-
-public:
-	void sendChoke();
-	void sendUnchoke();
-	void sendInterested();
-	void sendNotInterested();
-
-	void sendHaveMeta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void sendHaveChunk(const blob& ct_hash);
-
-	void sendMetaRequest(const Meta::PathRevision& revision);
-	void sendMetaReply(const SignedMeta& smeta, const bitfield_type& bitfield);
-	void sendMetaCancel(const Meta::PathRevision& revision);
-
-	void sendBlockRequest(const blob& ct_hash, uint32_t offset, uint32_t size);
-	void sendBlockReply(const blob& ct_hash, uint32_t offset, const blob& block);
-	void sendBlockCancel(const blob& ct_hash, uint32_t offset, uint32_t size);
-
-/* Message handlers */
-private slots:
 	void handleMessage(const QByteArray& message);
-
-	void handleHandshake(const blob& message_raw);
-
-	void handleChoke(const blob& message_raw);
-	void handleUnchoke(const blob& message_raw);
-	void handleInterested(const blob& message_raw);
-	void handleNotInterested(const blob& message_raw);
-
-	void handleHaveMeta(const blob& message_raw);
-	void handleHaveChunk(const blob& message_raw);
-
-	void handleMetaRequest(const blob& message_raw);
-	void handleMetaReply(const blob& message_raw);
-	void handleMetaCancel(const blob& message_raw);
-
-	void handleBlockRequest(const blob& message_raw);
-	void handleBlockReply(const blob& message_raw);
-	void handleBlockCancel(const blob& message_raw);
 };
 
 } /* namespace librevault */

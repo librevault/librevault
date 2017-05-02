@@ -301,7 +301,7 @@ P2PFolder* Downloader::nodeForRequest(QByteArray ct_hash) {
 		return nullptr;
 
 	for(P2PFolder* owner_remote : chunk->owned_by.keys())
-		if(owner_remote->ready() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
+		if(owner_remote->isValid() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;
 }

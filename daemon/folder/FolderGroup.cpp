@@ -196,7 +196,7 @@ void FolderGroup::push_state() {
 	// peers
 	QJsonArray peers_array;
 	for(auto& p2p_folder : remotes_) {
-		peers_array.append(p2p_folder->collect_state());
+		peers_array.append(p2p_folder->collectState());
 	}
 	state_collector_->folder_state_set(params().folderid(), "peers", peers_array);
 	// bandwidth

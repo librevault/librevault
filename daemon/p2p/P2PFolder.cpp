@@ -128,12 +128,12 @@ QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
 	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
-QJsonObject P2PFolder::collect_state() {
+QJsonObject P2PFolder::collectState() {
 	QJsonObject state;
 
 	state["endpoint"] = displayName();   //FIXME: Must be host:port
-	state["client_name"] = client_name();
-	state["user_agent"] = user_agent();
+	state["client_name"] = clientName();
+	state["user_agent"] = userAgent();
 	state["traffic_stats"] = counter_.heartbeat_json();
 	state["rtt"] = double(rtt_.count());
 
@@ -322,7 +322,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 
 	bumpTimeout();
 
-	if(ready()) {
+	if(isValid()) {
 		switch(message_type) {
 			case V1Parser::CHOKE: handleChoke(message_raw); break;
 			case V1Parser::UNCHOKE: handleUnchoke(message_raw); break;

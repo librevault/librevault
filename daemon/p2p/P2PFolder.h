@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "folder/RemoteFolder.h"
-#include "p2p/BandwidthCounter.h"
+#include "util/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
 #include <chrono>
@@ -54,9 +54,10 @@ public:
 		auth_error() : error("Remote node couldn't verify its authenticity") {}
 	};
 
-	P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, QSslConfiguration ssl_conf);
+	P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
 	~P2PFolder();
 
+	void setConnectedSocket(QWebSocket* socket);
 	void open(QUrl url);
 
 	/* Getters */
@@ -94,9 +95,8 @@ public:
 private:
 	enum Role {SERVER, CLIENT} role_;
 
-	P2PProvider* provider_;
 	NodeKey* node_key_;
-	QWebSocket* socket_;
+	QWebSocket* socket_ = nullptr;
 	FolderGroup* fgroup_;
 
 	/* Handshake */
@@ -109,19 +109,25 @@ private:
 	QString client_name_;
 	QString user_agent_;
 
-	/* Ping/pong and timeout handlers */
-	QTimer* ping_timer_;
-	QTimer* timeout_timer_;
+	// Underlying socket management
+	void resetUnderlyingSocket(QWebSocket* socket);
 
-	/* Token generators */
-	blob derive_token_digest(const Secret& secret, QByteArray digest);
+	// Token generators
+	static blob derive_token_digest(const Secret& secret, QByteArray digest);
 	blob local_token();
 	blob remote_token();
 
-	void bump_timeout();
+	// Timeout
+	QTimer* timeout_timer_;
+	void startTimeout();
+	void bumpTimeout();
 
+	// Pinger
+	QTimer* ping_timer_;
 	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
+	void startPinger();
 
+private:
 	/* Message handlers */
 	void handle_message(const QByteArray& message);
 
@@ -144,8 +150,9 @@ private:
 	void handle_BlockCancel(const blob& message_raw);
 
 private slots:
-	void handlePong(quint64 rtt);
+	void handleDisconnected() {deleteLater();}
 	void handleConnected();
+	void handlePong(quint64 rtt);
 };
 
 } /* namespace librevault */

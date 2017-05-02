@@ -40,45 +40,16 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key, QSslConfiguration ssl_conf) :
-	RemoteFolder(fgroup),
-	role_(socket->state() == QAbstractSocket::ConnectedState ? Role::SERVER : Role::CLIENT),
-	provider_(provider),
+P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
+	RemoteFolder(parent),
 	node_key_(node_key),
-	socket_(socket),
 	fgroup_(fgroup) {
 	LOGFUNC();
 
-	socket->setParent(this);
-	this->setParent(fgroup_);
+	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
-	// Set up timers
-	ping_timer_ = new QTimer(this);
-	timeout_timer_ = new QTimer(this);
-
-	// Connect signals
-	connect(ping_timer_, &QTimer::timeout, this, [this]{socket_->ping();});
-	connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::deleteLater);
-	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
-	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
-	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
-	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
-	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::deleteLater);
-	connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::deleteLater);
-
-	// Start timers
-	ping_timer_->setInterval(20*1000);
-	ping_timer_->start();
-
-	timeout_timer_->setSingleShot(true);
-	bump_timeout();
-	timeout_timer_->start();
-
-	if(socket_->state() != QAbstractSocket::ConnectedState) {
-		socket_->setSslConfiguration(ssl_conf);
-	}else{
-		handleConnected();
-	}
+	// Internal signal interconnection
+	connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
 }
 
 P2PFolder::~P2PFolder() {
@@ -86,8 +57,56 @@ P2PFolder::~P2PFolder() {
 	fgroup_->detach(this);
 }
 
+void P2PFolder::resetUnderlyingSocket(QWebSocket* socket) {
+	if(socket_) socket_->deleteLater();
+	socket_ = socket;
+	socket_->setParent(this);
+
+	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
+	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
+	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
+	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
+	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::handleDisconnected);
+}
+
+void P2PFolder::setConnectedSocket(QWebSocket* socket) {
+	resetUnderlyingSocket(socket);
+
+	role_ = Role::SERVER;
+
+	startTimeout();
+	handleConnected();
+}
+
 void P2PFolder::open(QUrl url) {
+	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
+
+	role_ = Role::CLIENT;
+
+	startTimeout();
+	socket_->setSslConfiguration(P2PProvider::getSslConfiguration(node_key_));
 	socket_->open(url);
+}
+
+void P2PFolder::startPinger() {
+	if(ping_timer_) ping_timer_->deleteLater();
+	ping_timer_ = new QTimer();
+
+	ping_timer_->setInterval(20*1000);
+	ping_timer_->start();
+
+	connect(ping_timer_, &QTimer::timeout, this, [this]{socket_->ping();});
+}
+
+void P2PFolder::startTimeout() {
+	if(timeout_timer_) timeout_timer_->deleteLater();
+	timeout_timer_ = new QTimer();
+
+	connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::handleDisconnected);
+
+	timeout_timer_->setSingleShot(true);
+	bumpTimeout();
+	timeout_timer_->start();
 }
 
 QString P2PFolder::displayName() const {
@@ -97,7 +116,7 @@ QString P2PFolder::displayName() const {
 		case QAbstractSocket::IPv6Protocol:
 			return QString("[%1]:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
 		default:
-			return "Unknown peer";
+			return "";
 	}
 }
 
@@ -276,7 +295,7 @@ void P2PFolder::handle_message(const QByteArray& message) {
 
 	counter_.add_down(message_raw.size());
 
-	bump_timeout();
+	bumpTimeout();
 
 	if(ready()) {
 		switch(message_type) {
@@ -448,19 +467,20 @@ void P2PFolder::handle_BlockCancel(const blob& message_raw) {
 	emit rcvdBlockCancel(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 
-void P2PFolder::bump_timeout() {
+void P2PFolder::bumpTimeout() {
 	timeout_timer_->setInterval(120*1000);
 }
 
 void P2PFolder::handlePong(quint64 rtt) {
-	bump_timeout();
+	bumpTimeout();
 	rtt_ = std::chrono::milliseconds(rtt);
 }
 
 void P2PFolder::handleConnected() {
-	if(!provider_->isLoopback(digest()) && fgroup_->attach(this)) {
-		if(role_ == CLIENT)
-			sendHandshake();
+	startPinger();
+
+	if(fgroup_->attach(this)) {
+		if(role_ == CLIENT) sendHandshake();
 	}else
 		socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
 }

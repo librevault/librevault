@@ -46,7 +46,7 @@ P2PProvider::P2PProvider(NodeKey* node_key,
                          QObject* parent) : QObject(parent),
 	node_key_(node_key), port_mapping_(port_mapping), folder_service_(folder_service) {
 	server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
-	server_->setSslConfiguration(getSslConfiguration());
+	server_->setSslConfiguration(getSslConfiguration(node_key_));
 
 	connect(server_, &QWebSocketServer::newConnection, this, &P2PProvider::handleConnection);
 	connect(server_, &QWebSocketServer::peerVerifyError, this, &P2PProvider::handlePeerVerifyError);
@@ -66,19 +66,11 @@ P2PProvider::~P2PProvider() {
 	port_mapping_->removePort("main");
 }
 
-QSslConfiguration P2PProvider::getSslConfiguration() const {
-	QSslConfiguration ssl_config;
-	ssl_config.setPeerVerifyMode(QSslSocket::QueryPeer);
-	ssl_config.setPrivateKey(node_key_->privateKey());
-	ssl_config.setLocalCertificate(node_key_->certificate());
-	ssl_config.setProtocol(QSsl::TlsV1_2OrLater);
-	return ssl_config;
-}
-
 bool P2PProvider::isLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 
+// Generators
 QUrl P2PProvider::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) {
 	QUrl url;
 	url.setScheme("wss");
@@ -86,6 +78,15 @@ QUrl P2PProvider::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) 
 	url.setHost(addr.toString());
 	url.setPort(port);
 	return url;
+}
+
+QSslConfiguration P2PProvider::getSslConfiguration(NodeKey* node_key) {
+	QSslConfiguration ssl_config;
+	ssl_config.setPeerVerifyMode(QSslSocket::QueryPeer);
+	ssl_config.setPrivateKey(node_key->privateKey());
+	ssl_config.setLocalCertificate(node_key->certificate());
+	ssl_config.setProtocol(QSsl::TlsV1_2OrLater);
+	return ssl_config;
 }
 
 /* Here are where new QWebSocket created */
@@ -98,7 +99,8 @@ void P2PProvider::handleConnection() {
 
 		qCDebug(log_p2p) << "New incoming connection:" << socket->requestUrl().toString();
 
-		P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_, getSslConfiguration());
+		P2PFolder* folder = new P2PFolder(fgroup, node_key_, fgroup);
+		folder->setConnectedSocket(socket);
 		Q_UNUSED(folder);
 	}
 }
@@ -115,8 +117,7 @@ void P2PProvider::handleDiscovered(QByteArray folderid, QHostAddress addr, quint
 
 	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
-	QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
-	P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_, getSslConfiguration());
+	P2PFolder* folder = new P2PFolder(fgroup, node_key_, fgroup);
 	folder->open(ws_url);
 	Q_UNUSED(folder);
 }

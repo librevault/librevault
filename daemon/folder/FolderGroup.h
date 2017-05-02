@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "control/FolderParams.h"
-#include "p2p/BandwidthCounter.h"
+#include "util/BandwidthCounter.h"
 #include "blob.h"
 #include <librevault/Secret.h>
 #include <librevault/SignedMeta.h>

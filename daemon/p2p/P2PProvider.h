@@ -47,10 +47,14 @@ public:
 	            QObject* parent);
 	virtual ~P2PProvider();
 
-	QSslConfiguration getSslConfiguration() const;
+
 
 	/* Loopback detection */
 	bool isLoopback(QByteArray digest);
+
+	// Generators
+	static QUrl makeUrl(QHostAddress addr, quint16 port, QByteArray folderid);
+	static QSslConfiguration getSslConfiguration(NodeKey* node_key);
 
 public slots:
 	void handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port);
@@ -61,8 +65,6 @@ private:
 	FolderService* folder_service_;
 
 	QWebSocketServer* server_;
-
-	static QUrl makeUrl(QHostAddress addr, quint16 port, QByteArray folderid);
 
 private slots:
 	void handleConnection();

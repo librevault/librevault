@@ -26,27 +26,27 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QTimer>
-#include <chrono>
+#include "TimeoutHandler.h"
 
 namespace librevault {
 
-class PingHandler : public QObject {
-	Q_OBJECT
+TimeoutHandler::TimeoutHandler(QObject* parent) : QObject(parent) {}
 
-public:
-	explicit PingHandler(QObject* parent = nullptr);
+void TimeoutHandler::start() {
+	if(timeout_timer_) timeout_timer_->deleteLater();
+	timeout_timer_ = new QTimer();
 
-	Q_SIGNAL void sendPing(const QByteArray& payload);
-	Q_SLOT void handlePong(quint64 elapsedTime, const QByteArray& payload);
+	timeout_timer_->setInterval(120*1000);
+	timeout_timer_->start();
 
-	Q_SLOT void start();
-	std::chrono::milliseconds getRtt() {return rtt_;}
+	connect(timeout_timer_, &QTimer::timeout, this, [this]{
+		emit timedOut();
+	});
+}
 
-private:
-	QTimer* ping_timer_ = nullptr;
-	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
-};
+void TimeoutHandler::bump() {
+	Q_ASSERT(timeout_timer_);
+	timeout_timer_->setInterval(120*1000);
+}
 
 } /* namespace librevault */

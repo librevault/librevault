@@ -36,7 +36,7 @@ void PingHandler::handlePong(quint64 elapsedTime, const QByteArray& payload) {
 	rtt_ = std::chrono::milliseconds(elapsedTime);
 }
 
-void PingHandler::startPinger() {
+void PingHandler::start() {
 	if(ping_timer_) ping_timer_->deleteLater();
 	ping_timer_ = new QTimer();
 

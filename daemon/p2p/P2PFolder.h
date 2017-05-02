@@ -31,6 +31,7 @@
 #include <QTimer>
 #include <QWebSocket>
 #include "blob.h"
+#include "TimeoutHandler.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/conv_bitfield.h>
@@ -91,11 +92,8 @@ private:
 
 /* Timeout */
 private:
-	QTimer* timeout_timer_;
-	void startTimeout();
-	void bumpTimeout();
-
 	PingHandler* ping_handler_;
+	TimeoutHandler* timeout_handler_;
 
 /* Choking status */
 public:

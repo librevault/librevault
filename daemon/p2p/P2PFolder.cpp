@@ -54,6 +54,8 @@ P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&P2PFolder::sendMessage));
 
 	ping_handler_ = new PingHandler();
+	timeout_handler_ = new TimeoutHandler();
+	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &P2PFolder::handleDisconnected);
 
 	// Internal signal interconnection
 	connect(this, &P2PFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
@@ -71,8 +73,9 @@ void P2PFolder::resetUnderlyingSocket(QWebSocket* socket) {
 
 	connect(ping_handler_, &PingHandler::sendPing, socket_, &QWebSocket::ping);
 	connect(socket_, &QWebSocket::pong, ping_handler_, &PingHandler::handlePong);
-	connect(socket_, &QWebSocket::pong, this, &P2PFolder::bumpTimeout);
+	connect(socket_, &QWebSocket::pong, timeout_handler_, &TimeoutHandler::bump);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handleMessage);
+	connect(socket_, &QWebSocket::binaryMessageReceived, timeout_handler_, &TimeoutHandler::bump);
 	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
 	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
 	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::handleDisconnected);
@@ -83,7 +86,7 @@ void P2PFolder::setConnectedSocket(QWebSocket* socket) {
 
 	role_ = Role::SERVER;
 
-	startTimeout();
+	timeout_handler_->start();
 	handleConnected();
 }
 
@@ -92,20 +95,9 @@ void P2PFolder::open(QUrl url) {
 
 	role_ = Role::CLIENT;
 
-	startTimeout();
+	timeout_handler_->start();
 	socket_->setSslConfiguration(P2PProvider::getSslConfiguration(node_key_));
 	socket_->open(url);
-}
-
-void P2PFolder::startTimeout() {
-	if(timeout_timer_) timeout_timer_->deleteLater();
-	timeout_timer_ = new QTimer();
-
-	connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::handleDisconnected);
-
-	timeout_timer_->setSingleShot(true);
-	bumpTimeout();
-	timeout_timer_->start();
 }
 
 QByteArray P2PFolder::digest() const {
@@ -307,7 +299,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 
 	counter_all_.add_down(message_raw.size());
 
-	bumpTimeout();
+	timeout_handler_->bump();
 
 	if(handshake_handler_->isValid()) {
 		switch(message_type) {
@@ -456,12 +448,8 @@ void P2PFolder::handleBlockCancel(const blob& message_raw) {
 	emit rcvdBlockCancel(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 
-void P2PFolder::bumpTimeout() {
-	timeout_timer_->setInterval(120*1000);
-}
-
 void P2PFolder::handleConnected() {
-	ping_handler_->startPinger();
+	ping_handler_->start();
 
 	if(fgroup_->attach(this)) {
 		handshake_handler_->handleEstablishedConnection(HandshakeHandler::Role(role_), node_key_->digest(), digest());

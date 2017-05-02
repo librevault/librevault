@@ -32,21 +32,19 @@
 
 namespace librevault {
 
-class PingHandler : public QObject {
+class TimeoutHandler : public QObject {
 	Q_OBJECT
 
 public:
-	explicit PingHandler(QObject* parent = nullptr);
+	explicit TimeoutHandler(QObject* parent = nullptr);
 
-	Q_SIGNAL void sendPing(const QByteArray& payload);
-	Q_SLOT void handlePong(quint64 elapsedTime, const QByteArray& payload);
-
+	Q_SIGNAL void timedOut();
 	Q_SLOT void start();
-	std::chrono::milliseconds getRtt() {return rtt_;}
+
+	Q_SLOT void bump();
 
 private:
-	QTimer* ping_timer_ = nullptr;
-	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
+	QTimer* timeout_timer_ = nullptr;
 };
 
 } /* namespace librevault */

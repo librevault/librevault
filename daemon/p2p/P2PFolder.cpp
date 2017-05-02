@@ -141,7 +141,8 @@ QJsonObject P2PFolder::collectState() {
 	state["endpoint"] = endpointString();   //FIXME: Must be host:port
 	state["client_name"] = clientName();
 	state["user_agent"] = userAgent();
-	state["traffic_stats"] = counter_.heartbeat_json();
+	state["traffic_stats_all"] = counter_all_.heartbeat_json();
+	state["traffic_stats_blocks"] = counter_blocks_.heartbeat_json();
 	state["rtt"] = double(ping_handler_->getRtt().count());
 
 	return state;
@@ -172,7 +173,7 @@ std::shared_ptr<P2PFolder::InterestGuard> P2PFolder::get_interest_guard() {
 
 /* RPC Actions */
 void P2PFolder::sendMessage(QByteArray message) {
-	counter_.add_up(message.size());
+	counter_all_.add_up(message.size());
 	socket_->sendBinaryMessage(message);
 }
 
@@ -282,7 +283,7 @@ void P2PFolder::sendBlockReply(const blob& ct_hash, uint32_t offset, const blob&
 	message.content = block;
 	sendMessage(V1Parser().gen_BlockReply(message));
 
-	counter_.add_up_blocks(block.size());
+	counter_blocks_.add_up(block.size());
 
 	LOGD("==> BLOCK_REPLY:"
 		<< " ct_hash=" << ct_hash_readable(ct_hash)
@@ -304,7 +305,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 	blob message_raw(message.begin(), message.end());
 	V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
 
-	counter_.add_down(message_raw.size());
+	counter_all_.add_down(message_raw.size());
 
 	bumpTimeout();
 
@@ -438,7 +439,7 @@ void P2PFolder::handleBlockReply(const blob& message_raw) {
 		<< " ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< " offset=" << message_struct.offset);
 
-	counter_.add_down_blocks(message_struct.content.size());
+	counter_blocks_.add_down(message_struct.content.size());
 
 	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }

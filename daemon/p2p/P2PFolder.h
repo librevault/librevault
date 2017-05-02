@@ -83,7 +83,8 @@ private:
 	QWebSocket* socket_ = nullptr;
 	FolderGroup* fgroup_;
 
-	BandwidthCounter counter_;
+	BandwidthCounter counter_all_;
+	BandwidthCounter counter_blocks_;
 
 	// Underlying socket management
 	void resetUnderlyingSocket(QWebSocket* socket);

@@ -41,8 +41,6 @@
 
 namespace librevault {
 
-class RemoteFolder;
-class FSFolder;
 class P2PFolder;
 
 class PathNormalizer;
@@ -74,7 +72,7 @@ public:
 	void detach(P2PFolder* remote);
 
 	/* Getters */
-	QList<RemoteFolder*> remotes() const;
+	QList<P2PFolder*> remotes() const;
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -102,8 +100,8 @@ private:
 	QTimer* state_pusher_;
 
 	/* Members */
-	QSet<RemoteFolder*> remotes_;
-	QSet<RemoteFolder*> remotes_ready_;
+	QSet<P2PFolder*> remotes_;
+	QSet<P2PFolder*> remotes_ready_;
 
 	// Member lookup optimization
 	QSet<QByteArray> p2p_folders_digests_;
@@ -112,7 +110,7 @@ private:
 private slots:
 	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(RemoteFolder* origin);
+	void handle_handshake(P2PFolder* origin);
 };
 
 } /* namespace librevault */

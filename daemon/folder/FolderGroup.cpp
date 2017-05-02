@@ -117,31 +117,31 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 }
 
 // RemoteFolder actions
-void FolderGroup::handle_handshake(RemoteFolder* origin) {
+void FolderGroup::handle_handshake(P2PFolder* origin) {
 	remotes_ready_.insert(origin);
 	downloader_->trackRemote(origin);
 
-	connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
-	connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
-	connect(origin, &RemoteFolder::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
-	connect(origin, &RemoteFolder::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
+	connect(origin, &P2PFolder::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
+	connect(origin, &P2PFolder::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
+	connect(origin, &P2PFolder::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
+	connect(origin, &P2PFolder::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
 
-	connect(origin, &RemoteFolder::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
+	connect(origin, &P2PFolder::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
 		meta_downloader_->handle_have_meta(origin, revision, bitfield);
 	});
-	connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
+	connect(origin, &P2PFolder::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
 		downloader_->notifyRemoteChunk(origin, ct_hash);
 	});
-	connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
+	connect(origin, &P2PFolder::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
 		meta_uploader_->handle_meta_request(origin, path_revision);
 	});
-	connect(origin, &RemoteFolder::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
+	connect(origin, &P2PFolder::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
 		meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
 	});
-	connect(origin, &RemoteFolder::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
+	connect(origin, &P2PFolder::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
 		uploader_->handle_block_request(origin, ct_hash, offset, size);
 	});
-	connect(origin, &RemoteFolder::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
+	connect(origin, &P2PFolder::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
 		downloader_->putBlock(ct_hash, offset, block, origin);
 	});
 
@@ -161,7 +161,7 @@ bool FolderGroup::attach(P2PFolder* remote) {
 
 	LOGD("Attached remote " << remote->displayName());
 
-	connect(remote, &RemoteFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
+	connect(remote, &P2PFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
 
 	emit attached(remote);
 
@@ -184,7 +184,7 @@ void FolderGroup::detach(P2PFolder* remote) {
 	LOGD("Detached remote " << remote->displayName());
 }
 
-QList<RemoteFolder*> FolderGroup::remotes() const {
+QList<P2PFolder*> FolderGroup::remotes() const {
 	return remotes_.toList();
 }
 

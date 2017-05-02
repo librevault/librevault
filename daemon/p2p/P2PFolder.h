@@ -27,11 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "folder/RemoteFolder.h"
 #include "util/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
 #include <chrono>
+#include "blob.h"
+#include <librevault/Meta.h>
+#include <librevault/SignedMeta.h>
+#include <librevault/util/conv_bitfield.h>
+#include <QObject>
 
 namespace librevault {
 
@@ -39,9 +43,13 @@ class FolderGroup;
 class NodeKey;
 class P2PProvider;
 
-class P2PFolder : public RemoteFolder {
+class P2PFolder : public QObject {
 	Q_OBJECT
 	friend class P2PProvider;
+
+signals:
+	void disconnected();
+
 public:
 	/* Errors */
 	struct error : public std::runtime_error {
@@ -68,32 +76,12 @@ public:
 	QString user_agent() const {return user_agent_;}
 	QJsonObject collect_state();
 
-	/* RPC Actions */
-	void send_message(const blob& message);
-
-	// Handshake
-	void sendHandshake();
 	bool ready() const {return handshake_sent_ && handshake_received_;}
-
-	/* Message senders */
-	void choke();
-	void unchoke();
-	void interest();
-	void uninterest();
-
-	void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void post_have_chunk(const blob& ct_hash);
-
-	void request_meta(const Meta::PathRevision& revision);
-	void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
-	void cancel_meta(const Meta::PathRevision& revision);
-
-	void request_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-	void post_block(const blob& ct_hash, uint32_t offset, const blob& block);
-	void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 
 private:
 	enum Role {SERVER, CLIENT} role_;
+
+	QString log_tag() const {return displayName();}
 
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
@@ -112,47 +100,125 @@ private:
 	// Underlying socket management
 	void resetUnderlyingSocket(QWebSocket* socket);
 
-	// Token generators
+/* Token generators */
+private:
 	static blob derive_token_digest(const Secret& secret, QByteArray digest);
 	blob local_token();
 	blob remote_token();
 
-	// Timeout
+/* Timeout */
+private:
 	QTimer* timeout_timer_;
 	void startTimeout();
 	void bumpTimeout();
 
-	// Pinger
+/* Pinger */
+private:
 	QTimer* ping_timer_;
 	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 	void startPinger();
 
+private slots:
+	void handlePong(quint64 rtt);
+
+/* Choking status */
+public:
+	bool am_choking() const {return am_choking_;}
+	bool am_interested() const {return am_interested_;}
+	bool peer_choking() const {return peer_choking_;}
+	bool peer_interested() const {return peer_interested_;}
+
 private:
-	/* Message handlers */
-	void handle_message(const QByteArray& message);
+	bool am_choking_ = true;
+	bool am_interested_ = false;
+	bool peer_choking_ = true;
+	bool peer_interested_ = false;
 
-	void handle_Handshake(const blob& message_raw);
+/* InterestGuard */
+public:
+	struct InterestGuard {
+		InterestGuard(P2PFolder* remote);
+		~InterestGuard();
+	private:
+		P2PFolder* remote_;
+	};
+	std::shared_ptr<InterestGuard> get_interest_guard();
 
-	void handle_Choke(const blob& message_raw);
-	void handle_Unchoke(const blob& message_raw);
-	void handle_Interested(const blob& message_raw);
-	void handle_NotInterested(const blob& message_raw);
+private:
+	std::weak_ptr<InterestGuard> interest_guard_;
 
-	void handle_HaveMeta(const blob& message_raw);
-	void handle_HaveChunk(const blob& message_raw);
-
-	void handle_MetaRequest(const blob& message_raw);
-	void handle_MetaReply(const blob& message_raw);
-	void handle_MetaCancel(const blob& message_raw);
-
-	void handle_BlockRequest(const blob& message_raw);
-	void handle_BlockReply(const blob& message_raw);
-	void handle_BlockCancel(const blob& message_raw);
-
+/* State change handlers */
 private slots:
 	void handleDisconnected() {deleteLater();}
 	void handleConnected();
-	void handlePong(quint64 rtt);
+
+/////////////// Message processing
+
+/* Message signals */
+signals:
+	void handshakeSuccess();
+	void handshakeFailed();
+
+	void rcvdChoke();
+	void rcvdUnchoke();
+	void rcvdInterested();
+	void rcvdNotInterested();
+
+	void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
+	void rcvdHaveChunk(blob);
+
+	void rcvdMetaRequest(Meta::PathRevision);
+	void rcvdMetaReply(SignedMeta, bitfield_type);
+	void rcvdMetaCancel(Meta::PathRevision);
+
+	void rcvdBlockRequest(blob, uint32_t, uint32_t);
+	void rcvdBlockReply(blob, uint32_t, blob);
+	void rcvdBlockCancel(blob, uint32_t, uint32_t);
+
+/* Message senders */
+private:
+	void sendMessage(const QByteArray& message);
+	void sendMessage(const blob& message);
+	void sendHandshake();
+
+public:
+	void sendChoke();
+	void sendUnchoke();
+	void sendInterested();
+	void sendNotInterested();
+
+	void sendHaveMeta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void sendHaveChunk(const blob& ct_hash);
+
+	void sendMetaRequest(const Meta::PathRevision& revision);
+	void sendMetaReply(const SignedMeta& smeta, const bitfield_type& bitfield);
+	void sendMetaCancel(const Meta::PathRevision& revision);
+
+	void sendBlockRequest(const blob& ct_hash, uint32_t offset, uint32_t size);
+	void sendBlockReply(const blob& ct_hash, uint32_t offset, const blob& block);
+	void sendBlockCancel(const blob& ct_hash, uint32_t offset, uint32_t size);
+
+/* Message handlers */
+private slots:
+	void handleMessage(const QByteArray& message);
+
+	void handleHandshake(const blob& message_raw);
+
+	void handleChoke(const blob& message_raw);
+	void handleUnchoke(const blob& message_raw);
+	void handleInterested(const blob& message_raw);
+	void handleNotInterested(const blob& message_raw);
+
+	void handleHaveMeta(const blob& message_raw);
+	void handleHaveChunk(const blob& message_raw);
+
+	void handleMetaRequest(const blob& message_raw);
+	void handleMetaReply(const blob& message_raw);
+	void handleMetaCancel(const blob& message_raw);
+
+	void handleBlockRequest(const blob& message_raw);
+	void handleBlockReply(const blob& message_raw);
+	void handleBlockCancel(const blob& message_raw);
 };
 
 } /* namespace librevault */

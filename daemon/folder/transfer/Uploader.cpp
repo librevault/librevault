@@ -28,7 +28,7 @@
  */
 #include "Uploader.h"
 #include "folder/chunk/ChunkStorage.h"
-#include "folder/RemoteFolder.h"
+#include "p2p/P2PFolder.h"
 
 namespace librevault {
 
@@ -38,29 +38,29 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
 	LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(QList<P2PFolder*> remotes, const blob& ct_hash) {
 	for(auto& remote : remotes) {
-		remote->post_have_chunk(ct_hash);
+		remote->sendHaveChunk(ct_hash);
 	}
 }
 
-void Uploader::handle_interested(RemoteFolder* remote) {
+void Uploader::handle_interested(P2PFolder* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
-	remote->unchoke();
+	remote->sendUnchoke();
 }
-void Uploader::handle_not_interested(RemoteFolder* remote) {
+void Uploader::handle_not_interested(P2PFolder* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
-	remote->choke();
+	remote->sendChoke();
 }
 
-void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
+void Uploader::handle_block_request(P2PFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
 	try {
 		if(!remote->am_choking() && remote->peer_interested()) {
-			remote->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+			remote->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
 		}
 	}catch(ChunkStorage::no_such_chunk& e){
 		LOGW("Requested nonexistent block");

@@ -35,7 +35,7 @@
 
 namespace librevault {
 
-class RemoteFolder;
+class P2PFolder;
 class MetaStorage;
 class ChunkStorage;
 
@@ -45,11 +45,11 @@ class MetaUploader : public QObject {
 public:
 	MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 
-	void broadcast_meta(QList<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void broadcast_meta(QList<P2PFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
 
 	/* Message handlers */
-	void handle_handshake(RemoteFolder* remote);
-	void handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision);
+	void handle_handshake(P2PFolder* remote);
+	void handle_meta_request(P2PFolder* remote, const Meta::PathRevision& revision);
 
 private:
 	MetaStorage* meta_storage_;

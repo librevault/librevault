@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-class RemoteFolder;
+class P2PFolder;
 class ChunkStorage;
 
 class Uploader : public QObject {
@@ -43,13 +43,13 @@ class Uploader : public QObject {
 public:
 	Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-	void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
+	void broadcast_chunk(QList<P2PFolder*> remotes, const blob& ct_hash);
 
 	/* Message handlers */
-	void handle_interested(RemoteFolder* remote);
-	void handle_not_interested(RemoteFolder* remote);
+	void handle_interested(P2PFolder* remote);
+	void handle_not_interested(P2PFolder* remote);
 
-	void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
+	void handle_block_request(P2PFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
 
 private:
 	ChunkStorage* chunk_storage_;

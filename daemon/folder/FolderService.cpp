@@ -65,10 +65,10 @@ void FolderService::stop() {
 void FolderService::initFolder(const FolderParams& params) {
 	LOGFUNC();
 	auto fgroup = new FolderGroup(params, state_collector_, this);
-	groups_[fgroup->folderid()] = fgroup;
+	groups_[params.folderid()] = fgroup;
 
 	emit folderAdded(fgroup);
-	LOGD("Folder initialized: " << fgroup->folderid().toHex());
+	LOGD("Folder initialized: " << params.folderid().toHex());
 }
 
 void FolderService::deinitFolder(const QByteArray& folderid) {

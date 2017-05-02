@@ -129,11 +129,11 @@ blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
 }
 
 blob P2PFolder::local_token() {
-	return derive_token_digest(fgroup_->secret(), node_key_->digest());
+	return derive_token_digest(fgroup_->params().secret, node_key_->digest());
 }
 
 blob P2PFolder::remote_token() {
-	return derive_token_digest(fgroup_->secret(), digest());
+	return derive_token_digest(fgroup_->params().secret, digest());
 }
 
 void P2PFolder::send_message(const blob& message) {
@@ -395,7 +395,7 @@ void P2PFolder::handle_MetaRequest(const blob& message_raw) {
 void P2PFolder::handle_MetaReply(const blob& message_raw) {
 	LOGFUNC();
 
-	auto message_struct = V1Parser().parse_MetaReply(message_raw, fgroup_->secret());
+	auto message_struct = V1Parser().parse_MetaReply(message_raw, fgroup_->params().secret);
 	LOGD("<== META_REPLY:"
 		<< " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
 		<< " revision=" << message_struct.smeta.meta().revision()

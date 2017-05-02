@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <blob.h>
 #include <librevault/Meta.h>
 #include <librevault/Secret.h>
 #include <QList>
@@ -46,6 +47,8 @@ struct FolderParams {
 	};
 
 	FolderParams(QVariantMap fconfig);
+
+	QByteArray folderid() const {return conv_bytearray(secret.get_Hash());}
 
 	/* Parameters */
 	Secret secret;

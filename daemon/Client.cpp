@@ -59,14 +59,14 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(discovery_, &DiscoveryAdapter::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
 
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
+		control_server_->notify_folder_added(group->params().folderid(), Config::get()->getFolder(group->params().folderid()));
 	});
 	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_removed(group->folderid());
+		control_server_->notify_folder_removed(group->params().folderid());
 	});
 
-	connect(folder_service_, &FolderService::folderAdded, discovery_, [=](FolderGroup* fgroup){discovery_->addGroup(fgroup->folderid());});
-	connect(folder_service_, &FolderService::folderRemoved, discovery_, [=](FolderGroup* fgroup){discovery_->removeGroup(fgroup->folderid());});
+	connect(folder_service_, &FolderService::folderAdded, discovery_, [=](FolderGroup* fgroup){discovery_->addGroup(fgroup->params().folderid());});
+	connect(folder_service_, &FolderService::folderRemoved, discovery_, [=](FolderGroup* fgroup){discovery_->removeGroup(fgroup->params().folderid());});
 
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);

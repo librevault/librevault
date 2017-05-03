@@ -38,6 +38,7 @@
 #include "folder/transfer/Uploader.h"
 #include "folder/transfer/Downloader.h"
 #include "p2p/P2PFolder.h"
+#include "p2p/MessageHandler.h"
 #include <QDir>
 #include <QJsonArray>
 #ifdef Q_OS_WIN
@@ -121,27 +122,27 @@ void FolderGroup::handle_handshake(P2PFolder* origin) {
 	remotes_ready_.insert(origin);
 	downloader_->trackRemote(origin);
 
-	connect(origin, &P2PFolder::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
-	connect(origin, &P2PFolder::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
-	connect(origin, &P2PFolder::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
-	connect(origin, &P2PFolder::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
+	connect(origin->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
+	connect(origin->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
+	connect(origin->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
+	connect(origin->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
 
-	connect(origin, &P2PFolder::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
+	connect(origin->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
 		meta_downloader_->handle_have_meta(origin, revision, bitfield);
 	});
-	connect(origin, &P2PFolder::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
+	connect(origin->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
 		downloader_->notifyRemoteChunk(origin, ct_hash);
 	});
-	connect(origin, &P2PFolder::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
+	connect(origin->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
 		meta_uploader_->handle_meta_request(origin, path_revision);
 	});
-	connect(origin, &P2PFolder::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
+	connect(origin->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
 		meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
 	});
-	connect(origin, &P2PFolder::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
+	connect(origin->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
 		uploader_->handle_block_request(origin, ct_hash, offset, size);
 	});
-	connect(origin, &P2PFolder::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
+	connect(origin->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
 		downloader_->putBlock(ct_hash, offset, block, origin);
 	});
 

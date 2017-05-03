@@ -30,6 +30,7 @@
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
 #include "p2p/P2PFolder.h"
+#include "p2p/MessageHandler.h"
 #include "folder/meta/MetaStorage.h"
 
 namespace librevault {
@@ -45,7 +46,7 @@ void MetaDownloader::handle_have_meta(P2PFolder* origin, const Meta::PathRevisio
 	if(meta_storage_->haveMeta(revision))
 		downloader_->notifyRemoteMeta(origin, revision, bitfield);
 	else if(meta_storage_->putAllowed(revision))
-		origin->sendMetaRequest(revision);
+		origin->messageHandler()->sendMetaRequest(revision);
 	else
 		LOGD("Remote node notified us about an expired Meta");
 }

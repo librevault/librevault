@@ -30,6 +30,7 @@
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
 #include "p2p/P2PFolder.h"
+#include "p2p/MessageHandler.h"
 
 namespace librevault {
 
@@ -41,19 +42,19 @@ MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storag
 
 void MetaUploader::broadcast_meta(QList<P2PFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	for(auto remote : remotes) {
-		remote->sendHaveMeta(revision, bitfield);
+		remote->messageHandler()->sendHaveMeta(revision, bitfield);
 	}
 }
 
 void MetaUploader::handle_handshake(P2PFolder* remote) {
 	for(auto& meta : meta_storage_->getMeta()) {
-		remote->sendHaveMeta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
+		remote->messageHandler()->sendHaveMeta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
 	}
 }
 
 void MetaUploader::handle_meta_request(P2PFolder* remote, const Meta::PathRevision& revision) {
 	try {
-		remote->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
+		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
 	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

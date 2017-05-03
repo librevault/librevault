@@ -31,6 +31,7 @@
 #include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/meta/MetaStorage.h"
+#include "p2p/MessageHandler.h"
 #include "util/readable.h"
 #include <QLoggingCategory>
 #include <boost/range/adaptor/map.hpp>
@@ -287,7 +288,7 @@ bool Downloader::requestOne() {
 			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
 			request.started = std::chrono::steady_clock::now();
 
-			remote->sendBlockRequest(conv_bytearray(ct_hash), request.offset, request.size);
+			remote->messageHandler()->sendBlockRequest(conv_bytearray(ct_hash), request.offset, request.size);
 			chunk->requests.insert(remote, request);
 			return true;
 		}

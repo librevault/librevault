@@ -43,20 +43,15 @@ class FolderGroup;
 class NodeKey;
 class HandshakeHandler;
 class PingHandler;
-
-#define DECLARE_MESSAGE(message_name, fields...) \
-public: \
-	Q_SIGNAL void rcvd##message_name(fields); \
-public: \
-	void send##message_name(fields); \
-private: \
-	Q_SLOT void handle##message_name(const blob& message);
+class MessageHandler;
 
 class P2PFolder : public QObject {
 	Q_OBJECT
 
 signals:
 	void disconnected();
+	void handshakeSuccess();
+	void handshakeFailed(QString error);
 
 public:
 	P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
@@ -75,6 +70,8 @@ public:
 
 	bool isValid() const;
 
+	MessageHandler* messageHandler() {return message_handler_;}
+
 private:
 	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2} role_ = Role::UNDEFINED;
 
@@ -87,13 +84,13 @@ private:
 	BandwidthCounter counter_all_;
 	BandwidthCounter counter_blocks_;
 
-	// Underlying socket management
-	void resetUnderlyingSocket(QWebSocket* socket);
-
-/* Timeout */
-private:
 	PingHandler* ping_handler_;
 	TimeoutHandler* timeout_handler_;
+	HandshakeHandler* handshake_handler_;
+	MessageHandler* message_handler_;
+
+	// Underlying socket management
+	void resetUnderlyingSocket(QWebSocket* socket);
 
 /* Choking status */
 public:
@@ -126,35 +123,9 @@ private slots:
 	void handleDisconnected() {deleteLater();}
 	void handleConnected();
 
-/////////////// Message processing
-DECLARE_MESSAGE(Choke);
-DECLARE_MESSAGE(Unchoke);
-DECLARE_MESSAGE(Interested);
-DECLARE_MESSAGE(NotInterested);
-
-DECLARE_MESSAGE(HaveMeta, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-DECLARE_MESSAGE(HaveChunk, const blob& ct_hash);
-
-DECLARE_MESSAGE(MetaRequest, const Meta::PathRevision& revision);
-DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, const bitfield_type& bitfield);
-DECLARE_MESSAGE(MetaCancel, const Meta::PathRevision& revision);
-
-DECLARE_MESSAGE(BlockRequest, const blob& ct_hash, uint32_t offset, uint32_t size);
-DECLARE_MESSAGE(BlockReply, const blob& ct_hash, uint32_t offset, const blob& block);
-DECLARE_MESSAGE(BlockCancel, const blob& ct_hash, uint32_t offset, uint32_t size);
-
-/* Handshake */
-signals:
-	void handshakeSuccess();
-	void handshakeFailed(QString error);
-
-private:
-	HandshakeHandler* handshake_handler_;
-
 /* Message processing */
 private slots:
 	void sendMessage(QByteArray message);
-	void sendMessage(const blob& message);
 	void handleMessage(const QByteArray& message);
 };
 

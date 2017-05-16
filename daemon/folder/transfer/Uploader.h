@@ -49,7 +49,7 @@ public:
 	void handle_interested(Peer* remote);
 	void handle_not_interested(Peer* remote);
 
-	void handle_block_request(Peer* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
+	void handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
 
 private:
 	ChunkStorage* chunk_storage_;

@@ -41,7 +41,7 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
 
 void Uploader::broadcast_chunk(QList<Peer*> remotes, const blob& ct_hash) {
 	for(auto& remote : remotes) {
-		remote->messageHandler()->sendHaveChunk(ct_hash);
+		remote->messageHandler()->sendHaveChunk(conv_bytearray(ct_hash));
 	}
 }
 
@@ -58,10 +58,10 @@ void Uploader::handle_not_interested(Peer* remote) {
 	remote->messageHandler()->sendChoke();
 }
 
-void Uploader::handle_block_request(Peer* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
+void Uploader::handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
 	try {
 		if(!remote->am_choking() && remote->peer_interested()) {
-			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
+			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(conv_bytearray(ct_hash), offset, size));
 		}
 	}catch(ChunkStorage::no_such_chunk& e){
 		LOGW("Requested nonexistent block");

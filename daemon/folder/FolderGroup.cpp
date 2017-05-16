@@ -134,7 +134,7 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
 		meta_downloader_->handle_have_meta(peer, revision, bitfield);
 	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
+	connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](QByteArray ct_hash){
 		downloader_->notifyRemoteChunk(peer, ct_hash);
 	});
 	connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
@@ -143,10 +143,10 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
 		meta_downloader_->handle_meta_reply(peer, smeta, bitfield);
 	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
+	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](QByteArray ct_hash, uint32_t offset, uint32_t size){
 		uploader_->handle_block_request(peer, ct_hash, offset, size);
 	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
+	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](QByteArray ct_hash, uint32_t offset, const blob& block){
 		downloader_->putBlock(ct_hash, offset, block, peer);
 	});
 

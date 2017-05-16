@@ -156,23 +156,21 @@ void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revisi
 		bitfield.resize(chunks.size(), 0);  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
 		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield[chunk_idx])
-				notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
+				notifyRemoteChunk(remote, conv_bytearray(chunks[chunk_idx].ct_hash));
 	}catch(MetaStorage::no_such_meta){
 		qCDebug(log_downloader) << "Expired Meta";
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
 	}
 }
-void Downloader::notifyRemoteChunk(Peer* remote, const blob& ct_hash) {
+void Downloader::notifyRemoteChunk(Peer* remote, QByteArray ct_hash) {
 	SCOPELOG(log_downloader);
-	QByteArray ct_hash_q = conv_bytearray(ct_hash);
-
-	DownloadChunkPtr chunk = down_chunks_.value(ct_hash_q);
+	DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 	if(! chunk)
 		return;
 
 	chunk->owned_by.insert(remote, remote->get_interest_guard());
-	download_queue_.setRemotesCount(ct_hash_q, chunk->owned_by.size());
+	download_queue_.setRemotesCount(ct_hash, chunk->owned_by.size());
 
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
@@ -192,9 +190,9 @@ void Downloader::handleUnchoke(Peer* remote) {
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data, Peer* from) {
+void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, const blob& data, Peer* from) {
 	SCOPELOG(log_downloader);
-	auto missing_chunk = down_chunks_.value(conv_bytearray(ct_hash));
+	auto missing_chunk = down_chunks_.value(ct_hash);
 	if(! missing_chunk) return;
 
 	QList<QPair<QByteArray, QFile*>> downloaded_chunks;
@@ -213,7 +211,7 @@ void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data
 				QFile* chunk_f = missing_chunk->builder.release_chunk();
 				chunk_f->setParent(this);
 
-				downloaded_chunks << qMakePair(conv_bytearray(ct_hash), chunk_f);
+				downloaded_chunks << qMakePair(ct_hash, chunk_f);
 			}   // TODO: catch "invalid hash" exception here
 		}
 	}
@@ -288,7 +286,7 @@ bool Downloader::requestOne() {
 			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
 			request.started = std::chrono::steady_clock::now();
 
-			remote->messageHandler()->sendBlockRequest(conv_bytearray(ct_hash), request.offset, request.size);
+			remote->messageHandler()->sendBlockRequest(ct_hash, request.offset, request.size);
 			chunk->requests.insert(remote, request);
 			return true;
 		}

@@ -70,9 +70,9 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitf
 		<< "revision=" << message.revision.revision_
 		<< "bits=" << conv_bitarray(message.bitfield);
 }
-void MessageHandler::sendHaveChunk(const blob& ct_hash) {
+void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 	V1Parser::HaveChunk message;
-	message.ct_hash = ct_hash;
+	message.ct_hash = conv_bytearray(ct_hash);
 	prepareMessage(V1Parser().gen_HaveChunk(message));
 
 	qDebug() << "==> HAVE_BLOCK:"
@@ -109,9 +109,9 @@ void MessageHandler::sendMetaCancel(const Meta::PathRevision& revision) {
 		<< "revision=" << revision.revision_;
 }
 
-void MessageHandler::sendBlockRequest(const blob& ct_hash, uint32_t offset, uint32_t length) {
+void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint32_t length) {
 	V1Parser::BlockRequest message;
-	message.ct_hash = ct_hash;
+	message.ct_hash = conv_bytearray(ct_hash);
 	message.offset = offset;
 	message.length = length;
 	prepareMessage(V1Parser().gen_BlockRequest(message));
@@ -121,9 +121,9 @@ void MessageHandler::sendBlockRequest(const blob& ct_hash, uint32_t offset, uint
 		<< "offset=" << offset
 		<< "length=" << length;
 }
-void MessageHandler::sendBlockReply(const blob& ct_hash, uint32_t offset, const blob& block) {
+void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, const blob& block) {
 	V1Parser::BlockReply message;
-	message.ct_hash = ct_hash;
+	message.ct_hash = conv_bytearray(ct_hash);
 	message.offset = offset;
 	message.content = block;
 	prepareMessage(V1Parser().gen_BlockReply(message));
@@ -132,9 +132,9 @@ void MessageHandler::sendBlockReply(const blob& ct_hash, uint32_t offset, const 
 		<< "ct_hash=" << ct_hash_readable(ct_hash)
 		<< "offset=" << offset;
 }
-void MessageHandler::sendBlockCancel(const blob& ct_hash, uint32_t offset, uint32_t length) {
+void MessageHandler::sendBlockCancel(QByteArray ct_hash, uint32_t offset, uint32_t length) {
 	V1Parser::BlockCancel message;
-	message.ct_hash = ct_hash;
+	message.ct_hash = conv_bytearray(ct_hash);
 	message.offset = offset;
 	message.length = length;
 	prepareMessage(V1Parser().gen_BlockCancel(message));
@@ -174,7 +174,7 @@ void MessageHandler::handleHaveChunk(const blob& message_raw) {
 	auto message_struct = V1Parser().parse_HaveChunk(message_raw);
 	qDebug() << "<== HAVE_BLOCK:"
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash);
-	emit rcvdHaveChunk(message_struct.ct_hash);
+	emit rcvdHaveChunk(conv_bytearray(message_struct.ct_hash));
 }
 
 void MessageHandler::handleMetaRequest(const blob& message_raw) {
@@ -211,7 +211,7 @@ void MessageHandler::handleBlockRequest(const blob& message_raw) {
 		<< "length=" << message_struct.length
 		<< "offset=" << message_struct.offset;
 
-	emit rcvdBlockRequest(message_struct.ct_hash, message_struct.offset, message_struct.length);
+	emit rcvdBlockRequest(conv_bytearray(message_struct.ct_hash), message_struct.offset, message_struct.length);
 }
 void MessageHandler::handleBlockReply(const blob& message_raw) {
 	auto message_struct = V1Parser().parse_BlockReply(message_raw);
@@ -219,7 +219,7 @@ void MessageHandler::handleBlockReply(const blob& message_raw) {
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
 		<< "offset=" << message_struct.offset;
 
-	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
+	emit rcvdBlockReply(conv_bytearray(message_struct.ct_hash), message_struct.offset, message_struct.content);
 }
 void MessageHandler::handleBlockCancel(const blob& message_raw) {
 #   warning "Not implemented yet"
@@ -229,7 +229,7 @@ void MessageHandler::handleBlockCancel(const blob& message_raw) {
 		<< "length=" << message_struct.length
 		<< "offset=" << message_struct.offset;
 
-	emit rcvdBlockCancel(message_struct.ct_hash, message_struct.offset, message_struct.length);
+	emit rcvdBlockCancel(conv_bytearray(message_struct.ct_hash), message_struct.offset, message_struct.length);
 }
 
 } /* namespace librevault */

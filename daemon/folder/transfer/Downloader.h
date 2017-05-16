@@ -85,12 +85,12 @@ public slots:
 	void notifyLocalChunk(const blob& ct_hash);
 
 	void notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notifyRemoteChunk(Peer* remote, const blob& ct_hash);
+	void notifyRemoteChunk(Peer* remote, QByteArray ct_hash);
 
 	void handleChoke(Peer* remote);
 	void handleUnchoke(Peer* remote);
 
-	void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, Peer* from);
+	void putBlock(QByteArray ct_hash, uint32_t offset, const blob& data, Peer* from);
 
 	void trackRemote(Peer* remote);
 	void untrackRemote(Peer* remote);

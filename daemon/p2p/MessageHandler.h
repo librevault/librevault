@@ -64,15 +64,15 @@ private:
 	DECLARE_MESSAGE(NotInterested);
 
 	DECLARE_MESSAGE(HaveMeta, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	DECLARE_MESSAGE(HaveChunk, const blob& ct_hash);
+	DECLARE_MESSAGE(HaveChunk, QByteArray ct_hash);
 
 	DECLARE_MESSAGE(MetaRequest, const Meta::PathRevision& revision);
 	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, const bitfield_type& bitfield);
 	DECLARE_MESSAGE(MetaCancel, const Meta::PathRevision& revision);
 
-	DECLARE_MESSAGE(BlockRequest, const blob& ct_hash, uint32_t offset, uint32_t size);
-	DECLARE_MESSAGE(BlockReply, const blob& ct_hash, uint32_t offset, const blob& block);
-	DECLARE_MESSAGE(BlockCancel, const blob& ct_hash, uint32_t offset, uint32_t size);
+	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);
+	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, const blob& block);
+	DECLARE_MESSAGE(BlockCancel, QByteArray ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

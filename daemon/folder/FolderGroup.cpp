@@ -86,7 +86,7 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 
 	// Connecting signals and slots
 	connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
-	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
+	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash){
 		downloader_->notifyLocalChunk(ct_hash);
 		uploader_->broadcast_chunk(pool_->validPeers(), ct_hash);
 	});

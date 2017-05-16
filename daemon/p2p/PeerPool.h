@@ -66,8 +66,7 @@ public:
 private:
 	FolderParams params_;
 	NodeKey* node_key_;
-	BandwidthCounter bc_all_;
-	BandwidthCounter bc_blocks_;
+	BandwidthCounter bc_all_, bc_blocks_;
 
 	DiscoveryGroup* dgroup_;
 

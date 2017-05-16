@@ -43,7 +43,7 @@ class Uploader : public QObject {
 public:
 	Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-	void broadcast_chunk(QList<Peer*> remotes, const blob& ct_hash);
+	void broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash);
 
 	/* Message handlers */
 	void handle_interested(Peer* remote);

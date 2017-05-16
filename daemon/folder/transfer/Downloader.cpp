@@ -116,13 +116,13 @@ void Downloader::removeChunk(QByteArray ct_hash) {
 	}
 }
 
-void Downloader::notifyLocalChunk(const blob& ct_hash) {
+void Downloader::notifyLocalChunk(QByteArray ct_hash) {
 	SCOPELOG(log_downloader);
 
-	removeChunk(conv_bytearray(ct_hash));
+	removeChunk(ct_hash);
 
 	// Mark all other chunks "clustered"
-	foreach(QByteArray cluster_hash, getCluster(conv_bytearray(ct_hash))) {
+	for(QByteArray cluster_hash : getCluster(ct_hash)) {
 		download_queue_.markClustered(cluster_hash);
 	}
 }

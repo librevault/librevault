@@ -39,9 +39,9 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
 	LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(QList<Peer*> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash) {
 	for(auto& remote : remotes) {
-		remote->messageHandler()->sendHaveChunk(conv_bytearray(ct_hash));
+		remote->messageHandler()->sendHaveChunk(ct_hash);
 	}
 }
 

@@ -57,12 +57,14 @@ public:
 	virtual ~Client();
 
 	int run();
+
+public slots:
 	void restart();
 	void shutdown();
+
 private:
 	StateCollector* state_collector_;
-	BandwidthCounter bc_all_;
-	BandwidthCounter bc_blocks_;
+	BandwidthCounter bc_all_, bc_blocks_;
 	NodeKey* node_key_;
 	PortMapper* portmanager_;
 	DiscoveryAdapter* discovery_;
@@ -71,6 +73,8 @@ private:
 
 	// Folders
 	QMap<QByteArray, FolderGroup*> groups_;
+
+private slots:
 	void initFolder(const FolderParams& params);
 	void deinitFolder(const QByteArray& folderid);
 };

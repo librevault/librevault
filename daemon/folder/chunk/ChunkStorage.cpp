@@ -83,7 +83,7 @@ void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	for(auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash)))
 		file_assembler->addAssemble(smeta);
 
-	emit chunkAdded(conv_bytearray(ct_hash));
+	emit chunkAdded(ct_hash);
 }
 
 bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {

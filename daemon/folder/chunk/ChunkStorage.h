@@ -63,7 +63,7 @@ public:
 	void cleanup(const Meta& meta);
 
 signals:
-	void chunkAdded(blob ct_hash);
+	void chunkAdded(QByteArray ct_hash);
 
 protected:
 	MetaStorage* meta_storage_;

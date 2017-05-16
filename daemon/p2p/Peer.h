@@ -83,8 +83,7 @@ private:
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
 
-	BandwidthCounter bc_all_;
-	BandwidthCounter bc_blocks_;
+	BandwidthCounter bc_all_, bc_blocks_;
 
 	PingHandler* ping_handler_;
 	TimeoutHandler* timeout_handler_;

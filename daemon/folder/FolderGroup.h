@@ -38,8 +38,11 @@
 #include <QSet>
 #include <set>
 #include <QHostAddress>
+#include <QLoggingCategory>
 
 namespace librevault {
+
+Q_DECLARE_LOGGING_CATEGORY(log_folder);
 
 class Peer;
 
@@ -59,11 +62,6 @@ class PeerPool;
 
 class FolderGroup : public QObject {
 	Q_OBJECT
-	friend class ControlServer;
-
-signals:
-	void attached(Peer* remote_ptr);
-	void detached(Peer* remote_ptr);
 
 public:
 	FolderGroup(FolderParams params, PeerPool* pool, StateCollector* state_collector, QObject* parent);
@@ -71,10 +69,6 @@ public:
 
 	/* Getters */
 	inline const FolderParams& params() const {return params_;}
-
-	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
-
-	QString log_tag() const;
 
 private:
 	const FolderParams params_;
@@ -91,8 +85,6 @@ private:
 	Downloader* downloader_;
 	MetaUploader* meta_uploader_;
 	MetaDownloader* meta_downloader_;
-
-	BandwidthCounter bandwidth_counter_;
 
 	QTimer* state_pusher_;
 

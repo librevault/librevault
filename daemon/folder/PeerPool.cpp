@@ -43,11 +43,11 @@ PeerPool::PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, Node
 PeerPool::~PeerPool() {}
 
 bool PeerPool::contains(Peer* peer) const {
-	return remotes_.contains(peer) || digests_.contains(peer->digest()) || endpoints_.contains(peer->endpoint());
+	return peers_.contains(peer) || digests_.contains(peer->digest()) || endpoints_.contains(peer->endpoint());
 }
 
 void PeerPool::handleHandshake(Peer* peer) {
-	remotes_ready_.insert(peer);
+	peers_ready_.insert(peer);
 	emit newValidPeer(peer);
 }
 
@@ -62,7 +62,7 @@ void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
 }
 
 void PeerPool::handleIncoming(Peer* peer) {
-	Q_ASSUME(! remotes_.contains(peer));
+	Q_ASSUME(! peers_.contains(peer));
 
 	if(contains(peer)) {
 		peer->deleteLater();
@@ -71,7 +71,7 @@ void PeerPool::handleIncoming(Peer* peer) {
 
 	peer->setParent(this);
 
-	remotes_.insert(peer);
+	peers_.insert(peer);
 	endpoints_.insert(peer->endpoint());
 	digests_.insert(peer->digest());
 
@@ -80,8 +80,8 @@ void PeerPool::handleIncoming(Peer* peer) {
 }
 
 void PeerPool::handleDisconnected(Peer* peer) {
-	remotes_.remove(peer);
-	remotes_ready_.remove(peer);
+	peers_.remove(peer);
+	peers_ready_.remove(peer);
 
 	endpoints_.remove(peer->endpoint());
 	digests_.remove(peer->digest());

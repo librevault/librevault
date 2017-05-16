@@ -47,11 +47,12 @@
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_folder, "log.folder");
+
 FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* state_collector, QObject* parent) :
 	QObject(parent),
 	params_(std::move(params)), pool_(pool),
 	state_collector_(state_collector) {
-	LOGFUNC();
 
 	/* Creating directories */
 	QDir().mkpath(params_.path);
@@ -60,10 +61,10 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 	SetFileAttributesW(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif
 
-	LOGD("New folder:"
+	qCDebug(log_folder) << "New folder:"
 		<< "Key type=" << (char)params_.secret.get_type()
 		<< "Path=" << params_.path
-		<< "System path=" << params_.system_path);
+		<< "System path=" << params_.system_path;
 
 	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "secret", QString::fromStdString(params_.secret.string()));
 
@@ -109,7 +110,6 @@ FolderGroup::~FolderGroup() {
 	state_pusher_->stop();
 
 	state_collector_->folder_state_purge(conv_bytearray(params_.secret.get_Hash()));
-	LOGFUNC();
 }
 
 /* Actions */
@@ -156,10 +156,6 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(peer);});
 }
 
-QString FolderGroup::log_tag() const {
-	return !params_.path.isEmpty() ? params_.path : params_.system_path;
-}
-
 void FolderGroup::push_state() {
 	// peers
 	QJsonArray peers_array;
@@ -167,8 +163,6 @@ void FolderGroup::push_state() {
 		peers_array.append(peer->collectState());
 	}
 	state_collector_->folder_state_set(params().folderid(), "peers", peers_array);
-	// bandwidth
-	state_collector_->folder_state_set(params().folderid(), "traffic_stats", bandwidth_counter_.heartbeat_json());
 }
 
 } /* namespace librevault */

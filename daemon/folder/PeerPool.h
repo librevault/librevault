@@ -54,8 +54,8 @@ public:
 	void handleIncoming(Peer* peer);
 
 	/* Getters */
-	QList<Peer*> peers() const {return remotes_.toList();}
-	QList<Peer*> validPeers() const {return remotes_ready_.toList();}
+	QList<Peer*> peers() const {return peers_.toList();}
+	QList<Peer*> validPeers() const {return peers_ready_.toList();}
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -65,11 +65,12 @@ private:
 
 	DiscoveryGroup* dgroup_;
 
-	BandwidthCounter bandwidth_counter_;
+	BandwidthCounter counter_all_;
+	BandwidthCounter counter_blocks_;
 
 	/* Members */
-	QSet<Peer*> remotes_;
-	QSet<Peer*> remotes_ready_;
+	QSet<Peer*> peers_;
+	QSet<Peer*> peers_ready_;
 
 	// Member lookup optimization
 	QSet<QByteArray> digests_;

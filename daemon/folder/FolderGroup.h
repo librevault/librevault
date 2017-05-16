@@ -68,7 +68,7 @@ public:
 	virtual ~FolderGroup();
 
 	/* Membership management */
-	bool attach(Peer* remote);
+	bool handleIncoming(Peer* remote);
 	void detach(Peer* remote);
 
 	/* Getters */

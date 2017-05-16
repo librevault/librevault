@@ -70,6 +70,13 @@ bool PeerServer::isLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 
+void PeerServer::addPeerPool(QByteArray folderid, FolderGroup* fgroup) {
+	Q_ASSUME(!peer_pools_.contains(folderid));
+
+	peer_pools_[folderid] = fgroup;
+	connect(fgroup, &FolderGroup::destroyed, this, [=]{peer_pools_.remove(folderid);});
+}
+
 // Generators
 QUrl PeerServer::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) {
 	QUrl url;
@@ -93,15 +100,18 @@ QSslConfiguration PeerServer::getSslConfiguration(NodeKey* node_key) {
 void PeerServer::handleConnection() {
 	while(server_->hasPendingConnections()) {
 		QWebSocket* socket = server_->nextPendingConnection();
-		QUrl ws_url = socket->requestUrl();
-		QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
-		FolderGroup* fgroup = folder_service_->getGroup(folderid);
+		handleSingleConnection(socket);
+	}
+}
 
-		qCDebug(log_p2p) << "New incoming connection:" << socket->requestUrl().toString();
+void PeerServer::handleSingleConnection(QWebSocket* socket) {
+	QUrl ws_url = socket->requestUrl();
+	QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
+	FolderGroup* fgroup = peer_pools_.value(folderid);
 
-		Peer* folder = new Peer(fgroup, node_key_, fgroup);
-		folder->setConnectedSocket(socket);
-		Q_UNUSED(folder);
+	if(fgroup) {
+		Peer* peer = new Peer(fgroup, node_key_, fgroup);
+		peer->setConnectedSocket(socket);
 	}
 }
 

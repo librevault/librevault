@@ -50,6 +50,8 @@ public:
 	/* Loopback detection */
 	bool isLoopback(QByteArray digest);
 
+	void addPeerPool(QByteArray folderid, FolderGroup* fgroup);
+
 	// Generators
 	static QUrl makeUrl(QHostAddress addr, quint16 port, QByteArray folderid);
 	static QSslConfiguration getSslConfiguration(NodeKey* node_key);
@@ -64,8 +66,11 @@ private:
 
 	QWebSocketServer* server_;
 
+	QMap<QByteArray, FolderGroup*> peer_pools_;
+
 private slots:
 	void handleConnection();
+	void handleSingleConnection(QWebSocket* socket);
 	void handlePeerVerifyError(const QSslError& error);
 	void handleServerError(QWebSocketProtocol::CloseCode closeCode);
 	void handleSslErrors(const QList<QSslError>& errors);

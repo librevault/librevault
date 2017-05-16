@@ -42,31 +42,27 @@ namespace librevault {
 
 Peer::Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	QObject(parent),
-	node_key_(node_key),
-	fgroup_(fgroup) {
+	node_key_(node_key) {
 	LOGFUNC();
 
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
-	handshake_handler_ = new HandshakeHandler(fgroup_->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
+	handshake_handler_ = new HandshakeHandler(fgroup->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
 	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
 	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
-	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&Peer::sendMessage));
+	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::sendMessage);
 
 	ping_handler_ = new PingHandler();
 	timeout_handler_ = new TimeoutHandler();
 	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &Peer::handleDisconnected);
 
-	message_handler_ = new MessageHandler(fgroup_->params(), this);
+	message_handler_ = new MessageHandler(fgroup->params(), this);
 
 	// Internal signal interconnection
 	connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);
 }
 
-Peer::~Peer() {
-	LOGFUNC();
-	fgroup_->detach(this);
-}
+Peer::~Peer() {}
 
 void Peer::resetUnderlyingSocket(QWebSocket* socket) {
 	if(socket_) socket_->deleteLater();
@@ -79,7 +75,6 @@ void Peer::resetUnderlyingSocket(QWebSocket* socket) {
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &Peer::handleMessage);
 	connect(socket_, &QWebSocket::binaryMessageReceived, timeout_handler_, &TimeoutHandler::bump);
 	connect(socket_, &QWebSocket::connected, this, &Peer::handleConnected);
-	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
 	connect(socket_, &QWebSocket::disconnected, this, &Peer::handleDisconnected);
 }
 
@@ -87,6 +82,7 @@ void Peer::setConnectedSocket(QWebSocket* socket) {
 	resetUnderlyingSocket(socket);
 
 	role_ = Role::SERVER;
+	qDebug() << "New incoming connection:" << socket->requestUrl();
 
 	timeout_handler_->start();
 	handleConnected();
@@ -96,6 +92,7 @@ void Peer::open(QUrl url) {
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
 	role_ = Role::CLIENT;
+	qDebug() << "New outgoing connection:" << url;
 
 	timeout_handler_->start();
 	socket_->setSslConfiguration(PeerServer::getSslConfiguration(node_key_));
@@ -202,11 +199,7 @@ void Peer::handleMessage(const QByteArray& message) {
 
 void Peer::handleConnected() {
 	ping_handler_->start();
-
-	if(fgroup_->attach(this)) {
-		handshake_handler_->handleEstablishedConnection(HandshakeHandler::Role(role_), node_key_->digest(), digest());
-	}else
-		socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
+	handshake_handler_->handleEstablishedConnection(HandshakeHandler::Role(role_), node_key_->digest(), digest());
 }
 
 } /* namespace librevault */

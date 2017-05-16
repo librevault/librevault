@@ -79,7 +79,6 @@ private:
 
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
-	FolderGroup* fgroup_;
 
 	BandwidthCounter counter_all_;
 	BandwidthCounter counter_blocks_;

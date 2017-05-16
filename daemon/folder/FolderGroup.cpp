@@ -149,7 +149,7 @@ void FolderGroup::handle_handshake(Peer* origin) {
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});
 }
 
-bool FolderGroup::attach(Peer* remote) {
+bool FolderGroup::handleIncoming(Peer* remote) {
 	if(remotes_.contains(remote)
 		|| p2p_folders_digests_.contains(remote->digest())
 		|| p2p_folders_endpoints_.contains(remote->endpoint()) ) {

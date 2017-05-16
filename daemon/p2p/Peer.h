@@ -44,6 +44,7 @@ class NodeKey;
 class HandshakeHandler;
 class PingHandler;
 class MessageHandler;
+class FolderParams;
 
 class Peer : public QObject {
 	Q_OBJECT
@@ -54,7 +55,7 @@ signals:
 	void handshakeFailed(QString error);
 
 public:
-	Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
+	Peer(const FolderParams& params, NodeKey* node_key, QObject* parent);
 	~Peer();
 
 	void setConnectedSocket(QWebSocket* socket);
@@ -119,7 +120,7 @@ private:
 
 /* State change handlers */
 private slots:
-	void handleDisconnected() {deleteLater();}
+	void handleDisconnected() {disconnected();}
 	void handleConnected();
 
 /* Message processing */

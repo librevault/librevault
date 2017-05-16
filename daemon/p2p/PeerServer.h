@@ -37,6 +37,7 @@ class FolderGroup;
 class FolderService;
 class NodeKey;
 class Peer;
+class PeerPool;
 class PortMapper;
 class PeerServer : public QObject {
 	Q_OBJECT
@@ -50,10 +51,10 @@ public:
 	/* Loopback detection */
 	bool isLoopback(QByteArray digest);
 
-	void addPeerPool(QByteArray folderid, FolderGroup* fgroup);
+	void addPeerPool(QByteArray folderid, PeerPool* pool);
 
 	// Generators
-	static QUrl makeUrl(QHostAddress addr, quint16 port, QByteArray folderid);
+	static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
 	static QSslConfiguration getSslConfiguration(NodeKey* node_key);
 
 public slots:
@@ -66,7 +67,7 @@ private:
 
 	QWebSocketServer* server_;
 
-	QMap<QByteArray, FolderGroup*> peer_pools_;
+	QMap<QByteArray, PeerPool*> peer_pools_;
 
 private slots:
 	void handleConnection();

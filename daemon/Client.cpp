@@ -48,7 +48,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMapper(this);
 	discovery_ = new DiscoveryAdapter(portmanager_, this);
-	folder_service_ = new FolderService(state_collector_, this);
+	folder_service_ = new FolderService(node_key_, state_collector_, this);
 	peerserver_ = new PeerServer(node_key_, portmanager_, folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 

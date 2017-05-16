@@ -55,6 +55,8 @@ class MetaDownloader;
 class Uploader;
 class Downloader;
 
+class PeerPool;
+
 class FolderGroup : public QObject {
 	Q_OBJECT
 	friend class ControlServer;
@@ -64,16 +66,10 @@ signals:
 	void detached(Peer* remote_ptr);
 
 public:
-	FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
+	FolderGroup(FolderParams params, PeerPool* pool, StateCollector* state_collector, QObject* parent);
 	virtual ~FolderGroup();
 
-	/* Membership management */
-	bool handleIncoming(Peer* remote);
-	void detach(Peer* remote);
-
 	/* Getters */
-	QList<Peer*> remotes() const;
-
 	inline const FolderParams& params() const {return params_;}
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
@@ -82,6 +78,7 @@ public:
 
 private:
 	const FolderParams params_;
+	PeerPool* pool_;
 	StateCollector* state_collector_;
 
 	std::unique_ptr<PathNormalizer> path_normalizer_;
@@ -99,18 +96,10 @@ private:
 
 	QTimer* state_pusher_;
 
-	/* Members */
-	QSet<Peer*> remotes_;
-	QSet<Peer*> remotes_ready_;
-
-	// Member lookup optimization
-	QSet<QByteArray> p2p_folders_digests_;
-	QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
-
 private slots:
 	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(Peer* origin);
+	void handleNewPeer(Peer* peer);
 };
 
 } /* namespace librevault */

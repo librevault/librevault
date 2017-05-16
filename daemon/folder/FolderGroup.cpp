@@ -30,6 +30,7 @@
 
 #include "IgnoreList.h"
 #include "PathNormalizer.h"
+#include "PeerPool.h"
 #include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
@@ -37,7 +38,6 @@
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
 #include "folder/transfer/Downloader.h"
-#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 #include <QDir>
 #include <QJsonArray>
@@ -47,10 +47,10 @@
 
 namespace librevault {
 
-FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent) :
-		QObject(parent),
-		params_(std::move(params)),
-		state_collector_(state_collector) {
+FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* state_collector, QObject* parent) :
+	QObject(parent),
+	params_(std::move(params)), pool_(pool),
+	state_collector_(state_collector) {
 	LOGFUNC();
 
 	/* Creating directories */
@@ -81,14 +81,18 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 
 	state_pusher_ = new QTimer(this);
 
+	pool_->setParent(this);
+
 	// Connecting signals and slots
 	connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
 	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash){
 		downloader_->notifyLocalChunk(ct_hash);
-		uploader_->broadcast_chunk(remotes(), ct_hash);
+		uploader_->broadcast_chunk(pool_->validPeers(), ct_hash);
 	});
 	connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
 	connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);
+
+	connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 
 	// Set up state pusher
 	state_pusher_->setInterval(1000);
@@ -114,79 +118,42 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
 	downloader_->notifyLocalMeta(smeta, bitfield);
-	meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
+	meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);
 }
 
 // RemoteFolder actions
-void FolderGroup::handle_handshake(Peer* origin) {
-	remotes_ready_.insert(origin);
-	downloader_->trackRemote(origin);
+void FolderGroup::handleNewPeer(Peer* peer) {
+	downloader_->trackRemote(peer);
 
-	connect(origin->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=]{downloader_->handleChoke(origin);});
-	connect(origin->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(origin);});
-	connect(origin->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=]{uploader_->handle_interested(origin);});
-	connect(origin->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(origin);});
+	// Messages
+	connect(peer->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=]{downloader_->handleChoke(peer);});
+	connect(peer->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(peer);});
+	connect(peer->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=]{uploader_->handle_interested(peer);});
+	connect(peer->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(peer);});
 
-	connect(origin->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
-		meta_downloader_->handle_have_meta(origin, revision, bitfield);
+	connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
+		meta_downloader_->handle_have_meta(peer, revision, bitfield);
 	});
-	connect(origin->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
-		downloader_->notifyRemoteChunk(origin, ct_hash);
+	connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](const blob& ct_hash){
+		downloader_->notifyRemoteChunk(peer, ct_hash);
 	});
-	connect(origin->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
-		meta_uploader_->handle_meta_request(origin, path_revision);
+	connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
+		meta_uploader_->handle_meta_request(peer, path_revision);
 	});
-	connect(origin->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
-		meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
+	connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
+		meta_downloader_->handle_meta_reply(peer, smeta, bitfield);
 	});
-	connect(origin->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
-		uploader_->handle_block_request(origin, ct_hash, offset, size);
+	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](const blob& ct_hash, uint32_t offset, uint32_t size){
+		uploader_->handle_block_request(peer, ct_hash, offset, size);
 	});
-	connect(origin->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
-		downloader_->putBlock(ct_hash, offset, block, origin);
+	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](const blob& ct_hash, uint32_t offset, const blob& block){
+		downloader_->putBlock(ct_hash, offset, block, peer);
 	});
 
-	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});
-}
+	// States
+	connect(peer, &Peer::disconnected, downloader_, [=]{downloader_->untrackRemote(peer);});
 
-bool FolderGroup::handleIncoming(Peer* remote) {
-	if(remotes_.contains(remote)
-		|| p2p_folders_digests_.contains(remote->digest())
-		|| p2p_folders_endpoints_.contains(remote->endpoint()) ) {
-		return false;
-	}
-
-	remotes_.insert(remote);
-	p2p_folders_endpoints_.insert(remote->endpoint());
-	p2p_folders_digests_.insert(remote->digest());
-
-	LOGD("Attached remote " << remote->endpointString());
-
-	connect(remote, &Peer::handshakeSuccess, this, [=]{handle_handshake(remote);});
-
-	emit attached(remote);
-
-	return true;
-}
-
-void FolderGroup::detach(Peer* remote) {
-	if(! remotes_.contains(remote))
-		return;
-
-	emit detached(remote);
-	downloader_->untrackRemote(remote);
-
-	p2p_folders_digests_.remove(remote->digest());
-	p2p_folders_endpoints_.remove(remote->endpoint());
-
-	remotes_.remove(remote);
-	remotes_ready_.remove(remote);
-
-	LOGD("Detached remote " << remote->endpointString());
-}
-
-QList<Peer*> FolderGroup::remotes() const {
-	return remotes_.toList();
+	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(peer);});
 }
 
 QString FolderGroup::log_tag() const {
@@ -196,8 +163,8 @@ QString FolderGroup::log_tag() const {
 void FolderGroup::push_state() {
 	// peers
 	QJsonArray peers_array;
-	for(auto& p2p_folder : remotes_) {
-		peers_array.append(p2p_folder->collectState());
+	for(auto& peer : pool_->validPeers()) {
+		peers_array.append(peer->collectState());
 	}
 	state_collector_->folder_state_set(params().folderid(), "peers", peers_array);
 	// bandwidth

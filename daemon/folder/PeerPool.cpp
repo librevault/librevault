@@ -26,45 +26,63 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "blob.h"
-#include "util/log.h"
-#include <QObject>
-#include <QMap>
+#include <p2p/PeerServer.h>
+#include "PeerPool.h"
+#include "FolderGroup.h"
+#include "p2p/Peer.h"
 
 namespace librevault {
 
-/* Folder info */
-class FolderGroup;
-class FolderParams;
-class StateCollector;
-class NodeKey;
+PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent) :
+	QObject(parent),
+	params_(params),
+	node_key_(node_key) {}
 
-class FolderService : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("FolderService");
-public:
-	explicit FolderService(NodeKey* node_key, StateCollector* state_collector, QObject* parent);
-	virtual ~FolderService();
+PeerPool::~PeerPool() {}
 
-	void run();
-	void stop();
+bool PeerPool::contains(Peer* peer) const {
+	return remotes_.contains(peer) || digests_.contains(peer->digest()) || endpoints_.contains(peer->endpoint());
+}
 
-	/* FolderGroup nanagenent */
-	void initFolder(const FolderParams& params);
-	void deinitFolder(const QByteArray& folderid);
+void PeerPool::handleHandshake(Peer* peer) {
+	remotes_ready_.insert(peer);
+	emit newValidPeer(peer);
+}
 
-	FolderGroup* getGroup(const QByteArray& folderid);
+void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
+	if(endpoints_.contains(endpoint))
+		return;
 
-signals:
-	void folderAdded(FolderGroup* fgroup);
-	void folderRemoved(FolderGroup* fgroup);
+	Peer* folder = new Peer(params_, node_key_, this);
 
-private:
-	NodeKey* node_key_;
-	StateCollector* state_collector_;
+	QUrl ws_url = PeerServer::makeUrl(endpoint, params_.folderid());
+	folder->open(ws_url);
+}
 
-	QMap<QByteArray, FolderGroup*> groups_;
-};
+void PeerPool::handleIncoming(Peer* peer) {
+	Q_ASSUME(! remotes_.contains(peer));
+
+	if(contains(peer)) {
+		peer->deleteLater();
+		return;
+	}
+
+	peer->setParent(this);
+
+	remotes_.insert(peer);
+	endpoints_.insert(peer->endpoint());
+	digests_.insert(peer->digest());
+
+	connect(peer, &Peer::handshakeSuccess, this, [=]{handleHandshake(peer);});
+	connect(peer, &Peer::handshakeFailed, this, [=]{handleDisconnected(peer);});
+}
+
+void PeerPool::handleDisconnected(Peer* peer) {
+	remotes_.remove(peer);
+	remotes_ready_.remove(peer);
+
+	endpoints_.remove(peer->endpoint());
+	digests_.remove(peer->digest());
+}
 
 } /* namespace librevault */

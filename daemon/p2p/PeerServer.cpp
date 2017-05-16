@@ -28,6 +28,7 @@
  */
 #include "PeerServer.h"
 #include "Peer.h"
+#include "folder/PeerPool.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
@@ -70,20 +71,20 @@ bool PeerServer::isLoopback(QByteArray digest) {
 	return node_key_->digest() == digest;
 }
 
-void PeerServer::addPeerPool(QByteArray folderid, FolderGroup* fgroup) {
+void PeerServer::addPeerPool(QByteArray folderid, PeerPool* pool) {
 	Q_ASSUME(!peer_pools_.contains(folderid));
 
-	peer_pools_[folderid] = fgroup;
-	connect(fgroup, &FolderGroup::destroyed, this, [=]{peer_pools_.remove(folderid);});
+	peer_pools_[folderid] = pool;
+	connect(pool, &QObject::destroyed, this, [=]{peer_pools_.remove(folderid);});
 }
 
 // Generators
-QUrl PeerServer::makeUrl(QHostAddress addr, quint16 port, QByteArray folderid) {
+QUrl PeerServer::makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid) {
 	QUrl url;
 	url.setScheme("wss");
 	url.setPath("/" + folderid.toHex());
-	url.setHost(addr.toString());
-	url.setPort(port);
+	url.setHost(endpoint.first.toString());
+	url.setPort(endpoint.second);
 	return url;
 }
 
@@ -107,10 +108,10 @@ void PeerServer::handleConnection() {
 void PeerServer::handleSingleConnection(QWebSocket* socket) {
 	QUrl ws_url = socket->requestUrl();
 	QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
-	FolderGroup* fgroup = peer_pools_.value(folderid);
+	PeerPool* pool = peer_pools_.value(folderid);
 
-	if(fgroup) {
-		Peer* peer = new Peer(fgroup, node_key_, fgroup);
+	if(pool) {
+		Peer* peer = new Peer(pool->params(), node_key_, pool);
 		peer->setConnectedSocket(socket);
 	}
 }
@@ -118,16 +119,16 @@ void PeerServer::handleSingleConnection(QWebSocket* socket) {
 void PeerServer::handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port) {
 	qCDebug(log_p2p) << "Discovery event about:" << addr << port;
 
-	FolderGroup* fgroup = folder_service_->getGroup(folderid);
-	if(!fgroup) {
+	PeerPool* pool = peer_pools_.value(folderid);
+	if(!pool) {
 		return; // Maybe, we have received a multicast not for us?
 	}
 
-	QUrl ws_url = makeUrl(addr, port, folderid);
+	QUrl ws_url = makeUrl({addr, port}, folderid);
 
 	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
-	Peer* folder = new Peer(fgroup, node_key_, fgroup);
+	Peer* folder = new Peer(pool->params(), node_key_, pool);
 	folder->open(ws_url);
 	Q_UNUSED(folder);
 }

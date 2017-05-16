@@ -27,44 +27,56 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
-#include "util/log.h"
+#include "control/FolderParams.h"
+#include "util/BandwidthCounter.h"
 #include <QObject>
-#include <QMap>
+#include <QSet>
+#include <QHostAddress>
 
 namespace librevault {
 
-/* Folder info */
+class Peer;
 class FolderGroup;
-class FolderParams;
-class StateCollector;
 class NodeKey;
 
-class FolderService : public QObject {
+class PeerPool : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("FolderService");
-public:
-	explicit FolderService(NodeKey* node_key, StateCollector* state_collector, QObject* parent);
-	virtual ~FolderService();
-
-	void run();
-	void stop();
-
-	/* FolderGroup nanagenent */
-	void initFolder(const FolderParams& params);
-	void deinitFolder(const QByteArray& folderid);
-
-	FolderGroup* getGroup(const QByteArray& folderid);
 
 signals:
-	void folderAdded(FolderGroup* fgroup);
-	void folderRemoved(FolderGroup* fgroup);
+	void newValidPeer(Peer* peer);
+
+public:
+	PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent);
+	virtual ~PeerPool();
+
+	void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
+	void handleIncoming(Peer* peer);
+
+	/* Getters */
+	QList<Peer*> peers() const {return remotes_.toList();}
+	QList<Peer*> validPeers() const {return remotes_ready_.toList();}
+
+	inline const FolderParams& params() const {return params_;}
 
 private:
+	FolderParams params_;
 	NodeKey* node_key_;
-	StateCollector* state_collector_;
 
-	QMap<QByteArray, FolderGroup*> groups_;
+	BandwidthCounter bandwidth_counter_;
+
+	/* Members */
+	QSet<Peer*> remotes_;
+	QSet<Peer*> remotes_ready_;
+
+	// Member lookup optimization
+	QSet<QByteArray> digests_;
+	QSet<QPair<QHostAddress, quint16>> endpoints_;
+
+	bool contains(Peer* peer) const;
+
+private slots:
+	void handleHandshake(Peer* peer);
+	void handleDisconnected(Peer* peer);
 };
 
 } /* namespace librevault */

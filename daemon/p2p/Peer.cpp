@@ -40,14 +40,14 @@
 
 namespace librevault {
 
-Peer::Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
+Peer::Peer(const FolderParams& params, NodeKey* node_key, QObject* parent) :
 	QObject(parent),
 	node_key_(node_key) {
 	LOGFUNC();
 
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
-	handshake_handler_ = new HandshakeHandler(fgroup->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
+	handshake_handler_ = new HandshakeHandler(params, Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
 	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
 	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
 	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::sendMessage);
@@ -56,7 +56,7 @@ Peer::Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	timeout_handler_ = new TimeoutHandler();
 	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &Peer::handleDisconnected);
 
-	message_handler_ = new MessageHandler(fgroup->params(), this);
+	message_handler_ = new MessageHandler(params, this);
 
 	// Internal signal interconnection
 	connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);

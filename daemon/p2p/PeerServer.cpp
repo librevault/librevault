@@ -28,11 +28,10 @@
  */
 #include "PeerServer.h"
 #include "Peer.h"
-#include "folder/PeerPool.h"
+#include "PeerPool.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
 #include "PortMapper.h"
 #include "nodekey/NodeKey.h"
 #include <QLoggingCategory>
@@ -43,9 +42,8 @@ namespace librevault {
 
 PeerServer::PeerServer(NodeKey* node_key,
                          PortMapper* port_mapping,
-                         FolderService* folder_service,
                          QObject* parent) : QObject(parent),
-	node_key_(node_key), port_mapping_(port_mapping), folder_service_(folder_service) {
+	node_key_(node_key), port_mapping_(port_mapping) {
 	server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
 	server_->setSslConfiguration(getSslConfiguration(node_key_));
 

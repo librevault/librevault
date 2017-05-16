@@ -31,18 +31,20 @@
 #define EXIT_RESTART 451
 
 #include <QCoreApplication>
-#include <memory>
+#include <QMap>
 
 namespace librevault {
 
 /* Components */
 class ControlServer;
 class DiscoveryAdapter;
-class FolderService;
 class NodeKey;
 class PeerServer;
 class PortMapper;
 class StateCollector;
+
+class FolderGroup;
+class FolderParams;
 
 class Client : public QCoreApplication {
 	Q_OBJECT
@@ -58,9 +60,13 @@ private:
 	NodeKey* node_key_;
 	PortMapper* portmanager_;
 	DiscoveryAdapter* discovery_;
-	FolderService* folder_service_;
 	PeerServer* peerserver_;
 	ControlServer* control_server_;
+
+	// Folders
+	QMap<QByteArray, FolderGroup*> groups_;
+	void initFolder(const FolderParams& params);
+	void deinitFolder(const QByteArray& folderid);
 };
 
 } /* namespace librevault */

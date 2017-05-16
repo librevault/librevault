@@ -30,7 +30,6 @@
 
 #include "IgnoreList.h"
 #include "PathNormalizer.h"
-#include "PeerPool.h"
 #include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
@@ -38,6 +37,7 @@
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
 #include "folder/transfer/Downloader.h"
+#include "p2p/PeerPool.h"
 #include "p2p/MessageHandler.h"
 #include <QDir>
 #include <QJsonArray>

@@ -44,7 +44,6 @@ class PeerServer : public QObject {
 public:
 	PeerServer(NodeKey* node_key,
 	            PortMapper* port_mapping,
-	            FolderService* folder_service,
 	            QObject* parent);
 	virtual ~PeerServer();
 
@@ -63,7 +62,6 @@ public slots:
 private:
 	NodeKey* node_key_;
 	PortMapper* port_mapping_;
-	FolderService* folder_service_;
 
 	QWebSocketServer* server_;
 

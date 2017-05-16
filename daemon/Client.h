@@ -30,8 +30,10 @@
 
 #define EXIT_RESTART 451
 
+#include "util/BandwidthCounter.h"
 #include <QCoreApplication>
 #include <QMap>
+#include <memory>
 
 namespace librevault {
 
@@ -46,6 +48,8 @@ class StateCollector;
 class FolderGroup;
 class FolderParams;
 
+class BandwidthCounter;
+
 class Client : public QCoreApplication {
 	Q_OBJECT
 public:
@@ -57,6 +61,8 @@ public:
 	void shutdown();
 private:
 	StateCollector* state_collector_;
+	BandwidthCounter bc_all_;
+	BandwidthCounter bc_blocks_;
 	NodeKey* node_key_;
 	PortMapper* portmanager_;
 	DiscoveryAdapter* discovery_;

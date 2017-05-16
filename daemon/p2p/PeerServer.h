@@ -48,16 +48,7 @@ public:
 	virtual ~PeerServer();
 
 	/* Loopback detection */
-	bool isLoopback(QByteArray digest);
-
 	void addPeerPool(QByteArray folderid, PeerPool* pool);
-
-	// Generators
-	static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
-	static QSslConfiguration getSslConfiguration(NodeKey* node_key);
-
-public slots:
-	void handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port);
 
 private:
 	NodeKey* node_key_;

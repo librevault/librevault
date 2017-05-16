@@ -44,8 +44,8 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	cert_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->cert_path));
 	private_key_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->key_path));
 
-	write_key();
-	gen_certificate();
+	writeKey();
+	writeCertificate();
 
 	private_key_file_.open(QIODevice::ReadOnly);
 	cert_file_.open(QIODevice::ReadOnly);
@@ -65,21 +65,21 @@ QByteArray NodeKey::digest() const {
 	return certificate().digest(digestAlgorithm());
 }
 
-void NodeKey::write_key() {
+QSslConfiguration NodeKey::getSslConfiguration() const {
+	QSslConfiguration ssl_config;
+	ssl_config.setPeerVerifyMode(QSslSocket::QueryPeer);
+	ssl_config.setPrivateKey(privateKey());
+	ssl_config.setLocalCertificate(certificate());
+	ssl_config.setProtocol(QSsl::TlsV1_2OrLater);
+	return ssl_config;
+}
+
+void NodeKey::writeKey() {
 	/* Generate key */
 	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
 
 	CryptoPP::AutoSeededRandomPool rng;
 	private_key.Initialize(rng, CryptoPP::ASN1::secp256r1());
-
-//	std::string s;
-//	CryptoPP::StringSink ss(s);
-//	private_key.DEREncode(ss);
-//
-//	private_key_ = QSslKey(QByteArray::fromRawData(s.data(), s.size()), QSsl::Ec, QSsl::Der);
-//	private_key_file_.open(QIODevice::WriteOnly | QIODevice::Truncate);
-//	private_key_file_.write(private_key_.toPem());
-//	private_key_file_.close();
 
 	/* Write to DER buffer */
 	auto& group_params = private_key.GetGroupParameters();
@@ -133,7 +133,7 @@ void NodeKey::write_key() {
 	private_key_file_.close();
 }
 
-void NodeKey::gen_certificate() {
+void NodeKey::writeCertificate() {
 	std::unique_ptr<X509, decltype(&X509_free)> x509(X509_new(), &X509_free);
 	std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> openssl_pkey(EVP_PKEY_new(), &EVP_PKEY_free);
 

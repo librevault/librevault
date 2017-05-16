@@ -47,26 +47,29 @@ signals:
 	void newValidPeer(Peer* peer);
 
 public:
-	PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, QObject* parent);
+	PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
 	virtual ~PeerPool();
 
-	void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
-	void handleIncoming(Peer* peer);
+	Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) {handleDiscovered({host, port});}
+	Q_SLOT void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
+	Q_SLOT void handleIncoming(Peer* peer);
 
 	/* Getters */
 	QList<Peer*> peers() const {return peers_.toList();}
 	QList<Peer*> validPeers() const {return peers_ready_.toList();}
+
+	BandwidthCounter* getBlockCounterAll() {return &bc_all_;}
+	BandwidthCounter* getBlockCounterBlocks() {return &bc_blocks_;}
 
 	inline const FolderParams& params() const {return params_;}
 
 private:
 	FolderParams params_;
 	NodeKey* node_key_;
+	BandwidthCounter bc_all_;
+	BandwidthCounter bc_blocks_;
 
 	DiscoveryGroup* dgroup_;
-
-	BandwidthCounter counter_all_;
-	BandwidthCounter counter_blocks_;
 
 	/* Members */
 	QSet<Peer*> peers_;

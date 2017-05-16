@@ -29,14 +29,18 @@
 #include "PeerPool.h"
 #include "p2p/PeerServer.h"
 #include "p2p/Peer.h"
+#include <DiscoveryGroup.h>
 
 namespace librevault {
 
-PeerPool::PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, QObject* parent) :
+PeerPool::PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	node_key_(node_key) {
+	node_key_(node_key),
+	bc_all_(bc_all),
+	bc_blocks_(bc_blocks) {
 	dgroup_ = discovery->createGroup(params.folderid());
+	connect(dgroup_, &DiscoveryGroup::discovered, this, qOverload<QHostAddress, quint16>(&PeerPool::handleDiscovered));
 }
 
 PeerPool::~PeerPool() {}
@@ -54,9 +58,9 @@ void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
 	if(endpoints_.contains(endpoint))
 		return;
 
-	Peer* folder = new Peer(params_, node_key_, this);
+	Peer* folder = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
 
-	QUrl ws_url = PeerServer::makeUrl(endpoint, params_.folderid());
+	QUrl ws_url = Peer::makeUrl(endpoint, params_.folderid());
 	folder->open(ws_url);
 }
 

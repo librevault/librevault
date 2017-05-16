@@ -40,10 +40,12 @@
 
 namespace librevault {
 
-Peer::Peer(const FolderParams& params, NodeKey* node_key, QObject* parent) :
+Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent) :
 	QObject(parent),
-	node_key_(node_key) {
-	LOGFUNC();
+	node_key_(node_key),
+	bc_all_(bc_all),
+	bc_blocks_(bc_blocks) {
+	qDebug() << "new peer";
 
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
@@ -95,8 +97,17 @@ void Peer::open(QUrl url) {
 	qDebug() << "New outgoing connection:" << url;
 
 	timeout_handler_->start();
-	socket_->setSslConfiguration(PeerServer::getSslConfiguration(node_key_));
+	socket_->setSslConfiguration(node_key_->getSslConfiguration());
 	socket_->open(url);
+}
+
+QUrl Peer::makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid) {
+	QUrl url;
+	url.setScheme("wss");
+	url.setPath("/" + folderid.toHex());
+	url.setHost(endpoint.first.toString());
+	url.setPort(endpoint.second);
+	return url;
 }
 
 QByteArray Peer::digest() const {
@@ -132,8 +143,8 @@ QJsonObject Peer::collectState() {
 	state["endpoint"] = endpointString();   //FIXME: Must be host:port
 	state["client_name"] = clientName();
 	state["user_agent"] = userAgent();
-	state["traffic_stats_all"] = counter_all_.heartbeat_json();
-	state["traffic_stats_blocks"] = counter_blocks_.heartbeat_json();
+	state["traffic_stats_all"] = bc_all_.heartbeat_json();
+	state["traffic_stats_blocks"] = bc_blocks_.heartbeat_json();
 	state["rtt"] = double(ping_handler_->getRtt().count());
 
 	return state;
@@ -164,7 +175,7 @@ std::shared_ptr<Peer::InterestGuard> Peer::get_interest_guard() {
 
 /* RPC Actions */
 void Peer::sendMessage(QByteArray message) {
-	counter_all_.add_up(message.size());
+	bc_all_.add_up(message.size());
 	socket_->sendBinaryMessage(message);
 }
 
@@ -172,7 +183,7 @@ void Peer::handleMessage(const QByteArray& message) {
 	blob message_raw(message.begin(), message.end());
 	V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
 
-	counter_all_.add_down(message_raw.size());
+	bc_all_.add_down(message_raw.size());
 
 	timeout_handler_->bump();
 

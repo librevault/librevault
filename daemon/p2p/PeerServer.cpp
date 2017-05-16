@@ -45,7 +45,7 @@ PeerServer::PeerServer(NodeKey* node_key,
                          QObject* parent) : QObject(parent),
 	node_key_(node_key), port_mapping_(port_mapping) {
 	server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
-	server_->setSslConfiguration(getSslConfiguration(node_key_));
+	server_->setSslConfiguration(node_key_->getSslConfiguration());
 
 	connect(server_, &QWebSocketServer::newConnection, this, &PeerServer::handleConnection);
 	connect(server_, &QWebSocketServer::peerVerifyError, this, &PeerServer::handlePeerVerifyError);
@@ -65,34 +65,11 @@ PeerServer::~PeerServer() {
 	port_mapping_->removePort("main");
 }
 
-bool PeerServer::isLoopback(QByteArray digest) {
-	return node_key_->digest() == digest;
-}
-
 void PeerServer::addPeerPool(QByteArray folderid, PeerPool* pool) {
 	Q_ASSUME(!peer_pools_.contains(folderid));
 
 	peer_pools_[folderid] = pool;
 	connect(pool, &QObject::destroyed, this, [=]{peer_pools_.remove(folderid);});
-}
-
-// Generators
-QUrl PeerServer::makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid) {
-	QUrl url;
-	url.setScheme("wss");
-	url.setPath("/" + folderid.toHex());
-	url.setHost(endpoint.first.toString());
-	url.setPort(endpoint.second);
-	return url;
-}
-
-QSslConfiguration PeerServer::getSslConfiguration(NodeKey* node_key) {
-	QSslConfiguration ssl_config;
-	ssl_config.setPeerVerifyMode(QSslSocket::QueryPeer);
-	ssl_config.setPrivateKey(node_key->privateKey());
-	ssl_config.setLocalCertificate(node_key->certificate());
-	ssl_config.setProtocol(QSsl::TlsV1_2OrLater);
-	return ssl_config;
 }
 
 /* Here are where new QWebSocket created */
@@ -109,26 +86,12 @@ void PeerServer::handleSingleConnection(QWebSocket* socket) {
 	PeerPool* pool = peer_pools_.value(folderid);
 
 	if(pool) {
-		Peer* peer = new Peer(pool->params(), node_key_, pool);
+		Peer* peer = new Peer(pool->params(), node_key_, pool->getBlockCounterAll(), pool->getBlockCounterBlocks(), pool);
 		peer->setConnectedSocket(socket);
+		pool->handleIncoming(peer);
+	}else{
+		socket->deleteLater();
 	}
-}
-
-void PeerServer::handleDiscovered(QByteArray folderid, QHostAddress addr, quint16 port) {
-	qCDebug(log_p2p) << "Discovery event about:" << addr << port;
-
-	PeerPool* pool = peer_pools_.value(folderid);
-	if(!pool) {
-		return; // Maybe, we have received a multicast not for us?
-	}
-
-	QUrl ws_url = makeUrl({addr, port}, folderid);
-
-	qCDebug(log_p2p) << "New connection:" << ws_url.toString();
-
-	Peer* folder = new Peer(pool->params(), node_key_, pool);
-	folder->open(ws_url);
-	Q_UNUSED(folder);
 }
 
 void PeerServer::handlePeerVerifyError(const QSslError& error) {

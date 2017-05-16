@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include <QObject>
 #include <QFile>
 #include <QSslCertificate>
+#include <QSslConfiguration>
 #include <QSslKey>
 #include <QLoggingCategory>
 
@@ -50,9 +50,11 @@ public:
 	QSslKey privateKey() const {return private_key_;}
 	QSslCertificate certificate() const {return certificate_;}
 
+	QSslConfiguration getSslConfiguration() const;
+
 private:
-	void write_key();
-	void gen_certificate();
+	void writeKey();
+	void writeCertificate();
 
 	QFile cert_file_, private_key_file_;
 	QSslKey private_key_;

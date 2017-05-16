@@ -55,11 +55,13 @@ signals:
 	void handshakeFailed(QString error);
 
 public:
-	Peer(const FolderParams& params, NodeKey* node_key, QObject* parent);
+	Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
 	~Peer();
 
 	void setConnectedSocket(QWebSocket* socket);
 	void open(QUrl url);
+
+	static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
 
 	/* Getters */
 	QByteArray digest() const;
@@ -81,8 +83,8 @@ private:
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
 
-	BandwidthCounter counter_all_;
-	BandwidthCounter counter_blocks_;
+	BandwidthCounter bc_all_;
+	BandwidthCounter bc_blocks_;
 
 	PingHandler* ping_handler_;
 	TimeoutHandler* timeout_handler_;

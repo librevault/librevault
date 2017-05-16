@@ -55,8 +55,6 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
 
-	connect(discovery_, &DiscoveryAdapter::discovered, peerserver_, &PeerServer::handleDiscovered);
-
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 
@@ -96,7 +94,7 @@ void Client::shutdown(){
 }
 
 void Client::initFolder(const FolderParams& params) {
-	auto peer_pool = new PeerPool(params, discovery_, node_key_, this);
+	auto peer_pool = new PeerPool(params, discovery_, node_key_, &bc_all_, &bc_blocks_, this);
 	auto fgroup = new FolderGroup(params, peer_pool, state_collector_, this);
 	groups_[params.folderid()] = fgroup;
 

@@ -48,7 +48,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMapper(this);
 	discovery_ = new DiscoveryAdapter(portmanager_, this);
-	folder_service_ = new FolderService(node_key_, state_collector_, this);
+	folder_service_ = new FolderService(node_key_, discovery_, state_collector_, this);
 	peerserver_ = new PeerServer(node_key_, portmanager_, folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 
@@ -64,9 +64,6 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_removed(group->params().folderid());
 	});
-
-	connect(folder_service_, &FolderService::folderAdded, discovery_, [=](FolderGroup* fgroup){discovery_->addGroup(fgroup->params().folderid());});
-	connect(folder_service_, &FolderService::folderRemoved, discovery_, [=](FolderGroup* fgroup){discovery_->removeGroup(fgroup->params().folderid());});
 
 	connect(control_server_, &ControlServer::restart, this, &Client::restart);
 	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);

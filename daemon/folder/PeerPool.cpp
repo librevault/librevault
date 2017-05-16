@@ -33,10 +33,12 @@
 
 namespace librevault {
 
-PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent) :
+PeerPool::PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	node_key_(node_key) {}
+	node_key_(node_key) {
+	dgroup_ = discovery->createGroup(params.folderid());
+}
 
 PeerPool::~PeerPool() {}
 

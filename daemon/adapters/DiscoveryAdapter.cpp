@@ -29,8 +29,6 @@
 #include "DiscoveryAdapter.h"
 #include "control/Config.h"
 #include <DiscoveryGroup.h>
-#include <QUrl>
-#include <folder/FolderGroup.h>
 
 namespace librevault {
 
@@ -52,9 +50,8 @@ DiscoveryAdapter::~DiscoveryAdapter() {
 	portmapper_->removePort("mldht");
 }
 
-void DiscoveryAdapter::addGroup(QByteArray folderid) {
+DiscoveryGroup* DiscoveryAdapter::createGroup(QByteArray folderid) {
 	DiscoveryGroup* dgroup = discovery_->createGroup(folderid);
-	groups_[folderid] = dgroup;
 
 	bool dht_enabled = Config::get()->getFolder(folderid).value("mainline_dht_enabled").toBool();
 	bool bt_enabled = Config::get()->getFolder(folderid).value("bt_enabled").toBool();
@@ -73,11 +70,7 @@ void DiscoveryAdapter::addGroup(QByteArray folderid) {
 		dgroup->setBTTrackers(trackers);
 	}
 
-	connect(dgroup, &DiscoveryGroup::discovered, this, [=](QHostAddress addr, quint16 port){emit discovered(folderid, addr, port);});
-}
-
-void DiscoveryAdapter::removeGroup(QByteArray folderid) {
-	delete groups_[folderid];
+	return dgroup;
 }
 
 void DiscoveryAdapter::initDiscovery() {

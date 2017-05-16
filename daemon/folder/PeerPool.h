@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "adapters/DiscoveryAdapter.h"
 #include "control/FolderParams.h"
 #include "util/BandwidthCounter.h"
 #include <QObject>
@@ -46,7 +47,7 @@ signals:
 	void newValidPeer(Peer* peer);
 
 public:
-	PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent);
+	PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, QObject* parent);
 	virtual ~PeerPool();
 
 	void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
@@ -61,6 +62,8 @@ public:
 private:
 	FolderParams params_;
 	NodeKey* node_key_;
+
+	DiscoveryGroup* dgroup_;
 
 	BandwidthCounter bandwidth_counter_;
 

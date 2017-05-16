@@ -44,8 +44,7 @@ public:
 	virtual ~DiscoveryAdapter();
 
 public slots:
-	void addGroup(QByteArray folderid);
-	void removeGroup(QByteArray folderid);
+	DiscoveryGroup* createGroup(QByteArray folderid);
 
 private:
 	PortMapper* portmapper_;

@@ -29,6 +29,7 @@
 #include "FolderService.h"
 #include "FolderGroup.h"
 #include "PeerPool.h"
+#include "adapters/DiscoveryAdapter.h"
 #include "control/Config.h"
 #include "control/StateCollector.h"
 #include "folder/meta/IndexerQueue.h"
@@ -36,8 +37,9 @@
 
 namespace librevault {
 
-FolderService::FolderService(NodeKey* node_key, StateCollector* state_collector, QObject* parent) : QObject(parent),
+FolderService::FolderService(NodeKey* node_key, DiscoveryAdapter* discovery, StateCollector* state_collector, QObject* parent) : QObject(parent),
 	node_key_(node_key),
+	discovery_(discovery),
 	state_collector_(state_collector) {
 	LOGFUNC();
 }
@@ -66,7 +68,7 @@ void FolderService::stop() {
 
 void FolderService::initFolder(const FolderParams& params) {
 	LOGFUNC();
-	auto peer_pool = new PeerPool(params, node_key_, this);
+	auto peer_pool = new PeerPool(params, discovery_, node_key_, this);
 	auto fgroup = new FolderGroup(params, peer_pool, state_collector_, this);
 	groups_[params.folderid()] = fgroup;
 

@@ -38,13 +38,14 @@ namespace librevault {
 class FolderGroup;
 class FolderParams;
 class StateCollector;
+class DiscoveryAdapter;
 class NodeKey;
 
 class FolderService : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("FolderService");
 public:
-	explicit FolderService(NodeKey* node_key, StateCollector* state_collector, QObject* parent);
+	explicit FolderService(NodeKey* node_key, DiscoveryAdapter* discovery, StateCollector* state_collector, QObject* parent);
 	virtual ~FolderService();
 
 	void run();
@@ -62,6 +63,7 @@ signals:
 
 private:
 	NodeKey* node_key_;
+	DiscoveryAdapter* discovery_;
 	StateCollector* state_collector_;
 
 	QMap<QByteArray, FolderGroup*> groups_;

@@ -36,16 +36,16 @@ namespace librevault {
 class FolderGroup;
 class FolderService;
 class NodeKey;
-class P2PFolder;
+class Peer;
 class PortMapper;
-class P2PProvider : public QObject {
+class PeerServer : public QObject {
 	Q_OBJECT
 public:
-	P2PProvider(NodeKey* node_key,
+	PeerServer(NodeKey* node_key,
 	            PortMapper* port_mapping,
 	            FolderService* folder_service,
 	            QObject* parent);
-	virtual ~P2PProvider();
+	virtual ~PeerServer();
 
 	/* Loopback detection */
 	bool isLoopback(QByteArray digest);

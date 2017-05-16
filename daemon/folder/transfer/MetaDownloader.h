@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-class P2PFolder;
+class Peer;
 class MetaStorage;
 class Downloader;
 
@@ -45,8 +45,8 @@ public:
 	MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
 
 	/* Message handlers */
-	void handle_have_meta(P2PFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(P2PFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+	void handle_have_meta(Peer* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void handle_meta_reply(Peer* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
 
 private:
 	MetaStorage* meta_storage_;

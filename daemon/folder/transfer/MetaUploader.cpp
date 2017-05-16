@@ -29,7 +29,7 @@
 #include "MetaUploader.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "p2p/P2PFolder.h"
+#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 
 namespace librevault {
@@ -40,19 +40,19 @@ MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storag
 	LOGFUNC();
 }
 
-void MetaUploader::broadcast_meta(QList<P2PFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaUploader::broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	for(auto remote : remotes) {
 		remote->messageHandler()->sendHaveMeta(revision, bitfield);
 	}
 }
 
-void MetaUploader::handle_handshake(P2PFolder* remote) {
+void MetaUploader::handle_handshake(Peer* remote) {
 	for(auto& meta : meta_storage_->getMeta()) {
 		remote->messageHandler()->sendHaveMeta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
 	}
 }
 
-void MetaUploader::handle_meta_request(P2PFolder* remote, const Meta::PathRevision& revision) {
+void MetaUploader::handle_meta_request(Peer* remote, const Meta::PathRevision& revision) {
 	try {
 		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
 	}catch(MetaStorage::no_such_meta& e){

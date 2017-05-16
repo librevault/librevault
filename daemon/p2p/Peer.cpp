@@ -26,8 +26,8 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "P2PFolder.h"
-#include "P2PProvider.h"
+#include "Peer.h"
+#include "PeerServer.h"
 #include "HandshakeHandler.h"
 #include "PingHandler.h"
 #include "MessageHandler.h"
@@ -40,7 +40,7 @@
 
 namespace librevault {
 
-P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
+Peer::Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	QObject(parent),
 	node_key_(node_key),
 	fgroup_(fgroup) {
@@ -49,26 +49,26 @@ P2PFolder::P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent) :
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
 	handshake_handler_ = new HandshakeHandler(fgroup_->params(), Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
-	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &P2PFolder::handshakeSuccess);
-	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &P2PFolder::handshakeFailed);
-	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&P2PFolder::sendMessage));
+	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
+	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
+	connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, qOverload<QByteArray>(&Peer::sendMessage));
 
 	ping_handler_ = new PingHandler();
 	timeout_handler_ = new TimeoutHandler();
-	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &P2PFolder::handleDisconnected);
+	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &Peer::handleDisconnected);
 
 	message_handler_ = new MessageHandler(fgroup_->params(), this);
 
 	// Internal signal interconnection
-	connect(this, &P2PFolder::handshakeFailed, this, &P2PFolder::handleDisconnected);
+	connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);
 }
 
-P2PFolder::~P2PFolder() {
+Peer::~Peer() {
 	LOGFUNC();
 	fgroup_->detach(this);
 }
 
-void P2PFolder::resetUnderlyingSocket(QWebSocket* socket) {
+void Peer::resetUnderlyingSocket(QWebSocket* socket) {
 	if(socket_) socket_->deleteLater();
 	socket_ = socket;
 	socket_->setParent(this);
@@ -76,14 +76,14 @@ void P2PFolder::resetUnderlyingSocket(QWebSocket* socket) {
 	connect(ping_handler_, &PingHandler::sendPing, socket_, &QWebSocket::ping);
 	connect(socket_, &QWebSocket::pong, ping_handler_, &PingHandler::handlePong);
 	connect(socket_, &QWebSocket::pong, timeout_handler_, &TimeoutHandler::bump);
-	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handleMessage);
+	connect(socket_, &QWebSocket::binaryMessageReceived, this, &Peer::handleMessage);
 	connect(socket_, &QWebSocket::binaryMessageReceived, timeout_handler_, &TimeoutHandler::bump);
-	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
+	connect(socket_, &QWebSocket::connected, this, &Peer::handleConnected);
 	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
-	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::handleDisconnected);
+	connect(socket_, &QWebSocket::disconnected, this, &Peer::handleDisconnected);
 }
 
-void P2PFolder::setConnectedSocket(QWebSocket* socket) {
+void Peer::setConnectedSocket(QWebSocket* socket) {
 	resetUnderlyingSocket(socket);
 
 	role_ = Role::SERVER;
@@ -92,25 +92,25 @@ void P2PFolder::setConnectedSocket(QWebSocket* socket) {
 	handleConnected();
 }
 
-void P2PFolder::open(QUrl url) {
+void Peer::open(QUrl url) {
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
 	role_ = Role::CLIENT;
 
 	timeout_handler_->start();
-	socket_->setSslConfiguration(P2PProvider::getSslConfiguration(node_key_));
+	socket_->setSslConfiguration(PeerServer::getSslConfiguration(node_key_));
 	socket_->open(url);
 }
 
-QByteArray P2PFolder::digest() const {
+QByteArray Peer::digest() const {
 	return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
-QPair<QHostAddress, quint16> P2PFolder::endpoint() const {
+QPair<QHostAddress, quint16> Peer::endpoint() const {
 	return {socket_->peerAddress(), socket_->peerPort()};
 }
 
-QString P2PFolder::endpointString() const {
+QString Peer::endpointString() const {
 	switch(socket_->peerAddress().protocol()) {
 		case QAbstractSocket::IPv4Protocol:
 			return QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
@@ -121,15 +121,15 @@ QString P2PFolder::endpointString() const {
 	}
 }
 
-QString P2PFolder::clientName() const {
+QString Peer::clientName() const {
 	return handshake_handler_->clientName();
 }
 
-QString P2PFolder::userAgent() const {
+QString Peer::userAgent() const {
 	return handshake_handler_->userAgent();
 }
 
-QJsonObject P2PFolder::collectState() {
+QJsonObject Peer::collectState() {
 	QJsonObject state;
 
 	state["endpoint"] = endpointString();   //FIXME: Must be host:port
@@ -142,20 +142,20 @@ QJsonObject P2PFolder::collectState() {
 	return state;
 }
 
-bool P2PFolder::isValid() const {
+bool Peer::isValid() const {
 	return handshake_handler_->isValid();
 }
 
 /* InterestGuard */
-P2PFolder::InterestGuard::InterestGuard(P2PFolder* remote) : remote_(remote) {
+Peer::InterestGuard::InterestGuard(Peer* remote) : remote_(remote) {
 	remote_->message_handler_->sendInterested();
 }
 
-P2PFolder::InterestGuard::~InterestGuard() {
+Peer::InterestGuard::~InterestGuard() {
 	remote_->message_handler_->sendNotInterested();
 }
 
-std::shared_ptr<P2PFolder::InterestGuard> P2PFolder::get_interest_guard() {
+std::shared_ptr<Peer::InterestGuard> Peer::get_interest_guard() {
 	try {
 		return std::shared_ptr<InterestGuard>(interest_guard_);
 	}catch(std::bad_weak_ptr& e){
@@ -166,12 +166,12 @@ std::shared_ptr<P2PFolder::InterestGuard> P2PFolder::get_interest_guard() {
 }
 
 /* RPC Actions */
-void P2PFolder::sendMessage(QByteArray message) {
+void Peer::sendMessage(QByteArray message) {
 	counter_all_.add_up(message.size());
 	socket_->sendBinaryMessage(message);
 }
 
-void P2PFolder::handleMessage(const QByteArray& message) {
+void Peer::handleMessage(const QByteArray& message) {
 	blob message_raw(message.begin(), message.end());
 	V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
 
@@ -200,7 +200,7 @@ void P2PFolder::handleMessage(const QByteArray& message) {
 	}
 }
 
-void P2PFolder::handleConnected() {
+void Peer::handleConnected() {
 	ping_handler_->start();
 
 	if(fgroup_->attach(this)) {

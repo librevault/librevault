@@ -27,13 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "MessageHandler.h"
-#include "P2PProvider.h"
-#include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
-#include "nodekey/NodeKey.h"
 #include "util/readable.h"
 #include "util/conv_bitarray.h"
 #include <librevault/protocol/V1Parser.h>
+#include <QDebug>
 
 namespace librevault {
 

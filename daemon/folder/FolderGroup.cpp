@@ -37,7 +37,7 @@
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
 #include "folder/transfer/Downloader.h"
-#include "p2p/P2PFolder.h"
+#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 #include <QDir>
 #include <QJsonArray>
@@ -118,7 +118,7 @@ void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 }
 
 // RemoteFolder actions
-void FolderGroup::handle_handshake(P2PFolder* origin) {
+void FolderGroup::handle_handshake(Peer* origin) {
 	remotes_ready_.insert(origin);
 	downloader_->trackRemote(origin);
 
@@ -149,7 +149,7 @@ void FolderGroup::handle_handshake(P2PFolder* origin) {
 	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(origin);});
 }
 
-bool FolderGroup::attach(P2PFolder* remote) {
+bool FolderGroup::attach(Peer* remote) {
 	if(remotes_.contains(remote)
 		|| p2p_folders_digests_.contains(remote->digest())
 		|| p2p_folders_endpoints_.contains(remote->endpoint()) ) {
@@ -162,14 +162,14 @@ bool FolderGroup::attach(P2PFolder* remote) {
 
 	LOGD("Attached remote " << remote->endpointString());
 
-	connect(remote, &P2PFolder::handshakeSuccess, this, [=]{handle_handshake(remote);});
+	connect(remote, &Peer::handshakeSuccess, this, [=]{handle_handshake(remote);});
 
 	emit attached(remote);
 
 	return true;
 }
 
-void FolderGroup::detach(P2PFolder* remote) {
+void FolderGroup::detach(Peer* remote) {
 	if(! remotes_.contains(remote))
 		return;
 
@@ -185,7 +185,7 @@ void FolderGroup::detach(P2PFolder* remote) {
 	LOGD("Detached remote " << remote->endpointString());
 }
 
-QList<P2PFolder*> FolderGroup::remotes() const {
+QList<Peer*> FolderGroup::remotes() const {
 	return remotes_.toList();
 }
 

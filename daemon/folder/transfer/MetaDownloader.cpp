@@ -29,7 +29,7 @@
 #include "MetaDownloader.h"
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
-#include "p2p/P2PFolder.h"
+#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 #include "folder/meta/MetaStorage.h"
 
@@ -42,7 +42,7 @@ MetaDownloader::MetaDownloader(MetaStorage* meta_storage, Downloader* downloader
 	LOGFUNC();
 }
 
-void MetaDownloader::handle_have_meta(P2PFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaDownloader::handle_have_meta(Peer* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
 	if(meta_storage_->haveMeta(revision))
 		downloader_->notifyRemoteMeta(origin, revision, bitfield);
 	else if(meta_storage_->putAllowed(revision))
@@ -51,7 +51,7 @@ void MetaDownloader::handle_have_meta(P2PFolder* origin, const Meta::PathRevisio
 		LOGD("Remote node notified us about an expired Meta");
 }
 
-void MetaDownloader::handle_meta_reply(P2PFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
+void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
 	if(meta_storage_->putAllowed(smeta.meta().path_revision())) {
 		meta_storage_->putMeta(smeta);
 		downloader_->notifyRemoteMeta(origin, smeta.meta().path_revision(), bitfield);

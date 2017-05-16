@@ -28,7 +28,7 @@
  */
 #include "Uploader.h"
 #include "folder/chunk/ChunkStorage.h"
-#include "p2p/P2PFolder.h"
+#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 
 namespace librevault {
@@ -39,26 +39,26 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
 	LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(QList<P2PFolder*> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(QList<Peer*> remotes, const blob& ct_hash) {
 	for(auto& remote : remotes) {
 		remote->messageHandler()->sendHaveChunk(ct_hash);
 	}
 }
 
-void Uploader::handle_interested(P2PFolder* remote) {
+void Uploader::handle_interested(Peer* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->messageHandler()->sendUnchoke();
 }
-void Uploader::handle_not_interested(P2PFolder* remote) {
+void Uploader::handle_not_interested(Peer* remote) {
 	LOGFUNC();
 
 	// TODO: write good choking algorithm.
 	remote->messageHandler()->sendChoke();
 }
 
-void Uploader::handle_block_request(P2PFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
+void Uploader::handle_block_request(Peer* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept {
 	try {
 		if(!remote->am_choking() && remote->peer_interested()) {
 			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));

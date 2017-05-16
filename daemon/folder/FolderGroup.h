@@ -41,7 +41,7 @@
 
 namespace librevault {
 
-class P2PFolder;
+class Peer;
 
 class PathNormalizer;
 class IgnoreList;
@@ -60,19 +60,19 @@ class FolderGroup : public QObject {
 	friend class ControlServer;
 
 signals:
-	void attached(P2PFolder* remote_ptr);
-	void detached(P2PFolder* remote_ptr);
+	void attached(Peer* remote_ptr);
+	void detached(Peer* remote_ptr);
 
 public:
 	FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
 	virtual ~FolderGroup();
 
 	/* Membership management */
-	bool attach(P2PFolder* remote);
-	void detach(P2PFolder* remote);
+	bool attach(Peer* remote);
+	void detach(Peer* remote);
 
 	/* Getters */
-	QList<P2PFolder*> remotes() const;
+	QList<Peer*> remotes() const;
 
 	inline const FolderParams& params() const {return params_;}
 
@@ -100,8 +100,8 @@ private:
 	QTimer* state_pusher_;
 
 	/* Members */
-	QSet<P2PFolder*> remotes_;
-	QSet<P2PFolder*> remotes_ready_;
+	QSet<Peer*> remotes_;
+	QSet<Peer*> remotes_ready_;
 
 	// Member lookup optimization
 	QSet<QByteArray> p2p_folders_digests_;
@@ -110,7 +110,7 @@ private:
 private slots:
 	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(P2PFolder* origin);
+	void handle_handshake(Peer* origin);
 };
 
 } /* namespace librevault */

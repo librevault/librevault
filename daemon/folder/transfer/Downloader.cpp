@@ -149,7 +149,7 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 	return cluster;
 }
 
-void Downloader::notifyRemoteMeta(P2PFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
 	SCOPELOG(log_downloader);
 	try {
 		auto chunks = meta_storage_->getMeta(revision).meta().chunks();
@@ -163,7 +163,7 @@ void Downloader::notifyRemoteMeta(P2PFolder* remote, const Meta::PathRevision& r
 		// Nevertheless, ignore this notification.
 	}
 }
-void Downloader::notifyRemoteChunk(P2PFolder* remote, const blob& ct_hash) {
+void Downloader::notifyRemoteChunk(Peer* remote, const blob& ct_hash) {
 	SCOPELOG(log_downloader);
 	QByteArray ct_hash_q = conv_bytearray(ct_hash);
 
@@ -177,7 +177,7 @@ void Downloader::notifyRemoteChunk(P2PFolder* remote, const blob& ct_hash) {
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleChoke(P2PFolder* remote) {
+void Downloader::handleChoke(Peer* remote) {
 	SCOPELOG(log_downloader);
 
 	/* Remove requests to this node */
@@ -187,19 +187,19 @@ void Downloader::handleChoke(P2PFolder* remote) {
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleUnchoke(P2PFolder* remote) {
+void Downloader::handleUnchoke(Peer* remote) {
 	SCOPELOG(log_downloader);
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data, P2PFolder* from) {
+void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data, Peer* from) {
 	SCOPELOG(log_downloader);
 	auto missing_chunk = down_chunks_.value(conv_bytearray(ct_hash));
 	if(! missing_chunk) return;
 
 	QList<QPair<QByteArray, QFile*>> downloaded_chunks;
 
-	QMutableHashIterator<P2PFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
+	QMutableHashIterator<Peer*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
 	while(request_it.hasNext()) {
 		request_it.next();
 
@@ -225,12 +225,12 @@ void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::trackRemote(P2PFolder* remote) {
+void Downloader::trackRemote(Peer* remote) {
 	remotes_.insert(remote);
 	download_queue_.setRemotesCount(remotes_.size());
 }
 
-void Downloader::untrackRemote(P2PFolder* remote) {
+void Downloader::untrackRemote(Peer* remote) {
 	SCOPELOG(log_downloader);
 
 	if(! remotes_.contains(remote)) return;
@@ -251,7 +251,7 @@ void Downloader::maintainRequests() {
 	{
 		auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
 		foreach(DownloadChunkPtr missing_chunk, down_chunks_.values()) {
-			QMutableHashIterator<P2PFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
+			QMutableHashIterator<Peer*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
 			while(request_it.hasNext()) {
 				if(request_it.next().value().started + request_timeout < std::chrono::steady_clock::now())
 					request_it.remove();
@@ -296,12 +296,12 @@ bool Downloader::requestOne() {
 	return false;
 }
 
-P2PFolder* Downloader::nodeForRequest(QByteArray ct_hash) {
+Peer* Downloader::nodeForRequest(QByteArray ct_hash) {
 	DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 	if(! chunk)
 		return nullptr;
 
-	for(P2PFolder* owner_remote : chunk->owned_by.keys())
+	for(Peer* owner_remote : chunk->owned_by.keys())
 		if(owner_remote->isValid() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;

@@ -27,14 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "HandshakeHandler.h"
-#include "P2PProvider.h"
-#include "Version.h"
-#include "control/Config.h"
-#include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
 #include "nodekey/NodeKey.h"
-#include "util/readable.h"
-#include "util/conv_bitarray.h"
 #include <librevault/Tokens.h>
 #include <librevault/protocol/V1Parser.h>
 

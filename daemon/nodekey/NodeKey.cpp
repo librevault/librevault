@@ -28,7 +28,6 @@
  */
 #include "NodeKey.h"
 #include "control/Paths.h"
-#include "util/log.h"
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
@@ -39,8 +38,9 @@
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_nodekey, "log.nodekey");
+
 NodeKey::NodeKey(QObject* parent) : QObject(parent) {
-	LOGFUNC();
 	cert_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->cert_path));
 	private_key_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->key_path));
 
@@ -56,15 +56,10 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
 	private_key_file_.close();
 	cert_file_.close();
 
-	LOGI("PeerID:" << digest().toHex());
-
-	LOGFUNCEND();
+	qCDebug(log_nodekey) << "PeerID:" << digest().toHex();
 }
 
-NodeKey::~NodeKey() {
-	LOGFUNC();
-	LOGFUNCEND();
-}
+NodeKey::~NodeKey() {}
 
 QByteArray NodeKey::digest() const {
 	return certificate().digest(digestAlgorithm());

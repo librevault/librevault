@@ -40,7 +40,7 @@ class ControlServer;
 class DiscoveryAdapter;
 class FolderService;
 class NodeKey;
-class P2PProvider;
+class PeerServer;
 class PortMapper;
 class StateCollector;
 
@@ -59,7 +59,7 @@ private:
 	PortMapper* portmanager_;
 	DiscoveryAdapter* discovery_;
 	FolderService* folder_service_;
-	P2PProvider* p2p_provider_;
+	PeerServer* peerserver_;
 	ControlServer* control_server_;
 };
 

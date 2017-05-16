@@ -29,7 +29,7 @@
 #pragma once
 #include "downloader/ChunkFileBuilder.h"
 #include "downloader/WeightedChunkQueue.h"
-#include "p2p/P2PFolder.h"
+#include "p2p/Peer.h"
 #include "util/AvailabilityMap.h"
 #include "blob.h"
 #include "util/log.h"
@@ -63,8 +63,8 @@ struct DownloadChunk : boost::noncopyable {
 		uint32_t size;
 		std::chrono::steady_clock::time_point started;
 	};
-	QMultiHash<P2PFolder*, BlockRequest> requests;
-	QHash<P2PFolder*, std::shared_ptr<P2PFolder::InterestGuard>> owned_by;
+	QMultiHash<Peer*, BlockRequest> requests;
+	QHash<Peer*, std::shared_ptr<Peer::InterestGuard>> owned_by;
 
 	const QByteArray ct_hash;
 };
@@ -84,16 +84,16 @@ public slots:
 	void notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield);
 	void notifyLocalChunk(const blob& ct_hash);
 
-	void notifyRemoteMeta(P2PFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notifyRemoteChunk(P2PFolder* remote, const blob& ct_hash);
+	void notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
+	void notifyRemoteChunk(Peer* remote, const blob& ct_hash);
 
-	void handleChoke(P2PFolder* remote);
-	void handleUnchoke(P2PFolder* remote);
+	void handleChoke(Peer* remote);
+	void handleUnchoke(Peer* remote);
 
-	void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, P2PFolder* from);
+	void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, Peer* from);
 
-	void trackRemote(P2PFolder* remote);
-	void untrackRemote(P2PFolder* remote);
+	void trackRemote(Peer* remote);
+	void untrackRemote(Peer* remote);
 
 private:
 	const FolderParams& params_;
@@ -109,13 +109,13 @@ private:
 
 	void maintainRequests();
 	bool requestOne();
-	P2PFolder* nodeForRequest(QByteArray ct_hash);
+	Peer* nodeForRequest(QByteArray ct_hash);
 
 	void addChunk(QByteArray ct_hash, quint32 size);
 	void removeChunk(QByteArray ct_hash);
 
 	/* Node management */
-	QSet<P2PFolder*> remotes_;
+	QSet<Peer*> remotes_;
 
 	QSet<QByteArray> getCluster(QByteArray ct_hash);
 	QSet<QByteArray> getMetaCluster(QList<QByteArray> ct_hashes);

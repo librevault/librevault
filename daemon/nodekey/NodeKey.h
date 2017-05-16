@@ -32,12 +32,14 @@
 #include <QFile>
 #include <QSslCertificate>
 #include <QSslKey>
+#include <QLoggingCategory>
 
 namespace librevault {
 
+Q_DECLARE_LOGGING_CATEGORY(log_nodekey);
+
 class NodeKey : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("NodeKey");
 public:
 	NodeKey(QObject* parent);
 	virtual ~NodeKey();

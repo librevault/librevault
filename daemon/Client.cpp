@@ -35,7 +35,7 @@
 #include "folder/FolderService.h"
 #include "PortMapper.h"
 #include "nodekey/NodeKey.h"
-#include "p2p/P2PProvider.h"
+#include "p2p/PeerServer.h"
 
 namespace librevault {
 
@@ -49,14 +49,14 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	portmanager_ = new PortMapper(this);
 	discovery_ = new DiscoveryAdapter(portmanager_, this);
 	folder_service_ = new FolderService(state_collector_, this);
-	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
+	peerserver_ = new PeerServer(node_key_, portmanager_, folder_service_, this);
 	control_server_ = new ControlServer(state_collector_, this);
 
 	/* Connecting signals */
 	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
 	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
 
-	connect(discovery_, &DiscoveryAdapter::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
+	connect(discovery_, &DiscoveryAdapter::discovered, peerserver_, &PeerServer::handleDiscovered);
 
 	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
 		control_server_->notify_folder_added(group->params().folderid(), Config::get()->getFolder(group->params().folderid()));
@@ -74,7 +74,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 
 Client::~Client() {
 	delete control_server_;
-	delete p2p_provider_;
+	delete peerserver_;
 	delete folder_service_;
 	delete discovery_;
 	delete portmanager_;

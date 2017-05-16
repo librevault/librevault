@@ -45,7 +45,7 @@ class HandshakeHandler;
 class PingHandler;
 class MessageHandler;
 
-class P2PFolder : public QObject {
+class Peer : public QObject {
 	Q_OBJECT
 
 signals:
@@ -54,8 +54,8 @@ signals:
 	void handshakeFailed(QString error);
 
 public:
-	P2PFolder(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
-	~P2PFolder();
+	Peer(FolderGroup* fgroup, NodeKey* node_key, QObject* parent);
+	~Peer();
 
 	void setConnectedSocket(QWebSocket* socket);
 	void open(QUrl url);
@@ -108,10 +108,10 @@ private:
 /* InterestGuard */
 public:
 	struct InterestGuard {
-		InterestGuard(P2PFolder* remote);
+		InterestGuard(Peer* remote);
 		~InterestGuard();
 	private:
-		P2PFolder* remote_;
+		Peer* remote_;
 	};
 	std::shared_ptr<InterestGuard> get_interest_guard();
 

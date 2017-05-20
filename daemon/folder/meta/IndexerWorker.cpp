@@ -229,7 +229,7 @@ void IndexerWorker::update_chunks() {
 	// Chunking
 	std::vector<Meta::Chunk> chunks;
 
-	blob buffer;
+	std::vector<uchar> buffer;
 	buffer.reserve(hasher.maxsize);
 
 	QFile f(abspath_);
@@ -257,7 +257,7 @@ void IndexerWorker::update_chunks() {
 	new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
+Meta::Chunk IndexerWorker::populate_chunk(const std::vector<uchar>& data, const std::map<blob, blob>& pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
 	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(conv_bytearray(secret_.getEncryptionKey()));

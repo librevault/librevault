@@ -30,7 +30,6 @@
 #include "util/BandwidthCounter.h"
 #include <QTimer>
 #include <QWebSocket>
-#include "blob.h"
 #include "TimeoutHandler.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>

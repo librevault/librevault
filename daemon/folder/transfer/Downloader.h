@@ -31,7 +31,6 @@
 #include "downloader/WeightedChunkQueue.h"
 #include "p2p/Peer.h"
 #include "util/AvailabilityMap.h"
-#include "blob.h"
 #include "util/log.h"
 #include <QList>
 #include <QTimer>
@@ -90,7 +89,7 @@ public slots:
 	void handleChoke(Peer* remote);
 	void handleUnchoke(Peer* remote);
 
-	void putBlock(QByteArray ct_hash, uint32_t offset, const blob& data, Peer* from);
+	void putBlock(QByteArray ct_hash, uint32_t offset, QByteArray data, Peer* from);
 
 	void trackRemote(Peer* remote);
 	void untrackRemote(Peer* remote);

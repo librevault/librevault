@@ -146,7 +146,7 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](QByteArray ct_hash, uint32_t offset, uint32_t size){
 		uploader_->handle_block_request(peer, ct_hash, offset, size);
 	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](QByteArray ct_hash, uint32_t offset, const blob& block){
+	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](QByteArray ct_hash, uint32_t offset, QByteArray block){
 		downloader_->putBlock(ct_hash, offset, block, peer);
 	});
 

@@ -180,27 +180,26 @@ void Peer::sendMessage(QByteArray message) {
 }
 
 void Peer::handleMessage(const QByteArray& message) {
-	blob message_raw(message.begin(), message.end());
-	V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
+	V1Parser::message_type message_type = V1Parser().parse_MessageType(message);
 
-	bc_all_.add_down(message_raw.size());
+	bc_all_.add_down(message.size());
 
 	timeout_handler_->bump();
 
 	if(handshake_handler_->isValid()) {
 		switch(message_type) {
-			case V1Parser::CHOKE: message_handler_->handleChoke(message_raw); break;
-			case V1Parser::UNCHOKE: message_handler_->handleUnchoke(message_raw); break;
-			case V1Parser::INTERESTED: message_handler_->handleInterested(message_raw); break;
-			case V1Parser::NOT_INTERESTED: message_handler_->handleNotInterested(message_raw); break;
-			case V1Parser::HAVE_META: message_handler_->handleHaveMeta(message_raw); break;
-			case V1Parser::HAVE_CHUNK: message_handler_->handleHaveChunk(message_raw); break;
-			case V1Parser::META_REQUEST: message_handler_->handleMetaRequest(message_raw); break;
-			case V1Parser::META_REPLY: message_handler_->handleMetaReply(message_raw); break;
-			case V1Parser::META_CANCEL: message_handler_->handleMetaCancel(message_raw); break;
-			case V1Parser::BLOCK_REQUEST: message_handler_->handleBlockRequest(message_raw); break;
-			case V1Parser::BLOCK_REPLY: message_handler_->handleBlockReply(message_raw); break;
-			case V1Parser::BLOCK_CANCEL: message_handler_->handleBlockCancel(message_raw); break;
+			case V1Parser::CHOKE: message_handler_->handleChoke(message); break;
+			case V1Parser::UNCHOKE: message_handler_->handleUnchoke(message); break;
+			case V1Parser::INTERESTED: message_handler_->handleInterested(message); break;
+			case V1Parser::NOT_INTERESTED: message_handler_->handleNotInterested(message); break;
+			case V1Parser::HAVE_META: message_handler_->handleHaveMeta(message); break;
+			case V1Parser::HAVE_CHUNK: message_handler_->handleHaveChunk(message); break;
+			case V1Parser::META_REQUEST: message_handler_->handleMetaRequest(message); break;
+			case V1Parser::META_REPLY: message_handler_->handleMetaReply(message); break;
+			case V1Parser::META_CANCEL: message_handler_->handleMetaCancel(message); break;
+			case V1Parser::BLOCK_REQUEST: message_handler_->handleBlockRequest(message); break;
+			case V1Parser::BLOCK_REPLY: message_handler_->handleBlockReply(message); break;
+			case V1Parser::BLOCK_CANCEL: message_handler_->handleBlockCancel(message); break;
 			default: socket_->close(QWebSocketProtocol::CloseCodeProtocolError);
 		}
 	}else{

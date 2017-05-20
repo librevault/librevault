@@ -42,7 +42,7 @@ public: \
 public: \
 	void send##message_name(fields); \
 public: \
-	Q_SLOT void handle##message_name(const blob& message);
+	Q_SLOT void handle##message_name(QByteArray message);
 
 class MessageHandler : public QObject {
 	Q_OBJECT
@@ -53,8 +53,6 @@ public:
 	Q_SIGNAL void messagePrepared(QByteArray msg);
 
 private:
-	void prepareMessage(const blob& message);
-
 	// Messages
 	DECLARE_MESSAGE(Choke);
 	DECLARE_MESSAGE(Unchoke);
@@ -69,7 +67,7 @@ private:
 	DECLARE_MESSAGE(MetaCancel, const Meta::PathRevision& revision);
 
 	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);
-	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, const blob& block);
+	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, QByteArray block);
 	DECLARE_MESSAGE(BlockCancel, QByteArray ct_hash, uint32_t offset, uint32_t size);
 };
 

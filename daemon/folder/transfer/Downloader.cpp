@@ -190,7 +190,7 @@ void Downloader::handleUnchoke(Peer* remote) {
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, const blob& data, Peer* from) {
+void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, QByteArray data, Peer* from) {
 	SCOPELOG(log_downloader);
 	auto missing_chunk = down_chunks_.value(ct_hash);
 	if(! missing_chunk) return;
@@ -202,11 +202,11 @@ void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, const blob& data,
 		request_it.next();
 
 		if(request_it.value().offset == offset      // Chunk position incorrect
-		&& request_it.value().size == data.size()   // Chunk size incorrect
+		&& request_it.value().size == (uint)data.size()   // Chunk size incorrect
 		&& request_it.key() == from) {              // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
 			request_it.remove();
 
-			missing_chunk->builder.put_block(offset, QByteArray::fromRawData((const char*)data.data(), data.size()));
+			missing_chunk->builder.put_block(offset, data);
 			if(missing_chunk->builder.complete()) {
 				QFile* chunk_f = missing_chunk->builder.release_chunk();
 				chunk_f->setParent(this);

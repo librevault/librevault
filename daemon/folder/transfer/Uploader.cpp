@@ -61,17 +61,17 @@ void Uploader::handle_not_interested(Peer* remote) {
 void Uploader::handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
 	try {
 		if(!remote->am_choking() && remote->peer_interested()) {
-			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(conv_bytearray(ct_hash), offset, size));
+			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
 		}
 	}catch(ChunkStorage::no_such_chunk& e){
 		LOGW("Requested nonexistent block");
 	}
 }
 
-blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
-	auto chunk = chunk_storage_->get_chunk(ct_hash);
+QByteArray Uploader::get_block(QByteArray ct_hash, uint32_t offset, uint32_t size) {
+	auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
 	if((int)offset < chunk.size() && (int)size <= chunk.size()-(int)offset)
-		return blob(chunk.begin()+offset, chunk.begin()+offset+size);
+		return chunk.mid(offset, size);
 	else
 		throw ChunkStorage::no_such_chunk();
 }

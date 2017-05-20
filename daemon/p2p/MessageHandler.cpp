@@ -38,24 +38,20 @@ MessageHandler::MessageHandler(QObject* parent) :
 	QObject(parent) {
 }
 
-void MessageHandler::prepareMessage(const blob& message) {
-	emit messagePrepared(conv_bytearray(message));
-}
-
 void MessageHandler::sendChoke() {
-	prepareMessage(V1Parser().gen_Choke());
+	emit messagePrepared(V1Parser().gen_Choke());
 	qDebug() << "==> CHOKE";
 }
 void MessageHandler::sendUnchoke() {
-	prepareMessage(V1Parser().gen_Unchoke());
+	emit messagePrepared(V1Parser().gen_Unchoke());
 	qDebug() << "==> UNCHOKE";
 }
 void MessageHandler::sendInterested() {
-	prepareMessage(V1Parser().gen_Interested());
+	emit messagePrepared(V1Parser().gen_Interested());
 	qDebug() << "==> INTERESTED";
 }
 void MessageHandler::sendNotInterested() {
-	prepareMessage(V1Parser().gen_NotInterested());
+	emit messagePrepared(V1Parser().gen_NotInterested());
 	qDebug() << "==> NOT_INTERESTED";
 }
 
@@ -63,7 +59,7 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitf
 	V1Parser::HaveMeta message;
 	message.revision = revision;
 	message.bitfield = bitfield;
-	prepareMessage(V1Parser().gen_HaveMeta(message));
+	emit messagePrepared(V1Parser().gen_HaveMeta(message));
 
 	qDebug() << "==> HAVE_META:"
 		<< "path_id=" << path_id_readable(message.revision.path_id_)
@@ -73,7 +69,7 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitf
 void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 	V1Parser::HaveChunk message;
 	message.ct_hash = conv_bytearray(ct_hash);
-	prepareMessage(V1Parser().gen_HaveChunk(message));
+	emit messagePrepared(V1Parser().gen_HaveChunk(message));
 
 	qDebug() << "==> HAVE_BLOCK:"
 		<< "ct_hash=" << ct_hash_readable(ct_hash);
@@ -82,7 +78,7 @@ void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 void MessageHandler::sendMetaRequest(const Meta::PathRevision& revision) {
 	V1Parser::MetaRequest message;
 	message.revision = revision;
-	prepareMessage(V1Parser().gen_MetaRequest(message));
+	emit messagePrepared(V1Parser().gen_MetaRequest(message));
 
 	qDebug() << "==> META_REQUEST:"
 		<< "path_id=" << path_id_readable(revision.path_id_)
@@ -92,7 +88,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, const bitfield_type&
 	V1Parser::MetaReply message;
 	message.smeta = smeta;
 	message.bitfield = bitfield;
-	prepareMessage(V1Parser().gen_MetaReply(message));
+	emit messagePrepared(V1Parser().gen_MetaReply(message));
 
 	qDebug() << "==> META_REPLY:"
 		<< "path_id=" << path_id_readable(smeta.meta().path_id())
@@ -102,7 +98,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, const bitfield_type&
 void MessageHandler::sendMetaCancel(const Meta::PathRevision& revision) {
 	V1Parser::MetaCancel message;
 	message.revision = revision;
-	prepareMessage(V1Parser().gen_MetaCancel(message));
+	emit messagePrepared(V1Parser().gen_MetaCancel(message));
 
 	qDebug() << "==> META_CANCEL:"
 		<< "path_id=" << path_id_readable(revision.path_id_)
@@ -114,19 +110,19 @@ void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint3
 	message.ct_hash = ct_hash;
 	message.offset = offset;
 	message.length = length;
-	prepareMessage(V1Parser().gen_BlockRequest(message));
+	emit messagePrepared(V1Parser().gen_BlockRequest(message));
 
 	qDebug() << "==> BLOCK_REQUEST:"
 		<< "ct_hash=" << ct_hash_readable(ct_hash)
 		<< "offset=" << offset
 		<< "length=" << length;
 }
-void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, const blob& block) {
+void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, QByteArray block) {
 	V1Parser::BlockReply message;
 	message.ct_hash = ct_hash;
 	message.offset = offset;
 	message.content = block;
-	prepareMessage(V1Parser().gen_BlockReply(message));
+	emit messagePrepared(V1Parser().gen_BlockReply(message));
 
 	qDebug() << "==> BLOCK_REPLY:"
 		<< "ct_hash=" << ct_hash_readable(ct_hash)
@@ -137,31 +133,31 @@ void MessageHandler::sendBlockCancel(QByteArray ct_hash, uint32_t offset, uint32
 	message.ct_hash = ct_hash;
 	message.offset = offset;
 	message.length = length;
-	prepareMessage(V1Parser().gen_BlockCancel(message));
+	emit messagePrepared(V1Parser().gen_BlockCancel(message));
 	qDebug() << "==> BLOCK_CANCEL:"
 		<< "ct_hash=" << ct_hash_readable(ct_hash)
 		<< "offset=" << offset
 		<< "length=" << length;
 }
 
-void MessageHandler::handleChoke(const blob& message_raw) {
+void MessageHandler::handleChoke(QByteArray message_raw) {
 	qDebug() << "<== CHOKE";
 	emit rcvdChoke();
 }
-void MessageHandler::handleUnchoke(const blob& message_raw) {
+void MessageHandler::handleUnchoke(QByteArray message_raw) {
 	qDebug() << "<== UNCHOKE";
 	emit rcvdUnchoke();
 }
-void MessageHandler::handleInterested(const blob& message_raw) {
+void MessageHandler::handleInterested(QByteArray message_raw) {
 	qDebug() << "<== INTERESTED";
 	emit rcvdInterested();
 }
-void MessageHandler::handleNotInterested(const blob& message_raw) {
+void MessageHandler::handleNotInterested(QByteArray message_raw) {
 	qDebug() << "<== NOT_INTERESTED";
 	emit rcvdNotInterested();
 }
 
-void MessageHandler::handleHaveMeta(const blob& message_raw) {
+void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveMeta(message_raw);
 	qDebug() << "<== HAVE_META:"
 		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
@@ -170,14 +166,14 @@ void MessageHandler::handleHaveMeta(const blob& message_raw) {
 
 	emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
 }
-void MessageHandler::handleHaveChunk(const blob& message_raw) {
+void MessageHandler::handleHaveChunk(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveChunk(message_raw);
 	qDebug() << "<== HAVE_BLOCK:"
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash);
 	emit rcvdHaveChunk(conv_bytearray(message_struct.ct_hash));
 }
 
-void MessageHandler::handleMetaRequest(const blob& message_raw) {
+void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaRequest(message_raw);
 	qDebug() << "<== META_REQUEST:"
 		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
@@ -185,7 +181,7 @@ void MessageHandler::handleMetaRequest(const blob& message_raw) {
 
 	emit rcvdMetaRequest(message_struct.revision);
 }
-void MessageHandler::handleMetaReply(const blob& message_raw) {
+void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
 		<< "path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
@@ -194,7 +190,7 @@ void MessageHandler::handleMetaReply(const blob& message_raw) {
 
 	emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
 }
-void MessageHandler::handleMetaCancel(const blob& message_raw) {
+void MessageHandler::handleMetaCancel(QByteArray message_raw) {
 #   warning "Not implemented yet"
 	auto message_struct = V1Parser().parse_MetaCancel(message_raw);
 	qDebug() << "<== META_CANCEL:"
@@ -204,7 +200,7 @@ void MessageHandler::handleMetaCancel(const blob& message_raw) {
 	emit rcvdMetaCancel(message_struct.revision);
 }
 
-void MessageHandler::handleBlockRequest(const blob& message_raw) {
+void MessageHandler::handleBlockRequest(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_BlockRequest(message_raw);
 	qDebug() << "<== BLOCK_REQUEST:"
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
@@ -213,7 +209,7 @@ void MessageHandler::handleBlockRequest(const blob& message_raw) {
 
 	emit rcvdBlockRequest(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
-void MessageHandler::handleBlockReply(const blob& message_raw) {
+void MessageHandler::handleBlockReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_BlockReply(message_raw);
 	qDebug() << "<== BLOCK_REPLY:"
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
@@ -221,7 +217,7 @@ void MessageHandler::handleBlockReply(const blob& message_raw) {
 
 	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }
-void MessageHandler::handleBlockCancel(const blob& message_raw) {
+void MessageHandler::handleBlockCancel(QByteArray message_raw) {
 #   warning "Not implemented yet"
 	auto message_struct = V1Parser().parse_BlockCancel(message_raw);
 	qDebug() << "<== BLOCK_CANCEL:"

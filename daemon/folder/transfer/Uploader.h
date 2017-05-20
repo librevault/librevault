@@ -28,9 +28,7 @@
  */
 #pragma once
 #include "util/log.h"
-#include "blob.h"
 #include <QObject>
-#include <set>
 
 namespace librevault {
 
@@ -54,7 +52,7 @@ public:
 private:
 	ChunkStorage* chunk_storage_;
 
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
+	QByteArray get_block(QByteArray ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

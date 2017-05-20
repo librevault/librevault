@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
 #include "util/log.h"
 #include "util/SQLiteWrapper.h"
 #include "SignedMeta.h"

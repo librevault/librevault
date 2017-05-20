@@ -207,9 +207,9 @@ void IndexerWorker::update_chunks() {
 	}
 
 	// IV reuse
-	std::map<blob, blob> pt_hmac__iv;
+	QMap<QByteArray, QByteArray> pt_hmac__iv;
 	for(auto& chunk : old_meta_.chunks()) {
-		pt_hmac__iv.insert({conv_bytearray(chunk.pt_hmac), conv_bytearray(chunk.iv)});
+		pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
 	}
 
 	// Initializing chunker
@@ -228,7 +228,7 @@ void IndexerWorker::update_chunks() {
 	// Chunking
 	QList<Meta::Chunk> chunks;
 
-	std::vector<uchar> buffer;
+	QByteArray buffer;
 	buffer.reserve(hasher.maxsize);
 
 	QFile f(abspath_);
@@ -238,10 +238,8 @@ void IndexerWorker::update_chunks() {
 	char byte;
 	while(f.getChar(&byte) && active_) {
 		buffer.push_back(byte);
-		//size_t len = fread(buf, 1, sizeof(buf), stdin);
-		uint8_t *ptr = &buffer.back();
 
-		if(rabin_next_chunk(&hasher, ptr, 1) == 1) {    // Found a chunk
+		if(rabin_next_chunk(&hasher, (uchar*)&byte, 1) == 1) {    // Found a chunk
 			chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
 			buffer.clear();
 		}
@@ -256,22 +254,21 @@ void IndexerWorker::update_chunks() {
 	new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const std::vector<uchar>& data, const std::map<blob, blob>& pt_hmac__iv) {
+Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
 
 	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
 	hasher.addData(secret_.getEncryptionKey());
-	hasher.addData(conv_bytearray(data));
+	hasher.addData(data);
 
 	chunk.pt_hmac = hasher.result();
 
 	// IV reuse
-	auto it = pt_hmac__iv.find(conv_bytearray(chunk.pt_hmac));
-	chunk.iv = (it != pt_hmac__iv.end() ? conv_bytearray(it->second) : generateRandomIV());
+	chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, generateRandomIV());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(conv_bytearray(data), secret_.getEncryptionKey(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.getEncryptionKey(), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

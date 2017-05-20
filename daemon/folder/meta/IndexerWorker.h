@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
 #include "SignedMeta.h"
 #include <QLoggingCategory>
 #include <QObject>
@@ -82,7 +81,7 @@ private:
 	Meta::Type get_type();
 	void update_fsattrib();
 	void update_chunks();
-	Meta::Chunk populate_chunk(const std::vector<uchar>& data, const std::map<blob, blob>& pt_hmac__iv);
+	Meta::Chunk populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
 };
 
 } /* namespace librevault */

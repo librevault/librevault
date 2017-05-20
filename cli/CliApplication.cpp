@@ -28,7 +28,6 @@
  */
 #include "CliApplication.h"
 #include "appver.h"
-#include "blob.h"
 #include "Secret.h"
 #include <QDebug>
 #include <QtGlobal>

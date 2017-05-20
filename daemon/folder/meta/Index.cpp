@@ -31,6 +31,7 @@
 #include "control/StateCollector.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/readable.h"
+#include "blob.h"
 #include <QFile>
 
 namespace librevault {

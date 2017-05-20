@@ -29,7 +29,7 @@
 #include "HandshakeHandler.h"
 #include "nodekey/NodeKey.h"
 #include "Tokens.h"
-#include <librevault/protocol/V1Parser.h>
+#include "V1Parser.h"
 
 namespace librevault {
 

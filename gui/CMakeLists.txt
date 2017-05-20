@@ -90,7 +90,6 @@ endif()
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-gui lvcommon)
 target_link_libraries(librevault-gui librevault-common)
 target_link_libraries(librevault-gui openssl)
 

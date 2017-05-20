@@ -29,7 +29,7 @@
 #include "MessageHandler.h"
 #include "util/readable.h"
 #include "conv_bitarray.h"
-#include <librevault/protocol/V1Parser.h>
+#include "V1Parser.h"
 #include <QDebug>
 
 namespace librevault {

@@ -12,26 +12,25 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 
-file(GLOB_RECURSE meta_SOURCES "*.cpp")
-file(GLOB_RECURSE meta_HEADERS "*.h")
+file(GLOB_RECURSE protocol_SOURCES "*.cpp")
+file(GLOB_RECURSE protocol_HEADERS "*.h")
 file(GLOB_RECURSE PROTO_LIST "*.proto")
 protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
-list(APPEND meta_SOURCES ${PROTO_SOURCES})
+list(APPEND protocol_SOURCES ${PROTO_SOURCES})
 
 #============================================================================
 # Compile targets
 #============================================================================
 
-add_library(meta STATIC ${meta_SOURCES} ${meta_HEADERS})
-target_include_directories(meta PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(protocol STATIC ${protocol_SOURCES} ${protocol_HEADERS})
+target_include_directories(protocol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #============================================================================
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(meta PRIVATE librevault-common)
-target_link_libraries(meta PRIVATE aes)
-target_link_libraries(meta PRIVATE secret)
-target_link_libraries(meta PUBLIC protobuf)
-target_link_libraries(meta PRIVATE Qt5::Core)
-target_link_libraries(meta PRIVATE cryptopp)
+target_link_libraries(protocol PRIVATE librevault-common)
+target_link_libraries(protocol PRIVATE secret)
+target_link_libraries(protocol PRIVATE meta)
+target_link_libraries(protocol PUBLIC protobuf)
+target_link_libraries(protocol PRIVATE Qt5::Core)

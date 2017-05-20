@@ -28,8 +28,8 @@
  */
 #include "CliApplication.h"
 #include "appver.h"
+#include "blob.h"
 #include <librevault/Secret.h>
-#include <librevault/crypto/Hex.h>
 #include <QDebug>
 #include <QtGlobal>
 #include <QJsonDocument>
@@ -54,7 +54,7 @@ void CliApplication::performProcessing() {
 		}else if(args["derive"].asBool()) {
 			std::cout << Secret(args["<secret>"].asString()).derive((Secret::Type)args["<type>"].asString().at(0)) << std::endl;
 		}else if(args["folderid"].asBool()) {
-			std::cout << crypto::Hex().to_string(Secret(args["<secret>"].asString()).get_Hash()) << std::endl;
+			std::cout << conv_bytearray(Secret(args["<secret>"].asString()).get_Hash()).toHex().toStdString() << std::endl;
 		}
 		quit();
 		return;

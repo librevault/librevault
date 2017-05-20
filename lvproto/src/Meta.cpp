@@ -19,6 +19,7 @@
 #include <librevault/crypto/SHA3.h>
 #include <librevault/crypto/SHA2.h>
 #include <librevault/crypto/HMAC-SHA3.h>
+#include "blob.h"
 
 namespace librevault {
 
@@ -233,7 +234,7 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 }
 
 std::vector<uint8_t> Meta::make_path_id(const std::string& path, const Secret& secret) {
-	return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
+	return path | crypto::HMAC_SHA3_224(conv_bytearray(secret.getEncryptionKey()));
 }
 
 } /* namespace librevault */

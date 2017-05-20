@@ -260,14 +260,14 @@ void IndexerWorker::update_chunks() {
 Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
-	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
+	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(conv_bytearray(secret_.getEncryptionKey()));
 
 	// IV reuse
 	auto it = pt_hmac__iv.find(chunk.pt_hmac);
 	chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, conv_bytearray(secret_.getEncryptionKey()), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

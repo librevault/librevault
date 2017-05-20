@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,52 +27,23 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
-#include <librevault/Meta.h>
 #include "conv_bitfield.h"
-#include <QFile>
+#include <QBitArray>
 
 namespace librevault {
 
-class FolderParams;
-class MetaStorage;
-class PathNormalizer;
+inline QBitArray conv_bitarray(bitfield_type bitfield) {
+	QBitArray bitarray(bitfield.size());
+	for(size_t i = 0; i < bitfield.size(); i++)
+		bitarray.setBit(i, bitfield[i]);
+	return bitarray;
+}
 
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
-class Archive;
-class AssemblerQueue;
-
-class ChunkStorage : public QObject {
-	Q_OBJECT
-public:
-	struct no_such_chunk : public std::runtime_error {
-		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
-	};
-
-	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
-	virtual ~ChunkStorage();
-
-	bool have_chunk(const blob& ct_hash) const noexcept ;
-	QByteArray get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
-
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
-
-	void cleanup(const Meta& meta);
-
-signals:
-	void chunkAdded(QByteArray ct_hash);
-
-protected:
-	MetaStorage* meta_storage_;
-
-	MemoryCachedStorage* mem_storage;
-	EncStorage* enc_storage;
-	OpenStorage* open_storage;
-	Archive* archive;
-	AssemblerQueue* file_assembler;
-};
+inline bitfield_type conv_bitarray(QBitArray bitarray) {
+	bitfield_type bitfield(bitarray.size());
+	for(int i = 0; i < bitarray.size(); i++)
+		bitfield[i] = bitarray[i];
+	return bitfield;
+}
 
 } /* namespace librevault */

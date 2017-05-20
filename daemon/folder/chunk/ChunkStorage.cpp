@@ -43,7 +43,7 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
 	meta_storage_(meta_storage) {
 	mem_storage = new MemoryCachedStorage(this);
 	enc_storage = new EncStorage(params, this);
-	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
+	if(params.secret.getType() <= Secret::Type::ReadOnly) {
 		open_storage = new OpenStorage(params, meta_storage_, path_normalizer, this);
 		archive = new Archive(params, meta_storage_, path_normalizer, this);
 		file_assembler = new AssemblerQueue(params, meta_storage_,  this, path_normalizer, archive, this);

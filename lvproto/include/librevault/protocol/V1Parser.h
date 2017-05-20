@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "../SignedMeta.h"
-#include "../util/conv_bitfield.h"
+#include "conv_bitfield.h"
 
 namespace librevault {
 

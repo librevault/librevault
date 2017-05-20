@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2015 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,24 +26,50 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <librevault/util/conv_bitfield.h>
-#include <QBitArray>
+#include "Base58.h"
+#include <cryptopp/integer.h>
 
 namespace librevault {
 
-inline QBitArray conv_bitarray(bitfield_type bitfield) {
-	QBitArray bitarray(bitfield.size());
-	for(size_t i = 0; i < bitfield.size(); i++)
-		bitarray.setBit(i, bitfield[i]);
-	return bitarray;
+QByteArray toBase58(QByteArray src) {
+	CryptoPP::Integer big_data((uchar*)src.data(), src.size());
+
+	QByteArray result;
+	result.reserve(src.size()*138/100 + 1);
+
+	CryptoPP::word mod;
+	CryptoPP::Integer div;
+	while(big_data > 0){
+		CryptoPP::Integer::Divide(mod, div, big_data, 58);
+		result += base58_alphabet.at(mod);
+		big_data = div;
+	}
+
+	for(const char* orig_str = src.data(); orig_str < src.data()+src.size() && *orig_str == 0; orig_str++){
+		result += base58_alphabet[0];
+	}
+
+	std::reverse(result.begin(), result.end());
+	return result;
 }
 
-inline bitfield_type conv_bitarray(QBitArray bitarray) {
-	bitfield_type bitfield(bitarray.size());
-	for(int i = 0; i < bitarray.size(); i++)
-		bitfield[i] = bitarray[i];
-	return bitfield;
+QByteArray fromBase58(QByteArray src) {
+	CryptoPP::Integer big_data = 0;
+	CryptoPP::Integer multi = 1;
+
+	for(int i = src.size()-1; i >= 0; i--){
+		big_data += multi * base58_alphabet.indexOf(src[i]);
+		multi *= 58;
+	}
+
+	int leading_zeros = 0;
+	for(const char* orig_str = src.data(); orig_str < src.data()+src.size() && *orig_str == base58_alphabet[0]; orig_str++){
+		leading_zeros++;
+	}
+
+	QByteArray decoded(leading_zeros + big_data.MinEncodedSize(), 0);
+	big_data.Encode((uchar*)decoded.data() + leading_zeros, decoded.size());
+	return decoded;
 }
 
 } /* namespace librevault */

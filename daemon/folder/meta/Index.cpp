@@ -62,7 +62,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
 
 	/* Create a special hash-file */
 	QFile hash_file(params_.system_path + "/hash.txt");
-	QByteArray hexhash_conf = conv_bytearray(params_.secret.get_Hash());
+	QByteArray hexhash_conf = params_.secret.getHash();
 	if(hash_file.exists()) {
 		hash_file.open(QIODevice::ReadOnly);
 		if(hash_file.readAll().toLower() != hexhash_conf.toLower()) wipe();
@@ -211,7 +211,7 @@ void Index::notifyState() {
 	for(auto row : db_->exec("SELECT type, COUNT(*) AS entries FROM meta GROUP BY type")) {
 		entries[QString::number(row[0].as_uint())] = (double)row[1].as_uint();
 	}
-	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "index", entries);
+	state_collector_->folder_state_set(params_.secret.getHash(), "index", entries);
 }
 
 } /* namespace librevault */

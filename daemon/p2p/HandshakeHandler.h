@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "control/FolderParams.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QObject>
 
 namespace librevault {
@@ -72,7 +72,6 @@ private:
 	Q_SLOT void sendHandshake();
 
 /* Token generators */
-	static QByteArray deriveToken(const Secret& secret, QByteArray digest);
 	QByteArray localToken();
 	QByteArray remoteToken();
 };

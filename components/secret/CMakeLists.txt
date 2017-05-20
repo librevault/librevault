@@ -1,38 +1,31 @@
 #============================================================================
 # Internal compiler options
 #============================================================================
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-include_directories(${CMAKE_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 #============================================================================
 # Sources & headers
 #============================================================================
-# Universal sources
-file(GLOB_RECURSE MAIN_SRCS "*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "*.h")
 
-
-list(APPEND SRCS ${MAIN_SRCS})
-list(APPEND SRCS ${MAIN_HEADERS})
+file(GLOB_RECURSE secret_SOURCES "*.cpp")
+file(GLOB_RECURSE secret_HEADERS "*.h")
 
 #============================================================================
 # Compile targets
 #============================================================================
 
-add_executable(librevault-cli ${SRCS})
+add_library(secret STATIC ${secret_SOURCES} ${secret_HEADERS})
+target_include_directories(secret PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #============================================================================
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-cli lvcommon)
-target_link_libraries(librevault-cli librevault-common)
-target_link_libraries(librevault-cli openssl)
-target_link_libraries(librevault-cli docopt_s)
-
-# Qt
-target_link_libraries(librevault-cli Qt5::Network)
+target_link_libraries(secret PRIVATE Qt5::Core)
+target_link_libraries(secret PRIVATE cryptopp)
+target_link_libraries(secret PRIVATE librevault-common)

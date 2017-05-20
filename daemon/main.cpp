@@ -31,7 +31,7 @@
 #include "control/Config.h"
 #include "control/Paths.h"
 #include <docopt.h>
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <spdlog/spdlog.h>
 #include <boost/filesystem/path.hpp>
 

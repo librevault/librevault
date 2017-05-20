@@ -47,10 +47,10 @@ IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, 
 	state_collector_(state_collector),
 	secret_(params.secret) {
 	qRegisterMetaType<SignedMeta>("SignedMeta");
-	state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", false);
+	state_collector_->folder_state_set(secret_.getHash(), "is_indexing", false);
 
-	connect(this, &IndexerQueue::startedIndexing, this, [this]{state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", true);});
-	connect(this, &IndexerQueue::finishedIndexing, this, [this]{state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", false);});
+	connect(this, &IndexerQueue::startedIndexing, this, [this]{state_collector_->folder_state_set(secret_.getHash(), "is_indexing", true);});
+	connect(this, &IndexerQueue::finishedIndexing, this, [this]{state_collector_->folder_state_set(secret_.getHash(), "is_indexing", false);});
 
 	threadpool_ = new QThreadPool(this);
 }

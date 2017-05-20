@@ -292,10 +292,11 @@ endif()
 # Subprojects
 #============================================================================
 
-add_subdirectory("lvproto")
 add_subdirectory("common")
+add_subdirectory("components/secret")
 add_subdirectory("components/portmapping")
 add_subdirectory("components/discovery")
+add_subdirectory("lvproto")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

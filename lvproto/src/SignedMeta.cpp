@@ -28,7 +28,8 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer(secret.get_Private_Key().data(), secret.get_Private_Key().size()));
+	auto privkey_s = secret.getPrivateKey();
+	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer((uchar*)privkey_s.data(), privkey_s.size()));
 
 	signature_ = std::make_shared<std::vector<uint8_t>>(signer.SignatureLength());
 	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
@@ -45,7 +46,8 @@ SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signa
 
 			verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
 			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-			verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, secret.get_Public_Key().data(), secret.get_Public_Key().size());
+			auto pubkey_s = secret.getPublicKey();
+			verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)pubkey_s.data(), pubkey_s.size());
 			verifier.AccessKey().SetPublicElement(p);
 			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
 				throw signature_error();

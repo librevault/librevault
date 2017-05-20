@@ -30,9 +30,9 @@
 #include "control/FolderParams.h"
 #include "util/BandwidthCounter.h"
 #include "blob.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <librevault/SignedMeta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "conv_bitfield.h"
 #include <QObject>
 #include <QTimer>
 #include <QSet>

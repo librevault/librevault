@@ -43,6 +43,9 @@ endif()
 # Third-party libraries
 #============================================================================
 
+target_link_libraries(lvcommon PRIVATE librevault-common)
+target_link_libraries(lvcommon PUBLIC secret)
+
 ### WinSock
 if(WIN32)
 	target_link_libraries(lvcommon PUBLIC ws2_32)

@@ -29,7 +29,7 @@
 #pragma once
 #include <blob.h>
 #include <librevault/Meta.h>
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QList>
 #include <QVariantMap>
 #include <QString>
@@ -48,7 +48,7 @@ struct FolderParams {
 
 	FolderParams(QVariantMap fconfig);
 
-	QByteArray folderid() const {return conv_bytearray(secret.get_Hash());}
+	QByteArray folderid() const {return secret.getHash();}
 
 	/* Parameters */
 	Secret secret;

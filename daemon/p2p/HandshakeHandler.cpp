@@ -39,16 +39,12 @@ HandshakeHandler::HandshakeHandler(const FolderParams& params, QString client_na
 	connect(this, &HandshakeHandler::handshakeFailed, [=](QString error){qDebug() << "Librevault handshake failed: " + error;});
 }
 
-QByteArray HandshakeHandler::deriveToken(const Secret& secret, QByteArray digest) {
-	return conv_bytearray(derive_token(secret, conv_bytearray(digest)));
-}
-
 QByteArray HandshakeHandler::localToken() {
-	return deriveToken(params_.secret, local_digest_);
+	return derive_token(params_.secret, local_digest_);
 }
 
 QByteArray HandshakeHandler::remoteToken() {
-	return deriveToken(params_.secret, remote_digest_);
+	return derive_token(params_.secret, remote_digest_);
 }
 
 void HandshakeHandler::sendHandshake() {

@@ -1,18 +1,35 @@
-/* Written in 2015 by Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2015 Alexander Shishenko <alex@shishenko.com>
  *
- * LVCrypto - Cryptographic wrapper, used in Librevault.
- * To the extent possible under law, the author(s) have dedicated all copyright
- * and related and neighboring rights to this software to the public domain
- * worldwide. This software is distributed without any warranty.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * You should have received a copy of the CC0 Public Domain Dedication
- * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
  */
 #pragma once
 #include "Base58.h"
 
 namespace librevault {
-namespace crypto {
 
 template<uint8_t N, class InputIterator, class CodePointFromCharLookupTable, class CharFromCodePointLookupTable>
 char LuhnMod(InputIterator first,
@@ -52,8 +69,7 @@ static uint8_t LuhnMod58_lookup[128] = {
 
 template<class InputIterator>
 char LuhnMod58(InputIterator first, InputIterator last) {
-	return LuhnMod<58>(first, last, LuhnMod58_lookup, Base58_alphabets::bitcoin_alphabet);
+	return LuhnMod<58>(first, last, LuhnMod58_lookup, base58_alphabet);
 }
 
-} /* namespace crypto */
 } /* namespace librevault */

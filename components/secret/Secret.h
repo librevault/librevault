@@ -12,12 +12,26 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
  */
 #pragma once
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
+#include <QByteArray>
+#include <QString>
 
 namespace librevault {
 
@@ -44,25 +58,27 @@ public:
 	};
 
 	Secret();
-	Secret(Type type, const std::vector<uint8_t>& payload);
+	Secret(Type type, QByteArray payload);
 	Secret(std::string string_secret);
+	Secret(QByteArray string_secret);
+	Secret(QString string_secret);
 
-	std::string string() const {return secret_s;}
-	operator std::string() const {return string();}
+	operator std::string() const {return secret_s.toStdString();}
+	operator QString() const {return QString::fromLatin1(secret_s);}
 
-	Type get_type() const {return (Type)secret_s.front();}
-	char get_param() const {return secret_s[1];}
-	char get_check_char() const {return secret_s.back();}
+	Type getType() const {return (Type)secret_s[0];}
+	char getParam() const {return secret_s[1];}
+	char getCheckChar() const {return secret_s[secret_s.size()-1];}
 
 	// Secret derivers
 	Secret derive(Type key_type) const;
 
 	// Payload getters
-	const std::vector<uint8_t>& get_Private_Key() const;
-	const std::vector<uint8_t>& get_Public_Key() const;
-	const std::vector<uint8_t>& get_Encryption_Key() const;
+	QByteArray getPrivateKey() const;
+	QByteArray getPublicKey() const;
+	QByteArray getEncryptionKey() const;
 
-	const std::vector<uint8_t>& get_Hash() const;
+	QByteArray getHash() const;
 
 	bool operator== (const Secret& key) const {return secret_s == key.secret_s;}
 	bool operator< (const Secret& key) const {return secret_s < key.secret_s;}
@@ -74,16 +90,16 @@ private:
 
 	static constexpr size_t hash_size = 32;
 
-	std::string secret_s;
+	QByteArray secret_s;
 
-	mutable std::vector<uint8_t> cached_private_key;	// ReadWrite
-	mutable std::vector<uint8_t> cached_encryption_key;	// ReadOnly
-	mutable std::vector<uint8_t> cached_public_key;		// Download
+	mutable QByteArray cached_private_key;	// ReadWrite
+	mutable QByteArray cached_encryption_key;	// ReadOnly
+	mutable QByteArray cached_public_key;		// Download
 
-	mutable std::vector<uint8_t> cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
+	mutable QByteArray cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
 
-	std::string get_encoded_payload() const;
-	std::vector<uint8_t> get_payload() const;
+	QByteArray getEncodedPayload() const;
+	QByteArray getPayload() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Secret& k);

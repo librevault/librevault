@@ -16,13 +16,14 @@
 #include <librevault/util/AES_CBC_DATA.h>
 #include <librevault/crypto/AES_CBC.h>
 #include <librevault/Meta.h>
+#include "blob.h"
 
 namespace librevault {
 
 bool AES_CBC_DATA::check(const Secret& secret) {
 	if(!check()) return false;
 	try {
-		ct | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), iv);
+		ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.getEncryptionKey()), iv);
 	}catch(const CryptoPP::Exception& e){
 		return false;
 	}
@@ -31,7 +32,7 @@ bool AES_CBC_DATA::check(const Secret& secret) {
 
 std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
 	try {
-		return ct | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), iv);
+		return ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.getEncryptionKey()), iv);
 	}catch(const CryptoPP::Exception& e){
 		throw Meta::parse_error("Parse error: Decryption failed");
 	}
@@ -39,7 +40,7 @@ std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
 
 void AES_CBC_DATA::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
 	iv = crypto::AES_CBC::random_iv();
-	ct = pt | crypto::AES_CBC(secret.get_Encryption_Key(), iv);
+	ct = pt | crypto::AES_CBC(conv_bytearray(secret.getEncryptionKey()), iv);
 }
 
 } /* namespace librevault */

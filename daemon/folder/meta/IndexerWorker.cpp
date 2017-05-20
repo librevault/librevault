@@ -68,7 +68,7 @@ void IndexerWorker::run() noexcept {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = meta_storage_->getMeta(conv_bytearray(Meta::makePathId(normpath, secret_)));
+			old_smeta_ = meta_storage_->getMeta(Meta::makePathId(normpath, secret_));
 			old_meta_ = old_smeta_.meta();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
@@ -226,7 +226,7 @@ void IndexerWorker::update_chunks() {
 	rabin_init(&hasher);
 
 	// Chunking
-	std::vector<Meta::Chunk> chunks;
+	QList<Meta::Chunk> chunks;
 
 	std::vector<uchar> buffer;
 	buffer.reserve(hasher.maxsize);
@@ -251,7 +251,7 @@ void IndexerWorker::update_chunks() {
 		throw abort_index("Indexing had been interruped");
 
 	if(rabin_finalize(&hasher) != 0)
-		chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+		chunks << populate_chunk(buffer, pt_hmac__iv);
 
 	new_meta_.set_chunks(chunks);
 }

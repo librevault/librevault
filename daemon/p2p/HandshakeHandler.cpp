@@ -93,7 +93,7 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 		for(const std::string& extension : message_struct.extensions) {
 			remote_extensions_.push_back(QString::fromStdString(extension));
 		}
-		rcvd_remote_token = QByteArray((const char*)message_struct.auth_token.data(), message_struct.auth_token.size());
+		rcvd_remote_token = message_struct.auth_token;
 	}catch(std::exception& e){
 		emit handshakeFailed(QStringLiteral("Handshake message parse error: ") + e.what());
 		return;

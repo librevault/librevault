@@ -69,7 +69,7 @@ void Uploader::handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t o
 }
 
 QByteArray Uploader::get_block(QByteArray ct_hash, uint32_t offset, uint32_t size) {
-	auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
+	auto chunk = chunk_storage_->get_chunk(ct_hash);
 	if((int)offset < chunk.size() && (int)size <= chunk.size()-(int)offset)
 		return chunk.mid(offset, size);
 	else

@@ -173,28 +173,28 @@ bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
 	}
 }
 
-void Index::setAssembled(blob path_id) {
-	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
-	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", path_id}});
+void Index::setAssembled(QByteArray path_id) {
+	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
+	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
 }
 
-bool Index::isAssembledChunk(blob ct_hash) {
+bool Index::isAssembledChunk(QByteArray ct_hash) {
 	auto sql_result = db_->exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
-		{":ct_hash", ct_hash}
+		{":ct_hash", conv_bytearray(ct_hash)}
 	});
 	return sql_result.have_rows();
 }
 
-QPair<quint32, QByteArray> Index::getChunkSizeIv(blob ct_hash) {
-	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
+QPair<quint32, QByteArray> Index::getChunkSizeIv(QByteArray ct_hash) {
+	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", conv_bytearray(ct_hash)}})) {
 		return qMakePair(row[0].as_uint(), conv_bytearray(row[1].as_blob()));
 	}
 	throw MetaStorage::no_such_meta();
 };
 
-QList<SignedMeta> Index::containingChunk(const blob& ct_hash) {
+QList<SignedMeta> Index::containingChunk(QByteArray ct_hash) {
 	return getMeta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
-		{{":ct_hash", ct_hash}});
+		{{":ct_hash", conv_bytearray(ct_hash)}});
 }
 
 void Index::wipe() {

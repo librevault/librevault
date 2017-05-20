@@ -40,20 +40,16 @@ QString EncStorage::make_chunk_ct_name(QByteArray ct_hash) const noexcept {
 	return "chunk-" + QString::fromLatin1(fromBase32(ct_hash));
 }
 
-QString EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
-	return make_chunk_ct_path(conv_bytearray(ct_hash));
-}
-
 QString EncStorage::make_chunk_ct_path(QByteArray ct_hash) const noexcept {
 	return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
 }
 
-bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {
+bool EncStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	QReadLocker lk(&storage_mtx_);
 	return QFile::exists(make_chunk_ct_path(ct_hash));
 }
 
-QByteArray EncStorage::get_chunk(const blob& ct_hash) const {
+QByteArray EncStorage::get_chunk(QByteArray ct_hash) const {
 	QReadLocker lk(&storage_mtx_);
 
 	QFile chunk_file(make_chunk_ct_path(ct_hash));
@@ -63,7 +59,7 @@ QByteArray EncStorage::get_chunk(const blob& ct_hash) const {
 	return chunk_file.readAll();
 }
 
-void EncStorage::put_chunk(const QByteArray& ct_hash, QFile* chunk_f) {
+void EncStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	QWriteLocker lk(&storage_mtx_);
 
 	chunk_f->setParent(this);
@@ -73,7 +69,7 @@ void EncStorage::put_chunk(const QByteArray& ct_hash, QFile* chunk_f) {
 	LOGD("Encrypted block" << ct_hash_readable(ct_hash) << "pushed into EncStorage");
 }
 
-void EncStorage::remove_chunk(const blob& ct_hash) {
+void EncStorage::remove_chunk(QByteArray ct_hash) {
 	QWriteLocker lk(&storage_mtx_);
 	QFile::remove(make_chunk_ct_path(ct_hash));
 

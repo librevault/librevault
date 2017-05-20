@@ -226,7 +226,7 @@ void Meta::parse(QByteArray serialized_data) {
 			chunk.iv = QByteArray::fromStdString(chunk_s.iv());
 			chunk.pt_hmac = QByteArray::fromStdString(chunk_s.pt_hmac());
 
-			chunks_.push_back(chunk);
+			chunks_ << chunk;
 		}
 	}
 }

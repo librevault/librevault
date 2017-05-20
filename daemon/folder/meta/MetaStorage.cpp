@@ -63,8 +63,8 @@ SignedMeta MetaStorage::getMeta(const Meta::PathRevision& path_revision) {
 	return index_->getMeta(path_revision);
 }
 
-SignedMeta MetaStorage::getMeta(const blob& path_id) {
-	return index_->getMeta(conv_bytearray(path_id));
+SignedMeta MetaStorage::getMeta(QByteArray path_id) {
+	return index_->getMeta(path_id);
 }
 
 QList<SignedMeta> MetaStorage::getMeta() {
@@ -83,19 +83,19 @@ void MetaStorage::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	return index_->putMeta(signed_meta, fully_assembled);
 }
 
-QList<SignedMeta> MetaStorage::containingChunk(const blob& ct_hash) {
+QList<SignedMeta> MetaStorage::containingChunk(QByteArray ct_hash) {
 	return index_->containingChunk(ct_hash);
 }
 
-void MetaStorage::markAssembled(blob path_id) {
+void MetaStorage::markAssembled(QByteArray path_id) {
 	index_->setAssembled(path_id);
 }
 
-bool MetaStorage::isChunkAssembled(blob ct_hash) {
+bool MetaStorage::isChunkAssembled(QByteArray ct_hash) {
 	return index_->isAssembledChunk(ct_hash);
 }
 
-QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(blob ct_hash) {
+QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(QByteArray ct_hash) {
 	return index_->getChunkSizeIv(ct_hash);
 };
 

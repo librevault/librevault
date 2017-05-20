@@ -130,7 +130,7 @@ void Downloader::notifyLocalChunk(QByteArray ct_hash) {
 QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 	QSet<QByteArray> cluster;
 
-	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(conv_bytearray(ct_hash))) {
+	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(ct_hash)) {
 		for(auto& chunk : smeta.meta().chunks()) {
 			cluster << chunk.ct_hash;
 		}

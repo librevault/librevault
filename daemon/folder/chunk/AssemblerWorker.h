@@ -78,7 +78,7 @@ private:
 
 	void apply_attrib();
 
-	QByteArray get_chunk_pt(const blob& ct_hash) const;
+	QByteArray get_chunk_pt(QByteArray ct_hash) const;
 };
 
 } /* namespace librevault */

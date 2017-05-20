@@ -17,6 +17,7 @@
 
 #include "Secret.h"
 #include "util/AES_CBC_DATA.h"
+#include <QList>
 
 namespace librevault {
 
@@ -79,7 +80,7 @@ private:
 	/// Rabin algorithm parameters
 	AES_CBC_DATA rabin_global_params_;
 
-	std::vector<Chunk> chunks_;
+	QList<Chunk> chunks_;
 
 public:
 	/* Nested structs & classes */
@@ -168,8 +169,8 @@ public:
 	uint32_t max_chunksize() const {return max_chunksize_;}
 	void set_max_chunksize(uint32_t max_chunksize) {max_chunksize_ = max_chunksize;}
 
-	const std::vector<Chunk>& chunks() const {return chunks_;}
-	void set_chunks(const std::vector<Chunk>& chunks) {chunks_ = chunks;}
+	QList<Chunk> chunks() const {return chunks_;}
+	void set_chunks(QList<Chunk> chunks) {chunks_ = chunks;}
 };
 
 } /* namespace librevault */

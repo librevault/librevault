@@ -66,7 +66,7 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 
 AssemblerWorker::~AssemblerWorker() {}
 
-QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
+QByteArray AssemblerWorker::get_chunk_pt(QByteArray ct_hash) const {
 	try {
 		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
 		return Meta::Chunk::decrypt(chunk_storage_->get_chunk(ct_hash), size_iv.first, params_.secret.getEncryptionKey(), size_iv.second);
@@ -101,7 +101,7 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.meta_type() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_->markAssembled(conv_bytearray(meta_.pathId()));
+			meta_storage_->markAssembled(meta_.pathId());
 			chunk_storage_->cleanup(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
@@ -161,7 +161,7 @@ bool AssemblerWorker::assemble_file() {
 	}
 
 	for(auto chunk : meta_.chunks()) {
-		assembly_f.write(get_chunk_pt(conv_bytearray(chunk.ct_hash))); // Writing to file
+		assembly_f.write(get_chunk_pt(chunk.ct_hash)); // Writing to file
 	}
 
 	if(!assembly_f.commit()) {

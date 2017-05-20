@@ -275,14 +275,6 @@ target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
 
 ## OpenSSL
 find_package(OpenSSL 1.0.2 REQUIRED)
-add_library(openssl INTERFACE)
-target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
-if(OS_WIN)
-	target_link_libraries(openssl INTERFACE ws2_32)
-elseif(OS_LINUX)
-	target_link_libraries(openssl INTERFACE dl)
-endif()
 
 #============================================================================
 # Subprojects

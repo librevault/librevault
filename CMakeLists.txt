@@ -245,10 +245,6 @@ if(BUILD_STATIC)
 endif()
 find_package(Boost 1.58 REQUIRED COMPONENTS system filesystem thread)
 
-add_library(boost INTERFACE)
-target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
-target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
-
 ## Qt5
 set(Qt_COMPONENTS
 		LinguistTools
@@ -262,8 +258,8 @@ if(OS_WIN)
 elseif(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-find_package(Qt5 5.6 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
+find_package(Qt5 5.7 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050700")
 
 ## Protobuf
 find_package(Protobuf 3.0 REQUIRED)

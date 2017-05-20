@@ -101,8 +101,8 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
 			{":path_id", signed_meta.meta().path_id()},
-			{":meta", signed_meta.raw_meta()},
-			{":signature", signed_meta.signature()},
+			{":meta", conv_bytearray(signed_meta.raw_meta())},
+			{":signature", conv_bytearray(signed_meta.signature())},
 			{":type", (uint64_t)signed_meta.meta().meta_type()},
 			{":assembled", (uint64_t)fully_assembled}
 	});
@@ -110,13 +110,13 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	uint64_t offset = 0;
 	for(auto chunk : signed_meta.meta().chunks()){
 		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
-				{":ct_hash", chunk.ct_hash},
+				{":ct_hash", conv_bytearray(chunk.ct_hash)},
 				{":size", (uint64_t)chunk.size},
-				{":iv", chunk.iv}
+				{":iv", conv_bytearray(chunk.iv)}
 		});
 
 		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
-				{":ct_hash", chunk.ct_hash},
+				{":ct_hash", conv_bytearray(chunk.ct_hash)},
 				{":path_id", signed_meta.meta().path_id()},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
@@ -142,7 +142,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list << SignedMeta(row[0], row[1]);
+		result_list << SignedMeta(conv_bytearray(row[0]), conv_bytearray(row[1]));
 	return result_list;
 }
 SignedMeta Index::getMeta(const blob& path_id){

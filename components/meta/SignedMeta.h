@@ -27,21 +27,21 @@ public:
 
 	SignedMeta() {}
 	SignedMeta(Meta meta, const Secret& secret);
-	SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature);
+	SignedMeta(QByteArray raw_meta, QByteArray signature);
 
-	operator bool() const {return meta_ && raw_meta_ && signature_;}
+	operator bool() const {return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty();}
 
 	bool isValid(const Secret& secret) const;
 
 	// Getters
 	const Meta& meta() const {return *meta_;}
-	const std::vector<uint8_t>& raw_meta() const {return *raw_meta_;}
-	const std::vector<uint8_t>& signature() const {return *signature_;}
+	QByteArray raw_meta() const {return raw_meta_;}
+	QByteArray signature() const {return signature_;}
 private:
 	std::shared_ptr<Meta> meta_;
 
-	std::shared_ptr<std::vector<uint8_t>> raw_meta_;
-	std::shared_ptr<std::vector<uint8_t>> signature_;
+	QByteArray raw_meta_;
+	QByteArray signature_;
 };
 
 } /* namespace librevault */

@@ -23,19 +23,19 @@ namespace librevault {
 class Meta {
 public:
 	enum Type : uint32_t {FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255};
-	enum AlgorithmType : uint8_t {RABIN=0/*, RSYNC=1, RSYNC64=2*/};
-	enum StrongHashType : uint8_t {SHA3_224=0, SHA2_224=1};
+	enum AlgorithmType : uint8_t {RABIN=0};
+	enum StrongHashType : uint8_t {SHA3_256=0};
 	struct Chunk {
-		std::vector<uint8_t> ct_hash;
+		QByteArray ct_hash;
 		uint32_t size;
-		std::vector<uint8_t> iv;
+		QByteArray iv;
 
-		std::vector<uint8_t> pt_hmac;
+		QByteArray pt_hmac;
 
-		static std::vector<uint8_t> encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
-		static std::vector<uint8_t> decrypt(const std::vector<uint8_t>& chunk, uint32_t size, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
+		static QByteArray encrypt(QByteArray chunk, QByteArray key, QByteArray iv);
+		static QByteArray decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv);
 
-		static std::vector<uint8_t> compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type);
+		static QByteArray compute_strong_hash(QByteArray chunk, StrongHashType type);
 	};
 
 	struct RabinGlobalParams {

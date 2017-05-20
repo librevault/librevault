@@ -54,7 +54,7 @@ private:
 	MetaStorage* meta_storage_;
 	PathNormalizer* path_normalizer_;
 
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt, Meta::StrongHashType strong_hash_type) const {
 		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
 	}
 };

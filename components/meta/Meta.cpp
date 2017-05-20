@@ -21,22 +21,22 @@
 
 namespace librevault {
 
-std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-	return conv_bytearray(encryptAesCbc(conv_bytearray(chunk), conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
+QByteArray Meta::Chunk::encrypt(QByteArray chunk, QByteArray key, QByteArray iv) {
+	return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0);
 }
 
-std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-	return conv_bytearray(decryptAesCbc(conv_bytearray(chunk), conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
+QByteArray Meta::Chunk::decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv) {
+	return decryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0);
 }
 
-std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
+QByteArray Meta::Chunk::compute_strong_hash(QByteArray chunk, StrongHashType type) {
 	switch(type){
-		case SHA3_224: {
+		case SHA3_256: {
 			QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-			hasher.addData(conv_bytearray(chunk));
-			return conv_bytearray(hasher.result());
+			hasher.addData(chunk);
+			return hasher.result();
 		}
-		default: return std::vector<uint8_t>();	// TODO: throw some exception.
+		default: return QByteArray();	// TODO: throw some exception.
 	}
 }
 
@@ -54,7 +54,7 @@ bool Meta::validate() const {
 
 	if(meta_type_ == Type::FILE) {
 		if(algorithm_type_ != RABIN
-			|| strong_hash_type_ > SHA2_224 // Unknown cryptographic hashing algorithm
+			|| strong_hash_type_ != SHA3_256 // Unknown cryptographic hashing algorithm
 			|| max_chunksize_ == 0 || min_chunksize_ == 0 || max_chunksize_ > min_chunksize_) return false;    // Invalid chunk constraints
 
 		if(algorithm_type_ == RABIN && !rabin_global_params_.check()) return false;
@@ -224,10 +224,10 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 
 		for(auto& chunk_s : meta_s.file_metadata().chunks()) {
 			Chunk chunk;
-			chunk.ct_hash.assign(chunk_s.ct_hash().begin(), chunk_s.ct_hash().end());
+			chunk.ct_hash = QByteArray::fromStdString(chunk_s.ct_hash());
 			chunk.size = chunk_s.size();
-			chunk.iv.assign(chunk_s.iv().begin(), chunk_s.iv().end());
-			chunk.pt_hmac.assign(chunk_s.pt_hmac().begin(), chunk_s.pt_hmac().end());
+			chunk.iv = QByteArray::fromStdString(chunk_s.iv());
+			chunk.pt_hmac = QByteArray::fromStdString(chunk_s.pt_hmac());
 
 			chunks_.push_back(chunk);
 		}

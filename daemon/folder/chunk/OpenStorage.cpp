@@ -53,7 +53,7 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 		uint64_t offset = 0;
 		unsigned chunk_idx = 0;
 		for(auto& chunk : smeta.meta().chunks()) {
-			if(chunk.ct_hash == ct_hash) break;
+			if(chunk.ct_hash == conv_bytearray(ct_hash)) break;
 			offset += chunk.size;
 			chunk_idx++;
 		}
@@ -68,10 +68,10 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
 
-		blob chunk_ct = Meta::Chunk::encrypt(chunk_pt, conv_bytearray(params_.secret.getEncryptionKey()), chunk.iv);
+		QByteArray chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.getEncryptionKey(), chunk.iv);
 
 		// Check
-		if(verify_chunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return conv_bytearray(chunk_ct);
+		if(verify_chunk(conv_bytearray(ct_hash), chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
 	}
 	throw ChunkStorage::no_such_chunk();
 }

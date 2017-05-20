@@ -72,7 +72,7 @@ target_link_libraries(librevault-daemon websocketpp)
 ##### External libraries #####
 
 ## Boost
-target_link_libraries(librevault-daemon boost)
+target_link_libraries(librevault-daemon Boost::system Boost::filesystem Boost::thread)
 
 ## Qt5
 target_link_libraries(librevault-daemon Qt5::WebSockets)

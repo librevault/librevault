@@ -117,8 +117,8 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(QByteArray message_raw) {
 	protocol::MetaReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
-	std::vector<uint8_t> raw_meta(message_protobuf.meta().begin(), message_protobuf.meta().end());
-	std::vector<uint8_t> signature(message_protobuf.signature().begin(), message_protobuf.signature().end());
+	QByteArray raw_meta = QByteArray::fromStdString(message_protobuf.meta());
+	QByteArray signature = QByteArray::fromStdString(message_protobuf.signature());
 
 	bitfield_type converted_bitfield = convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 

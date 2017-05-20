@@ -67,12 +67,9 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 AssemblerWorker::~AssemblerWorker() {}
 
 QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-	blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
-
 	try {
 		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
-		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, conv_bytearray(params_.secret.getEncryptionKey()), conv_bytearray(size_iv.second));
-		return conv_bytearray(chunk_pt_v);
+		return Meta::Chunk::decrypt(chunk_storage_->get_chunk(ct_hash), size_iv.first, params_.secret.getEncryptionKey(), size_iv.second);
 	}catch(std::exception& e){
 		qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
 		throw ChunkStorage::no_such_chunk();
@@ -164,7 +161,7 @@ bool AssemblerWorker::assemble_file() {
 	}
 
 	for(auto chunk : meta_.chunks()) {
-		assembly_f.write(get_chunk_pt(chunk.ct_hash)); // Writing to file
+		assembly_f.write(get_chunk_pt(conv_bytearray(chunk.ct_hash))); // Writing to file
 	}
 
 	if(!assembly_f.commit()) {

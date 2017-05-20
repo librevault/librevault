@@ -209,7 +209,7 @@ void IndexerWorker::update_chunks() {
 	// IV reuse
 	std::map<blob, blob> pt_hmac__iv;
 	for(auto& chunk : old_meta_.chunks()) {
-		pt_hmac__iv.insert({chunk.pt_hmac, chunk.iv});
+		pt_hmac__iv.insert({conv_bytearray(chunk.pt_hmac), conv_bytearray(chunk.iv)});
 	}
 
 	// Initializing chunker
@@ -264,14 +264,14 @@ Meta::Chunk IndexerWorker::populate_chunk(const std::vector<uchar>& data, const 
 	hasher.addData(secret_.getEncryptionKey());
 	hasher.addData(conv_bytearray(data));
 
-	chunk.pt_hmac = conv_bytearray(hasher.result());
+	chunk.pt_hmac = hasher.result();
 
 	// IV reuse
-	auto it = pt_hmac__iv.find(chunk.pt_hmac);
-	chunk.iv = (it != pt_hmac__iv.end() ? it->second : conv_bytearray(generateRandomIV()));
+	auto it = pt_hmac__iv.find(conv_bytearray(chunk.pt_hmac));
+	chunk.iv = (it != pt_hmac__iv.end() ? conv_bytearray(it->second) : generateRandomIV());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, conv_bytearray(secret_.getEncryptionKey()), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(conv_bytearray(data), secret_.getEncryptionKey(), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

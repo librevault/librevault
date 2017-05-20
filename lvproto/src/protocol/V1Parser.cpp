@@ -20,9 +20,9 @@ namespace librevault {
 
 std::vector<uint8_t> V1Parser::gen_Handshake(const Handshake& message_struct) {
 	protocol::Handshake message_protobuf;
-	message_protobuf.set_auth_token(message_struct.auth_token.data(), message_struct.auth_token.size());
-	message_protobuf.set_device_name(message_struct.device_name.data(), message_struct.device_name.size());
-	message_protobuf.set_user_agent(message_struct.user_agent.data(), message_struct.user_agent.size());
+	message_protobuf.set_auth_token(message_struct.auth_token.toStdString());
+	message_protobuf.set_device_name(message_struct.device_name.toStdString());
+	message_protobuf.set_user_agent(message_struct.user_agent.toStdString());
 
 	for(auto& extension : message_struct.extensions)
 		message_protobuf.add_extensions(extension);
@@ -34,9 +34,9 @@ V1Parser::Handshake V1Parser::parse_Handshake(const std::vector<uint8_t>& messag
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	Handshake message_struct;
-	message_struct.auth_token.assign(message_protobuf.auth_token().begin(), message_protobuf.auth_token().end());
-	message_struct.device_name.assign(message_protobuf.device_name().begin(), message_protobuf.device_name().end());
-	message_struct.user_agent.assign(message_protobuf.user_agent().begin(), message_protobuf.user_agent().end());
+	message_struct.auth_token = QByteArray::fromStdString(message_protobuf.auth_token());
+	message_struct.device_name = QString::fromStdString(message_protobuf.device_name());
+	message_struct.user_agent = QString::fromStdString(message_protobuf.user_agent());
 
 	message_struct.extensions.reserve(message_protobuf.extensions().size());
 	for(auto& extension : message_protobuf.extensions())
@@ -156,7 +156,7 @@ V1Parser::BlockRequest V1Parser::parse_BlockRequest(const std::vector<uint8_t>& 
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	BlockRequest message_struct;
-	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
+	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.length = message_protobuf.length();
 
@@ -176,7 +176,7 @@ V1Parser::BlockReply V1Parser::parse_BlockReply(const std::vector<uint8_t>& mess
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	BlockReply message_struct;
-	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
+	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.content.assign(message_protobuf.content().begin(), message_protobuf.content().end());
 
@@ -196,7 +196,7 @@ V1Parser::BlockCancel V1Parser::parse_BlockCancel(const std::vector<uint8_t>& me
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	BlockCancel message_struct;
-	message_struct.ct_hash.assign(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
+	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.length = message_protobuf.length();
 

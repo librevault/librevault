@@ -61,9 +61,9 @@ public:
 	}
 
 	struct Handshake {
-		std::vector<uint8_t> auth_token;
-		std::string device_name;
-		std::string user_agent;
+		QByteArray auth_token;
+		QString device_name;
+		QString user_agent;
 		std::vector<std::string> extensions;
 	};
 	struct HaveMeta {
@@ -84,17 +84,17 @@ public:
 		Meta::PathRevision revision;
 	};
 	struct BlockRequest {
-		std::vector<uint8_t> ct_hash;
+		QByteArray ct_hash;
 		uint32_t offset;
 		uint32_t length;
 	};
 	struct BlockReply {
-		std::vector<uint8_t> ct_hash;
+		QByteArray ct_hash;
 		uint32_t offset;
 		std::vector<uint8_t> content;
 	};
 	struct BlockCancel {
-		std::vector<uint8_t> ct_hash;
+		QByteArray ct_hash;
 		uint32_t offset;
 		uint32_t length;
 	};

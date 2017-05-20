@@ -51,9 +51,9 @@ void HandshakeHandler::sendHandshake() {
 	Q_ASSERT(!handshake_sent_);
 
 	V1Parser::Handshake message_struct;
-	message_struct.auth_token = conv_bytearray(localToken());
-	message_struct.device_name = local_client_name_.toStdString();
-	message_struct.user_agent = local_user_agent_.toStdString();
+	message_struct.auth_token = localToken();
+	message_struct.device_name = local_client_name_;
+	message_struct.user_agent = local_user_agent_;
 
 	message_struct.extensions.reserve(local_extensions_.size());
 	for(auto& extension : local_extensions_)
@@ -88,8 +88,8 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 	try {
 		auto message_struct = V1Parser().parse_Handshake(conv_bytearray(msg));
 
-		remote_client_name_ = QString::fromStdString(message_struct.device_name);
-		remote_user_agent_ = QString::fromStdString(message_struct.user_agent);
+		remote_client_name_ = message_struct.device_name;
+		remote_user_agent_ = message_struct.user_agent;
 		for(const std::string& extension : message_struct.extensions) {
 			remote_extensions_.push_back(QString::fromStdString(extension));
 		}

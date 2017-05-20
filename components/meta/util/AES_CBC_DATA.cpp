@@ -26,9 +26,9 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "librevault/crypto/AES_CBC_DATA.h"
+#include "AES_CBC_DATA.h"
 #include "AES_CBC.h"
-#include <librevault/Meta.h>
+#include "../Meta.h"
 #include "blob.h"
 #include <cryptopp/cryptlib.h>
 

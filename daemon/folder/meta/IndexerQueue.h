@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QMap>
 #include <QString>
 #include <QThreadPool>

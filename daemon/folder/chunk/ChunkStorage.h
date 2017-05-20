@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "blob.h"
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include "conv_bitfield.h"
 #include <QFile>
 

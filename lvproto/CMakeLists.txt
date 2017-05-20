@@ -34,6 +34,7 @@ target_include_directories(lvcommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(lvcommon PRIVATE librevault-common)
 target_link_libraries(lvcommon PUBLIC aes)
 target_link_libraries(lvcommon PUBLIC secret)
+target_link_libraries(lvcommon PUBLIC meta)
 
 ### WinSock
 if(WIN32)

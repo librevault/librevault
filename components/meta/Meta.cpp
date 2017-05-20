@@ -13,12 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <Meta_s.pb.h>
+#include <QCryptographicHash>
 #include "AES_CBC.h"
-#include <librevault/crypto/SHA3.h>
-#include <librevault/crypto/SHA2.h>
-#include <librevault/crypto/HMAC-SHA3.h>
 #include "blob.h"
 
 namespace librevault {
@@ -33,8 +31,11 @@ std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uin
 
 std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
 	switch(type){
-		case SHA3_224: return chunk | crypto::SHA3(224);
-		case SHA2_224: return chunk | crypto::SHA2(224);
+		case SHA3_224: {
+			QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+			hasher.addData(conv_bytearray(chunk));
+			return conv_bytearray(hasher.result());
+		}
 		default: return std::vector<uint8_t>();	// TODO: throw some exception.
 	}
 }
@@ -234,7 +235,10 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 }
 
 std::vector<uint8_t> Meta::make_path_id(const std::string& path, const Secret& secret) {
-	return path | crypto::HMAC_SHA3_224(conv_bytearray(secret.getEncryptionKey()));
+	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+	hasher.addData(secret.getEncryptionKey());
+	hasher.addData(QByteArray::fromStdString(path));
+	return conv_bytearray(hasher.result());
 }
 
 } /* namespace librevault */

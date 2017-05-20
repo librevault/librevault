@@ -29,7 +29,7 @@
 #pragma once
 #include "blob.h"
 #include "util/log.h"
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QObject>
 #include <memory>
 

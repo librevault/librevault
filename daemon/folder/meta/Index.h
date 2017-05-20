@@ -30,7 +30,7 @@
 #include "blob.h"
 #include "util/log.h"
 #include "util/SQLiteWrapper.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QObject>
 
 namespace librevault {

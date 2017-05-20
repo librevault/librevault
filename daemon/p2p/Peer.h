@@ -31,8 +31,8 @@
 #include <QTimer>
 #include <QWebSocket>
 #include "TimeoutHandler.h"
-#include <librevault/Meta.h>
-#include <librevault/SignedMeta.h>
+#include "Meta.h"
+#include "SignedMeta.h"
 #include "conv_bitfield.h"
 #include <QObject>
 

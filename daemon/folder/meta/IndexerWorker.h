@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "blob.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>

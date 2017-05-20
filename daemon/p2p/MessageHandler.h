@@ -29,8 +29,8 @@
 #pragma once
 #include "control/FolderParams.h"
 #include "Secret.h"
-#include <librevault/Meta.h>
-#include <librevault/SignedMeta.h>
+#include "Meta.h"
+#include "SignedMeta.h"
 #include "conv_bitfield.h"
 #include <QObject>
 

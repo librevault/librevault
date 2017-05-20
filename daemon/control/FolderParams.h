@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include "Secret.h"
 #include <QList>
 #include <QVariantMap>

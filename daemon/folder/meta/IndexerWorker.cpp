@@ -33,7 +33,6 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "human_size.h"
-#include <librevault/crypto/HMAC-SHA3.h>
 #include "AES_CBC.h"
 #include <rabin.h>
 #include <boost/filesystem.hpp>
@@ -260,7 +259,12 @@ void IndexerWorker::update_chunks() {
 Meta::Chunk IndexerWorker::populate_chunk(const std::vector<uchar>& data, const std::map<blob, blob>& pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
-	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(conv_bytearray(secret_.getEncryptionKey()));
+
+	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+	hasher.addData(secret_.getEncryptionKey());
+	hasher.addData(conv_bytearray(data));
+
+	chunk.pt_hmac = conv_bytearray(hasher.result());
 
 	// IV reuse
 	auto it = pt_hmac__iv.find(chunk.pt_hmac);

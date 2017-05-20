@@ -31,7 +31,7 @@
 #include "util/BandwidthCounter.h"
 #include "blob.h"
 #include "Secret.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include "conv_bitfield.h"
 #include <QObject>
 #include <QTimer>

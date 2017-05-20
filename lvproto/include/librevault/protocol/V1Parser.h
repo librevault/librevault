@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../SignedMeta.h"
+#include "SignedMeta.h"
 #include "conv_bitfield.h"
 
 namespace librevault {

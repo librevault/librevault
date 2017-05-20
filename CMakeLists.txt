@@ -293,6 +293,8 @@ endif()
 #============================================================================
 
 add_subdirectory("common")
+add_subdirectory("components/aes")
+add_subdirectory("components/base32")
 add_subdirectory("components/secret")
 add_subdirectory("components/portmapping")
 add_subdirectory("components/discovery")

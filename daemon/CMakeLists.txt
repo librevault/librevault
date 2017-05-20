@@ -54,6 +54,8 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
+target_link_libraries(librevault-daemon secret)
+target_link_libraries(librevault-daemon base32)
 target_link_libraries(librevault-daemon lvcommon)
 target_link_libraries(librevault-daemon portmapping)
 target_link_libraries(librevault-daemon discovery)

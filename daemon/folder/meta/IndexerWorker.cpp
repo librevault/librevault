@@ -34,7 +34,7 @@
 #include "folder/PathNormalizer.h"
 #include "human_size.h"
 #include <librevault/crypto/HMAC-SHA3.h>
-#include <librevault/crypto/AES_CBC.h>
+#include "AES_CBC.h"
 #include <rabin.h>
 #include <boost/filesystem.hpp>
 #include <QFile>
@@ -264,7 +264,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const std::vector<uchar>& data, const 
 
 	// IV reuse
 	auto it = pt_hmac__iv.find(chunk.pt_hmac);
-	chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
+	chunk.iv = (it != pt_hmac__iv.end() ? it->second : conv_bytearray(generateRandomIV()));
 
 	chunk.size = data.size();
 	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, conv_bytearray(secret_.getEncryptionKey()), chunk.iv), new_meta_.strong_hash_type());

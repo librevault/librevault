@@ -16,7 +16,7 @@
 #pragma once
 
 #include "Secret.h"
-#include "util/AES_CBC_DATA.h"
+#include "crypto/AES_CBC_DATA.h"
 
 namespace librevault {
 

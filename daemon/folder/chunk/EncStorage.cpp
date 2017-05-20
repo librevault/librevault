@@ -30,14 +30,14 @@
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
 #include "util/readable.h"
-#include <librevault/crypto/Base32.h>
+#include "Base32.h"
 
 namespace librevault {
 
 EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QString EncStorage::make_chunk_ct_name(QByteArray ct_hash) const noexcept {
-	return "chunk-" + QString::fromStdString(crypto::Base32().to_string(ct_hash));
+	return "chunk-" + QString::fromLatin1(fromBase32(ct_hash));
 }
 
 QString EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {

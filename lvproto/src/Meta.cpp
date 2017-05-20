@@ -15,7 +15,7 @@
  */
 #include <librevault/Meta.h>
 #include <Meta_s.pb.h>
-#include <librevault/crypto/AES_CBC.h>
+#include "AES_CBC.h"
 #include <librevault/crypto/SHA3.h>
 #include <librevault/crypto/SHA2.h>
 #include <librevault/crypto/HMAC-SHA3.h>
@@ -24,11 +24,11 @@
 namespace librevault {
 
 std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-	return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
+	return conv_bytearray(encryptAesCbc(conv_bytearray(chunk), conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size, const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-	return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
+	return conv_bytearray(decryptAesCbc(conv_bytearray(chunk), conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
@@ -192,8 +192,8 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 	if(!parsed_well) throw parse_error("Parse error: Protobuf parsing failed");
 
 	path_id_.assign(meta_s.path_id().begin(), meta_s.path_id().end());
-	path_.ct.assign(meta_s.path().ct().begin(), meta_s.path().ct().end());
-	path_.iv.assign(meta_s.path().iv().begin(), meta_s.path().iv().end());
+	path_.ct = QByteArray::fromStdString(meta_s.path().ct());
+	path_.iv = QByteArray::fromStdString(meta_s.path().iv());
 	meta_type_ = (Type)meta_s.meta_type();
 	revision_ = (int64_t)meta_s.revision();
 
@@ -207,8 +207,8 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 
 	if(meta_type_ == SYMLINK) {
 		if(meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata) throw parse_error("Parse error: Symlink metadata needed");
-		symlink_path_.ct.assign(meta_s.symlink_metadata().symlink_path().ct().begin(), meta_s.symlink_metadata().symlink_path().ct().end());
-		symlink_path_.iv.assign(meta_s.symlink_metadata().symlink_path().iv().begin(), meta_s.symlink_metadata().symlink_path().iv().end());
+		symlink_path_.ct = QByteArray::fromStdString(meta_s.symlink_metadata().symlink_path().ct());
+		symlink_path_.iv = QByteArray::fromStdString(meta_s.symlink_metadata().symlink_path().iv());
 	}
 
 	if(meta_type_ == FILE) {
@@ -218,8 +218,8 @@ void Meta::parse(const std::vector<uint8_t> &serialized_data) {
 		max_chunksize_ = meta_s.file_metadata().max_chunksize();
 		min_chunksize_ = meta_s.file_metadata().min_chunksize();
 
-		rabin_global_params_.ct.assign(meta_s.file_metadata().rabin_global_params().ct().begin(), meta_s.file_metadata().rabin_global_params().ct().end());
-		rabin_global_params_.iv.assign(meta_s.file_metadata().rabin_global_params().iv().begin(), meta_s.file_metadata().rabin_global_params().iv().end());
+		rabin_global_params_.ct = QByteArray::fromStdString(meta_s.file_metadata().rabin_global_params().ct());
+		rabin_global_params_.iv = QByteArray::fromStdString(meta_s.file_metadata().rabin_global_params().iv());
 
 		for(auto& chunk_s : meta_s.file_metadata().chunks()) {
 			Chunk chunk;

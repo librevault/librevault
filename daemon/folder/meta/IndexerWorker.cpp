@@ -68,7 +68,7 @@ void IndexerWorker::run() noexcept {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath.toStdString(), secret_));
+			old_smeta_ = meta_storage_->getMeta(conv_bytearray(Meta::makePathId(normpath, secret_)));
 			old_meta_ = old_smeta_.meta();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
@@ -102,7 +102,7 @@ void IndexerWorker::make_Meta() {
 
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 
-	new_meta_.set_path(normpath.toStdString(), secret_);    // sets path_id, encrypted_path and encrypted_path_iv
+	new_meta_.setPath(normpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
 	new_meta_.set_meta_type(get_type());  // Type
 
@@ -119,7 +119,7 @@ void IndexerWorker::make_Meta() {
 		update_chunks();
 
 	if(new_meta_.meta_type() == Meta::SYMLINK) {
-		new_meta_.set_symlink_path(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string(), secret_);
+		new_meta_.setSymlinkPath(QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string()), secret_);
 	}
 
 	// FSAttrib

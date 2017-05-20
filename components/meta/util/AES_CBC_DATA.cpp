@@ -29,7 +29,6 @@
 #include "AES_CBC_DATA.h"
 #include "AES_CBC.h"
 #include "../Meta.h"
-#include "blob.h"
 #include <cryptopp/cryptlib.h>
 
 namespace librevault {
@@ -44,17 +43,17 @@ bool AES_CBC_DATA::check(const Secret& secret) {
 	return true;
 }
 
-std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
+QByteArray AES_CBC_DATA::getPlain(const Secret& secret) const {
 	try {
-		return conv_bytearray(decryptAesCbc(ct, secret.getEncryptionKey(), iv));
+		return decryptAesCbc(ct, secret.getEncryptionKey(), iv);
 	}catch(const CryptoPP::Exception& e){
 		throw Meta::parse_error("Parse error: Decryption failed");
 	}
 }
 
-void AES_CBC_DATA::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
+void AES_CBC_DATA::setPlain(QByteArray pt, const Secret& secret) {
 	iv = generateRandomIV();
-	ct = encryptAesCbc(ct, secret.getEncryptionKey(), conv_bytearray(pt));
+	ct = encryptAesCbc(ct, secret.getEncryptionKey(), pt);
 }
 
 } /* namespace librevault */

@@ -100,7 +100,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
-			{":path_id", signed_meta.meta().path_id()},
+			{":path_id", conv_bytearray(signed_meta.meta().pathId())},
 			{":meta", conv_bytearray(signed_meta.raw_meta())},
 			{":signature", conv_bytearray(signed_meta.signature())},
 			{":type", (uint64_t)signed_meta.meta().meta_type()},
@@ -117,7 +117,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
 				{":ct_hash", conv_bytearray(chunk.ct_hash)},
-				{":path_id", signed_meta.meta().path_id()},
+				{":path_id", conv_bytearray(signed_meta.meta().pathId())},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
@@ -128,9 +128,9 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().pathId()) << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().pathId()) << " t:" << signed_meta.meta().meta_type());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)
@@ -145,24 +145,24 @@ QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::str
 		result_list << SignedMeta(conv_bytearray(row[0]), conv_bytearray(row[1]));
 	return result_list;
 }
-SignedMeta Index::getMeta(const blob& path_id){
+SignedMeta Index::getMeta(QByteArray path_id){
 	auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
-		{":path_id", path_id}
+		{":path_id", conv_bytearray(path_id)}
 	});
 
 	if(meta_list.empty()) throw MetaStorage::no_such_meta();
 	return *meta_list.begin();
 }
 QList<SignedMeta> Index::getMeta(){
-	return getMeta("SELECT meta, signature FROM meta");
+	return getMeta(std::string("SELECT meta, signature FROM meta"));
 }
 
 QList<SignedMeta> Index::getExistingMeta() {
-	return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
+	return getMeta(std::string("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;"));
 }
 
 QList<SignedMeta> Index::getIncompleteMeta() {
-	return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
+	return getMeta(std::string("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;"));
 }
 
 bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {

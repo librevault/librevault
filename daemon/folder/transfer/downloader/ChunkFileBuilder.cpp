@@ -29,7 +29,6 @@
 #include "ChunkFileBuilder.h"
 #include "Base32.h"
 #include <QLoggingCategory>
-#include "blob.h"
 
 namespace librevault {
 

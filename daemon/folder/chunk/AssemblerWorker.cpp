@@ -79,7 +79,7 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
-	normpath_ = QByteArray::fromStdString(meta_.path(params_.secret));
+	normpath_ = meta_.path(params_.secret);
 	denormpath_ = path_normalizer_->denormalizePath(normpath_);
 
 	try {
@@ -101,12 +101,12 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.meta_type() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_->markAssembled(meta_.path_id());
+			meta_storage_->markAssembled(conv_bytearray(meta_.pathId()));
 			chunk_storage_->cleanup(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
-		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).c_str() << "E:" << e.what();    // FIXME: #83
+		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).data() << "E:" << e.what();    // FIXME: #83
 	}
 }
 
@@ -122,7 +122,7 @@ bool AssemblerWorker::assemble_symlink() {
 	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
 	boost::filesystem::remove_all(denormpath_fs);
-	boost::filesystem::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
+	boost::filesystem::create_symlink(meta_.symlinkPath(params_.secret).toStdString(), denormpath_fs);
 
 	return true;    // Maybe, something else?
 }

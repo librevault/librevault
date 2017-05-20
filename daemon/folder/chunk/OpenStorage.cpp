@@ -63,7 +63,7 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		QFile f(path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret))));
+		QFile f(path_normalizer_->denormalizePath(smeta.meta().path(params_.secret)));
 		if(! f.open(QIODevice::ReadOnly)) continue;
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;

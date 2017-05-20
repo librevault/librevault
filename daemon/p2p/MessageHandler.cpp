@@ -68,7 +68,7 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitf
 }
 void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 	V1Parser::HaveChunk message;
-	message.ct_hash = conv_bytearray(ct_hash);
+	message.ct_hash = ct_hash;
 	emit messagePrepared(V1Parser().gen_HaveChunk(message));
 
 	qDebug() << "==> HAVE_BLOCK:"
@@ -91,7 +91,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, const bitfield_type&
 	emit messagePrepared(V1Parser().gen_MetaReply(message));
 
 	qDebug() << "==> META_REPLY:"
-		<< "path_id=" << path_id_readable(smeta.meta().path_id())
+		<< "path_id=" << path_id_readable(smeta.meta().pathId())
 		<< "revision=" << smeta.meta().revision()
 		<< "bits=" << conv_bitarray(bitfield);
 }
@@ -170,7 +170,7 @@ void MessageHandler::handleHaveChunk(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveChunk(message_raw);
 	qDebug() << "<== HAVE_BLOCK:"
 		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash);
-	emit rcvdHaveChunk(conv_bytearray(message_struct.ct_hash));
+	emit rcvdHaveChunk(message_struct.ct_hash);
 }
 
 void MessageHandler::handleMetaRequest(QByteArray message_raw) {
@@ -184,7 +184,7 @@ void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
-		<< "path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
+		<< "path_id=" << path_id_readable(message_struct.smeta.meta().pathId())
 		<< "revision=" << message_struct.smeta.meta().revision()
 		<< "bits=" << conv_bitarray(message_struct.bitfield);
 

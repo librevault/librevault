@@ -62,7 +62,7 @@ V1Parser::HaveMeta V1Parser::parse_HaveMeta(QByteArray message_raw) {
 
 	HaveMeta message_struct;
 	message_struct.revision.revision_ = message_protobuf.revision();
-	message_struct.revision.path_id_ = std::vector<uint8_t>(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
+	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
 	message_struct.bitfield = convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
 	return message_struct;
@@ -80,7 +80,7 @@ V1Parser::HaveChunk V1Parser::parse_HaveChunk(QByteArray message_raw) {
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	HaveChunk message_struct;
-	message_struct.ct_hash = std::vector<uint8_t>(message_protobuf.ct_hash().begin(), message_protobuf.ct_hash().end());
+	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
 
 	return message_struct;
 }
@@ -97,7 +97,7 @@ V1Parser::MetaRequest V1Parser::parse_MetaRequest(QByteArray message_raw) {
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	MetaRequest message_struct;
-	message_struct.revision.path_id_.assign(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
+	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
 	message_struct.revision.revision_ = message_protobuf.revision();
 
 	return message_struct;
@@ -137,7 +137,7 @@ V1Parser::MetaCancel V1Parser::parse_MetaCancel(QByteArray message_raw) {
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
 	MetaCancel message_struct;
-	message_struct.revision.path_id_.assign(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
+	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
 	message_struct.revision.revision_ = message_protobuf.revision();
 
 	return message_struct;

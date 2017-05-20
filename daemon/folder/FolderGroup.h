@@ -29,7 +29,6 @@
 #pragma once
 #include "control/FolderParams.h"
 #include "util/BandwidthCounter.h"
-#include "blob.h"
 #include "Secret.h"
 #include "SignedMeta.h"
 #include "conv_bitfield.h"

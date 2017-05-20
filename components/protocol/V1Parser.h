@@ -71,7 +71,7 @@ public:
 		bitfield_type bitfield;
 	};
 	struct HaveChunk {
-		std::vector<uint8_t> ct_hash;
+		QByteArray ct_hash;
 	};
 	struct MetaRequest {
 		Meta::PathRevision revision;

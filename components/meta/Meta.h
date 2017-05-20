@@ -49,7 +49,7 @@ private:
 	/* Meta fields, must be serialized together and then signed */
 
 	/* Required data */
-	std::vector<uint8_t> path_id_;
+	QByteArray path_id_;
 	AES_CBC_DATA path_;
 	Type meta_type_ = FILE;
 	int64_t revision_ = 0;	// timestamp of Meta modification
@@ -95,40 +95,36 @@ public:
 
 	/// Used for querying specific version of Meta
 	struct PathRevision {
-		std::vector<uint8_t> path_id_;
+		QByteArray path_id_;
 		int64_t revision_;
 	};
 
 	/* Class methods */
 	Meta();
-	explicit Meta(const std::vector<uint8_t>& meta_s);
+	explicit Meta(QByteArray meta_s);
 	virtual ~Meta();
 
 	/* Serialization */
-	std::vector<uint8_t> serialize() const;
-	void parse(const std::vector<uint8_t>& serialized_data);
+	QByteArray serialize() const;
+	void parse(QByteArray serialized_data);
 
 	/* Validation */
 	bool validate() const;
 	//bool validate(const Secret& secret) const;
 
 	/* Generators */
-	static std::vector<uint8_t> make_path_id(const std::string& path, const Secret& secret);
+	static QByteArray makePathId(QString path, const Secret& secret);
 
 	/* Smart getters+setters */
-	PathRevision path_revision() const {return PathRevision{path_id(), revision()};}
+	PathRevision path_revision() const {return PathRevision{pathId(), revision()};}
 	uint64_t size() const;
 
 	// Encryptors/decryptors
-	std::string path(const Secret& secret) const;
-	void set_path(std::string path, const Secret& secret);   // Also, computes and sets path_id
-	AES_CBC_DATA& raw_path() {return path_;}
-	const AES_CBC_DATA& raw_path() const {return path_;}
+	QByteArray path(const Secret& secret) const;
+	void setPath(QByteArray path, const Secret& secret);   // Also, computes and sets path_id
 
-	std::string symlink_path(const Secret& secret) const;
-	void set_symlink_path(std::string path, const Secret& secret);
-	AES_CBC_DATA& raw_symlink_path() {return symlink_path_;}
-	const AES_CBC_DATA& raw_symlink_path() const {return symlink_path_;}
+	QByteArray symlinkPath(const Secret& secret) const;
+	void setSymlinkPath(QByteArray path, const Secret& secret);
 
 	RabinGlobalParams rabin_global_params(const Secret& secret) const;
 	void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
@@ -136,8 +132,8 @@ public:
 	const AES_CBC_DATA& raw_rabin_global_params() const {return rabin_global_params_;}
 
 	// Dumb getters & setters
-	const std::vector<uint8_t>& path_id() const {return path_id_;}
-	void set_path_id(const std::vector<uint8_t>& path_id) {path_id_ = path_id;}
+	QByteArray pathId() const {return path_id_;}
+	void setPathId(QByteArray path_id) {path_id_ = path_id;}
 
 	Type meta_type() const {return meta_type_;}
 	void set_meta_type(Type meta_type) {meta_type_ = meta_type;}

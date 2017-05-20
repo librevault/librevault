@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SignedMeta.h"
-#include "blob.h"
 #include <cryptopp/osrng.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/sha3.h>
@@ -25,7 +24,7 @@ namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 	meta_ = std::make_shared<Meta>(std::move(meta));
-	raw_meta_ = conv_bytearray(meta.serialize());
+	raw_meta_ = meta.serialize();
 
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
@@ -37,7 +36,7 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 }
 
 SignedMeta::SignedMeta(QByteArray raw_meta, QByteArray signature) : raw_meta_(raw_meta), signature_(signature) {
-	meta_ = std::make_shared<Meta>(conv_bytearray(raw_meta_));
+	meta_ = std::make_shared<Meta>(raw_meta_);
 }
 
 bool SignedMeta::isValid(const Secret& secret) const {

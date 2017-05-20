@@ -59,8 +59,6 @@ Secret::Secret(Type type, QByteArray binary_part) {
 	secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
 }
 
-Secret::Secret(std::string string_secret) : Secret(QByteArray::fromStdString(string_secret)) {}
-
 Secret::Secret(QString string_secret) : Secret(string_secret.toLatin1()) {}
 
 Secret::Secret(QByteArray string_secret) : secret_s(string_secret) {
@@ -167,7 +165,7 @@ QByteArray Secret::getHash() const {
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k){
-	return os << (std::string)k;
+	return os << ((QString)k).toStdString();
 }
 
 } /* namespace librevault */

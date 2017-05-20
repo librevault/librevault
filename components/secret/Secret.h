@@ -59,11 +59,9 @@ public:
 
 	Secret();
 	Secret(Type type, QByteArray payload);
-	Secret(std::string string_secret);
 	Secret(QByteArray string_secret);
 	Secret(QString string_secret);
 
-	operator std::string() const {return secret_s.toStdString();}
 	operator QString() const {return QString::fromLatin1(secret_s);}
 
 	Type getType() const {return (Type)secret_s[0];}

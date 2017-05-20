@@ -66,7 +66,7 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 		<< "Path=" << params_.path
 		<< "System path=" << params_.system_path;
 
-	state_collector_->folder_state_set(params_.secret.getHash(), "secret", QString::fromStdString(params_.secret));
+	state_collector_->folder_state_set(params_.secret.getHash(), "secret", (QString)params_.secret);
 
 	/* Initializing components */
 	path_normalizer_ = std::make_unique<PathNormalizer>(params_);

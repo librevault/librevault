@@ -92,6 +92,7 @@ endif()
 
 target_link_libraries(librevault-gui librevault-common)
 target_link_libraries(librevault-gui openssl)
+target_link_libraries(librevault-gui secret)
 
 # Qt
 target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)

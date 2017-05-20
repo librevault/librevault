@@ -29,7 +29,7 @@
 #include "CliApplication.h"
 #include "appver.h"
 #include "blob.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QDebug>
 #include <QtGlobal>
 #include <QJsonDocument>
@@ -52,9 +52,9 @@ void CliApplication::performProcessing() {
 		if(args["generate"].asBool()) {
 			std::cout << Secret() << std::endl;
 		}else if(args["derive"].asBool()) {
-			std::cout << Secret(args["<secret>"].asString()).derive((Secret::Type)args["<type>"].asString().at(0)) << std::endl;
+			std::cout << Secret(QString::fromStdString(args["<secret>"].asString())).derive((Secret::Type)args["<type>"].asString().at(0)) << std::endl;
 		}else if(args["folderid"].asBool()) {
-			std::cout << conv_bytearray(Secret(args["<secret>"].asString()).get_Hash()).toHex().toStdString() << std::endl;
+			std::cout << Secret(QString::fromStdString(args["<secret>"].asString())).getHash().toHex().toStdString() << std::endl;
 		}
 		quit();
 		return;

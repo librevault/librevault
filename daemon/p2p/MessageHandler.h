@@ -48,13 +48,11 @@ class MessageHandler : public QObject {
 	Q_OBJECT
 
 public:
-	MessageHandler(const FolderParams& params, QObject* parent = nullptr);
+	MessageHandler(QObject* parent = nullptr);
 
 	Q_SIGNAL void messagePrepared(QByteArray msg);
 
 private:
-	FolderParams params_;
-
 	void prepareMessage(const blob& message);
 
 	// Messages

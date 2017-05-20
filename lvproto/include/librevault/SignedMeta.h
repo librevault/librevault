@@ -27,9 +27,11 @@ public:
 
 	SignedMeta() {}
 	SignedMeta(Meta meta, const Secret& secret);
-	SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature = true);
+	SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature);
 
 	operator bool() const {return meta_ && raw_meta_ && signature_;}
+
+	bool isValid(const Secret& secret) const;
 
 	// Getters
 	const Meta& meta() const {return *meta_;}

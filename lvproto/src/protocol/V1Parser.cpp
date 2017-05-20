@@ -113,7 +113,7 @@ std::vector<uint8_t> V1Parser::gen_MetaReply(const MetaReply& message_struct) {
 
 	return prepare_proto_message(message_protobuf, META_REPLY);
 }
-V1Parser::MetaReply V1Parser::parse_MetaReply(const std::vector<uint8_t>& message_raw, const Secret& secret_verifier) {
+V1Parser::MetaReply V1Parser::parse_MetaReply(const std::vector<uint8_t>& message_raw) {
 	protocol::MetaReply message_protobuf;
 	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
 
@@ -122,7 +122,7 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(const std::vector<uint8_t>& messag
 
 	bitfield_type converted_bitfield = convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
-	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier), std::move(converted_bitfield)};
+	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature)), std::move(converted_bitfield)};
 }
 
 std::vector<uint8_t> V1Parser::gen_MetaCancel(const MetaCancel& message_struct) {

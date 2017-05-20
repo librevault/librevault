@@ -58,7 +58,7 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
 	timeout_handler_ = new TimeoutHandler();
 	connect(timeout_handler_, &TimeoutHandler::timedOut, this, &Peer::handleDisconnected);
 
-	message_handler_ = new MessageHandler(params, this);
+	message_handler_ = new MessageHandler(this);
 
 	// Internal signal interconnection
 	connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);

@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "control/FolderParams.h"
 #include "util/log.h"
 #include <librevault/SignedMeta.h>
 #include "conv_bitfield.h"
@@ -42,13 +43,14 @@ class MetaDownloader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("MetaDownloader");
 public:
-	MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
+	MetaDownloader(const FolderParams& params, MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
 
 	/* Message handlers */
 	void handle_have_meta(Peer* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
 	void handle_meta_reply(Peer* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
 
 private:
+	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	Downloader* downloader_;
 };

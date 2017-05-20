@@ -142,7 +142,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list << SignedMeta(row[0], row[1], params_.secret);
+		result_list << SignedMeta(row[0], row[1]);
 	return result_list;
 }
 SignedMeta Index::getMeta(const blob& path_id){

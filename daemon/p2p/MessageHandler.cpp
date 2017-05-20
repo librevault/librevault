@@ -34,8 +34,8 @@
 
 namespace librevault {
 
-MessageHandler::MessageHandler(const FolderParams& params, QObject* parent) :
-	QObject(parent), params_(params) {
+MessageHandler::MessageHandler(QObject* parent) :
+	QObject(parent) {
 }
 
 void MessageHandler::prepareMessage(const blob& message) {
@@ -186,7 +186,7 @@ void MessageHandler::handleMetaRequest(const blob& message_raw) {
 	emit rcvdMetaRequest(message_struct.revision);
 }
 void MessageHandler::handleMetaReply(const blob& message_raw) {
-	auto message_struct = V1Parser().parse_MetaReply(message_raw, params_.secret);
+	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
 		<< "path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
 		<< "revision=" << message_struct.smeta.meta().revision()

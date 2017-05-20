@@ -78,7 +78,7 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 	uploader_ = new Uploader(chunk_storage_, this);
 	downloader_ = new Downloader(params_, meta_storage_, this);
 	meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
-	meta_downloader_ = new MetaDownloader(meta_storage_, downloader_, this);
+	meta_downloader_ = new MetaDownloader(params_, meta_storage_, downloader_, this);
 
 	state_pusher_ = new QTimer(this);
 

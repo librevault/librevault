@@ -35,8 +35,9 @@
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent) :
+MetaDownloader::MetaDownloader(const FolderParams& params, MetaStorage* meta_storage, Downloader* downloader, QObject* parent) :
 	QObject(parent),
+	params_(params),
 	meta_storage_(meta_storage),
 	downloader_(downloader) {
 	LOGFUNC();
@@ -52,7 +53,7 @@ void MetaDownloader::handle_have_meta(Peer* origin, const Meta::PathRevision& re
 }
 
 void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	if(meta_storage_->putAllowed(smeta.meta().path_revision())) {
+	if(smeta.isValid(params_.secret), meta_storage_->putAllowed(smeta.meta().path_revision())) {
 		meta_storage_->putMeta(smeta);
 		downloader_->notifyRemoteMeta(origin, smeta.meta().path_revision(), bitfield);
 	}else

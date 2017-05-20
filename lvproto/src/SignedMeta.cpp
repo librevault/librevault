@@ -35,28 +35,29 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
 }
 
-SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature) :
+SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature) :
 	raw_meta_(std::make_shared<std::vector<uint8_t>>(std::move(raw_meta))),
 	signature_(std::make_shared<std::vector<uint8_t>>(std::move(signature))) {
+	meta_ = std::make_shared<Meta>(*raw_meta_);
+}
 
-	if(check_signature) {
-		try {
-			CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-			CryptoPP::ECP::Point p;
+bool SignedMeta::isValid(const Secret& secret) const {
+	try {
+		CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
+		CryptoPP::ECP::Point p;
 
-			verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
-			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-			auto pubkey_s = secret.getPublicKey();
-			verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)pubkey_s.data(), pubkey_s.size());
-			verifier.AccessKey().SetPublicElement(p);
-			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
-				throw signature_error();
-		}catch(CryptoPP::Exception& e){
-			throw signature_error();
-		}
+		verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
+		verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
+		auto pubkey_s = secret.getPublicKey();
+		verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)pubkey_s.data(), pubkey_s.size());
+		verifier.AccessKey().SetPublicElement(p);
+		if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
+			return false;
+	}catch(CryptoPP::Exception& e){
+		return false;
 	}
 
-	meta_ = std::make_shared<Meta>(*raw_meta_);
+	return true;
 }
 
 } /* namespace librevault */

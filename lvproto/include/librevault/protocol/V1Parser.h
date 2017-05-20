@@ -131,7 +131,7 @@ public:
 	MetaRequest parse_MetaRequest(const std::vector<uint8_t>& message_raw);
 
 	std::vector<uint8_t> gen_MetaReply(const MetaReply& message_struct);
-	MetaReply parse_MetaReply(const std::vector<uint8_t>& message_raw, const Secret& secret_verifier);
+	MetaReply parse_MetaReply(const std::vector<uint8_t>& message_raw);
 
 	std::vector<uint8_t> gen_MetaCancel(const MetaCancel& message_struct);
 	MetaCancel parse_MetaCancel(const std::vector<uint8_t>& message_raw);

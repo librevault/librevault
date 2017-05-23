@@ -30,6 +30,7 @@
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
 #include <QTimer>
+#include <cerrno>
 
 namespace librevault {
 

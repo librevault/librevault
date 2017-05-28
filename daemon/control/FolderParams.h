@@ -57,7 +57,6 @@ struct FolderParams {
 	bool preserve_unix_attrib;
 	bool preserve_windows_attrib;
 	bool preserve_symlinks;
-	bool normalize_unicode;
 	Meta::StrongHashType chunk_strong_hash_type;
 	std::chrono::seconds full_rescan_interval;
 	QStringList ignore_paths;

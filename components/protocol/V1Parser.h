@@ -68,7 +68,7 @@ public:
 	};
 	struct HaveMeta {
 		Meta::PathRevision revision;
-		bitfield_type bitfield;
+		QBitArray bitfield;
 	};
 	struct HaveChunk {
 		QByteArray ct_hash;
@@ -78,7 +78,7 @@ public:
 	};
 	struct MetaReply {
 		SignedMeta smeta;
-		bitfield_type bitfield;
+		QBitArray bitfield;
 	};
 	struct MetaCancel {
 		Meta::PathRevision revision;

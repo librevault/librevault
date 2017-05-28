@@ -40,7 +40,7 @@ MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storag
 	LOGFUNC();
 }
 
-void MetaUploader::broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaUploader::broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, QBitArray bitfield) {
 	for(auto remote : remotes) {
 		remote->messageHandler()->sendHaveMeta(revision, bitfield);
 	}

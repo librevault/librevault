@@ -45,7 +45,7 @@ class MetaUploader : public QObject {
 public:
 	MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 
-	void broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	void broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, QBitArray bitfield);
 
 	/* Message handlers */
 	void handle_handshake(Peer* remote);

@@ -35,7 +35,6 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
-#include "conv_bitarray.h"
 #include "V1Parser.h"
 
 namespace librevault {

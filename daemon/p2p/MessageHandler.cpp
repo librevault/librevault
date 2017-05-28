@@ -28,7 +28,6 @@
  */
 #include "MessageHandler.h"
 #include "util/readable.h"
-#include "conv_bitarray.h"
 #include "V1Parser.h"
 #include <QDebug>
 
@@ -55,7 +54,7 @@ void MessageHandler::sendNotInterested() {
 	qDebug() << "==> NOT_INTERESTED";
 }
 
-void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, QBitArray bitfield) {
 	V1Parser::HaveMeta message;
 	message.revision = revision;
 	message.bitfield = bitfield;
@@ -64,7 +63,7 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, const bitf
 	qDebug() << "==> HAVE_META:"
 		<< "path_id=" << path_id_readable(message.revision.path_id_)
 		<< "revision=" << message.revision.revision_
-		<< "bits=" << conv_bitarray(message.bitfield);
+		<< "bits=" << message.bitfield;
 }
 void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 	V1Parser::HaveChunk message;
@@ -84,7 +83,7 @@ void MessageHandler::sendMetaRequest(const Meta::PathRevision& revision) {
 		<< "path_id=" << path_id_readable(revision.path_id_)
 		<< "revision=" << revision.revision_;
 }
-void MessageHandler::sendMetaReply(const SignedMeta& smeta, const bitfield_type& bitfield) {
+void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) {
 	V1Parser::MetaReply message;
 	message.smeta = smeta;
 	message.bitfield = bitfield;
@@ -93,7 +92,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, const bitfield_type&
 	qDebug() << "==> META_REPLY:"
 		<< "path_id=" << path_id_readable(smeta.meta().pathId())
 		<< "revision=" << smeta.meta().revision()
-		<< "bits=" << conv_bitarray(bitfield);
+		<< "bits=" << bitfield;
 }
 void MessageHandler::sendMetaCancel(const Meta::PathRevision& revision) {
 	V1Parser::MetaCancel message;
@@ -162,7 +161,7 @@ void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 	qDebug() << "<== HAVE_META:"
 		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
 		<< "revision=" << message_struct.revision.revision_
-		<< "bits=" << conv_bitarray(message_struct.bitfield);
+		<< "bits=" << message_struct.bitfield;
 
 	emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
 }
@@ -186,7 +185,7 @@ void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	qDebug() << "<== META_REPLY:"
 		<< "path_id=" << path_id_readable(message_struct.smeta.meta().pathId())
 		<< "revision=" << message_struct.smeta.meta().revision()
-		<< "bits=" << conv_bitarray(message_struct.bitfield);
+		<< "bits=" << message_struct.bitfield;
 
 	emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
 }

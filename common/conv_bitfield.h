@@ -14,28 +14,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <vector>
+#include <QBitArray>
+#include <QByteArray>
 
 namespace librevault {
 
-using bitfield_type = std::vector<bool>;
+using bitfield_type = QBitArray;
 
-inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bits) {
-	size_t byte_size = (bits.size() / 8) + ((bits.size() % 8) ? 1 : 0);
-	std::vector<uint8_t> bytes(byte_size);
+inline QByteArray convert_bitfield(QBitArray bits) {
+	int byte_size = (bits.size() / 8) + ((bits.size() % 8) ? 1 : 0);
+	QByteArray bytes(byte_size, 0);
 
-	for(size_t bitn = 0; bitn < bits.size(); bitn++) {
-		bytes[bitn/8] |= ((bits[bitn]?1:0) << (7-(bitn%8)));
+	for(int bitn = 0; bitn < bits.size(); bitn++) {
+		bytes[bitn/8] = bytes[bitn/8] | ((bits[bitn]?1:0) << (7-(bitn%8)));
 	}
 
 	return bytes;
 }
 
-inline bitfield_type convert_bitfield(std::vector<uint8_t> bytes) {
-	bitfield_type bits(bytes.size()*8);
-	for(size_t byten = 0; byten < bytes.size(); byten++) {
-		for(size_t bitn = 0; bitn < 8; bitn++) {
-			bits[byten*8+bitn] = (bytes[byten] & (1<<(7-bitn)));
+inline QBitArray convert_bitfield(QByteArray bytes) {
+	QBitArray bits(bytes.size()*8);
+	for(int byten = 0; byten < bytes.size(); byten++) {
+		for(int bitn = 0; bitn < 8; bitn++) {
+			bits.setBit(byten*8+bitn, bytes[byten] & (1<<(7-bitn)));
 		}
 	}
 	return bits;

@@ -59,11 +59,11 @@ private:
 	DECLARE_MESSAGE(Interested);
 	DECLARE_MESSAGE(NotInterested);
 
-	DECLARE_MESSAGE(HaveMeta, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+	DECLARE_MESSAGE(HaveMeta, const Meta::PathRevision& revision, QBitArray bitfield);
 	DECLARE_MESSAGE(HaveChunk, QByteArray ct_hash);
 
 	DECLARE_MESSAGE(MetaRequest, const Meta::PathRevision& revision);
-	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, const bitfield_type& bitfield);
+	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, QBitArray bitfield);
 	DECLARE_MESSAGE(MetaCancel, const Meta::PathRevision& revision);
 
 	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);

@@ -63,7 +63,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 
 Downloader::~Downloader() {}
 
-void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield) {
+void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 
 	Q_ASSERT(bitfield.size() == smeta.meta().chunks().size());
@@ -74,12 +74,12 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
 	bool have_complete = false;
 	bool have_incomplete = false;
 
-	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
+	for(int chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
 		auto& meta_chunk = smeta.meta().chunks().at(chunk_idx);
 
 		QByteArray ct_hash = meta_chunk.ct_hash;
 
-		if(bitfield[chunk_idx]) {
+		if(bitfield.testBit(chunk_idx)) {
 			have_complete = true;   // We have chunk, remove from missing
 			removeChunk(ct_hash); // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
 		}else{
@@ -149,13 +149,13 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 	return cluster;
 }
 
-void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 	try {
 		auto chunks = meta_storage_->getMeta(revision).meta().chunks();
-		bitfield.resize(chunks.size(), 0);  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
-		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
-			if(bitfield[chunk_idx])
+		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
+		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
+			if(bitfield.testBit(chunk_idx))
 				notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
 	}catch(MetaStorage::no_such_meta){
 		qCDebug(log_downloader) << "Expired Meta";

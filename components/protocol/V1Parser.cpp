@@ -51,8 +51,8 @@ QByteArray V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
 	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
 
-	std::vector<uint8_t> converted_bitfield = convert_bitfield(message_struct.bitfield);
-	message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
+	QByteArray converted_bitfield = convert_bitfield(message_struct.bitfield);
+	message_protobuf.set_bitfield(converted_bitfield.toStdString());
 
 	return prepare_proto_message(message_protobuf, HAVE_META);
 }
@@ -63,7 +63,7 @@ V1Parser::HaveMeta V1Parser::parse_HaveMeta(QByteArray message_raw) {
 	HaveMeta message_struct;
 	message_struct.revision.revision_ = message_protobuf.revision();
 	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
-	message_struct.bitfield = convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
+	message_struct.bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
 
 	return message_struct;
 }
@@ -107,9 +107,7 @@ QByteArray V1Parser::gen_MetaReply(const MetaReply& message_struct) {
 	protocol::MetaReply message_protobuf;
 	message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
 	message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
-
-	std::vector<uint8_t> converted_bitfield = convert_bitfield(message_struct.bitfield);
-	message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
+	message_protobuf.set_bitfield(convert_bitfield(message_struct.bitfield).toStdString());
 
 	return prepare_proto_message(message_protobuf, META_REPLY);
 }
@@ -120,7 +118,7 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(QByteArray message_raw) {
 	QByteArray raw_meta = QByteArray::fromStdString(message_protobuf.meta());
 	QByteArray signature = QByteArray::fromStdString(message_protobuf.signature());
 
-	bitfield_type converted_bitfield = convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
+	QBitArray converted_bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
 
 	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature)), std::move(converted_bitfield)};
 }

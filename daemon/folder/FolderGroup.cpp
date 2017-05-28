@@ -115,7 +115,7 @@ FolderGroup::~FolderGroup() {
 /* Actions */
 void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
 	Meta::PathRevision revision = smeta.meta().path_revision();
-	bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
+	QBitArray bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
 	downloader_->notifyLocalMeta(smeta, bitfield);
 	meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);
@@ -131,7 +131,7 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	connect(peer->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=]{uploader_->handle_interested(peer);});
 	connect(peer->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(peer);});
 
-	connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, bitfield_type bitfield){
+	connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, QBitArray bitfield){
 		meta_downloader_->handle_have_meta(peer, revision, bitfield);
 	});
 	connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](QByteArray ct_hash){
@@ -140,7 +140,7 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 	connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
 		meta_uploader_->handle_meta_request(peer, path_revision);
 	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, const bitfield_type& bitfield){
+	connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, QBitArray bitfield){
 		meta_downloader_->handle_meta_reply(peer, smeta, bitfield);
 	});
 	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](QByteArray ct_hash, uint32_t offset, uint32_t size){

@@ -31,7 +31,7 @@
 #include "TimestampArchive.h"
 #include "TrashArchive.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
 #include <QTimer>

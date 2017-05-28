@@ -31,7 +31,7 @@
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
@@ -78,7 +78,7 @@ void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
 	normpath_ = meta_.path(params_.secret);
-	denormpath_ = PathNormalizer::denormalizePath(normpath_, params_.path);
+	denormpath_ = PathNormalizer::absolutizePath(normpath_, params_.path);
 
 	try {
 		bool assembled = false;

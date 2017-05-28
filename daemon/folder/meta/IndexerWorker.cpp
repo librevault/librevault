@@ -31,7 +31,7 @@
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "human_size.h"
 #include "AES_CBC.h"
 #include <rabin.h>

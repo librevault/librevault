@@ -26,48 +26,14 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "PathNormalizer.h"
-#include <QDir>
+#pragma once
+#include <QString>
 
 namespace librevault {
 namespace PathNormalizer {
 
-QByteArray normalizePath(QString abspath, QString root) {
-	QDir root_dir(root);
-
-	// Make it relative to root
-	QString normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));
-
-	// Convert directory separators
-	normpath = QDir::fromNativeSeparators(normpath);
-
-	// Apply Unicode NFC-normalization
-	normpath = normpath.normalized(QString::NormalizationForm_C);
-
-	// Removing last '/' in directories
-	if(normpath.endsWith('/'))
-		normpath.chop(1);
-
-	// Convert to UTF-8
-	return normpath.toUtf8();
-}
-
-QString denormalizePath(QByteArray normpath, QString root) {
-	QDir root_dir(root);
-
-	// Convert from UTF-8
-	QString denormpath = QString::fromUtf8(normpath);
-
-	// Make it absolute
-	denormpath = root_dir.absoluteFilePath(denormpath);
-
-	// Use Mac-NFD normalization on macOS (weird Unicode 3.2 edition)
-#ifdef Q_OS_MAC
-	denormpath = denormpath.normalized(QString::NormalizationForm_D, QChar::Unicode_3_2);
-#endif
-
-	return denormpath;
-}
+QByteArray normalizePath(QString abspath, QString root);
+QString absolutizePath(QByteArray normpath, QString root);
 
 } /* namespace PathNormalizer */
 } /* namespace librevault */

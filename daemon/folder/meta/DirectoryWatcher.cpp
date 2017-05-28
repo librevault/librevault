@@ -29,7 +29,7 @@
 #include "DirectoryWatcher.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "util/conv_fspath.h"
 #include <QTimer>
 

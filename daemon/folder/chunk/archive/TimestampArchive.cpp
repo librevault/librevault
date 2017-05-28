@@ -28,7 +28,7 @@
  */
 #include "TimestampArchive.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "util/conv_fspath.h"
 #include "util/regex_escape.h"
 #include <QDateTime>

@@ -30,7 +30,7 @@
 #include "control/FolderParams.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "util/readable.h"
 
 namespace librevault {
@@ -62,7 +62,7 @@ QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		QFile f(PathNormalizer::denormalizePath(smeta.meta().path(params_.secret), params_.path));
+		QFile f(PathNormalizer::absolutizePath(smeta.meta().path(params_.secret), params_.path));
 		if(! f.open(QIODevice::ReadOnly)) continue;
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;

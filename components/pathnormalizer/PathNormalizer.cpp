@@ -26,14 +26,40 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QString>
+#include "PathNormalizer.h"
+#include <QDir>
 
 namespace librevault {
 namespace PathNormalizer {
 
-QByteArray normalizePath(QString abspath, QString root);
-QString denormalizePath(QByteArray normpath, QString root);
+QByteArray normalizePath(QString abspath, QString root) {
+	QDir root_dir(root);
+
+	// Make it relative to root
+	QString normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));
+
+	// Convert directory separators
+	normpath = QDir::fromNativeSeparators(normpath);
+
+	// Removing last '/' in directories
+	if(normpath.endsWith('/'))
+		normpath.chop(1);
+
+	// Convert to UTF-8
+	return normpath.toUtf8();
+}
+
+QString absolutizePath(QByteArray normpath, QString root) {
+	QDir root_dir(root);
+
+	// Convert from UTF-8
+	QString denormpath = QString::fromUtf8(normpath);
+
+	// Make it absolute
+	denormpath = root_dir.absoluteFilePath(denormpath);
+
+	return denormpath;
+}
 
 } /* namespace PathNormalizer */
 } /* namespace librevault */

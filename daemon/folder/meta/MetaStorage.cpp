@@ -32,7 +32,6 @@
 #include "Index.h"
 #include "IndexerQueue.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
 
 namespace librevault {
 

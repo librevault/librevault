@@ -29,7 +29,6 @@
 #include "FolderGroup.h"
 
 #include "IgnoreList.h"
-#include "PathNormalizer.h"
 #include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"

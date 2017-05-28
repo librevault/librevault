@@ -28,7 +28,7 @@
  */
 #include "TrashArchive.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "util/conv_fspath.h"
 #include <QDir>
 #include <QTimer>

@@ -28,7 +28,7 @@
  */
 #include "IgnoreList.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include <QDirIterator>
 #include <QLoggingCategory>
 

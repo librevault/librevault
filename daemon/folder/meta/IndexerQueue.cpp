@@ -32,7 +32,6 @@
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
 
 Q_LOGGING_CATEGORY(log_indexer, "folder.meta.indexer")
 

@@ -36,7 +36,6 @@ namespace librevault {
 
 class FolderParams;
 class MetaStorage;
-class PathNormalizer;
 
 class MemoryCachedStorage;
 class EncStorage;
@@ -51,7 +50,7 @@ public:
 		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 	virtual ~ChunkStorage();
 
 	bool have_chunk(QByteArray ct_hash) const noexcept ;

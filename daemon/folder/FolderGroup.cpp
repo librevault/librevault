@@ -69,11 +69,10 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 	state_collector_->folder_state_set(params_.secret.getHash(), "secret", (QString)params_.secret);
 
 	/* Initializing components */
-	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
-	ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
+	ignore_list = std::make_unique<IgnoreList>(params_);
 
-	meta_storage_ = new MetaStorage(params_, ignore_list.get(), path_normalizer_.get(), state_collector_, this);
-	chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_.get(), this);
+	meta_storage_ = new MetaStorage(params_, ignore_list.get(), state_collector_, this);
+	chunk_storage_ = new ChunkStorage(params_, meta_storage_, this);
 
 	uploader_ = new Uploader(chunk_storage_, this);
 	downloader_ = new Downloader(params_, meta_storage_, this);

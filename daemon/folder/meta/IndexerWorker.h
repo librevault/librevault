@@ -39,7 +39,6 @@ namespace librevault {
 class FolderParams;
 class MetaStorage;
 class IgnoreList;
-class PathNormalizer;
 class IndexerWorker : public QObject, public QRunnable {
 	Q_OBJECT
 signals:
@@ -51,7 +50,7 @@ public:
 		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
 	};
 
-	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent);
 	virtual ~IndexerWorker();
 
 	QString absolutePath() const {return abspath_;}
@@ -65,7 +64,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
 
 	const Secret& secret_;
 

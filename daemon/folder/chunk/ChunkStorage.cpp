@@ -38,15 +38,15 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
 	QObject(parent),
 	meta_storage_(meta_storage) {
 	mem_storage = new MemoryCachedStorage(this);
 	enc_storage = new EncStorage(params, this);
 	if(params.secret.getType() <= Secret::Type::ReadOnly) {
-		open_storage = new OpenStorage(params, meta_storage_, path_normalizer, this);
-		archive = new Archive(params, meta_storage_, path_normalizer, this);
-		file_assembler = new AssemblerQueue(params, meta_storage_,  this, path_normalizer, archive, this);
+		open_storage = new OpenStorage(params, meta_storage_, this);
+		archive = new Archive(params, meta_storage_, this);
+		file_assembler = new AssemblerQueue(params, meta_storage_, this, archive, this);
 	}
 
 	connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);

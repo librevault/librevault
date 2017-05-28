@@ -34,12 +34,11 @@ namespace librevault {
 class TrashArchive : public ArchiveStrategy {
 	Q_OBJECT
 public:
-	TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
+	TrashArchive(const FolderParams& params, QObject* parent);
 	void archive(QString denormpath);
 
 private:
 	const FolderParams& params_;
-	PathNormalizer* path_normalizer_;
 
 	QString archive_path_;
 

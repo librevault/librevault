@@ -54,12 +54,10 @@ namespace librevault {
 AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 	                             MetaStorage* meta_storage,
 	                             ChunkStorage* chunk_storage,
-	                             PathNormalizer* path_normalizer,
 	                             Archive* archive) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
-	path_normalizer_(path_normalizer),
 	archive_(archive),
 	smeta_(smeta),
 	meta_(smeta.meta()) {}
@@ -80,7 +78,7 @@ void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
 	normpath_ = meta_.path(params_.secret);
-	denormpath_ = path_normalizer_->denormalizePath(normpath_);
+	denormpath_ = PathNormalizer::denormalizePath(normpath_, params_.path);
 
 	try {
 		bool assembled = false;

@@ -30,18 +30,10 @@
 #include <QString>
 
 namespace librevault {
+namespace PathNormalizer {
 
-class FolderParams;
+QByteArray normalizePath(QString abspath, QString root);
+QString denormalizePath(QByteArray normpath, QString root);
 
-class PathNormalizer {
-public:
-	PathNormalizer(const FolderParams& params);
-
-	QByteArray normalizePath(QString abspath);
-	QString denormalizePath(QByteArray normpath);
-
-private:
-	const FolderParams& params_;
-};
-
+} /* namespace PathNormalizer */
 } /* namespace librevault */

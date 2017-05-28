@@ -36,10 +36,9 @@
 
 namespace librevault {
 
-TrashArchive::TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent) :
+TrashArchive::TrashArchive(const FolderParams& params, QObject* parent) :
 	ArchiveStrategy(parent),
 	params_(params),
-	path_normalizer_(path_normalizer),
 	archive_path_(params_.system_path + "/archive") {
 
 	QDir().mkpath(archive_path_);
@@ -68,7 +67,7 @@ void TrashArchive::maintain_cleanup() {
 }
 
 void TrashArchive::archive(QString denormpath) {
-	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
+	QString archived_path = archive_path_ + "/" + PathNormalizer::normalizePath(denormpath, params_.path);
 	qDebug() << "Adding an archive item: " << archived_path;
 	QFile::rename(denormpath, archived_path);
 	boost::filesystem::last_write_time(conv_fspath(archived_path), time(nullptr));

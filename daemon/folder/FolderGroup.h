@@ -45,7 +45,6 @@ Q_DECLARE_LOGGING_CATEGORY(log_folder);
 
 class Peer;
 
-class PathNormalizer;
 class IgnoreList;
 class StateCollector;
 
@@ -74,7 +73,6 @@ private:
 	PeerPool* pool_;
 	StateCollector* state_collector_;
 
-	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;
 
 	ChunkStorage* chunk_storage_;

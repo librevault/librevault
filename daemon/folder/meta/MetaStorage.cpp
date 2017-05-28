@@ -36,11 +36,11 @@
 
 namespace librevault {
 
-MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) : QObject(parent) {
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, StateCollector* state_collector, QObject* parent) : QObject(parent) {
 	index_ = new Index(params, state_collector, this);
-	indexer_ = new IndexerQueue(params, ignore_list, path_normalizer, state_collector, this);
-	poller_ = new DirectoryPoller(params, ignore_list, path_normalizer, this);
-	watcher_ = new DirectoryWatcher(params, ignore_list, path_normalizer, this);
+	indexer_ = new IndexerQueue(params, ignore_list, state_collector, this);
+	poller_ = new DirectoryPoller(params, ignore_list, this);
+	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 
 	if(params.secret.getType() <= Secret::Type::ReadWrite){
 		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);

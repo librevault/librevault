@@ -36,7 +36,6 @@ namespace librevault {
 
 class FolderParams;
 class MetaStorage;
-class PathNormalizer;
 
 struct ArchiveStrategy : public QObject {
 	Q_OBJECT
@@ -51,13 +50,13 @@ class Archive : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("Archive");
 public:
-	Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+	Archive(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 
 	bool archive(QString denormpath);
 
 private:
+	const FolderParams& params_;
 	MetaStorage* meta_storage_;
-	PathNormalizer* path_normalizer_;
 
 	ArchiveStrategy* archive_strategy_;
 };

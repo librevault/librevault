@@ -35,11 +35,10 @@
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	meta_storage_(meta_storage),
-	path_normalizer_(path_normalizer) {}
+	meta_storage_(meta_storage) {}
 
 bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	return meta_storage_->isChunkAssembled(ct_hash);
@@ -63,7 +62,7 @@ QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		QFile f(path_normalizer_->denormalizePath(smeta.meta().path(params_.secret)));
+		QFile f(PathNormalizer::denormalizePath(smeta.meta().path(params_.secret), params_.path));
 		if(! f.open(QIODevice::ReadOnly)) continue;
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;

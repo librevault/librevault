@@ -48,20 +48,19 @@ Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
-IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	abspath_(abspath),
 	params_(params),
 	meta_storage_(meta_storage),
 	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer),
 	secret_(params.secret),
 	active_(true) {}
 
 IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
-	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
+	QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
 	qCDebug(log_indexer) << "Started indexing:" << normpath;
 
 	try {
@@ -98,7 +97,7 @@ void IndexerWorker::run() noexcept {
 /* Actual indexing process */
 void IndexerWorker::make_Meta() {
 	QString abspath = abspath_;
-	QByteArray normpath = path_normalizer_->normalizePath(abspath);
+	QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
 
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 

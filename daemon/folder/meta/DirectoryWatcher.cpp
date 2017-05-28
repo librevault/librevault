@@ -61,11 +61,10 @@ void DirectoryWatcherThread::monitorLoop() {
 	});
 }
 
-DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer) {
+	ignore_list_(ignore_list) {
 	qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
 
 	watcher_thread_ = new DirectoryWatcherThread(params_.path, this);
@@ -102,7 +101,7 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 	case boost::asio::dir_monitor_event::null:
 	{
 		QString abspath = conv_fspath(ev.path);
-		QByteArray normpath = path_normalizer_->normalizePath(abspath);
+		QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
 
 		auto prepared_assemble_it = prepared_assemble_.find(normpath);
 		if(prepared_assemble_it != prepared_assemble_.end()) {

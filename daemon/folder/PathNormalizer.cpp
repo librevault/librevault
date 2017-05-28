@@ -27,15 +27,13 @@
  * files in the program, then also delete it here.
  */
 #include "PathNormalizer.h"
-#include "control/FolderParams.h"
 #include <QDir>
 
 namespace librevault {
+namespace PathNormalizer {
 
-PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
-
-QByteArray PathNormalizer::normalizePath(QString abspath) {
-	QDir root_dir(params_.path);
+QByteArray normalizePath(QString abspath, QString root) {
+	QDir root_dir(root);
 
 	// Make it relative to root
 	QString normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));
@@ -43,9 +41,8 @@ QByteArray PathNormalizer::normalizePath(QString abspath) {
 	// Convert directory separators
 	normpath = QDir::fromNativeSeparators(normpath);
 
-	// Apply NFC-normalization (if not explicitly disabled for somewhat reasons)
-	if(params_.normalize_unicode)	// Unicode normalization NFC (for compatibility)
-		normpath = normpath.normalized(QString::NormalizationForm_C);
+	// Apply Unicode NFC-normalization
+	normpath = normpath.normalized(QString::NormalizationForm_C);
 
 	// Removing last '/' in directories
 	if(normpath.endsWith('/'))
@@ -55,8 +52,8 @@ QByteArray PathNormalizer::normalizePath(QString abspath) {
 	return normpath.toUtf8();
 }
 
-QString PathNormalizer::denormalizePath(QByteArray normpath) {
-	QDir root_dir(params_.path);
+QString denormalizePath(QByteArray normpath, QString root) {
+	QDir root_dir(root);
 
 	// Convert from UTF-8
 	QString denormpath = QString::fromUtf8(normpath);
@@ -72,4 +69,5 @@ QString PathNormalizer::denormalizePath(QByteArray normpath) {
 	return denormpath;
 }
 
+} /* namespace PathNormalizer */
 } /* namespace librevault */

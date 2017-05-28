@@ -38,7 +38,6 @@ class FolderParams;
 class IgnoreList;
 class Index;
 class IndexerQueue;
-class PathNormalizer;
 class StateCollector;
 
 class MetaStorage : public QObject {
@@ -52,7 +51,7 @@ public:
 		no_such_meta() : std::runtime_error("Requested Meta not found"){}
 	};
 
-	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
+	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, StateCollector* state_collector, QObject* parent);
 	virtual ~MetaStorage();
 
 	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;

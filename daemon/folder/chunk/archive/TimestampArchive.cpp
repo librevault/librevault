@@ -39,10 +39,9 @@
 
 namespace librevault {
 
-TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent) :
+TimestampArchive::TimestampArchive(const FolderParams& params, QObject* parent) :
 	ArchiveStrategy(parent),
 	params_(params),
-	path_normalizer_(path_normalizer),
 	archive_path_(params_.system_path + "archive") {
 
 	QDir().mkpath(archive_path_);
@@ -51,7 +50,7 @@ TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* p
 void TimestampArchive::archive(QString denormpath) {
 	boost::filesystem::path denormpath_fs = conv_fspath(denormpath);
 	// Add a new entry
-	QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
+	QString archived_path = archive_path_ + "/" + PathNormalizer::normalizePath(denormpath, params_.path);
 
 	qint64 mtime = boost::filesystem::last_write_time(denormpath_fs);
 	QString suffix = "~" + QDateTime::fromMSecsSinceEpoch(mtime*1000).toString("yyyyMMdd-HHmmss");

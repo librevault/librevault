@@ -190,14 +190,6 @@ if(BUILD_GUI)
 	add_subdirectory("contrib/qtsingleapplication")
 endif()
 
-## Spdlog
-if(TARGET CONAN_PKG::spdlog)
-	add_library(spdlog INTERFACE)
-	target_link_libraries(spdlog INTERFACE CONAN_PKG::spdlog)
-else()
-	add_subdirectory(contrib/spdlog)
-endif()
-
 ## SQLite
 if(NOT USE_BUNDLED_SQLITE3)
 	find_package(Sqlite3 3.9 QUIET)

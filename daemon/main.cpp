@@ -117,7 +117,6 @@ int main(int argc, char** argv) {
 
 			log->set_level(log_level);
 			log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
-			log->flush_on(spdlog::level::warn);
 		}
 
 		// This overrides default Qt behavior, which is fine in many cases;

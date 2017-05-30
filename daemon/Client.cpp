@@ -28,7 +28,6 @@
  */
 #include "Client.h"
 #include "control/Config.h"
-#include "control/server/ControlServer.h"
 #include "control/StateCollector.h"
 #include "adapters/DiscoveryAdapter.h"
 #include "folder/FolderGroup.h"
@@ -49,15 +48,8 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	portmanager_ = new PortMapper(this);
 	discovery_ = new DiscoveryAdapter(portmanager_, this);
 	peerserver_ = new PeerServer(node_key_, portmanager_, this);
-	control_server_ = new ControlServer(state_collector_, this);
 
 	/* Connecting signals */
-	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
-	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
-
-	connect(control_server_, &ControlServer::restart, this, &Client::restart);
-	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
-
 	connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
 	connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);
 
@@ -69,7 +61,6 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 }
 
 Client::~Client() {
-	delete control_server_;
 	delete peerserver_;
 	delete discovery_;
 	delete portmanager_;
@@ -78,8 +69,6 @@ Client::~Client() {
 }
 
 int Client::run() {
-	control_server_->run();
-
 	return this->exec();
 }
 
@@ -100,16 +89,12 @@ void Client::initFolder(const FolderParams& params) {
 
 	peerserver_->addPeerPool(params.folderid(), peer_pool);
 
-	control_server_->notify_folder_added(params.folderid(), Config::get()->getFolder(params.folderid()));
-
 	qInfo() << "Folder initialized: " << params.folderid().toHex();
 }
 
 void Client::deinitFolder(const QByteArray& folderid) {
 	auto fgroup = groups_[folderid];
 	groups_.remove(folderid);
-
-	control_server_->notify_folder_removed(folderid);
 
 	fgroup->deleteLater();
 	qInfo() << "Folder deinitialized:" << folderid.toHex();

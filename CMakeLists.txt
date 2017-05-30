@@ -29,7 +29,6 @@ option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
-option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
@@ -89,10 +88,6 @@ endif()
 
 if(DEBUG_NORMALIZATION)
 	add_definitions(-DLV_DEBUG_NORMALIZATION)
-endif()
-
-if(DEBUG_WEBSOCKETPP)
-	add_definitions(-DLV_DEBUG_WEBSOCKETPP)
 endif()
 
 if(NOT DEBUG_QT)
@@ -225,14 +220,6 @@ else()
 	if(OS_LINUX)
 		target_link_libraries(sqlite3 PUBLIC dl)
 	endif()
-endif()
-
-## WebSocket++
-find_package(websocketpp QUIET)
-add_library(websocketpp INTERFACE)
-if(NOT websocketpp_FOUND)
-	add_subdirectory("contrib/websocketpp")
-	target_include_directories(websocketpp INTERFACE "contrib/websocketpp")
 endif()
 
 ##### External libraries #####

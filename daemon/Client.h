@@ -38,7 +38,6 @@
 namespace librevault {
 
 /* Components */
-class ControlServer;
 class DiscoveryAdapter;
 class NodeKey;
 class PeerServer;
@@ -69,7 +68,6 @@ private:
 	PortMapper* portmanager_;
 	DiscoveryAdapter* discovery_;
 	PeerServer* peerserver_;
-	ControlServer* control_server_;
 
 	// Folders
 	QMap<QByteArray, FolderGroup*> groups_;

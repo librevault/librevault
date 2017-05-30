@@ -68,7 +68,6 @@ target_link_libraries(librevault-daemon spdlog)
 target_link_libraries(librevault-daemon docopt_s)
 target_link_libraries(librevault-daemon rabin)
 target_link_libraries(librevault-daemon sqlite3)
-target_link_libraries(librevault-daemon websocketpp)
 
 ##### External libraries #####
 

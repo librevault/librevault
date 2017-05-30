@@ -3,7 +3,7 @@ project(librevault)
 
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-	conan_basic_setup()
+	conan_basic_setup(TARGETS)
 endif()
 
 #============================================================================
@@ -196,11 +196,9 @@ if(BUILD_GUI)
 endif()
 
 ## Spdlog
-find_package(spdlog QUIET)
-add_definitions(-DSPDLOG_WCHAR_FILENAMES)
-if(spdlog_FOUND)
+if(TARGET CONAN_PKG::spdlog)
 	add_library(spdlog INTERFACE)
-	target_link_libraries(spdlog INTERFACE spdlog::spdlog)
+	target_link_libraries(spdlog INTERFACE CONAN_PKG::spdlog)
 else()
 	add_subdirectory(contrib/spdlog)
 endif()

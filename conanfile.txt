@@ -1,8 +1,0 @@
-[requires]
-docopt.cpp/latest@signal9/stable
-spdlog/latest@signal9/stable
-
-[generators]
-cmake
-
-[options]

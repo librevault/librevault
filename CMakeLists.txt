@@ -142,10 +142,7 @@ add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
 ## Docopt
-find_package(docopt QUIET)
-if(NOT docopt_FOUND)
-	add_subdirectory(contrib/docopt)
-endif()
+find_package(docopt)
 
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)

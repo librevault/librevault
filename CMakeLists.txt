@@ -74,7 +74,7 @@ if(BUILD_STATIC)
 endif()
 
 if(OS_WIN)
-	add_definitions(-D_WIN32_WINNT=0x600)
+	add_definitions(-D_WIN32_WINNT=0x0601)
 	add_definitions(-DUNICODE)
 	add_definitions(-DWIN32_LEAN_AND_MEAN)
 endif()

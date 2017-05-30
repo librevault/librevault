@@ -110,9 +110,7 @@ int main(int argc, char** argv) {
 			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
 			boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
-			sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-				(log_path.parent_path() / log_path.stem()).native(),
-				10 * 1024 * 1024, 9));
+			sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
 
 			log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
 			spdlog::register_logger(log);

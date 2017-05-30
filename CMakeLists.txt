@@ -28,9 +28,8 @@ option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
-option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
-set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
+set(SANITIZE "none" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
 #============================================================================
@@ -58,7 +57,7 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Sanitizer builds
-if(NOT SANITIZE STREQUAL "false")
+if(NOT SANITIZE STREQUAL "none")
 	set(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_CXX_FLAGS}")
 	set(CMAKE_C_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_C_FLAGS}")
 	set(CMAKE_EXE_LINKER_FLAGS "-fsanitize=${SANITIZE} ${CMAKE_EXE_LINKER_FLAGS}")
@@ -84,10 +83,6 @@ if(OS_MAC)
 	add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
 	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fobjc-arc")
 	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-arc")
-endif()
-
-if(DEBUG_NORMALIZATION)
-	add_definitions(-DLV_DEBUG_NORMALIZATION)
 endif()
 
 if(NOT DEBUG_QT)

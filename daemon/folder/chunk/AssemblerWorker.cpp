@@ -35,7 +35,6 @@
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
-#include "util/readable.h"
 #include <boost/filesystem.hpp>
 #include <QDir>
 #include <QLoggingCategory>

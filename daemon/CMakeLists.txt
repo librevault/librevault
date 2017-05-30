@@ -82,7 +82,7 @@ target_link_libraries(librevault-daemon Qt5::WebSockets)
 target_link_libraries(librevault-daemon cryptopp)
 
 ## OpenSSL
-target_link_libraries(librevault-daemon OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(librevault-daemon OpenSSL::SSL)
 
 ##### System libraries #####
 

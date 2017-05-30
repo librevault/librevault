@@ -29,7 +29,6 @@
 #include "EncStorage.h"
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
-#include "util/readable.h"
 #include "Base32.h"
 
 namespace librevault {
@@ -66,14 +65,14 @@ void EncStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	chunk_f->rename(make_chunk_ct_path(ct_hash));
 	chunk_f->deleteLater();
 
-	LOGD("Encrypted block" << ct_hash_readable(ct_hash) << "pushed into EncStorage");
+	LOGD("Encrypted block" << ct_hash.toHex() << "pushed into EncStorage");
 }
 
 void EncStorage::remove_chunk(QByteArray ct_hash) {
 	QWriteLocker lk(&storage_mtx_);
 	QFile::remove(make_chunk_ct_path(ct_hash));
 
-	LOGD("Block" << ct_hash_readable(ct_hash) << "removed from EncStorage");
+	LOGD("Block" << ct_hash.toHex() << "removed from EncStorage");
 }
 
 } /* namespace librevault */

@@ -32,7 +32,6 @@
 #include "control/FolderParams.h"
 #include "folder/meta/MetaStorage.h"
 #include "p2p/MessageHandler.h"
-#include "util/readable.h"
 #include <QLoggingCategory>
 #include <boost/range/adaptor/map.hpp>
 
@@ -97,7 +96,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 }
 
 void Downloader::addChunk(QByteArray ct_hash, quint32 size) {
-	qCDebug(log_downloader) << "Added" << ct_hash_readable(ct_hash) << "to download queue";
+	qCDebug(log_downloader) << "Added" << ct_hash.toHex() << "to download queue";
 
 	uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;
 
@@ -112,7 +111,7 @@ void Downloader::removeChunk(QByteArray ct_hash) {
 		download_queue_.removeChunk(ct_hash);
 		down_chunks_.remove(ct_hash);
 
-		qCDebug(log_downloader) << "Removed" << ct_hash_readable(ct_hash) << "from download queue";
+		qCDebug(log_downloader) << "Removed" << ct_hash.toHex() << "from download queue";
 	}
 }
 

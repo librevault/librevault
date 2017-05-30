@@ -28,4 +28,3 @@ target_include_directories(secret PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(secret PRIVATE Qt5::Core)
 target_link_libraries(secret PRIVATE cryptopp)
-target_link_libraries(secret PRIVATE librevault-common)

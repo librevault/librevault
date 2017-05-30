@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #include "MessageHandler.h"
-#include "util/readable.h"
 #include "V1Parser.h"
 #include <QDebug>
 
@@ -61,7 +60,7 @@ void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, QBitArray 
 	emit messagePrepared(V1Parser().gen_HaveMeta(message));
 
 	qDebug() << "==> HAVE_META:"
-		<< "path_id=" << path_id_readable(message.revision.path_id_)
+		<< "path_id=" << message.revision.path_id_.toHex()
 		<< "revision=" << message.revision.revision_
 		<< "bits=" << message.bitfield;
 }
@@ -71,7 +70,7 @@ void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 	emit messagePrepared(V1Parser().gen_HaveChunk(message));
 
 	qDebug() << "==> HAVE_BLOCK:"
-		<< "ct_hash=" << ct_hash_readable(ct_hash);
+		<< "ct_hash=" << ct_hash.toHex();
 }
 
 void MessageHandler::sendMetaRequest(const Meta::PathRevision& revision) {
@@ -80,7 +79,7 @@ void MessageHandler::sendMetaRequest(const Meta::PathRevision& revision) {
 	emit messagePrepared(V1Parser().gen_MetaRequest(message));
 
 	qDebug() << "==> META_REQUEST:"
-		<< "path_id=" << path_id_readable(revision.path_id_)
+		<< "path_id=" << revision.path_id_.toHex()
 		<< "revision=" << revision.revision_;
 }
 void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) {
@@ -90,7 +89,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) 
 	emit messagePrepared(V1Parser().gen_MetaReply(message));
 
 	qDebug() << "==> META_REPLY:"
-		<< "path_id=" << path_id_readable(smeta.meta().pathId())
+		<< "path_id=" << smeta.meta().pathId().toHex()
 		<< "revision=" << smeta.meta().revision()
 		<< "bits=" << bitfield;
 }
@@ -100,7 +99,7 @@ void MessageHandler::sendMetaCancel(const Meta::PathRevision& revision) {
 	emit messagePrepared(V1Parser().gen_MetaCancel(message));
 
 	qDebug() << "==> META_CANCEL:"
-		<< "path_id=" << path_id_readable(revision.path_id_)
+		<< "path_id=" << revision.path_id_.toHex()
 		<< "revision=" << revision.revision_;
 }
 
@@ -112,7 +111,7 @@ void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint3
 	emit messagePrepared(V1Parser().gen_BlockRequest(message));
 
 	qDebug() << "==> BLOCK_REQUEST:"
-		<< "ct_hash=" << ct_hash_readable(ct_hash)
+		<< "ct_hash=" << ct_hash.toHex()
 		<< "offset=" << offset
 		<< "length=" << length;
 }
@@ -124,7 +123,7 @@ void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, QByteAr
 	emit messagePrepared(V1Parser().gen_BlockReply(message));
 
 	qDebug() << "==> BLOCK_REPLY:"
-		<< "ct_hash=" << ct_hash_readable(ct_hash)
+		<< "ct_hash=" << ct_hash.toHex()
 		<< "offset=" << offset;
 }
 void MessageHandler::sendBlockCancel(QByteArray ct_hash, uint32_t offset, uint32_t length) {
@@ -134,7 +133,7 @@ void MessageHandler::sendBlockCancel(QByteArray ct_hash, uint32_t offset, uint32
 	message.length = length;
 	emit messagePrepared(V1Parser().gen_BlockCancel(message));
 	qDebug() << "==> BLOCK_CANCEL:"
-		<< "ct_hash=" << ct_hash_readable(ct_hash)
+		<< "ct_hash=" << ct_hash.toHex()
 		<< "offset=" << offset
 		<< "length=" << length;
 }
@@ -159,7 +158,7 @@ void MessageHandler::handleNotInterested(QByteArray message_raw) {
 void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveMeta(message_raw);
 	qDebug() << "<== HAVE_META:"
-		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< "path_id=" << message_struct.revision.path_id_.toHex()
 		<< "revision=" << message_struct.revision.revision_
 		<< "bits=" << message_struct.bitfield;
 
@@ -168,14 +167,14 @@ void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 void MessageHandler::handleHaveChunk(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveChunk(message_raw);
 	qDebug() << "<== HAVE_BLOCK:"
-		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash);
+		<< "ct_hash=" << message_struct.ct_hash.toHex();
 	emit rcvdHaveChunk(message_struct.ct_hash);
 }
 
 void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaRequest(message_raw);
 	qDebug() << "<== META_REQUEST:"
-		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< "path_id=" << message_struct.revision.path_id_.toHex()
 		<< "revision=" << message_struct.revision.revision_;
 
 	emit rcvdMetaRequest(message_struct.revision);
@@ -183,7 +182,7 @@ void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
-		<< "path_id=" << path_id_readable(message_struct.smeta.meta().pathId())
+		<< "path_id=" << message_struct.smeta.meta().pathId().toHex()
 		<< "revision=" << message_struct.smeta.meta().revision()
 		<< "bits=" << message_struct.bitfield;
 
@@ -193,7 +192,7 @@ void MessageHandler::handleMetaCancel(QByteArray message_raw) {
 #   warning "Not implemented yet"
 	auto message_struct = V1Parser().parse_MetaCancel(message_raw);
 	qDebug() << "<== META_CANCEL:"
-		<< "path_id=" << path_id_readable(message_struct.revision.path_id_)
+		<< "path_id=" << message_struct.revision.path_id_.toHex()
 		<< "revision=" << message_struct.revision.revision_;
 
 	emit rcvdMetaCancel(message_struct.revision);
@@ -202,7 +201,7 @@ void MessageHandler::handleMetaCancel(QByteArray message_raw) {
 void MessageHandler::handleBlockRequest(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_BlockRequest(message_raw);
 	qDebug() << "<== BLOCK_REQUEST:"
-		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
+		<< "ct_hash=" << message_struct.ct_hash.toHex()
 		<< "length=" << message_struct.length
 		<< "offset=" << message_struct.offset;
 
@@ -211,7 +210,7 @@ void MessageHandler::handleBlockRequest(QByteArray message_raw) {
 void MessageHandler::handleBlockReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_BlockReply(message_raw);
 	qDebug() << "<== BLOCK_REPLY:"
-		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
+		<< "ct_hash=" << message_struct.ct_hash.toHex()
 		<< "offset=" << message_struct.offset;
 
 	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
@@ -220,7 +219,7 @@ void MessageHandler::handleBlockCancel(QByteArray message_raw) {
 #   warning "Not implemented yet"
 	auto message_struct = V1Parser().parse_BlockCancel(message_raw);
 	qDebug() << "<== BLOCK_CANCEL:"
-		<< "ct_hash=" << ct_hash_readable(message_struct.ct_hash)
+		<< "ct_hash=" << message_struct.ct_hash.toHex()
 		<< "length=" << message_struct.length
 		<< "offset=" << message_struct.offset;
 

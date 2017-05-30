@@ -31,7 +31,6 @@
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
 #include <PathNormalizer.h>
-#include "util/readable.h"
 
 namespace librevault {
 
@@ -45,7 +44,7 @@ bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept {
 }
 
 QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
-	LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
+	LOGD("get_chunk(" << ct_hash.toHex() << ")");
 
 	foreach(auto& smeta, meta_storage_->containingChunk(ct_hash)) {
 		// Search for chunk offset and index

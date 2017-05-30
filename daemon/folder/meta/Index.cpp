@@ -30,7 +30,6 @@
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/readable.h"
 #include "blob.h"
 #include <QFile>
 
@@ -129,9 +128,9 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().pathId()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added fully assembled Meta of " << signed_meta.meta().pathId().toHex() << " t:" << signed_meta.meta().meta_type());
 	else
-		LOGD("Added Meta of " << path_id_readable(signed_meta.meta().pathId()) << " t:" << signed_meta.meta().meta_type());
+		LOGD("Added Meta of " << signed_meta.meta().pathId().toHex() << " t:" << signed_meta.meta().meta_type());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)

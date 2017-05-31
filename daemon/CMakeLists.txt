@@ -67,6 +67,9 @@ target_link_libraries(librevault-daemon dir_monitor)
 target_link_libraries(librevault-daemon docopt_s)
 target_link_libraries(librevault-daemon rabin)
 target_link_libraries(librevault-daemon sqlite3)
+if(TARGET CONAN_PKG::spdlog)
+	target_link_libraries(librevault-daemon CONAN_PKG::spdlog)
+endif()
 
 ##### External libraries #####
 
@@ -96,6 +99,6 @@ if(OS_MAC)
 	target_link_libraries(librevault-daemon "-framework CoreServices")
 endif()
 
-if(BUILD_STATIC AND OS_LINUX)
+if(OS_LINUX)
 	target_link_libraries(librevault-daemon dl)
 endif()

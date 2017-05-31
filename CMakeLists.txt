@@ -183,28 +183,10 @@ if(BUILD_GUI)
 endif()
 
 ## SQLite
-if(NOT USE_BUNDLED_SQLITE3)
-	find_package(Sqlite3 3.9 QUIET)
-endif()
-
-if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
-	message(STATUS "Using system SQLite ${SQLITE3_VERSION}")
-	add_library(sqlite3 INTERFACE)
-	target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
-	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
-
-	if(OS_LINUX)
-		target_link_libraries(sqlite3 INTERFACE dl)
-	endif()
-else()
-	message(STATUS "Using bundled SQLite")
-	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
-	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
-
-	if(OS_LINUX)
-		target_link_libraries(sqlite3 PUBLIC dl)
-	endif()
-endif()
+find_package(Sqlite3 3.9 QUIET)
+add_library(sqlite3 INTERFACE)
+target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
+target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
 
 ##### External libraries #####
 

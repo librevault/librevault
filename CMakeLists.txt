@@ -124,16 +124,7 @@ endif()
 ##### System libraries #####
 
 ## Threads
-add_library(threads INTERFACE)
-if(OS_LINUX AND BUILD_STATIC)
-	target_link_libraries(threads INTERFACE pthread)
-	#target_compile_definitions(threads INTERFACE "-D_REENTRANT")
-else()
-	set(THREADS_PREFER_PTHREAD_FLAG ON)
-	find_package(Threads)
-
-	target_link_libraries(threads INTERFACE Threads::Threads)
-endif()
+find_package(Threads)
 
 ##### Bundled libraries #####
 
@@ -187,6 +178,9 @@ find_package(Sqlite3 3.9 QUIET)
 add_library(sqlite3 INTERFACE)
 target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
 target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
+if(OS_LINUX)
+	target_link_libraries(sqlite3 INTERFACE pthread dl)
+endif()
 
 ##### External libraries #####
 
@@ -236,6 +230,8 @@ add_subdirectory("components/aes")
 add_subdirectory("components/base32")
 add_subdirectory("components/secret")
 add_subdirectory("components/meta")
+add_subdirectory("components/snapshot")
+add_subdirectory("components/snapshotcreator")
 add_subdirectory("components/portmapping")
 add_subdirectory("components/pathnormalizer")
 add_subdirectory("components/discovery")

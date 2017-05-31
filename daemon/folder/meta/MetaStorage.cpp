@@ -35,9 +35,9 @@
 
 namespace librevault {
 
-MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, StateCollector* state_collector, QObject* parent) : QObject(parent) {
-	index_ = new Index(params, state_collector, this);
-	indexer_ = new IndexerQueue(params, ignore_list, state_collector, this);
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) : QObject(parent) {
+	index_ = new Index(params, this);
+	indexer_ = new IndexerQueue(params, ignore_list, this);
 	poller_ = new DirectoryPoller(params, ignore_list, this);
 	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 

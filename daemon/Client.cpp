@@ -28,7 +28,6 @@
  */
 #include "Client.h"
 #include "control/Config.h"
-#include "control/StateCollector.h"
 #include "adapters/DiscoveryAdapter.h"
 #include "folder/FolderGroup.h"
 #include "PortMapper.h"
@@ -43,7 +42,6 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	setOrganizationDomain("librevault.com");
 
 	// Initializing components
-	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
 	portmanager_ = new PortMapper(this);
 	discovery_ = new DiscoveryAdapter(portmanager_, this);
@@ -65,7 +63,6 @@ Client::~Client() {
 	delete discovery_;
 	delete portmanager_;
 	delete node_key_;
-	delete state_collector_;
 }
 
 int Client::run() {
@@ -84,7 +81,7 @@ void Client::shutdown(){
 
 void Client::initFolder(const FolderParams& params) {
 	auto peer_pool = new PeerPool(params, discovery_, node_key_, &bc_all_, &bc_blocks_, this);
-	auto fgroup = new FolderGroup(params, peer_pool, state_collector_, this);
+	auto fgroup = new FolderGroup(params, peer_pool, this);
 	groups_[params.folderid()] = fgroup;
 
 	peerserver_->addPeerPool(params.folderid(), peer_pool);

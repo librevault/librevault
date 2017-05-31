@@ -29,7 +29,6 @@
 #include "FolderGroup.h"
 
 #include "IgnoreList.h"
-#include "control/StateCollector.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
 #include "folder/transfer/MetaDownloader.h"
@@ -48,10 +47,9 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "log.folder");
 
-FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* state_collector, QObject* parent) :
+FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, QObject* parent) :
 	QObject(parent),
-	params_(std::move(params)), pool_(pool),
-	state_collector_(state_collector) {
+	params_(std::move(params)), pool_(pool) {
 
 	/* Creating directories */
 	QDir().mkpath(params_.path);
@@ -65,12 +63,10 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 		<< "Path=" << params_.path
 		<< "System path=" << params_.system_path;
 
-	state_collector_->folder_state_set(params_.secret.getHash(), "secret", (QString)params_.secret);
-
 	/* Initializing components */
 	ignore_list = std::make_unique<IgnoreList>(params_);
 
-	meta_storage_ = new MetaStorage(params_, ignore_list.get(), state_collector_, this);
+	meta_storage_ = new MetaStorage(params_, ignore_list.get(), this);
 	chunk_storage_ = new ChunkStorage(params_, meta_storage_, this);
 
 	uploader_ = new Uploader(chunk_storage_, this);
@@ -106,8 +102,6 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, StateCollector* st
 
 FolderGroup::~FolderGroup() {
 	state_pusher_->stop();
-
-	state_collector_->folder_state_purge(params_.secret.getHash());
 }
 
 /* Actions */
@@ -160,7 +154,6 @@ void FolderGroup::push_state() {
 	for(auto& peer : pool_->validPeers()) {
 		peers_array.append(peer->collectState());
 	}
-	state_collector_->folder_state_set(params().folderid(), "peers", peers_array);
 }
 
 } /* namespace librevault */

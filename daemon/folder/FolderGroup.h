@@ -35,7 +35,6 @@
 #include <QObject>
 #include <QTimer>
 #include <QSet>
-#include <set>
 #include <QHostAddress>
 #include <QLoggingCategory>
 

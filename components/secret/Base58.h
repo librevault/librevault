@@ -33,7 +33,7 @@ namespace librevault {
 
 static QByteArray base58_alphabet = QByteArrayLiteral("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 
-QByteArray toBase58(QByteArray src);
-QByteArray fromBase58(QByteArray src);
+QByteArray toBase58(const QByteArray& src);
+QByteArray fromBase58(const QByteArray& src);
 
 } /* namespace librevault */

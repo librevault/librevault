@@ -31,8 +31,8 @@
 
 namespace librevault {
 
-QByteArray toBase58(QByteArray src) {
-	CryptoPP::Integer big_data((uchar*)src.data(), src.size());
+QByteArray toBase58(const QByteArray& src) {
+	CryptoPP::Integer big_data((const uchar*)src.data(), src.size());
 
 	QByteArray result;
 	result.reserve(src.size()*138/100 + 1);
@@ -53,7 +53,7 @@ QByteArray toBase58(QByteArray src) {
 	return result;
 }
 
-QByteArray fromBase58(QByteArray src) {
+QByteArray fromBase58(const QByteArray& src) {
 	CryptoPP::Integer big_data = 0;
 	CryptoPP::Integer multi = 1;
 

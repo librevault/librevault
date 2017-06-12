@@ -99,7 +99,3 @@ if(OS_MAC)
 	target_link_libraries(librevault-daemon "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon "-framework CoreServices")
 endif()
-
-if(OS_LINUX)
-	target_link_libraries(librevault-daemon dl)
-endif()

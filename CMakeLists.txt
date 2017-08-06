@@ -135,30 +135,13 @@ find_package(docopt)
 
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
-if(NOT libnatpmp_LIBRARIES)
-	add_subdirectory(contrib/libnatpmp)
-else()
-	add_library(natpmp INTERFACE)
-	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
-endif()
+add_library(natpmp INTERFACE)
+target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
 
 ## libminiupnpc
 add_library(libminiupnpc INTERFACE)
-
-if(NOT USE_BUNDLED_MINIUPNP)
-	find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
-endif()
-
-if(libminiupnpc_LIBRARIES AND NOT USE_BUNDLED_MINIUPNP)
-	message(STATUS "Using system Miniupnp ${SQLITE3_VERSION}")
-	target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
-else()
-	message(STATUS "Using bundled Miniupnp")
-	set(UPNPC_BUILD_SHARED FALSE)
-	add_subdirectory(contrib/miniupnp/miniupnpc)
-	target_link_libraries(libminiupnpc INTERFACE upnpc-static)
-	target_include_directories(libminiupnpc INTERFACE contrib/miniupnp)
-endif()
+find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
+target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
 
 ## rabin
 add_subdirectory("contrib/rabin")

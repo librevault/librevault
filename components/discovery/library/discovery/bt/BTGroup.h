@@ -27,60 +27,43 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "btcompat.h"
-#include <QHostInfo>
-#include <QTimer>
-#include <QUdpSocket>
+#include <QObject>
+#include <QHostAddress>
 #include <QUrl>
 #include <QLoggingCategory>
+#include <memory>
+#include <set>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
+class BTConnection;
 class BTProvider;
-class BTGroup;
-
-// BEP-0015 partial implementation (without scrape mechanism)
-class BTConnection : public QObject {
+class BTGroup : public QObject {
 	Q_OBJECT
-public:
-	BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
-	virtual ~BTConnection();
-
-	void setEnabled(bool enabled);
 
 signals:
 	void discovered(QHostAddress addr, quint16 port);
 
-private:
+public:
+	BTGroup(BTProvider* provider, QByteArray discovery_id);
+	BTGroup(const BTGroup&) = delete;
+	BTGroup(BTGroup&&) = delete;
+
+	QByteArray getDiscoveryID() {return discovery_id_;}
+	QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
+
+public slots:
+	void setEnabled(bool enabled);
+	void setTrackerList(QList<QUrl> trackers);
+
+protected:
 	BTProvider* provider_;
-	BTGroup* btgroup_;
+	QByteArray discovery_id_;
+	std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
 
-	// Tracker address
-	QUrl tracker_unresolved_;
-	QPair<QHostAddress, quint16> tracker_resolved_;
-
-	// Connection state
-	quint64 conn_id_;
-	quint32 transaction_id_;
-
-	// Timers
-	QTimer* resolver_timer_;
-	QTimer* connect_timer_;
-	QTimer* announce_timer_;
-	int resolver_lookup_id_ = 0;
-
-	void resolve();
-	void btconnect();
-	void announce();
-
-	quint32 startTransaction();
-
-private slots:
-	void handleResolve(const QHostInfo& host);
-	void handleConnect(quint32 transaction_id, quint64 connection_id);
-	void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+	bool enabled_ = false;
 };
 
 } /* namespace librevault */

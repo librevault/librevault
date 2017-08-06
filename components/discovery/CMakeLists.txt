@@ -3,8 +3,6 @@
 #============================================================================
 
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
 
 #============================================================================
 # Sources & headers
@@ -20,7 +18,7 @@ file(GLOB_RECURSE discovery_testapp_HEADERS "testapp/*.h")
 # Compile targets
 #============================================================================
 
-add_library(discovery STATIC ${discovery_SOURCES} ${discovery_HEADERS} ${multicast_SOURCES} ${multicast_HEADERS} ${mldht_SOURCES} ${mldht_HEADERS})
+add_library(discovery STATIC ${discovery_SOURCES} ${discovery_HEADERS})
 set_target_properties(discovery PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 target_include_directories(discovery PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/library)
 

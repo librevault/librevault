@@ -27,34 +27,42 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QPointer>
+#include <QHostAddress>
 #include <QTimer>
-#include <QUdpSocket>
-#include <chrono>
 
 namespace librevault {
 
-class MulticastProvider;
-class MulticastGroup : public QObject {
+class DHTProvider;
+class FolderGroup;
+
+class DHTGroup : public QObject {
 	Q_OBJECT
 
 signals:
 	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	MulticastGroup(MulticastProvider* provider, QByteArray id);
-	void setEnabled(bool enabled);
-	void setInterval(std::chrono::seconds interval);
+	DHTGroup(DHTProvider* provider, QByteArray discovery_id);
+	DHTGroup(const DHTGroup&) = delete;
+	DHTGroup(DHTGroup&&) = delete;
+
+	bool enabled() {return timer_->isActive();}
+
+public slots:
+	void setEnabled(bool enable);
 
 private:
-	MulticastProvider* provider_;
+	QPointer<DHTProvider> provider_;
 	QTimer* timer_;
-	QByteArray id_;
 
-	QByteArray getMessage();
-	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
+	QByteArray discovery_id_;
+
+	inline QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
 
 private slots:
-	void sendMulticasts();
+	void startSearches();
+	void handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port);
 };
 
 } /* namespace librevault */

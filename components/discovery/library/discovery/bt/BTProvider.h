@@ -27,38 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "btcompat.h"
-#include <QTimer>
+#include "../btcompat.h"
+#include <QUdpSocket>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class MLDHTProvider;
+Q_DECLARE_LOGGING_CATEGORY(log_bt)
+
 class FolderGroup;
 
-class MLDHTGroup : public QObject {
-	Q_OBJECT
+class NodeKey;
+
+class BTProvider : public QObject {
+Q_OBJECT
 
 signals:
-	void discovered(QHostAddress addr, quint16 port);
+  void receivedConnect(quint32 transaction_id, quint64 connection_id);
+  void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+  void receivedError(quint32 transaction_id, QString error_message);
 
 public:
-	MLDHTGroup(MLDHTProvider* provider, QByteArray id);
-	bool enabled() {return timer_->isActive();}
+  explicit BTProvider(QObject* parent);
+  BTProvider(const BTProvider&) = delete;
+  BTProvider(BTProvider&&) = delete;
+  ~BTProvider();
+
+  quint16 getAnnouncePort() const {return announce_port_;}
+  QByteArray getPeerId() const {return peer_id_;}
+  QUdpSocket* getSocket() {return socket_;}
 
 public slots:
-	void setEnabled(bool enable);
+  void setAnnouncePort(quint16 port) {announce_port_ = port;}
+  void setIDPrefix(QByteArray peer_id_prefix = QByteArray());
 
 private:
-	MLDHTProvider* provider_;
-	QTimer* timer_;
+  QUdpSocket* socket_;
 
-	QByteArray id_;
+  quint16 announce_port_ = 0;
 
-	inline QByteArray getInfoHash() {return id_.leftJustified(20, 0, true);}
+  QByteArray peer_id_;
 
 private slots:
-	void startSearches();
-	void handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port);
+  void processDatagram();
 };
 
 } /* namespace librevault */

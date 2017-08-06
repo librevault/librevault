@@ -27,26 +27,30 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <docopt.h>
 #include <QCoreApplication>
-#include <QNetworkAccessManager>
 #include <QHostAddress>
 #include <QUrl>
+#include "discovery/multicast/MulticastGroup.h"
+#include "discovery/multicast/MulticastProvider.h"
+#include "discovery/bt/BTProvider.h"
+#include "discovery/bt/BTGroup.h"
+#include "discovery/dht/DHTProvider.h"
+#include "discovery/dht/DHTGroup.h"
 
 namespace librevault {
 
-class Discovery;
-class DiscoveryGroup;
 class DiscoveryApp : public QCoreApplication {
+  Q_OBJECT
 public:
 	DiscoveryApp(int argc, char** argv, const char* USAGE);
 private:
-	std::map<std::string, docopt::value> args;
-	QNetworkAccessManager* nam_;
-	QUrl daemon_control_;
+	MulticastProvider* mcast_p;
+	DHTProvider* dht_p;
+  BTProvider* bt_p;
 
-	Discovery* discovery;
-	DiscoveryGroup* dgroup;
+  MulticastGroup* mcast_g;
+  DHTGroup* dht_g;
+  BTProvider* bt_g;
 
 private slots:
 	void handleDiscovered(QHostAddress addr, quint16 port);

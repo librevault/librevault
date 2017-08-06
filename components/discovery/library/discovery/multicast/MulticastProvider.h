@@ -26,64 +26,49 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "Discovery.h"
-#include "DiscoveryGroup.h"
-#include "multicast/MulticastProvider.h"
-#include "mldht/MLDHTProvider.h"
-#include "bt/BTProvider.h"
+#pragma once
+#include <QUdpSocket>
 
 namespace librevault {
 
-Discovery::Discovery(QObject* parent) : QObject(parent) {
-	multicast_ = new MulticastProvider(this);
-	mldht_ = new MLDHTProvider(this);
-	bt_ = new BTProvider(this);
-	connect(mldht_, &MLDHTProvider::nodeCountChanged, this, &Discovery::DHTnodeCountChanged);
-}
+class FolderGroup;
 
-Discovery::~Discovery() {}
+class MulticastGroup;
 
-DiscoveryGroup* Discovery::createGroup(QByteArray id) {
-	return new DiscoveryGroup(id, multicast_, mldht_, bt_, this);
-}
+class MulticastProvider : public QObject {
+Q_OBJECT
 
-QList<QPair<QHostAddress, quint16>> Discovery::getDHTNodes() {
-	return mldht_->getNodes();
+signals:
+  void discovered(QByteArray id, QHostAddress addr, quint16 port);
+
+public:
+  explicit MulticastProvider(QObject* parent);
+  MulticastProvider(const MulticastProvider&) = delete;
+  MulticastProvider(MulticastProvider&&) = delete;
+  ~MulticastProvider();
+
+  quint16 getAnnouncePort() const {return announce_port_;}
+  quint16 getMulticastPort() const {return multicast_port_;}
+  QHostAddress getAddress() const {return addr_;}
+  QUdpSocket* getSocket() {return socket_;}
+
+  bool isEnabled() {return socket_->isValid();}
+
+public slots:
+  void start(QHostAddress addr, quint16 port);
+  void stop();
+  void setAnnouncePort(quint16 port) {announce_port_ = port;}
+
+private:
+  QHostAddress addr_;
+
+  quint16 announce_port_, multicast_port_;
+  QUdpSocket* socket_;
+
+  static constexpr size_t buffer_size_ = 65535;
+
+private slots:
+  void processDatagram(QUdpSocket* socket);
 };
-
-void Discovery::setAnnounceLANPort(quint16 port) {
-	multicast_->setAnnouncePort(port);
-}
-
-void Discovery::setAnnounceWANPort(quint16 port) {
-	mldht_->setAnnouncePort(port);
-	bt_->setAnnouncePort(port);
-}
-
-// Multicast
-void Discovery::startMulticast(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6) {
-	multicast_->start(addr4, port4, addr6, port6);
-}
-
-void Discovery::stopMulticast() {
-	multicast_->stop();
-}
-
-// DHT
-void Discovery::startDHT(quint16 port) {
-	mldht_->start(port);
-}
-
-void Discovery::stopDHT() {
-	mldht_->stop();
-}
-
-void Discovery::addDHTRouter(QString host, quint16 port) {
-	mldht_->addRouter(host, port);
-}
-
-void Discovery::addDHTNode(QHostAddress addr, quint16 port) {
-	mldht_->addNode(addr, port);
-}
 
 } /* namespace librevault */

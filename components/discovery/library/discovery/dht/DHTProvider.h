@@ -27,52 +27,69 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "../btcompat.h"
+#include <QLoggingCategory>
+#include <QHostInfo>
+#include <QTimer>
 #include <QUdpSocket>
+
+Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
 namespace librevault {
 
-class FolderGroup;
-class MulticastGroup;
-class MulticastProvider : public QObject {
+class Discovery;
+class DHTWrapper;
+class DHTProvider : public QObject {
 	Q_OBJECT
 
 signals:
-	void discovered(QByteArray id, QHostAddress addr, quint16 port);
+	void discovered(QByteArray ih, QHostAddress addr, quint16 port);
+	void nodeCountChanged(int count);
 
 public:
-	explicit MulticastProvider(QObject* parent);
-	virtual ~MulticastProvider();
+	explicit DHTProvider(QObject* parent);
+	DHTProvider(const DHTProvider&) = delete;
+	DHTProvider(DHTProvider&&) = delete;
+	~DHTProvider();
 
+	// Start/Stop
+	void start(quint16 port);
+	void stop();
+
+	int getNodeCount() const;
 	quint16 getAnnouncePort() const {return announce_port_;}
-	quint16 getMulticastPort4() const {return multicast_port4_;}
-	quint16 getMulticastPort6() const {return multicast_port4_;}
 
-	QHostAddress getAddress4() const {return addr4_;}
-	QHostAddress getAddress6() const {return addr6_;}
-
-	QUdpSocket* getSocket4() {return socket4_;}
-	QUdpSocket* getSocket6() {return socket6_;}
+	QList<QPair<QHostAddress, quint16>> getNodes();
 
 	bool isEnabled() {return socket4_->isValid() || socket6_->isValid();}
 
 public slots:
-	void start(QHostAddress addr4, quint16 port4, QHostAddress addr6, quint16 port6);
-	void stop();
+	void addRouter(QString host, quint16 port);
+	void addNode(QHostAddress addr, quint16 port);
 	void setAnnouncePort(quint16 port) {announce_port_ = port;}
 
+	// internal
+	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+
 private:
-	QHostAddress addr4_;
-	QHostAddress addr6_;
+	DHTWrapper* dht_wrapper_ = nullptr;
 
-	quint16 announce_port_, multicast_port4_, multicast_port6_;
+	quint16 announce_port_;
 
+	// Sockets
 	QUdpSocket* socket4_;
 	QUdpSocket* socket6_;
 
-	static constexpr size_t buffer_size_ = 65535;
+	// Initialization
+	void readSessionFile(QString path);
+	void writeSessionFile(QString path);
+
+	QMap<int, quint16> resolves_;
 
 private slots:
-	void processDatagram(QUdpSocket* socket);
+	void handleResolve(const QHostInfo& host);
+	void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes);
 };
 
 } /* namespace librevault */

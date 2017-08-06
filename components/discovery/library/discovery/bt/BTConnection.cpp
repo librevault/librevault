@@ -29,7 +29,7 @@
 #include "BTConnection.h"
 #include "BTProvider.h"
 #include "BTGroup.h"
-#include "rand.h"
+#include "../rand.h"
 #include <QDataStream>
 
 #define RESOLVE_INTERVAL 30
@@ -63,8 +63,6 @@ BTConnection::BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* t
 	connect(tracker_provider, &BTProvider::receivedAnnounce, this, &BTConnection::handleAnnounce);
 	connect(this, &BTConnection::discovered, btgroup_, &BTGroup::discovered);
 }
-
-BTConnection::~BTConnection() {}
 
 void BTConnection::setEnabled(bool enabled) {
 	if(enabled) {

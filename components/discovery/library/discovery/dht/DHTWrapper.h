@@ -26,47 +26,55 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MLDHTGroup.h"
-#include "MLDHTProvider.h"
-#ifdef Q_OS_WIN
-#   include <winsock2.h>
-#else
-#   include <sys/socket.h>
-#endif
+#pragma once
+#include "../btcompat.h"
+#include <QByteArray>
+#include <QTimer>
+#include <QUdpSocket>
 
 namespace librevault {
 
-MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, QByteArray id) :
-	provider_(provider),
-	id_(id) {
-	timer_ = new QTimer(this);
+class DHTWrapper : public QObject {
+Q_OBJECT
 
-	timer_->setInterval(60*1000);
-	timer_->setTimerType(Qt::VeryCoarseTimer);
+public:
+  using EndpointList = QList<QPair<QHostAddress, quint16>>;
 
-	connect(provider_, &MLDHTProvider::discovered, this, &MLDHTGroup::handleDiscovered);
-	connect(timer_, &QTimer::timeout, this, &MLDHTGroup::startSearches);
-}
+signals:
+  void searchDone(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
+  void foundNodes(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
+  void nodeCountChanged(int node_count);
 
-void MLDHTGroup::setEnabled(bool enable) {
-	if(enable) {
-		QTimer::singleShot(0, this, &MLDHTGroup::startSearches);
-		timer_->start();
-	}else
-		timer_->stop();
-}
+public:
+  DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent);
+  DHTWrapper(const DHTWrapper&) = delete;
+  DHTWrapper(DHTWrapper&&) = delete;
+  ~DHTWrapper();
 
-void MLDHTGroup::startSearches() {
-	QByteArray ih = getInfoHash();
+  void nodeCount(int& good_return, int& dubious_return, int& cached_return, int& incoming_return);
+  int goodNodeCount();
 
-	qCDebug(log_dht) << "Starting DHT searches for:" << ih.toHex() << "on port:" << provider_->getAnnouncePort();
-	provider_->startAnnounce(ih, QAbstractSocket::IPv4Protocol, provider_->getAnnouncePort());
-	provider_->startAnnounce(ih, QAbstractSocket::IPv6Protocol, provider_->getAnnouncePort());
-}
+  EndpointList getNodes();
 
-void MLDHTGroup::handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port) {
-	if(!enabled() || ih != getInfoHash()) return;
-	emit discovered(addr, port);
-}
+public slots:
+  void pingNode(QHostAddress addr, quint16 port);
+  void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+  void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+
+  void enable() {periodic_->start();}
+  void disable() {periodic_->stop();}
+
+private:
+  QTimer* periodic_;
+  int last_node_count_ = 0;
+
+  int convertAF(QAbstractSocket::NetworkLayerProtocol qaf);
+  bool enabled() {return periodic_->isActive();}
+
+private slots:
+  void processDatagram(QUdpSocket* socket);
+  void periodicRequest();
+  void updateNodeCount();
+};
 
 } /* namespace librevault */

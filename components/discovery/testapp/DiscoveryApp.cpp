@@ -27,50 +27,55 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoveryApp.h"
-#include "Discovery.h"
-#include "DiscoveryGroup.h"
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QNetworkReply>
-#include <QTimer>
+#include <docopt.h>
 
 namespace librevault {
 
 DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreApplication(argc, argv) {
-	args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true);
+  std::map<std::string, docopt::value> args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true);
 
-	discovery = new Discovery(this);
-	discovery->setAnnounceLANPort(12345);
-	discovery->setAnnounceWANPort(12346);
-	discovery->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
-	discovery->startDHT(39893);
-	discovery->addDHTRouter("router.utorrent.com", 6881);
-	discovery->addDHTRouter("router.bittorrent.com", 6881);
-	discovery->addDHTRouter("dht.transmissionbt.com", 6881);
-	discovery->addDHTRouter("dht.aelitis.com", 6881);
-	discovery->addDHTRouter("dht.libtorrent.org", 25401);
+  QByteArray discovery_id = QByteArray::fromHex(QByteArray::fromStdString(args["<id>"].asString()));
 
-	connect(discovery, &Discovery::DHTnodeCountChanged, this, [=](int count){
-		qDebug() << "DHT node count:" << count;
-		qDebug() << discovery->getDHTNodes();
-	});
+  // initialization
+  mcast_p = new MulticastProvider(this);
+  mcast_p->setAnnouncePort(12345);
 
-	// Group
-	QByteArray id = QByteArray::fromHex(QByteArray::fromStdString(args["<id>"].asString()));
-	dgroup = discovery->createGroup(id);
-	dgroup->setMulticastEnabled(true);
-	dgroup->setMulticastInterval(std::chrono::seconds(30));
-	dgroup->setDHTEnabled(true);
-	dgroup->setBTEnabled(true);
-	dgroup->setBTTrackers({
-		QUrl("udp://discovery.librevault.com:6969/announce"),
-	});
+  mcast_p->start(QHostAddress("239.192.152.144"), 28914);
 
-	connect(dgroup, &DiscoveryGroup::discovered, this, &DiscoveryApp::handleDiscovered);
+  mcast_g = new MulticastGroup(mcast_p, discovery_id, this);
+  mcast_g->setEnabled(true);
+
+  connect(mcast_g, &MulticastGroup::discovered, this, &DiscoveryApp::handleDiscovered);
+
+  //discovery->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
+  //discovery->startDHT(39893);
+  //discovery->addDHTRouter("router.utorrent.com", 6881);
+  //discovery->addDHTRouter("router.bittorrent.com", 6881);
+  //discovery->addDHTRouter("dht.transmissionbt.com", 6881);
+  //discovery->addDHTRouter("dht.aelitis.com", 6881);
+  //discovery->addDHTRouter("dht.libtorrent.org", 25401);
+
+  //connect(discovery, &Discovery::DHTnodeCountChanged, this, [=](int count){
+  //	qDebug() << "DHT node count:" << count;
+  //	qDebug() << discovery->getDHTNodes();
+  //});
+
+  // Group
+
+//	dgroup = discovery->createGroup(id);
+//	dgroup->setMulticastEnabled(true);
+//	dgroup->setMulticastInterval(std::chrono::seconds(30));
+//	dgroup->setDHTEnabled(true);
+//	dgroup->setBTEnabled(true);
+//	dgroup->setBTTrackers({
+//		QUrl("udp://discovery.librevault.com:6969/announce"),
+//	});
+//
+//	connect(dgroup, &DiscoveryGroup::discovered, this, &DiscoveryApp::handleDiscovered);
 }
 
 void DiscoveryApp::handleDiscovered(QHostAddress addr, quint16 port) {
-	qInfo() << "Discovered:" << addr.toString() << port;
+  qInfo() << "Discovered:" << addr.toString() << port;
 }
 
 } /* namespace librevault */

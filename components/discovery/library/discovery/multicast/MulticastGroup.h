@@ -27,40 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "btcompat.h"
-#include <QObject>
-#include <QUrl>
-#include <QLoggingCategory>
-#include <memory>
-#include <set>
+#include <QTimer>
+#include <QPointer>
+#include <QUdpSocket>
+#include <chrono>
 
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_bt)
+class MulticastProvider;
 
-class BTConnection;
-class BTProvider;
-class BTGroup : public QObject {
-	Q_OBJECT
+class MulticastGroup : public QObject {
+Q_OBJECT
 
 signals:
-	void discovered(QHostAddress addr, quint16 port);
+  void discovered(QHostAddress addr, quint16 port);
 
 public:
-	BTGroup(BTProvider* provider, QByteArray discovery_id);
-	QByteArray getDiscoveryID() {return discovery_id_;}
-	QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
+  MulticastGroup(MulticastProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
+  MulticastGroup(const MulticastGroup&) = delete;
+  MulticastGroup(MulticastGroup&&) = delete;
 
-public slots:
-	void setEnabled(bool enabled);
-	void setTrackerList(QList<QUrl> trackers);
+  void setEnabled(bool enabled);
+  void setInterval(std::chrono::seconds interval);
 
-protected:
-	BTProvider* provider_;
-	QByteArray discovery_id_;
-	std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
+private:
+  QPointer<MulticastProvider> provider_;
+  QTimer* timer_;
+  QByteArray discovery_id_;
 
-	bool enabled_ = false;
+  QByteArray getMessage();
+
+private slots:
+  void sendMulticast();
 };
 
 } /* namespace librevault */

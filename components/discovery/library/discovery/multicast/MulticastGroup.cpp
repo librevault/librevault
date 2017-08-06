@@ -36,49 +36,53 @@ Q_DECLARE_LOGGING_CATEGORY(log_multicast)
 
 namespace librevault {
 
-MulticastGroup::MulticastGroup(MulticastProvider* provider, QByteArray id) :
-	provider_(provider), id_(id) {
-	timer_ = new QTimer(this);
-	timer_->setInterval(30*1000);
+MulticastGroup::MulticastGroup(MulticastProvider* provider, QByteArray discovery_id, QObject* parent) : QObject(parent),
+  provider_(provider), discovery_id_(discovery_id) {
+  timer_ = new QTimer(this);
+  timer_->setInterval(std::chrono::seconds(30));
 
-	// Connecting signals
-	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
-	connect(provider_, &MulticastProvider::discovered, this, [=](QByteArray id, QHostAddress addr, quint16 port){
-		if(id == id_) emit discovered(addr, port);
-	});
+  // Connecting signals
+  connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticast);
+  connect(provider_, &MulticastProvider::discovered, this, [=](QByteArray id, QHostAddress addr, quint16 port) {
+    if(id == discovery_id_) emit discovered(addr, port);
+  });
+
+  connect(provider_, &QObject::destroyed, timer_, &QTimer::stop);
 }
 
 void MulticastGroup::setEnabled(bool enabled) {
-	if(!timer_->isActive() && enabled) {
-		sendMulticasts();
-		timer_->start();
-	}else if(timer_->isActive() && !enabled)
-		timer_->stop();
+  if(timer_->isActive() == enabled) // no status change
+    return;
+
+  if(enabled) {
+    QTimer::singleShot(0, this, &MulticastGroup::sendMulticast);
+    timer_->start();
+  }else
+    timer_->stop();
 }
 
 void MulticastGroup::setInterval(std::chrono::seconds interval) {
-	timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(interval).count());
+  timer_->setInterval(interval);
 }
 
 QByteArray MulticastGroup::getMessage() {
-	QJsonObject message;
-	message["port"] = provider_->getAnnouncePort();
-	message["id"] = QString::fromLatin1(id_.toBase64());
+  Q_ASSERT(provider_);
 
-	return QJsonDocument(message).toJson(QJsonDocument::Compact);
+  QJsonObject message;
+  message["port"] = provider_->getAnnouncePort();
+  message["id"] = QString::fromLatin1(discovery_id_.toBase64());
+
+  return QJsonDocument(message).toJson(QJsonDocument::Compact);
 }
 
-void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
-	if(! provider_->isEnabled()) return;
-	if(socket->writeDatagram(getMessage(), addr, port))
-		qCDebug(log_multicast) << "===> Multicast message sent to:" << addr << ":" << port;
-	else
-		qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << addr << ":" << port << "E:" << socket->errorString();
-}
+void MulticastGroup::sendMulticast() {
+  if(!provider_ || !provider_->isEnabled())
+    return;
 
-void MulticastGroup::sendMulticasts() {
-	sendMulticast(provider_->getSocket4(), provider_->getAddress4(), provider_->getMulticastPort4());
-	sendMulticast(provider_->getSocket6(), provider_->getAddress6(), provider_->getMulticastPort6());
+  if(provider_->getSocket()->writeDatagram(getMessage(), provider_->getAddress(), provider_->getMulticastPort()))
+    qCDebug(log_multicast) << "===> Multicast message sent to:" << provider_->getAddress() << ":" << provider_->getMulticastPort();
+  else
+    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << provider_->getAddress() << ":" << provider_->getMulticastPort() << "E:" << provider_->getSocket()->errorString();
 }
 
 } /* namespace librevault */

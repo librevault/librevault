@@ -27,68 +27,60 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "btcompat.h"
-#include <QLoggingCategory>
 #include <QHostInfo>
 #include <QTimer>
 #include <QUdpSocket>
-
-Q_DECLARE_LOGGING_CATEGORY(log_dht)
+#include <QUrl>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class Discovery;
-class DHTWrapper;
-class MLDHTProvider : public QObject {
+Q_DECLARE_LOGGING_CATEGORY(log_bt)
+
+class BTProvider;
+class BTGroup;
+
+// BEP-0015 partial implementation (without scrape mechanism)
+class BTConnection : public QObject {
 	Q_OBJECT
+public:
+	BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
+	BTConnection(const BTConnection&) = delete;
+	BTConnection(BTConnection&&) = delete;
+
+	void setEnabled(bool enabled);
 
 signals:
-	void discovered(QByteArray ih, QHostAddress addr, quint16 port);
-	void nodeCountChanged(int count);
-
-public:
-	MLDHTProvider(Discovery* parent);
-	virtual ~MLDHTProvider();
-
-	// Start/Stop
-	void start(quint16 port);
-	void stop();
-
-	int getNodeCount() const;
-	quint16 getAnnouncePort() const {return announce_port_;}
-
-	QList<QPair<QHostAddress, quint16>> getNodes();
-
-	bool isEnabled() {return socket4_->isValid() || socket6_->isValid();}
-
-public slots:
-	void addRouter(QString host, quint16 port);
-	void addNode(QHostAddress addr, quint16 port);
-	void setAnnouncePort(quint16 port) {announce_port_ = port;}
-
-	// internal
-	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
-	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+	void discovered(QHostAddress addr, quint16 port);
 
 private:
-	Discovery* parent_;
-	DHTWrapper* dht_wrapper_ = nullptr;
+	BTProvider* provider_;
+	BTGroup* btgroup_;
 
-	quint16 announce_port_;
+	// Tracker address
+	QUrl tracker_unresolved_;
+	QPair<QHostAddress, quint16> tracker_resolved_;
 
-	// Sockets
-	QUdpSocket* socket4_;
-	QUdpSocket* socket6_;
+	// Connection state
+	quint64 conn_id_;
+	quint32 transaction_id_;
 
-	// Initialization
-	void readSessionFile(QString path);
-	void writeSessionFile(QString path);
+	// Timers
+	QTimer* resolver_timer_;
+	QTimer* connect_timer_;
+	QTimer* announce_timer_;
+	int resolver_lookup_id_ = 0;
 
-	QMap<int, quint16> resolves_;
+	void resolve();
+	void btconnect();
+	void announce();
+
+	quint32 startTransaction();
 
 private slots:
 	void handleResolve(const QHostInfo& host);
-	void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes);
+	void handleConnect(quint32 transaction_id, quint64 connection_id);
+	void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
 };
 
 } /* namespace librevault */

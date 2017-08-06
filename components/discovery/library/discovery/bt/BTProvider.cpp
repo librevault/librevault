@@ -27,70 +27,67 @@
  * files in the program, then also delete it here.
  */
 #include "BTProvider.h"
-#include "Discovery.h"
-#include "rand.h"
+#include "../rand.h"
 #include <QDataStream>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_bt, "discovery.bt")
 
-BTProvider::BTProvider(Discovery* parent) : QObject(parent),
-	parent_(parent) {
-	socket_ = new QUdpSocket();
-	socket_->bind();
+BTProvider::BTProvider(QObject* parent) : QObject(parent) {
+  socket_ = new QUdpSocket();
+  socket_->bind();
 
-	connect(socket_, &QUdpSocket::readyRead, this, &BTProvider::processDatagram);
-	setIDPrefix();
+  connect(socket_, &QUdpSocket::readyRead, this, &BTProvider::processDatagram);
+  setIDPrefix();
 }
 
 BTProvider::~BTProvider() {}
 
 void BTProvider::setIDPrefix(QByteArray peer_id_prefix) {
-	peer_id_prefix_ = peer_id_prefix;
-	peer_id_ = peer_id_prefix_ + getRandomArray(20);
-	peer_id_.resize(20);
+  peer_id_ = peer_id_prefix + getRandomArray(20);
+  peer_id_.resize(20);
 }
 
 void BTProvider::processDatagram() {
-	QHostAddress tracker_addr;
-	QByteArray message(65535, 0);
-	qint64 datagram_size = socket_->readDatagram(message.data(), message.size(), &tracker_addr);
-	message.resize(datagram_size);
+  QHostAddress tracker_addr;
+  QByteArray message(65535, 0);
+  qint64 datagram_size = socket_->readDatagram(message.data(), message.size(), &tracker_addr);
+  message.resize(datagram_size);
 
-	{
-		bool ok = false;
-		quint32 addr4 = tracker_addr.toIPv4Address(&ok);
-		if(ok) tracker_addr = QHostAddress(addr4);
-	}
+  {
+    bool ok = false;
+    quint32 addr4 = tracker_addr.toIPv4Address(&ok);
+    if(ok) tracker_addr = QHostAddress(addr4);
+  }
 
-	qCDebug(log_bt) << "Received BitTorrent tracker message from" << tracker_addr;
+  qCDebug(log_bt) << "Received BitTorrent tracker message from" << tracker_addr;
 
-	if(message.size() < 8) return;
+  if(message.size() < 8) return;
 
-	QDataStream stream(&message, QIODevice::ReadOnly);
-	quint32 action = 0, transaction_id = 0;
-	stream >> action >> transaction_id;
+  QDataStream stream(&message, QIODevice::ReadOnly);
+  quint32 action = 0, transaction_id = 0;
+  stream >> action >> transaction_id;
 
-	if(action == 0) {   // CONNECT
-		quint64 connection_id = 0;
-		stream >> connection_id;
-		emit receivedConnect(transaction_id, connection_id);
-	}else if(action == 1) { // ANNOUNCE
-		quint32 interval = 0, leechers = 0, seeders = 0;
-		stream >> interval >> leechers >> seeders;
-		QList<QPair<QHostAddress, quint16>> peers;
-		if(tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
-			peers = btcompat::unpackEnpointList4(message.mid(20));
-		}else if(tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {
-			peers = btcompat::unpackEnpointList6(message.mid(20));
-		}
-		emit receivedAnnounce(transaction_id, interval, leechers, seeders, peers);
-	}else if(action == 2) { // SCRAPE
-		// no-op
-	}else if(action == 3) { // ERROR
-		emit receivedError(transaction_id, message.mid(8));
-	}
+  if(action == 0) {   // CONNECT
+    quint64 connection_id = 0;
+    stream >> connection_id;
+    emit receivedConnect(transaction_id, connection_id);
+  }else if(action == 1) { // ANNOUNCE
+    quint32 interval = 0, leechers = 0, seeders = 0;
+    stream >> interval >> leechers >> seeders;
+    QList<QPair<QHostAddress, quint16>> peers;
+    if(tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
+      peers = btcompat::unpackEnpointList4(message.mid(20));
+    }else if(tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {
+      peers = btcompat::unpackEnpointList6(message.mid(20));
+    }
+    emit receivedAnnounce(transaction_id, interval, leechers, seeders, peers);
+  }else if(action == 2) { // SCRAPE
+    // no-op
+  }else if(action == 3) { // ERROR
+    emit receivedError(transaction_id, message.mid(8));
+  }
 }
 
 } /* namespace librevault */

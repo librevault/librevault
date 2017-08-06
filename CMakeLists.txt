@@ -181,14 +181,11 @@ if(OS_WIN)
 elseif(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-find_package(Qt5 5.7 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+find_package(Qt5 5.9 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050700")
 
 ## Protobuf
 find_package(Protobuf 3.0 REQUIRED)
-add_library(protobuf INTERFACE)
-target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
 
 ## CryptoPP
 find_package(CryptoPP 5.6.4 REQUIRED MODULE)
@@ -203,6 +200,8 @@ find_package(OpenSSL 1.0.2 REQUIRED)
 # Subprojects
 #============================================================================
 
+add_subdirectory("util/rabin-cpp")
+add_subdirectory("util/QDocopt")
 add_subdirectory("common")
 add_subdirectory("components/aes")
 add_subdirectory("components/base32")
@@ -212,8 +211,6 @@ add_subdirectory("components/portmapping")
 add_subdirectory("components/pathnormalizer")
 add_subdirectory("components/discovery")
 add_subdirectory("components/protocol")
-add_subdirectory("util/rabin-cpp")
-add_subdirectory("util/QDocopt")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

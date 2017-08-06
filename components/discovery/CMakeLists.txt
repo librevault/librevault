@@ -36,4 +36,4 @@ if(WIN32)
 endif()
 
 target_link_libraries(discovery-testapp PRIVATE discovery)
-target_link_libraries(discovery-testapp PRIVATE docopt_s)
+target_link_libraries(discovery-testapp PRIVATE QDocopt)

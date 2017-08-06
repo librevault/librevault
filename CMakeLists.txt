@@ -128,7 +128,7 @@ find_package(Threads)
 
 ## Dir_monitor
 add_library(dir_monitor INTERFACE)
-target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
+target_include_directories(dir_monitor INTERFACE 3rd-party/dir_monitor/include)
 
 ## Docopt
 find_package(docopt)
@@ -144,11 +144,11 @@ find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
 target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
 
 ## dht
-add_subdirectory("contrib/dht")
+add_subdirectory("3rd-party/dht")
 
 ## QtSingleApplication
 if(BUILD_GUI)
-	add_subdirectory("contrib/qtsingleapplication")
+	add_subdirectory("3rd-party/qtsingleapplication")
 endif()
 
 ## SQLite

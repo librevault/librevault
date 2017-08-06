@@ -1,0 +1,36 @@
+language: cpp
+sudo: false
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env:
+        - COMPILER=g++-5
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'boost-latest', 'george-edison55-precise-backports']
+          packages: ["g++-5", "cmake-data", "cmake", "libboost1.55-all-dev"]
+    - os: osx
+      osx_image: xcode7
+      compiler: clang
+      env: COMPILER=clang++
+
+before_install:
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      brew install cmake boost
+    fi
+
+before_script:
+  - rm -rf build/
+  - mkdir build
+  - cd build
+script:
+  - cmake -DCMAKE_CXX_COMPILER=${COMPILER} -DBUILD_TESTING=ON ..
+  - cmake --build .
+#TODO: add support for osx
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+        ctest --verbose
+    fi

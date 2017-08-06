@@ -143,9 +143,6 @@ add_library(libminiupnpc INTERFACE)
 find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
 target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
 
-## rabin
-add_subdirectory("contrib/rabin")
-
 ## dht
 add_subdirectory("contrib/dht")
 
@@ -215,6 +212,7 @@ add_subdirectory("components/portmapping")
 add_subdirectory("components/pathnormalizer")
 add_subdirectory("components/discovery")
 add_subdirectory("components/protocol")
+add_subdirectory("util/rabin-cpp")
 if(BUILD_DAEMON)
 	add_subdirectory("daemon")
 endif()

@@ -34,7 +34,7 @@
 #include <PathNormalizer.h>
 #include "human_size.h"
 #include "AES_CBC.h"
-#include <rabin.h>
+#include <Rabin.hpp>
 #include <boost/filesystem.hpp>
 #include <QFile>
 #ifdef Q_OS_UNIX
@@ -212,23 +212,14 @@ void IndexerWorker::update_chunks() {
 	}
 
 	// Initializing chunker
-	rabin_t hasher;
-	hasher.average_bits = rabin_global_params.avg_bits;
-	hasher.minsize = new_meta_.min_chunksize();
-	hasher.maxsize = new_meta_.max_chunksize();
-	hasher.polynomial = rabin_global_params.polynomial;
-	hasher.polynomial_degree = rabin_global_params.polynomial_degree;
-	hasher.polynomial_shift = rabin_global_params.polynomial_shift;
-
-	hasher.mask = uint64_t((1<<uint64_t(hasher.average_bits))-1);
-
-	rabin_init(&hasher);
+  uint64_t rabin_mask = (1ull<<uint64_t(rabin_global_params.avg_bits))-1ull;
+  Rabin rabin(rabin_global_params.polynomial, rabin_global_params.polynomial_shift, new_meta_.min_chunksize(), new_meta_.max_chunksize(), rabin_mask);
 
 	// Chunking
 	QList<Meta::Chunk> chunks;
 
 	QByteArray buffer;
-	buffer.reserve(hasher.maxsize);
+	buffer.reserve(new_meta_.max_chunksize());
 
 	QFile f(abspath_);
 	if(!f.open(QIODevice::ReadOnly))
@@ -238,7 +229,7 @@ void IndexerWorker::update_chunks() {
 	while(f.getChar(&byte) && active_) {
 		buffer.push_back(byte);
 
-		if(rabin_next_chunk(&hasher, (uchar*)&byte, 1) == 1) {    // Found a chunk
+		if(rabin.next_chunk(byte)) {    // Found a chunk
 			chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
 			buffer.clear();
 		}
@@ -247,7 +238,7 @@ void IndexerWorker::update_chunks() {
 	if(!active_)
 		throw abort_index("Indexing had been interruped");
 
-	if(rabin_finalize(&hasher) != 0)
+	if(rabin.finalize())
 		chunks << populate_chunk(buffer, pt_hmac__iv);
 
 	new_meta_.set_chunks(chunks);

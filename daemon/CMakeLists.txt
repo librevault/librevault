@@ -78,7 +78,7 @@ endif()
 target_link_libraries(librevault-daemon Boost::system Boost::filesystem Boost::thread)
 
 ## Qt5
-target_link_libraries(librevault-daemon Qt5::WebSockets)
+target_link_libraries(librevault-daemon Qt5::Core Qt5::Network Qt5::WebSockets)
 
 ## CryptoPP
 target_link_libraries(librevault-daemon cryptopp)

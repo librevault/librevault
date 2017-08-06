@@ -21,7 +21,6 @@ include(OSDetection)
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
 option(BUILD_GUI "Build GUI" ON)
-option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
@@ -238,9 +237,6 @@ if(BUILD_DAEMON)
 endif()
 if(BUILD_GUI)
 	add_subdirectory("gui")
-endif()
-if(BUILD_CLI)
-	add_subdirectory("cli")
 endif()
 
 include(Install.cmake)

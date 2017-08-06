@@ -27,33 +27,36 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-//#include <Discovery.h>
-#include <PortMapper.h>
-#include <QHostAddress>
-#include <memory>
 
-namespace librevault {
+#include <docopt.h>
+#include <QtCore/QVariantMap>
 
-class DiscoveryAdapter : public QObject {
-	Q_OBJECT
+QVariantMap qdocopt(QString doc, int argc, char** argv, bool help = true, QString version = QString(), bool options_first = false) {
+  std::map<std::string, docopt::value> docopt_args = docopt::docopt(doc.toStdString(), {argv + 1, argv+argc}, help, version.toStdString());
 
-signals:
-	void discovered(QByteArray folderid, QHostAddress addr, quint16 port);
+  QVariantMap qmap;
+  for(auto& value : docopt_args) {
+    QString qkey = QString::fromStdString(value.first);
+    QVariant qvalue;
 
-public:
-	DiscoveryAdapter(PortMapper* portmapper, QObject* parent);
-	virtual ~DiscoveryAdapter();
+    if(value.second) {
+      if(value.second.isBool()) {
+        qvalue = value.second.asBool();
+      }else if(value.second.isLong()) {
+        qvalue = (qlonglong)value.second.asLong();
+      }else if(value.second.isString()) {
+        qvalue = QString::fromStdString(value.second.asString());
+      }else if(value.second.isStringList()) {
+        QStringList sl;
+        for(const std::string& str : value.second.asStringList()) {
+          sl.push_back(QString::fromStdString(str));
+        }
+        qvalue = sl;
+      }
+    }
 
-public slots:
-//	DiscoveryGroup* createGroup(QByteArray folderid);
+    qmap.insert(qkey, qvalue);
+  }
 
-private:
-	PortMapper* portmapper_;
-//	Discovery* discovery_;
-
-//	QMap<QByteArray, DiscoveryGroup*> groups_;
-
-	void initDiscovery();
-};
-
-} /* namespace librevault */
+  return qmap;
+}

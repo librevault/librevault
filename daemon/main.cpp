@@ -34,6 +34,7 @@
 #include "Secret.h"
 #include <spdlog/spdlog.h>
 #include <boost/filesystem/path.hpp>
+#include <QDocopt.hpp>
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
@@ -86,24 +87,25 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
 }
 
 int main(int argc, char** argv) {
-	do {
-		// Argument parsing
-		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
+  // Argument parsing
+	QVariantMap args = qdocopt(USAGE, argc, argv, true, librevault::Version().version_string());
 
+  // Initializing log verbosity
+  spdlog::level::level_enum log_level;
+  switch(args["-v"].toLongLong()) {
+    case 2:     log_level = spdlog::level::trace; break;
+    case 1:     log_level = spdlog::level::debug; break;
+    default:    log_level = spdlog::level::info;
+  }
+
+	do {
 		// Initializing paths
 		QString appdata_path;
-		if(args["--data"].isString())
-			appdata_path = QString::fromStdString(args["--data"].asString());
+    if(args.contains("--data"))
+      appdata_path = args["--data"].toString();
 		Paths::get(appdata_path);
 
-		// Initializing log
-		spdlog::level::level_enum log_level;
-		switch(args["-v"].asLong()) {
-			case 2:     log_level = spdlog::level::trace; break;
-			case 1:     log_level = spdlog::level::debug; break;
-			default:    log_level = spdlog::level::info;
-		}
-
+    // Initializing log
 		auto log = spdlog::get(Version::current().name().toStdString());
 		if(!log){
 			std::vector<spdlog::sink_ptr> sinks;

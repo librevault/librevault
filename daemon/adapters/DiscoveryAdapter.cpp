@@ -28,14 +28,11 @@
  */
 #include "DiscoveryAdapter.h"
 #include "control/Config.h"
-#include <DiscoveryGroup.h>
 
 namespace librevault {
 
 DiscoveryAdapter::DiscoveryAdapter(PortMapper* portmapper, QObject* parent) : QObject(parent), portmapper_(portmapper) {
-	discovery_ = new Discovery(this);
-
-	initDiscovery();
+/*	initDiscovery();
 
 	quint16 lan_port = Config::get()->getGlobal("p2p_listen").toUInt();
 	quint16 wan_port = portmapper_->getMappedPort("main");
@@ -43,14 +40,14 @@ DiscoveryAdapter::DiscoveryAdapter(PortMapper* portmapper, QObject* parent) : QO
 		if(id == "main") discovery_->setAnnounceWANPort(port);
 	});
 	discovery_->setAnnounceLANPort(lan_port);
-	discovery_->setAnnounceWANPort(wan_port);
+	discovery_->setAnnounceWANPort(wan_port);*/
 }
 
 DiscoveryAdapter::~DiscoveryAdapter() {
 	portmapper_->removePort("mldht");
 }
 
-DiscoveryGroup* DiscoveryAdapter::createGroup(QByteArray folderid) {
+/*DiscoveryGroup* DiscoveryAdapter::createGroup(QByteArray folderid) {
 	DiscoveryGroup* dgroup = discovery_->createGroup(folderid);
 
 	bool dht_enabled = Config::get()->getFolder(folderid).value("mainline_dht_enabled").toBool();
@@ -71,9 +68,9 @@ DiscoveryGroup* DiscoveryAdapter::createGroup(QByteArray folderid) {
 	}
 
 	return dgroup;
-}
+}*/
 
-void DiscoveryAdapter::initDiscovery() {
+/*void DiscoveryAdapter::initDiscovery() {
 	bool dht_enabled = Config::get()->getGlobal("mainline_dht_enbled").toBool();
 	quint16 dht_port = Config::get()->getGlobal("mainline_dht_port").toUInt();
 	portmapper_->addPort("mldht", dht_port, QAbstractSocket::UdpSocket, "Librevault DHT");
@@ -91,6 +88,6 @@ void DiscoveryAdapter::initDiscovery() {
 	if(multicast_enabled) {
 		discovery_->startMulticast(QHostAddress("239.192.152.144"), 28914, QHostAddress("ff08::BD02"), 28914);
 	}
-}
+}*/
 
 } /* namespace librevault */

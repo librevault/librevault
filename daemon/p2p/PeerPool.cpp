@@ -29,7 +29,7 @@
 #include "PeerPool.h"
 #include "p2p/PeerServer.h"
 #include "p2p/Peer.h"
-#include <DiscoveryGroup.h>
+//#include <DiscoveryGroup.h>
 
 namespace librevault {
 
@@ -39,8 +39,8 @@ PeerPool::PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, Node
 	node_key_(node_key),
 	bc_all_(bc_all),
 	bc_blocks_(bc_blocks) {
-	dgroup_ = discovery->createGroup(params.folderid());
-	connect(dgroup_, &DiscoveryGroup::discovered, this, qOverload<QHostAddress, quint16>(&PeerPool::handleDiscovered));
+//	dgroup_ = discovery->createGroup(params.folderid());
+//	connect(dgroup_, &DiscoveryGroup::discovered, this, qOverload<QHostAddress, quint16>(&PeerPool::handleDiscovered));
 }
 
 PeerPool::~PeerPool() {}

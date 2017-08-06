@@ -68,7 +68,7 @@ private:
 	NodeKey* node_key_;
 	BandwidthCounter bc_all_, bc_blocks_;
 
-	DiscoveryGroup* dgroup_;
+	//DiscoveryGroup* dgroup_;
 
 	/* Members */
 	QSet<Peer*> peers_;

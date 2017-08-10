@@ -47,7 +47,7 @@ signals:
 	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	BTGroup(BTProvider* provider, QByteArray discovery_id);
+	BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent);
 	BTGroup(const BTGroup&) = delete;
 	BTGroup(BTGroup&&) = delete;
 

@@ -31,7 +31,8 @@
 
 namespace librevault {
 
-BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id) :
+BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent) :
+	QObject(parent),
 	provider_(provider),
 	discovery_id_(discovery_id) {}
 

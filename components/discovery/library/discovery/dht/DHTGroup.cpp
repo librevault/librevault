@@ -31,7 +31,8 @@
 
 namespace librevault {
 
-DHTGroup::DHTGroup(DHTProvider* provider, QByteArray discovery_id) :
+DHTGroup::DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent) :
+	QObject(parent),
 	provider_(provider),
 	discovery_id_(discovery_id) {
 	timer_ = new QTimer(this);

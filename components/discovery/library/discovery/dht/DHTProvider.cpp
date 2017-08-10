@@ -82,7 +82,7 @@ void DHTProvider::readSessionFile(QString path) {
 
 	QJsonArray nodes = session_json["nodes"].toArray();
 	qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
-	foreach(const QJsonValue& node_v, nodes) {
+	for(const QJsonValue& node_v : qAsConst(nodes)) {
 		QJsonObject node = node_v.toObject();
 		addNode(QHostAddress(node["ip"].toString()), node["port"].toInt());
 	}

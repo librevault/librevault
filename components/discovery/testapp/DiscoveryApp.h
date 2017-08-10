@@ -50,10 +50,12 @@ private:
 
   MulticastGroup* mcast_g;
   DHTGroup* dht_g;
-  BTProvider* bt_g;
+  BTGroup* bt_g;
 
 private slots:
-	void handleDiscovered(QHostAddress addr, quint16 port);
+	void handleDiscoveredMulticast(QHostAddress addr, quint16 port);
+	void handleDiscoveredDht(QHostAddress addr, quint16 port);
+	void handleDiscoveredTorrent(QHostAddress addr, quint16 port);
 };
 
 } /* namespace librevault */

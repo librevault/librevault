@@ -43,7 +43,7 @@ signals:
 	void discovered(QHostAddress addr, quint16 port);
 
 public:
-	DHTGroup(DHTProvider* provider, QByteArray discovery_id);
+	DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
 	DHTGroup(const DHTGroup&) = delete;
 	DHTGroup(DHTGroup&&) = delete;
 

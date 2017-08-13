@@ -27,78 +27,72 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <iostream>
-#include <stdexcept>
-#include <string>
 #include <QByteArray>
 #include <QString>
+#include <iostream>
+#include <stdexcept>
 
 namespace librevault {
 
 class Secret {
-public:
-	enum Type : char {
-		Owner = 'A',	/// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
-		ReadWrite = 'B',	/// Signature key, used to sign modified files.
-		ReadOnly = 'C',	/// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
-		Download = 'D',	/// Public key, used to verify signed modified files
-	};
+ public:
+  enum Type : char {
+    Owner = 'A',      /// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
+    ReadWrite = 'B',  /// Signature key, used to sign modified files.
+    ReadOnly = 'C',   /// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
+    Download = 'D',   /// Public key, used to verify signed modified files
+  };
 
-	struct error : public std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-	};
-	struct format_error : public error {
-		format_error() : error("Secret format mismatch") {}
-	};
-	struct level_error : public error {
-		level_error() : error("Secret has insufficient privileges for this action") {}
-	};
-	struct crypto_error : public error {
-		crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
-	};
+  struct error : public std::runtime_error {
+    error(const char* what) : std::runtime_error(what) {}
+  };
+  struct format_error : public error {
+    format_error() : error("Secret format mismatch") {}
+  };
+  struct level_error : public error {
+    level_error() : error("Secret has insufficient privileges for this action") {}
+  };
+  struct crypto_error : public error {
+    crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
+  };
 
-	Secret();
-	Secret(Type type, QByteArray payload);
-	Secret(QByteArray string_secret);
-	Secret(QString string_secret);
+  Secret();
+  Secret(Type type, QByteArray payload);
+  Secret(QByteArray string_secret);
+  Secret(QString string_secret);
 
-	operator QString() const {return QString::fromLatin1(secret_s);}
+  operator QString() const { return QString::fromLatin1(secret_s); }
 
-	Type getType() const {return (Type)secret_s[0];}
-	char getTypeChar() const {return (char)getType();}
-	char getParam() const {return secret_s[1];}
-	char getCheckChar() const {return secret_s[secret_s.size()-1];}
+  Type getType() const { return (Type)secret_s[0]; }
+  char getTypeChar() const { return (char)getType(); }
+  char getParam() const { return secret_s[1]; }
+  char getCheckChar() const { return secret_s[secret_s.size() - 1]; }
 
-	// Secret derivers
-	Secret derive(Type key_type) const;
+  // Secret derivers
+  Secret derive(Type key_type) const;
 
-	// Payload getters
-	QByteArray getPrivateKey() const;
-	QByteArray getPublicKey() const;
-	QByteArray getEncryptionKey() const;
+  // Payload getters
+  QByteArray getPrivateKey() const;
+  QByteArray getPublicKey() const;
+  QByteArray getEncryptionKey() const;
 
-	QByteArray getHash() const;
+  QByteArray getHash() const;
 
-	bool operator== (const Secret& key) const {return secret_s == key.secret_s;}
-	bool operator< (const Secret& key) const {return secret_s < key.secret_s;}
+  bool operator==(const Secret& key) const { return secret_s == key.secret_s; }
+  bool operator<(const Secret& key) const { return secret_s < key.secret_s; }
 
-private:
-	static constexpr size_t private_key_size = 32;
-	static constexpr size_t encryption_key_size = 32;
-	static constexpr size_t public_key_size = 33;
+ private:
+  QByteArray secret_s;
 
-	static constexpr size_t hash_size = 32;
+  mutable QByteArray cached_private_key;     // ReadWrite
+  mutable QByteArray cached_encryption_key;  // ReadOnly
+  mutable QByteArray cached_public_key;      // Download
 
-	QByteArray secret_s;
+  mutable QByteArray cached_hash;  // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
+                                   // Completely public, no need to hide it.
 
-	mutable QByteArray cached_private_key;	// ReadWrite
-	mutable QByteArray cached_encryption_key;	// ReadOnly
-	mutable QByteArray cached_public_key;		// Download
-
-	mutable QByteArray cached_hash;			// It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key. Completely public, no need to hide it.
-
-	QByteArray getEncodedPayload() const;
-	QByteArray getPayload() const;
+  QByteArray getEncodedPayload() const;
+  QByteArray getPayload() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Secret& k);

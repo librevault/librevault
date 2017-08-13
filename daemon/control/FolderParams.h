@@ -30,41 +30,36 @@
 #include "Meta.h"
 #include "Secret.h"
 #include <QList>
-#include <QVariantMap>
 #include <QString>
 #include <QUrl>
+#include <QVariantMap>
 #include <chrono>
 
 namespace librevault {
 
 struct FolderParams {
-	enum class ArchiveType : unsigned {
-		NO_ARCHIVE = 0,
-		TRASH_ARCHIVE,
-		TIMESTAMP_ARCHIVE,
-		BLOCK_ARCHIVE
-	};
+  enum class ArchiveType : unsigned { NO_ARCHIVE = 0, TRASH_ARCHIVE, TIMESTAMP_ARCHIVE, BLOCK_ARCHIVE };
 
-	FolderParams(QVariantMap fconfig);
+  FolderParams(QVariantMap fconfig);
 
-	QByteArray folderid() const {return secret.getHash();}
+  QByteArray folderid() const { return secret.getHash(); }
 
-	/* Parameters */
-	Secret secret;
-	QString path;
-	QString system_path;
-	std::chrono::milliseconds index_event_timeout;
-	bool preserve_unix_attrib;
-	bool preserve_windows_attrib;
-	bool preserve_symlinks;
-	Meta::StrongHashType chunk_strong_hash_type;
-	std::chrono::seconds full_rescan_interval;
-	QStringList ignore_paths;
-	QList<QUrl> nodes;
-	ArchiveType archive_type;
-	unsigned archive_trash_ttl;
-	unsigned archive_timestamp_count;
-	bool mainline_dht_enabled;
+  /* Parameters */
+  Secret secret;
+  QString path;
+  QString system_path;
+  std::chrono::milliseconds index_event_timeout;
+  bool preserve_unix_attrib;
+  bool preserve_windows_attrib;
+  bool preserve_symlinks;
+  Meta::StrongHashType chunk_strong_hash_type;
+  std::chrono::seconds full_rescan_interval;
+  QStringList ignore_paths;
+  QList<QUrl> nodes;
+  ArchiveType archive_type;
+  unsigned archive_trash_ttl;
+  unsigned archive_timestamp_count;
+  bool mainline_dht_enabled;
 };
 
 } /* namespace librevault */

@@ -28,6 +28,7 @@
  */
 #include "Paths.h"
 #include <QDir>
+#include <QtCore/QStandardPaths>
 
 namespace librevault {
 
@@ -40,6 +41,10 @@ Paths::Paths(QString appdata_path) :
 	cert_path(this->appdata_path + "/cert.pem"),
 	dht_session_path(this->appdata_path + "/session_dht.json") {
 	QDir().mkpath(this->appdata_path);
+}
+
+QString Paths::default_appdata_path() {
+	return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 }
 
 Paths* Paths::instance_ = nullptr;

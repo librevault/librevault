@@ -38,134 +38,140 @@ using CryptoPP::ASN1::secp256r1;
 
 namespace librevault {
 
+namespace {
+static constexpr size_t private_key_size = 32;
+static constexpr size_t encryption_key_size = 32;
+static constexpr size_t public_key_size = 33;
+
+static constexpr size_t hash_size = 32;
+}
+
 Secret::Secret() {
-	CryptoPP::AutoSeededRandomPool rng;
-	CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-	private_key.Initialize(rng, secp256r1());
+  CryptoPP::AutoSeededRandomPool rng;
+  CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
+  private_key.Initialize(rng, secp256r1());
 
-	cached_private_key.resize(private_key_size);
-	private_key.GetPrivateExponent().Encode((uchar*)cached_private_key.data(), private_key_size);
+  cached_private_key.resize(private_key_size);
+  private_key.GetPrivateExponent().Encode((uchar*)cached_private_key.data(), private_key_size);
 
-	secret_s.append(1, (char)Owner);
-	secret_s.append(1, '1');
-	secret_s.append(toBase58(cached_private_key));
-	secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
+  secret_s.append(1, (char)Owner);
+  secret_s.append(1, '1');
+  secret_s.append(toBase58(cached_private_key));
+  secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
 }
 
 Secret::Secret(Type type, QByteArray binary_part) {
-	secret_s.append(1, type);
-	secret_s.append(1, '1');
-	secret_s.append(toBase58(binary_part));
-	secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
+  secret_s.append(1, type);
+  secret_s.append(1, '1');
+  secret_s.append(toBase58(binary_part));
+  secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
 }
 
 Secret::Secret(QString string_secret) : Secret(string_secret.toLatin1()) {}
 
 Secret::Secret(QByteArray string_secret) : secret_s(string_secret) {
-	auto base58_payload = getEncodedPayload();
+  auto base58_payload = getEncodedPayload();
 
-	if(base58_payload.isEmpty()) throw format_error();
-	if(LuhnMod58(base58_payload.begin(), base58_payload.end()) != getCheckChar()) throw format_error();
+  if (base58_payload.isEmpty()) throw format_error();
+  if (LuhnMod58(base58_payload.begin(), base58_payload.end()) != getCheckChar()) throw format_error();
 
-	// TODO: It would be good to check private/public key for validity and throw crypto_error() here
+  // TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
 
 QByteArray Secret::getEncodedPayload() const {  // TODO: Caching
-	return secret_s.mid(2, secret_s.size()-3);
+  return secret_s.mid(2, secret_s.size() - 3);
 }
 
-QByteArray Secret::getPayload() const {	// TODO: Caching
-	return fromBase58(getEncodedPayload());
+QByteArray Secret::getPayload() const {  // TODO: Caching
+  return fromBase58(getEncodedPayload());
 }
 
 Secret Secret::derive(Type key_type) const {
-	if(key_type == getType()) return *this;
+  if (key_type == getType()) return *this;
 
-	switch(key_type){
-	case Owner:
-	case ReadWrite:
-		return Secret(key_type, getPrivateKey());
-	case ReadOnly:
-		return Secret(key_type, getPublicKey() + getEncryptionKey());
-	case Download:
-		return Secret(key_type, getPublicKey());
-	default:
-		throw level_error();
-	}
+  switch (key_type) {
+    case Owner:
+    case ReadWrite:
+      return Secret(key_type, getPrivateKey());
+    case ReadOnly:
+      return Secret(key_type, getPublicKey() + getEncryptionKey());
+    case Download:
+      return Secret(key_type, getPublicKey());
+    default:
+      throw level_error();
+  }
 }
 
 QByteArray Secret::getPrivateKey() const {
-	if(!cached_private_key.isEmpty()) return cached_private_key;
+  if (!cached_private_key.isEmpty()) return cached_private_key;
 
-	switch(getType()){
-	case Owner:
-	case ReadWrite: {
-		return cached_private_key = getPayload();
-	}
-	default:
-		throw level_error();
-	}
+  switch (getType()) {
+    case Owner:
+    case ReadWrite: {
+      return cached_private_key = getPayload();
+    }
+    default:
+      throw level_error();
+  }
 }
 
 QByteArray Secret::getEncryptionKey() const {
-	if(!cached_encryption_key.isEmpty()) return cached_encryption_key;
+  if (!cached_encryption_key.isEmpty()) return cached_encryption_key;
 
-	switch(getType()){
-	case Owner:
-	case ReadWrite: {
-		QCryptographicHash hash(QCryptographicHash::Sha3_256);
-		hash.addData(getPrivateKey());
+  switch (getType()) {
+    case Owner:
+    case ReadWrite: {
+      QCryptographicHash hash(QCryptographicHash::Sha3_256);
+      hash.addData(getPrivateKey());
 
-		return cached_encryption_key = hash.result();
-	}
-	case ReadOnly: {
-		return cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
-	}
-	default:
-		throw level_error();
-	}
+      return cached_encryption_key = hash.result();
+    }
+    case ReadOnly: {
+      return cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
+    }
+    default:
+      throw level_error();
+  }
 }
 
 QByteArray Secret::getPublicKey() const {
-	if(!cached_public_key.isEmpty()) return cached_public_key;
+  if (!cached_public_key.isEmpty()) return cached_public_key;
 
-	switch(getType()){
-	case Owner:
-	case ReadWrite: {
-		CryptoPP::AutoSeededRandomPool rng;
-		CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-		CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
-		private_key.Initialize(rng, secp256r1());
-		auto private_key_s = getPrivateKey();
-		private_key.SetPrivateExponent(CryptoPP::Integer((uchar*)private_key_s.data(), private_key_s.size()));
-		private_key.MakePublicKey(public_key);
+  switch (getType()) {
+    case Owner:
+    case ReadWrite: {
+      CryptoPP::AutoSeededRandomPool rng;
+      CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
+      CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
+      private_key.Initialize(rng, secp256r1());
+      auto private_key_s = getPrivateKey();
+      private_key.SetPrivateExponent(CryptoPP::Integer((uchar*)private_key_s.data(), private_key_s.size()));
+      private_key.MakePublicKey(public_key);
 
-		public_key.AccessGroupParameters().SetPointCompression(true);
-		cached_public_key.resize(public_key_size);
-		public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), (uchar*)cached_public_key.data());
+      public_key.AccessGroupParameters().SetPointCompression(true);
+      cached_public_key.resize(public_key_size);
+      public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), (uchar*)cached_public_key.data());
 
-		return cached_public_key;
-	}
-	case ReadOnly:
-	case Download: {
-		return cached_public_key = getPayload();
-	}
-	default:
-		throw level_error();
-	}
+      return cached_public_key;
+    }
+    case ReadOnly:
+    case Download: {
+      return cached_public_key = getPayload();
+    }
+    default:
+      throw level_error();
+  }
 }
 
 QByteArray Secret::getHash() const {
-	if(!cached_hash.isEmpty()) return cached_hash;
+  if (!cached_hash.isEmpty()) return cached_hash;
 
-	QCryptographicHash hash(QCryptographicHash::Sha3_256);
-	hash.addData(getPublicKey());
+  QCryptographicHash hash(QCryptographicHash::Sha3_256);
+  hash.addData(getPublicKey());
 
-	return cached_hash = hash.result();
+  return cached_hash = hash.result();
 }
 
-std::ostream& operator<<(std::ostream& os, const Secret& k){
-	return os << ((QString)k).toStdString();
-}
+std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << ((QString)k).toStdString(); }
 
 } /* namespace librevault */

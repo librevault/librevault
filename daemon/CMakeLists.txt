@@ -18,27 +18,6 @@ file(GLOB_RECURSE MAIN_SRCS "*.cpp")
 file(GLOB_RECURSE MAIN_HEADERS "*.h")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
-# Platform-dependent sources
-if(NOT OS_WIN)
-	file(GLOB_RECURSE WIN_SRCS "*.win.cpp")
-	list(REMOVE_ITEM MAIN_SRCS ${WIN_SRCS})
-endif()
-
-# Linux sources
-if(NOT OS_LINUX)
-	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
-	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
-endif()
-
-# OS X sources
-if(OS_MAC)
-	file(GLOB_RECURSE MAIN_MMS "*.mm")
-	list(APPEND SRCS ${MAIN_MMS})
-else()
-	#file(GLOB_RECURSE MAC_SRCS "*.mac.cpp")
-	#list(REMOVE_ITEM MAIN_SRCS ${MAC_SRCS})
-endif()
-
 list(APPEND SRCS ${MAIN_SRCS})
 list(APPEND SRCS ${MAIN_HEADERS})
 list(APPEND SRCS ${MAIN_QRCS})

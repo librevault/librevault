@@ -38,9 +38,6 @@
 namespace librevault {
 
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
-  setApplicationName("Librevault");
-  setOrganizationDomain("librevault.com");
-
   // Initializing components
   node_key_ = new NodeKey(this);
   portmanager_ = new PortMapper(this);

@@ -88,6 +88,9 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
 }
 
 int main(int argc, char** argv) {
+  QCoreApplication::setApplicationName("Librevault");
+  QCoreApplication::setOrganizationDomain("librevault.com");
+
   // Argument parsing
   QVariantMap args = qdocopt(USAGE, argc, argv, true, librevault::Version().version_string());
 
@@ -104,12 +107,12 @@ int main(int argc, char** argv) {
       log_level = spdlog::level::info;
   }
 
-  do {
-    // Initializing paths
-    QString appdata_path;
-    if (args.contains("--data")) appdata_path = args["--data"].toString();
-    Paths::get(appdata_path);
+  // Initializing paths
+  QString appdata_path;
+  if (args.contains("--data")) appdata_path = args["--data"].toString();
+  Paths::get(appdata_path);
 
+  do {
     // Initializing log
     auto log = spdlog::get(Version::current().name().toStdString());
     if (!log) {

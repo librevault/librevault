@@ -31,7 +31,6 @@
 #include "EncStorage.h"
 #include "OpenStorage.h"
 #include "control/FolderParams.h"
-#include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 
 #include "AssemblerQueue.h"
@@ -45,7 +44,6 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
 	enc_storage = new EncStorage(params, this);
 	if(params.secret.getType() <= Secret::Type::ReadOnly) {
 		open_storage = new OpenStorage(params, meta_storage_, this);
-		archive = new Archive(params, meta_storage_, this);
 		file_assembler = new AssemblerQueue(params, meta_storage_, this, archive, this);
 	}
 

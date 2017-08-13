@@ -38,8 +38,6 @@
 namespace librevault {
 
 struct FolderParams {
-  enum class ArchiveType : unsigned { NO_ARCHIVE = 0, TRASH_ARCHIVE, TIMESTAMP_ARCHIVE, BLOCK_ARCHIVE };
-
   FolderParams(QVariantMap fconfig);
 
   QByteArray folderid() const { return secret.getHash(); }
@@ -56,7 +54,6 @@ struct FolderParams {
   std::chrono::seconds full_rescan_interval;
   QStringList ignore_paths;
   QList<QUrl> nodes;
-  ArchiveType archive_type;
   unsigned archive_trash_ttl;
   unsigned archive_timestamp_count;
   bool mainline_dht_enabled;

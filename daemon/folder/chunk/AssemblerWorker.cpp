@@ -32,9 +32,9 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include <PathNormalizer.h>
-#include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
+#include "util/log.h"
 #include <boost/filesystem.hpp>
 #include <QDir>
 #include <QLoggingCategory>
@@ -109,8 +109,7 @@ void AssemblerWorker::run() noexcept {
 
 bool AssemblerWorker::assemble_deleted() {
 	LOGFUNC();
-
-	return archive_->archive(denormpath_);   // Maybe, something else?
+	return QFile::remove(denormpath_);
 }
 
 bool AssemblerWorker::assemble_symlink() {
@@ -176,7 +175,7 @@ bool AssemblerWorker::assemble_file() {
 
 	meta_storage_->prepareAssemble(normpath_, Meta::FILE, boost::filesystem::exists(conv_fspath(denormpath_)));
 
-	if(! archive_->archive(denormpath_)) {
+	if(! QFile::remove(denormpath_)) {
 		qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83
 		throw abort_assembly();
 	}

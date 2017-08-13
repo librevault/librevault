@@ -27,74 +27,79 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
-#include "control/Config.h"
-#include "adapters/DiscoveryAdapter.h"
-#include "folder/FolderGroup.h"
 #include "PortMapper.h"
+#include "control/Config.h"
+#include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
-#include "p2p/PeerServer.h"
 #include "p2p/PeerPool.h"
+#include "p2p/PeerServer.h"
+#include <QTimer>
 
 namespace librevault {
 
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
-	setApplicationName("Librevault");
-	setOrganizationDomain("librevault.com");
+  setApplicationName("Librevault");
+  setOrganizationDomain("librevault.com");
 
-	// Initializing components
-	node_key_ = new NodeKey(this);
-	portmanager_ = new PortMapper(this);
-	discovery_ = new DiscoveryAdapter(portmanager_, this);
-	peerserver_ = new PeerServer(node_key_, portmanager_, this);
+  // Initializing components
+  node_key_ = new NodeKey(this);
+  portmanager_ = new PortMapper(this);
+  peerserver_ = new PeerServer(node_key_, portmanager_, this);
 
-	/* Connecting signals */
-	connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
-	connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);
+  /* Connecting signals */
+  connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
+  connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);
 
-	QTimer::singleShot(0, this, [this] {
-			foreach(QByteArray folderid, Config::get()->listFolders()) {
-				initFolder(Config::get()->getFolder(folderid));
-			}
-	});
+  QTimer::singleShot(0, this, &Client::initializeAll);
 }
 
 Client::~Client() {
-	delete peerserver_;
-	delete discovery_;
-	delete portmanager_;
-	delete node_key_;
+  delete peerserver_;
+  delete portmanager_;
+  delete node_key_;
 }
 
-int Client::run() {
-	return this->exec();
+void Client::initializeAll() {
+  // Initialize all existing folders
+  for (QByteArray folderid : Config::get()->listFolders()) {
+    initFolder(Config::get()->getFolder(folderid));
+  }
+}
+
+void Client::deinitializeAll() {
+  for (QByteArray folderid : Config::get()->listFolders()) {
+    deinitFolder(folderid);
+  }
 }
 
 void Client::restart() {
-	qInfo() << "Restarting...";
-	this->exit(EXIT_RESTART);
+  deinitializeAll();
+  qInfo() << "Restarting...";
+  this->exit(EXIT_RESTART);
 }
 
-void Client::shutdown(){
-	qInfo() << "Exiting...";
-	this->exit();
+void Client::shutdown() {
+  deinitializeAll();
+  qInfo() << "Exiting...";
+  this->exit();
 }
 
 void Client::initFolder(const FolderParams& params) {
-	auto peer_pool = new PeerPool(params, discovery_, node_key_, &bc_all_, &bc_blocks_, this);
-	auto fgroup = new FolderGroup(params, peer_pool, this);
-	groups_[params.folderid()] = fgroup;
+  auto peer_pool = new PeerPool(params, node_key_, &bc_all_, &bc_blocks_, this);
+  auto fgroup = new FolderGroup(params, peer_pool, this);
+  groups_[params.folderid()] = fgroup;
 
-	peerserver_->addPeerPool(params.folderid(), peer_pool);
+  peerserver_->addPeerPool(params.folderid(), peer_pool);
 
-	qInfo() << "Folder initialized: " << params.folderid().toHex();
+  qInfo() << "Folder initialized: " << params.folderid().toHex();
 }
 
 void Client::deinitFolder(const QByteArray& folderid) {
-	auto fgroup = groups_[folderid];
-	groups_.remove(folderid);
+  auto fgroup = groups_[folderid];
+  groups_.remove(folderid);
 
-	fgroup->deleteLater();
-	qInfo() << "Folder deinitialized:" << folderid.toHex();
+  fgroup->deleteLater();
+  qInfo() << "Folder deinitialized:" << folderid.toHex();
 }
 
 } /* namespace librevault */

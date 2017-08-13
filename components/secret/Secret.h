@@ -65,6 +65,7 @@ public:
 	operator QString() const {return QString::fromLatin1(secret_s);}
 
 	Type getType() const {return (Type)secret_s[0];}
+	char getTypeChar() const {return (char)getType();}
 	char getParam() const {return secret_s[1];}
 	char getCheckChar() const {return secret_s[secret_s.size()-1];}
 

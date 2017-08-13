@@ -46,13 +46,15 @@ DerivePointerAlignment: true
 DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
-IncludeCategories: 
-  - Regex:           '^<.*\.h>'
+IncludeCategories:
+  - Regex:           '^".*\.h"'
     Priority:        1
-  - Regex:           '^<.*'
+  - Regex:           '^<.*\.h>'
     Priority:        2
-  - Regex:           '.*'
+  - Regex:           '^<.*'
     Priority:        3
+  - Regex:           '.*'
+    Priority:        4
 IndentCaseLabels: true
 IndentWidth:     2
 IndentWrappedFunctionNames: false

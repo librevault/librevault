@@ -27,12 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "adapters/DiscoveryAdapter.h"
-#include "control/FolderParams.h"
-#include "util/BandwidthCounter.h"
+#include <QHostAddress>
 #include <QObject>
 #include <QSet>
-#include <QHostAddress>
+#include "control/FolderParams.h"
+#include "util/BandwidthCounter.h"
 
 namespace librevault {
 
@@ -41,48 +40,48 @@ class FolderGroup;
 class NodeKey;
 
 class PeerPool : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-signals:
-	void newValidPeer(Peer* peer);
+ signals:
+  void newValidPeer(Peer* peer);
 
-public:
-	PeerPool(const FolderParams& params, DiscoveryAdapter* discovery, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
-	virtual ~PeerPool();
+ public:
+  PeerPool(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
+  virtual ~PeerPool();
 
-	Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) {handleDiscovered({host, port});}
-	Q_SLOT void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
-	Q_SLOT void handleIncoming(Peer* peer);
+  Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) { handleDiscovered({host, port}); }
+  Q_SLOT void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
+  Q_SLOT void handleIncoming(Peer* peer);
 
-	/* Getters */
-	QList<Peer*> peers() const {return peers_.toList();}
-	QList<Peer*> validPeers() const {return peers_ready_.toList();}
+  /* Getters */
+  QList<Peer*> peers() const { return peers_.toList(); }
+  QList<Peer*> validPeers() const { return peers_ready_.toList(); }
 
-	BandwidthCounter* getBlockCounterAll() {return &bc_all_;}
-	BandwidthCounter* getBlockCounterBlocks() {return &bc_blocks_;}
+  BandwidthCounter* getBlockCounterAll() { return &bc_all_; }
+  BandwidthCounter* getBlockCounterBlocks() { return &bc_blocks_; }
 
-	inline const FolderParams& params() const {return params_;}
+  inline const FolderParams& params() const { return params_; }
 
-private:
-	FolderParams params_;
-	NodeKey* node_key_;
-	BandwidthCounter bc_all_, bc_blocks_;
+ private:
+  FolderParams params_;
+  NodeKey* node_key_;
+  BandwidthCounter bc_all_, bc_blocks_;
 
-	//DiscoveryGroup* dgroup_;
+  // DiscoveryGroup* dgroup_;
 
-	/* Members */
-	QSet<Peer*> peers_;
-	QSet<Peer*> peers_ready_;
+  /* Members */
+  QSet<Peer*> peers_;
+  QSet<Peer*> peers_ready_;
 
-	// Member lookup optimization
-	QSet<QByteArray> digests_;
-	QSet<QPair<QHostAddress, quint16>> endpoints_;
+  // Member lookup optimization
+  QSet<QByteArray> digests_;
+  QSet<QPair<QHostAddress, quint16>> endpoints_;
 
-	bool contains(Peer* peer) const;
+  bool contains(Peer* peer) const;
 
-private slots:
-	void handleHandshake(Peer* peer);
-	void handleDisconnected(Peer* peer);
+ private slots:
+  void handleHandshake(Peer* peer);
+  void handleDisconnected(Peer* peer);
 };
 
 } /* namespace librevault */

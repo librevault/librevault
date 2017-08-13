@@ -33,7 +33,6 @@
 #include "util/BandwidthCounter.h"
 #include <QCoreApplication>
 #include <QMap>
-#include <memory>
 
 namespace librevault {
 
@@ -49,30 +48,30 @@ class FolderParams;
 class BandwidthCounter;
 
 class Client : public QCoreApplication {
-	Q_OBJECT
-public:
-	Client(int argc, char** argv);
-	virtual ~Client();
+  Q_OBJECT
+ public:
+  Client(int argc, char** argv);
+  virtual ~Client();
 
-	int run();
+ public slots:
+  void restart();
+  void shutdown();
 
-public slots:
-	void restart();
-	void shutdown();
+ private:
+  BandwidthCounter bc_all_, bc_blocks_;
+  NodeKey* node_key_;
+  PortMapper* portmanager_;
+  PeerServer* peerserver_;
 
-private:
-	BandwidthCounter bc_all_, bc_blocks_;
-	NodeKey* node_key_;
-	PortMapper* portmanager_;
-	DiscoveryAdapter* discovery_;
-	PeerServer* peerserver_;
+  // Folders
+  QMap<QByteArray, FolderGroup*> groups_;
 
-	// Folders
-	QMap<QByteArray, FolderGroup*> groups_;
+ private slots:
+  void initFolder(const FolderParams& params);
+  void deinitFolder(const QByteArray& folderid);
 
-private slots:
-	void initFolder(const FolderParams& params);
-	void deinitFolder(const QByteArray& folderid);
+  void initializeAll();
+  void deinitializeAll();
 };
 
 } /* namespace librevault */

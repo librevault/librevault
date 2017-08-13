@@ -36,9 +36,6 @@ inline QString log_tag() const {return QStringLiteral(SCOPE);}
 #define LOGD(ARGS) \
 qDebug() << log_tag().toStdString().c_str() << "|" << ARGS
 
-#define LOGI(ARGS) \
-qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
-
 #define LOGW(ARGS) \
 qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
 

@@ -31,129 +31,103 @@
 #include "IgnoreList.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
+#include "folder/transfer/Downloader.h"
 #include "folder/transfer/MetaDownloader.h"
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
-#include "folder/transfer/Downloader.h"
-#include "p2p/PeerPool.h"
 #include "p2p/MessageHandler.h"
+#include "p2p/PeerPool.h"
 #include <QDir>
-#include <QJsonArray>
 #ifdef Q_OS_WIN
-#   include <windows.h>
+#include <windows.h>
 #endif
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "log.folder");
 
-FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, QObject* parent) :
-	QObject(parent),
-	params_(std::move(params)), pool_(pool) {
+FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, QObject* parent) : QObject(parent), params_(std::move(params)), pool_(pool) {
+  /* Creating directories */
+  QDir().mkpath(params_.path);
+  createServiceDirectory();
 
-	/* Creating directories */
-	QDir().mkpath(params_.path);
-	QDir().mkpath(params_.system_path);
-#ifdef Q_OS_WIN
-	SetFileAttributesW(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
-#endif
+  qCDebug(log_folder) << "New folder:"
+                      << "Key type=" << params_.secret.getTypeChar() << "Path=" << params_.path << "System path=" << params_.system_path;
 
-	qCDebug(log_folder) << "New folder:"
-		<< "Key type=" << (char)params_.secret.getType()
-		<< "Path=" << params_.path
-		<< "System path=" << params_.system_path;
+  /* Initializing components */
+  ignore_list = std::make_unique<IgnoreList>(params_);
 
-	/* Initializing components */
-	ignore_list = std::make_unique<IgnoreList>(params_);
+  meta_storage_ = new MetaStorage(params_, ignore_list.get(), this);
+  chunk_storage_ = new ChunkStorage(params_, meta_storage_, this);
 
-	meta_storage_ = new MetaStorage(params_, ignore_list.get(), this);
-	chunk_storage_ = new ChunkStorage(params_, meta_storage_, this);
+  uploader_ = new Uploader(chunk_storage_, this);
+  downloader_ = new Downloader(params_, meta_storage_, this);
+  meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
+  meta_downloader_ = new MetaDownloader(params_, meta_storage_, downloader_, this);
 
-	uploader_ = new Uploader(chunk_storage_, this);
-	downloader_ = new Downloader(params_, meta_storage_, this);
-	meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
-	meta_downloader_ = new MetaDownloader(params_, meta_storage_, downloader_, this);
+  pool_->setParent(this);
 
-	state_pusher_ = new QTimer(this);
+  // Connecting signals and slots
+  connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handleIndexedMeta);
+  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash) {
+    downloader_->notifyLocalChunk(ct_hash);
+    uploader_->broadcast_chunk(pool_->validPeers(), ct_hash);
+  });
+  connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
 
-	pool_->setParent(this);
+  connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 
-	// Connecting signals and slots
-	connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
-	connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash){
-		downloader_->notifyLocalChunk(ct_hash);
-		uploader_->broadcast_chunk(pool_->validPeers(), ct_hash);
-	});
-	connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
-	connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);
-
-	connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
-
-	// Set up state pusher
-	state_pusher_->setInterval(1000);
-	state_pusher_->start();
-
-	// Go through index
-	QTimer::singleShot(0, this, [=]{
-		for(auto& smeta : meta_storage_->getMeta())
-			handle_indexed_meta(smeta);
-	});
+  // Go through index
+  QTimer::singleShot(0, this, [=] {
+    for (auto& smeta : meta_storage_->getMeta()) handleIndexedMeta(smeta);
+  });
 }
 
-FolderGroup::~FolderGroup() {
-	state_pusher_->stop();
-}
+FolderGroup::~FolderGroup() {}
 
 /* Actions */
-void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
-	Meta::PathRevision revision = smeta.meta().path_revision();
-	QBitArray bitfield = chunk_storage_->make_bitfield(smeta.meta());
+void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {
+  Meta::PathRevision revision = smeta.meta().path_revision();
+  QBitArray bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
-	downloader_->notifyLocalMeta(smeta, bitfield);
-	meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);
+  downloader_->notifyLocalMeta(smeta, bitfield);
+  meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);
 }
 
 // RemoteFolder actions
 void FolderGroup::handleNewPeer(Peer* peer) {
-	downloader_->trackRemote(peer);
+  downloader_->trackRemote(peer);
 
-	// Messages
-	connect(peer->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=]{downloader_->handleChoke(peer);});
-	connect(peer->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=]{downloader_->handleUnchoke(peer);});
-	connect(peer->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=]{uploader_->handle_interested(peer);});
-	connect(peer->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=]{uploader_->handle_not_interested(peer);});
+  // Messages
+  connect(peer->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=] { downloader_->handleChoke(peer); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=] { downloader_->handleUnchoke(peer); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdInterested, downloader_, [=] { uploader_->handle_interested(peer); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_, [=] { uploader_->handle_not_interested(peer); });
 
-	connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_, [=](Meta::PathRevision revision, QBitArray bitfield){
-		meta_downloader_->handle_have_meta(peer, revision, bitfield);
-	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_, [=](QByteArray ct_hash){
-		downloader_->notifyRemoteChunk(peer, ct_hash);
-	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_, [=](Meta::PathRevision path_revision){
-		meta_uploader_->handle_meta_request(peer, path_revision);
-	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_, [=](const SignedMeta& smeta, QBitArray bitfield){
-		meta_downloader_->handle_meta_reply(peer, smeta, bitfield);
-	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_, [=](QByteArray ct_hash, uint32_t offset, uint32_t size){
-		uploader_->handle_block_request(peer, ct_hash, offset, size);
-	});
-	connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_, [=](QByteArray ct_hash, uint32_t offset, QByteArray block){
-		downloader_->putBlock(ct_hash, offset, block, peer);
-	});
+  connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_,
+          [=](Meta::PathRevision revision, QBitArray bitfield) { meta_downloader_->handle_have_meta(peer, revision, bitfield); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_,
+          [=](QByteArray ct_hash) { downloader_->notifyRemoteChunk(peer, ct_hash); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_,
+          [=](Meta::PathRevision path_revision) { meta_uploader_->handle_meta_request(peer, path_revision); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_,
+          [=](const SignedMeta& smeta, QBitArray bitfield) { meta_downloader_->handle_meta_reply(peer, smeta, bitfield); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_,
+          [=](QByteArray ct_hash, uint32_t offset, uint32_t size) { uploader_->handle_block_request(peer, ct_hash, offset, size); });
+  connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_,
+          [=](QByteArray ct_hash, uint32_t offset, QByteArray block) { downloader_->putBlock(ct_hash, offset, block, peer); });
 
-	// States
-	connect(peer, &Peer::disconnected, downloader_, [=]{downloader_->untrackRemote(peer);});
+  // States
+  connect(peer, &Peer::disconnected, downloader_, [=] { downloader_->untrackRemote(peer); });
 
-	QTimer::singleShot(0, meta_uploader_, [=]{meta_uploader_->handle_handshake(peer);});
+  QTimer::singleShot(0, meta_uploader_, [=] { meta_uploader_->handle_handshake(peer); });
 }
 
-void FolderGroup::push_state() {
-	// peers
-	QJsonArray peers_array;
-	for(auto& peer : pool_->validPeers()) {
-		peers_array.append(peer->collectState());
-	}
+void FolderGroup::createServiceDirectory() {
+  QDir().mkpath(params_.system_path);
+#ifdef Q_OS_WIN
+  SetFileAttributesW(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
+#endif
 }
 
 } /* namespace librevault */

@@ -27,16 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "control/FolderParams.h"
-#include "util/BandwidthCounter.h"
 #include "Secret.h"
 #include "SignedMeta.h"
-#include "conv_bitfield.h"
-#include <QObject>
-#include <QTimer>
-#include <QSet>
-#include <QHostAddress>
+#include "control/FolderParams.h"
+#include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
+#include <QObject>
 
 namespace librevault {
 
@@ -57,35 +53,32 @@ class Downloader;
 class PeerPool;
 
 class FolderGroup : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	FolderGroup(FolderParams params, PeerPool* pool, QObject* parent);
-	virtual ~FolderGroup();
+ public:
+  FolderGroup(FolderParams params, PeerPool* pool, QObject* parent);
+  virtual ~FolderGroup();
 
-	/* Getters */
-	inline const FolderParams& params() const {return params_;}
+ private:
+  const FolderParams params_;
+  PeerPool* pool_;
 
-private:
-	const FolderParams params_;
-	PeerPool* pool_;
+  std::unique_ptr<IgnoreList> ignore_list;
 
-	std::unique_ptr<IgnoreList> ignore_list;
+  ChunkStorage* chunk_storage_;
+  MetaStorage* meta_storage_;
 
-	ChunkStorage* chunk_storage_;
-	MetaStorage* meta_storage_;
+  Uploader* uploader_;
+  Downloader* downloader_;
+  MetaUploader* meta_uploader_;
+  MetaDownloader* meta_downloader_;
 
-	Uploader* uploader_;
-	Downloader* downloader_;
-	MetaUploader* meta_uploader_;
-	MetaDownloader* meta_downloader_;
+ private slots:
+  void handleIndexedMeta(const SignedMeta& smeta);
+  void handleNewPeer(Peer* peer);
 
-	QTimer* state_pusher_;
-
-private slots:
-	void push_state();
-	void handle_indexed_meta(const SignedMeta& smeta);
-	void handleNewPeer(Peer* peer);
+ private:
+  void createServiceDirectory();
 };
 
 } /* namespace librevault */

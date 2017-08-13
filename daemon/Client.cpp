@@ -85,11 +85,10 @@ void Client::shutdown() {
 }
 
 void Client::initFolder(const FolderParams& params) {
-  auto peer_pool = new PeerPool(params, node_key_, &bc_all_, &bc_blocks_, this);
-  auto fgroup = new FolderGroup(params, peer_pool, this);
+  auto fgroup = new FolderGroup(params, node_key_, this);
   groups_[params.folderid()] = fgroup;
 
-  peerserver_->addPeerPool(params.folderid(), peer_pool);
+  //peerserver_->addPeerPool(params.folderid(), peer_pool);
 
   qInfo() << "Folder initialized: " << params.folderid().toHex();
 }

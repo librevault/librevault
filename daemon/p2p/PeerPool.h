@@ -46,7 +46,7 @@ class PeerPool : public QObject {
   void newValidPeer(Peer* peer);
 
  public:
-  PeerPool(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
+  PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent);
   virtual ~PeerPool();
 
   Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) { handleDiscovered({host, port}); }

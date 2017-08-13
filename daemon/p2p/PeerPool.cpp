@@ -32,8 +32,8 @@
 
 namespace librevault {
 
-PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent)
-    : QObject(parent), params_(params), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {}
+PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent)
+    : QObject(parent), params_(params), node_key_(node_key) {}
 
 PeerPool::~PeerPool() {}
 

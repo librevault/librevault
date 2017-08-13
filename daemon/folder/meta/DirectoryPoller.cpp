@@ -43,7 +43,7 @@ DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_
 	ignore_list_(ignore_list) {
 
 	polling_timer_ = new QTimer(this);
-	polling_timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(params_.full_rescan_interval).count());
+	polling_timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(params_.full_rescan_interval));
 	polling_timer_->setTimerType(Qt::VeryCoarseTimer);
 
 	connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);

@@ -51,12 +51,13 @@ class Uploader;
 class Downloader;
 
 class PeerPool;
+class NodeKey;
 
 class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(FolderParams params, PeerPool* pool, QObject* parent);
+  FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent);
   virtual ~FolderGroup();
 
  private:

@@ -46,9 +46,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "log.folder");
 
-FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, QObject* parent) : QObject(parent), params_(std::move(params)), pool_(pool) {
-  /* Creating directories */
-  QDir().mkpath(params_.path);
+FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent) : QObject(parent), params_(std::move(params)) {
   createServiceDirectory();
 
   qCDebug(log_folder) << "New folder:"
@@ -65,7 +63,7 @@ FolderGroup::FolderGroup(FolderParams params, PeerPool* pool, QObject* parent) :
   meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
   meta_downloader_ = new MetaDownloader(params_, meta_storage_, downloader_, this);
 
-  pool_->setParent(this);
+  pool_ = new PeerPool(params, node_key, this);
 
   // Connecting signals and slots
   connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handleIndexedMeta);

@@ -27,27 +27,16 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <atomic>
 #include <QElapsedTimer>
 #include <QJsonObject>
+#include <QMutex>
 
 namespace librevault {
 
 class BandwidthCounter {
 public:
-	struct Stats {
-		// Download
-		quint64 down_bytes_;
-		qreal down_bandwidth_;
-
-		// Upload
-		quint64 up_bytes_;
-		qreal up_bandwidth_;
-	};
-
 	BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
 
-	Stats heartbeat();
 	QJsonObject heartbeat_json();
 
 	void add_down(quint64 bytes);
@@ -55,14 +44,9 @@ public:
 private:
 	BandwidthCounter* parent_counter_;
 	QElapsedTimer last_heartbeat_;
+	QMutex mutex_;
 
-	// Download
-	std::atomic<quint64> down_bytes_;
-	std::atomic<quint64> down_bytes_last_;
-
-	// Upload
-	std::atomic<quint64> up_bytes_;
-	std::atomic<quint64> up_bytes_last_;
+	quint64 download_bytes_ = 0, download_bytes_last_ = 0, upload_bytes_ = 0, upload_bytes_last_ = 0;
 };
 
 } /* namespace librevault */

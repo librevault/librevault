@@ -26,52 +26,47 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#include <QtCore/QPoint>
 #include "BandwidthCounter.h"
 
 namespace librevault {
 
 BandwidthCounter::BandwidthCounter(BandwidthCounter* parent_counter) :
-	parent_counter_(parent_counter),
-	down_bytes_(0),
-	down_bytes_last_(0),
-    up_bytes_(0),
-	up_bytes_last_(0) {
+	parent_counter_(parent_counter) {
 	last_heartbeat_.start();
 }
 
-BandwidthCounter::Stats BandwidthCounter::heartbeat() {
-	Stats stats;
+QJsonObject BandwidthCounter::heartbeat_json() {
+	QMutexLocker lk(&mutex_);
 
 	qreal period = qreal(last_heartbeat_.restart())/1000;
-	stats.down_bandwidth_ = qreal(down_bytes_last_.exchange(0)) / period;
-	stats.up_bandwidth_ = qreal(up_bytes_last_.exchange(0)) / period;
 
-	stats.down_bytes_ = down_bytes_;
-	stats.up_bytes_ = up_bytes_;
-
-	return stats;
-}
-
-QJsonObject BandwidthCounter::heartbeat_json() {
-	BandwidthCounter::Stats traffic_stats = heartbeat();
 	QJsonObject state_traffic_stats;
-	state_traffic_stats["up_bandwidth"] = traffic_stats.up_bandwidth_;
-	state_traffic_stats["down_bandwidth"] = traffic_stats.down_bandwidth_;
-	state_traffic_stats["up_bytes"] = qint64(traffic_stats.up_bytes_);
-	state_traffic_stats["down_bytes"] = qint64(traffic_stats.down_bytes_);
+	state_traffic_stats["up_bandwidth"] = qreal(upload_bytes_last_) / period;
+	state_traffic_stats["down_bandwidth"] = qreal(download_bytes_last_) / period;
+	state_traffic_stats["up_bytes"] = (qreal)upload_bytes_;
+	state_traffic_stats["down_bytes"] = (qreal)download_bytes_;
+
+	upload_bytes_last_ = 0;
+	download_bytes_last_ = 0;
+
 	return state_traffic_stats;
 }
 
 void BandwidthCounter::add_down(quint64 bytes) {
-	down_bytes_ += bytes;
-	down_bytes_last_ += bytes;
+	QMutexLocker lk(&mutex_);
+
+	download_bytes_ += bytes;
+	download_bytes_last_ += bytes;
 	if(parent_counter_)
 		parent_counter_->add_down(bytes);
 }
 
 void BandwidthCounter::add_up(quint64 bytes) {
-	up_bytes_ += bytes;
-	up_bytes_last_ += bytes;
+	QMutexLocker lk(&mutex_);
+
+	upload_bytes_ += bytes;
+	download_bytes_ += bytes;
 	if(parent_counter_)
 		parent_counter_->add_up(bytes);
 }

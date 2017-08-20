@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <QByteArray>
+#include <QReadWriteLock>
 #include <QString>
 #include <iostream>
 #include <stdexcept>
@@ -57,9 +58,8 @@ class Secret {
   };
 
   Secret();
-  Secret(Type type, QByteArray payload);
-  Secret(QByteArray string_secret);
-  Secret(QString string_secret);
+  Secret(const QByteArray& string_secret);
+  Secret(const QString& string_secret);
 
   operator QString() const { return QString::fromLatin1(secret_s); }
 
@@ -90,6 +90,8 @@ class Secret {
 
   mutable QByteArray cached_hash;  // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
                                    // Completely public, no need to hide it.
+
+  Secret(Type type, QByteArray payload);
 
   QByteArray getEncodedPayload() const;
   QByteArray getPayload() const;

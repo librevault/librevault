@@ -50,6 +50,7 @@ QByteArray toBase58(const QByteArray& src) {
 	}
 
 	std::reverse(result.begin(), result.end());
+	result.squeeze();
 	return result;
 }
 
@@ -67,9 +68,9 @@ QByteArray fromBase58(const QByteArray& src) {
 		leading_zeros++;
 	}
 
-	QByteArray decoded(leading_zeros + big_data.MinEncodedSize(), 0);
-	big_data.Encode((uchar*)decoded.data() + leading_zeros, decoded.size());
-	return decoded;
+	QByteArray decoded(big_data.MinEncodedSize(), 0);
+	big_data.Encode((uchar*)decoded.data(), decoded.size());
+	return QByteArray(leading_zeros, 0) + decoded;
 }
 
 } /* namespace librevault */

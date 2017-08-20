@@ -39,41 +39,57 @@ using CryptoPP::ASN1::secp256r1;
 namespace librevault {
 
 namespace {
-static constexpr size_t private_key_size = 32;
-static constexpr size_t encryption_key_size = 32;
-static constexpr size_t public_key_size = 33;
+constexpr size_t private_key_size = 32;
+constexpr size_t encryption_key_size = 32;
+constexpr size_t public_key_size = 33;
 
-static constexpr size_t hash_size = 32;
+constexpr size_t hash_size = 32;
+
+char computeCheckChar(const QByteArray& data) {
+  return LuhnMod58(data.begin(), data.end());
 }
 
-Secret::Secret() {
+QByteArray generatePrivateKey() {
   CryptoPP::AutoSeededRandomPool rng;
-  CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-  private_key.Initialize(rng, secp256r1());
+  CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key_crypto;
+  private_key_crypto.Initialize(rng, secp256r1());
 
-  cached_private_key.resize(private_key_size);
-  private_key.GetPrivateExponent().Encode((uchar*)cached_private_key.data(), private_key_size);
-
-  secret_s.append(1, (char)Owner);
-  secret_s.append(1, '1');
-  secret_s.append(toBase58(cached_private_key));
-  secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
+  QByteArray private_key(private_key_size, 0);
+  private_key_crypto.GetPrivateExponent().Encode((uchar*)private_key.data(), private_key_size);
+  return private_key;
 }
+
+QByteArray derivePublicKey(const QByteArray& private_key) {
+  CryptoPP::AutoSeededRandomPool rng;
+  CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key_crypto;
+  CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key_crypto;
+  private_key_crypto.Initialize(rng, secp256r1());
+  private_key_crypto.SetPrivateExponent(CryptoPP::Integer((uchar*)private_key.data(), private_key.size()));
+  private_key_crypto.MakePublicKey(public_key_crypto);
+
+  public_key_crypto.AccessGroupParameters().SetPointCompression(true);
+  QByteArray public_key(public_key_size, 0);
+  public_key_crypto.GetGroupParameters().EncodeElement(true, public_key_crypto.GetPublicElement(), (uchar*)public_key.data());
+  return public_key;
+}
+}
+
+Secret::Secret() : Secret(Owner, generatePrivateKey()) {}
 
 Secret::Secret(Type type, QByteArray binary_part) {
-  secret_s.append(1, type);
-  secret_s.append(1, '1');
-  secret_s.append(toBase58(binary_part));
-  secret_s.append(1, LuhnMod58(secret_s.data() + 2, secret_s.data() + secret_s.size()));
+  secret_s += type;
+  secret_s += '1';
+  secret_s += toBase58(binary_part);
+  secret_s += computeCheckChar(secret_s.mid(2));
 }
 
-Secret::Secret(QString string_secret) : Secret(string_secret.toLatin1()) {}
+Secret::Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
 
-Secret::Secret(QByteArray string_secret) : secret_s(string_secret) {
+Secret::Secret(const QByteArray& string_secret) : secret_s(string_secret) {
   auto base58_payload = getEncodedPayload();
 
   if (base58_payload.isEmpty()) throw format_error();
-  if (LuhnMod58(base58_payload.begin(), base58_payload.end()) != getCheckChar()) throw format_error();
+  if (computeCheckChar(base58_payload) != getCheckChar()) throw format_error();
 
   // TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
@@ -140,18 +156,7 @@ QByteArray Secret::getPublicKey() const {
   switch (getType()) {
     case Owner:
     case ReadWrite: {
-      CryptoPP::AutoSeededRandomPool rng;
-      CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-      CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
-      private_key.Initialize(rng, secp256r1());
-      auto private_key_s = getPrivateKey();
-      private_key.SetPrivateExponent(CryptoPP::Integer((uchar*)private_key_s.data(), private_key_s.size()));
-      private_key.MakePublicKey(public_key);
-
-      public_key.AccessGroupParameters().SetPointCompression(true);
-      cached_public_key.resize(public_key_size);
-      public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(), (uchar*)cached_public_key.data());
-
+      cached_public_key = derivePublicKey(getPrivateKey());
       return cached_public_key;
     }
     case ReadOnly:

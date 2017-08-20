@@ -32,45 +32,45 @@
 namespace librevault {
 
 QByteArray toBase58(const QByteArray& src) {
-	CryptoPP::Integer big_data((const uchar*)src.data(), src.size());
+  CryptoPP::Integer big_data((const uchar*)src.data(), src.size());
 
-	QByteArray result;
-	result.reserve(src.size()*138/100 + 1);
+  QByteArray result;
+  result.reserve(src.size() * 138 / 100 + 1);
 
-	CryptoPP::word mod;
-	CryptoPP::Integer div;
-	while(big_data > 0){
-		CryptoPP::Integer::Divide(mod, div, big_data, 58);
-		result += base58_alphabet.at(mod);
-		big_data = div;
-	}
+  CryptoPP::word mod;
+  CryptoPP::Integer div;
+  while (big_data > 0) {
+    CryptoPP::Integer::Divide(mod, div, big_data, 58);
+    result += base58_alphabet.at(mod);
+    big_data = div;
+  }
 
-	for(const char* orig_str = src.data(); orig_str < src.data()+src.size() && *orig_str == 0; orig_str++){
-		result += base58_alphabet[0];
-	}
+  for (const char* orig_str = src.data(); orig_str < src.data() + src.size() && *orig_str == 0; orig_str++) {
+    result += base58_alphabet[0];
+  }
 
-	std::reverse(result.begin(), result.end());
-	result.squeeze();
-	return result;
+  std::reverse(result.begin(), result.end());
+  result.squeeze();
+  return result;
 }
 
 QByteArray fromBase58(const QByteArray& src) {
-	CryptoPP::Integer big_data = 0;
-	CryptoPP::Integer multi = 1;
+  CryptoPP::Integer big_data = 0;
+  CryptoPP::Integer multi = 1;
 
-	for(int i = src.size()-1; i >= 0; i--){
-		big_data += multi * base58_alphabet.indexOf(src[i]);
-		multi *= 58;
-	}
+  for (int i = src.size() - 1; i >= 0; i--) {
+    big_data += multi * base58_alphabet.indexOf(src[i]);
+    multi *= 58;
+  }
 
-	int leading_zeros = 0;
-	for(const char* orig_str = src.data(); orig_str < src.data()+src.size() && *orig_str == base58_alphabet[0]; orig_str++){
-		leading_zeros++;
-	}
+  int leading_zeros = 0;
+  for (const char* orig_str = src.data(); orig_str < src.data() + src.size() && *orig_str == base58_alphabet[0]; orig_str++) {
+    leading_zeros++;
+  }
 
-	QByteArray decoded(big_data.MinEncodedSize(), 0);
-	big_data.Encode((uchar*)decoded.data(), decoded.size());
-	return QByteArray(leading_zeros, 0) + decoded;
+  QByteArray decoded(big_data.MinEncodedSize(), 0);
+  big_data.Encode((uchar*)decoded.data(), decoded.size());
+  return QByteArray(leading_zeros, 0) + decoded;
 }
 
 } /* namespace librevault */

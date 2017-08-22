@@ -27,11 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "SecretPrivate.h"
 #include <QByteArray>
 #include <QReadWriteLock>
 #include <QString>
 #include <iostream>
 #include <stdexcept>
+#include <QSharedData>
 
 namespace librevault {
 
@@ -59,14 +61,14 @@ class Secret {
 
   Secret();
   Secret(const QByteArray& string_secret);
-  Secret(const QString& string_secret);
+  Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
 
-  operator QString() const { return QString::fromLatin1(secret_s); }
+  operator QString() const { return QString::fromLatin1(d->secret_s); }
 
-  Type getType() const { return (Type)secret_s[0]; }
+  Type getType() const { return (Type)d->secret_s.at(0); }
   char getTypeChar() const { return (char)getType(); }
-  char getParam() const { return secret_s[1]; }
-  char getCheckChar() const { return secret_s[secret_s.size() - 1]; }
+  char getParam() const { return d->secret_s[1]; }
+  char getCheckChar() const { return d->secret_s[d->secret_s.size() - 1]; }
 
   // Secret derivers
   Secret derive(Type key_type) const;
@@ -78,18 +80,11 @@ class Secret {
 
   QByteArray getHash() const;
 
-  bool operator==(const Secret& key) const { return secret_s == key.secret_s; }
-  bool operator<(const Secret& key) const { return secret_s < key.secret_s; }
+  bool operator==(const Secret& key) const { return d->secret_s == key.d->secret_s; }
+  bool operator<(const Secret& key) const { return d->secret_s < key.d->secret_s; }
 
  private:
-  QByteArray secret_s;
-
-  mutable QByteArray cached_private_key;     // ReadWrite
-  mutable QByteArray cached_encryption_key;  // ReadOnly
-  mutable QByteArray cached_public_key;      // Download
-
-  mutable QByteArray cached_hash;  // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
-                                   // Completely public, no need to hide it.
+  mutable QSharedDataPointer<SecretPrivate> d;
 
   Secret(Type type, QByteArray payload);
 

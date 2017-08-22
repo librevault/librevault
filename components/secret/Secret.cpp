@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Secret.h"
+#include "SecretPrivate.h"
 #include "LuhnModN.h"
 
 #include <cryptopp/eccrypto.h>
@@ -77,15 +78,18 @@ QByteArray derivePublicKey(const QByteArray& private_key) {
 Secret::Secret() : Secret(Owner, generatePrivateKey()) {}
 
 Secret::Secret(Type type, QByteArray binary_part) {
-  secret_s += type;
-  secret_s += '1';
-  secret_s += toBase58(binary_part);
-  secret_s += computeCheckChar(secret_s.mid(2));
+  d = new SecretPrivate();
+
+  d->secret_s += type;
+  d->secret_s += '1';
+  d->secret_s += toBase58(binary_part);
+  d->secret_s += computeCheckChar(d->secret_s.mid(2));
 }
 
-Secret::Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
+Secret::Secret(const QByteArray& string_secret) {
+  d = new SecretPrivate();
 
-Secret::Secret(const QByteArray& string_secret) : secret_s(string_secret) {
+  d->secret_s = string_secret;
   auto base58_payload = getEncodedPayload();
 
   if (base58_payload.isEmpty()) throw format_error();
@@ -95,7 +99,7 @@ Secret::Secret(const QByteArray& string_secret) : secret_s(string_secret) {
 }
 
 QByteArray Secret::getEncodedPayload() const {  // TODO: Caching
-  return secret_s.mid(2, secret_s.size() - 3);
+  return d->secret_s.mid(2, d->secret_s.size() - 3);
 }
 
 QByteArray Secret::getPayload() const {  // TODO: Caching
@@ -119,12 +123,12 @@ Secret Secret::derive(Type key_type) const {
 }
 
 QByteArray Secret::getPrivateKey() const {
-  if (!cached_private_key.isEmpty()) return cached_private_key;
+  if (!d->cached_private_key.isEmpty()) return d->cached_private_key;
 
   switch (getType()) {
     case Owner:
     case ReadWrite: {
-      return cached_private_key = getPayload();
+      return d->cached_private_key = getPayload();
     }
     default:
       throw level_error();
@@ -132,7 +136,7 @@ QByteArray Secret::getPrivateKey() const {
 }
 
 QByteArray Secret::getEncryptionKey() const {
-  if (!cached_encryption_key.isEmpty()) return cached_encryption_key;
+  if (!d->cached_encryption_key.isEmpty()) return d->cached_encryption_key;
 
   switch (getType()) {
     case Owner:
@@ -140,10 +144,10 @@ QByteArray Secret::getEncryptionKey() const {
       QCryptographicHash hash(QCryptographicHash::Sha3_256);
       hash.addData(getPrivateKey());
 
-      return cached_encryption_key = hash.result();
+      return d->cached_encryption_key = hash.result();
     }
     case ReadOnly: {
-      return cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
+      return d->cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
     }
     default:
       throw level_error();
@@ -151,17 +155,17 @@ QByteArray Secret::getEncryptionKey() const {
 }
 
 QByteArray Secret::getPublicKey() const {
-  if (!cached_public_key.isEmpty()) return cached_public_key;
+  if (!d->cached_public_key.isEmpty()) return d->cached_public_key;
 
   switch (getType()) {
     case Owner:
     case ReadWrite: {
-      cached_public_key = derivePublicKey(getPrivateKey());
-      return cached_public_key;
+      d->cached_public_key = derivePublicKey(getPrivateKey());
+      return d->cached_public_key;
     }
     case ReadOnly:
     case Download: {
-      return cached_public_key = getPayload();
+      return d->cached_public_key = getPayload();
     }
     default:
       throw level_error();
@@ -169,12 +173,12 @@ QByteArray Secret::getPublicKey() const {
 }
 
 QByteArray Secret::getHash() const {
-  if (!cached_hash.isEmpty()) return cached_hash;
+  if (!d->cached_hash.isEmpty()) return d->cached_hash;
 
   QCryptographicHash hash(QCryptographicHash::Sha3_256);
   hash.addData(getPublicKey());
 
-  return cached_hash = hash.result();
+  return d->cached_hash = hash.result();
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << ((QString)k).toStdString(); }

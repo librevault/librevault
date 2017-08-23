@@ -50,7 +50,7 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   createServiceDirectory();
 
   qCDebug(log_folder) << "New folder:"
-                      << "Key type=" << params_.secret.getTypeChar() << "Path=" << params_.path << "System path=" << params_.system_path;
+                      << "Key type=" << params_.secret.level() << "Path=" << params_.path << "System path=" << params_.system_path;
 
   /* Initializing components */
   ignore_list = std::make_unique<IgnoreList>(params_);

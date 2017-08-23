@@ -34,12 +34,13 @@
 #include <iostream>
 #include <stdexcept>
 #include <QSharedData>
+#include <QSharedDataPointer>
 
 namespace librevault {
 
 class Secret {
  public:
-  enum Type : char {
+  enum Level : char {
     Owner = 'A',      /// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to ReadWrite.
     ReadWrite = 'B',  /// Signature key, used to sign modified files.
     ReadOnly = 'C',   /// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
@@ -49,47 +50,53 @@ class Secret {
   struct error : public std::runtime_error {
     error(const char* what) : std::runtime_error(what) {}
   };
-  struct format_error : public error {
-    format_error() : error("Secret format mismatch") {}
+  struct FormatMismatch : public error {
+    FormatMismatch() : error("Secret format mismatch") {}
   };
-  struct level_error : public error {
-    level_error() : error("Secret has insufficient privileges for this action") {}
+  struct LevelError : public error {
+    LevelError() : error("Secret has insufficient privileges for this action") {}
   };
-  struct crypto_error : public error {
-    crypto_error() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
+  struct CryptoError : public error {
+    CryptoError() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
+  };
+  struct UnknownSecretLevel : public error {
+    UnknownSecretLevel() : error("Unknown Secret level") {}
+  };
+  struct UnknownSecretVersion : public error {
+    UnknownSecretVersion() : error("Unknown Secret version") {}
   };
 
   Secret();
   Secret(const QByteArray& string_secret);
   Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
 
-  operator QString() const { return QString::fromLatin1(d->secret_s); }
+  static Secret generate();
 
-  Type getType() const { return (Type)d->secret_s.at(0); }
-  char getTypeChar() const { return (char)getType(); }
-  char getParam() const { return d->secret_s[1]; }
-  char getCheckChar() const { return d->secret_s[d->secret_s.size() - 1]; }
+  QString toString() const;
+  operator QString() const { return toString(); }
 
-  // Secret derivers
-  Secret derive(Type key_type) const;
+  // Parameters
+  Level level() const { return (Level)d->level_; }
+  char version() const { return d->version_; }
 
   // Payload getters
-  QByteArray getPrivateKey() const;
-  QByteArray getPublicKey() const;
-  QByteArray getEncryptionKey() const;
+  const QByteArray& privateKey() const;
+  const QByteArray& publicKey() const;
+  const QByteArray& encryptionKey() const;
 
-  QByteArray getHash() const;
+  const QByteArray& folderid() const;
 
-  bool operator==(const Secret& key) const { return d->secret_s == key.d->secret_s; }
-  bool operator<(const Secret& key) const { return d->secret_s < key.d->secret_s; }
+  // Secret derivers
+  Secret derive(Level key_type) const;
+
+  bool operator==(const Secret& key) const { return toString() == key.toString(); }
+  bool operator<(const Secret& key) const { return toString() < key.toString(); }
 
  private:
-  mutable QSharedDataPointer<SecretPrivate> d;
+  QSharedDataPointer<SecretPrivate> d;
 
-  Secret(Type type, QByteArray payload);
-
-  QByteArray getEncodedPayload() const;
-  QByteArray getPayload() const;
+  QByteArray makeBinaryPayload() const;
+  bool currentLevelLessThan(Level lvl) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const Secret& k);

@@ -61,7 +61,7 @@ Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), par
 
 	/* Create a special hash-file */
 	QFile hash_file(params_.system_path + "/hash.txt");
-	QByteArray hexhash_conf = params_.secret.getHash();
+	QByteArray hexhash_conf = params_.secret.folderid();
 	if(hash_file.exists()) {
 		hash_file.open(QIODevice::ReadOnly);
 		if(hash_file.readAll().toLower() != hexhash_conf.toLower()) wipe();

@@ -233,7 +233,7 @@ void Meta::parse(QByteArray serialized_data) {
 
 QByteArray Meta::makePathId(QString path, const Secret& secret) {
 	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-	hasher.addData(secret.getEncryptionKey());
+	hasher.addData(secret.encryptionKey());
 	hasher.addData(path.toUtf8());
 	return hasher.result();
 }

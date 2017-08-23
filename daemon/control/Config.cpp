@@ -29,6 +29,7 @@
 #include "Config.h"
 #include "Paths.h"
 #include "Secret.h"
+#include "util/MergePatch.h"
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -96,7 +97,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
 }
 
 void Config::addFolder(QVariantMap fconfig) {
-	QByteArray folderid = Secret(fconfig["secret"].toString()).getHash();
+	QByteArray folderid = Secret(fconfig["secret"].toString()).folderid();
 	if(folders_custom_.contains(folderid))
 		throw samekey_error();
 	folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));

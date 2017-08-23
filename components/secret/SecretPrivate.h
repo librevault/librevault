@@ -33,13 +33,14 @@
 namespace librevault {
 
 struct SecretPrivate : public QSharedData {
-  QByteArray secret_s;
+  char level_ = 0;
+  char version_ = 0;
 
-  QByteArray cached_private_key;     // ReadWrite
-  QByteArray cached_encryption_key;  // ReadOnly
-  QByteArray cached_public_key;      // Download
+  QByteArray private_key_;     // ReadWrite
+  QByteArray encryption_key_;  // ReadOnly
+  QByteArray public_key_;      // Download
 
-  QByteArray cached_hash;  // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
+  QByteArray folderid_;  // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
                             // Completely public, no need to hide it.
 };
 

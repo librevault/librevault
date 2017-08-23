@@ -28,7 +28,7 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	auto privkey_s = secret.getPrivateKey();
+	auto privkey_s = secret.privateKey();
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer((uchar*)privkey_s.data(), privkey_s.size()));
 
 	signature_ = QByteArray(signer.SignatureLength(), 0);
@@ -46,7 +46,7 @@ bool SignedMeta::isValid(const Secret& secret) const {
 
 		verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
 		verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-		auto pubkey_s = secret.getPublicKey();
+		auto pubkey_s = secret.publicKey();
 		verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)pubkey_s.data(), pubkey_s.size());
 		verifier.AccessKey().SetPublicElement(p);
 		if(! verifier.VerifyMessage((uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data(), signature_.size()))

@@ -36,7 +36,7 @@ namespace librevault {
 bool AES_CBC_DATA::check(const Secret& secret) {
 	if(!check()) return false;
 	try {
-		decryptAesCbc(ct, secret.getEncryptionKey(), iv);
+		decryptAesCbc(ct, secret.encryptionKey(), iv);
 	}catch(const CryptoPP::Exception& e){
 		return false;
 	}
@@ -45,7 +45,7 @@ bool AES_CBC_DATA::check(const Secret& secret) {
 
 QByteArray AES_CBC_DATA::getPlain(const Secret& secret) const {
 	try {
-		return decryptAesCbc(ct, secret.getEncryptionKey(), iv);
+		return decryptAesCbc(ct, secret.encryptionKey(), iv);
 	}catch(const CryptoPP::Exception& e){
 		throw Meta::parse_error("Parse error: Decryption failed");
 	}
@@ -53,7 +53,7 @@ QByteArray AES_CBC_DATA::getPlain(const Secret& secret) const {
 
 void AES_CBC_DATA::setPlain(QByteArray pt, const Secret& secret) {
 	iv = generateRandomIV();
-	ct = encryptAesCbc(ct, secret.getEncryptionKey(), pt);
+	ct = encryptAesCbc(ct, secret.encryptionKey(), pt);
 }
 
 } /* namespace librevault */

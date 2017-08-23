@@ -40,11 +40,11 @@ using CryptoPP::ASN1::secp256r1;
 namespace librevault {
 
 namespace {
-constexpr size_t private_key_size = 32;
-constexpr size_t encryption_key_size = 32;
-constexpr size_t public_key_size = 33;
+constexpr int private_key_size = 32;
+constexpr int encryption_key_size = 32;
+constexpr int public_key_size = 33;
 
-constexpr size_t hash_size = 32;
+constexpr int hash_size = 32;
 
 char computeCheckChar(const QByteArray& data) {
   return LuhnMod58(data.begin(), data.end());
@@ -60,6 +60,12 @@ QByteArray generatePrivateKey() {
   return private_key;
 }
 
+QByteArray deriveEncryptionKey(const QByteArray& private_key) {
+  QCryptographicHash hash(QCryptographicHash::Sha3_256);
+  hash.addData(private_key);
+  return hash.result();
+}
+
 QByteArray derivePublicKey(const QByteArray& private_key) {
   CryptoPP::AutoSeededRandomPool rng;
   CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key_crypto;
@@ -73,114 +79,139 @@ QByteArray derivePublicKey(const QByteArray& private_key) {
   public_key_crypto.GetGroupParameters().EncodeElement(true, public_key_crypto.GetPublicElement(), (uchar*)public_key.data());
   return public_key;
 }
+
+QByteArray makeFolderHash(const QByteArray& public_key) {
+  QCryptographicHash hash(QCryptographicHash::Sha3_256);
+  hash.addData(public_key);
+  return hash.result();
+}
 }
 
-Secret::Secret() : Secret(Owner, generatePrivateKey()) {}
-
-Secret::Secret(Type type, QByteArray binary_part) {
-  d = new SecretPrivate();
-
-  d->secret_s += type;
-  d->secret_s += '1';
-  d->secret_s += toBase58(binary_part);
-  d->secret_s += computeCheckChar(d->secret_s.mid(2));
-}
+Secret::Secret() {}
 
 Secret::Secret(const QByteArray& string_secret) {
   d = new SecretPrivate();
+  if(string_secret.size() < 3) throw FormatMismatch();  // Level, Version, Checksum
 
-  d->secret_s = string_secret;
-  auto base58_payload = getEncodedPayload();
+  // Extract version
+  d->version_ = string_secret[1];
+  if(d->version_ != '1') throw UnknownSecretVersion();
 
-  if (base58_payload.isEmpty()) throw format_error();
-  if (computeCheckChar(base58_payload) != getCheckChar()) throw format_error();
+  // Extract type
+  d->level_ = string_secret[0];
+  if(d->level_ < Owner || d->level_ > Download) throw UnknownSecretLevel();
 
-  // TODO: It would be good to check private/public key for validity and throw crypto_error() here
+  // Extract payload
+  QByteArray base58_payload = string_secret.mid(2, string_secret.size()-3);
+  if (base58_payload.isEmpty()) throw FormatMismatch();
+  QByteArray payload = fromBase58(base58_payload);
+
+  if(d->level_ == Owner || d->level_ == ReadWrite) {
+    if(payload.size() < private_key_size) throw FormatMismatch();
+    d->private_key_ = payload;
+    d->encryption_key_ = deriveEncryptionKey(d->private_key_);
+    d->public_key_ = derivePublicKey(d->private_key_);
+  }else if(d->level_ == ReadOnly) {
+    if(payload.size() < public_key_size + encryption_key_size) throw FormatMismatch();
+    d->encryption_key_ = payload.mid(public_key_size, encryption_key_size);
+    d->public_key_ = payload.mid(0, public_key_size);
+  }else if(d->level_ == Download) {
+    if(payload.size() < public_key_size) throw FormatMismatch();
+    d->public_key_ = payload;
+  }
+  d->folderid_ = makeFolderHash(d->public_key_);
+
+  // Extract Luhn checksum
+  char checksum = *(string_secret.rbegin());
+  if(computeCheckChar(base58_payload) != checksum) throw FormatMismatch();
+
+  // TODO: It would be good to check private/public key for validity and throw CryptoError() here
 }
 
-QByteArray Secret::getEncodedPayload() const {  // TODO: Caching
-  return d->secret_s.mid(2, d->secret_s.size() - 3);
+Secret Secret::generate() {
+  QByteArray secret_s;
+  secret_s += 'A';
+  secret_s += '1';
+  QByteArray base58_payload = toBase58(generatePrivateKey());
+  secret_s += base58_payload;
+  secret_s += computeCheckChar(base58_payload);
+
+  return Secret(secret_s);
 }
 
-QByteArray Secret::getPayload() const {  // TODO: Caching
-  return fromBase58(getEncodedPayload());
+QString Secret::toString() const {
+  Q_ASSERT(d);
+
+  QString s;
+  s.reserve(128);
+  s += d->level_;
+  s += d->version_;
+  QByteArray base58_payload = toBase58(makeBinaryPayload());
+  s += base58_payload;
+  s += computeCheckChar(base58_payload);
+  s.squeeze();
+
+  return s;
 }
 
-Secret Secret::derive(Type key_type) const {
-  if (key_type == getType()) return *this;
+Secret Secret::derive(Level key_type) const {
+  Q_ASSERT(d);
+  if(currentLevelLessThan(key_type)) throw LevelError();
 
-  switch (key_type) {
-    case Owner:
-    case ReadWrite:
-      return Secret(key_type, getPrivateKey());
-    case ReadOnly:
-      return Secret(key_type, getPublicKey() + getEncryptionKey());
-    case Download:
-      return Secret(key_type, getPublicKey());
+  Secret s(*this);
+  s.d->level_ = key_type;
+  return s;
+}
+
+const QByteArray& Secret::privateKey() const {
+  Q_ASSERT(d);
+  if(currentLevelLessThan(ReadWrite)) throw LevelError();
+  return d->private_key_;
+}
+
+const QByteArray& Secret::encryptionKey() const {
+  Q_ASSERT(d);
+  if(currentLevelLessThan(ReadOnly)) throw LevelError();
+  return d->encryption_key_;
+}
+
+const QByteArray& Secret::publicKey() const {
+  Q_ASSERT(d);
+  if(currentLevelLessThan(Download)) throw LevelError();
+  return d->public_key_;
+}
+
+const QByteArray& Secret::folderid() const {
+  Q_ASSERT(d);
+  return d->folderid_;
+}
+
+QByteArray Secret::makeBinaryPayload() const {
+  Q_ASSERT(d);
+  switch(d->level_) {
+    case Secret::Owner:
+    case Secret::ReadWrite:
+      return d->private_key_;
+    case Secret::ReadOnly:
+      return d->public_key_ + d->encryption_key_;
+    case Secret::Download:
+      return d->public_key_;
     default:
-      throw level_error();
+      throw UnknownSecretLevel();
   }
 }
 
-QByteArray Secret::getPrivateKey() const {
-  if (!d->cached_private_key.isEmpty()) return d->cached_private_key;
+bool Secret::currentLevelLessThan(Level lvl) const {
+  if(lvl < Owner || lvl > Download)
+    throw UnknownSecretLevel();
+  if( (lvl == Owner || lvl == ReadWrite) && (d->level_ == Owner || d->level_ == ReadWrite) )
+    return false;
+  if(lvl >= d->level_)
+    return false;
 
-  switch (getType()) {
-    case Owner:
-    case ReadWrite: {
-      return d->cached_private_key = getPayload();
-    }
-    default:
-      throw level_error();
-  }
+  return true;
 }
 
-QByteArray Secret::getEncryptionKey() const {
-  if (!d->cached_encryption_key.isEmpty()) return d->cached_encryption_key;
-
-  switch (getType()) {
-    case Owner:
-    case ReadWrite: {
-      QCryptographicHash hash(QCryptographicHash::Sha3_256);
-      hash.addData(getPrivateKey());
-
-      return d->cached_encryption_key = hash.result();
-    }
-    case ReadOnly: {
-      return d->cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
-    }
-    default:
-      throw level_error();
-  }
-}
-
-QByteArray Secret::getPublicKey() const {
-  if (!d->cached_public_key.isEmpty()) return d->cached_public_key;
-
-  switch (getType()) {
-    case Owner:
-    case ReadWrite: {
-      d->cached_public_key = derivePublicKey(getPrivateKey());
-      return d->cached_public_key;
-    }
-    case ReadOnly:
-    case Download: {
-      return d->cached_public_key = getPayload();
-    }
-    default:
-      throw level_error();
-  }
-}
-
-QByteArray Secret::getHash() const {
-  if (!d->cached_hash.isEmpty()) return d->cached_hash;
-
-  QCryptographicHash hash(QCryptographicHash::Sha3_256);
-  hash.addData(getPublicKey());
-
-  return d->cached_hash = hash.result();
-}
-
-std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << ((QString)k).toStdString(); }
+std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.toString().toStdString(); }
 
 } /* namespace librevault */

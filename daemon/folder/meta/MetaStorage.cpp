@@ -41,7 +41,7 @@ MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QO
 	poller_ = new DirectoryPoller(params, ignore_list, this);
 	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 
-	if(params.secret.getType() <= Secret::Type::ReadWrite){
+	if(params.secret.level() <= Secret::Level::ReadWrite){
 		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);
 		connect(watcher_, &DirectoryWatcher::newPath, indexer_, &IndexerQueue::addIndexing);
 

@@ -249,7 +249,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArra
 	Meta::Chunk chunk;
 
 	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-	hasher.addData(secret_.getEncryptionKey());
+	hasher.addData(secret_.encryptionKey());
 	hasher.addData(data);
 
 	chunk.pt_hmac = hasher.result();
@@ -258,7 +258,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArra
 	chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, generateRandomIV());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.getEncryptionKey(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.encryptionKey(), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

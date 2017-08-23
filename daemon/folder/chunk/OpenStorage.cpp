@@ -66,7 +66,7 @@ QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
 
-		QByteArray chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.getEncryptionKey(), chunk.iv);
+		QByteArray chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.encryptionKey(), chunk.iv);
 
 		// Check
 		if(verify_chunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;

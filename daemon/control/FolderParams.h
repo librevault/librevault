@@ -40,7 +40,7 @@ namespace librevault {
 struct FolderParams {
   FolderParams(QVariantMap fconfig);
 
-  QByteArray folderid() const { return secret.getHash(); }
+  QByteArray folderid() const { return secret.folderid(); }
 
   /* Parameters */
   Secret secret;

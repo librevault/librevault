@@ -85,7 +85,7 @@ void IndexerWorker::run() noexcept {
 
 		qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << human_bandwidth(bandwidth) << ")"
 			<< "Path=" << abspath_
-			<< "Rev=" << new_smeta_.meta().revision()
+			<< "Rev=" << new_smeta_.meta().timestamp().time_since_epoch().count()
 			<< "Chk=" << new_smeta_.meta().chunks().size();
 
 		emit metaCreated(new_smeta_);
@@ -101,37 +101,39 @@ void IndexerWorker::make_Meta() {
 
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 
-	new_meta_.setPath(normpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
+	new_meta_.path(EncryptedData::fromPlaintext(normpath, secret_.encryptionKey(), generateRandomIV()));    // sets path_id, encrypted_path and encrypted_path_iv
+  new_meta_.pathKeyedHash(Meta::makePathId(normpath, secret_));
 
-	new_meta_.set_meta_type(get_type());  // Type
+	new_meta_.kind(get_type());  // Kind
 
-	if(!old_smeta_ && new_meta_.meta_type() == Meta::DELETED)
+	if(!old_smeta_ && new_meta_.kind() == Meta::DELETED)
 		throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 
-	if(old_meta_.meta_type() == Meta::DIRECTORY && new_meta_.meta_type() == Meta::DIRECTORY)
+	if(old_meta_.kind() == Meta::DIRECTORY && new_meta_.kind() == Meta::DIRECTORY)
 		throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
 
-	if(old_meta_.meta_type() == Meta::DELETED && new_meta_.meta_type() == Meta::DELETED)
+	if(old_meta_.kind() == Meta::DELETED && new_meta_.kind() == Meta::DELETED)
 		throw abort_index("Old Meta is DELETED, new Meta is DELETED");
 
-	if(new_meta_.meta_type() == Meta::FILE)
+	if(new_meta_.kind() == Meta::FILE)
 		update_chunks();
 
-	if(new_meta_.meta_type() == Meta::SYMLINK) {
-		new_meta_.setSymlinkPath(QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string()), secret_);
+	if(new_meta_.kind() == Meta::SYMLINK) {
+    QByteArray symlink_target = QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string());
+		new_meta_.symlinkTarget(EncryptedData::fromPlaintext(symlink_target, secret_.encryptionKey(), generateRandomIV()));
 	}
 
 	// FSAttrib
-	if(new_meta_.meta_type() != Meta::DELETED)
+	if(new_meta_.kind() != Meta::DELETED)
 		update_fsattrib();   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
 	// Revision
-	new_meta_.set_revision(std::time(nullptr));	// Meta is ready. Assigning timestamp.
+	new_meta_.timestamp(std::chrono::system_clock::now());	// Meta is ready. Assigning timestamp.
 
 	new_smeta_ = SignedMeta(new_meta_, secret_);
 }
 
-Meta::Type IndexerWorker::get_type() {
+Meta::Kind IndexerWorker::get_type() {
 	QString abspath = abspath_;
 	boost::filesystem::path babspath(abspath.toStdWString());
 
@@ -155,7 +157,7 @@ void IndexerWorker::update_fsattrib() {
 	new_meta_.set_uid(old_meta_.uid());
 	new_meta_.set_gid(old_meta_.gid());
 
-	if(new_meta_.meta_type() != Meta::SYMLINK)
+	if(new_meta_.kind() != Meta::SYMLINK)
 		new_meta_.set_mtime(boost::filesystem::last_write_time(babspath));   // File/directory modification time
 	else {
 		// TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for Unix and GetFileAttributesEx for Windows.
@@ -183,24 +185,20 @@ void IndexerWorker::update_fsattrib() {
 }
 
 void IndexerWorker::update_chunks() {
-	Meta::RabinGlobalParams rabin_global_params;
-
-	if(old_meta_.meta_type() == Meta::FILE && old_meta_.validate()) {
-		new_meta_.set_algorithm_type(old_meta_.algorithm_type());
-		new_meta_.set_strong_hash_type(old_meta_.strong_hash_type());
-
+	if(old_meta_.kind() == Meta::FILE) {
 		new_meta_.set_max_chunksize(old_meta_.max_chunksize());
 		new_meta_.set_min_chunksize(old_meta_.min_chunksize());
 
-		new_meta_.raw_rabin_global_params() = old_meta_.raw_rabin_global_params();
-
-		rabin_global_params = old_meta_.rabin_global_params(secret_);
+		new_meta_.rabinMask(old_meta_.rabinMask());
+		new_meta_.rabinShift(old_meta_.rabinShift());
+		new_meta_.rabinPolynomial(old_meta_.rabinPolynomial());
 	}else{
-		new_meta_.set_algorithm_type(Meta::RABIN);
-		new_meta_.set_strong_hash_type(params_.chunk_strong_hash_type);
-
 		new_meta_.set_max_chunksize(8*1024*1024);
 		new_meta_.set_min_chunksize(1*1024*1024);
+
+		new_meta_.rabinMask(0x0FFFFF);
+		new_meta_.rabinShift(53 - 8);
+		new_meta_.rabinPolynomial(0x3DA3358B4DC173LL);
 
 		// TODO: Generate a new polynomial for rabin_global_params here to prevent a possible fingerprinting attack.
 	}
@@ -212,8 +210,7 @@ void IndexerWorker::update_chunks() {
 	}
 
 	// Initializing chunker
-  uint64_t rabin_mask = (1ull<<uint64_t(rabin_global_params.avg_bits))-1ull;
-  Rabin rabin(rabin_global_params.polynomial, rabin_global_params.polynomial_shift, new_meta_.min_chunksize(), new_meta_.max_chunksize(), rabin_mask);
+  Rabin rabin(new_meta_.rabinPolynomial(), new_meta_.rabinShift(), new_meta_.min_chunksize(), new_meta_.max_chunksize(), new_meta_.rabinMask());
 
 	// Chunking
 	QList<Meta::Chunk> chunks;
@@ -258,7 +255,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArra
 	chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, generateRandomIV());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.encryptionKey(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.encryptionKey(), chunk.iv));
 	return chunk;
 }
 

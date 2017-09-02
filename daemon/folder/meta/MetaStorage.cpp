@@ -102,7 +102,7 @@ bool MetaStorage::putAllowed(const Meta::PathRevision& path_revision) noexcept {
 	return index_->putAllowed(path_revision);
 }
 
-void MetaStorage::prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal) {
+void MetaStorage::prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal) {
 	watcher_->prepareAssemble(normpath, type, with_removal);
 }
 

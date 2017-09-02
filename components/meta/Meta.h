@@ -15,162 +15,122 @@
  */
 #pragma once
 
-#include "Secret.h"
 #include "util/AES_CBC_DATA.h"
+#include "EncryptedData.h"
 #include <QList>
+#include <chrono>
 
 namespace librevault {
 
+class MetaPrivate;
 class Meta {
-public:
-	enum Type : uint32_t {FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255};
-	enum AlgorithmType : uint8_t {RABIN=0};
-	enum StrongHashType : uint8_t {SHA3_256=0};
-	struct Chunk {
-		QByteArray ct_hash;
-		uint32_t size;
-		QByteArray iv;
+ public:
+  using Timestamp = std::chrono::system_clock::time_point;
+  enum Kind : uint32_t { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
+  enum StrongHashType : uint8_t { SHA3_256 = 0 };
+  struct Chunk {
+    QByteArray ct_hash;
+    uint32_t size;
+    QByteArray iv;
 
-		QByteArray pt_hmac;
+    QByteArray pt_hmac;
 
-		static QByteArray encrypt(QByteArray chunk, QByteArray key, QByteArray iv);
-		static QByteArray decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv);
+    static QByteArray encrypt(QByteArray chunk, QByteArray key, QByteArray iv);
+    static QByteArray decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv);
 
-		static QByteArray compute_strong_hash(QByteArray chunk, StrongHashType type);
-	};
+    static QByteArray compute_strong_hash(QByteArray chunk);
+  };
 
-	struct RabinGlobalParams {
-		uint64_t polynomial = 0x3DA3358B4DC173LL;
-		uint32_t polynomial_degree = 53;
-		uint32_t polynomial_shift = 53 - 8;
-		uint32_t avg_bits = 20;
-	};
+ private:
+  QSharedDataPointer<MetaPrivate> d;
 
-private:
-	/* Meta fields, must be serialized together and then signed */
+ public:
+  /* Nested structs & classes */
+  struct error : std::runtime_error {
+    error(const char* what) : std::runtime_error(what) {}
+    error() : error("Meta error") {}
+  };
 
-	/* Required data */
-	QByteArray path_id_;
-	AES_CBC_DATA path_;
-	Type meta_type_ = FILE;
-	int64_t revision_ = 0;	// timestamp of Meta modification
+  struct parse_error : error {
+    parse_error(const char* what) : error(what) {}
+    parse_error() : error("Parse error") {}
+  };
 
-	/* Content-specific metadata */
-	// Generic metadata
-	int64_t mtime_ = 0;	// file/directory mtime
-	/// Windows-specific
-	uint32_t windows_attrib_ = 0;
-	/// Unix-specific
-	uint32_t mode_ = 0;
-	uint32_t uid_ = 0;
-	uint32_t gid_ = 0;
+  /// Used for querying specific version of Meta
+  struct PathRevision {
+    QByteArray path_id_;
+    int64_t revision_;
+  };
 
-	// Symlink metadata
-	AES_CBC_DATA symlink_path_;
+  /* Class methods */
+  Meta();
+  Meta(const Meta& r);
+  Meta(Meta&& r) noexcept;
+  explicit Meta(QByteArray meta_s);
+  virtual ~Meta();
 
-	// File metadata
-	/// Algorithm selection
-	AlgorithmType algorithm_type_ = (AlgorithmType)0;
-	StrongHashType strong_hash_type_ = (StrongHashType)0;
+  Meta& operator=(const Meta& r);
+  Meta& operator=(Meta&& r) noexcept;
 
-	/// Uni-algorithm parameters
-	uint32_t max_chunksize_ = 0;
-	uint32_t min_chunksize_ = 0;
+  /* Serialization */
+  QByteArray serialize() const;
+  void parse(const QByteArray& serialized);
 
-	/// Rabin algorithm parameters
-	AES_CBC_DATA rabin_global_params_;
+  /* Generators */
+  static QByteArray makePathId(QByteArray path, const Secret& secret);
 
-	QList<Chunk> chunks_;
+  /* Smart getters+setters */
+  PathRevision path_revision() const { return PathRevision{pathKeyedHash(), timestamp().time_since_epoch().count()}; }
+  uint64_t size() const;
 
-public:
-	/* Nested structs & classes */
-	struct error : std::runtime_error {
-		error(const char* what) : std::runtime_error(what) {}
-		error() : error("Meta error") {}
-	};
+  // Dumb getters & setters
+  QByteArray pathKeyedHash() const;
+  void pathKeyedHash(const QByteArray& path_id);
 
-	struct parse_error : error {
-		parse_error(const char* what) : error(what) {}
-		parse_error() : error("Parse error") {}
-	};
+  EncryptedData path() const;
+  void path(const EncryptedData& path) ;
 
-	/// Used for querying specific version of Meta
-	struct PathRevision {
-		QByteArray path_id_;
-		int64_t revision_;
-	};
+  Kind kind() const;
+  void kind(Kind meta_kind);
 
-	/* Class methods */
-	Meta();
-	explicit Meta(QByteArray meta_s);
-	virtual ~Meta();
+  Timestamp timestamp() const;
+  void timestamp(Timestamp revision);
 
-	/* Serialization */
-	QByteArray serialize() const;
-	void parse(QByteArray serialized_data);
+  int64_t mtime() const;
+  void set_mtime(int64_t mtime);
 
-	/* Validation */
-	bool validate() const;
-	//bool validate(const Secret& secret) const;
+  uint32_t windows_attrib() const;
+  void set_windows_attrib(uint32_t windows_attrib);
 
-	/* Generators */
-	static QByteArray makePathId(QString path, const Secret& secret);
+  uint32_t mode() const;
+  void set_mode(uint32_t mode);
 
-	/* Smart getters+setters */
-	PathRevision path_revision() const {return PathRevision{pathId(), revision()};}
-	uint64_t size() const;
+  uint32_t uid() const;
+  void set_uid(uint32_t uid);
 
-	// Encryptors/decryptors
-	QByteArray path(const Secret& secret) const;
-	void setPath(QByteArray path, const Secret& secret);   // Also, computes and sets path_id
+  uint32_t gid() const;
+  void set_gid(uint32_t gid);
 
-	QByteArray symlinkPath(const Secret& secret) const;
-	void setSymlinkPath(QByteArray path, const Secret& secret);
+  uint32_t min_chunksize() const;
+  void set_min_chunksize(uint32_t min_chunksize);
 
-	RabinGlobalParams rabin_global_params(const Secret& secret) const;
-	void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
-	AES_CBC_DATA& raw_rabin_global_params() {return rabin_global_params_;}
-	const AES_CBC_DATA& raw_rabin_global_params() const {return rabin_global_params_;}
+  uint32_t max_chunksize() const;
+  void set_max_chunksize(uint32_t max_chunksize);
 
-	// Dumb getters & setters
-	QByteArray pathId() const {return path_id_;}
-	void setPathId(QByteArray path_id) {path_id_ = path_id;}
+  quint64 rabinPolynomial() const;
+  void rabinPolynomial(quint64 rabin_polynomial);
 
-	Type meta_type() const {return meta_type_;}
-	void set_meta_type(Type meta_type) {meta_type_ = meta_type;}
+  quint32 rabinShift() const;
+  void rabinShift(quint32 rabin_shift);
 
-	int64_t revision() const {return revision_;}
-	void set_revision(int64_t revision) {revision_ = revision;}
+  quint64 rabinMask() const;
+  void rabinMask(quint64 rabin_mask);
 
-	int64_t mtime() const {return mtime_;}
-	void set_mtime(int64_t mtime) {mtime_ = mtime;}
+  QList<Chunk> chunks() const;
+  void set_chunks(QList<Chunk> chunks);
 
-	uint32_t windows_attrib() const {return windows_attrib_;}
-	void set_windows_attrib(uint32_t windows_attrib) {windows_attrib_ = windows_attrib;}
-
-	uint32_t mode() const {return mode_;}
-	void set_mode(uint32_t mode) {mode_ = mode;}
-
-	uint32_t uid() const {return uid_;}
-	void set_uid(uint32_t uid) {uid_ = uid;}
-
-	uint32_t gid() const {return gid_;}
-	void set_gid(uint32_t gid) {gid_ = gid;}
-
-	AlgorithmType algorithm_type() const {return algorithm_type_;}
-	void set_algorithm_type(AlgorithmType algorithm_type) {algorithm_type_ = algorithm_type;}
-
-	StrongHashType strong_hash_type() const {return strong_hash_type_;}
-	void set_strong_hash_type(StrongHashType strong_hash_type) {strong_hash_type_ = strong_hash_type;}
-
-	uint32_t min_chunksize() const {return min_chunksize_;}
-	void set_min_chunksize(uint32_t min_chunksize) {min_chunksize_ = min_chunksize;}
-
-	uint32_t max_chunksize() const {return max_chunksize_;}
-	void set_max_chunksize(uint32_t max_chunksize) {max_chunksize_ = max_chunksize;}
-
-	QList<Chunk> chunks() const {return chunks_;}
-	void set_chunks(QList<Chunk> chunks) {chunks_ = chunks;}
+  EncryptedData symlinkTarget() const;
+  void symlinkTarget(const EncryptedData& symlink_target);
 };
 
 } /* namespace librevault */

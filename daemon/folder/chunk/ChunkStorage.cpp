@@ -85,7 +85,7 @@ void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 }
 
 QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
-	if(meta.meta_type() == meta.FILE) {
+	if(meta.kind() == meta.FILE) {
 		QBitArray bitfield(meta.chunks().size());
 
 		for(int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)

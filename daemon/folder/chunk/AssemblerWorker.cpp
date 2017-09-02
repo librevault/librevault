@@ -76,12 +76,12 @@ QByteArray AssemblerWorker::get_chunk_pt(QByteArray ct_hash) const {
 void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
-	normpath_ = meta_.path(params_.secret);
+	normpath_ = meta_.path().plaintext(params_.secret.encryptionKey());
 	denormpath_ = PathNormalizer::absolutizePath(normpath_, params_.path);
 
 	try {
 		bool assembled = false;
-		switch(meta_.meta_type()) {
+		switch(meta_.kind()) {
 			case Meta::FILE: assembled = assemble_file();
 				break;
 			case Meta::DIRECTORY: assembled = assemble_directory();
@@ -91,19 +91,19 @@ void AssemblerWorker::run() noexcept {
 			case Meta::DELETED: assembled = assemble_deleted();
 				break;
 			default:
-				qWarning() << QString("Unexpected meta type: %1").arg(meta_.meta_type());
+				qWarning() << QString("Unexpected meta type: %1").arg(meta_.kind());
 				throw abort_assembly();
 		}
 		if(assembled) {
-			if(meta_.meta_type() != Meta::DELETED)
+			if(meta_.kind() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_->markAssembled(meta_.pathId());
+			meta_storage_->markAssembled(meta_.pathKeyedHash());
 			chunk_storage_->cleanup(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
-		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).data() << "E:" << e.what();    // FIXME: #83
+		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path().plaintext(params_.secret.encryptionKey()) << "E:" << e.what();    // FIXME: #83
 	}
 }
 
@@ -118,7 +118,7 @@ bool AssemblerWorker::assemble_symlink() {
 	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
 	boost::filesystem::remove_all(denormpath_fs);
-	boost::filesystem::create_symlink(meta_.symlinkPath(params_.secret).toStdString(), denormpath_fs);
+	boost::filesystem::create_symlink(meta_.symlinkTarget().plaintext(params_.secret.encryptionKey()).toStdString(), denormpath_fs);
 
 	return true;    // Maybe, something else?
 }
@@ -190,7 +190,7 @@ bool AssemblerWorker::assemble_file() {
 void AssemblerWorker::apply_attrib() {
 #if defined(Q_OS_UNIX)
 	if(params_.preserve_unix_attrib) {
-		if(meta_.meta_type() != Meta::SYMLINK) {
+		if(meta_.kind() != Meta::SYMLINK) {
 			int ec = 0;
 			ec = chmod(QFile::encodeName(denormpath_), meta_.mode());
 			if(ec) {

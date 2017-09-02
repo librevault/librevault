@@ -73,9 +73,9 @@ DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignor
 
 DirectoryWatcher::~DirectoryWatcher() {}
 
-void DirectoryWatcher::prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal) {
+void DirectoryWatcher::prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal) {
 	unsigned skip_events = 0;
-	if(with_removal || type == Meta::Type::DELETED) skip_events++;
+	if(with_removal || type == Meta::Kind::DELETED) skip_events++;
 
 	switch(type) {
 		case Meta::FILE:

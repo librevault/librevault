@@ -69,7 +69,7 @@ public:
 
 	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 
-	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal = false);
 
 private:
 	Index* index_;

@@ -66,7 +66,7 @@ public:
 	virtual ~DirectoryWatcher();
 
 	// A VERY DIRTY HACK
-	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal = false);
 
 private:
 	const FolderParams& params_;

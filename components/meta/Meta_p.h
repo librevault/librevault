@@ -14,13 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-
-#include <Meta.pb.h>
-#include <QSharedData>
+#include "Meta.h"
+#include <Meta_s.pb.h>
 
 namespace librevault {
 
-struct InodePrivate : public QSharedData {
+struct MetaPrivate : public QSharedData {
+  QList<Meta::Chunk> chunks_;
+
   serialization::Meta proto;
 };
 

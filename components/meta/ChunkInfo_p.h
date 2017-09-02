@@ -15,13 +15,13 @@
  */
 #pragma once
 
-#include <Meta.pb.h>
+#include <Inode.pb.h>
 #include <QSharedData>
 
 namespace librevault {
 
-struct InodePrivate : public QSharedData {
-  serialization::Meta proto;
+struct ChunkInfoPrivate : public QSharedData {
+  serialization::ChunkInfo proto;
 };
 
 } /* namespace librevault */

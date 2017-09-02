@@ -15,10 +15,8 @@
  */
 #pragma once
 
-#include "Secret.h"
 #include <Inode.pb.h>
-#include <QList>
-#include <QtCore/QSharedData>
+#include <QSharedData>
 
 namespace librevault {
 

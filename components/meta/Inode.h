@@ -15,11 +15,10 @@
  */
 #pragma once
 
-#include "Secret.h"
 #include "EncryptedData.h"
 #include <QList>
+#include <QSharedDataPointer>
 #include <chrono>
-#include <QtCore/QSharedDataPointer>
 
 namespace librevault {
 
@@ -27,12 +26,22 @@ class ChunkInfo;
 
 class InodePrivate;
 class Inode {
-public:
+ public:
   using Timestamp = std::chrono::system_clock::time_point;
-  enum Kind : quint32 {
-    FILE = 0, DIRECTORY = 1, SYMLINK = 2, DELETED = 255
-  };
+  enum Kind : quint32 { FILE = 0, DIRECTORY = 1, SYMLINK = 2, DELETED = 255 };
 
+  Inode();
+  Inode(const Inode& r);
+  Inode(Inode&& r) noexcept;
+  ~Inode();
+  Inode& operator=(const Inode& r);
+  Inode& operator=(Inode&& r) noexcept;
+
+  // Serialization
+  QByteArray serialize() const;
+  static Inode parse(const QByteArray& data);
+
+  // Accessors
   QByteArray pathKeyedHash() const;
   void pathKeyedHash(const QByteArray& path_keyed_hash);
 
@@ -84,7 +93,7 @@ public:
   EncryptedData symlinkTarget() const;
   void symlinkTarget(const EncryptedData& symlink_target);
 
-private:
+ private:
   QSharedDataPointer<InodePrivate> d;
 };
 

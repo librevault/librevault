@@ -19,7 +19,7 @@
 namespace librevault {
 
 class EncryptedData {
-public:
+ public:
   static EncryptedData fromCiphertext(const QByteArray& ciphertext, const QByteArray& iv);
   static EncryptedData fromPlaintext(const QByteArray& plaintext, const QByteArray& key, const QByteArray& iv);
 
@@ -27,7 +27,7 @@ public:
   const QByteArray& ciphertext() const;
   const QByteArray& iv() const;
 
-private:
+ private:
   QByteArray ct_, iv_;
   mutable QByteArray pt_;
 };

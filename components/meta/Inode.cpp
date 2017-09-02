@@ -14,22 +14,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Inode.h"
-#include "Inode_p.h"
 #include "ChunkInfo.h"
-#include <QList>
+#include "Inode_p.h"
 
 namespace librevault {
 
 namespace {
 
-serialization::EncryptedData serialize(const EncryptedData& enc) {
+serialization::EncryptedData conv_encdata(const EncryptedData& enc) {
   serialization::EncryptedData enc_s;
   enc_s.set_ct(enc.ciphertext(), enc.ciphertext().size());
   enc_s.set_iv(enc.iv(), enc.iv().size());
   return enc_s;
 }
 
-EncryptedData parse(const serialization::EncryptedData& enc) {
+EncryptedData conv_encdata(const serialization::EncryptedData& enc) {
   return EncryptedData::fromCiphertext(QByteArray::fromStdString(enc.ct()), QByteArray::fromStdString(enc.iv()));
 }
 
@@ -43,121 +42,81 @@ inline ::google::protobuf::Timestamp conv_timestamp(Inode::Timestamp timestamp) 
 };
 
 inline Inode::Timestamp conv_timestamp(::google::protobuf::Timestamp timestamp) {
-  return Inode::Timestamp(std::chrono::nanoseconds(timestamp.seconds()*1000000000ll + timestamp.nanos()));
+  return Inode::Timestamp(std::chrono::nanoseconds(timestamp.seconds() * 1000000000ll + timestamp.nanos()));
 };
-
 }
 
-QByteArray Inode::pathKeyedHash() const {
-  return QByteArray::fromStdString(d->proto.path_keyed_hash());
+Inode::Inode() { d = new InodePrivate; }
+Inode::Inode(const Inode& r) { *this = r; }
+Inode::Inode(Inode&& r) noexcept { *this = std::move(r); }
+Inode::~Inode() {}
+Inode& Inode::operator=(const Inode& r) {
+  d = r.d;
+  return *this;
 }
-void Inode::pathKeyedHash(const QByteArray& path_keyed_hash) {
-  d->proto.set_path_keyed_hash(path_keyed_hash.toStdString());
-}
-
-EncryptedData Inode::path() const {
-  return parse(d->proto.path());
-}
-void Inode::path(const EncryptedData& path) {
-  d->proto.mutable_path()->CopyFrom(serialize(path));
-}
-
-Inode::Timestamp Inode::timestamp() const {
-  return conv_timestamp(d->proto.timestamp());
-}
-void Inode::timestamp(Timestamp timestamp){
-  d->proto.mutable_timestamp()->CopyFrom(conv_timestamp(timestamp));
+Inode& Inode::operator=(Inode&& r) noexcept {
+  d = std::move(r.d);
+  return *this;
 }
 
-Inode::Kind Inode::kind() const{
-  return Inode::Kind(d->proto.kind());
+QByteArray Inode::serialize() const {
+  return QByteArray::fromStdString(d->proto.SerializeAsString());
 }
-void Inode::kind(Inode::Kind kind){
-  d->proto.set_kind(kind);
-}
-
-Inode::Timestamp Inode::mtime() const{
-  return conv_timestamp(d->proto.mtime());
-}
-void Inode::mtime(Timestamp mtime){
-  d->proto.mutable_mtime()->CopyFrom(conv_timestamp(mtime));
-
+Inode Inode::parse(const QByteArray& data) {
+  Inode new_inode;
+  new_inode.d->proto.ParseFromArray(data, data.size());
+  return new_inode;
 }
 
-std::chrono::nanoseconds Inode::mtimeGranularity() const{
-  return std::chrono::nanoseconds(d->proto.mtime_granularity());
-}
-void Inode::mtimeGranularity(std::chrono::nanoseconds mtime_granularity){
-  d->proto.set_mtime_granularity(mtime_granularity.count());
-}
+QByteArray Inode::pathKeyedHash() const { return QByteArray::fromStdString(d->proto.path_keyed_hash()); }
+void Inode::pathKeyedHash(const QByteArray& path_keyed_hash) { d->proto.set_path_keyed_hash(path_keyed_hash.toStdString()); }
 
-quint32 Inode::windowsAttrib() const{
-  return d->proto.windows_attrib();
-}
-void Inode::windowsAttrib(quint32 windows_attrib){
-  d->proto.set_windows_attrib(windows_attrib);
-}
+EncryptedData Inode::path() const { return conv_encdata(d->proto.path()); }
+void Inode::path(const EncryptedData& path) { d->proto.mutable_path()->CopyFrom(conv_encdata(path)); }
 
-quint32 Inode::mode() const{
-  return d->proto.mode();
-}
-void Inode::mode(quint32 mode){
-  d->proto.set_mode(mode);
-}
+Inode::Timestamp Inode::timestamp() const { return conv_timestamp(d->proto.timestamp()); }
+void Inode::timestamp(Timestamp timestamp) { d->proto.mutable_timestamp()->CopyFrom(conv_timestamp(timestamp)); }
 
-quint32 Inode::uid() const{
-  return d->proto.uid();
-}
-void Inode::uid(quint32 uid){
-  d->proto.set_uid(uid);
-}
+Inode::Kind Inode::kind() const { return Inode::Kind(d->proto.kind()); }
+void Inode::kind(Inode::Kind kind) { d->proto.set_kind(kind); }
 
-quint32 Inode::gid() const{
-  return d->proto.gid();
-}
-void Inode::gid(quint32 gid){
-  d->proto.set_gid(gid);
-}
+Inode::Timestamp Inode::mtime() const { return conv_timestamp(d->proto.mtime()); }
+void Inode::mtime(Timestamp mtime) { d->proto.mutable_mtime()->CopyFrom(conv_timestamp(mtime)); }
 
-quint32 Inode::maxChunksize() const{
-  return d->proto.max_chunksize();
-}
-void Inode::maxChunksize(quint32 max_chunksize){
-  d->proto.set_max_chunksize(max_chunksize);
-}
+std::chrono::nanoseconds Inode::mtimeGranularity() const { return std::chrono::nanoseconds(d->proto.mtime_granularity()); }
+void Inode::mtimeGranularity(std::chrono::nanoseconds mtime_granularity) { d->proto.set_mtime_granularity(mtime_granularity.count()); }
 
-quint32 Inode::minChunksize() const{
-  return d->proto.min_chunksize();
-}
-void Inode::minChunksize(quint32 min_chunksize){
-  d->proto.set_min_chunksize(min_chunksize);
-}
+quint32 Inode::windowsAttrib() const { return d->proto.windows_attrib(); }
+void Inode::windowsAttrib(quint32 windows_attrib) { d->proto.set_windows_attrib(windows_attrib); }
 
-quint64 Inode::rabinPolynomial() const{
-  return d->proto.rabin_polynomial();
-}
-void Inode::rabinPolynomial(quint64 rabin_polynomial){
-  d->proto.set_rabin_polynomial(rabin_polynomial);
-}
+quint32 Inode::mode() const { return d->proto.mode(); }
+void Inode::mode(quint32 mode) { d->proto.set_mode(mode); }
 
-quint32 Inode::rabinShift() const{
-  return d->proto.rabin_shift();
-}
-void Inode::rabinShift(quint32 rabin_shift){
-  d->proto.set_rabin_shift(rabin_shift);
-}
+quint32 Inode::uid() const { return d->proto.uid(); }
+void Inode::uid(quint32 uid) { d->proto.set_uid(uid); }
 
-quint64 Inode::rabinMask() const{
-  return d->proto.rabin_mask();
-}
-void Inode::rabinMask(quint64 rabin_mask){
-  d->proto.rabin_mask();
-}
+quint32 Inode::gid() const { return d->proto.gid(); }
+void Inode::gid(quint32 gid) { d->proto.set_gid(gid); }
 
-QList<ChunkInfo> Inode::chunks() const{
+quint32 Inode::maxChunksize() const { return d->proto.max_chunksize(); }
+void Inode::maxChunksize(quint32 max_chunksize) { d->proto.set_max_chunksize(max_chunksize); }
+
+quint32 Inode::minChunksize() const { return d->proto.min_chunksize(); }
+void Inode::minChunksize(quint32 min_chunksize) { d->proto.set_min_chunksize(min_chunksize); }
+
+quint64 Inode::rabinPolynomial() const { return d->proto.rabin_polynomial(); }
+void Inode::rabinPolynomial(quint64 rabin_polynomial) { d->proto.set_rabin_polynomial(rabin_polynomial); }
+
+quint32 Inode::rabinShift() const { return d->proto.rabin_shift(); }
+void Inode::rabinShift(quint32 rabin_shift) { d->proto.set_rabin_shift(rabin_shift); }
+
+quint64 Inode::rabinMask() const { return d->proto.rabin_mask(); }
+void Inode::rabinMask(quint64 rabin_mask) { d->proto.rabin_mask(); }
+
+QList<ChunkInfo> Inode::chunks() const {
   QList<ChunkInfo> ret;
   ret.reserve(d->proto.chunks().size());
-  for(const auto& info_s : d->proto.chunks()) {
+  for (const auto& info_s : d->proto.chunks()) {
     ChunkInfo info;
     info.size(info_s.size());
     info.iv(QByteArray::fromStdString(info_s.iv()));
@@ -168,9 +127,9 @@ QList<ChunkInfo> Inode::chunks() const{
   return ret;
 }
 
-void Inode::chunks(const QList<ChunkInfo>& chunks){
+void Inode::chunks(const QList<ChunkInfo>& chunks) {
   d->proto.clear_chunks();
-  for(const auto& chunk : chunks) {
+  for (const auto& chunk : chunks) {
     auto chunk_s = d->proto.add_chunks();
     chunk_s->set_size(chunk.size());
     chunk_s->set_iv(chunk.iv().toStdString());
@@ -179,11 +138,7 @@ void Inode::chunks(const QList<ChunkInfo>& chunks){
   }
 }
 
-EncryptedData Inode::symlinkTarget() const{
-  return parse(d->proto.symlink_target());
-}
-void Inode::symlinkTarget(const EncryptedData& symlink_target){
-  d->proto.mutable_symlink_target()->CopyFrom(serialize(symlink_target));
-}
+EncryptedData Inode::symlinkTarget() const { return conv_encdata(d->proto.symlink_target()); }
+void Inode::symlinkTarget(const EncryptedData& symlink_target) { d->proto.mutable_symlink_target()->CopyFrom(conv_encdata(symlink_target)); }
 
 } /* namespace librevault */

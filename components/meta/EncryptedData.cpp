@@ -19,8 +19,7 @@
 namespace librevault {
 
 EncryptedData EncryptedData::fromCiphertext(const QByteArray& ct, const QByteArray& iv) {
-  if(iv.size() != 16)
-    throw std::runtime_error("Invalid IV: " + iv.toHex());
+  if (iv.size() != 16) throw std::runtime_error("Invalid IV: " + iv.toHex());
 
   EncryptedData enc;
   enc.ct_ = ct;
@@ -29,8 +28,7 @@ EncryptedData EncryptedData::fromCiphertext(const QByteArray& ct, const QByteArr
 }
 
 EncryptedData EncryptedData::fromPlaintext(const QByteArray& plaintext, const QByteArray& key, const QByteArray& iv) {
-  if(iv.size() != 16)
-    throw std::runtime_error("Invalid IV: " + iv.toHex());
+  if (iv.size() != 16) throw std::runtime_error("Invalid IV: " + iv.toHex());
 
   EncryptedData enc;
   enc.pt_ = plaintext;
@@ -39,17 +37,12 @@ EncryptedData EncryptedData::fromPlaintext(const QByteArray& plaintext, const QB
 }
 
 const QByteArray& EncryptedData::plaintext(const QByteArray& key) const {
-  if(pt_.isEmpty())
-    pt_ = decryptAesCbc(ct_, key, iv_);
+  if (pt_.isEmpty()) pt_ = decryptAesCbc(ct_, key, iv_);
   return pt_;
 }
 
-const QByteArray& EncryptedData::ciphertext() const {
-  return ct_;
-}
+const QByteArray& EncryptedData::ciphertext() const { return ct_; }
 
-const QByteArray& EncryptedData::iv() const {
-  return iv_;
-}
+const QByteArray& EncryptedData::iv() const { return iv_; }
 
 } /* namespace librevault */

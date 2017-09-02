@@ -22,7 +22,7 @@ list(APPEND protocol_SOURCES ${PROTO_SOURCES})
 # Compile targets
 #============================================================================
 
-add_library(protocol STATIC ${protocol_SOURCES} ${protocol_HEADERS})
+add_library(protocol STATIC ${protocol_SOURCES} ${protocol_HEADERS} ${PROTO_LIST})
 target_include_directories(protocol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #============================================================================

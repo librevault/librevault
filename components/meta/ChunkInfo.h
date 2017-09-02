@@ -16,11 +16,20 @@
 #pragma once
 
 #include <QByteArray>
+#include <QSharedDataPointer>
 
 namespace librevault {
 
+class ChunkInfoPrivate;
 class ChunkInfo {
-public:
+ public:
+  ChunkInfo();
+  ChunkInfo(const ChunkInfo& r);
+  ChunkInfo(ChunkInfo&& r) noexcept;
+  ~ChunkInfo();
+  ChunkInfo& operator=(const ChunkInfo& r);
+  ChunkInfo& operator=(ChunkInfo&& r) noexcept;
+
   QByteArray ctHash() const;
   void ctHash(const QByteArray& ct_hash);
 
@@ -32,6 +41,9 @@ public:
 
   QByteArray ptKeyedHash() const;
   void ptKeyedHash(const QByteArray& pt_keyed_hash);
+
+ private:
+  QSharedDataPointer<ChunkInfoPrivate> d;
 };
 
 } /* namespace librevault */

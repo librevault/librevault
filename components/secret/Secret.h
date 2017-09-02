@@ -28,12 +28,9 @@
  */
 #pragma once
 #include "SecretPrivate.h"
-#include <QByteArray>
-#include <QReadWriteLock>
 #include <QString>
 #include <iostream>
 #include <stdexcept>
-#include <QSharedData>
 #include <QSharedDataPointer>
 
 namespace librevault {

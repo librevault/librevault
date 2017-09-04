@@ -30,13 +30,6 @@ class MetaInfo {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
   enum Kind : quint32 { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
-  struct Chunk {
-    QByteArray ct_hash;
-    quint32 size;
-    QByteArray iv;
-
-    QByteArray pt_hmac;
-  };
 
  public:
   /* Nested structs & classes */

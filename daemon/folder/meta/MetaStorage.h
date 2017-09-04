@@ -53,8 +53,8 @@ public:
 	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
 	virtual ~MetaStorage();
 
-	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const Meta::PathRevision& path_revision);
+	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
+	SignedMeta getMeta(const MetaInfo::PathRevision& path_revision);
 	SignedMeta getMeta(QByteArray path_id);
 	QList<SignedMeta> getMeta();
 	QList<SignedMeta> getExistingMeta();
@@ -67,9 +67,9 @@ public:
 	void markAssembled(QByteArray path_id);
 	bool isChunkAssembled(QByteArray ct_hash);
 
-	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+	bool putAllowed(const MetaInfo::PathRevision& path_revision) noexcept;
 
-	void prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal = false);
 
 private:
 	Index* index_;

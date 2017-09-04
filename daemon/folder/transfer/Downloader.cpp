@@ -149,7 +149,7 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 	return cluster;
 }
 
-void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, QBitArray bitfield) {
+void Downloader::notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 	try {
 		auto chunks = meta_storage_->getMeta(revision).meta().chunks();

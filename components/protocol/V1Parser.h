@@ -67,21 +67,21 @@ public:
 		std::vector<std::string> extensions;
 	};
 	struct HaveMeta {
-		Meta::PathRevision revision;
+		MetaInfo::PathRevision revision;
 		QBitArray bitfield;
 	};
 	struct HaveChunk {
 		QByteArray ct_hash;
 	};
 	struct MetaRequest {
-		Meta::PathRevision revision;
+		MetaInfo::PathRevision revision;
 	};
 	struct MetaReply {
 		SignedMeta smeta;
 		QBitArray bitfield;
 	};
 	struct MetaCancel {
-		Meta::PathRevision revision;
+		MetaInfo::PathRevision revision;
 	};
 	struct BlockRequest {
 		QByteArray ct_hash;

@@ -73,7 +73,7 @@ Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), par
 	hash_file.close();
 }
 
-bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
+bool Index::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		getMeta(path_revision);
 	}catch(MetaStorage::no_such_meta& e){
@@ -82,7 +82,7 @@ bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 	return true;
 }
 
-SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
+SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
 	auto smeta = getMeta(path_revision.path_id_);
 	if(smeta.meta().revision() == path_revision.revision_)
 		return smeta;
@@ -161,7 +161,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 	return getMeta(std::string("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;"));
 }
 
-bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
+bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
 	}catch(MetaStorage::no_such_meta& e){

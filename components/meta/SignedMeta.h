@@ -14,18 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Meta.h"
+#include "MetaInfo.h"
 
 namespace librevault {
 
 class SignedMeta {
 public:
-	struct signature_error : Meta::error {
-		signature_error() : Meta::error("Meta signature mismatch") {}
+	struct signature_error : MetaInfo::error {
+		signature_error() : MetaInfo::error("Meta signature mismatch") {}
 	};
 
 	SignedMeta() = default;
-	SignedMeta(const Meta& meta, const Secret& secret);
+	SignedMeta(const MetaInfo& meta, const Secret& secret);
 	SignedMeta(const QByteArray& raw_meta, const QByteArray& signature);
 
 	operator bool() const {return !meta_.isEmpty() && !raw_meta_.isEmpty() && !signature_.isEmpty();}
@@ -33,11 +33,11 @@ public:
 	bool isValid(const Secret& secret) const;
 
 	// Getters
-	const Meta& meta() const {return meta_;}
+	const MetaInfo& meta() const {return meta_;}
 	QByteArray raw_meta() const {return raw_meta_;}
 	QByteArray signature() const {return signature_;}
 private:
-	Meta meta_;
+	MetaInfo meta_;
 
 	QByteArray raw_meta_;
 	QByteArray signature_;

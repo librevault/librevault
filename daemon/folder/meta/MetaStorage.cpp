@@ -54,11 +54,11 @@ MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QO
 
 MetaStorage::~MetaStorage() {}
 
-bool MetaStorage::haveMeta(const Meta::PathRevision& path_revision) noexcept {
+bool MetaStorage::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 	return index_->haveMeta(path_revision);
 }
 
-SignedMeta MetaStorage::getMeta(const Meta::PathRevision& path_revision) {
+SignedMeta MetaStorage::getMeta(const MetaInfo::PathRevision& path_revision) {
 	return index_->getMeta(path_revision);
 }
 
@@ -98,11 +98,11 @@ QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(QByteArray ct_hash) {
 	return index_->getChunkSizeIv(ct_hash);
 };
 
-bool MetaStorage::putAllowed(const Meta::PathRevision& path_revision) noexcept {
+bool MetaStorage::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	return index_->putAllowed(path_revision);
 }
 
-void MetaStorage::prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal) {
+void MetaStorage::prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal) {
 	watcher_->prepareAssemble(normpath, type, with_removal);
 }
 

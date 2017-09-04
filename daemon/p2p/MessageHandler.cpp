@@ -53,7 +53,7 @@ void MessageHandler::sendNotInterested() {
 	qDebug() << "==> NOT_INTERESTED";
 }
 
-void MessageHandler::sendHaveMeta(const Meta::PathRevision& revision, QBitArray bitfield) {
+void MessageHandler::sendHaveMeta(const MetaInfo::PathRevision& revision, QBitArray bitfield) {
 	V1Parser::HaveMeta message;
 	message.revision = revision;
 	message.bitfield = bitfield;
@@ -73,7 +73,7 @@ void MessageHandler::sendHaveChunk(QByteArray ct_hash) {
 		<< "ct_hash=" << ct_hash.toHex();
 }
 
-void MessageHandler::sendMetaRequest(const Meta::PathRevision& revision) {
+void MessageHandler::sendMetaRequest(const MetaInfo::PathRevision& revision) {
 	V1Parser::MetaRequest message;
 	message.revision = revision;
 	emit messagePrepared(V1Parser().gen_MetaRequest(message));
@@ -93,7 +93,7 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) 
 		<< "revision=" << smeta.meta().timestamp().time_since_epoch().count()
 		<< "bits=" << bitfield;
 }
-void MessageHandler::sendMetaCancel(const Meta::PathRevision& revision) {
+void MessageHandler::sendMetaCancel(const MetaInfo::PathRevision& revision) {
 	V1Parser::MetaCancel message;
 	message.revision = revision;
 	emit messagePrepared(V1Parser().gen_MetaCancel(message));

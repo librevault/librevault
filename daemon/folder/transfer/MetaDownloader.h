@@ -46,7 +46,7 @@ public:
 	MetaDownloader(const FolderParams& params, MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
 
 	/* Message handlers */
-	void handle_have_meta(Peer* origin, const Meta::PathRevision& revision, QBitArray bitfield);
+	void handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield);
 	void handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield);
 
 private:

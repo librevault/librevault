@@ -67,7 +67,7 @@ private:
 
 	const Secret& secret_;
 
-	Meta old_meta_, new_meta_;
+	MetaInfo old_meta_, new_meta_;
 	SignedMeta old_smeta_, new_smeta_;
 
 	/* Status */
@@ -76,7 +76,7 @@ private:
 	void make_Meta();
 
 	/* File analyzers */
-	Meta::Kind get_type();
+	MetaInfo::Kind get_type();
 	void update_fsattrib();
 	void update_chunks();
 	ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);

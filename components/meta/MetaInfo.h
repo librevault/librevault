@@ -26,7 +26,7 @@ class ChunkInfo;
 class Secret;
 
 class MetaPrivate;
-class Meta {
+class MetaInfo {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
   enum Kind : quint32 { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
@@ -57,16 +57,16 @@ class Meta {
   };
 
   /* Class methods */
-  Meta();
-  Meta(const Meta& r);
-  Meta(Meta&& r) noexcept;
-  explicit Meta(const QByteArray& meta_s);
-  virtual ~Meta();
+  MetaInfo();
+  MetaInfo(const MetaInfo& r);
+  MetaInfo(MetaInfo&& r) noexcept;
+  explicit MetaInfo(const QByteArray& meta_s);
+  virtual ~MetaInfo();
 
-  Meta& operator=(const Meta& r);
-  Meta& operator=(Meta&& r) noexcept;
+  MetaInfo& operator=(const MetaInfo& r);
+  MetaInfo& operator=(MetaInfo&& r) noexcept;
 
-  bool operator==(const Meta& r) const;
+  bool operator==(const MetaInfo& r) const;
 
   /* Serialization */
   QByteArray serialize() const;

@@ -73,15 +73,15 @@ DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignor
 
 DirectoryWatcher::~DirectoryWatcher() {}
 
-void DirectoryWatcher::prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal) {
+void DirectoryWatcher::prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal) {
 	unsigned skip_events = 0;
-	if(with_removal || type == Meta::Kind::DELETED) skip_events++;
+	if(with_removal || type == MetaInfo::Kind::DELETED) skip_events++;
 
 	switch(type) {
-		case Meta::FILE:
+		case MetaInfo::FILE:
 			skip_events += 2;   // RENAMED (NEW NAME), MODIFIED
 			break;
-		case Meta::DIRECTORY:
+		case MetaInfo::DIRECTORY:
 			skip_events += 1;   // ADDED
 			break;
 		default:;

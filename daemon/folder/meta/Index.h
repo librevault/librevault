@@ -47,15 +47,15 @@ public:
 	Index(const FolderParams& params, QObject* parent);
 
 	/* Meta manipulators */
-	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const Meta::PathRevision& path_revision);
+	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
+	SignedMeta getMeta(const MetaInfo::PathRevision& path_revision);
 	SignedMeta getMeta(QByteArray path_id);
 	QList<SignedMeta> getMeta();
 	QList<SignedMeta> getExistingMeta();
 	QList<SignedMeta> getIncompleteMeta();
 	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
 
-	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+	bool putAllowed(const MetaInfo::PathRevision& path_revision) noexcept;
 
 	void setAssembled(QByteArray path_id);
 	bool isAssembledChunk(QByteArray ct_hash);

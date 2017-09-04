@@ -83,7 +83,7 @@ public slots:
 	void notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield);
 	void notifyLocalChunk(QByteArray ct_hash);
 
-	void notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, QBitArray bitfield);
+	void notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, QBitArray bitfield);
 	void notifyRemoteChunk(Peer* remote, QByteArray ct_hash);
 
 	void handleChoke(Peer* remote);

@@ -68,14 +68,14 @@ void IndexerWorker::run() noexcept {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = meta_storage_->getMeta(Meta::makePathId(normpath, secret_));
+			old_smeta_ = meta_storage_->getMeta(MetaInfo::makePathId(normpath, secret_));
 			old_meta_ = old_smeta_.meta();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(boost::filesystem::filesystem_error& e){
 		}catch(MetaStorage::no_such_meta& e){
-		}catch(Meta::error& e){
+		}catch(MetaInfo::error& e){
 			qCDebug(log_indexer) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
 		}
 
@@ -103,29 +103,29 @@ void IndexerWorker::make_Meta() {
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 
 	new_meta_.path(EncryptedData::fromPlaintext(normpath, secret_.encryptionKey(), generateRandomIV()));    // sets path_id, encrypted_path and encrypted_path_iv
-  new_meta_.pathKeyedHash(Meta::makePathId(normpath, secret_));
+  new_meta_.pathKeyedHash(MetaInfo::makePathId(normpath, secret_));
 
 	new_meta_.kind(get_type());  // Kind
 
-	if(!old_smeta_ && new_meta_.kind() == Meta::DELETED)
+	if(!old_smeta_ && new_meta_.kind() == MetaInfo::DELETED)
 		throw abort_index("Old Meta is not in the index, new Meta is DELETED");
 
-	if(old_meta_.kind() == Meta::DIRECTORY && new_meta_.kind() == Meta::DIRECTORY)
+	if(old_meta_.kind() == MetaInfo::DIRECTORY && new_meta_.kind() == MetaInfo::DIRECTORY)
 		throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
 
-	if(old_meta_.kind() == Meta::DELETED && new_meta_.kind() == Meta::DELETED)
+	if(old_meta_.kind() == MetaInfo::DELETED && new_meta_.kind() == MetaInfo::DELETED)
 		throw abort_index("Old Meta is DELETED, new Meta is DELETED");
 
-	if(new_meta_.kind() == Meta::FILE)
+	if(new_meta_.kind() == MetaInfo::FILE)
 		update_chunks();
 
-	if(new_meta_.kind() == Meta::SYMLINK) {
+	if(new_meta_.kind() == MetaInfo::SYMLINK) {
     QByteArray symlink_target = QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string());
 		new_meta_.symlinkTarget(EncryptedData::fromPlaintext(symlink_target, secret_.encryptionKey(), generateRandomIV()));
 	}
 
 	// FSAttrib
-	if(new_meta_.kind() != Meta::DELETED)
+	if(new_meta_.kind() != MetaInfo::DELETED)
 		update_fsattrib();   // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
 	// Revision
@@ -134,17 +134,17 @@ void IndexerWorker::make_Meta() {
 	new_smeta_ = SignedMeta(new_meta_, secret_);
 }
 
-Meta::Kind IndexerWorker::get_type() {
+MetaInfo::Kind IndexerWorker::get_type() {
 	QString abspath = abspath_;
 	boost::filesystem::path babspath(abspath.toStdWString());
 
 	boost::filesystem::file_status file_status = params_.preserve_symlinks ? boost::filesystem::symlink_status(babspath) : boost::filesystem::status(babspath);	// Preserves symlinks if such option is set.
 
 	switch(file_status.type()){
-		case boost::filesystem::regular_file: return Meta::FILE;
-		case boost::filesystem::directory_file: return Meta::DIRECTORY;
-		case boost::filesystem::symlink_file: return Meta::SYMLINK;
-		case boost::filesystem::file_not_found: return Meta::DELETED;
+		case boost::filesystem::regular_file: return MetaInfo::FILE;
+		case boost::filesystem::directory_file: return MetaInfo::DIRECTORY;
+		case boost::filesystem::symlink_file: return MetaInfo::SYMLINK;
+		case boost::filesystem::file_not_found: return MetaInfo::DELETED;
 		default: throw abort_index("File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported");
 	}
 }
@@ -158,7 +158,7 @@ void IndexerWorker::update_fsattrib() {
   new_meta_.uid(old_meta_.uid());
   new_meta_.gid(old_meta_.gid());
 
-	if(new_meta_.kind() != Meta::SYMLINK)
+	if(new_meta_.kind() != MetaInfo::SYMLINK)
     new_meta_.mtime(boost::filesystem::last_write_time(babspath));   // File/directory modification time
 	else {
 		// TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for Unix and GetFileAttributesEx for Windows.
@@ -186,7 +186,7 @@ void IndexerWorker::update_fsattrib() {
 }
 
 void IndexerWorker::update_chunks() {
-	if(old_meta_.kind() == Meta::FILE) {
+	if(old_meta_.kind() == MetaInfo::FILE) {
     new_meta_.maxChunksize(old_meta_.maxChunksize());
     new_meta_.minChunksize(old_meta_.minChunksize());
 

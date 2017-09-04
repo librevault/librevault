@@ -62,7 +62,7 @@ private:
 	Archive* archive_;
 
 	SignedMeta smeta_;
-	const Meta& meta_;
+	const MetaInfo& meta_;
 
 	QByteArray normpath_;
 	QString denormpath_;

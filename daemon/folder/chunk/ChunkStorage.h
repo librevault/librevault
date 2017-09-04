@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "blob.h"
-#include "Meta.h"
+#include "MetaInfo.h"
 #include "conv_bitfield.h"
 #include <QFile>
 
@@ -57,9 +57,9 @@ public:
 	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
 	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
 
-	QBitArray make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
+	QBitArray make_bitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
 
-	void cleanup(const Meta& meta);
+	void cleanup(const MetaInfo& meta);
 
 signals:
 	void chunkAdded(QByteArray ct_hash);

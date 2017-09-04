@@ -43,7 +43,7 @@ MetaDownloader::MetaDownloader(const FolderParams& params, MetaStorage* meta_sto
 	LOGFUNC();
 }
 
-void MetaDownloader::handle_have_meta(Peer* origin, const Meta::PathRevision& revision, QBitArray bitfield) {
+void MetaDownloader::handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
 	if(meta_storage_->haveMeta(revision))
 		downloader_->notifyRemoteMeta(origin, revision, bitfield);
 	else if(meta_storage_->putAllowed(revision))

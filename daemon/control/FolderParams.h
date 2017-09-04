@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Meta.h"
+#include "MetaInfo.h"
 #include "Secret.h"
 #include <QList>
 #include <QString>

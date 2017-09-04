@@ -29,7 +29,7 @@
 #pragma once
 #include "util/log.h"
 #include <dir_monitor/dir_monitor.hpp>
-#include "Meta.h"
+#include "MetaInfo.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 
@@ -66,7 +66,7 @@ public:
 	virtual ~DirectoryWatcher();
 
 	// A VERY DIRTY HACK
-	void prepareAssemble(QByteArray normpath, Meta::Kind type, bool with_removal = false);
+	void prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal = false);
 
 private:
 	const FolderParams& params_;

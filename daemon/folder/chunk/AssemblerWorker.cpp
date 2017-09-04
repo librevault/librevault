@@ -83,20 +83,20 @@ void AssemblerWorker::run() noexcept {
 	try {
 		bool assembled = false;
 		switch(meta_.kind()) {
-			case Meta::FILE: assembled = assemble_file();
+			case MetaInfo::FILE: assembled = assemble_file();
 				break;
-			case Meta::DIRECTORY: assembled = assemble_directory();
+			case MetaInfo::DIRECTORY: assembled = assemble_directory();
 				break;
-			case Meta::SYMLINK: assembled = assemble_symlink();
+			case MetaInfo::SYMLINK: assembled = assemble_symlink();
 				break;
-			case Meta::DELETED: assembled = assemble_deleted();
+			case MetaInfo::DELETED: assembled = assemble_deleted();
 				break;
 			default:
 				qWarning() << QString("Unexpected meta type: %1").arg(meta_.kind());
 				throw abort_assembly();
 		}
 		if(assembled) {
-			if(meta_.kind() != Meta::DELETED)
+			if(meta_.kind() != MetaInfo::DELETED)
 				apply_attrib();
 
 			meta_storage_->markAssembled(meta_.pathKeyedHash());
@@ -132,7 +132,7 @@ bool AssemblerWorker::assemble_directory() {
 	bool create_new = true;
 	if(boost::filesystem::status(denormpath_fs).type() != boost::filesystem::file_type::directory_file)
 		create_new = !boost::filesystem::remove(denormpath_fs);
-	meta_storage_->prepareAssemble(normpath_, Meta::DIRECTORY, create_new);
+	meta_storage_->prepareAssemble(normpath_, MetaInfo::DIRECTORY, create_new);
 
 	if(create_new)
 		QDir().mkpath(denormpath_);
@@ -174,7 +174,7 @@ bool AssemblerWorker::assemble_file() {
 		}
 	}
 
-	meta_storage_->prepareAssemble(normpath_, Meta::FILE, boost::filesystem::exists(conv_fspath(denormpath_)));
+	meta_storage_->prepareAssemble(normpath_, MetaInfo::FILE, boost::filesystem::exists(conv_fspath(denormpath_)));
 
 	if(! QFile::remove(denormpath_)) {
 		qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83
@@ -191,7 +191,7 @@ bool AssemblerWorker::assemble_file() {
 void AssemblerWorker::apply_attrib() {
 #if defined(Q_OS_UNIX)
 	if(params_.preserve_unix_attrib) {
-		if(meta_.kind() != Meta::SYMLINK) {
+		if(meta_.kind() != MetaInfo::SYMLINK) {
 			int ec = 0;
 			ec = chmod(QFile::encodeName(denormpath_), meta_.mode());
 			if(ec) {

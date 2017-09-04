@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/log.h"
-#include "Meta.h"
+#include "MetaInfo.h"
 #include <QTimer>
 
 namespace librevault {

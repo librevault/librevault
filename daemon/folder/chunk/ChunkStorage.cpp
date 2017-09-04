@@ -84,7 +84,7 @@ void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	emit chunkAdded(ct_hash);
 }
 
-QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
+QBitArray ChunkStorage::make_bitfield(const MetaInfo& meta) const noexcept {
 	if(meta.kind() == meta.FILE) {
 		QBitArray bitfield(meta.chunks().size());
 
@@ -97,7 +97,7 @@ QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 		return QBitArray();
 }
 
-void ChunkStorage::cleanup(const Meta& meta) {
+void ChunkStorage::cleanup(const MetaInfo& meta) {
 	for(auto chunk : meta.chunks())
 		if(open_storage->have_chunk(chunk.ctHash()))
 			enc_storage->remove_chunk(chunk.ctHash());

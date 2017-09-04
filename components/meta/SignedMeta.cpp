@@ -23,7 +23,7 @@
 
 namespace librevault {
 
-SignedMeta::SignedMeta(const Meta& meta, const Secret& secret) {
+SignedMeta::SignedMeta(const MetaInfo& meta, const Secret& secret) {
 	meta_ = meta;
 	raw_meta_ = meta.serialize();
 

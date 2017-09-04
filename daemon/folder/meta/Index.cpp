@@ -31,6 +31,7 @@
 #include "folder/meta/MetaStorage.h"
 #include "blob.h"
 #include <QFile>
+#include <ChunkInfo.h>
 
 namespace librevault {
 
@@ -83,7 +84,7 @@ bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 
 SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
 	auto smeta = getMeta(path_revision.path_id_);
-	if(smeta.meta().timestamp().time_since_epoch().count() == path_revision.revision_)
+	if(smeta.meta().revision() == path_revision.revision_)
 		return smeta;
 	else throw MetaStorage::no_such_meta();
 }
@@ -107,19 +108,19 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	uint64_t offset = 0;
 	for(auto chunk : signed_meta.meta().chunks()){
 		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
-				{":ct_hash", conv_bytearray(chunk.ct_hash)},
-				{":size", (uint64_t)chunk.size},
-				{":iv", conv_bytearray(chunk.iv)}
+				{":ct_hash", conv_bytearray(chunk.ctHash())},
+				{":size", (uint64_t)chunk.size()},
+				{":iv", conv_bytearray(chunk.iv())}
 		});
 
 		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
-				{":ct_hash", conv_bytearray(chunk.ct_hash)},
+				{":ct_hash", conv_bytearray(chunk.ctHash())},
 				{":path_id", conv_bytearray(signed_meta.meta().pathKeyedHash())},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
 
-		offset += chunk.size;
+		offset += chunk.size();
 	}
 
 	raii_transaction.commit();  // End transaction
@@ -162,7 +163,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 
 bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
 	try {
-		return getMeta(path_revision.path_id_).meta().timestamp().time_since_epoch().count() < path_revision.revision_;
+		return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
 	}catch(MetaStorage::no_such_meta& e){
 		return true;
 	}

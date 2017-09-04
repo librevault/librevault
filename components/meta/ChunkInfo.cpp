@@ -13,6 +13,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <AES_CBC.h>
+#include <QCryptographicHash>
 #include "ChunkInfo.h"
 #include "ChunkInfo_p.h"
 
@@ -42,5 +44,17 @@ void ChunkInfo::iv(const QByteArray& iv) { d->proto.set_iv(iv.toStdString()); }
 
 QByteArray ChunkInfo::ptKeyedHash() const { return QByteArray::fromStdString(d->proto.pt_keyed_hash()); }
 void ChunkInfo::ptKeyedHash(const QByteArray& pt_keyed_hash) { d->proto.set_pt_keyed_hash(pt_keyed_hash.toStdString()); }
+
+QByteArray ChunkInfo::encrypt(QByteArray chunk, QByteArray key, QByteArray iv) { return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0); }
+
+QByteArray ChunkInfo::decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv) {
+  return decryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0);
+}
+
+QByteArray ChunkInfo::compute_hash(QByteArray chunk) {
+  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+  hasher.addData(chunk);
+  return hasher.result();
+}
 
 } /* namespace librevault */

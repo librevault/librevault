@@ -15,8 +15,11 @@
  */
 #include "Meta.h"
 #include "AES_CBC.h"
-#include "Meta_p.h"
+#include "ChunkInfo.h"
 #include "EncryptedData.h"
+#include "Meta_p.h"
+#include <Secret.h>
+#include <google/protobuf/util/message_differencer.h>
 #include <QCryptographicHash>
 
 namespace librevault {
@@ -46,47 +49,31 @@ inline ::google::protobuf::Timestamp conv_timestamp(Meta::Timestamp timestamp) {
 inline Meta::Timestamp conv_timestamp(::google::protobuf::Timestamp timestamp) {
   return Meta::Timestamp(std::chrono::nanoseconds(timestamp.seconds() * 1000000000ll + timestamp.nanos()));
 };
-}
 
-QByteArray Meta::Chunk::encrypt(QByteArray chunk, QByteArray key, QByteArray iv) { return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0); }
-
-QByteArray Meta::Chunk::decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv) {
-  return decryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0);
-}
-
-QByteArray Meta::Chunk::compute_strong_hash(QByteArray chunk) {
-  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-  hasher.addData(chunk);
-  return hasher.result();
-}
+}  // namespace
 
 Meta::Meta() { d = new MetaPrivate; }
-Meta::Meta(const Meta& r) { d = r.d; }
-Meta::Meta(Meta&& r) noexcept { d = std::move(r.d); }
+Meta::Meta(const Meta& r) = default;
+Meta::Meta(Meta&& r) noexcept = default;
+Meta& Meta::operator=(const Meta& r) = default;
+Meta& Meta::operator=(Meta&& r) noexcept = default;
+Meta::~Meta() = default;
 
-Meta& Meta::operator=(const Meta& r) {
-  d = r.d;
-  return *this;
-}
-Meta& Meta::operator=(Meta&& r) noexcept {
-  d = std::move(r.d);
-  return *this;
-}
+bool Meta::operator==(const Meta& r) const { return ::google::protobuf::util::MessageDifferencer::Equals(d->proto, r.d->proto); }
 
-Meta::Meta(QByteArray meta_s) { parse(meta_s); }
-Meta::~Meta() {}
+Meta::Meta(const QByteArray& meta_s) { parse(meta_s); }
 
-uint64_t Meta::size() const {
-  uint64_t total_size = 0;
+bool Meta::isEmpty() const { return *this == Meta(); }
+
+quint64 Meta::size() const {
+  quint64 total_size = 0;
   for (auto& chunk : chunks()) {
-    total_size += chunk.size;
+    total_size += chunk.size();
   }
   return total_size;
 }
 
-QByteArray Meta::serialize() const {
-  return QByteArray::fromStdString(d->proto.SerializeAsString());
-}
+QByteArray Meta::serialize() const { return QByteArray::fromStdString(d->proto.SerializeAsString()); }
 
 void Meta::parse(const QByteArray& serialized) { d->proto.ParseFromArray(serialized, serialized.size()); }
 
@@ -101,40 +88,42 @@ QByteArray Meta::makePathId(QByteArray path, const Secret& secret) {
 QByteArray Meta::pathKeyedHash() const { return QByteArray::fromStdString(d->proto.path_keyed_hash()); }
 void Meta::pathKeyedHash(const QByteArray& path_id) { d->proto.set_path_keyed_hash(path_id.toStdString()); }
 
-EncryptedData Meta::path() const {
-  return conv_encdata(d->proto.path());
-}
+quint64 Meta::revision() const { return d->proto.revision(); }
+void Meta::revision(quint64 revision) { d->proto.set_revision(revision); }
 
-void Meta::path(const EncryptedData& path)  {
-  d->proto.mutable_path()->CopyFrom(conv_encdata(path));
-}
-
-Meta::Kind Meta::kind() const { return (Meta::Kind)d->proto.kind(); }
-void Meta::kind(Kind meta_kind) { d->proto.set_kind(meta_kind); }
+EncryptedData Meta::path() const { return conv_encdata(d->proto.path()); }
 
 Meta::Timestamp Meta::timestamp() const { return conv_timestamp(d->proto.timestamp()); }
 void Meta::timestamp(Timestamp revision) { d->proto.mutable_timestamp()->CopyFrom(conv_timestamp(revision)); }
 
-int64_t Meta::mtime() const { return conv_timestamp(d->proto.mtime()).time_since_epoch().count(); }
-void Meta::set_mtime(int64_t mtime) { d->proto.mutable_mtime()->CopyFrom(conv_timestamp(Timestamp(std::chrono::seconds(mtime)))); }
+void Meta::path(const EncryptedData& path) { d->proto.mutable_path()->CopyFrom(conv_encdata(path)); }
 
-uint32_t Meta::windows_attrib() const { return d->proto.windows_attrib(); }
-void Meta::set_windows_attrib(uint32_t windows_attrib) { d->proto.set_windows_attrib(windows_attrib); }
+Meta::Kind Meta::kind() const { return (Meta::Kind)d->proto.kind(); }
+void Meta::kind(Kind meta_kind) { d->proto.set_kind(meta_kind); }
 
-uint32_t Meta::mode() const { return d->proto.mode(); }
-void Meta::set_mode(uint32_t mode) { d->proto.set_mode(mode); }
+qint64 Meta::mtime() const { return conv_timestamp(d->proto.mtime()).time_since_epoch().count(); }
+void Meta::mtime(qint64 mtime) { d->proto.mutable_mtime()->CopyFrom(conv_timestamp(Timestamp(std::chrono::seconds(mtime)))); }
 
-uint32_t Meta::uid() const { return d->proto.uid(); }
-void Meta::set_uid(uint32_t uid) { d->proto.set_uid(uid); }
+quint64 Meta::mtimeGranularity() const { return d->proto.mtime_granularity(); }
+void Meta::mtimeGranularity(quint64 mtime) { d->proto.set_mtime_granularity(mtime); }
 
-uint32_t Meta::gid() const { return d->proto.gid(); }
-void Meta::set_gid(uint32_t gid) { d->proto.set_gid(gid); }
+quint32 Meta::windowsAttrib() const { return d->proto.windows_attrib(); }
+void Meta::windowsAttrib(quint32 windows_attrib) { d->proto.set_windows_attrib(windows_attrib); }
 
-uint32_t Meta::min_chunksize() const { return d->proto.min_chunksize(); }
-void Meta::set_min_chunksize(uint32_t min_chunksize) { d->proto.set_min_chunksize(min_chunksize); }
+quint32 Meta::mode() const { return d->proto.mode(); }
+void Meta::mode(quint32 mode) { d->proto.set_mode(mode); }
 
-uint32_t Meta::max_chunksize() const { return d->proto.max_chunksize(); }
-void Meta::set_max_chunksize(uint32_t max_chunksize) { d->proto.set_max_chunksize(max_chunksize); }
+quint32 Meta::uid() const { return d->proto.uid(); }
+void Meta::uid(quint32 uid) { d->proto.set_uid(uid); }
+
+quint32 Meta::gid() const { return d->proto.gid(); }
+void Meta::gid(quint32 gid) { d->proto.set_gid(gid); }
+
+quint32 Meta::minChunksize() const { return d->proto.min_chunksize(); }
+void Meta::minChunksize(quint32 min_chunksize) { d->proto.set_min_chunksize(min_chunksize); }
+
+quint32 Meta::maxChunksize() const { return d->proto.max_chunksize(); }
+void Meta::maxChunksize(quint32 max_chunksize) { d->proto.set_max_chunksize(max_chunksize); }
 
 quint64 Meta::rabinPolynomial() const { return d->proto.rabin_polynomial(); }
 void Meta::rabinPolynomial(quint64 rabin_polynomial) { d->proto.set_rabin_polynomial(rabin_polynomial); }
@@ -145,14 +134,29 @@ void Meta::rabinShift(quint32 rabin_shift) { d->proto.set_rabin_shift(rabin_shif
 quint64 Meta::rabinMask() const { return d->proto.rabin_mask(); }
 void Meta::rabinMask(quint64 rabin_mask) { d->proto.rabin_mask(); }
 
-QList<Meta::Chunk> Meta::chunks() const { return d->chunks_; }
-void Meta::set_chunks(QList<Meta::Chunk> chunks) { d->chunks_ = chunks; }
+QList<ChunkInfo> Meta::chunks() const {
+  QList<ChunkInfo> result;
+  for (const auto& chunk : d->proto.chunks()) {
+    ChunkInfo info;
+    info.ctHash(QByteArray::fromStdString(chunk.ct_hash()));
+    info.size(chunk.size());
+    info.iv(QByteArray::fromStdString(chunk.iv()));
+    info.ptKeyedHash(QByteArray::fromStdString(chunk.pt_keyed_hash()));
+    result.push_back(info);
+  }
+  return result;
+}
+void Meta::chunks(const QList<ChunkInfo>& chunks) {
+  for (const auto& info : chunks) {
+    serialization::ChunkInfo* chunk = d->proto.add_chunks();
+    chunk->set_ct_hash(info.ctHash().toStdString());
+    chunk->set_size(info.size());
+    chunk->set_iv(info.iv().toStdString());
+    chunk->set_pt_keyed_hash(info.ptKeyedHash().toStdString());
+  }
+}
 
-EncryptedData Meta::symlinkTarget() const {
-  return conv_encdata(d->proto.symlink_target());
-}
-void Meta::symlinkTarget(const EncryptedData& symlink_target) {
-  d->proto.mutable_symlink_target()->CopyFrom(conv_encdata(symlink_target));
-}
+EncryptedData Meta::symlinkTarget() const { return conv_encdata(d->proto.symlink_target()); }
+void Meta::symlinkTarget(const EncryptedData& symlink_target) { d->proto.mutable_symlink_target()->CopyFrom(conv_encdata(symlink_target)); }
 
 } /* namespace librevault */

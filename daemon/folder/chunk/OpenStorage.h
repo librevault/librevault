@@ -32,6 +32,7 @@
 #include "Meta.h"
 #include <QObject>
 #include <memory>
+#include <ChunkInfo.h>
 
 namespace librevault {
 
@@ -52,8 +53,8 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 
-	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt);
+	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
+		return ct_hash == ChunkInfo::compute_hash(chunk_pt);
 	}
 };
 

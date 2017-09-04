@@ -32,6 +32,7 @@
 #include "control/FolderParams.h"
 #include "folder/meta/MetaStorage.h"
 #include "p2p/MessageHandler.h"
+#include <ChunkInfo.h>
 #include <QLoggingCategory>
 #include <boost/range/adaptor/map.hpp>
 
@@ -76,14 +77,14 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 	for(int chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
 		auto& meta_chunk = smeta.meta().chunks().at(chunk_idx);
 
-		QByteArray ct_hash = meta_chunk.ct_hash;
+		QByteArray ct_hash = meta_chunk.ctHash();
 
 		if(bitfield.testBit(chunk_idx)) {
 			have_complete = true;   // We have chunk, remove from missing
 			removeChunk(ct_hash); // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
 		}else{
 			have_incomplete = true; // We haven't this chunk, we need to download it
-			addChunk(ct_hash, meta_chunk.size);
+			addChunk(ct_hash, meta_chunk.size());
 			incomplete_chunks << ct_hash;
 		}
 	}
@@ -131,7 +132,7 @@ QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 
 	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(ct_hash)) {
 		for(auto& chunk : smeta.meta().chunks()) {
-			cluster << chunk.ct_hash;
+			cluster << chunk.ctHash();
 		}
 	}
 
@@ -155,7 +156,7 @@ void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revisi
 		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
 		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield.testBit(chunk_idx))
-				notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
+				notifyRemoteChunk(remote, chunks[chunk_idx].ctHash());
 	}catch(MetaStorage::no_such_meta){
 		qCDebug(log_downloader) << "Expired Meta";
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.

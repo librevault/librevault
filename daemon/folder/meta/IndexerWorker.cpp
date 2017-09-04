@@ -32,6 +32,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include <PathNormalizer.h>
+#include <ChunkInfo.h>
 #include "human_size.h"
 #include "AES_CBC.h"
 #include <Rabin.hpp>
@@ -152,13 +153,13 @@ void IndexerWorker::update_fsattrib() {
 	boost::filesystem::path babspath(abspath_.toStdWString());
 
 	// First, preserve old values of attributes
-	new_meta_.set_windows_attrib(old_meta_.windows_attrib());
-	new_meta_.set_mode(old_meta_.mode());
-	new_meta_.set_uid(old_meta_.uid());
-	new_meta_.set_gid(old_meta_.gid());
+  new_meta_.windowsAttrib(old_meta_.windowsAttrib());
+  new_meta_.mode(old_meta_.mode());
+  new_meta_.uid(old_meta_.uid());
+  new_meta_.gid(old_meta_.gid());
 
 	if(new_meta_.kind() != Meta::SYMLINK)
-		new_meta_.set_mtime(boost::filesystem::last_write_time(babspath));   // File/directory modification time
+    new_meta_.mtime(boost::filesystem::last_write_time(babspath));   // File/directory modification time
 	else {
 		// TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for Unix and GetFileAttributesEx for Windows.
 	}
@@ -176,9 +177,9 @@ void IndexerWorker::update_fsattrib() {
 		else
 			stat_err = stat(babspath.c_str(), &stat_buf);
 		if(stat_err == 0){
-			new_meta_.set_mode(stat_buf.st_mode);
-			new_meta_.set_uid(stat_buf.st_uid);
-			new_meta_.set_gid(stat_buf.st_gid);
+      new_meta_.mode(stat_buf.st_mode);
+      new_meta_.uid(stat_buf.st_uid);
+      new_meta_.gid(stat_buf.st_gid);
 		}
 	}
 #endif
@@ -186,15 +187,15 @@ void IndexerWorker::update_fsattrib() {
 
 void IndexerWorker::update_chunks() {
 	if(old_meta_.kind() == Meta::FILE) {
-		new_meta_.set_max_chunksize(old_meta_.max_chunksize());
-		new_meta_.set_min_chunksize(old_meta_.min_chunksize());
+    new_meta_.maxChunksize(old_meta_.maxChunksize());
+    new_meta_.minChunksize(old_meta_.minChunksize());
 
 		new_meta_.rabinMask(old_meta_.rabinMask());
 		new_meta_.rabinShift(old_meta_.rabinShift());
 		new_meta_.rabinPolynomial(old_meta_.rabinPolynomial());
 	}else{
-		new_meta_.set_max_chunksize(8*1024*1024);
-		new_meta_.set_min_chunksize(1*1024*1024);
+    new_meta_.maxChunksize(8 * 1024 * 1024);
+    new_meta_.minChunksize(1 * 1024 * 1024);
 
 		new_meta_.rabinMask(0x0FFFFF);
 		new_meta_.rabinShift(53 - 8);
@@ -206,17 +207,17 @@ void IndexerWorker::update_chunks() {
 	// IV reuse
 	QMap<QByteArray, QByteArray> pt_hmac__iv;
 	for(auto& chunk : old_meta_.chunks()) {
-		pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
+		pt_hmac__iv.insert(chunk.ptKeyedHash(), chunk.iv());
 	}
 
 	// Initializing chunker
-  Rabin rabin(new_meta_.rabinPolynomial(), new_meta_.rabinShift(), new_meta_.min_chunksize(), new_meta_.max_chunksize(), new_meta_.rabinMask());
+  Rabin rabin(new_meta_.rabinPolynomial(), new_meta_.rabinShift(), new_meta_.minChunksize(), new_meta_.maxChunksize(), new_meta_.rabinMask());
 
 	// Chunking
-	QList<Meta::Chunk> chunks;
+	QList<ChunkInfo> chunks;
 
 	QByteArray buffer;
-	buffer.reserve(new_meta_.max_chunksize());
+	buffer.reserve(new_meta_.maxChunksize());
 
 	QFile f(abspath_);
 	if(!f.open(QIODevice::ReadOnly))
@@ -238,24 +239,24 @@ void IndexerWorker::update_chunks() {
 	if(rabin.finalize())
 		chunks << populate_chunk(buffer, pt_hmac__iv);
 
-	new_meta_.set_chunks(chunks);
+  new_meta_.chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
+ChunkInfo IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
-	Meta::Chunk chunk;
+	ChunkInfo chunk;
 
 	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
 	hasher.addData(secret_.encryptionKey());
 	hasher.addData(data);
 
-	chunk.pt_hmac = hasher.result();
+	chunk.ptKeyedHash(hasher.result());
 
 	// IV reuse
-	chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, generateRandomIV());
+	chunk.iv(pt_hmac__iv.value(chunk.ptKeyedHash(), generateRandomIV()));
 
-	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.encryptionKey(), chunk.iv));
+	chunk.size(data.size());
+	chunk.ctHash(ChunkInfo::compute_hash(ChunkInfo::encrypt(data, secret_.encryptionKey(), chunk.iv())));
 	return chunk;
 }
 

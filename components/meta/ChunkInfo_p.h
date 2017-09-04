@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include <Inode.pb.h>
+#include <Meta.pb.h>
 #include <QSharedData>
 
 namespace librevault {

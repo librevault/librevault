@@ -51,25 +51,25 @@ QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
 		uint64_t offset = 0;
 		int chunk_idx = 0;
 		for(auto& chunk : smeta.meta().chunks()) {
-			if(chunk.ct_hash == ct_hash) break;
-			offset += chunk.size;
+			if(chunk.ctHash() == ct_hash) break;
+			offset += chunk.size();
 			chunk_idx++;
 		}
 		if(chunk_idx > smeta.meta().chunks().size()) continue;
 
 		// Found chunk & offset
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
-		blob chunk_pt = blob(chunk.size);
+		QByteArray chunk_pt(chunk.size(), 0);
 
 		QFile f(PathNormalizer::absolutizePath(smeta.meta().path().plaintext(params_.secret.encryptionKey()), params_.path));
 		if(! f.open(QIODevice::ReadOnly)) continue;
 		if(! f.seek(offset)) continue;
-		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
+		if(f.read(chunk_pt.data(), chunk.size()) != chunk.size()) continue;
 
-		QByteArray chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.encryptionKey(), chunk.iv);
+		QByteArray chunk_ct = ChunkInfo::encrypt(chunk_pt, params_.secret.encryptionKey(), chunk.iv());
 
 		// Check
-		if(verify_chunk(ct_hash, chunk_ct, Meta::SHA3_256)) return chunk_ct;
+		if(verify_chunk(ct_hash, chunk_ct)) return chunk_ct;
 	}
 	throw ChunkStorage::no_such_chunk();
 }

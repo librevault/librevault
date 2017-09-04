@@ -33,6 +33,7 @@
 #include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
 #include <QObject>
+#include <memory>
 
 namespace librevault {
 

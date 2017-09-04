@@ -89,7 +89,7 @@ QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 		QBitArray bitfield(meta.chunks().size());
 
 		for(int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
-			if(have_chunk(meta.chunks().at(bitfield_idx).ct_hash))
+			if(have_chunk(meta.chunks().at(bitfield_idx).ctHash()))
 				bitfield[bitfield_idx] = true;
 
 		return bitfield;
@@ -99,8 +99,8 @@ QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 
 void ChunkStorage::cleanup(const Meta& meta) {
 	for(auto chunk : meta.chunks())
-		if(open_storage->have_chunk(chunk.ct_hash))
-			enc_storage->remove_chunk(chunk.ct_hash);
+		if(open_storage->have_chunk(chunk.ctHash()))
+			enc_storage->remove_chunk(chunk.ctHash());
 }
 
 } /* namespace librevault */

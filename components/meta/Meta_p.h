@@ -15,13 +15,11 @@
  */
 #pragma once
 #include "Meta.h"
-#include <Meta_s.pb.h>
+#include <Meta.pb.h>
 
 namespace librevault {
 
 struct MetaPrivate : public QSharedData {
-  QList<Meta::Chunk> chunks_;
-
   serialization::Meta proto;
 };
 

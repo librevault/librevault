@@ -43,38 +43,35 @@ message ChunkInfo {
   bytes pt_keyed_hash = 4;    // SHA-3 can be used directly by prepending key before the plaintext, others need to use HMAC
 }
 
-message PathRevision {
-  bytes path_keyed_hash = 1;
-  google.protobuf.Timestamp timestamp = 2;
-}
-
 message Meta {
-  PathRevision id = 1;
-  EncryptedData path = 2;
-  uint32 kind = 3;
+  bytes path_keyed_hash = 1;
+  uint64 revision = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  EncryptedData path = 4;
+  uint32 kind = 5;
 
-  google.protobuf.Timestamp mtime = 4;
-  uint64 mtime_granularity = 5;    // (0 treated as 1). Should be 0 in "private mode", as it leaks the OS.
+  google.protobuf.Timestamp mtime = 6;
+  uint64 mtime_granularity = 7;    // (0 treated as 1). Should be 0 in "private mode", as it leaks the OS.
 
   // Windows-specific
-  uint32 windows_attrib = 6;
+  uint32 windows_attrib = 8;
   // Unix-specific
-  uint32 mode = 7;
-  uint32 uid = 8;
-  uint32 gid = 9;
+  uint32 mode = 9;
+  uint32 uid = 10;
+  uint32 gid = 11;
 
   /* File-specific */
   // Uni-algorithm parameters
-  uint32 max_chunksize = 10;
-  uint32 min_chunksize = 11;
+  uint32 min_chunksize = 12;
+  uint32 max_chunksize = 13;
 
   // Rabin chunking algorithm parameters
-  uint64 rabin_polynomial = 12;
-  uint32 rabin_shift = 13;
-  uint64 rabin_mask = 14;
+  uint64 rabin_polynomial = 14;
+  uint32 rabin_shift = 15;
+  uint64 rabin_mask = 16;
 
   repeated ChunkInfo chunks = 255;
 
   /* Symlink-specific */
-  EncryptedData symlink_target = 15;
+  EncryptedData symlink_target = 17;
 }

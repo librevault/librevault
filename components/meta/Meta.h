@@ -15,34 +15,28 @@
  */
 #pragma once
 
-#include "util/AES_CBC_DATA.h"
 #include "EncryptedData.h"
 #include <QList>
+#include <QSharedDataPointer>
 #include <chrono>
 
 namespace librevault {
+
+class ChunkInfo;
+class Secret;
 
 class MetaPrivate;
 class Meta {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
-  enum Kind : uint32_t { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
-  enum StrongHashType : uint8_t { SHA3_256 = 0 };
+  enum Kind : quint32 { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
   struct Chunk {
     QByteArray ct_hash;
-    uint32_t size;
+    quint32 size;
     QByteArray iv;
 
     QByteArray pt_hmac;
-
-    static QByteArray encrypt(QByteArray chunk, QByteArray key, QByteArray iv);
-    static QByteArray decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv);
-
-    static QByteArray compute_strong_hash(QByteArray chunk);
   };
-
- private:
-  QSharedDataPointer<MetaPrivate> d;
 
  public:
   /* Nested structs & classes */
@@ -59,18 +53,20 @@ class Meta {
   /// Used for querying specific version of Meta
   struct PathRevision {
     QByteArray path_id_;
-    int64_t revision_;
+    quint64 revision_;
   };
 
   /* Class methods */
   Meta();
   Meta(const Meta& r);
   Meta(Meta&& r) noexcept;
-  explicit Meta(QByteArray meta_s);
+  explicit Meta(const QByteArray& meta_s);
   virtual ~Meta();
 
   Meta& operator=(const Meta& r);
   Meta& operator=(Meta&& r) noexcept;
+
+  bool operator==(const Meta& r) const;
 
   /* Serialization */
   QByteArray serialize() const;
@@ -80,42 +76,49 @@ class Meta {
   static QByteArray makePathId(QByteArray path, const Secret& secret);
 
   /* Smart getters+setters */
-  PathRevision path_revision() const { return PathRevision{pathKeyedHash(), timestamp().time_since_epoch().count()}; }
-  uint64_t size() const;
+  bool isEmpty() const;
+  PathRevision path_revision() const { return PathRevision{pathKeyedHash(), revision()}; }
+  quint64 size() const;
 
   // Dumb getters & setters
   QByteArray pathKeyedHash() const;
   void pathKeyedHash(const QByteArray& path_id);
 
-  EncryptedData path() const;
-  void path(const EncryptedData& path) ;
-
-  Kind kind() const;
-  void kind(Kind meta_kind);
+  quint64 revision() const;
+  void revision(quint64 revision);
 
   Timestamp timestamp() const;
   void timestamp(Timestamp revision);
 
-  int64_t mtime() const;
-  void set_mtime(int64_t mtime);
+  EncryptedData path() const;
+  void path(const EncryptedData& path);
 
-  uint32_t windows_attrib() const;
-  void set_windows_attrib(uint32_t windows_attrib);
+  Kind kind() const;
+  void kind(Kind meta_kind);
 
-  uint32_t mode() const;
-  void set_mode(uint32_t mode);
+  qint64 mtime() const;
+  void mtime(qint64 mtime);
 
-  uint32_t uid() const;
-  void set_uid(uint32_t uid);
+  quint64 mtimeGranularity() const;
+  void mtimeGranularity(quint64 mtime);
 
-  uint32_t gid() const;
-  void set_gid(uint32_t gid);
+  quint32 windowsAttrib() const;
+  void windowsAttrib(quint32 windows_attrib);
 
-  uint32_t min_chunksize() const;
-  void set_min_chunksize(uint32_t min_chunksize);
+  quint32 mode() const;
+  void mode(quint32 mode);
 
-  uint32_t max_chunksize() const;
-  void set_max_chunksize(uint32_t max_chunksize);
+  quint32 uid() const;
+  void uid(quint32 uid);
+
+  quint32 gid() const;
+  void gid(quint32 gid);
+
+  quint32 minChunksize() const;
+  void minChunksize(quint32 min_chunksize);
+
+  quint32 maxChunksize() const;
+  void maxChunksize(quint32 max_chunksize);
 
   quint64 rabinPolynomial() const;
   void rabinPolynomial(quint64 rabin_polynomial);
@@ -126,11 +129,14 @@ class Meta {
   quint64 rabinMask() const;
   void rabinMask(quint64 rabin_mask);
 
-  QList<Chunk> chunks() const;
-  void set_chunks(QList<Chunk> chunks);
+  QList<ChunkInfo> chunks() const;
+  void chunks(const QList<ChunkInfo>& chunks);
 
   EncryptedData symlinkTarget() const;
   void symlinkTarget(const EncryptedData& symlink_target);
+
+ private:
+  QSharedDataPointer<MetaPrivate> d;
 };
 
 } /* namespace librevault */

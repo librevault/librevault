@@ -15,7 +15,6 @@
  */
 #pragma once
 #include "Meta.h"
-#include <memory>
 
 namespace librevault {
 
@@ -25,20 +24,20 @@ public:
 		signature_error() : Meta::error("Meta signature mismatch") {}
 	};
 
-	SignedMeta() {}
-	SignedMeta(Meta meta, const Secret& secret);
-	SignedMeta(QByteArray raw_meta, QByteArray signature);
+	SignedMeta() = default;
+	SignedMeta(const Meta& meta, const Secret& secret);
+	SignedMeta(const QByteArray& raw_meta, const QByteArray& signature);
 
-	operator bool() const {return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty();}
+	operator bool() const {return !meta_.isEmpty() && !raw_meta_.isEmpty() && !signature_.isEmpty();}
 
 	bool isValid(const Secret& secret) const;
 
 	// Getters
-	const Meta& meta() const {return *meta_;}
+	const Meta& meta() const {return meta_;}
 	QByteArray raw_meta() const {return raw_meta_;}
 	QByteArray signature() const {return signature_;}
 private:
-	std::shared_ptr<Meta> meta_;
+	Meta meta_;
 
 	QByteArray raw_meta_;
 	QByteArray signature_;

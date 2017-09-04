@@ -79,7 +79,7 @@ private:
 	Meta::Kind get_type();
 	void update_fsattrib();
 	void update_chunks();
-	Meta::Chunk populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
+	ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
 };
 
 } /* namespace librevault */

@@ -43,7 +43,6 @@ FolderParams::FolderParams(QVariantMap fconfig) {
   preserve_unix_attrib = fconfig["preserve_unix_attrib"].toBool();
   preserve_windows_attrib = fconfig["preserve_windows_attrib"].toBool();
   preserve_symlinks = fconfig["preserve_symlinks"].toBool();
-  chunk_strong_hash_type = Meta::StrongHashType(fconfig["chunk_strong_hash_type"].toInt());
   full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
 
   for (const QString& ignore_path : fconfig["ignore_paths"].toStringList())

@@ -35,6 +35,7 @@
 #include "SignedMeta.h"
 #include "conv_bitfield.h"
 #include <QObject>
+#include <memory>
 
 namespace librevault {
 

@@ -81,7 +81,7 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   });
 }
 
-FolderGroup::~FolderGroup() {}
+FolderGroup::~FolderGroup() = default;
 
 /* Actions */
 void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {

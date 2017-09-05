@@ -29,10 +29,10 @@
 #include "PeerServer.h"
 #include "Peer.h"
 #include "PeerPool.h"
+#include "PortMapper.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include "PortMapper.h"
 #include "nodekey/NodeKey.h"
 #include <QLoggingCategory>
 
@@ -40,74 +40,73 @@ Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
 namespace librevault {
 
-PeerServer::PeerServer(NodeKey* node_key,
-                         PortMapper* port_mapping,
-                         QObject* parent) : QObject(parent),
-	node_key_(node_key), port_mapping_(port_mapping) {
-	server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
-	server_->setSslConfiguration(node_key_->getSslConfiguration());
+PeerServer::PeerServer(NodeKey* node_key, PortMapper* port_mapping, QObject* parent)
+    : QObject(parent), node_key_(node_key), port_mapping_(port_mapping) {
+  server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
+  server_->setSslConfiguration(node_key_->getSslConfiguration());
 
-	connect(server_, &QWebSocketServer::newConnection, this, &PeerServer::handleConnection);
-	connect(server_, &QWebSocketServer::peerVerifyError, this, &PeerServer::handlePeerVerifyError);
-	connect(server_, &QWebSocketServer::serverError, this, &PeerServer::handleServerError);
-	connect(server_, &QWebSocketServer::sslErrors, this, &PeerServer::handleSslErrors);
-	connect(server_, &QWebSocketServer::acceptError, this, &PeerServer::handleAcceptError);
-
-	if(server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
-		qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
-	}else{
-		qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort() << "E:" << server_->errorString();
-	}
-	port_mapping_->addPort("main", server_->serverPort(), QAbstractSocket::TcpSocket, "Librevault");
+  connect(server_, &QWebSocketServer::newConnection, this, &PeerServer::handleConnection);
+  connect(server_, &QWebSocketServer::peerVerifyError, this, &PeerServer::handlePeerVerifyError);
+  connect(server_, &QWebSocketServer::serverError, this, &PeerServer::handleServerError);
+  connect(server_, &QWebSocketServer::sslErrors, this, &PeerServer::handleSslErrors);
+  connect(server_, &QWebSocketServer::acceptError, this, &PeerServer::handleAcceptError);
 }
 
-PeerServer::~PeerServer() {
-	port_mapping_->removePort("main");
-}
+PeerServer::~PeerServer() = default;
 
 void PeerServer::addPeerPool(QByteArray folderid, PeerPool* pool) {
-	Q_ASSUME(!peer_pools_.contains(folderid));
+  Q_ASSUME(!peer_pools_.contains(folderid));
 
-	peer_pools_[folderid] = pool;
-	connect(pool, &QObject::destroyed, this, [=]{peer_pools_.remove(folderid);});
+  peer_pools_[folderid] = pool;
+  connect(pool, &QObject::destroyed, this, [=] { peer_pools_.remove(folderid); });
+}
+
+void PeerServer::start() {
+  if (server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
+    qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
+  } else {
+    qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
+                       << "E:" << server_->errorString();
+  }
+  port_mapping_->addPort("main", server_->serverPort(), QAbstractSocket::TcpSocket, "Librevault");
+}
+
+void PeerServer::stop() {
+  server_->close();
+  port_mapping_->removePort("main");
 }
 
 /* Here are where new QWebSocket created */
 void PeerServer::handleConnection() {
-	while(server_->hasPendingConnections()) {
-		QWebSocket* socket = server_->nextPendingConnection();
-		handleSingleConnection(socket);
-	}
-}
+  QWebSocket* socket = server_->nextPendingConnection();
 
-void PeerServer::handleSingleConnection(QWebSocket* socket) {
-	QUrl ws_url = socket->requestUrl();
-	QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
-	PeerPool* pool = peer_pools_.value(folderid);
+  QUrl ws_url = socket->requestUrl();
+  QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
+  PeerPool* pool = peer_pools_.value(folderid);
 
-	if(pool) {
-		Peer* peer = new Peer(pool->params(), node_key_, pool->getBlockCounterAll(), pool->getBlockCounterBlocks(), pool);
-		peer->setConnectedSocket(socket);
-		pool->handleIncoming(peer);
-	}else{
-		socket->deleteLater();
-	}
+  if (pool) {
+    Peer* peer = new Peer(pool->params(), node_key_, pool->getBlockCounterAll(), pool->getBlockCounterBlocks(), pool);
+    peer->setConnectedSocket(socket);
+    pool->handleIncoming(peer);
+  } else {
+    socket->deleteLater();
+  }
 }
 
 void PeerServer::handlePeerVerifyError(const QSslError& error) {
-	qCDebug(log_p2p) << "PeerVerifyError:" << error.errorString();
+  qCDebug(log_p2p) << "PeerVerifyError:" << error.errorString();
 }
 
 void PeerServer::handleServerError(QWebSocketProtocol::CloseCode closeCode) {
-	qCDebug(log_p2p) << "ServerError:" << server_->errorString();
+  qCDebug(log_p2p) << "ServerError:" << server_->errorString();
 }
 
 void PeerServer::handleSslErrors(const QList<QSslError>& errors) {
-	qCDebug(log_p2p) << "SSL errors:" << errors;
+  qCDebug(log_p2p) << "SSL errors:" << errors;
 }
 
 void PeerServer::handleAcceptError(QAbstractSocket::SocketError socketError) {
-	qCDebug(log_p2p) << "Accept error:" << socketError;
+  qCDebug(log_p2p) << "Accept error:" << socketError;
 }
 
 } /* namespace librevault */

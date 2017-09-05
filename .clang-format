@@ -36,7 +36,7 @@ BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit:     150
+ColumnLimit:     120
 CommentPragmas:  '^ IWYU pragma:'
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
@@ -51,11 +51,16 @@ IncludeCategories:
     Priority:        1
   - Regex:           '^<.*\.h>'
     Priority:        2
-  - Regex:           '^<.*'
+  - Regex:           '^<Q.*'
     Priority:        3
-  - Regex:           '.*'
+  - Regex:           '^<boost/.*'
     Priority:        4
+  - Regex:           '^<.*'
+    Priority:        5
+  - Regex:           '.*'
+    Priority:        6
 IndentCaseLabels: true
+IndentPPDirectives: AfterHash
 IndentWidth:     2
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false

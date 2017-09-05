@@ -57,6 +57,8 @@ Client::~Client() {
 }
 
 void Client::initializeAll() {
+  peerserver_->start();
+
   // Initialize all existing folders
   for (QByteArray folderid : Config::get()->listFolders()) {
     initFolder(Config::get()->getFolder(folderid));
@@ -67,6 +69,8 @@ void Client::deinitializeAll() {
   for (QByteArray folderid : Config::get()->listFolders()) {
     deinitFolder(folderid);
   }
+
+  peerserver_->stop();
 }
 
 void Client::restart() {

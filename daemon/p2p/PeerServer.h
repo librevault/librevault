@@ -40,31 +40,31 @@ class Peer;
 class PeerPool;
 class PortMapper;
 class PeerServer : public QObject {
-	Q_OBJECT
-public:
-	PeerServer(NodeKey* node_key,
-	            PortMapper* port_mapping,
-	            QObject* parent);
-	virtual ~PeerServer();
+  Q_OBJECT
+ public:
+  PeerServer(NodeKey* node_key, PortMapper* port_mapping, QObject* parent);
+  virtual ~PeerServer();
 
-	/* Loopback detection */
-	void addPeerPool(QByteArray folderid, PeerPool* pool);
+  /* Loopback detection */
+  void addPeerPool(QByteArray folderid, PeerPool* pool);
 
-private:
-	NodeKey* node_key_;
-	PortMapper* port_mapping_;
+  Q_SLOT void start();
+  Q_SLOT void stop();
 
-	QWebSocketServer* server_;
+ private:
+  NodeKey* node_key_;
+  PortMapper* port_mapping_;
 
-	QMap<QByteArray, PeerPool*> peer_pools_;
+  QWebSocketServer* server_;
 
-private slots:
-	void handleConnection();
-	void handleSingleConnection(QWebSocket* socket);
-	void handlePeerVerifyError(const QSslError& error);
-	void handleServerError(QWebSocketProtocol::CloseCode closeCode);
-	void handleSslErrors(const QList<QSslError>& errors);
-	void handleAcceptError(QAbstractSocket::SocketError socketError);
+  QMap<QByteArray, PeerPool*> peer_pools_;
+
+ private slots:
+  void handleConnection();
+  void handlePeerVerifyError(const QSslError& error);
+  void handleServerError(QWebSocketProtocol::CloseCode closeCode);
+  void handleSslErrors(const QList<QSslError>& errors);
+  void handleAcceptError(QAbstractSocket::SocketError socketError);
 };
 
 } /* namespace librevault */

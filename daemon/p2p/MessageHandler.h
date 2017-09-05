@@ -31,7 +31,7 @@
 #include "Secret.h"
 #include "MetaInfo.h"
 #include "SignedMeta.h"
-#include "conv_bitfield.h"
+#include <QBitArray>
 #include <QObject>
 
 namespace librevault {

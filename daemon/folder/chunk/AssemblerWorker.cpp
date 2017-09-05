@@ -37,6 +37,7 @@
 #include "util/conv_fspath.h"
 #include "util/log.h"
 #include <boost/filesystem.hpp>
+#include <QBitArray>
 #include <QDir>
 #include <QLoggingCategory>
 #include <QSaveFile>

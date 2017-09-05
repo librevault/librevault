@@ -30,8 +30,8 @@
 #include "control/FolderParams.h"
 #include "util/log.h"
 #include "SignedMeta.h"
-#include "conv_bitfield.h"
 #include <QObject>
+#include <QBitArray>
 
 namespace librevault {
 

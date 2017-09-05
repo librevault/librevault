@@ -34,6 +34,7 @@
 #include "util/log.h"
 #include <QList>
 #include <QTimer>
+#include <QBitArray>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>

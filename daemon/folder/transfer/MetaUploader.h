@@ -29,8 +29,8 @@
 #pragma once
 #include "util/log.h"
 #include "MetaInfo.h"
-#include "conv_bitfield.h"
 #include <QObject>
+#include <QBitArray>
 #include <set>
 
 namespace librevault {

@@ -33,7 +33,6 @@
 #include "TimeoutHandler.h"
 #include "MetaInfo.h"
 #include "SignedMeta.h"
-#include "conv_bitfield.h"
 #include <QObject>
 #include <memory>
 

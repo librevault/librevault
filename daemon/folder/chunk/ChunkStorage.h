@@ -29,7 +29,6 @@
 #pragma once
 #include "blob.h"
 #include "MetaInfo.h"
-#include "conv_bitfield.h"
 #include <QFile>
 
 namespace librevault {

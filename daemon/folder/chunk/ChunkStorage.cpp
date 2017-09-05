@@ -34,6 +34,7 @@
 #include "folder/meta/MetaStorage.h"
 
 #include "AssemblerQueue.h"
+#include <QBitArray>
 
 namespace librevault {
 

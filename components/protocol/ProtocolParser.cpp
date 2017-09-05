@@ -97,7 +97,7 @@ QVariantMap ProtocolParser::parse(const QByteArray& message_bytes) const {
     default: throw ParserError("Invalid message type in Protobuf message");
   }
 
-  qCDebug(log_protocol_parsing) << "Parsed message" << "Protobuf:" << message_proto.DebugString() << "Qt:" << message;
+  qCDebug(log_protocol_parsing) << "Parsed message" << "Protobuf:" << QString::fromStdString(message_proto.DebugString()) << "Qt:" << message;
   return message;
 }
 
@@ -163,7 +163,7 @@ QByteArray ProtocolParser::serialize(const QVariantMap& message) const {
 
   message_proto.set_allocated_payload(&payload_bytes_buffer);
 
-  qCDebug(log_protocol_parsing) << "Serialized message" << "Qt:" << message << "Protobuf:" << message_proto.DebugString();
+  qCDebug(log_protocol_parsing) << "Serialized message" << "Qt:" << message << "Protobuf:" << QString::fromStdString(message_proto.DebugString());
   return serializeAsByteArray(message_proto);
 }
 

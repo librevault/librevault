@@ -24,8 +24,8 @@
 namespace librevault {
 
 SignedMeta::SignedMeta(const MetaInfo& meta, const Secret& secret) {
-	meta_ = meta;
-	raw_meta_ = meta.serialize();
+	meta_info_ = meta;
+	raw_meta_info_ = meta.serializeToBinary();
 
 	CryptoPP::AutoSeededRandomPool rng;
 	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
@@ -33,10 +33,10 @@ SignedMeta::SignedMeta(const MetaInfo& meta, const Secret& secret) {
 	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), CryptoPP::Integer((uchar*)privkey_s.data(), privkey_s.size()));
 
 	signature_ = QByteArray(signer.SignatureLength(), 0);
-	signer.SignMessage(rng, (uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());
+	signer.SignMessage(rng, (uchar*)raw_meta_info_.data(), raw_meta_info_.size(), (uchar*)signature_.data());
 }
 
-SignedMeta::SignedMeta(const QByteArray& raw_meta, const QByteArray& signature) : meta_(raw_meta), raw_meta_(raw_meta), signature_(signature) {}
+SignedMeta::SignedMeta(const QByteArray& raw_meta, const QByteArray& signature) : meta_info_(raw_meta), raw_meta_info_(raw_meta), signature_(signature) {}
 
 bool SignedMeta::isValid(const Secret& secret) const {
 	try {
@@ -48,7 +48,7 @@ bool SignedMeta::isValid(const Secret& secret) const {
 		auto pubkey_s = secret.publicKey();
 		verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)pubkey_s.data(), pubkey_s.size());
 		verifier.AccessKey().SetPublicElement(p);
-		if(! verifier.VerifyMessage((uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data(), signature_.size()))
+		if(! verifier.VerifyMessage((uchar*)raw_meta_info_.data(), raw_meta_info_.size(), (uchar*)signature_.data(), signature_.size()))
 			return false;
 	}catch(CryptoPP::Exception& e){
 		return false;

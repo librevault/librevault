@@ -60,7 +60,7 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 	chunk_storage_(chunk_storage),
 	archive_(archive),
 	smeta_(smeta),
-	meta_(smeta.meta()) {}
+	meta_(smeta.metaInfo()) {}
 
 AssemblerWorker::~AssemblerWorker() {}
 

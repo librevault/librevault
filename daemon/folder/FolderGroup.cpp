@@ -85,8 +85,8 @@ FolderGroup::~FolderGroup() {}
 
 /* Actions */
 void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {
-  MetaInfo::PathRevision revision = smeta.meta().path_revision();
-  QBitArray bitfield = chunk_storage_->make_bitfield(smeta.meta());
+  MetaInfo::PathRevision revision = smeta.metaInfo().path_revision();
+  QBitArray bitfield = chunk_storage_->make_bitfield(smeta.metaInfo());
 
   downloader_->notifyLocalMeta(smeta, bitfield);
   meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);

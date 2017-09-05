@@ -18,6 +18,7 @@
 #include "EncryptedData.h"
 #include <QList>
 #include <QSharedDataPointer>
+#include <QJsonDocument>
 #include <chrono>
 
 namespace librevault {
@@ -62,8 +63,11 @@ class MetaInfo {
   bool operator==(const MetaInfo& r) const;
 
   /* Serialization */
-  QByteArray serialize() const;
-  void parse(const QByteArray& serialized);
+  QByteArray serializeToBinary() const;
+  void parseFromBinary(const QByteArray &serialized);
+
+  QJsonDocument serializeToJson() const;
+  void parseFromJson(const QJsonDocument& json);
 
   /* Generators */
   static QByteArray makePathId(QByteArray path, const Secret& secret);

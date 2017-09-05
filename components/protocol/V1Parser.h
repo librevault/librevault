@@ -41,25 +41,6 @@ public:
 		BLOCK_CANCEL = 12,
 	};
 
-	const char* type_text(message_type type) {
-		switch(type) {
-			case HANDSHAKE: return "HANDSHAKE";
-			case CHOKE: return "CHOKE";
-			case UNCHOKE: return "UNCHOKE";
-			case INTERESTED: return "INTERESTED";
-			case NOT_INTERESTED: return "NOT_INTERESTED";
-			case HAVE_META: return "HAVE_META";
-			case HAVE_CHUNK: return "HAVE_CHUNK";
-			case META_REQUEST: return "META_REQUEST";
-			case META_REPLY: return "META_REPLY";
-			case META_CANCEL: return "META_CANCEL";
-			case BLOCK_REQUEST: return "BLOCK_REQUEST";
-			case BLOCK_REPLY: return "BLOCK_REPLY";
-			case BLOCK_CANCEL: return "BLOCK_CANCEL";
-			default: return "UNKNOWN";
-		}
-	}
-
 	struct Handshake {
 		QByteArray auth_token;
 		QString device_name;

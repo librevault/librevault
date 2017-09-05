@@ -105,7 +105,7 @@ V1Parser::MetaRequest V1Parser::parse_MetaRequest(QByteArray message_raw) {
 
 QByteArray V1Parser::gen_MetaReply(const MetaReply& message_struct) {
 	protocol::MetaReply message_protobuf;
-	message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
+	message_protobuf.set_meta(message_struct.smeta.rawMetaInfo().data(), message_struct.smeta.rawMetaInfo().size());
 	message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
 	message_protobuf.set_bitfield(convert_bitfield(message_struct.bitfield).toStdString());
 

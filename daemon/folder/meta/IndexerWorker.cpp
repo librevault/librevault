@@ -69,7 +69,7 @@ void IndexerWorker::run() noexcept {
 
 		try {
 			old_smeta_ = meta_storage_->getMeta(MetaInfo::makePathId(normpath, secret_));
-			old_meta_ = old_smeta_.meta();
+			old_meta_ = old_smeta_.metaInfo();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
@@ -82,12 +82,12 @@ void IndexerWorker::run() noexcept {
 		QElapsedTimer timer_; timer_.start();   // Starting timer
 		make_Meta();   // Actual indexing
 		qreal time_spent = qreal(timer_.elapsed())/1000;
-		qreal bandwidth = qreal(new_smeta_.meta().size())/time_spent;
+		qreal bandwidth = qreal(new_smeta_.metaInfo().size())/time_spent;
 
 		qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << human_bandwidth(bandwidth) << ")"
 			<< "Path=" << abspath_
-			<< "Rev=" << new_smeta_.meta().timestamp().time_since_epoch().count()
-			<< "Chk=" << new_smeta_.meta().chunks().size();
+			<< "Rev=" << new_smeta_.metaInfo().timestamp().time_since_epoch().count()
+			<< "Chk=" << new_smeta_.metaInfo().chunks().size();
 
 		emit metaCreated(new_smeta_);
 	}catch(std::runtime_error& e){

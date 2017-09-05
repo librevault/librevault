@@ -28,18 +28,18 @@ public:
 	SignedMeta(const MetaInfo& meta, const Secret& secret);
 	SignedMeta(const QByteArray& raw_meta, const QByteArray& signature);
 
-	operator bool() const {return !meta_.isEmpty() && !raw_meta_.isEmpty() && !signature_.isEmpty();}
+	operator bool() const {return !meta_info_.isEmpty() && !raw_meta_info_.isEmpty() && !signature_.isEmpty();}
 
 	bool isValid(const Secret& secret) const;
 
 	// Getters
-	const MetaInfo& meta() const {return meta_;}
-	QByteArray raw_meta() const {return raw_meta_;}
+	const MetaInfo& metaInfo() const {return meta_info_;}
+	QByteArray rawMetaInfo() const {return raw_meta_info_;}
 	QByteArray signature() const {return signature_;}
 private:
-	MetaInfo meta_;
+	MetaInfo meta_info_;
 
-	QByteArray raw_meta_;
+	QByteArray raw_meta_info_;
 	QByteArray signature_;
 };
 

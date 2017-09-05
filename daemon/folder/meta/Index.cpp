@@ -84,7 +84,7 @@ bool Index::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 
 SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
 	auto smeta = getMeta(path_revision.path_id_);
-	if(smeta.meta().revision() == path_revision.revision_)
+	if(smeta.metaInfo().revision() == path_revision.revision_)
 		return smeta;
 	else throw MetaStorage::no_such_meta();
 }
@@ -98,15 +98,15 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
-			{":path_id", conv_bytearray(signed_meta.meta().pathKeyedHash())},
-			{":meta", conv_bytearray(signed_meta.raw_meta())},
+			{":path_id", conv_bytearray(signed_meta.metaInfo().pathKeyedHash())},
+			{":meta", conv_bytearray(signed_meta.rawMetaInfo())},
 			{":signature", conv_bytearray(signed_meta.signature())},
-			{":type", (uint64_t)signed_meta.meta().kind()},
+			{":type", (uint64_t) signed_meta.metaInfo().kind()},
 			{":assembled", (uint64_t)fully_assembled}
 	});
 
 	uint64_t offset = 0;
-	for(auto chunk : signed_meta.meta().chunks()){
+	for(auto chunk : signed_meta.metaInfo().chunks()){
 		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
 				{":ct_hash", conv_bytearray(chunk.ctHash())},
 				{":size", (uint64_t)chunk.size()},
@@ -115,7 +115,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
 				{":ct_hash", conv_bytearray(chunk.ctHash())},
-				{":path_id", conv_bytearray(signed_meta.meta().pathKeyedHash())},
+				{":path_id", conv_bytearray(signed_meta.metaInfo().pathKeyedHash())},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
@@ -126,9 +126,9 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << signed_meta.meta().pathKeyedHash().toHex() << " t:" << signed_meta.meta().kind());
+		LOGD("Added fully assembled Meta of " << signed_meta.metaInfo().pathKeyedHash().toHex() << " t:" << signed_meta.metaInfo().kind());
 	else
-		LOGD("Added Meta of " << signed_meta.meta().pathKeyedHash().toHex() << " t:" << signed_meta.meta().kind());
+		LOGD("Added Meta of " << signed_meta.metaInfo().pathKeyedHash().toHex() << " t:" << signed_meta.metaInfo().kind());
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)
@@ -163,7 +163,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 
 bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
-		return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
+		return getMeta(path_revision.path_id_).metaInfo().revision() < path_revision.revision_;
 	}catch(MetaStorage::no_such_meta& e){
 		return true;
 	}

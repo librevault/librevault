@@ -48,13 +48,14 @@ void MetaUploader::broadcast_meta(QList<Peer*> remotes, const MetaInfo::PathRevi
 
 void MetaUploader::handle_handshake(Peer* remote) {
 	for(auto& meta : meta_storage_->getMeta()) {
-		remote->messageHandler()->sendHaveMeta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
+		remote->messageHandler()->sendHaveMeta(meta.metaInfo().path_revision(), chunk_storage_->make_bitfield(meta.metaInfo()));
 	}
 }
 
 void MetaUploader::handle_meta_request(Peer* remote, const MetaInfo::PathRevision& revision) {
 	try {
-		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
+		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(
+            meta_storage_->getMeta(revision).metaInfo()));
 	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

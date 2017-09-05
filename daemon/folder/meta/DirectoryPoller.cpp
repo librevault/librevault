@@ -80,13 +80,13 @@ QList<QString> DirectoryPoller::getReindexList() {
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
 	// They can still be indexed by monitor, though.
 	for(auto& smeta : meta_storage_->getIncompleteMeta()) {
-		QString denormpath = PathNormalizer::absolutizePath(smeta.meta().path().plaintext(params_.secret.encryptionKey()), params_.path);
+		QString denormpath = PathNormalizer::absolutizePath(smeta.metaInfo().path().plaintext(params_.secret.encryptionKey()), params_.path);
 		file_list.remove(denormpath);
 	}
 
 	// Files present in index (files added from here will be marked as DELETED)
 	for(auto& smeta : meta_storage_->getExistingMeta()) {
-		QByteArray normpath = smeta.meta().path().plaintext(params_.secret.encryptionKey());
+		QByteArray normpath = smeta.metaInfo().path().plaintext(params_.secret.encryptionKey());
 		QString denormpath = PathNormalizer::absolutizePath(normpath, params_.path);
 
 		if(!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);

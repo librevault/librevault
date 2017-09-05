@@ -66,16 +66,16 @@ Downloader::~Downloader() {}
 void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 
-	Q_ASSERT(bitfield.size() == smeta.meta().chunks().size());
+	Q_ASSERT(bitfield.size() == smeta.metaInfo().chunks().size());
 
 	QList<QByteArray> incomplete_chunks;
-	incomplete_chunks.reserve(smeta.meta().chunks().size());
+	incomplete_chunks.reserve(smeta.metaInfo().chunks().size());
 
 	bool have_complete = false;
 	bool have_incomplete = false;
 
-	for(int chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
-		auto& meta_chunk = smeta.meta().chunks().at(chunk_idx);
+	for(int chunk_idx = 0; chunk_idx < smeta.metaInfo().chunks().size(); chunk_idx++) {
+		auto& meta_chunk = smeta.metaInfo().chunks().at(chunk_idx);
 
 		QByteArray ct_hash = meta_chunk.ctHash();
 
@@ -131,7 +131,7 @@ QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 	QSet<QByteArray> cluster;
 
 	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(ct_hash)) {
-		for(auto& chunk : smeta.meta().chunks()) {
+		for(auto& chunk : smeta.metaInfo().chunks()) {
 			cluster << chunk.ctHash();
 		}
 	}
@@ -152,7 +152,7 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 void Downloader::notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 	try {
-		auto chunks = meta_storage_->getMeta(revision).meta().chunks();
+		auto chunks = meta_storage_->getMeta(revision).metaInfo().chunks();
 		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
 		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield.testBit(chunk_idx))

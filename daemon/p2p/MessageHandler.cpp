@@ -89,8 +89,8 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) 
 	emit messagePrepared(V1Parser().gen_MetaReply(message));
 
 	qDebug() << "==> META_REPLY:"
-		<< "path_id=" << smeta.meta().pathKeyedHash().toHex()
-		<< "revision=" << smeta.meta().timestamp().time_since_epoch().count()
+		<< "path_id=" << smeta.metaInfo().pathKeyedHash().toHex()
+		<< "revision=" << smeta.metaInfo().timestamp().time_since_epoch().count()
 		<< "bits=" << bitfield;
 }
 void MessageHandler::sendMetaCancel(const MetaInfo::PathRevision& revision) {
@@ -182,8 +182,8 @@ void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
-		<< "path_id=" << message_struct.smeta.meta().pathKeyedHash().toHex()
-		<< "revision=" << message_struct.smeta.meta().timestamp().time_since_epoch().count()
+		<< "path_id=" << message_struct.smeta.metaInfo().pathKeyedHash().toHex()
+		<< "revision=" << message_struct.smeta.metaInfo().timestamp().time_since_epoch().count()
 		<< "bits=" << message_struct.bitfield;
 
 	emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);

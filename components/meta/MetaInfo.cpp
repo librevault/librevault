@@ -20,6 +20,7 @@
 #include "MetaInfo_p.h"
 #include <Secret.h>
 #include <google/protobuf/util/message_differencer.h>
+#include <google/protobuf/util/json_util.h>
 #include <QCryptographicHash>
 
 namespace librevault {
@@ -61,7 +62,7 @@ MetaInfo::~MetaInfo() = default;
 
 bool MetaInfo::operator==(const MetaInfo& r) const { return ::google::protobuf::util::MessageDifferencer::Equals(d->proto, r.d->proto); }
 
-MetaInfo::MetaInfo(const QByteArray& meta_s) { parse(meta_s); }
+MetaInfo::MetaInfo(const QByteArray& meta_s) { parseFromBinary(meta_s); }
 
 bool MetaInfo::isEmpty() const { return *this == MetaInfo(); }
 
@@ -73,9 +74,26 @@ quint64 MetaInfo::size() const {
   return total_size;
 }
 
-QByteArray MetaInfo::serialize() const { return QByteArray::fromStdString(d->proto.SerializeAsString()); }
+QByteArray MetaInfo::serializeToBinary() const { return QByteArray::fromStdString(d->proto.SerializeAsString()); }
 
-void MetaInfo::parse(const QByteArray& serialized) { d->proto.ParseFromArray(serialized, serialized.size()); }
+void MetaInfo::parseFromBinary(const QByteArray &serialized) { d->proto.ParseFromArray(serialized, serialized.size()); }
+
+QJsonDocument MetaInfo::serializeToJson() const {
+  std::string result;
+
+  ::google::protobuf::util::JsonPrintOptions options;
+  options.add_whitespace = false;
+  options.always_print_primitive_fields = true;
+  ::google::protobuf::util::MessageToJsonString(d->proto, &result, options);
+
+  return QJsonDocument::fromJson(QByteArray::fromStdString(result));
+}
+
+void MetaInfo::parseFromJson(const QJsonDocument& json) {
+  ::google::protobuf::util::JsonParseOptions options;
+  options.ignore_unknown_fields = true;
+  ::google::protobuf::util::JsonStringToMessage(json.toJson(QJsonDocument::Compact).toStdString(), &(d->proto), options);
+}
 
 QByteArray MetaInfo::makePathId(QByteArray path, const Secret& secret) {
   QCryptographicHash hasher(QCryptographicHash::Sha3_256);

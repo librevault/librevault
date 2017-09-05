@@ -15,13 +15,26 @@
  */
 syntax = "proto3";
 package librevault.protocol.v2;
-import "google/protobuf/any.proto";
 
-// Self-descripting wrapper for all messages, transparently converts to JSON
-message ProtocolMessage {
-  google.protobuf.Any payload = 1;
+enum MessageType {
+  HANDSHAKE = 0;
+  CHOKE = 1;
+  UNCHOKE = 2;
+  INTERESTED = 3;
+  NOTINTERESTED = 4;
+  INDEXUPDATE = 5;
+  METAREQUEST = 6;
+  METARESPONSE = 7;
+  BLOCKREQUEST = 8;
+  BLOCKRESPONSE = 9;
 }
 
+message ProtocolMessage {
+  MessageType type = 1;
+  bytes payload = 2;
+}
+
+/* Message payloads */
 message Handshake {
   bytes auth_token = 1;
   string device_name = 2;

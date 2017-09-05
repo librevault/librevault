@@ -15,12 +15,6 @@
  */
 syntax = "proto3";
 package librevault.protocol;
-import "google/protobuf/any.proto";
-
-// Self-descripting wrapper for all messages
-message ProtocolMessage {
-	google.protobuf.Any msg = 1;
-}
 
 message Handshake {
 	bytes auth_token = 1;

@@ -51,7 +51,7 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
 	connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
-ChunkStorage::~ChunkStorage() {}
+ChunkStorage::~ChunkStorage() = default;
 
 bool ChunkStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
@@ -89,9 +89,9 @@ QBitArray ChunkStorage::make_bitfield(const MetaInfo& meta) const noexcept {
 	if(meta.kind() == meta.FILE) {
 		QBitArray bitfield(meta.chunks().size());
 
-		for(int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
-			if(have_chunk(meta.chunks().at(bitfield_idx).ctHash()))
-				bitfield[bitfield_idx] = true;
+		int bitfield_idx = 0;
+		for(const auto& chunk : meta.chunks())
+			bitfield[bitfield_idx++] = have_chunk(chunk.ctHash());
 
 		return bitfield;
 	}else

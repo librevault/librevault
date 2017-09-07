@@ -32,7 +32,6 @@
 #include <QObject>
 #include <QRunnable>
 #include <QString>
-#include <map>
 
 namespace librevault {
 

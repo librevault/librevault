@@ -40,13 +40,13 @@ QByteArray generateRandomIV() {
 	return random_iv;
 }
 
-QByteArray encryptAesCbc(QByteArray src, QByteArray key, QByteArray iv, bool padding) {
+QByteArray encryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
 	iv = iv.leftJustified(16, 0, true);
 
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter((uchar*)key.data(), key.size(), (uchar*)iv.data());
+	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
 
 	std::string buffer;
-	CryptoPP::StringSource((uchar*)src.data(), src.size(), true,
+	CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
 		new CryptoPP::StreamTransformationFilter(filter,
 			new CryptoPP::StringSink(buffer),
 			padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
@@ -56,13 +56,13 @@ QByteArray encryptAesCbc(QByteArray src, QByteArray key, QByteArray iv, bool pad
 	return QByteArray::fromStdString(buffer);
 }
 
-QByteArray decryptAesCbc(QByteArray src, QByteArray key, QByteArray iv, bool padding) {
+QByteArray decryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
 	iv = iv.leftJustified(16, 0, true);
 
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter((uchar*)key.data(), key.size(), (uchar*)iv.data());
+	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
 
 	std::string buffer;
-	CryptoPP::StringSource((uchar*)src.data(), src.size(), true,
+	CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
 		new CryptoPP::StreamTransformationFilter(filter,
 			new CryptoPP::StringSink(buffer),
 			padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING

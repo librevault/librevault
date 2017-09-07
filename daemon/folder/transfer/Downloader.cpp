@@ -34,7 +34,6 @@
 #include "p2p/MessageHandler.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
-#include <boost/range/adaptor/map.hpp>
 
 namespace librevault {
 
@@ -61,7 +60,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 	maintain_timer_->start();
 }
 
-Downloader::~Downloader() {}
+Downloader::~Downloader() = default;
 
 void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
@@ -99,7 +98,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 void Downloader::addChunk(QByteArray ct_hash, quint32 size) {
 	qCDebug(log_downloader) << "Added" << ct_hash.toHex() << "to download queue";
 
-	uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;
+	uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;	// TODO: pad always
 
 	DownloadChunkPtr chunk = std::make_shared<DownloadChunk>(params_, ct_hash, padded_size);
 	down_chunks_.insert(ct_hash, chunk);
@@ -169,7 +168,7 @@ void Downloader::notifyRemoteChunk(Peer* remote, QByteArray ct_hash) {
 	if(! chunk)
 		return;
 
-	chunk->owned_by.insert(remote, remote->get_interest_guard());
+	chunk->owned_by.insert(remote, remote->getInterestGuard());
 	download_queue_.setRemotesCount(ct_hash, chunk->owned_by.size());
 
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
@@ -269,7 +268,7 @@ void Downloader::maintainRequests() {
 bool Downloader::requestOne() {
 	SCOPELOG(log_downloader);
 	// Try to choose chunk to request
-	foreach(QByteArray ct_hash, download_queue_.chunks()) {
+	for(const QByteArray& ct_hash : download_queue_.chunks()) {
 		// Try to choose a remote to request this block from
 		auto remote = nodeForRequest(ct_hash);
 		if(! remote) continue;

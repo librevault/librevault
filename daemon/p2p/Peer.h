@@ -58,7 +58,7 @@ public:
 	~Peer();
 
 	void setConnectedSocket(QWebSocket* socket);
-	void open(QUrl url);
+	void open(const QUrl& url);
 
 	static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
 
@@ -76,8 +76,6 @@ public:
 
 private:
 	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2} role_ = Role::UNDEFINED;
-
-	QString log_tag() const {return endpointString();}
 
 	NodeKey* node_key_;
 	QWebSocket* socket_ = nullptr;
@@ -108,12 +106,12 @@ private:
 /* InterestGuard */
 public:
 	struct InterestGuard {
-		InterestGuard(Peer* remote);
+		explicit InterestGuard(Peer* remote);
 		~InterestGuard();
 	private:
 		Peer* remote_;
 	};
-	std::shared_ptr<InterestGuard> get_interest_guard();
+	std::shared_ptr<InterestGuard> getInterestGuard();
 
 private:
 	std::weak_ptr<InterestGuard> interest_guard_;

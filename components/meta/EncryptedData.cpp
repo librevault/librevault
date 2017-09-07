@@ -25,6 +25,8 @@ EncryptedData EncryptedData::fromCiphertext(const QByteArray& ct, const QByteArr
   enc.ct_ = ct;
   enc.iv_ = iv;
   enc.pt_.clear();
+
+  return enc;
 }
 
 EncryptedData EncryptedData::fromPlaintext(const QByteArray& plaintext, const QByteArray& key, const QByteArray& iv) {
@@ -34,6 +36,8 @@ EncryptedData EncryptedData::fromPlaintext(const QByteArray& plaintext, const QB
   enc.pt_ = plaintext;
   enc.iv_ = iv;
   enc.ct_ = encryptAesCbc(enc.pt_, key, enc.iv_);
+
+  return enc;
 }
 
 const QByteArray& EncryptedData::plaintext(const QByteArray& key) const {

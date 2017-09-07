@@ -15,6 +15,7 @@
  */
 #include "V2Protocol.pb.h"
 #include "ProtocolParser.h"
+#include <conv_bitfield.h>
 #include <QLoggingCategory>
 
 namespace librevault {
@@ -80,7 +81,7 @@ QVariantMap ProtocolParser::parse(const QByteArray& message_bytes) const {
       auto payload_proto = parsePayload<protocol::v2::MetaResponse>(message_proto.payload());
       message["meta"] = QByteArray::fromStdString(payload_proto.meta());
       message["signature"] = QByteArray::fromStdString(payload_proto.signature());
-      message["bitfield"] = QByteArray::fromStdString(payload_proto.bitfield());
+      message["bitfield"] = convert_bitfield(QByteArray::fromStdString(payload_proto.bitfield()));
     } break;
     case protocol::v2::BLOCKREQUEST: {
       auto payload_proto = parsePayload<protocol::v2::BlockRequest>(message_proto.payload());
@@ -128,7 +129,7 @@ QByteArray ProtocolParser::serialize(const QVariantMap& message) const {
       protocol::v2::IndexUpdate payload_proto;
       payload_proto.set_path_id(message["path_id"].toByteArray().toStdString());
       payload_proto.set_revision(message["revision"].toUInt());
-      payload_proto.set_bitfield(message["bitfield"].toByteArray().toStdString());  // todo
+      payload_proto.set_bitfield(convert_bitfield(message["bitfield"].toBitArray()).toStdString());  // todo
       payload_bytes_buffer = payload_proto.SerializeAsString();
     } break;
     case protocol::v2::METAREQUEST: {
@@ -141,7 +142,7 @@ QByteArray ProtocolParser::serialize(const QVariantMap& message) const {
       protocol::v2::MetaResponse payload_proto;
       payload_proto.set_meta(message["meta"].toByteArray().toStdString());
       payload_proto.set_signature(message["signature"].toByteArray().toStdString());
-      payload_proto.set_bitfield(message["bitfield"].toByteArray().toStdString());
+      payload_proto.set_bitfield(convert_bitfield(message["bitfield"].toBitArray()).toStdString());
       payload_bytes_buffer = payload_proto.SerializeAsString();
     } break;
     case protocol::v2::BLOCKREQUEST: {

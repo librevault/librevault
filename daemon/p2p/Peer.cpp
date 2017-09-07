@@ -46,8 +46,6 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
 	bc_blocks_(bc_blocks) {
 	qDebug() << "new peer";
 
-	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
-
 	handshake_handler_ = new HandshakeHandler(params, Config::get()->getGlobal("client_name").toString(), Version().user_agent(), {}, this);
 	connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
 	connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
@@ -63,7 +61,7 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
 	connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);
 }
 
-Peer::~Peer() {}
+Peer::~Peer() = default;
 
 void Peer::resetUnderlyingSocket(QWebSocket* socket) {
 	if(socket_) socket_->deleteLater();
@@ -89,7 +87,7 @@ void Peer::setConnectedSocket(QWebSocket* socket) {
 	handleConnected();
 }
 
-void Peer::open(QUrl url) {
+void Peer::open(const QUrl& url) {
 	resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
 
 	role_ = Role::CLIENT;
@@ -162,7 +160,7 @@ Peer::InterestGuard::~InterestGuard() {
 	remote_->message_handler_->sendNotInterested();
 }
 
-std::shared_ptr<Peer::InterestGuard> Peer::get_interest_guard() {
+std::shared_ptr<Peer::InterestGuard> Peer::getInterestGuard() {
 	try {
 		return std::shared_ptr<InterestGuard>(interest_guard_);
 	}catch(std::bad_weak_ptr& e){

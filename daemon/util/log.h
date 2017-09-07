@@ -50,6 +50,3 @@ ScopeLog scopelog(BOOST_CURRENT_FUNCTION)
 
 #define LOGFUNC() \
 qDebug() << BOOST_CURRENT_FUNCTION
-
-#define LOGFUNCEND() \
-qDebug() << "~" << BOOST_CURRENT_FUNCTION

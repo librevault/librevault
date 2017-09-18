@@ -26,38 +26,55 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MemoryCachedStorage.h"
-#include "ChunkStorage.h"
+#pragma once
+#include "util/log.h"
+#include "util/SQLiteWrapper.h"
+#include "SignedMeta.h"
+#include <QObject>
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(QObject* parent) : QObject(parent), cache_(50*1024*1024) {}    // 50 MB cache is enough for most purposes
+class FolderParams;
 
-bool MemoryCachedStorage::have_chunk(QByteArray ct_hash) const noexcept {
-	return cache_.contains(ct_hash);
-}
+class Index : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("Index");
+signals:
+	void metaAdded(SignedMeta meta);
+	void metaAddedExternal(SignedMeta meta);
 
-QByteArray MemoryCachedStorage::get_chunk(QByteArray ct_hash) const {
-	QMutexLocker lk(&cache_lock_);
+public:
+  struct no_such_meta : public std::runtime_error {
+    no_such_meta() : std::runtime_error("Requested Meta not found"){}
+  };
 
-	QByteArray* cached_chunk = cache_[ct_hash];
-	if(cached_chunk)
-		return *cached_chunk;
-	else
-		throw ChunkStorage::no_such_chunk();
-}
+	Index(const FolderParams& params, QObject* parent);
 
-void MemoryCachedStorage::put_chunk(QByteArray ct_hash, QByteArray data) {
-	QMutexLocker lk(&cache_lock_);
+	/* Meta manipulators */
+	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
+	SignedMeta getMeta(const MetaInfo::PathRevision& path_revision);
+	SignedMeta getMeta(const QByteArray& path_id);
+	QList<SignedMeta> getMeta();
+	QList<SignedMeta> getExistingMeta();
+	QList<SignedMeta> getIncompleteMeta();
 
-	QByteArray* cached_chunk = new QByteArray(data);
-	cache_.insert(ct_hash, cached_chunk, cached_chunk->size());
-}
+	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
+	bool putAllowed(const MetaInfo::PathRevision& path_revision) noexcept;
 
-void MemoryCachedStorage::remove_chunk(QByteArray ct_hash) noexcept {
-	QMutexLocker lk(&cache_lock_);
+	void setAssembled(const QByteArray& path_id);
+	bool isChunkAssembled(const QByteArray& ct_hash);
+	QPair<quint32, QByteArray> getChunkSizeIv(const QByteArray& ct_hash);
 
-	cache_.remove(ct_hash);
-}
+	/* Properties */
+	QList<SignedMeta> containingChunk(const QByteArray& ct_hash);
+
+private:
+	const FolderParams& params_;
+
+	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+
+	QList<SignedMeta> getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
+	void wipe();
+};
 
 } /* namespace librevault */

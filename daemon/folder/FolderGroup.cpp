@@ -29,8 +29,9 @@
 #include "FolderGroup.h"
 
 #include "IgnoreList.h"
-#include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/ChunkStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "folder/transfer/Downloader.h"
 #include "folder/transfer/MetaDownloader.h"
 #include "folder/transfer/MetaUploader.h"
@@ -55,38 +56,37 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   /* Initializing components */
   ignore_list = std::make_unique<IgnoreList>(params_);
 
-  meta_storage_ = new MetaStorage(params_, ignore_list.get(), this);
-  chunk_storage_ = new ChunkStorage(params_, meta_storage_, this);
+  storage_ = new Storage(params_, ignore_list.get(), this);
 
-  uploader_ = new Uploader(chunk_storage_, this);
-  downloader_ = new Downloader(params_, meta_storage_, this);
-  meta_uploader_ = new MetaUploader(meta_storage_, chunk_storage_, this);
-  meta_downloader_ = new MetaDownloader(params_, meta_storage_, downloader_, this);
+  uploader_ = new Uploader(storage_->chunkStorage(), this);
+  downloader_ = new Downloader(params_, storage_, this);
+  meta_uploader_ = new MetaUploader(storage_, storage_->chunkStorage(), this);
+  meta_downloader_ = new MetaDownloader(params_, storage_, downloader_, this);
 
   pool_ = new PeerPool(params, node_key, this);
 
   // Connecting signals and slots
-  connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handleIndexedMeta);
-  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash) {
+  connect(storage_->index(), &Index::metaAdded, this, &FolderGroup::handleNewMeta);
+  connect(storage_->chunkStorage(), &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash) {
     downloader_->notifyLocalChunk(ct_hash);
     uploader_->broadcast_chunk(pool_->validPeers(), ct_hash);
   });
-  connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
+  connect(downloader_, &Downloader::chunkDownloaded, storage_->chunkStorage(), &ChunkStorage::put_chunk);
 
   connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 
   // Go through index
   QTimer::singleShot(0, this, [=] {
-    for (auto& smeta : meta_storage_->getMeta()) handleIndexedMeta(smeta);
+    for (auto& smeta : storage_->index()->getMeta()) handleNewMeta(smeta);
   });
 }
 
 FolderGroup::~FolderGroup() = default;
 
 /* Actions */
-void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {
+void FolderGroup::handleNewMeta(const SignedMeta& smeta) {
   MetaInfo::PathRevision revision = smeta.metaInfo().path_revision();
-  QBitArray bitfield = chunk_storage_->make_bitfield(smeta.metaInfo());
+  QBitArray bitfield = storage_->chunkStorage()->make_bitfield(smeta.metaInfo());
 
   downloader_->notifyLocalMeta(smeta, bitfield);
   meta_uploader_->broadcast_meta(pool_->validPeers(), revision, bitfield);

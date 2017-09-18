@@ -27,46 +27,39 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "SignedMeta.h"
+#include "util/log.h"
+#include "MetaInfo.h"
 #include <QTimer>
-#include <QThreadPool>
 
 namespace librevault {
 
-class Archive;
-class MetaStorage;
 class FolderParams;
-class ChunkStorage;
-class Secret;
+class IgnoreList;
+class Storage;
 
-class AssemblerQueue : public QObject {
+class DirectoryPoller : public QObject {
 	Q_OBJECT
+	LOG_SCOPE("DirectoryPoller");
 signals:
-	void aboutToStop();
-
-	void startedAssemble();
-	void finishedAssemble();
+	void newPath(QString denormpath);
 
 public:
-	AssemblerQueue(const FolderParams& params,
-	              MetaStorage* meta_storage,
-	              ChunkStorage* chunk_storage,
-	              Archive* archive, QObject* parent);
-	virtual ~AssemblerQueue();
+	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, Storage* parent);
+	virtual ~DirectoryPoller();
 
 public slots:
-	void addAssemble(SignedMeta smeta);
+	void setEnabled(bool enabled);
 
 private:
 	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
-	Archive* archive_;
+	Storage* meta_storage_;
+	IgnoreList* ignore_list_;
 
-	QThreadPool* threadpool_;
+	QTimer* polling_timer_;
 
-	void periodic_assemble_operation();
-	QTimer* assemble_timer_;
+	QList<QString> getReindexList();
+
+	void addPathsToQueue();
 };
 
 } /* namespace librevault */

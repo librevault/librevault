@@ -36,14 +36,14 @@
 namespace librevault {
 
 class Peer;
-class MetaStorage;
+class Storage;
 class ChunkStorage;
 
 class MetaUploader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("MetaUploader");
 public:
-	MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
+	MetaUploader(Storage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
 
 	void broadcast_meta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield);
 
@@ -52,7 +52,7 @@ public:
 	void handle_meta_request(Peer* remote, const MetaInfo::PathRevision& revision);
 
 private:
-	MetaStorage* meta_storage_;
+	Storage* storage_;
 	ChunkStorage* chunk_storage_;
 };
 

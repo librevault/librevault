@@ -27,46 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "SignedMeta.h"
-#include <QMap>
-#include <QString>
-#include <QThreadPool>
+#include "MetaInfo.h"
+#include <QFile>
 
 namespace librevault {
 
 class FolderParams;
-class MetaStorage;
-class IgnoreList;
-class IndexerWorker;
-class IndexerQueue : public QObject {
+class Storage;
+
+class MemoryCachedStorage;
+class EncStorage;
+class OpenStorage;
+class Archive;
+class AssemblerQueue;
+
+class ChunkStorage : public QObject {
 	Q_OBJECT
-signals:
-	void aboutToStop();
-
-	void startedIndexing();
-	void finishedIndexing();
-
 public:
-	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
-	virtual ~IndexerQueue();
+	struct no_such_chunk : public std::runtime_error {
+		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
+	};
 
-public slots:
-	void addIndexing(QString abspath);
+	ChunkStorage(const FolderParams& params, Storage* meta_storage, QObject* parent);
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	IgnoreList* ignore_list_;
+	bool have_chunk(QByteArray ct_hash) const noexcept ;
+	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
+	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
 
-	QThreadPool* threadpool_;
+	QBitArray make_bitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
 
-	const Secret& secret_;
+	void pruneAssembledChunks(const MetaInfo &meta);
+  void rebalanceChunk(const QByteArray& ct_hash);
 
-	QMap<QString, IndexerWorker*> tasks_;
+ signals:
+	void chunkAdded(QByteArray ct_hash);
 
-private slots:
-	void metaCreated(SignedMeta smeta);
-	void metaFailed(QString error_string);
+protected:
+  const FolderParams& params_;
+
+	Storage* storage_;
+
+	MemoryCachedStorage* mem_storage;
+	EncStorage* enc_storage;
+	OpenStorage* open_storage;
 };
 
 } /* namespace librevault */

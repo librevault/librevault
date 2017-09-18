@@ -26,54 +26,45 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "SignedMeta.h"
-#include <QObject>
-#include <QRunnable>
+#include "Storage.h"
+#include "scanner/DirectoryPoller.h"
+#include "scanner/DirectoryWatcher.h"
+#include "Index.h"
+#include "ChunkStorage.h"
+#include "scanner/IndexerQueue.h"
+#include "control/FolderParams.h"
+#include "assembler/AssemblerQueue.h"
 
 namespace librevault {
 
-class Archive;
-class MetaStorage;
-class FolderParams;
-class ChunkStorage;
-class Secret;
+Storage::Storage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) : QObject(parent) {
+	index_ = new Index(params, this);
+	indexer_ = new IndexerQueue(params, ignore_list, this);
+	poller_ = new DirectoryPoller(params, ignore_list, this);
+	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 
-class AssemblerWorker : public QObject, public QRunnable {
-public:
-	struct abort_assembly : std::runtime_error {
-		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
-	};
+	if(params.secret.canEncrypt()){
+		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);
+		connect(watcher_, &DirectoryWatcher::newPath, indexer_, &IndexerQueue::addIndexing);
 
-	AssemblerWorker(SignedMeta smeta,
-	                const FolderParams& params,
-					MetaStorage* meta_storage,
-					ChunkStorage* chunk_storage,
-					Archive* archive);
-	virtual ~AssemblerWorker();
+		poller_->setEnabled(true);
+	}
 
-	void run() noexcept override;
+	if(params.secret.canDecrypt()) {
+		file_assembler = new AssemblerQueue(params, this, this);
+		connect(index_, &Index::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
+	}
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	ChunkStorage* chunk_storage_;
-	Archive* archive_;
+	chunk_storage_ = new ChunkStorage(params, this, this);
+}
 
-	SignedMeta smeta_;
-	const MetaInfo& meta_;
+void Storage::addDownloadedMetaInfo(const SignedMeta &signed_meta) {
+	return index_->putMeta(signed_meta);	//reschedule
+}
 
-	QByteArray normpath_;
-	QString denormpath_;
-
-	bool assemble_deleted();
-	bool assemble_symlink();
-	bool assemble_directory();
-	bool assemble_file();
-
-	void apply_attrib();
-
-	QByteArray get_chunk_pt(QByteArray ct_hash) const;
-};
+void Storage::handleAddedChunk(const QByteArray& ct_hash) {
+	for(auto& smeta : index_->containingChunk(ct_hash))
+		file_assembler->addAssemble(smeta);
+}
 
 } /* namespace librevault */

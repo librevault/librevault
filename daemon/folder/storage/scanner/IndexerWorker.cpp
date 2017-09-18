@@ -28,7 +28,8 @@
  */
 #include "IndexerWorker.h"
 
-#include "MetaStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include <PathNormalizer.h>
@@ -49,11 +50,11 @@ Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
-IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent) :
+IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, Storage* storage, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	abspath_(abspath),
 	params_(params),
-	meta_storage_(meta_storage),
+	storage_(storage),
 	ignore_list_(ignore_list),
 	secret_(params.secret),
 	active_(true) {}
@@ -68,13 +69,13 @@ void IndexerWorker::run() noexcept {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = meta_storage_->getMeta(MetaInfo::makePathId(normpath, secret_));
+			old_smeta_ = storage_->index()->getMeta(MetaInfo::makePathId(normpath, secret_));
 			old_meta_ = old_smeta_.metaInfo();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
 			}
 		}catch(boost::filesystem::filesystem_error& e){
-		}catch(MetaStorage::no_such_meta& e){
+		}catch(Index::no_such_meta& e){
 		}catch(MetaInfo::error& e){
 			qCDebug(log_indexer) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
 		}

@@ -28,7 +28,7 @@
  */
 #include "Index.h"
 #include "control/FolderParams.h"
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/Storage.h"
 #include "blob.h"
 #include <QFile>
 #include <ChunkInfo.h>
@@ -76,7 +76,7 @@ Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), par
 bool Index::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		getMeta(path_revision);
-	}catch(MetaStorage::no_such_meta& e){
+	}catch(no_such_meta& e){
 		return false;
 	}
 	return true;
@@ -86,7 +86,7 @@ SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
 	auto smeta = getMeta(path_revision.path_id_);
 	if(smeta.metaInfo().revision() == path_revision.revision_)
 		return smeta;
-	else throw MetaStorage::no_such_meta();
+	else throw Index::no_such_meta();
 }
 
 /* Meta manipulators */
@@ -141,12 +141,12 @@ QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::str
 		result_list << SignedMeta(conv_bytearray(row[0]), conv_bytearray(row[1]));
 	return result_list;
 }
-SignedMeta Index::getMeta(QByteArray path_id){
+SignedMeta Index::getMeta(const QByteArray& path_id){
 	auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
 		{":path_id", conv_bytearray(path_id)}
 	});
 
-	if(meta_list.empty()) throw MetaStorage::no_such_meta();
+	if(meta_list.empty()) throw Index::no_such_meta();
 	return *meta_list.begin();
 }
 QList<SignedMeta> Index::getMeta(){
@@ -164,31 +164,31 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		return getMeta(path_revision.path_id_).metaInfo().revision() < path_revision.revision_;
-	}catch(MetaStorage::no_such_meta& e){
+	}catch(no_such_meta& e){
 		return true;
 	}
 }
 
-void Index::setAssembled(QByteArray path_id) {
+void Index::setAssembled(const QByteArray& path_id) {
 	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
 	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
 }
 
-bool Index::isAssembledChunk(QByteArray ct_hash) {
+bool Index::isChunkAssembled(const QByteArray& ct_hash) {
 	auto sql_result = db_->exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
 		{":ct_hash", conv_bytearray(ct_hash)}
 	});
 	return sql_result.have_rows();
 }
 
-QPair<quint32, QByteArray> Index::getChunkSizeIv(QByteArray ct_hash) {
+QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
 	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", conv_bytearray(ct_hash)}})) {
 		return qMakePair(row[0].as_uint(), conv_bytearray(row[1].as_blob()));
 	}
-	throw MetaStorage::no_such_meta();
+	throw Index::no_such_meta();
 };
 
-QList<SignedMeta> Index::containingChunk(QByteArray ct_hash) {
+QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {
 	return getMeta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
 		{{":ct_hash", conv_bytearray(ct_hash)}});
 }

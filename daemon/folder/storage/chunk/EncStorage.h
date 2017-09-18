@@ -26,39 +26,32 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MetaDownloader.h"
-#include "Downloader.h"
-#include "folder/FolderGroup.h"
-#include "p2p/Peer.h"
-#include "p2p/MessageHandler.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/Index.h"
+#pragma once
+#include "util/log.h"
+#include <QFile>
+#include <QReadWriteLock>
+#include <memory>
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	storage_(meta_storage),
-	downloader_(downloader) {
-	LOGFUNC();
-}
+class FolderParams;
+class EncStorage : public QObject {
+	Q_OBJECT
+	LOG_SCOPE("EncStorage");
+public:
+	EncStorage(const FolderParams& params, QObject* parent);
 
-void MetaDownloader::handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	if(storage_->index()->haveMeta(revision))
-		downloader_->notifyRemoteMeta(origin, revision, bitfield);
-	else if(storage_->index()->putAllowed(revision))
-		origin->messageHandler()->sendMetaRequest(revision);
-	else
-		LOGD("Remote node notified us about an expired Meta");
-}
+	bool have_chunk(QByteArray ct_hash) const noexcept;
+	QByteArray get_chunk(QByteArray ct_hash) const;
+	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
+	void remove_chunk(QByteArray ct_hash);
 
-void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
-	if(smeta.isValid(params_.secret), storage_->index()->putAllowed(smeta.metaInfo().path_revision())) {
-    storage_->addDownloadedMetaInfo(smeta);
-		downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
-	}else
-		LOGD("Remote node posted to us about an expired Meta");
-}
+private:
+	const FolderParams& params_;
+	mutable QReadWriteLock storage_mtx_;
+
+	QString make_chunk_ct_name(const QByteArray& ct_hash) const noexcept;
+	QString make_chunk_ct_path(const QByteArray& ct_hash) const noexcept;
+};
 
 } /* namespace librevault */

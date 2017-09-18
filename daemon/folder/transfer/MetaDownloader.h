@@ -36,14 +36,14 @@
 namespace librevault {
 
 class Peer;
-class MetaStorage;
+class Storage;
 class Downloader;
 
 class MetaDownloader : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("MetaDownloader");
 public:
-	MetaDownloader(const FolderParams& params, MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
+	MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent);
 
 	/* Message handlers */
 	void handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield);
@@ -51,7 +51,7 @@ public:
 
 private:
 	const FolderParams& params_;
-	MetaStorage* meta_storage_;
+	Storage* storage_;
 	Downloader* downloader_;
 };
 

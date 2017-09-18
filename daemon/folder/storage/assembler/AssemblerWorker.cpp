@@ -28,14 +28,15 @@
  */
 #include "AssemblerWorker.h"
 
-#include "ChunkStorage.h"
+#include "folder/storage/ChunkStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include <PathNormalizer.h>
 #include <ChunkInfo.h>
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/Storage.h"
 #include "util/conv_fspath.h"
 #include "util/log.h"
+#include "folder/storage/Index.h"
 #include <boost/filesystem.hpp>
 #include <QBitArray>
 #include <QDir>
@@ -53,13 +54,9 @@ Q_LOGGING_CATEGORY(log_assembler, "folder.chunk.assembler")
 namespace librevault {
 
 AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
-	                             MetaStorage* meta_storage,
-	                             ChunkStorage* chunk_storage,
-	                             Archive* archive) :
+	                             Storage* storage) :
 	params_(params),
-	meta_storage_(meta_storage),
-	chunk_storage_(chunk_storage),
-	archive_(archive),
+	storage_(storage),
 	smeta_(smeta),
 	meta_(smeta.metaInfo()) {}
 
@@ -67,8 +64,8 @@ AssemblerWorker::~AssemblerWorker() {}
 
 QByteArray AssemblerWorker::get_chunk_pt(QByteArray ct_hash) const {
 	try {
-		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
-		return ChunkInfo::decrypt(chunk_storage_->get_chunk(ct_hash), size_iv.first, params_.secret.encryptionKey(), size_iv.second);
+		QPair<quint32, QByteArray> size_iv = storage_->index()->getChunkSizeIv(ct_hash);
+		return ChunkInfo::decrypt(storage_->chunkStorage()->get_chunk(ct_hash), size_iv.first, params_.secret.encryptionKey(), size_iv.second);
 	}catch(std::exception& e){
 		qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
 		throw ChunkStorage::no_such_chunk();
@@ -100,8 +97,8 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.kind() != MetaInfo::DELETED)
 				apply_attrib();
 
-			meta_storage_->markAssembled(meta_.pathKeyedHash());
-			chunk_storage_->cleanup(meta_);
+			storage_->index()->setAssembled(meta_.pathKeyedHash());
+      storage_->chunkStorage()->pruneAssembledChunks(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
@@ -133,7 +130,6 @@ bool AssemblerWorker::assemble_directory() {
 	bool create_new = true;
 	if(boost::filesystem::status(denormpath_fs).type() != boost::filesystem::file_type::directory_file)
 		create_new = !boost::filesystem::remove(denormpath_fs);
-	meta_storage_->prepareAssemble(normpath_, MetaInfo::DIRECTORY, create_new);
 
 	if(create_new)
 		QDir().mkpath(denormpath_);
@@ -145,7 +141,7 @@ bool AssemblerWorker::assemble_file() {
 	LOGFUNC();
 
 	// Check if we have all needed chunks
-	auto bitfield = chunk_storage_->make_bitfield(meta_);
+	auto bitfield = storage_->chunkStorage()->make_bitfield(meta_);
 	if(bitfield.count(true) != bitfield.size()) return false;
 
 	//
@@ -174,8 +170,6 @@ bool AssemblerWorker::assemble_file() {
 			qCWarning(log_assembler) << "Could not set mtime on file:" << assembly_path << "E:" << QString::fromStdString(ec.message());    // FIXME: #83
 		}
 	}
-
-	meta_storage_->prepareAssemble(normpath_, MetaInfo::FILE, boost::filesystem::exists(conv_fspath(denormpath_)));
 
 	if(! QFile::remove(denormpath_)) {
 		qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83

@@ -83,6 +83,10 @@ class Secret {
 
   const QByteArray& folderid() const;
 
+  // Capabilities
+  bool canEncrypt() const { return level() <= ReadWrite; }
+  bool canDecrypt() const { return level() <= ReadOnly; }
+
   // Secret derivers
   Secret derive(Level key_type) const;
 

@@ -28,7 +28,8 @@
  */
 #include "IndexerQueue.h"
 #include "IndexerWorker.h"
-#include "MetaStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 
@@ -39,7 +40,7 @@ namespace librevault {
 IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	meta_storage_(qobject_cast<MetaStorage*>(parent)),
+	meta_storage_(qobject_cast<Storage*>(parent)),
 	ignore_list_(ignore_list),
 	secret_(params.secret) {
 	qRegisterMetaType<SignedMeta>("SignedMeta");
@@ -66,8 +67,6 @@ void IndexerQueue::addIndexing(QString abspath) {
 	connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);
 	connect(worker, &IndexerWorker::metaFailed, this, &IndexerQueue::metaFailed);
 	tasks_.insert(abspath, worker);
-	if(tasks_.size() == 1)
-		emit startedIndexing();
 	threadpool_->start(worker);
 }
 
@@ -76,19 +75,13 @@ void IndexerQueue::metaCreated(SignedMeta smeta) {
 	tasks_.remove(worker->absolutePath());
 	worker->deleteLater();
 
-	if(tasks_.size() == 0)
-		emit finishedIndexing();
-
-	meta_storage_->putMeta(smeta, true);
+	meta_storage_->index()->putMeta(smeta, true);
 }
 
 void IndexerQueue::metaFailed(QString error_string) {
 	IndexerWorker* worker = qobject_cast<IndexerWorker*>(sender());
 	tasks_.remove(worker->absolutePath());
 	worker->deleteLater();
-
-	if(tasks_.size() == 0)
-		emit finishedIndexing();
 
 	qCWarning(log_indexer) << "Skipping" << worker->absolutePath() << "Reason:" << error_string;
 }

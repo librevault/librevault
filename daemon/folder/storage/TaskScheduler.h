@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,53 +26,34 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "EncStorage.h"
-#include "ChunkStorage.h"
-#include "control/FolderParams.h"
-#include "Base32.h"
+#pragma once
+#include <QObject>
+#include <QThreadPool>
 
 namespace librevault {
 
-EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
+class FolderParams;
+class SignedMeta;
+class Storage;
 
-QString EncStorage::make_chunk_ct_name(QByteArray ct_hash) const noexcept {
-	return "chunk-" + QString::fromLatin1(fromBase32(ct_hash));
-}
+class TaskScheduler : public QObject {
+	Q_OBJECT
 
-QString EncStorage::make_chunk_ct_path(QByteArray ct_hash) const noexcept {
-	return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
-}
+signals:
+  void aboutToStop();
 
-bool EncStorage::have_chunk(QByteArray ct_hash) const noexcept {
-	QReadLocker lk(&storage_mtx_);
-	return QFile::exists(make_chunk_ct_path(ct_hash));
-}
+public:
+	TaskScheduler(const FolderParams& params, QObject* parent);
 
-QByteArray EncStorage::get_chunk(QByteArray ct_hash) const {
-	QReadLocker lk(&storage_mtx_);
+  Q_SLOT void scheduleScanning(const QString& abspath);
+	Q_SLOT void scheduleAssemble(const SignedMeta& smeta);
+	Q_SLOT void scheduleAddDownloadedMeta(const SignedMeta& smeta);
 
-	QFile chunk_file(make_chunk_ct_path(ct_hash));
-	if(!chunk_file.open(QIODevice::ReadOnly))
-		throw ChunkStorage::no_such_chunk();
+ private:
+	const FolderParams& params_;
+	Storage* storage_;
 
-	return chunk_file.readAll();
-}
-
-void EncStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
-	QWriteLocker lk(&storage_mtx_);
-
-	chunk_f->setParent(this);
-	chunk_f->rename(make_chunk_ct_path(ct_hash));
-	chunk_f->deleteLater();
-
-	LOGD("Encrypted block" << ct_hash.toHex() << "pushed into EncStorage");
-}
-
-void EncStorage::remove_chunk(QByteArray ct_hash) {
-	QWriteLocker lk(&storage_mtx_);
-	QFile::remove(make_chunk_ct_path(ct_hash));
-
-	LOGD("Block" << ct_hash.toHex() << "removed from EncStorage");
-}
+	QThreadPool* threadpool_;
+};
 
 } /* namespace librevault */

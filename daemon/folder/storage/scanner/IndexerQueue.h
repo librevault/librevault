@@ -27,31 +27,43 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include <QFile>
-#include <QReadWriteLock>
-#include <memory>
+#include "SignedMeta.h"
+#include <QMap>
+#include <QString>
+#include <QThreadPool>
 
 namespace librevault {
 
 class FolderParams;
-class EncStorage : public QObject {
+class Storage;
+class IgnoreList;
+class IndexerWorker;
+class IndexerQueue : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("EncStorage");
-public:
-	EncStorage(const FolderParams& params, QObject* parent);
+signals:
+	void aboutToStop();
 
-	bool have_chunk(QByteArray ct_hash) const noexcept;
-	QByteArray get_chunk(QByteArray ct_hash) const;
-	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
-	void remove_chunk(QByteArray ct_hash);
+public:
+	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
+	virtual ~IndexerQueue();
+
+public slots:
+	void addIndexing(QString abspath);
 
 private:
 	const FolderParams& params_;
-	mutable QReadWriteLock storage_mtx_;
+	Storage* meta_storage_;
+	IgnoreList* ignore_list_;
 
-	QString make_chunk_ct_name(QByteArray ct_hash) const noexcept;
-	QString make_chunk_ct_path(QByteArray ct_hash) const noexcept;
+	QThreadPool* threadpool_;
+
+	const Secret& secret_;
+
+	QMap<QString, IndexerWorker*> tasks_;
+
+private slots:
+	void metaCreated(SignedMeta smeta);
+	void metaFailed(QString error_string);
 };
 
 } /* namespace librevault */

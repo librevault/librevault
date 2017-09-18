@@ -26,58 +26,38 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/log.h"
-#include <dir_monitor/dir_monitor.hpp>
-#include "MetaInfo.h"
-#include <QThread>
-#include <boost/asio/io_service.hpp>
+#include "MemoryCachedStorage.h"
+#include "folder/storage/ChunkStorage.h"
 
 namespace librevault {
 
-class FolderParams;
-class IgnoreList;
+MemoryCachedStorage::MemoryCachedStorage(QObject* parent) : QObject(parent), cache_(50*1024*1024) {}    // 50 MB cache is enough for most purposes
 
-class DirectoryWatcherThread : public QThread {
-	Q_OBJECT
-signals:
-	void dirEvent(boost::asio::dir_monitor_event ev);
+bool MemoryCachedStorage::have_chunk(QByteArray ct_hash) const noexcept {
+	return cache_.contains(ct_hash);
+}
 
-public:
-	DirectoryWatcherThread(QString abspath, QObject* parent);
-	~DirectoryWatcherThread();
+QByteArray MemoryCachedStorage::get_chunk(QByteArray ct_hash) const {
+	QMutexLocker lk(&cache_lock_);
 
-protected:
-	boost::asio::io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
-	boost::asio::dir_monitor monitor_;  // https://github.com/berkus/dir_monitor/issues/42
+	QByteArray* cached_chunk = cache_[ct_hash];
+	if(cached_chunk)
+		return *cached_chunk;
+	else
+		throw ChunkStorage::no_such_chunk();
+}
 
-	void run() override;
+void MemoryCachedStorage::put_chunk(QByteArray ct_hash, QByteArray data) {
+	QMutexLocker lk(&cache_lock_);
 
-	void monitorLoop();
-};
+	QByteArray* cached_chunk = new QByteArray(data);
+	cache_.insert(ct_hash, cached_chunk, cached_chunk->size());
+}
 
-class DirectoryWatcher : public QObject {
-	Q_OBJECT
-signals:
-	void newPath(QString abspath);
+void MemoryCachedStorage::remove_chunk(QByteArray ct_hash) noexcept {
+	QMutexLocker lk(&cache_lock_);
 
-public:
-	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
-	virtual ~DirectoryWatcher();
-
-	// A VERY DIRTY HACK
-	void prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal = false);
-
-private:
-	const FolderParams& params_;
-	IgnoreList* ignore_list_;
-
-	DirectoryWatcherThread* watcher_thread_;
-
-	std::multiset<QString> prepared_assemble_;
-
-private slots:
-	void handleDirEvent(boost::asio::dir_monitor_event ev);
-};
+	cache_.remove(ct_hash);
+}
 
 } /* namespace librevault */

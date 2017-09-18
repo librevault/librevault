@@ -29,37 +29,32 @@
 #pragma once
 #include "util/log.h"
 #include "MetaInfo.h"
-#include <QTimer>
+#include <QObject>
+#include <memory>
+#include <ChunkInfo.h>
 
 namespace librevault {
 
 class FolderParams;
-class IgnoreList;
-class MetaStorage;
+class Secret;
+class Storage;
 
-class DirectoryPoller : public QObject {
+class OpenStorage : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("DirectoryPoller");
-signals:
-	void newPath(QString denormpath);
-
+	LOG_SCOPE("OpenStorage");
 public:
-	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, MetaStorage* parent);
-	virtual ~DirectoryPoller();
+	OpenStorage(const FolderParams& params, Storage* storage, QObject* parent);
 
-public slots:
-	void setEnabled(bool enabled);
+	bool have_chunk(QByteArray ct_hash) const noexcept;
+	QByteArray get_chunk(QByteArray ct_hash) const;
 
 private:
 	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	IgnoreList* ignore_list_;
+	Storage* storage_;
 
-	QTimer* polling_timer_;
-
-	QList<QString> getReindexList();
-
-	void addPathsToQueue();
+	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
+		return ct_hash == ChunkInfo::compute_hash(chunk_pt);
+	}
 };
 
 } /* namespace librevault */

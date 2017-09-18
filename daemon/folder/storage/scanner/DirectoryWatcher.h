@@ -26,39 +26,53 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MetaDownloader.h"
-#include "Downloader.h"
-#include "folder/FolderGroup.h"
-#include "p2p/Peer.h"
-#include "p2p/MessageHandler.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/Index.h"
+#pragma once
+#include "util/log.h"
+#include <dir_monitor/dir_monitor.hpp>
+#include "MetaInfo.h"
+#include <QThread>
+#include <boost/asio/io_service.hpp>
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	storage_(meta_storage),
-	downloader_(downloader) {
-	LOGFUNC();
-}
+class FolderParams;
+class IgnoreList;
 
-void MetaDownloader::handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	if(storage_->index()->haveMeta(revision))
-		downloader_->notifyRemoteMeta(origin, revision, bitfield);
-	else if(storage_->index()->putAllowed(revision))
-		origin->messageHandler()->sendMetaRequest(revision);
-	else
-		LOGD("Remote node notified us about an expired Meta");
-}
+class DirectoryWatcherThread : public QThread {
+	Q_OBJECT
+signals:
+	void dirEvent(boost::asio::dir_monitor_event ev);
 
-void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
-	if(smeta.isValid(params_.secret), storage_->index()->putAllowed(smeta.metaInfo().path_revision())) {
-    storage_->addDownloadedMetaInfo(smeta);
-		downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
-	}else
-		LOGD("Remote node posted to us about an expired Meta");
-}
+public:
+	DirectoryWatcherThread(QString abspath, QObject* parent);
+	~DirectoryWatcherThread();
+
+protected:
+	boost::asio::io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
+	boost::asio::dir_monitor monitor_;  // https://github.com/berkus/dir_monitor/issues/42
+
+	void run() override;
+
+	void monitorLoop();
+};
+
+class DirectoryWatcher : public QObject {
+	Q_OBJECT
+signals:
+	void newPath(QString abspath);
+
+public:
+	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
+	virtual ~DirectoryWatcher();
+
+private:
+	const FolderParams& params_;
+	IgnoreList* ignore_list_;
+
+	DirectoryWatcherThread* watcher_thread_;
+
+private slots:
+	void handleDirEvent(boost::asio::dir_monitor_event ev);
+};
 
 } /* namespace librevault */

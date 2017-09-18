@@ -28,54 +28,57 @@
  */
 #pragma once
 #include "SignedMeta.h"
+#include <QLoggingCategory>
 #include <QObject>
+#include <QRunnable>
+#include <QString>
 
 namespace librevault {
 
-class DirectoryPoller;
-class DirectoryWatcher;
 class FolderParams;
+class Storage;
 class IgnoreList;
-class Index;
-class IndexerQueue;
-
-class MetaStorage : public QObject {
+class IndexerWorker : public QObject, public QRunnable {
 	Q_OBJECT
 signals:
-	void metaAdded(SignedMeta meta);
-	void metaAddedExternal(SignedMeta meta);
+	void metaCreated(SignedMeta smeta);
+	void metaFailed(QString errorString);
 
 public:
-	struct no_such_meta : public std::runtime_error {
-		no_such_meta() : std::runtime_error("Requested Meta not found"){}
+	struct abort_index : public std::runtime_error {
+		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
 	};
 
-	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
-	virtual ~MetaStorage();
+	IndexerWorker(QString abspath, const FolderParams& params, Storage* storage, IgnoreList* ignore_list, QObject* parent);
+	virtual ~IndexerWorker();
 
-	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const MetaInfo::PathRevision& path_revision);
-	SignedMeta getMeta(QByteArray path_id);
-	QList<SignedMeta> getMeta();
-	QList<SignedMeta> getExistingMeta();
-	QList<SignedMeta> getIncompleteMeta();
-	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
-	QList<SignedMeta> containingChunk(QByteArray ct_hash);
-	QPair<quint32, QByteArray> getChunkSizeIv(QByteArray ct_hash);
+	QString absolutePath() const {return abspath_;}
 
-	// Assembled index
-	void markAssembled(QByteArray path_id);
-	bool isChunkAssembled(QByteArray ct_hash);
-
-	bool putAllowed(const MetaInfo::PathRevision& path_revision) noexcept;
-
-	void prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal = false);
+public slots:
+	void run() noexcept override;
+	void stop() {active_ = false;};
 
 private:
-	Index* index_;
-	IndexerQueue* indexer_;
-	DirectoryPoller* poller_;
-	DirectoryWatcher* watcher_;
+	QString abspath_;
+	const FolderParams& params_;
+	Storage* storage_;
+	IgnoreList* ignore_list_;
+
+	const Secret& secret_;
+
+	MetaInfo old_meta_, new_meta_;
+	SignedMeta old_smeta_, new_smeta_;
+
+	/* Status */
+	std::atomic<bool> active_;
+
+	void make_Meta();
+
+	/* File analyzers */
+	MetaInfo::Kind get_type();
+	void update_fsattrib();
+	void update_chunks();
+	ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
 };
 
 } /* namespace librevault */

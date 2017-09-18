@@ -71,25 +71,7 @@ DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignor
 	connect(watcher_thread_, &DirectoryWatcherThread::dirEvent, this, &DirectoryWatcher::handleDirEvent, Qt::QueuedConnection);
 }
 
-DirectoryWatcher::~DirectoryWatcher() {}
-
-void DirectoryWatcher::prepareAssemble(QByteArray normpath, MetaInfo::Kind type, bool with_removal) {
-	unsigned skip_events = 0;
-	if(with_removal || type == MetaInfo::Kind::DELETED) skip_events++;
-
-	switch(type) {
-		case MetaInfo::FILE:
-			skip_events += 2;   // RENAMED (NEW NAME), MODIFIED
-			break;
-		case MetaInfo::DIRECTORY:
-			skip_events += 1;   // ADDED
-			break;
-		default:;
-	}
-
-	for(unsigned i = 0; i < skip_events; i++)
-		prepared_assemble_.insert(normpath);
-}
+DirectoryWatcher::~DirectoryWatcher() = default;
 
 void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 	switch(ev.type){
@@ -102,13 +84,6 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
 	{
 		QString abspath = conv_fspath(ev.path);
 		QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
-
-		auto prepared_assemble_it = prepared_assemble_.find(normpath);
-		if(prepared_assemble_it != prepared_assemble_.end()) {
-			prepared_assemble_.erase(prepared_assemble_it);
-			return;
-			// FIXME: "prepares" is a dirty hack. It must be EXTERMINATED!
-		}
 
 		if(!ignore_list_->isIgnored(normpath))
 			emit newPath(abspath);

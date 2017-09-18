@@ -26,51 +26,53 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/log.h"
-#include "util/SQLiteWrapper.h"
-#include "SignedMeta.h"
-#include <QObject>
+#include "EncStorage.h"
+#include "folder/storage/ChunkStorage.h"
+#include "control/FolderParams.h"
+#include "Base32.h"
 
 namespace librevault {
 
-class FolderParams;
+EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
-class Index : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Index");
-signals:
-	void metaAdded(SignedMeta meta);
-	void metaAddedExternal(SignedMeta meta);
+QString EncStorage::make_chunk_ct_name(const QByteArray& ct_hash) const noexcept {
+	return "chunk-" + QString::fromLatin1(fromBase32(ct_hash));
+}
 
-public:
-	Index(const FolderParams& params, QObject* parent);
+QString EncStorage::make_chunk_ct_path(const QByteArray& ct_hash) const noexcept {
+	return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
+}
 
-	/* Meta manipulators */
-	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const MetaInfo::PathRevision& path_revision);
-	SignedMeta getMeta(QByteArray path_id);
-	QList<SignedMeta> getMeta();
-	QList<SignedMeta> getExistingMeta();
-	QList<SignedMeta> getIncompleteMeta();
-	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
+bool EncStorage::have_chunk(QByteArray ct_hash) const noexcept {
+	QReadLocker lk(&storage_mtx_);
+	return QFile::exists(make_chunk_ct_path(ct_hash));
+}
 
-	bool putAllowed(const MetaInfo::PathRevision& path_revision) noexcept;
+QByteArray EncStorage::get_chunk(QByteArray ct_hash) const {
+	QReadLocker lk(&storage_mtx_);
 
-	void setAssembled(QByteArray path_id);
-	bool isAssembledChunk(QByteArray ct_hash);
-	QPair<quint32, QByteArray> getChunkSizeIv(QByteArray ct_hash);
+	QFile chunk_file(make_chunk_ct_path(ct_hash));
+	if(!chunk_file.open(QIODevice::ReadOnly))
+		throw ChunkStorage::no_such_chunk();
 
-	/* Properties */
-	QList<SignedMeta> containingChunk(QByteArray ct_hash);
+	return chunk_file.readAll();
+}
 
-private:
-	const FolderParams& params_;
+void EncStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
+	QWriteLocker lk(&storage_mtx_);
 
-	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+	chunk_f->setParent(this);
+	chunk_f->rename(make_chunk_ct_path(ct_hash));
+	chunk_f->deleteLater();
 
-	QList<SignedMeta> getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
-	void wipe();
-};
+	LOGD("Encrypted block" << ct_hash.toHex() << "pushed into EncStorage");
+}
+
+void EncStorage::remove_chunk(QByteArray ct_hash) {
+	QWriteLocker lk(&storage_mtx_);
+	QFile::remove(make_chunk_ct_path(ct_hash));
+
+	LOGD("Block" << ct_hash.toHex() << "removed from EncStorage");
+}
 
 } /* namespace librevault */

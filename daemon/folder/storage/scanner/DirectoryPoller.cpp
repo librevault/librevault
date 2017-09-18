@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #include "DirectoryPoller.h"
-#include "MetaStorage.h"
 #include "IndexerQueue.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include <PathNormalizer.h>
@@ -36,7 +37,7 @@
 
 namespace librevault {
 
-DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, MetaStorage* parent) :
+DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, Storage* parent) :
 	QObject(parent),
 	params_(params),
 	meta_storage_(parent),
@@ -49,7 +50,7 @@ DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_
 	connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);
 }
 
-DirectoryPoller::~DirectoryPoller() {}
+DirectoryPoller::~DirectoryPoller() = default;
 
 void DirectoryPoller::setEnabled(bool enabled) {
 	if(enabled) {
@@ -79,13 +80,13 @@ QList<QString> DirectoryPoller::getReindexList() {
 
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
 	// They can still be indexed by monitor, though.
-	for(auto& smeta : meta_storage_->getIncompleteMeta()) {
+	for(auto& smeta : meta_storage_->index()->getIncompleteMeta()) {
 		QString denormpath = PathNormalizer::absolutizePath(smeta.metaInfo().path().plaintext(params_.secret.encryptionKey()), params_.path);
 		file_list.remove(denormpath);
 	}
 
 	// Files present in index (files added from here will be marked as DELETED)
-	for(auto& smeta : meta_storage_->getExistingMeta()) {
+	for(auto& smeta : meta_storage_->index()->getExistingMeta()) {
 		QByteArray normpath = smeta.metaInfo().path().plaintext(params_.secret.encryptionKey());
 		QString denormpath = PathNormalizer::absolutizePath(normpath, params_.path);
 

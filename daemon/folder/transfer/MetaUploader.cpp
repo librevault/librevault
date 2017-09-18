@@ -27,16 +27,17 @@
  * files in the program, then also delete it here.
  */
 #include "MetaUploader.h"
-#include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/ChunkStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 
 namespace librevault {
 
-MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storage, QObject* parent) :
+MetaUploader::MetaUploader(Storage* meta_storage, ChunkStorage* chunk_storage, QObject* parent) :
 	QObject(parent),
-	meta_storage_(meta_storage), chunk_storage_(chunk_storage) {
+	storage_(meta_storage), chunk_storage_(chunk_storage) {
 	LOGFUNC();
 }
 
@@ -47,16 +48,16 @@ void MetaUploader::broadcast_meta(QList<Peer*> remotes, const MetaInfo::PathRevi
 }
 
 void MetaUploader::handle_handshake(Peer* remote) {
-	for(auto& meta : meta_storage_->getMeta()) {
+	for(auto& meta : storage_->index()->getMeta()) {
 		remote->messageHandler()->sendHaveMeta(meta.metaInfo().path_revision(), chunk_storage_->make_bitfield(meta.metaInfo()));
 	}
 }
 
 void MetaUploader::handle_meta_request(Peer* remote, const MetaInfo::PathRevision& revision) {
 	try {
-		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(
-            meta_storage_->getMeta(revision).metaInfo()));
-	}catch(MetaStorage::no_such_meta& e){
+		remote->messageHandler()->sendMetaReply(storage_->index()->getMeta(revision), chunk_storage_->make_bitfield(
+            storage_->index()->getMeta(revision).metaInfo()));
+	}catch(Index::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}
 }

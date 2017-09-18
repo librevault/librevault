@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,50 +26,24 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "MetaInfo.h"
-#include <QFile>
+#include "TaskScheduler.h"
 
 namespace librevault {
 
-class FolderParams;
-class MetaStorage;
+TaskScheduler::TaskScheduler(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
 
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
-class Archive;
-class AssemblerQueue;
+}
 
-class ChunkStorage : public QObject {
-	Q_OBJECT
-public:
-	struct no_such_chunk : public std::runtime_error {
-		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
-	};
+void TaskScheduler::scheduleScanning(const QString& abspath) {
 
-	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
-	virtual ~ChunkStorage();
+}
 
-	bool have_chunk(QByteArray ct_hash) const noexcept ;
-	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
+void TaskScheduler::scheduleAssemble(const SignedMeta& smeta) {
 
-	QBitArray make_bitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
+}
 
-	void cleanup(const MetaInfo& meta);
+void TaskScheduler::scheduleAddDownloadedMeta(const SignedMeta& smeta) {
 
-signals:
-	void chunkAdded(QByteArray ct_hash);
-
-protected:
-	MetaStorage* meta_storage_;
-
-	MemoryCachedStorage* mem_storage;
-	EncStorage* enc_storage;
-	OpenStorage* open_storage;
-	Archive* archive;
-	AssemblerQueue* file_assembler;
-};
+}
 
 } /* namespace librevault */

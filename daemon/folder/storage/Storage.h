@@ -27,34 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include "MetaInfo.h"
+#include "SignedMeta.h"
 #include <QObject>
-#include <memory>
-#include <ChunkInfo.h>
 
 namespace librevault {
 
+class DirectoryPoller;
+class DirectoryWatcher;
 class FolderParams;
-class Secret;
-class MetaStorage;
+class IgnoreList;
+class Index;
+class IndexerQueue;
+class AssemblerQueue;
+class ChunkStorage;
 
-class OpenStorage : public QObject {
+class Storage : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("OpenStorage");
-public:
-	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 
-	bool have_chunk(QByteArray ct_hash) const noexcept;
-	QByteArray get_chunk(QByteArray ct_hash) const;
+public:
+	Storage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
+
+	void addDownloadedMetaInfo(const SignedMeta &signed_meta);
+
+  Index* index() const {return index_;}
+  ChunkStorage* chunkStorage() const {return chunk_storage_;}
 
 private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
+	Index* index_;
+	IndexerQueue* indexer_;
+	DirectoryPoller* poller_;
+	DirectoryWatcher* watcher_;
 
-	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
-		return ct_hash == ChunkInfo::compute_hash(chunk_pt);
-	}
+  AssemblerQueue* file_assembler;
+	ChunkStorage* chunk_storage_;
+
+	Q_SLOT void handleAddedChunk(const QByteArray& ct_hash);
 };
 
 } /* namespace librevault */

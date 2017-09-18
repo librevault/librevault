@@ -30,7 +30,8 @@
 
 #include "control/Config.h"
 #include "control/FolderParams.h"
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include "p2p/MessageHandler.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
@@ -48,10 +49,10 @@ AvailabilityMap<uint32_t> DownloadChunk::requestMap() {
 	return request_map;
 }
 
-Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
+Downloader::Downloader(const FolderParams& params, Storage* meta_storage, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	meta_storage_(meta_storage) {
+	storage_(meta_storage) {
 	LOGFUNC();
 	maintain_timer_ = new QTimer(this);
 	connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
@@ -129,7 +130,7 @@ void Downloader::notifyLocalChunk(QByteArray ct_hash) {
 QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 	QSet<QByteArray> cluster;
 
-	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(ct_hash)) {
+	foreach(const SignedMeta& smeta, storage_->index()->containingChunk(ct_hash)) {
 		for(auto& chunk : smeta.metaInfo().chunks()) {
 			cluster << chunk.ctHash();
 		}
@@ -151,12 +152,12 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 void Downloader::notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 	try {
-		auto chunks = meta_storage_->getMeta(revision).metaInfo().chunks();
+		auto chunks = storage_->index()->getMeta(revision).metaInfo().chunks();
 		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
 		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield.testBit(chunk_idx))
 				notifyRemoteChunk(remote, chunks[chunk_idx].ctHash());
-	}catch(MetaStorage::no_such_meta){
+	}catch(Index::no_such_meta){
 		qCDebug(log_downloader) << "Expired Meta";
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.

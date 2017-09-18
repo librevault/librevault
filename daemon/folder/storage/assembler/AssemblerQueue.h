@@ -26,39 +26,44 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MetaDownloader.h"
-#include "Downloader.h"
-#include "folder/FolderGroup.h"
-#include "p2p/Peer.h"
-#include "p2p/MessageHandler.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/Index.h"
+#pragma once
+#include "SignedMeta.h"
+#include <QTimer>
+#include <QThreadPool>
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	storage_(meta_storage),
-	downloader_(downloader) {
-	LOGFUNC();
-}
+class Archive;
+class Storage;
+class FolderParams;
+class ChunkStorage;
+class Secret;
 
-void MetaDownloader::handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	if(storage_->index()->haveMeta(revision))
-		downloader_->notifyRemoteMeta(origin, revision, bitfield);
-	else if(storage_->index()->putAllowed(revision))
-		origin->messageHandler()->sendMetaRequest(revision);
-	else
-		LOGD("Remote node notified us about an expired Meta");
-}
+class AssemblerQueue : public QObject {
+	Q_OBJECT
+signals:
+	void aboutToStop();
 
-void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
-	if(smeta.isValid(params_.secret), storage_->index()->putAllowed(smeta.metaInfo().path_revision())) {
-    storage_->addDownloadedMetaInfo(smeta);
-		downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
-	}else
-		LOGD("Remote node posted to us about an expired Meta");
-}
+	void startedAssemble();
+	void finishedAssemble();
+
+public:
+	AssemblerQueue(const FolderParams& params,
+	              Storage* storage,
+	              QObject* parent);
+	virtual ~AssemblerQueue();
+
+public slots:
+	void addAssemble(SignedMeta smeta);
+
+private:
+	const FolderParams& params_;
+	Storage* storage_;
+
+	QThreadPool* threadpool_;
+
+	void periodic_assemble_operation();
+	QTimer* assemble_timer_;
+};
 
 } /* namespace librevault */

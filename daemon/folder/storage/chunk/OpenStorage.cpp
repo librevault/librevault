@@ -28,25 +28,26 @@
  */
 #include "OpenStorage.h"
 #include "control/FolderParams.h"
-#include "folder/chunk/ChunkStorage.h"
-#include "folder/meta/MetaStorage.h"
+#include "folder/storage/ChunkStorage.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include <PathNormalizer.h>
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
+OpenStorage::OpenStorage(const FolderParams& params, Storage* storage, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	meta_storage_(meta_storage) {}
+	storage_(storage) {}
 
 bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept {
-	return meta_storage_->isChunkAssembled(ct_hash);
+	return storage_->index()->isChunkAssembled(ct_hash);
 }
 
 QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
 	LOGD("get_chunk(" << ct_hash.toHex() << ")");
 
-	foreach(auto& smeta, meta_storage_->containingChunk(ct_hash)) {
+	for(auto& smeta : storage_->index()->containingChunk(ct_hash)) {
 		// Search for chunk offset and index
 		uint64_t offset = 0;
 		int chunk_idx = 0;

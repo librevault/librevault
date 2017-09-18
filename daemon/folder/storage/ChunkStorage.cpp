@@ -27,42 +27,35 @@
  * files in the program, then also delete it here.
  */
 #include "ChunkStorage.h"
-#include "MemoryCachedStorage.h"
-#include "EncStorage.h"
-#include "OpenStorage.h"
+#include "folder/storage/chunk/MemoryCachedStorage.h"
+#include "folder/storage/chunk/EncStorage.h"
+#include "folder/storage/chunk/OpenStorage.h"
 #include "control/FolderParams.h"
-#include "folder/meta/MetaStorage.h"
-
-#include "AssemblerQueue.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/assembler/AssemblerQueue.h"
 #include <QBitArray>
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
+ChunkStorage::ChunkStorage(const FolderParams& params, Storage* meta_storage, QObject* parent) :
 	QObject(parent),
-	meta_storage_(meta_storage) {
+  params_(params),
+	storage_(meta_storage) {
 	mem_storage = new MemoryCachedStorage(this);
 	enc_storage = new EncStorage(params, this);
 	if(params.secret.level() <= Secret::Level::ReadOnly) {
-		open_storage = new OpenStorage(params, meta_storage_, this);
-		file_assembler = new AssemblerQueue(params, meta_storage_, this, archive, this);
+		open_storage = new OpenStorage(params, storage_, this);
 	}
-
-	connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
-
-ChunkStorage::~ChunkStorage() = default;
 
 bool ChunkStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
 }
 
 QByteArray ChunkStorage::get_chunk(QByteArray ct_hash) {
-	try {
-		// Cache hit
+	try {                                       // Cache hit
 		return mem_storage->get_chunk(ct_hash);
-	}catch(no_such_chunk& e) {
-		// Cache missed
+	}catch(no_such_chunk& e) {                  // Cache missed
 		QByteArray chunk;
 		try {
 			chunk = enc_storage->get_chunk(ct_hash);
@@ -79,9 +72,6 @@ QByteArray ChunkStorage::get_chunk(QByteArray ct_hash) {
 
 void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	enc_storage->put_chunk(ct_hash, chunk_f);
-	for(auto& smeta : meta_storage_->containingChunk(ct_hash))
-		file_assembler->addAssemble(smeta);
-
 	emit chunkAdded(ct_hash);
 }
 
@@ -98,10 +88,15 @@ QBitArray ChunkStorage::make_bitfield(const MetaInfo& meta) const noexcept {
 		return QBitArray();
 }
 
-void ChunkStorage::cleanup(const MetaInfo& meta) {
-	for(auto chunk : meta.chunks())
-		if(open_storage->have_chunk(chunk.ctHash()))
-			enc_storage->remove_chunk(chunk.ctHash());
+void ChunkStorage::pruneAssembledChunks(const MetaInfo &meta) {
+	for(const auto& chunk : meta.chunks())
+		rebalanceChunk(chunk.ctHash());
+}
+
+void ChunkStorage::rebalanceChunk(const QByteArray& ct_hash) {
+  if(params_.secret.canDecrypt())
+    if(open_storage->have_chunk(ct_hash))
+      enc_storage->remove_chunk(ct_hash);
 }
 
 } /* namespace librevault */

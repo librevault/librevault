@@ -26,59 +26,49 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "SignedMeta.h"
+#include "AssemblerQueue.h"
+#include "AssemblerWorker.h"
+#include "folder/storage/Storage.h"
+#include "folder/storage/Index.h"
 #include <QLoggingCategory>
-#include <QObject>
-#include <QRunnable>
-#include <QString>
+
+Q_DECLARE_LOGGING_CATEGORY(log_assembler)
 
 namespace librevault {
 
-class FolderParams;
-class MetaStorage;
-class IgnoreList;
-class IndexerWorker : public QObject, public QRunnable {
-	Q_OBJECT
-signals:
-	void metaCreated(SignedMeta smeta);
-	void metaFailed(QString errorString);
+AssemblerQueue::AssemblerQueue(const FolderParams& params,
+                             Storage* storage,
+                             QObject* parent) :
+	QObject(parent),
+	params_(params),
+  storage_(storage) {
 
-public:
-	struct abort_index : public std::runtime_error {
-		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
-	};
+	threadpool_ = new QThreadPool(this);
 
-	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent);
-	virtual ~IndexerWorker();
+	assemble_timer_ = new QTimer(this);
+	assemble_timer_->setInterval(30*1000);
+	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
+	assemble_timer_->start();
+}
 
-	QString absolutePath() const {return abspath_;}
+AssemblerQueue::~AssemblerQueue() {
+	qCDebug(log_assembler) << "Stopping assembler queue";
+	emit aboutToStop();
+	threadpool_->waitForDone();
+	qCDebug(log_assembler) << "Assembler queue stopped";
+}
 
-public slots:
-	void run() noexcept override;
-	void stop() {active_ = false;};
+void AssemblerQueue::addAssemble(SignedMeta smeta) {
+	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, storage_);
+	worker->setAutoDelete(true);
+	threadpool_->start(worker);
+}
 
-private:
-	QString abspath_;
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	IgnoreList* ignore_list_;
+void AssemblerQueue::periodic_assemble_operation() {
+	qCDebug(log_assembler) << "Performing periodic assemble";
 
-	const Secret& secret_;
-
-	MetaInfo old_meta_, new_meta_;
-	SignedMeta old_smeta_, new_smeta_;
-
-	/* Status */
-	std::atomic<bool> active_;
-
-	void make_Meta();
-
-	/* File analyzers */
-	MetaInfo::Kind get_type();
-	void update_fsattrib();
-	void update_chunks();
-	ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
-};
+	for(auto smeta : storage_->index()->getIncompleteMeta())
+		addAssemble(smeta);
+}
 
 } /* namespace librevault */

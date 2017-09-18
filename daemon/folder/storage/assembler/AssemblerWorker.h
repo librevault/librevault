@@ -26,51 +26,50 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AssemblerQueue.h"
-#include "AssemblerWorker.h"
-#include "folder/meta/MetaStorage.h"
-#include <QLoggingCategory>
-
-Q_DECLARE_LOGGING_CATEGORY(log_assembler)
+#pragma once
+#include "SignedMeta.h"
+#include <QObject>
+#include <QRunnable>
 
 namespace librevault {
 
-AssemblerQueue::AssemblerQueue(const FolderParams& params,
-                             MetaStorage* meta_storage,
-                             ChunkStorage* chunk_storage,
-                             Archive* archive, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	meta_storage_(meta_storage),
-	chunk_storage_(chunk_storage),
-	archive_(archive) {
+class Archive;
+class Storage;
+class FolderParams;
+class ChunkStorage;
+class Secret;
 
-	threadpool_ = new QThreadPool(this);
+class AssemblerWorker : public QObject, public QRunnable {
+public:
+	struct abort_assembly : std::runtime_error {
+		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
+	};
 
-	assemble_timer_ = new QTimer(this);
-	assemble_timer_->setInterval(30*1000);
-	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
-	assemble_timer_->start();
-}
+	AssemblerWorker(SignedMeta smeta,
+	                const FolderParams& params,
+					Storage* storage);
+	virtual ~AssemblerWorker();
 
-AssemblerQueue::~AssemblerQueue() {
-	qCDebug(log_assembler) << "Stopping assembler queue";
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	qCDebug(log_assembler) << "Assembler queue stopped";
-}
+	void run() noexcept override;
 
-void AssemblerQueue::addAssemble(SignedMeta smeta) {
-	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, meta_storage_, chunk_storage_, archive_);
-	worker->setAutoDelete(true);
-	threadpool_->start(worker);
-}
+private:
+	const FolderParams& params_;
+	Storage* storage_;
 
-void AssemblerQueue::periodic_assemble_operation() {
-	qCDebug(log_assembler) << "Performing periodic assemble";
+	SignedMeta smeta_;
+	const MetaInfo& meta_;
 
-	for(auto smeta : meta_storage_->getIncompleteMeta())
-		addAssemble(smeta);
-}
+	QByteArray normpath_;
+	QString denormpath_;
+
+	bool assemble_deleted();
+	bool assemble_symlink();
+	bool assemble_directory();
+	bool assemble_file();
+
+	void apply_attrib();
+
+	QByteArray get_chunk_pt(QByteArray ct_hash) const;
+};
 
 } /* namespace librevault */

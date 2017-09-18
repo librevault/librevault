@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Uploader.h"
-#include "folder/chunk/ChunkStorage.h"
+#include "folder/storage/ChunkStorage.h"
 #include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
 

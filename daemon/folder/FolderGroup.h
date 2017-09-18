@@ -44,7 +44,7 @@ class Peer;
 class IgnoreList;
 
 class ChunkStorage;
-class MetaStorage;
+class Storage;
 
 class MetaUploader;
 class MetaDownloader;
@@ -67,8 +67,7 @@ class FolderGroup : public QObject {
 
   std::unique_ptr<IgnoreList> ignore_list;
 
-  ChunkStorage* chunk_storage_;
-  MetaStorage* meta_storage_;
+  Storage* storage_;
 
   Uploader* uploader_;
   Downloader* downloader_;
@@ -76,7 +75,7 @@ class FolderGroup : public QObject {
   MetaDownloader* meta_downloader_;
 
  private slots:
-  void handleIndexedMeta(const SignedMeta& smeta);
+  void handleNewMeta(const SignedMeta& smeta);
   void handleNewPeer(Peer* peer);
 
  private:

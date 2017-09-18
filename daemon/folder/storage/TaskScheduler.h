@@ -29,12 +29,19 @@
 #pragma once
 #include <QObject>
 #include <QThreadPool>
+#include <QHash>
+#include <QMutex>
 
 namespace librevault {
 
 class FolderParams;
 class SignedMeta;
 class Storage;
+
+class QueuedTask : public QRunnable {
+ signals:
+  void finished();
+};
 
 class TaskScheduler : public QObject {
 	Q_OBJECT
@@ -53,7 +60,16 @@ public:
 	const FolderParams& params_;
 	Storage* storage_;
 
+  QMutex tq_mtx;
+  QHash<QByteArray, QString> scan_tq;
+  QHash<QByteArray, SignedMeta> assemble_tq;
+  QHash<QByteArray, SignedMeta> downloaded_tq;
+
+	QHash<QByteArray, QRunnable*> current_tasks;
+
 	QThreadPool* threadpool_;
+
+  Q_SLOT void process(const QByteArray& path_keyed_hash);
 };
 
 } /* namespace librevault */

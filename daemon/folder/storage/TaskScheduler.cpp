@@ -26,6 +26,9 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#include <control/FolderParams.h>
+#include <PathNormalizer.h>
+#include <SignedMeta.h>
 #include "TaskScheduler.h"
 
 namespace librevault {
@@ -35,14 +38,38 @@ TaskScheduler::TaskScheduler(const FolderParams& params, QObject* parent) : QObj
 }
 
 void TaskScheduler::scheduleScanning(const QString& abspath) {
+  Q_ASSERT(params_.secret.canSign());
 
+  QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
+  QByteArray pt_keyed_hash = MetaInfo::makePathId(normpath, params_.secret);
+
+  QMutexLocker lk(&tq_mtx);
+  scan_tq.insert(pt_keyed_hash, abspath);
+
+  process(pt_keyed_hash);
 }
 
 void TaskScheduler::scheduleAssemble(const SignedMeta& smeta) {
+  Q_ASSERT(params_.secret.canDecrypt());
 
+  QMutexLocker lk(&tq_mtx);
+  assemble_tq.insert(smeta.metaInfo().pathKeyedHash(), smeta);
+
+  process(smeta.metaInfo().pathKeyedHash());
 }
 
 void TaskScheduler::scheduleAddDownloadedMeta(const SignedMeta& smeta) {
+  QMutexLocker lk(&tq_mtx);
+  downloaded_tq.insert(smeta.metaInfo().pathKeyedHash(), smeta);
+
+  process(smeta.metaInfo().pathKeyedHash());
+}
+
+Q_SLOT void TaskScheduler::process(const QByteArray& path_keyed_hash) {
+  QMutexLocker lk(&tq_mtx);
+
+  if(current_tasks.contains(path_keyed_hash) && !scan_tq.contains(path_keyed_hash))
+    return;
 
 }
 

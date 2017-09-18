@@ -43,7 +43,7 @@ Storage::Storage(const FolderParams& params, IgnoreList* ignore_list, QObject* p
 	poller_ = new DirectoryPoller(params, ignore_list, this);
 	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 
-	if(params.secret.canEncrypt()){
+	if(params.secret.canSign()) {
 		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);
 		connect(watcher_, &DirectoryWatcher::newPath, indexer_, &IndexerQueue::addIndexing);
 

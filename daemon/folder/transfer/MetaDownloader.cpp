@@ -29,36 +29,32 @@
 #include "MetaDownloader.h"
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
-#include "p2p/Peer.h"
-#include "p2p/MessageHandler.h"
-#include "folder/storage/Storage.h"
 #include "folder/storage/Index.h"
+#include "p2p/MessageHandler.h"
+#include "p2p/Peer.h"
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	storage_(meta_storage),
-	downloader_(downloader) {
-	LOGFUNC();
+Q_LOGGING_CATEGORY(log_metadownloader, "folder.transfer.metadownloader")
+
+MetaDownloader::MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader, QObject* parent)
+    : QObject(parent), params_(params), index_(index), downloader_(downloader) {}
+
+void MetaDownloader::handleHaveMeta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
+  if (index_->haveMeta(revision))
+    downloader_->notifyRemoteMeta(origin, revision, bitfield);
+  else if (index_->putAllowed(revision))
+    origin->messageHandler()->sendMetaRequest(revision);
+  else
+    qCDebug(log_metadownloader) << "Remote node notified us about an expired Meta";
 }
 
-void MetaDownloader::handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	if(storage_->index()->haveMeta(revision))
-		downloader_->notifyRemoteMeta(origin, revision, bitfield);
-	else if(storage_->index()->putAllowed(revision))
-		origin->messageHandler()->sendMetaRequest(revision);
-	else
-		LOGD("Remote node notified us about an expired Meta");
-}
-
-void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
-	if(smeta.isValid(params_.secret), storage_->index()->putAllowed(smeta.metaInfo().path_revision())) {
-    storage_->addDownloadedMetaInfo(smeta);
-		downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
-	}else
-		LOGD("Remote node posted to us about an expired Meta");
+void MetaDownloader::handleMetaReply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
+  if (smeta.isValid(params_.secret) && index_->putAllowed(smeta.metaInfo().path_revision())) {
+    emit metaDownloaded(smeta);
+    downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
+  } else
+    qCDebug(log_metadownloader) << "Remote node posted to us about an expired Meta";
 }
 
 } /* namespace librevault */

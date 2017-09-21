@@ -28,48 +28,51 @@
  */
 #pragma once
 #include "SignedMeta.h"
+#include "folder/storage/MetaTaskScheduler.h"
 #include <QObject>
 #include <QRunnable>
 
 namespace librevault {
 
 class Archive;
-class Storage;
+class Index;
 class FolderParams;
 class ChunkStorage;
 class Secret;
 
-class AssemblerWorker : public QObject, public QRunnable {
-public:
-	struct abort_assembly : std::runtime_error {
-		explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
-	};
+class AssembleTask : public QueuedTask {
+ public:
+  struct abort_assembly : std::runtime_error {
+    explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
+  };
 
-	AssemblerWorker(SignedMeta smeta,
-	                const FolderParams& params,
-					Storage* storage);
-	virtual ~AssemblerWorker();
+  AssembleTask(SignedMeta smeta, const FolderParams& params, Index* index, ChunkStorage* chunk_storage,
+               QObject* parent);
+  virtual ~AssembleTask();
 
-	void run() noexcept override;
+  void run() noexcept override;
 
-private:
-	const FolderParams& params_;
-	Storage* storage_;
+  QByteArray pathKeyedHash() const override;
 
-	SignedMeta smeta_;
-	const MetaInfo& meta_;
+ private:
+  const FolderParams& params_;
+  Index* index_;
+  ChunkStorage* chunk_storage_;
 
-	QByteArray normpath_;
-	QString denormpath_;
+  SignedMeta smeta_;
+  const MetaInfo& meta_;
 
-	bool assemble_deleted();
-	bool assemble_symlink();
-	bool assemble_directory();
-	bool assemble_file();
+  QByteArray normpath_;
+  QString denormpath_;
 
-	void apply_attrib();
+  bool assemble_deleted();
+  bool assemble_symlink();
+  bool assemble_directory();
+  bool assemble_file();
 
-	QByteArray get_chunk_pt(QByteArray ct_hash) const;
+  void apply_attrib();
+
+  QByteArray get_chunk_pt(const QByteArray& ct_hash) const;
 };
 
 } /* namespace librevault */

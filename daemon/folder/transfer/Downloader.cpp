@@ -30,7 +30,6 @@
 
 #include "control/Config.h"
 #include "control/FolderParams.h"
-#include "folder/storage/Storage.h"
 #include "folder/storage/Index.h"
 #include "p2p/MessageHandler.h"
 #include <ChunkInfo.h>
@@ -38,7 +37,7 @@
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_downloader, "folder.downloader")
+Q_LOGGING_CATEGORY(log_downloader, "folder.transfer.downloader")
 
 DownloadChunk::DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size) : builder(params.system_path, ct_hash, size), ct_hash(ct_hash) {}
 
@@ -49,10 +48,10 @@ AvailabilityMap<uint32_t> DownloadChunk::requestMap() {
 	return request_map;
 }
 
-Downloader::Downloader(const FolderParams& params, Storage* meta_storage, QObject* parent) :
+Downloader::Downloader(const FolderParams& params, Index* index, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	storage_(meta_storage) {
+	index_(index) {
 	LOGFUNC();
 	maintain_timer_ = new QTimer(this);
 	connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
@@ -64,8 +63,6 @@ Downloader::Downloader(const FolderParams& params, Storage* meta_storage, QObjec
 Downloader::~Downloader() = default;
 
 void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
-	SCOPELOG(log_downloader);
-
 	Q_ASSERT(bitfield.size() == smeta.metaInfo().chunks().size());
 
 	QList<QByteArray> incomplete_chunks;
@@ -117,8 +114,6 @@ void Downloader::removeChunk(QByteArray ct_hash) {
 }
 
 void Downloader::notifyLocalChunk(QByteArray ct_hash) {
-	SCOPELOG(log_downloader);
-
 	removeChunk(ct_hash);
 
 	// Mark all other chunks "clustered"
@@ -130,7 +125,7 @@ void Downloader::notifyLocalChunk(QByteArray ct_hash) {
 QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 	QSet<QByteArray> cluster;
 
-	foreach(const SignedMeta& smeta, storage_->index()->containingChunk(ct_hash)) {
+	foreach(const SignedMeta& smeta, index_->containingChunk(ct_hash)) {
 		for(auto& chunk : smeta.metaInfo().chunks()) {
 			cluster << chunk.ctHash();
 		}
@@ -150,21 +145,19 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 }
 
 void Downloader::notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	SCOPELOG(log_downloader);
 	try {
-		auto chunks = storage_->index()->getMeta(revision).metaInfo().chunks();
+		auto chunks = index_->getMeta(revision).metaInfo().chunks();
 		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
 		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
 			if(bitfield.testBit(chunk_idx))
 				notifyRemoteChunk(remote, chunks[chunk_idx].ctHash());
-	}catch(Index::no_such_meta){
+	}catch(Index::NoSuchMeta){
 		qCDebug(log_downloader) << "Expired Meta";
 		// Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta, so this had been expired.
 		// Nevertheless, ignore this notification.
 	}
 }
 void Downloader::notifyRemoteChunk(Peer* remote, QByteArray ct_hash) {
-	SCOPELOG(log_downloader);
 	DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 	if(! chunk)
 		return;
@@ -176,8 +169,6 @@ void Downloader::notifyRemoteChunk(Peer* remote, QByteArray ct_hash) {
 }
 
 void Downloader::handleChoke(Peer* remote) {
-	SCOPELOG(log_downloader);
-
 	/* Remove requests to this node */
 	foreach(DownloadChunkPtr missing_chunk, down_chunks_)
 		missing_chunk->requests.remove(remote);
@@ -186,12 +177,10 @@ void Downloader::handleChoke(Peer* remote) {
 }
 
 void Downloader::handleUnchoke(Peer* remote) {
-	SCOPELOG(log_downloader);
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
 void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, QByteArray data, Peer* from) {
-	SCOPELOG(log_downloader);
 	auto missing_chunk = down_chunks_.value(ct_hash);
 	if(! missing_chunk) return;
 
@@ -229,8 +218,6 @@ void Downloader::trackRemote(Peer* remote) {
 }
 
 void Downloader::untrackRemote(Peer* remote) {
-	SCOPELOG(log_downloader);
-
 	if(! remotes_.contains(remote)) return;
 
 	foreach(DownloadChunkPtr missing_chunk, down_chunks_.values()) {
@@ -243,8 +230,6 @@ void Downloader::untrackRemote(Peer* remote) {
 }
 
 void Downloader::maintainRequests() {
-	SCOPELOG(log_downloader);
-
 	// Prune old requests by timeout
 	{
 		auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
@@ -267,7 +252,6 @@ void Downloader::maintainRequests() {
 }
 
 bool Downloader::requestOne() {
-	SCOPELOG(log_downloader);
 	// Try to choose chunk to request
 	for(const QByteArray& ct_hash : download_queue_.chunks()) {
 		// Try to choose a remote to request this block from

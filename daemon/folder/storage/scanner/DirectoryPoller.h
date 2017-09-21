@@ -27,39 +27,39 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include "MetaInfo.h"
+#include "util/log.h"
 #include <QTimer>
 
 namespace librevault {
 
-class FolderParams;
+class FolderGroup;
 class IgnoreList;
-class Storage;
+class Index;
 
 class DirectoryPoller : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("DirectoryPoller");
-signals:
-	void newPath(QString denormpath);
+  Q_OBJECT
+  LOG_SCOPE("DirectoryPoller");
+ signals:
+  void newPath(QString denormpath);
 
-public:
-	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, Storage* parent);
-	virtual ~DirectoryPoller();
+ public:
+  DirectoryPoller(IgnoreList* ignore_list, Index* index, FolderGroup* parent);
+  virtual ~DirectoryPoller();
 
-public slots:
-	void setEnabled(bool enabled);
+ public slots:
+  void setEnabled(bool enabled);
 
-private:
-	const FolderParams& params_;
-	Storage* meta_storage_;
-	IgnoreList* ignore_list_;
+ private:
+  FolderGroup* fgroup_;
+  Index* index_;
+  IgnoreList* ignore_list_;
 
-	QTimer* polling_timer_;
+  QTimer* polling_timer_;
 
-	QList<QString> getReindexList();
+  QList<QString> getReindexList();
 
-	void addPathsToQueue();
+  void addPathsToQueue();
 };
 
 } /* namespace librevault */

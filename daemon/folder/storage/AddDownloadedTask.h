@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,49 +26,35 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AssemblerQueue.h"
-#include "AssemblerWorker.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/Index.h"
-#include <QLoggingCategory>
+#pragma once
 
-Q_DECLARE_LOGGING_CATEGORY(log_assembler)
+#include <QObject>
+#include <QThreadPool>
+#include <QHash>
+#include <QMutex>
+#include "MetaTaskScheduler.h"
+#include "Index.h"
 
 namespace librevault {
 
-AssemblerQueue::AssemblerQueue(const FolderParams& params,
-                             Storage* storage,
-                             QObject* parent) :
-	QObject(parent),
-	params_(params),
-  storage_(storage) {
+class AddDownloadedTask : public QueuedTask {
+ Q_OBJECT
 
-	threadpool_ = new QThreadPool(this);
+ public:
+  AddDownloadedTask(const SignedMeta& smeta, Index* index, QObject* parent) :
+          QueuedTask(ADD_DOWNLOADED, parent), index_(index), smeta_(smeta) {}
 
-	assemble_timer_ = new QTimer(this);
-	assemble_timer_->setInterval(30*1000);
-	connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
-	assemble_timer_->start();
-}
+  inline void run() noexcept override {
+    index_->putMeta(smeta_);
+  }
 
-AssemblerQueue::~AssemblerQueue() {
-	qCDebug(log_assembler) << "Stopping assembler queue";
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	qCDebug(log_assembler) << "Assembler queue stopped";
-}
+  inline QByteArray pathKeyedHash() const override {
+    return smeta_.metaInfo().pathKeyedHash();
+  }
 
-void AssemblerQueue::addAssemble(SignedMeta smeta) {
-	AssemblerWorker* worker = new AssemblerWorker(smeta, params_, storage_);
-	worker->setAutoDelete(true);
-	threadpool_->start(worker);
-}
-
-void AssemblerQueue::periodic_assemble_operation() {
-	qCDebug(log_assembler) << "Performing periodic assemble";
-
-	for(auto smeta : storage_->index()->getIncompleteMeta())
-		addAssemble(smeta);
-}
+ private:
+  Index* index_;
+  SignedMeta smeta_;
+};
 
 } /* namespace librevault */

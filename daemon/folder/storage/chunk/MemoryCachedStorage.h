@@ -35,18 +35,18 @@
 namespace librevault {
 
 class MemoryCachedStorage : public QObject {
-	Q_OBJECT
-public:
-	MemoryCachedStorage(QObject* parent);
+  Q_OBJECT
+ public:
+  MemoryCachedStorage(QObject* parent);
 
-	bool have_chunk(QByteArray ct_hash) const noexcept;
-	QByteArray get_chunk(QByteArray ct_hash) const;
-	void put_chunk(QByteArray ct_hash, QByteArray data);
-	void remove_chunk(QByteArray ct_hash) noexcept;
+  bool have_chunk(QByteArray ct_hash) const noexcept;
+  QByteArray get_chunk(QByteArray ct_hash) const;
+  void put_chunk(QByteArray ct_hash, QByteArray data);
+  void remove_chunk(QByteArray ct_hash) noexcept;
 
-private:
-	mutable QMutex cache_lock_;
-	QCache<QByteArray, QByteArray> cache_;
+ private:
+  mutable QMutex cache_lock_;
+  QCache<QByteArray, QByteArray> cache_;
 };
 
 } /* namespace librevault */

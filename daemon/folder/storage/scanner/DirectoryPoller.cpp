@@ -27,81 +27,73 @@
  * files in the program, then also delete it here.
  */
 #include "DirectoryPoller.h"
-#include "IndexerQueue.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/Index.h"
-#include "control/FolderParams.h"
+#include "folder/FolderGroup.h"
 #include "folder/IgnoreList.h"
+#include "folder/storage/Index.h"
 #include <PathNormalizer.h>
 #include <QDirIterator>
 
 namespace librevault {
 
-DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, Storage* parent) :
-	QObject(parent),
-	params_(params),
-	meta_storage_(parent),
-	ignore_list_(ignore_list) {
+DirectoryPoller::DirectoryPoller(IgnoreList* ignore_list, Index* index, FolderGroup* parent)
+    : QObject(parent), fgroup_(parent), index_(index), ignore_list_(ignore_list) {
+  polling_timer_ = new QTimer(this);
+  polling_timer_->setInterval(
+      std::chrono::duration_cast<std::chrono::milliseconds>(fgroup_->params().full_rescan_interval));
+  polling_timer_->setTimerType(Qt::VeryCoarseTimer);
 
-	polling_timer_ = new QTimer(this);
-	polling_timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(params_.full_rescan_interval));
-	polling_timer_->setTimerType(Qt::VeryCoarseTimer);
-
-	connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);
+  connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);
 }
 
 DirectoryPoller::~DirectoryPoller() = default;
 
 void DirectoryPoller::setEnabled(bool enabled) {
-	if(enabled) {
-		QTimer::singleShot(0, this, &DirectoryPoller::addPathsToQueue);
-		polling_timer_->start();
-	}
-	else
-		polling_timer_->stop();
+  if (enabled) {
+    QTimer::singleShot(0, this, &DirectoryPoller::addPathsToQueue);
+    polling_timer_->start();
+  } else
+    polling_timer_->stop();
 }
 
 QList<QString> DirectoryPoller::getReindexList() {
-	QSet<QString> file_list;
+  QSet<QString> file_list;
 
-	// Files present in the file system
-	qDebug() << params_.path;
-	QDirIterator dir_it(
-		params_.path,
-		QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
-		params_.preserve_symlinks ? (QDirIterator::Subdirectories) : (QDirIterator::Subdirectories | QDirIterator::FollowSymlinks)
-	);
-	while(dir_it.hasNext()) {
-		QString abspath = dir_it.next();
-		QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
+  // Files present in the file system
+  qDebug() << fgroup_->params().path;
+  QDirIterator dir_it(fgroup_->params().path, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
+                      fgroup_->params().preserve_symlinks
+                          ? (QDirIterator::Subdirectories)
+                          : (QDirIterator::Subdirectories | QDirIterator::FollowSymlinks));
+  while (dir_it.hasNext()) {
+    QString abspath = dir_it.next();
+    QByteArray normpath = PathNormalizer::normalizePath(abspath, fgroup_->params().path);
 
-		if(!ignore_list_->isIgnored(normpath)) file_list.insert(abspath);
-	}
+    if (!ignore_list_->isIgnored(normpath)) file_list.insert(abspath);
+  }
 
-	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
-	// They can still be indexed by monitor, though.
-	for(auto& smeta : meta_storage_->index()->getIncompleteMeta()) {
-		QString denormpath = PathNormalizer::absolutizePath(smeta.metaInfo().path().plaintext(params_.secret.encryptionKey()), params_.path);
-		file_list.remove(denormpath);
-	}
+  // Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
+  // They can still be indexed by monitor, though.
+  for (auto& smeta : index_->getIncompleteMeta()) {
+    QString denormpath = PathNormalizer::absolutizePath(
+        smeta.metaInfo().path().plaintext(fgroup_->params().secret.encryptionKey()), fgroup_->params().path);
+    file_list.remove(denormpath);
+  }
 
-	// Files present in index (files added from here will be marked as DELETED)
-	for(auto& smeta : meta_storage_->index()->getExistingMeta()) {
-		QByteArray normpath = smeta.metaInfo().path().plaintext(params_.secret.encryptionKey());
-		QString denormpath = PathNormalizer::absolutizePath(normpath, params_.path);
+  // Files present in index (files added from here will be marked as DELETED)
+  for (auto& smeta : index_->getExistingMeta()) {
+    QByteArray normpath = smeta.metaInfo().path().plaintext(fgroup_->params().secret.encryptionKey());
+    QString denormpath = PathNormalizer::absolutizePath(normpath, fgroup_->params().path);
 
-		if(!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
-	}
+    if (!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
+  }
 
-	return file_list.toList();
+  return file_list.toList();
 }
 
 void DirectoryPoller::addPathsToQueue() {
-	LOGD("Performing full directory rescan");
+  LOGD("Performing full directory rescan");
 
-	foreach(QString denormpath, getReindexList()) {
-		emit newPath(denormpath);
-	}
+  for (auto& denormpath : getReindexList()) emit newPath(denormpath);
 }
 
 } /* namespace librevault */

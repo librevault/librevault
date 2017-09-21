@@ -27,34 +27,33 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include "MetaInfo.h"
+#include <ChunkInfo.h>
 #include <QObject>
 #include <memory>
-#include <ChunkInfo.h>
 
 namespace librevault {
 
 class FolderParams;
 class Secret;
-class Storage;
+class Index;
 
 class OpenStorage : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("OpenStorage");
-public:
-	OpenStorage(const FolderParams& params, Storage* storage, QObject* parent);
+  Q_OBJECT
 
-	bool have_chunk(QByteArray ct_hash) const noexcept;
-	QByteArray get_chunk(QByteArray ct_hash) const;
+ public:
+  OpenStorage(const FolderParams& params, Index* index, QObject* parent);
 
-private:
-	const FolderParams& params_;
-	Storage* storage_;
+  bool have_chunk(QByteArray ct_hash) const noexcept;
+  QByteArray get_chunk(QByteArray ct_hash) const;
 
-	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
-		return ct_hash == ChunkInfo::compute_hash(chunk_pt);
-	}
+ private:
+  const FolderParams& params_;
+  Index* index_;
+
+  inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
+    return ct_hash == ChunkInfo::compute_hash(chunk_pt);
+  }
 };
 
 } /* namespace librevault */

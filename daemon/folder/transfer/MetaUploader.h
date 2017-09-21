@@ -27,33 +27,34 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include "MetaInfo.h"
-#include <QObject>
+#include "util/log.h"
 #include <QBitArray>
+#include <QObject>
 #include <set>
 
 namespace librevault {
 
 class Peer;
-class Storage;
+class Index;
 class ChunkStorage;
 
 class MetaUploader : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("MetaUploader");
-public:
-	MetaUploader(Storage* meta_storage, ChunkStorage* chunk_storage, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("MetaUploader");
 
-	void broadcast_meta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield);
+ public:
+  MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* parent);
 
-	/* Message handlers */
-	void handle_handshake(Peer* remote);
-	void handle_meta_request(Peer* remote, const MetaInfo::PathRevision& revision);
+  void broadcastMeta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield);
 
-private:
-	Storage* storage_;
-	ChunkStorage* chunk_storage_;
+  /* Message handlers */
+  void handleHandshake(Peer* remote);
+  void handleMetaRequest(Peer* remote, const MetaInfo::PathRevision& revision);
+
+ private:
+  Index* index_;
+  ChunkStorage* chunk_storage_;
 };
 
 } /* namespace librevault */

@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
 #include <QObject>
 #include <QThreadPool>
 #include <QHash>
@@ -38,38 +39,51 @@ class FolderParams;
 class SignedMeta;
 class Storage;
 
-class QueuedTask : public QRunnable {
- signals:
-  void finished();
+class QueuedTask : public QObject, public QRunnable {
+ Q_OBJECT
+
+ public:
+  enum TaskKind {
+    SCAN = 0, ASSEMBLE = 1, ADD_DOWNLOADED = 2
+  };
+
+  QueuedTask(TaskKind kind, QObject* parent) : QObject(parent), kind_(kind), interrupted(false) {}
+  QueuedTask(const QueuedTask&) = delete;
+
+  virtual QByteArray pathKeyedHash() const = 0;
+  virtual TaskKind taskKind() const { return kind_; }
+
+  Q_SLOT virtual void interrupt() { interrupted = true; }
+  Q_SIGNAL void finished();
+
+ protected:
+  TaskKind kind_;
+  std::atomic_bool interrupted;
 };
 
-class TaskScheduler : public QObject {
-	Q_OBJECT
+class MetaTaskScheduler : public QObject {
+ Q_OBJECT
 
-signals:
+ signals:
   void aboutToStop();
 
-public:
-	TaskScheduler(const FolderParams& params, QObject* parent);
+ public:
+  MetaTaskScheduler(const FolderParams& params, QObject* parent);
+  ~MetaTaskScheduler();
 
-  Q_SLOT void scheduleScanning(const QString& abspath);
-	Q_SLOT void scheduleAssemble(const SignedMeta& smeta);
-	Q_SLOT void scheduleAddDownloadedMeta(const SignedMeta& smeta);
+  Q_SLOT void scheduleTask(QueuedTask* task);
 
  private:
-	const FolderParams& params_;
-	Storage* storage_;
+  const FolderParams& params_;
 
   QMutex tq_mtx;
-  QHash<QByteArray, QString> scan_tq;
-  QHash<QByteArray, SignedMeta> assemble_tq;
-  QHash<QByteArray, SignedMeta> downloaded_tq;
+  QHash<QByteArray, QueuedTask*> current_tasks;
+  QHash<QByteArray, QList<QueuedTask*>> pending_tasks;
 
-	QHash<QByteArray, QRunnable*> current_tasks;
+  QThreadPool* threadpool_;
 
-	QThreadPool* threadpool_;
-
-  Q_SLOT void process(const QByteArray& path_keyed_hash);
+  Q_SLOT void process(QByteArray path_keyed_hash);
+  Q_SLOT void handleFinished();
 };
 
 } /* namespace librevault */

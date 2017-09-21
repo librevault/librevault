@@ -44,8 +44,8 @@ signals:
 	void metaAddedExternal(SignedMeta meta);
 
 public:
-  struct no_such_meta : public std::runtime_error {
-    no_such_meta() : std::runtime_error("Requested Meta not found"){}
+  struct NoSuchMeta : public std::runtime_error {
+    NoSuchMeta() : std::runtime_error("Requested Meta not found"){}
   };
 
 	Index(const FolderParams& params, QObject* parent);

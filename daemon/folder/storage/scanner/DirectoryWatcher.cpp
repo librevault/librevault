@@ -29,67 +29,65 @@
 #include "DirectoryWatcher.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include <PathNormalizer.h>
 #include "util/conv_fspath.h"
+#include <PathNormalizer.h>
 #include <QTimer>
 
 namespace librevault {
 
-DirectoryWatcherThread::DirectoryWatcherThread(QString abspath, QObject* parent) : QThread(parent), monitor_(monitor_ios_) {
-	qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
-	monitor_.add_directory(abspath.toStdString());
-	start(QThread::LowPriority);
+DirectoryWatcherThread::DirectoryWatcherThread(QString abspath, QObject* parent)
+    : QThread(parent), monitor_(monitor_ios_) {
+  qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
+  monitor_.add_directory(abspath.toStdString());
+  start(QThread::LowPriority);
 }
 
 DirectoryWatcherThread::~DirectoryWatcherThread() {
-	monitor_ios_.stop();
-	this->wait();
+  monitor_ios_.stop();
+  this->wait();
 }
 
 void DirectoryWatcherThread::run() {
-	monitorLoop();
-	monitor_ios_.run();
+  monitorLoop();
+  monitor_ios_.run();
 }
 
 void DirectoryWatcherThread::monitorLoop() {
-	monitor_.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev){
-		if(ec == boost::asio::error::operation_aborted)
-			return;
+  monitor_.async_monitor([this](boost::system::error_code ec, boost::asio::dir_monitor_event ev) {
+    if (ec == boost::asio::error::operation_aborted) return;
 
-		emit dirEvent(ev);
-		monitorLoop();
-	});
+    emit dirEvent(ev);
+    monitorLoop();
+  });
 }
 
-DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	ignore_list_(ignore_list) {
-	qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
+DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent)
+    : QObject(parent), params_(params), ignore_list_(ignore_list) {
+  qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
 
-	watcher_thread_ = new DirectoryWatcherThread(params_.path, this);
-	connect(watcher_thread_, &DirectoryWatcherThread::dirEvent, this, &DirectoryWatcher::handleDirEvent, Qt::QueuedConnection);
+  watcher_thread_ = new DirectoryWatcherThread(params_.path, this);
+  connect(watcher_thread_, &DirectoryWatcherThread::dirEvent, this, &DirectoryWatcher::handleDirEvent,
+          Qt::QueuedConnection);
 }
 
 DirectoryWatcher::~DirectoryWatcher() = default;
 
 void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
-	switch(ev.type){
-	case boost::asio::dir_monitor_event::added:
-	case boost::asio::dir_monitor_event::modified:
-	case boost::asio::dir_monitor_event::renamed_old_name:
-	case boost::asio::dir_monitor_event::renamed_new_name:
-	case boost::asio::dir_monitor_event::removed:
-	case boost::asio::dir_monitor_event::null:
-	{
-		QString abspath = conv_fspath(ev.path);
-		QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
+  switch (ev.type) {
+    case boost::asio::dir_monitor_event::added:
+    case boost::asio::dir_monitor_event::modified:
+    case boost::asio::dir_monitor_event::renamed_old_name:
+    case boost::asio::dir_monitor_event::renamed_new_name:
+    case boost::asio::dir_monitor_event::removed:
+    case boost::asio::dir_monitor_event::null: {
+      QString abspath = conv_fspath(ev.path);
+      QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
 
-		if(!ignore_list_->isIgnored(normpath))
-			emit newPath(abspath);
-	}
-	default: break;
-	}
+      if (!ignore_list_->isIgnored(normpath)) emit newPath(abspath);
+    }
+    default:
+      break;
+  }
 }
 
 } /* namespace librevault */

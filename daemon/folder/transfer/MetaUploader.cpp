@@ -28,38 +28,36 @@
  */
 #include "MetaUploader.h"
 #include "folder/storage/ChunkStorage.h"
-#include "folder/storage/Storage.h"
 #include "folder/storage/Index.h"
-#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
+#include "p2p/Peer.h"
 
 namespace librevault {
 
-MetaUploader::MetaUploader(Storage* meta_storage, ChunkStorage* chunk_storage, QObject* parent) :
-	QObject(parent),
-	storage_(meta_storage), chunk_storage_(chunk_storage) {
-	LOGFUNC();
+MetaUploader::MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* parent)
+    : QObject(parent), index_(index), chunk_storage_(chunk_storage) {
+  LOGFUNC();
 }
 
-void MetaUploader::broadcast_meta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	for(auto remote : remotes) {
-		remote->messageHandler()->sendHaveMeta(revision, bitfield);
-	}
+void MetaUploader::broadcastMeta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
+  for (auto remote : remotes) {
+    remote->messageHandler()->sendHaveMeta(revision, bitfield);
+  }
 }
 
-void MetaUploader::handle_handshake(Peer* remote) {
-	for(auto& meta : storage_->index()->getMeta()) {
-		remote->messageHandler()->sendHaveMeta(meta.metaInfo().path_revision(), chunk_storage_->make_bitfield(meta.metaInfo()));
-	}
+void MetaUploader::handleHandshake(Peer* remote) {
+  for (auto& meta : index_->getMeta())
+    remote->messageHandler()->sendHaveMeta(meta.metaInfo().path_revision(),
+                                           chunk_storage_->make_bitfield(meta.metaInfo()));
 }
 
-void MetaUploader::handle_meta_request(Peer* remote, const MetaInfo::PathRevision& revision) {
-	try {
-		remote->messageHandler()->sendMetaReply(storage_->index()->getMeta(revision), chunk_storage_->make_bitfield(
-            storage_->index()->getMeta(revision).metaInfo()));
-	}catch(Index::no_such_meta& e){
-		LOGW("Requested nonexistent Meta");
-	}
+void MetaUploader::handleMetaRequest(Peer* remote, const MetaInfo::PathRevision& revision) {
+  try {
+    remote->messageHandler()->sendMetaReply(index_->getMeta(revision),
+                                            chunk_storage_->make_bitfield(index_->getMeta(revision).metaInfo()));
+  } catch (Index::NoSuchMeta& e) {
+    LOGW("Requested nonexistent Meta");
+  }
 }
 
 } /* namespace librevault */

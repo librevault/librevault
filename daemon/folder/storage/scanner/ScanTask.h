@@ -28,42 +28,53 @@
  */
 #pragma once
 #include "SignedMeta.h"
-#include <QMap>
+#include "folder/storage/MetaTaskScheduler.h"
+#include <QLoggingCategory>
+#include <QObject>
+#include <QRunnable>
 #include <QString>
-#include <QThreadPool>
 
 namespace librevault {
 
 class FolderParams;
-class Storage;
+class Index;
 class IgnoreList;
-class IndexerWorker;
-class IndexerQueue : public QObject {
-	Q_OBJECT
-signals:
-	void aboutToStop();
+class ScanTask : public QueuedTask {
+  Q_OBJECT
 
-public:
-	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
-	virtual ~IndexerQueue();
+ public:
+  struct abort_index : public std::runtime_error {
+    abort_index(QString what) : std::runtime_error(what.toStdString()) {}
+  };
 
-public slots:
-	void addIndexing(QString abspath);
+  ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent);
+  virtual ~ScanTask();
 
-private:
-	const FolderParams& params_;
-	Storage* meta_storage_;
-	IgnoreList* ignore_list_;
+  QString absolutePath() const { return abspath_; }
 
-	QThreadPool* threadpool_;
+  QByteArray pathKeyedHash() const override;
 
-	const Secret& secret_;
+ public slots:
+  Q_SLOT void run() noexcept override;
 
-	QMap<QString, IndexerWorker*> tasks_;
+ private:
+  QString abspath_;
+  const FolderParams& params_;
+  Index* index_;
+  IgnoreList* ignore_list_;
 
-private slots:
-	void metaCreated(SignedMeta smeta);
-	void metaFailed(QString error_string);
+  const Secret& secret_;
+
+  MetaInfo old_meta_, new_meta_;
+  SignedMeta old_smeta_, new_smeta_;
+
+  void make_Meta();
+
+  /* File analyzers */
+  MetaInfo::Kind get_type();
+  void update_fsattrib();
+  void update_chunks();
+  ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
 };
 
 } /* namespace librevault */

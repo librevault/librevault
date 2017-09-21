@@ -29,50 +29,49 @@
 #include "OpenStorage.h"
 #include "control/FolderParams.h"
 #include "folder/storage/ChunkStorage.h"
-#include "folder/storage/Storage.h"
 #include "folder/storage/Index.h"
 #include <PathNormalizer.h>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const FolderParams& params, Storage* storage, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	storage_(storage) {}
+Q_LOGGING_CATEGORY(log_openstorage, "folder.storage.chunk.openstorage")
 
-bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept {
-	return storage_->index()->isChunkAssembled(ct_hash);
-}
+OpenStorage::OpenStorage(const FolderParams& params, Index* index, QObject* parent)
+    : QObject(parent), params_(params), index_(index) {}
+
+bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept { return index_->isChunkAssembled(ct_hash); }
 
 QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
-	LOGD("get_chunk(" << ct_hash.toHex() << ")");
+  qCDebug(log_openstorage) << "get_chunk(" << ct_hash.toHex() << ")";
 
-	for(auto& smeta : storage_->index()->containingChunk(ct_hash)) {
-		// Search for chunk offset and index
-		uint64_t offset = 0;
-		int chunk_idx = 0;
-		for(auto& chunk : smeta.metaInfo().chunks()) {
-			if(chunk.ctHash() == ct_hash) break;
-			offset += chunk.size();
-			chunk_idx++;
-		}
-		if(chunk_idx > smeta.metaInfo().chunks().size()) continue;
+  for (auto& smeta : index_->containingChunk(ct_hash)) {
+    // Search for chunk offset and index
+    uint64_t offset = 0;
+    int chunk_idx = 0;
+    for (auto& chunk : smeta.metaInfo().chunks()) {
+      if (chunk.ctHash() == ct_hash) break;
+      offset += chunk.size();
+      chunk_idx++;
+    }
+    if (chunk_idx > smeta.metaInfo().chunks().size()) continue;
 
-		// Found chunk & offset
-		auto chunk = smeta.metaInfo().chunks().at(chunk_idx);
-		QByteArray chunk_pt(chunk.size(), 0);
+    // Found chunk & offset
+    auto chunk = smeta.metaInfo().chunks().at(chunk_idx);
+    QByteArray chunk_pt(chunk.size(), 0);
 
-		QFile f(PathNormalizer::absolutizePath(smeta.metaInfo().path().plaintext(params_.secret.encryptionKey()), params_.path));
-		if(! f.open(QIODevice::ReadOnly)) continue;
-		if(! f.seek(offset)) continue;
-		if(f.read(chunk_pt.data(), chunk.size()) != (qint64)chunk.size()) continue;
+    QFile f(PathNormalizer::absolutizePath(smeta.metaInfo().path().plaintext(params_.secret.encryptionKey()),
+                                           params_.path));
+    if (!f.open(QIODevice::ReadOnly)) continue;
+    if (!f.seek(offset)) continue;
+    if (f.read(chunk_pt.data(), chunk.size()) != (qint64)chunk.size()) continue;
 
-		QByteArray chunk_ct = ChunkInfo::encrypt(chunk_pt, params_.secret.encryptionKey(), chunk.iv());
+    QByteArray chunk_ct = ChunkInfo::encrypt(chunk_pt, params_.secret.encryptionKey(), chunk.iv());
 
-		// Check
-		if(verify_chunk(ct_hash, chunk_ct)) return chunk_ct;
-	}
-	throw ChunkStorage::no_such_chunk();
+    // Check
+    if (verify_chunk(ct_hash, chunk_ct)) return chunk_ct;
+  }
+  throw ChunkStorage::NoSuchChunk();
 }
 
 } /* namespace librevault */

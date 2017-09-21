@@ -27,32 +27,35 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "SignedMeta.h"
 #include "control/FolderParams.h"
 #include "util/log.h"
-#include "SignedMeta.h"
-#include <QObject>
 #include <QBitArray>
+#include <QObject>
 
 namespace librevault {
 
 class Peer;
-class Storage;
+class Index;
 class Downloader;
 
 class MetaDownloader : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("MetaDownloader");
-public:
-	MetaDownloader(const FolderParams& params, Storage* meta_storage, Downloader* downloader, QObject* parent);
+  Q_OBJECT
 
-	/* Message handlers */
-	void handle_have_meta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield);
-	void handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield);
+ signals:
+  void metaDownloaded(SignedMeta smeta);
 
-private:
-	const FolderParams& params_;
-	Storage* storage_;
-	Downloader* downloader_;
+ public:
+  MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader, QObject* parent);
+
+  /* Message handlers */
+  void handleHaveMeta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield);
+  void handleMetaReply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield);
+
+ private:
+  const FolderParams& params_;
+  Index* index_;
+  Downloader* downloader_;
 };
 
 } /* namespace librevault */

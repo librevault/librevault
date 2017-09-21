@@ -28,7 +28,6 @@
  */
 #include "Index.h"
 #include "control/FolderParams.h"
-#include "folder/storage/Storage.h"
 #include "blob.h"
 #include <QFile>
 #include <ChunkInfo.h>
@@ -76,7 +75,7 @@ Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), par
 bool Index::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		getMeta(path_revision);
-	}catch(no_such_meta& e){
+	}catch(NoSuchMeta& e){
 		return false;
 	}
 	return true;
@@ -86,7 +85,7 @@ SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
 	auto smeta = getMeta(path_revision.path_id_);
 	if(smeta.metaInfo().revision() == path_revision.revision_)
 		return smeta;
-	else throw Index::no_such_meta();
+	else throw Index::NoSuchMeta();
 }
 
 /* Meta manipulators */
@@ -146,7 +145,7 @@ SignedMeta Index::getMeta(const QByteArray& path_id){
 		{":path_id", conv_bytearray(path_id)}
 	});
 
-	if(meta_list.empty()) throw Index::no_such_meta();
+	if(meta_list.empty()) throw Index::NoSuchMeta();
 	return *meta_list.begin();
 }
 QList<SignedMeta> Index::getMeta(){
@@ -164,7 +163,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
 		return getMeta(path_revision.path_id_).metaInfo().revision() < path_revision.revision_;
-	}catch(no_such_meta& e){
+	}catch(NoSuchMeta& e){
 		return true;
 	}
 }
@@ -185,7 +184,7 @@ QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
 	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", conv_bytearray(ct_hash)}})) {
 		return qMakePair(row[0].as_uint(), conv_bytearray(row[1].as_blob()));
 	}
-	throw Index::no_such_meta();
+	throw Index::NoSuchMeta();
 };
 
 QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {

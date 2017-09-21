@@ -28,52 +28,50 @@
  */
 #include "Uploader.h"
 #include "folder/storage/ChunkStorage.h"
-#include "p2p/Peer.h"
 #include "p2p/MessageHandler.h"
+#include "p2p/Peer.h"
 
 namespace librevault {
 
-Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) :
-	QObject(parent),
-	chunk_storage_(chunk_storage) {
-	LOGFUNC();
+Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(parent), chunk_storage_(chunk_storage) {
+  LOGFUNC();
 }
 
 void Uploader::broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash) {
-	for(auto& remote : remotes) {
-		remote->messageHandler()->sendHaveChunk(ct_hash);
-	}
+  for (auto& remote : remotes) {
+    remote->messageHandler()->sendHaveChunk(ct_hash);
+  }
 }
 
 void Uploader::handle_interested(Peer* remote) {
-	LOGFUNC();
+  LOGFUNC();
 
-	// TODO: write good choking algorithm.
-	remote->messageHandler()->sendUnchoke();
+  // TODO: write good choking algorithm.
+  remote->messageHandler()->sendUnchoke();
 }
 void Uploader::handle_not_interested(Peer* remote) {
-	LOGFUNC();
+  LOGFUNC();
 
-	// TODO: write good choking algorithm.
-	remote->messageHandler()->sendChoke();
+  // TODO: write good choking algorithm.
+  remote->messageHandler()->sendChoke();
 }
 
 void Uploader::handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
-	try {
-		if(!remote->am_choking() && remote->peer_interested()) {
-			remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
-		}
-	}catch(ChunkStorage::no_such_chunk& e){
-		LOGW("Requested nonexistent block");
-	}
+  try {
+    if (!remote->am_choking() && remote->peer_interested()) {
+      remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
+    }
+  } catch (ChunkStorage::NoSuchChunk& e) {
+    LOGW("Requested nonexistent block");
+  }
 }
 
 QByteArray Uploader::get_block(QByteArray ct_hash, uint32_t offset, uint32_t size) {
-	auto chunk = chunk_storage_->get_chunk(ct_hash);
-	if((int)offset < chunk.size() && (int)size <= chunk.size()-(int)offset)
-		return chunk.mid(offset, size);
-	else
-		throw ChunkStorage::no_such_chunk();
+  auto chunk = chunk_storage_->get_chunk(ct_hash);
+  if ((int)offset < chunk.size() && (int)size <= chunk.size() - (int)offset)
+    return chunk.mid(offset, size);
+  else
+    throw ChunkStorage::NoSuchChunk();
 }
 
 } /* namespace librevault */

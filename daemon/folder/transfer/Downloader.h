@@ -47,7 +47,7 @@
 namespace librevault {
 
 class FolderParams;
-class Storage;
+class Index;
 class ChunkStorage;
 
 struct DownloadChunk : boost::noncopyable {
@@ -77,7 +77,7 @@ signals:
 	void chunkDownloaded(QByteArray ct_hash, QFile* chunk_f);
 
 public:
-	Downloader(const FolderParams& params, Storage* meta_storage, QObject* parent);
+	Downloader(const FolderParams& params, Index* index, QObject* parent);
 	~Downloader();
 
 public slots:
@@ -97,7 +97,7 @@ public slots:
 
 private:
 	const FolderParams& params_;
-	Storage* storage_;
+	Index* index_;
 
 	QHash<QByteArray, DownloadChunkPtr> down_chunks_;
 	WeightedChunkQueue download_queue_;

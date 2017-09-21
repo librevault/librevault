@@ -27,11 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include <dir_monitor/dir_monitor.hpp>
 #include "MetaInfo.h"
+#include "util/log.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
+#include <dir_monitor/dir_monitor.hpp>
 
 namespace librevault {
 
@@ -39,40 +39,41 @@ class FolderParams;
 class IgnoreList;
 
 class DirectoryWatcherThread : public QThread {
-	Q_OBJECT
-signals:
-	void dirEvent(boost::asio::dir_monitor_event ev);
+  Q_OBJECT
+ signals:
+  void dirEvent(boost::asio::dir_monitor_event ev);
 
-public:
-	DirectoryWatcherThread(QString abspath, QObject* parent);
-	~DirectoryWatcherThread();
+ public:
+  DirectoryWatcherThread(QString abspath, QObject* parent);
+  ~DirectoryWatcherThread();
 
-protected:
-	boost::asio::io_service monitor_ios_;            // Yes, we have a new thread for each directory, because several dir_monitors on a single io_service behave strangely:
-	boost::asio::dir_monitor monitor_;  // https://github.com/berkus/dir_monitor/issues/42
+ protected:
+  boost::asio::io_service monitor_ios_;  // Yes, we have a new thread for each directory, because several dir_monitors
+                                         // on a single io_service behave strangely:
+  boost::asio::dir_monitor monitor_;     // https://github.com/berkus/dir_monitor/issues/42
 
-	void run() override;
+  void run() override;
 
-	void monitorLoop();
+  void monitorLoop();
 };
 
 class DirectoryWatcher : public QObject {
-	Q_OBJECT
-signals:
-	void newPath(QString abspath);
+  Q_OBJECT
+ signals:
+  void newPath(QString abspath);
 
-public:
-	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
-	virtual ~DirectoryWatcher();
+ public:
+  DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
+  virtual ~DirectoryWatcher();
 
-private:
-	const FolderParams& params_;
-	IgnoreList* ignore_list_;
+ private:
+  const FolderParams& params_;
+  IgnoreList* ignore_list_;
 
-	DirectoryWatcherThread* watcher_thread_;
+  DirectoryWatcherThread* watcher_thread_;
 
-private slots:
-	void handleDirEvent(boost::asio::dir_monitor_event ev);
+ private slots:
+  void handleDirEvent(boost::asio::dir_monitor_event ev);
 };
 
 } /* namespace librevault */

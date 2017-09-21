@@ -15,6 +15,7 @@
  */
 #pragma once
 #include "MetaInfo.h"
+#include <QMetaType>
 
 namespace librevault {
 
@@ -44,3 +45,5 @@ private:
 };
 
 } /* namespace librevault */
+
+Q_DECLARE_METATYPE(librevault::SignedMeta)

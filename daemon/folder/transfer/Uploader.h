@@ -36,23 +36,24 @@ class Peer;
 class ChunkStorage;
 
 class Uploader : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Uploader");
-public:
-	Uploader(ChunkStorage* chunk_storage, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("Uploader");
 
-	void broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash);
+ public:
+  Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-	/* Message handlers */
-	void handle_interested(Peer* remote);
-	void handle_not_interested(Peer* remote);
+  void broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash);
 
-	void handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
+  /* Message handlers */
+  void handle_interested(Peer* remote);
+  void handle_not_interested(Peer* remote);
 
-private:
-	ChunkStorage* chunk_storage_;
+  void handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
 
-	QByteArray get_block(QByteArray ct_hash, uint32_t offset, uint32_t size);
+ private:
+  ChunkStorage* chunk_storage_;
+
+  QByteArray get_block(QByteArray ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

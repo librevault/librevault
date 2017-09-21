@@ -31,20 +31,18 @@
 #include "folder/storage/chunk/EncStorage.h"
 #include "folder/storage/chunk/OpenStorage.h"
 #include "control/FolderParams.h"
-#include "folder/storage/Storage.h"
-#include "folder/storage/assembler/AssemblerQueue.h"
+#include "folder/FolderGroup.h"
 #include <QBitArray>
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, Storage* meta_storage, QObject* parent) :
+ChunkStorage::ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent) :
 	QObject(parent),
-  params_(params),
-	storage_(meta_storage) {
+	fgroup_(fgroup) {
 	mem_storage = new MemoryCachedStorage(this);
-	enc_storage = new EncStorage(params, this);
-	if(params.secret.level() <= Secret::Level::ReadOnly) {
-		open_storage = new OpenStorage(params, storage_, this);
+	enc_storage = new EncStorage(fgroup_->params(), this);
+	if(fgroup_->params().secret.level() <= Secret::Level::ReadOnly) {
+		open_storage = new OpenStorage(fgroup_->params(), index, this);
 	}
 };
 
@@ -55,11 +53,11 @@ bool ChunkStorage::have_chunk(QByteArray ct_hash) const noexcept {
 QByteArray ChunkStorage::get_chunk(QByteArray ct_hash) {
 	try {                                       // Cache hit
 		return mem_storage->get_chunk(ct_hash);
-	}catch(no_such_chunk& e) {                  // Cache missed
+	}catch(const NoSuchChunk& e) {                  // Cache missed
 		QByteArray chunk;
 		try {
 			chunk = enc_storage->get_chunk(ct_hash);
-		}catch(no_such_chunk& e) {
+		}catch(const NoSuchChunk& e) {
 			if(open_storage)
 				chunk = open_storage->get_chunk(ct_hash);
 			else
@@ -90,11 +88,11 @@ QBitArray ChunkStorage::make_bitfield(const MetaInfo& meta) const noexcept {
 
 void ChunkStorage::pruneAssembledChunks(const MetaInfo &meta) {
 	for(const auto& chunk : meta.chunks())
-		rebalanceChunk(chunk.ctHash());
+    gcChunk(chunk.ctHash());
 }
 
-void ChunkStorage::rebalanceChunk(const QByteArray& ct_hash) {
-  if(params_.secret.canDecrypt())
+void ChunkStorage::gcChunk(const QByteArray& ct_hash) {
+  if(fgroup_->params().secret.canDecrypt())
     if(open_storage->have_chunk(ct_hash))
       enc_storage->remove_chunk(ct_hash);
 }

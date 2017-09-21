@@ -43,8 +43,11 @@ class Peer;
 
 class IgnoreList;
 
+class MetaTaskScheduler;
+class Index;
 class ChunkStorage;
-class Storage;
+class DirectoryPoller;
+class DirectoryWatcher;
 
 class MetaUploader;
 class MetaDownloader;
@@ -61,20 +64,32 @@ class FolderGroup : public QObject {
   FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent);
   virtual ~FolderGroup();
 
+  const FolderParams& params() const { return params_; }
+
  private:
   const FolderParams params_;
-  PeerPool* pool_;
 
+  // Local storage
   std::unique_ptr<IgnoreList> ignore_list;
+  MetaTaskScheduler* task_scheduler_;
+  Index* index_;
+  ChunkStorage* chunk_storage_;
+  DirectoryPoller* poller_;
+  DirectoryWatcher* watcher_;
 
-  Storage* storage_;
-
+  // P2P transfers
+  PeerPool* pool_;
   Uploader* uploader_;
   Downloader* downloader_;
   MetaUploader* meta_uploader_;
   MetaDownloader* meta_downloader_;
 
  private slots:
+  // void handleAddedChunk(const QByteArray& ct_hash);
+  void addIndexing(QString abspath);
+  void addAssemble(SignedMeta smeta);
+  void handleMetaDownloaded(SignedMeta smeta);
+
   void handleNewMeta(const SignedMeta& smeta);
   void handleNewPeer(Peer* peer);
 

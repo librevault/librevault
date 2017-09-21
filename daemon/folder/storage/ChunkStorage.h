@@ -32,8 +32,8 @@
 
 namespace librevault {
 
-class FolderParams;
-class Storage;
+class Index;
+class FolderGroup;
 
 class MemoryCachedStorage;
 class EncStorage;
@@ -44,11 +44,11 @@ class AssemblerQueue;
 class ChunkStorage : public QObject {
 	Q_OBJECT
 public:
-	struct no_such_chunk : public std::runtime_error {
-		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
+	struct NoSuchChunk : public std::runtime_error {
+		NoSuchChunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, Storage* meta_storage, QObject* parent);
+	ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent);
 
 	bool have_chunk(QByteArray ct_hash) const noexcept ;
 	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
@@ -57,15 +57,13 @@ public:
 	QBitArray make_bitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
 
 	void pruneAssembledChunks(const MetaInfo &meta);
-  void rebalanceChunk(const QByteArray& ct_hash);
+  void gcChunk(const QByteArray& ct_hash);
 
  signals:
 	void chunkAdded(QByteArray ct_hash);
 
 protected:
-  const FolderParams& params_;
-
-	Storage* storage_;
+	FolderGroup* fgroup_;
 
 	MemoryCachedStorage* mem_storage;
 	EncStorage* enc_storage;

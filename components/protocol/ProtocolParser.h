@@ -17,9 +17,11 @@
 #include <QVariantMap>
 
 namespace librevault {
+namespace protocol {
+namespace v2 {
 
 class ProtocolParser {
-public:
+ public:
   struct ParserError : public std::runtime_error {
     explicit ParserError(const std::string& what) : std::runtime_error(what) {}
   };
@@ -28,4 +30,4 @@ public:
   QByteArray serialize(const QVariantMap& message) const;
 };
 
-} /* namespace librevault */
+}}} /* namespace librevault */

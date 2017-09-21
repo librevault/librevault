@@ -39,9 +39,7 @@ namespace librevault {
 #define DECLARE_MESSAGE(message_name, fields...) \
 public: \
 	Q_SIGNAL void rcvd##message_name(fields); \
-public: \
 	void send##message_name(fields); \
-public: \
 	Q_SLOT void handle##message_name(QByteArray message);
 
 class MessageHandler : public QObject {

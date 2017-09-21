@@ -19,15 +19,17 @@
 #include <QLoggingCategory>
 
 namespace librevault {
+namespace protocol {
+namespace v2 {
 
 Q_LOGGING_CATEGORY(log_protocol_parsing, "protocol.parsing");
 
 namespace {
 
-template <class Message>
+template<class Message>
 Message parsePayload(const std::string& payload_binary) {
   Message payload_proto;
-  if(! payload_proto.ParseFromString(payload_binary)) {
+  if (!payload_proto.ParseFromString(payload_binary)) {
     throw ProtocolParser::ParserError(
             std::string("Could not parse protobuf payload of type ") + payload_proto.descriptor()->name()
     );
@@ -35,10 +37,10 @@ Message parsePayload(const std::string& payload_binary) {
   return payload_proto;
 }
 
-template <class Message>
+template<class Message>
 QByteArray serializeAsByteArray(Message message_proto) {
   QByteArray message_bytes(message_proto.ByteSize(), 0);
-  if(!message_proto.SerializeToArray(message_bytes.data(), message_bytes.size())) {
+  if (!message_proto.SerializeToArray(message_bytes.data(), message_bytes.size())) {
     throw ProtocolParser::ParserError(
             std::string("Could not serialize protobuf message of type ") + message_proto.descriptor()->name()
     );
@@ -61,44 +63,56 @@ QVariantMap ProtocolParser::parse(const QByteArray& message_bytes) const {
       message["device_name"] = QString::fromStdString(payload_proto.device_name());
       message["user_agent"] = QString::fromStdString(payload_proto.user_agent());
       message["dht_port"] = payload_proto.dht_port();
-    } break;
-    case protocol::v2::CHOKE: break;
-    case protocol::v2::UNCHOKE: break;
-    case protocol::v2::INTERESTED: break;
-    case protocol::v2::NOTINTERESTED: break;
+    }
+      break;
+    case protocol::v2::CHOKE:
+      break;
+    case protocol::v2::UNCHOKE:
+      break;
+    case protocol::v2::INTERESTED:
+      break;
+    case protocol::v2::NOTINTERESTED:
+      break;
     case protocol::v2::INDEXUPDATE: {
       auto payload_proto = parsePayload<protocol::v2::IndexUpdate>(message_proto.payload());
       message["path_id"] = QByteArray::fromStdString(payload_proto.path_id());
-      message["revision"] = (quint64)payload_proto.revision();
+      message["revision"] = (quint64) payload_proto.revision();
       message["bitfield"] = QByteArray::fromStdString(payload_proto.bitfield());
-    } break;
+    }
+      break;
     case protocol::v2::METAREQUEST: {
       auto payload_proto = parsePayload<protocol::v2::MetaRequest>(message_proto.payload());
       message["path_id"] = QByteArray::fromStdString(payload_proto.path_id());
-      message["revision"] = (quint64)payload_proto.revision();
-    } break;
+      message["revision"] = (quint64) payload_proto.revision();
+    }
+      break;
     case protocol::v2::METARESPONSE: {
       auto payload_proto = parsePayload<protocol::v2::MetaResponse>(message_proto.payload());
       message["meta"] = QByteArray::fromStdString(payload_proto.meta());
       message["signature"] = QByteArray::fromStdString(payload_proto.signature());
       message["bitfield"] = convert_bitfield(QByteArray::fromStdString(payload_proto.bitfield()));
-    } break;
+    }
+      break;
     case protocol::v2::BLOCKREQUEST: {
       auto payload_proto = parsePayload<protocol::v2::BlockRequest>(message_proto.payload());
       message["ct_hash"] = QByteArray::fromStdString(payload_proto.ct_hash());
-      message["offset"] = (quint64)payload_proto.offset();
-      message["length"] = (quint32)payload_proto.length();
-    } break;
+      message["offset"] = (quint64) payload_proto.offset();
+      message["length"] = (quint32) payload_proto.length();
+    }
+      break;
     case protocol::v2::BLOCKRESPONSE: {
       auto payload_proto = parsePayload<protocol::v2::BlockResponse>(message_proto.payload());
       message["ct_hash"] = QByteArray::fromStdString(payload_proto.ct_hash());
-      message["offset"] = (quint64)payload_proto.offset();
+      message["offset"] = (quint64) payload_proto.offset();
       message["content"] = QByteArray::fromStdString(payload_proto.content());
-    } break;
-    default: throw ParserError("Invalid message type in Protobuf message");
+    }
+      break;
+    default:
+      throw ParserError("Invalid message type in Protobuf message");
   }
 
-  qCDebug(log_protocol_parsing) << "Parsed message" << "Protobuf:" << QString::fromStdString(message_proto.DebugString()) << "Qt:" << message;
+  qCDebug(log_protocol_parsing) << "Parsed message" << "Protobuf:"
+                                << QString::fromStdString(message_proto.DebugString()) << "Qt:" << message;
   return message;
 }
 
@@ -106,7 +120,7 @@ QByteArray ProtocolParser::serialize(const QVariantMap& message) const {
   protocol::v2::ProtocolMessage message_proto;
 
   protocol::v2::MessageType payload_type;
-  if(! protocol::v2::MessageType_Parse(message["type"].toString().toStdString(), &payload_type)) {
+  if (!protocol::v2::MessageType_Parse(message["type"].toString().toStdString(), &payload_type)) {
     throw ParserError("Invalid message type in QVariantMap");
   }
   message_proto.set_type(payload_type);
@@ -120,52 +134,64 @@ QByteArray ProtocolParser::serialize(const QVariantMap& message) const {
       payload_proto.set_user_agent(message["user_agent"].toString().toStdString());
       payload_proto.set_dht_port(message["user_agent"].toUInt());
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
-    case protocol::v2::CHOKE: break;
-    case protocol::v2::UNCHOKE: break;
-    case protocol::v2::INTERESTED: break;
-    case protocol::v2::NOTINTERESTED: break;
+    }
+      break;
+    case protocol::v2::CHOKE:
+      break;
+    case protocol::v2::UNCHOKE:
+      break;
+    case protocol::v2::INTERESTED:
+      break;
+    case protocol::v2::NOTINTERESTED:
+      break;
     case protocol::v2::INDEXUPDATE: {
       protocol::v2::IndexUpdate payload_proto;
       payload_proto.set_path_id(message["path_id"].toByteArray().toStdString());
       payload_proto.set_revision(message["revision"].toUInt());
       payload_proto.set_bitfield(convert_bitfield(message["bitfield"].toBitArray()).toStdString());  // todo
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
+    }
+      break;
     case protocol::v2::METAREQUEST: {
       protocol::v2::MetaRequest payload_proto;
       payload_proto.set_path_id(message["path_id"].toByteArray().toStdString());
       payload_proto.set_revision(message["revision"].toULongLong());
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
+    }
+      break;
     case protocol::v2::METARESPONSE: {
       protocol::v2::MetaResponse payload_proto;
       payload_proto.set_meta(message["meta"].toByteArray().toStdString());
       payload_proto.set_signature(message["signature"].toByteArray().toStdString());
       payload_proto.set_bitfield(convert_bitfield(message["bitfield"].toBitArray()).toStdString());
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
+    }
+      break;
     case protocol::v2::BLOCKREQUEST: {
       protocol::v2::BlockRequest payload_proto;
       payload_proto.set_ct_hash(message["ct_hash"].toByteArray().toStdString());
       payload_proto.set_offset(message["offset"].toULongLong());
       payload_proto.set_length(message["length"].toUInt());
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
+    }
+      break;
     case protocol::v2::BLOCKRESPONSE: {
       protocol::v2::BlockResponse payload_proto;
       payload_proto.set_ct_hash(message["ct_hash"].toByteArray().toStdString());
       payload_proto.set_offset(message["offset"].toULongLong());
       payload_proto.set_content(message["content"].toByteArray().toStdString());
       payload_bytes_buffer = payload_proto.SerializeAsString();
-    } break;
-    default: throw ParserError("Invalid message type in QVariantMap message");
+    }
+      break;
+    default:
+      throw ParserError("Invalid message type in QVariantMap message");
   }
 
   message_proto.set_allocated_payload(&payload_bytes_buffer);
 
-  qCDebug(log_protocol_parsing) << "Serialized message" << "Qt:" << message << "Protobuf:" << QString::fromStdString(message_proto.DebugString());
+  qCDebug(log_protocol_parsing) << "Serialized message" << "Qt:" << message << "Protobuf:"
+                                << QString::fromStdString(message_proto.DebugString());
   return serializeAsByteArray(message_proto);
 }
 
-} /* namespace librevault */
+}}} /* namespace librevault */

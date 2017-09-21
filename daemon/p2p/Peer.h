@@ -27,13 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/BandwidthCounter.h"
-#include <QTimer>
-#include <QWebSocket>
-#include "TimeoutHandler.h"
 #include "MetaInfo.h"
 #include "SignedMeta.h"
+#include "TimeoutHandler.h"
+#include "util/BandwidthCounter.h"
 #include <QObject>
+#include <QTimer>
+#include <QWebSocket>
 #include <memory>
 
 namespace librevault {
@@ -46,85 +46,89 @@ class MessageHandler;
 class FolderParams;
 
 class Peer : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-signals:
-	void disconnected();
-	void handshakeSuccess();
-	void handshakeFailed(QString error);
+ signals:
+  void disconnected();
+  void handshakeSuccess();
+  void handshakeFailed(QString error);
 
-public:
-	Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks, QObject* parent);
-	~Peer();
+ public:
+  Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all, BandwidthCounter* bc_blocks,
+       QObject* parent);
+  ~Peer();
 
-	void setConnectedSocket(QWebSocket* socket);
-	void open(const QUrl& url);
+  void setConnectedSocket(QWebSocket* socket);
+  void open(const QUrl& url);
 
-	static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
+  static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
 
-	/* Getters */
-	QByteArray digest() const;
-	QPair<QHostAddress, quint16> endpoint() const;
-	QString endpointString() const;
-	QString clientName() const;
-	QString userAgent() const;
-	QJsonObject collectState();
+  /* Getters */
+  QByteArray digest() const;
+  QPair<QHostAddress, quint16> endpoint() const;
+  QString endpointString() const;
+  QString clientName() const;
+  QString userAgent() const;
+  QJsonObject collectState();
 
-	bool isValid() const;
+  bool isValid() const;
 
-	MessageHandler* messageHandler() {return message_handler_;}
+  MessageHandler* messageHandler() { return message_handler_; }
 
-private:
-	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2} role_ = Role::UNDEFINED;
+  Q_SLOT void send(const QVariantMap& message);
 
-	NodeKey* node_key_;
-	QWebSocket* socket_ = nullptr;
+ private:
+  enum class Role { UNDEFINED = 0, SERVER = 1, CLIENT = 2 } role_ = Role::UNDEFINED;
 
-	BandwidthCounter bc_all_, bc_blocks_;
+  NodeKey* node_key_;
+  QWebSocket* socket_ = nullptr;
 
-	PingHandler* ping_handler_;
-	TimeoutHandler* timeout_handler_;
-	HandshakeHandler* handshake_handler_;
-	MessageHandler* message_handler_;
+  BandwidthCounter bc_all_, bc_blocks_;
 
-	// Underlying socket management
-	void resetUnderlyingSocket(QWebSocket* socket);
+  PingHandler* ping_handler_;
+  TimeoutHandler* timeout_handler_;
+  HandshakeHandler* handshake_handler_;
+  MessageHandler* message_handler_;
 
-/* Choking status */
-public:
-	bool am_choking() const {return am_choking_;}
-	bool am_interested() const {return am_interested_;}
-	bool peer_choking() const {return peer_choking_;}
-	bool peer_interested() const {return peer_interested_;}
+  // Underlying socket management
+  void resetUnderlyingSocket(QWebSocket* socket);
 
-private:
-	bool am_choking_ = true;
-	bool am_interested_ = false;
-	bool peer_choking_ = true;
-	bool peer_interested_ = false;
+  /* Choking status */
+ public:
+  bool am_choking() const { return am_choking_; }
+  bool am_interested() const { return am_interested_; }
+  bool peer_choking() const { return peer_choking_; }
+  bool peer_interested() const { return peer_interested_; }
 
-/* InterestGuard */
-public:
-	struct InterestGuard {
-		explicit InterestGuard(Peer* remote);
-		~InterestGuard();
-	private:
-		Peer* remote_;
-	};
-	std::shared_ptr<InterestGuard> getInterestGuard();
+ private:
+  bool am_choking_ = true;
+  bool am_interested_ = false;
+  bool peer_choking_ = true;
+  bool peer_interested_ = false;
 
-private:
-	std::weak_ptr<InterestGuard> interest_guard_;
+  /* InterestGuard */
+ public:
+  struct InterestGuard {
+    explicit InterestGuard(Peer* remote);
+    ~InterestGuard();
 
-/* State change handlers */
-private slots:
-	void handleDisconnected() {disconnected();}
-	void handleConnected();
+   private:
+    Peer* remote_;
+  };
+  std::shared_ptr<InterestGuard> getInterestGuard();
 
-/* Message processing */
-private slots:
-	void sendMessage(QByteArray message);
-	void handleMessage(const QByteArray& message);
+ private:
+  std::weak_ptr<InterestGuard> interest_guard_;
+
+  /* State change handlers */
+ private slots:
+  void handleDisconnected() { disconnected(); }
+  void handleConnected();
+
+  /* Message processing */
+ private slots:
+  void sendMessage(const QByteArray& message);
+  void handleMessage(const QByteArray& message);
 };
 
 } /* namespace librevault */

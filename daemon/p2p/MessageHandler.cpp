@@ -60,7 +60,7 @@ void MessageHandler::sendHaveMeta(const MetaInfo::PathRevision& revision, QBitAr
 	emit messagePrepared(V1Parser().gen_HaveMeta(message));
 
 	qDebug() << "==> HAVE_META:"
-		<< "path_id=" << message.revision.path_id_.toHex()
+		<< "path_id=" << message.revision.path_keyed_hash_.toHex()
 		<< "revision=" << message.revision.revision_
 		<< "bits=" << message.bitfield;
 }
@@ -79,7 +79,7 @@ void MessageHandler::sendMetaRequest(const MetaInfo::PathRevision& revision) {
 	emit messagePrepared(V1Parser().gen_MetaRequest(message));
 
 	qDebug() << "==> META_REQUEST:"
-		<< "path_id=" << revision.path_id_.toHex()
+		<< "path_id=" << revision.path_keyed_hash_.toHex()
 		<< "revision=" << revision.revision_;
 }
 void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) {
@@ -92,15 +92,6 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) 
 		<< "path_id=" << smeta.metaInfo().pathKeyedHash().toHex()
 		<< "revision=" << smeta.metaInfo().timestamp().time_since_epoch().count()
 		<< "bits=" << bitfield;
-}
-void MessageHandler::sendMetaCancel(const MetaInfo::PathRevision& revision) {
-	V1Parser::MetaCancel message;
-	message.revision = revision;
-	emit messagePrepared(V1Parser().gen_MetaCancel(message));
-
-	qDebug() << "==> META_CANCEL:"
-		<< "path_id=" << revision.path_id_.toHex()
-		<< "revision=" << revision.revision_;
 }
 
 void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint32_t length) {
@@ -126,17 +117,6 @@ void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, QByteAr
 		<< "ct_hash=" << ct_hash.toHex()
 		<< "offset=" << offset;
 }
-void MessageHandler::sendBlockCancel(QByteArray ct_hash, uint32_t offset, uint32_t length) {
-	V1Parser::BlockCancel message;
-	message.ct_hash = ct_hash;
-	message.offset = offset;
-	message.length = length;
-	emit messagePrepared(V1Parser().gen_BlockCancel(message));
-	qDebug() << "==> BLOCK_CANCEL:"
-		<< "ct_hash=" << ct_hash.toHex()
-		<< "offset=" << offset
-		<< "length=" << length;
-}
 
 void MessageHandler::handleChoke(QByteArray message_raw) {
 	qDebug() << "<== CHOKE";
@@ -158,7 +138,7 @@ void MessageHandler::handleNotInterested(QByteArray message_raw) {
 void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_HaveMeta(message_raw);
 	qDebug() << "<== HAVE_META:"
-		<< "path_id=" << message_struct.revision.path_id_.toHex()
+		<< "path_id=" << message_struct.revision.path_keyed_hash_.toHex()
 		<< "revision=" << message_struct.revision.revision_
 		<< "bits=" << message_struct.bitfield;
 
@@ -174,7 +154,7 @@ void MessageHandler::handleHaveChunk(QByteArray message_raw) {
 void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaRequest(message_raw);
 	qDebug() << "<== META_REQUEST:"
-		<< "path_id=" << message_struct.revision.path_id_.toHex()
+		<< "path_id=" << message_struct.revision.path_keyed_hash_.toHex()
 		<< "revision=" << message_struct.revision.revision_;
 
 	emit rcvdMetaRequest(message_struct.revision);
@@ -183,19 +163,10 @@ void MessageHandler::handleMetaReply(QByteArray message_raw) {
 	auto message_struct = V1Parser().parse_MetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
 		<< "path_id=" << message_struct.smeta.metaInfo().pathKeyedHash().toHex()
-		<< "revision=" << message_struct.smeta.metaInfo().timestamp().time_since_epoch().count()
+		<< "revision=" << message_struct.smeta.metaInfo().revision()
 		<< "bits=" << message_struct.bitfield;
 
 	emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
-}
-void MessageHandler::handleMetaCancel(QByteArray message_raw) {
-#   warning "Not implemented yet"
-	auto message_struct = V1Parser().parse_MetaCancel(message_raw);
-	qDebug() << "<== META_CANCEL:"
-		<< "path_id=" << message_struct.revision.path_id_.toHex()
-		<< "revision=" << message_struct.revision.revision_;
-
-	emit rcvdMetaCancel(message_struct.revision);
 }
 
 void MessageHandler::handleBlockRequest(QByteArray message_raw) {
@@ -214,16 +185,6 @@ void MessageHandler::handleBlockReply(QByteArray message_raw) {
 		<< "offset=" << message_struct.offset;
 
 	emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
-}
-void MessageHandler::handleBlockCancel(QByteArray message_raw) {
-#   warning "Not implemented yet"
-	auto message_struct = V1Parser().parse_BlockCancel(message_raw);
-	qDebug() << "<== BLOCK_CANCEL:"
-		<< "ct_hash=" << message_struct.ct_hash.toHex()
-		<< "length=" << message_struct.length
-		<< "offset=" << message_struct.offset;
-
-	emit rcvdBlockCancel(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 
 } /* namespace librevault */

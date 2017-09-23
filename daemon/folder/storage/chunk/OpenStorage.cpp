@@ -37,12 +37,20 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_openstorage, "folder.storage.chunk.openstorage")
 
+namespace {
+
+bool verifyChunk(const QByteArray& ct_hash, const QByteArray& chunk_pt) {
+  return ct_hash == ChunkInfo::compute_hash(chunk_pt);
+}
+
+}
+
 OpenStorage::OpenStorage(const FolderParams& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {}
 
-bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept { return index_->isChunkAssembled(ct_hash); }
+bool OpenStorage::haveChunk(const QByteArray& ct_hash) const noexcept { return index_->isChunkAssembled(ct_hash); }
 
-QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
+QByteArray OpenStorage::getChunk(const QByteArray& ct_hash) const {
   qCDebug(log_openstorage) << "get_chunk(" << ct_hash.toHex() << ")";
 
   for (auto& smeta : index_->containingChunk(ct_hash)) {
@@ -69,7 +77,7 @@ QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
     QByteArray chunk_ct = ChunkInfo::encrypt(chunk_pt, params_.secret.encryptionKey(), chunk.iv());
 
     // Check
-    if (verify_chunk(ct_hash, chunk_ct)) return chunk_ct;
+    if (verifyChunk(ct_hash, chunk_ct)) return chunk_ct;
   }
   throw ChunkStorage::NoSuchChunk();
 }

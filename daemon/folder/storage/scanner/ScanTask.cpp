@@ -63,13 +63,13 @@ void ScanTask::run() noexcept {
   qCDebug(log_indexer) << "Started indexing:" << normpath;
 
   try {
-    if (ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
+    if (ignore_list_->isIgnored(normpath)) throw AbortIndex("File is ignored");
 
     try {
       old_smeta_ = index_->getMeta(MetaInfo::makePathId(normpath, secret_));
       old_meta_ = old_smeta_.metaInfo();
       if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
-        throw abort_index("Modification time is not changed");
+        throw AbortIndex("Modification time is not changed");
       }
     } catch (boost::filesystem::filesystem_error& e) {
     } catch (Index::NoSuchMeta& e) {
@@ -79,7 +79,7 @@ void ScanTask::run() noexcept {
 
     QElapsedTimer timer_;
     timer_.start();  // Starting timer
-    make_Meta();     // Actual indexing
+    makeMetaInfo();     // Actual indexing
     qreal time_spent = qreal(timer_.elapsed()) / 1000;
     qreal bandwidth = qreal(new_smeta_.metaInfo().size()) / time_spent;
 
@@ -89,13 +89,13 @@ void ScanTask::run() noexcept {
                          << "Chk=" << new_smeta_.metaInfo().chunks().size();
 
     index_->putMeta(new_smeta_, true);
-  } catch (std::runtime_error& e) {
+  } catch (const std::exception& e) {
     qCWarning(log_indexer) << "Skipping" << absolutePath() << "Reason:" << e.what();
   }
 }
 
 /* Actual indexing process */
-void ScanTask::make_Meta() {
+void ScanTask::makeMetaInfo() {
   QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
 
   // LOGD("make_Meta(" << normpath.toStdString() << ")");
@@ -107,13 +107,13 @@ void ScanTask::make_Meta() {
   new_meta_.kind(get_type());  // Kind
 
   if (!old_smeta_ && new_meta_.kind() == MetaInfo::DELETED)
-    throw abort_index("Old Meta is not in the index, new Meta is DELETED");
+    throw AbortIndex("Old Meta is not in the index, new Meta is DELETED");
 
   if (old_meta_.kind() == MetaInfo::DIRECTORY && new_meta_.kind() == MetaInfo::DIRECTORY)
-    throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
+    throw AbortIndex("Old Meta is DIRECTORY, new Meta is DIRECTORY");
 
   if (old_meta_.kind() == MetaInfo::DELETED && new_meta_.kind() == MetaInfo::DELETED)
-    throw abort_index("Old Meta is DELETED, new Meta is DELETED");
+    throw AbortIndex("Old Meta is DELETED, new Meta is DELETED");
 
   if (new_meta_.kind() == MetaInfo::FILE) update_chunks();
 
@@ -151,7 +151,7 @@ MetaInfo::Kind ScanTask::get_type() {
     case boost::filesystem::file_not_found:
       return MetaInfo::DELETED;
     default:
-      throw abort_index(
+      throw AbortIndex(
           "File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported");
   }
 }
@@ -232,7 +232,7 @@ void ScanTask::update_chunks() {
   buffer.reserve(new_meta_.maxChunksize());
 
   QFile f(abspath_);
-  if (!f.open(QIODevice::ReadOnly)) throw abort_index("I/O error: " + f.errorString());
+  if (!f.open(QIODevice::ReadOnly)) throw AbortIndex("I/O error: " + f.errorString());
 
   char byte;
   while (f.getChar(&byte) && !interrupted) {
@@ -244,7 +244,7 @@ void ScanTask::update_chunks() {
     }
   }
 
-  if (interrupted) throw abort_index("Indexing had been interruped");
+  if (interrupted) throw AbortIndex("Indexing had been interruped");
 
   if (rabin.finalize()) chunks << populate_chunk(buffer, pt_hmac__iv);
 

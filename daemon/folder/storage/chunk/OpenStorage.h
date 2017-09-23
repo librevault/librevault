@@ -44,16 +44,12 @@ class OpenStorage : public QObject {
  public:
   OpenStorage(const FolderParams& params, Index* index, QObject* parent);
 
-  bool have_chunk(QByteArray ct_hash) const noexcept;
-  QByteArray get_chunk(QByteArray ct_hash) const;
+  bool haveChunk(const QByteArray& ct_hash) const noexcept;
+  QByteArray getChunk(const QByteArray& ct_hash) const;
 
  private:
   const FolderParams& params_;
   Index* index_;
-
-  inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt) const {
-    return ct_hash == ChunkInfo::compute_hash(chunk_pt);
-  }
 };
 
 } /* namespace librevault */

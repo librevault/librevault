@@ -16,12 +16,15 @@
 syntax = "proto3";
 package librevault.protocol;
 
+message Header {
+	uint32 type = 1;
+}
+
 message Handshake {
 	bytes auth_token = 1;
 	string device_name = 2;
 	string user_agent = 3;
 	uint32 dht_port = 4;
-	repeated string extensions = 255;
 }
 
 message HaveMeta {
@@ -45,11 +48,6 @@ message MetaReply {
 	bytes bitfield = 3;
 }
 
-message MetaCancel {
-	bytes path_id = 1;
-	int64 revision = 2;
-}
-
 message BlockRequest {
 	bytes ct_hash = 1;
 	uint64 offset = 2;
@@ -60,10 +58,4 @@ message BlockReply {
 	bytes ct_hash = 1;
 	uint64 offset = 2;
 	bytes content = 3;
-}
-
-message BlockCancel {
-	bytes ct_hash = 1;
-	uint64 offset = 2;
-	uint32 length = 3;
 }

@@ -46,7 +46,7 @@ class MetaInfo {
 
   /// Used for querying specific version of Meta
   struct PathRevision {
-    QByteArray path_id_;
+    QByteArray path_keyed_hash_;
     quint64 revision_;
   };
 

@@ -46,55 +46,50 @@ ChunkStorage::ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent) :
 	}
 };
 
-bool ChunkStorage::have_chunk(QByteArray ct_hash) const noexcept {
-	return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
+bool ChunkStorage::haveChunk(QByteArray ct_hash) const noexcept {
+	return mem_storage->haveChunk(ct_hash) || enc_storage->haveChunk(ct_hash) || (open_storage && open_storage->haveChunk(ct_hash));
 }
 
-QByteArray ChunkStorage::get_chunk(QByteArray ct_hash) {
+QByteArray ChunkStorage::getChunk(QByteArray ct_hash) {
 	try {                                       // Cache hit
-		return mem_storage->get_chunk(ct_hash);
+		return mem_storage->getChunk(ct_hash);
 	}catch(const NoSuchChunk& e) {                  // Cache missed
 		QByteArray chunk;
 		try {
-			chunk = enc_storage->get_chunk(ct_hash);
+			chunk = enc_storage->getChunk(ct_hash);
 		}catch(const NoSuchChunk& e) {
 			if(open_storage)
-				chunk = open_storage->get_chunk(ct_hash);
+				chunk = open_storage->getChunk(ct_hash);
 			else
 				throw;
 		}
-		mem_storage->put_chunk(ct_hash, chunk); // Put into cache
+		mem_storage->putChunk(ct_hash, chunk); // Put into cache
 		return chunk;
 	}
 }
 
-void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
-	enc_storage->put_chunk(ct_hash, chunk_f);
+void ChunkStorage::putChunk(QByteArray ct_hash, QFile* chunk_f) {
+	enc_storage->putChunk(ct_hash, chunk_f);
 	emit chunkAdded(ct_hash);
 }
 
-QBitArray ChunkStorage::make_bitfield(const MetaInfo& meta) const noexcept {
+QBitArray ChunkStorage::makeBitfield(const MetaInfo& meta) const noexcept {
 	if(meta.kind() == meta.FILE) {
 		QBitArray bitfield(meta.chunks().size());
 
 		int bitfield_idx = 0;
 		for(const auto& chunk : meta.chunks())
-			bitfield[bitfield_idx++] = have_chunk(chunk.ctHash());
+			bitfield[bitfield_idx++] = haveChunk(chunk.ctHash());
 
 		return bitfield;
 	}else
 		return QBitArray();
 }
 
-void ChunkStorage::pruneAssembledChunks(const MetaInfo &meta) {
-	for(const auto& chunk : meta.chunks())
-    gcChunk(chunk.ctHash());
-}
-
 void ChunkStorage::gcChunk(const QByteArray& ct_hash) {
   if(fgroup_->params().secret.canDecrypt())
-    if(open_storage->have_chunk(ct_hash))
-      enc_storage->remove_chunk(ct_hash);
+    if(open_storage->haveChunk(ct_hash))
+			enc_storage->removeChunk(ct_hash);
 }
 
 } /* namespace librevault */

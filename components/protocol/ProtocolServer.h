@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,54 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "SignedMeta.h"
-#include "folder/storage/MetaTaskScheduler.h"
-#include <QLoggingCategory>
 #include <QObject>
-#include <QRunnable>
-#include <QString>
+#include <SignedMeta.h>
+#include <exception_helper.hpp>
 
-namespace librevault {
+namespace librevault { namespace protocol { namespace v2 {
 
-class FolderParams;
-class Index;
-class IgnoreList;
-class ScanTask : public QueuedTask {
+#define DECLARE_MESSAGE(message_name, fields...) \
+	Q_SIGNAL void parsed##message_name(fields); \
+	Q_SLOT void serialize##message_name(fields);
+
+class ProtocolServer : public QObject {
   Q_OBJECT
 
  public:
-  struct AbortIndex : public std::runtime_error {
-    AbortIndex(QString what) : std::runtime_error(what.toStdString()) {}
-  };
+  DECLARE_EXCEPTION(ParseError, "Parse error");
+  DECLARE_EXCEPTION_DETAIL(MessageTruncated, ParseError, "Message is truncated");
 
-  ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent);
-  virtual ~ScanTask();
+  Q_SIGNAL void serialized(const QByteArray& message_bytes);
+  Q_SIGNAL void parseFailed(const QString& reason, const QByteArray& message_bytes);
+  Q_SLOT void parse(const QByteArray& message_bytes);
 
-  QString absolutePath() const { return abspath_; }
+  DECLARE_MESSAGE(Handshake, const QByteArray& auth_token, const QString& device_name, const QString& user_agent, quint16 dht_port);
 
-  QByteArray pathKeyedHash() const override;
+  DECLARE_MESSAGE(Choke);
+  DECLARE_MESSAGE(Unchoke);
+  DECLARE_MESSAGE(Interested);
+  DECLARE_MESSAGE(NotInterested);
 
- public slots:
-  Q_SLOT void run() noexcept override;
+  DECLARE_MESSAGE(IndexUpdate, const MetaInfo::PathRevision& revision, const QBitArray& bitfield);
 
- private:
-  QString abspath_;
-  const FolderParams& params_;
-  Index* index_;
-  IgnoreList* ignore_list_;
+  DECLARE_MESSAGE(MetaRequest, const MetaInfo::PathRevision& revision);
+  DECLARE_MESSAGE(MetaResponse, const SignedMeta& smeta, const QBitArray& bitfield);
 
-  const Secret& secret_;
-
-  MetaInfo old_meta_, new_meta_;
-  SignedMeta old_smeta_, new_smeta_;
-
-  void makeMetaInfo();
-
-  /* File analyzers */
-  MetaInfo::Kind get_type();
-  void update_fsattrib();
-  void update_chunks();
-  ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
+  DECLARE_MESSAGE(BlockRequest, const QByteArray& ct_hash, quint64 offset, quint32 length);
+  DECLARE_MESSAGE(BlockResponse, const QByteArray& ct_hash, quint64 offset, const QByteArray& content);
 };
 
-} /* namespace librevault */
+}}}

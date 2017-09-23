@@ -82,7 +82,7 @@ bool Index::haveMeta(const MetaInfo::PathRevision& path_revision) noexcept {
 }
 
 SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
-	auto smeta = getMeta(path_revision.path_id_);
+	auto smeta = getMeta(path_revision.path_keyed_hash_);
 	if(smeta.metaInfo().revision() == path_revision.revision_)
 		return smeta;
 	else throw Index::NoSuchMeta();
@@ -162,7 +162,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 
 bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 	try {
-		return getMeta(path_revision.path_id_).metaInfo().revision() < path_revision.revision_;
+		return getMeta(path_revision.path_keyed_hash_).metaInfo().revision() < path_revision.revision_;
 	}catch(NoSuchMeta& e){
 		return true;
 	}

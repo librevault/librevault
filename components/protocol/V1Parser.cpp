@@ -18,29 +18,35 @@
 
 namespace librevault {
 
+namespace {
+
+template <class ProtoMessageClass>
+QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, V1Parser::message_type type) {
+	QByteArray message_raw(1+message_protobuf.ByteSize(), 0);
+	message_raw[0] = type;
+	message_protobuf.SerializeToArray(message_raw.data()+1, message_protobuf.ByteSize());
+
+	return message_raw;
+}
+
+}
+
 QByteArray V1Parser::gen_Handshake(const Handshake& message_struct) {
 	protocol::Handshake message_protobuf;
 	message_protobuf.set_auth_token(message_struct.auth_token.toStdString());
 	message_protobuf.set_device_name(message_struct.device_name.toStdString());
 	message_protobuf.set_user_agent(message_struct.user_agent.toStdString());
 
-	for(auto& extension : message_struct.extensions)
-		message_protobuf.add_extensions(extension);
-
 	return prepare_proto_message(message_protobuf, HANDSHAKE);
 }
 V1Parser::Handshake V1Parser::parse_Handshake(QByteArray message_raw) {
 	protocol::Handshake message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	Handshake message_struct;
 	message_struct.auth_token = QByteArray::fromStdString(message_protobuf.auth_token());
 	message_struct.device_name = QString::fromStdString(message_protobuf.device_name());
 	message_struct.user_agent = QString::fromStdString(message_protobuf.user_agent());
-
-	message_struct.extensions.reserve(message_protobuf.extensions().size());
-	for(auto& extension : message_protobuf.extensions())
-		message_struct.extensions.push_back(extension);
 
 	return message_struct;
 }
@@ -48,7 +54,7 @@ V1Parser::Handshake V1Parser::parse_Handshake(QByteArray message_raw) {
 QByteArray V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
 	protocol::HaveMeta message_protobuf;
 
-	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
+	message_protobuf.set_path_id(message_struct.revision.path_keyed_hash_.data(), message_struct.revision.path_keyed_hash_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
 
 	QByteArray converted_bitfield = convert_bitfield(message_struct.bitfield);
@@ -58,11 +64,11 @@ QByteArray V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
 }
 V1Parser::HaveMeta V1Parser::parse_HaveMeta(QByteArray message_raw) {
 	protocol::HaveMeta message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	HaveMeta message_struct;
 	message_struct.revision.revision_ = message_protobuf.revision();
-	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
+	message_struct.revision.path_keyed_hash_ = QByteArray::fromStdString(message_protobuf.path_id());
 	message_struct.bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
 
 	return message_struct;
@@ -77,7 +83,7 @@ QByteArray V1Parser::gen_HaveChunk(const HaveChunk& message_struct) {
 }
 V1Parser::HaveChunk V1Parser::parse_HaveChunk(QByteArray message_raw) {
 	protocol::HaveChunk message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	HaveChunk message_struct;
 	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
@@ -87,17 +93,17 @@ V1Parser::HaveChunk V1Parser::parse_HaveChunk(QByteArray message_raw) {
 
 QByteArray V1Parser::gen_MetaRequest(const MetaRequest& message_struct) {
 	protocol::MetaRequest message_protobuf;
-	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
+	message_protobuf.set_path_id(message_struct.revision.path_keyed_hash_.data(), message_struct.revision.path_keyed_hash_.size());
 	message_protobuf.set_revision(message_struct.revision.revision_);
 
 	return prepare_proto_message(message_protobuf, META_REQUEST);
 }
 V1Parser::MetaRequest V1Parser::parse_MetaRequest(QByteArray message_raw) {
 	protocol::MetaRequest message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	MetaRequest message_struct;
-	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
+	message_struct.revision.path_keyed_hash_ = QByteArray::fromStdString(message_protobuf.path_id());
 	message_struct.revision.revision_ = message_protobuf.revision();
 
 	return message_struct;
@@ -113,7 +119,7 @@ QByteArray V1Parser::gen_MetaReply(const MetaReply& message_struct) {
 }
 V1Parser::MetaReply V1Parser::parse_MetaReply(QByteArray message_raw) {
 	protocol::MetaReply message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	QByteArray raw_meta = QByteArray::fromStdString(message_protobuf.meta());
 	QByteArray signature = QByteArray::fromStdString(message_protobuf.signature());
@@ -121,24 +127,6 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(QByteArray message_raw) {
 	QBitArray converted_bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
 
 	return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature)), std::move(converted_bitfield)};
-}
-
-QByteArray V1Parser::gen_MetaCancel(const MetaCancel& message_struct) {
-	protocol::MetaCancel message_protobuf;
-	message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
-	message_protobuf.set_revision(message_struct.revision.revision_);
-
-	return prepare_proto_message(message_protobuf, META_CANCEL);
-}
-V1Parser::MetaCancel V1Parser::parse_MetaCancel(QByteArray message_raw) {
-	protocol::MetaCancel message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
-
-	MetaCancel message_struct;
-	message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
-	message_struct.revision.revision_ = message_protobuf.revision();
-
-	return message_struct;
 }
 
 QByteArray V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {
@@ -151,7 +139,7 @@ QByteArray V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {
 }
 V1Parser::BlockRequest V1Parser::parse_BlockRequest(QByteArray message_raw) {
 	protocol::BlockRequest message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	BlockRequest message_struct;
 	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
@@ -171,32 +159,12 @@ QByteArray V1Parser::gen_BlockReply(const BlockReply& message_struct) {
 }
 V1Parser::BlockReply V1Parser::parse_BlockReply(QByteArray message_raw) {
 	protocol::BlockReply message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
+	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw ParseError();
 
 	BlockReply message_struct;
 	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
 	message_struct.offset = message_protobuf.offset();
 	message_struct.content = QByteArray::fromStdString(message_protobuf.content());
-
-	return message_struct;
-}
-
-QByteArray V1Parser::gen_BlockCancel(const BlockCancel& message_struct) {
-	protocol::BlockCancel message_protobuf;
-	message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
-	message_protobuf.set_offset(message_struct.offset);
-	message_protobuf.set_length(message_struct.length);
-
-	return prepare_proto_message(message_protobuf, BLOCK_CANCEL);
-}
-V1Parser::BlockCancel V1Parser::parse_BlockCancel(QByteArray message_raw) {
-	protocol::BlockCancel message_protobuf;
-	if(!message_protobuf.ParseFromArray(message_raw.data()+1, message_raw.size()-1)) throw parse_error();
-
-	BlockCancel message_struct;
-	message_struct.ct_hash = QByteArray::fromStdString(message_protobuf.ct_hash());
-	message_struct.offset = message_protobuf.offset();
-	message_struct.length = message_protobuf.length();
 
 	return message_struct;
 }

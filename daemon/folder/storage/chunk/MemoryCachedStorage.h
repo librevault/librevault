@@ -39,10 +39,10 @@ class MemoryCachedStorage : public QObject {
  public:
   MemoryCachedStorage(QObject* parent);
 
-  bool have_chunk(QByteArray ct_hash) const noexcept;
-  QByteArray get_chunk(QByteArray ct_hash) const;
-  void put_chunk(QByteArray ct_hash, QByteArray data);
-  void remove_chunk(QByteArray ct_hash) noexcept;
+  bool haveChunk(const QByteArray& ct_hash) const noexcept;
+  QByteArray getChunk(const QByteArray& ct_hash) const;
+  void putChunk(const QByteArray& ct_hash, const QByteArray& data);
+  void removeChunk(const QByteArray& ct_hash) noexcept;
 
  private:
   mutable QMutex cache_lock_;

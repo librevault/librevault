@@ -33,8 +33,8 @@
 
 namespace librevault {
 
-HandshakeHandler::HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QList<QString> extensions, QObject* parent) :
-	QObject(parent), params_(params), local_client_name_(client_name), local_user_agent_(user_agent), local_extensions_(extensions) {
+HandshakeHandler::HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QObject* parent) :
+	QObject(parent), params_(params), local_client_name_(client_name), local_user_agent_(user_agent){
 	connect(this, &HandshakeHandler::handshakeSuccess, [=]{qDebug() << "Librevault handshake successful";});
 	connect(this, &HandshakeHandler::handshakeFailed, [=](QString error){qDebug() << "Librevault handshake failed: " + error;});
 }
@@ -54,10 +54,6 @@ void HandshakeHandler::sendHandshake() {
 	message_struct.auth_token = localToken();
 	message_struct.device_name = local_client_name_;
 	message_struct.user_agent = local_user_agent_;
-
-	message_struct.extensions.reserve(local_extensions_.size());
-	for(auto& extension : local_extensions_)
-		message_struct.extensions.push_back(extension.toStdString());
 
 	messagePrepared(V1Parser().gen_Handshake(message_struct));
 	handshake_sent_ = true;
@@ -90,9 +86,6 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 
 		remote_client_name_ = message_struct.device_name;
 		remote_user_agent_ = message_struct.user_agent;
-		for(const std::string& extension : message_struct.extensions) {
-			remote_extensions_.push_back(QString::fromStdString(extension));
-		}
 		rcvd_remote_token = message_struct.auth_token;
 	}catch(std::exception& e){
 		emit handshakeFailed(QStringLiteral("Handshake message parse error: ") + e.what());

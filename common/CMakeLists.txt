@@ -15,19 +15,14 @@ set(CMAKE_AUTORCC ON)
 
 # Main sources
 file(GLOB_RECURSE MAIN_SRCS "*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "*.h")
+file(GLOB_RECURSE MAIN_HEADERS "*.h" "*.hpp")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
-
-# Platform-dependent sources
-list(APPEND SRCS ${MAIN_SRCS})
-list(APPEND SRCS ${MAIN_HEADERS})
-list(APPEND SRCS ${MAIN_QRCS})
 
 #============================================================================
 # Compile targets
 #============================================================================
 
-add_library(librevault-common STATIC ${SRCS})
+add_library(librevault-common STATIC ${MAIN_SRCS} ${MAIN_HEADERS} ${MAIN_QRCS})
 target_include_directories(librevault-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 #============================================================================

@@ -37,37 +37,37 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(paren
   LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash) {
+void Uploader::broadcastChunk(QList<Peer*> remotes, QByteArray ct_hash) {
   for (auto& remote : remotes) {
     remote->messageHandler()->sendHaveChunk(ct_hash);
   }
 }
 
-void Uploader::handle_interested(Peer* remote) {
+void Uploader::handleInterested(Peer* remote) {
   LOGFUNC();
 
   // TODO: write good choking algorithm.
   remote->messageHandler()->sendUnchoke();
 }
-void Uploader::handle_not_interested(Peer* remote) {
+void Uploader::handleNotInterested(Peer* remote) {
   LOGFUNC();
 
   // TODO: write good choking algorithm.
   remote->messageHandler()->sendChoke();
 }
 
-void Uploader::handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
+void Uploader::handleBlockRequest(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
   try {
     if (!remote->am_choking() && remote->peer_interested()) {
-      remote->messageHandler()->sendBlockReply(ct_hash, offset, get_block(ct_hash, offset, size));
+      remote->messageHandler()->sendBlockReply(ct_hash, offset, getBlock(ct_hash, offset, size));
     }
   } catch (ChunkStorage::NoSuchChunk& e) {
     LOGW("Requested nonexistent block");
   }
 }
 
-QByteArray Uploader::get_block(QByteArray ct_hash, uint32_t offset, uint32_t size) {
-  auto chunk = chunk_storage_->get_chunk(ct_hash);
+QByteArray Uploader::getBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size) {
+  auto chunk = chunk_storage_->getChunk(ct_hash);
   if ((int)offset < chunk.size() && (int)size <= chunk.size() - (int)offset)
     return chunk.mid(offset, size);
   else

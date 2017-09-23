@@ -62,11 +62,9 @@ private:
 
 	DECLARE_MESSAGE(MetaRequest, const MetaInfo::PathRevision& revision);
 	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, QBitArray bitfield);
-	DECLARE_MESSAGE(MetaCancel, const MetaInfo::PathRevision& revision);
 
 	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);
 	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, QByteArray block);
-	DECLARE_MESSAGE(BlockCancel, QByteArray ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

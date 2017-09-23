@@ -32,7 +32,6 @@
 #include "PeerServer.h"
 #include "PingHandler.h"
 #include "V1Parser.h"
-#include "ProtocolParser.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
@@ -46,7 +45,7 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
   qDebug() << "new peer";
 
   handshake_handler_ = new HandshakeHandler(params, Config::get()->getGlobal("client_name").toString(),
-                                            Version().user_agent(), {}, this);
+                                            Version().user_agent(), this);
   connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
   connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
   connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::sendMessage);
@@ -144,10 +143,6 @@ QJsonObject Peer::collectState() {
 bool Peer::isValid() const { return handshake_handler_->isValid(); }
 
 void Peer::send(const QVariantMap& message) {
-  protocol::v2::ProtocolParser parser;
-  QByteArray message_bytes = parser.serialize(message);
-  bc_all_.add_up(message_bytes.size());
-  socket_->sendBinaryMessage(message_bytes);
 }
 
 /* InterestGuard */
@@ -205,17 +200,11 @@ void Peer::handleMessage(const QByteArray& message) {
       case V1Parser::META_REPLY:
         message_handler_->handleMetaReply(message);
         break;
-      case V1Parser::META_CANCEL:
-        message_handler_->handleMetaCancel(message);
-        break;
       case V1Parser::BLOCK_REQUEST:
         message_handler_->handleBlockRequest(message);
         break;
       case V1Parser::BLOCK_REPLY:
         message_handler_->handleBlockReply(message);
-        break;
-      case V1Parser::BLOCK_CANCEL:
-        message_handler_->handleBlockCancel(message);
         break;
       default:
         socket_->close(QWebSocketProtocol::CloseCodeProtocolError);

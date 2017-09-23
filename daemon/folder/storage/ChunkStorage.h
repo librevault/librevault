@@ -50,13 +50,12 @@ public:
 
 	ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent);
 
-	bool have_chunk(QByteArray ct_hash) const noexcept ;
-	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
+	bool haveChunk(QByteArray ct_hash) const noexcept ;
+	QByteArray getChunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
+	void putChunk(QByteArray ct_hash, QFile* chunk_f);
 
-	QBitArray make_bitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
+	QBitArray makeBitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
 
-	void pruneAssembledChunks(const MetaInfo &meta);
   void gcChunk(const QByteArray& ct_hash);
 
  signals:

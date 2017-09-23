@@ -34,18 +34,15 @@ public:
 
 		META_REQUEST = 7,
 		META_REPLY = 8,
-		META_CANCEL = 9,
 
 		BLOCK_REQUEST = 10,
 		BLOCK_REPLY = 11,
-		BLOCK_CANCEL = 12,
 	};
 
 	struct Handshake {
 		QByteArray auth_token;
 		QString device_name;
 		QString user_agent;
-		std::vector<std::string> extensions;
 	};
 	struct HaveMeta {
 		MetaInfo::PathRevision revision;
@@ -61,9 +58,6 @@ public:
 		SignedMeta smeta;
 		QBitArray bitfield;
 	};
-	struct MetaCancel {
-		MetaInfo::PathRevision revision;
-	};
 	struct BlockRequest {
 		QByteArray ct_hash;
 		uint32_t offset;
@@ -74,24 +68,19 @@ public:
 		uint32_t offset;
 		QByteArray content;
 	};
-	struct BlockCancel {
-		QByteArray ct_hash;
-		uint32_t offset;
-		uint32_t length;
-	};
 
 	/* Errors */
-	struct parse_error : std::runtime_error {
-		parse_error() : std::runtime_error("Parse error"){}
+	struct ParseError : std::runtime_error {
+		ParseError() : std::runtime_error("Parse error"){}
 	};
 
 	// gen_* messages return messages in format <type=byte><payload>
 	// parse_* messages take argument in format <type=byte><payload>
 
-	message_type parse_MessageType(QByteArray message_raw) {
-		if(!message_raw.isEmpty())
-			return (message_type)message_raw.at(0);
-		else throw parse_error();
+	message_type parse_MessageType(const QByteArray& message_raw) {
+		if(message_raw.isEmpty())
+			throw ParseError();
+		return (message_type)message_raw.at(0);
 	}
 
 	QByteArray gen_Handshake(const Handshake& message_struct);
@@ -114,27 +103,11 @@ public:
 	QByteArray gen_MetaReply(const MetaReply& message_struct);
 	MetaReply parse_MetaReply(QByteArray message_raw);
 
-	QByteArray gen_MetaCancel(const MetaCancel& message_struct);
-	MetaCancel parse_MetaCancel(QByteArray message_raw);
-
 	QByteArray gen_BlockRequest(const BlockRequest& message_struct);
 	BlockRequest parse_BlockRequest(QByteArray message_raw);
 
 	QByteArray gen_BlockReply(const BlockReply& message_struct);
 	BlockReply parse_BlockReply(QByteArray message_raw);
-
-	QByteArray gen_BlockCancel(const BlockCancel& message_struct);
-	BlockCancel parse_BlockCancel(QByteArray message_raw);
-
-protected:
-	template <class ProtoMessageClass>
-	QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
-		QByteArray message_raw(message_protobuf.ByteSize()+1, 0);
-		message_raw[0] = type;
-		message_protobuf.SerializeToArray(message_raw.data()+1, message_protobuf.ByteSize());
-
-		return message_raw;
-	}
 };
 
 } /* namespace librevault */

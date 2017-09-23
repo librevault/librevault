@@ -39,7 +39,7 @@ class HandshakeHandler : public QObject {
 public:
 	enum class Role {UNDEFINED = 0, SERVER = 1, CLIENT = 2};
 
-	HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QList<QString> extensions, QObject* parent = nullptr);
+	HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent, QObject* parent = nullptr);
 
 	Q_SIGNAL void handshakeSuccess();
 	Q_SIGNAL void handshakeFailed(QString error);
@@ -51,7 +51,6 @@ public:
 	/* Getters */
 	QString clientName() const {return remote_client_name_;}
 	QString userAgent() const {return remote_user_agent_;}
-	QList<QString> extensions() const {return remote_extensions_;}
 
 	bool isValid() const {return handshake_received_;}
 
@@ -62,7 +61,6 @@ private:
 	/* Handshake fields */
 	QString local_client_name_, remote_client_name_;
 	QString local_user_agent_, remote_user_agent_;
-	QList<QString> local_extensions_, remote_extensions_;
 
 	/* Digests */
 	QByteArray local_digest_, remote_digest_;

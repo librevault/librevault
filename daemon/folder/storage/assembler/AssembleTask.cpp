@@ -66,7 +66,7 @@ AssembleTask::~AssembleTask() {}
 QByteArray AssembleTask::get_chunk_pt(const QByteArray& ct_hash) const {
   try {
     QPair<quint32, QByteArray> size_iv = index_->getChunkSizeIv(ct_hash);
-    return ChunkInfo::decrypt(chunk_storage_->get_chunk(ct_hash), size_iv.first, params_.secret.encryptionKey(),
+    return ChunkInfo::decrypt(chunk_storage_->getChunk(ct_hash), size_iv.first, params_.secret.encryptionKey(),
                               size_iv.second);
   } catch (std::exception& e) {
     qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
@@ -148,7 +148,7 @@ bool AssembleTask::assemble_file() {
   LOGFUNC();
 
   // Check if we have all needed chunks
-  auto bitfield = chunk_storage_->make_bitfield(meta_);
+  auto bitfield = chunk_storage_->makeBitfield(meta_);
   if (bitfield.count(true) != bitfield.size()) return false;
 
   //

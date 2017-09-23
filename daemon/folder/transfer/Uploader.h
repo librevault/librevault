@@ -42,18 +42,18 @@ class Uploader : public QObject {
  public:
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcast_chunk(QList<Peer*> remotes, QByteArray ct_hash);
+  void broadcastChunk(QList<Peer*> remotes, QByteArray ct_hash);
 
   /* Message handlers */
-  void handle_interested(Peer* remote);
-  void handle_not_interested(Peer* remote);
+  void handleInterested(Peer* remote);
+  void handleNotInterested(Peer* remote);
 
-  void handle_block_request(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
+  void handleBlockRequest(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
 
  private:
   ChunkStorage* chunk_storage_;
 
-  QByteArray get_block(QByteArray ct_hash, uint32_t offset, uint32_t size);
+  QByteArray getBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
 };
 
 } /* namespace librevault */

@@ -15,6 +15,7 @@
  */
 #pragma once
 #include <QVariantMap>
+#include <exception_helper.hpp>
 
 namespace librevault {
 namespace protocol {
@@ -22,12 +23,12 @@ namespace v2 {
 
 class ProtocolParser {
  public:
-  struct ParserError : public std::runtime_error {
-    explicit ParserError(const std::string& what) : std::runtime_error(what) {}
-  };
+  DECLARE_EXCEPTION(ParserError, "Parser error");
 
   QVariantMap parse(const QByteArray& message) const;
   QByteArray serialize(const QVariantMap& message) const;
 };
 
-}}} /* namespace librevault */
+}  // namespace v2
+}  // namespace protocol
+} /* namespace librevault */

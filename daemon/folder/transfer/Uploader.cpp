@@ -38,9 +38,9 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(paren
 }
 
 void Uploader::broadcastChunk(QList<Peer*> remotes, QByteArray ct_hash) {
-  for (auto& remote : remotes) {
-    remote->messageHandler()->sendHaveChunk(ct_hash);
-  }
+  //for (auto& remote : remotes) {
+  //  remote->messageHandler()->sendHaveChunk(ct_hash);
+  //}
 }
 
 void Uploader::handleInterested(Peer* remote) {

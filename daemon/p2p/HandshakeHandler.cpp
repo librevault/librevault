@@ -55,7 +55,7 @@ void HandshakeHandler::sendHandshake() {
 	message_struct.device_name = local_client_name_;
 	message_struct.user_agent = local_user_agent_;
 
-	messagePrepared(V1Parser().gen_Handshake(message_struct));
+	messagePrepared(V1Parser().serializeHandshake(message_struct));
 	handshake_sent_ = true;
 	//LOGD("==> HANDSHAKE");
 }
@@ -82,7 +82,7 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 
 	QByteArray rcvd_remote_token;
 	try {
-		auto message_struct = V1Parser().parse_Handshake(msg);
+		auto message_struct = V1Parser().parseHandshake(msg);
 
 		remote_client_name_ = message_struct.device_name;
 		remote_user_agent_ = message_struct.user_agent;

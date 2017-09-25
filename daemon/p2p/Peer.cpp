@@ -169,7 +169,7 @@ void Peer::sendMessage(const QByteArray& message) {
 }
 
 void Peer::handleMessage(const QByteArray& message) {
-  V1Parser::message_type message_type = V1Parser().parse_MessageType(message);
+  V1Parser::MessageType message_type = V1Parser().parse_MessageType(message);
 
   bc_all_.add_down(message.size());
   timeout_handler_->bump();
@@ -185,25 +185,22 @@ void Peer::handleMessage(const QByteArray& message) {
       case V1Parser::INTERESTED:
         message_handler_->handleInterested(message);
         break;
-      case V1Parser::NOT_INTERESTED:
+      case V1Parser::NOTINTERESTED:
         message_handler_->handleNotInterested(message);
         break;
-      case V1Parser::HAVE_META:
+      case V1Parser::INDEXUPDATE:
         message_handler_->handleHaveMeta(message);
         break;
-      case V1Parser::HAVE_CHUNK:
-        message_handler_->handleHaveChunk(message);
-        break;
-      case V1Parser::META_REQUEST:
+      case V1Parser::METAREQUEST:
         message_handler_->handleMetaRequest(message);
         break;
-      case V1Parser::META_REPLY:
+      case V1Parser::METARESPONSE:
         message_handler_->handleMetaReply(message);
         break;
-      case V1Parser::BLOCK_REQUEST:
+      case V1Parser::BLOCKREQUEST:
         message_handler_->handleBlockRequest(message);
         break;
-      case V1Parser::BLOCK_REPLY:
+      case V1Parser::BLOCKRESPONSE:
         message_handler_->handleBlockReply(message);
         break;
       default:

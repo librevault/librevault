@@ -140,8 +140,8 @@ void FolderGroup::handleNewPeer(Peer* peer) {
           [=](MetaInfo::PathRevision revision, QBitArray bitfield) {
             meta_downloader_->handleHaveMeta(peer, revision, bitfield);
           });
-  connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_,
-          [=](QByteArray ct_hash) { downloader_->notifyRemoteChunk(peer, ct_hash); });
+  //connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_,
+  //        [=](QByteArray ct_hash) { downloader_->notifyRemoteChunk(peer, ct_hash); });
   connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_,
           [=](MetaInfo::PathRevision path_revision) { meta_uploader_->handleMetaRequest(peer, path_revision); });
   connect(

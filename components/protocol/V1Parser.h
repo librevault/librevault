@@ -16,27 +16,27 @@
 #pragma once
 #include "SignedMeta.h"
 #include "conv_bitfield.h"
+#include <exception_helper.hpp>
 
 namespace librevault {
 
 class V1Parser {
 public:
-	enum message_type : uint8_t {
+	enum MessageType : uint8_t {
 		HANDSHAKE = 0,
 
 		CHOKE = 1,
 		UNCHOKE = 2,
 		INTERESTED = 3,
-		NOT_INTERESTED = 4,
+		NOTINTERESTED = 4,
 
-		HAVE_META = 5,
-		HAVE_CHUNK = 6,
+		INDEXUPDATE = 5,
 
-		META_REQUEST = 7,
-		META_REPLY = 8,
+		METAREQUEST = 7,
+		METARESPONSE = 8,
 
-		BLOCK_REQUEST = 10,
-		BLOCK_REPLY = 11,
+		BLOCKREQUEST = 10,
+		BLOCKRESPONSE = 11,
 	};
 
 	struct Handshake {
@@ -44,70 +44,62 @@ public:
 		QString device_name;
 		QString user_agent;
 	};
-	struct HaveMeta {
+	struct IndexUpdate {
 		MetaInfo::PathRevision revision;
 		QBitArray bitfield;
-	};
-	struct HaveChunk {
-		QByteArray ct_hash;
 	};
 	struct MetaRequest {
 		MetaInfo::PathRevision revision;
 	};
-	struct MetaReply {
+	struct MetaResponse {
 		SignedMeta smeta;
 		QBitArray bitfield;
 	};
 	struct BlockRequest {
 		QByteArray ct_hash;
-		uint32_t offset;
-		uint32_t length;
+		quint32 offset;
+		quint32 length;
 	};
-	struct BlockReply {
+	struct BlockResponse {
 		QByteArray ct_hash;
-		uint32_t offset;
+		quint32 offset;
 		QByteArray content;
 	};
 
 	/* Errors */
-	struct ParseError : std::runtime_error {
-		ParseError() : std::runtime_error("Parse error"){}
-	};
+	DECLARE_EXCEPTION(ParseError, "Parse error");
 
 	// gen_* messages return messages in format <type=byte><payload>
 	// parse_* messages take argument in format <type=byte><payload>
 
-	message_type parse_MessageType(const QByteArray& message_raw) {
+	MessageType parse_MessageType(const QByteArray& message_raw) {
 		if(message_raw.isEmpty())
 			throw ParseError();
-		return (message_type)message_raw.at(0);
+		return (MessageType)message_raw.at(0);
 	}
 
-	QByteArray gen_Handshake(const Handshake& message_struct);
-	Handshake parse_Handshake(QByteArray message_raw);
+	QByteArray serializeHandshake(const Handshake& message_struct);
+	Handshake parseHandshake(QByteArray message_raw);
 
-	QByteArray gen_Choke() {return QByteArray(1, CHOKE);}
-	QByteArray gen_Unchoke() {return QByteArray(1, UNCHOKE);}
-	QByteArray gen_Interested() {return QByteArray(1, INTERESTED);}
-	QByteArray gen_NotInterested() {return QByteArray(1, NOT_INTERESTED);}
+	QByteArray genChoke() {return QByteArray(1, CHOKE);}
+	QByteArray genUnchoke() {return QByteArray(1, UNCHOKE);}
+	QByteArray genInterested() {return QByteArray(1, INTERESTED);}
+	QByteArray genNotInterested() {return QByteArray(1, NOTINTERESTED);}
 
-	QByteArray gen_HaveMeta(const HaveMeta& message_struct);
-	HaveMeta parse_HaveMeta(QByteArray message_raw);
+	QByteArray serializeIndexUpdate(const IndexUpdate& message_struct);
+	IndexUpdate parseIndexUpdate(QByteArray message_raw);
 
-	QByteArray gen_HaveChunk(const HaveChunk& message_struct);
-	HaveChunk parse_HaveChunk(QByteArray message_raw);
+	QByteArray serializeMetaRequest(const MetaRequest& message_struct);
+	MetaRequest parseMetaRequest(QByteArray message_raw);
 
-	QByteArray gen_MetaRequest(const MetaRequest& message_struct);
-	MetaRequest parse_MetaRequest(QByteArray message_raw);
+	QByteArray serializeMetaReply(const MetaResponse& message_struct);
+	MetaResponse parseMetaReply(QByteArray message_raw);
 
-	QByteArray gen_MetaReply(const MetaReply& message_struct);
-	MetaReply parse_MetaReply(QByteArray message_raw);
+	QByteArray serializeBlockRequest(const BlockRequest& message_struct);
+	BlockRequest parseBlockRequest(QByteArray message_raw);
 
-	QByteArray gen_BlockRequest(const BlockRequest& message_struct);
-	BlockRequest parse_BlockRequest(QByteArray message_raw);
-
-	QByteArray gen_BlockReply(const BlockReply& message_struct);
-	BlockReply parse_BlockReply(QByteArray message_raw);
+	QByteArray serializeBlockResponse(const BlockResponse& message_struct);
+	BlockResponse parseBlockResponse(QByteArray message_raw);
 };
 
 } /* namespace librevault */

@@ -27,43 +27,16 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "control/FolderParams.h"
-#include "Secret.h"
-#include "MetaInfo.h"
-#include "SignedMeta.h"
-#include <QBitArray>
-#include <QObject>
+#include <QString>
+#include <stdexcept>
+#include <string>
 
-namespace librevault {
+#define DECLARE_EXCEPTION_DETAIL(exception_name, parent_exception, exception_string) \
+	struct exception_name : public parent_exception { \
+    exception_name() : parent_exception(exception_string) {} \
+    explicit exception_name(const char* what) : parent_exception(what) {} \
+    explicit exception_name(const std::string& what) : exception_name(what.c_str()) {} \
+    explicit exception_name(const QString& what) : exception_name(what.toStdString()) {} \
+  }
 
-#define DECLARE_MESSAGE(message_name, fields...) \
-public: \
-	Q_SIGNAL void rcvd##message_name(fields); \
-	void send##message_name(fields); \
-	Q_SLOT void handle##message_name(QByteArray message);
-
-class MessageHandler : public QObject {
-	Q_OBJECT
-
-public:
-	MessageHandler(QObject* parent = nullptr);
-
-	Q_SIGNAL void messagePrepared(QByteArray msg);
-
-private:
-	// Messages
-	DECLARE_MESSAGE(Choke);
-	DECLARE_MESSAGE(Unchoke);
-	DECLARE_MESSAGE(Interested);
-	DECLARE_MESSAGE(NotInterested);
-
-	DECLARE_MESSAGE(HaveMeta, const MetaInfo::PathRevision& revision, QBitArray bitfield);
-
-	DECLARE_MESSAGE(MetaRequest, const MetaInfo::PathRevision& revision);
-	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, QBitArray bitfield);
-
-	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);
-	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, QByteArray block);
-};
-
-} /* namespace librevault */
+#define DECLARE_EXCEPTION(exception_name, exception_string) DECLARE_EXCEPTION_DETAIL(exception_name, std::runtime_error, exception_string)

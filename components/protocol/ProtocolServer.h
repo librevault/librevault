@@ -27,15 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QObject>
 #include <SignedMeta.h>
+#include <QObject>
 #include <exception_helper.hpp>
 
-namespace librevault { namespace protocol { namespace v2 {
+namespace librevault {
+namespace protocol {
+namespace v2 {
 
 #define DECLARE_MESSAGE(message_name, fields...) \
-	Q_SIGNAL void parsed##message_name(fields); \
-	Q_SLOT void serialize##message_name(fields);
+  Q_SIGNAL void parsed##message_name(fields);    \
+  Q_SLOT void serialize##message_name(fields);
 
 class ProtocolServer : public QObject {
   Q_OBJECT
@@ -48,7 +50,8 @@ class ProtocolServer : public QObject {
   Q_SIGNAL void parseFailed(const QString& reason, const QByteArray& message_bytes);
   Q_SLOT void parse(const QByteArray& message_bytes);
 
-  DECLARE_MESSAGE(Handshake, const QByteArray& auth_token, const QString& device_name, const QString& user_agent, quint16 dht_port);
+  DECLARE_MESSAGE(Handshake, const QByteArray& auth_token, const QString& device_name, const QString& user_agent,
+                  quint16 dht_port);
 
   DECLARE_MESSAGE(Choke);
   DECLARE_MESSAGE(Unchoke);
@@ -64,4 +67,6 @@ class ProtocolServer : public QObject {
   DECLARE_MESSAGE(BlockResponse, const QByteArray& ct_hash, quint64 offset, const QByteArray& content);
 };
 
-}}}
+}  // namespace v2
+}  // namespace protocol
+}  // namespace librevault

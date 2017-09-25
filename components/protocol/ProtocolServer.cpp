@@ -26,19 +26,21 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "V2Protocol.pb.h"
 #include "ProtocolServer.h"
-#include <QDataStream>
+#include "V2Protocol.pb.h"
 #include <conv_bitfield.h>
+#include <QDataStream>
 
-namespace librevault { namespace protocol { namespace v2 {
+namespace librevault {
+namespace protocol {
+namespace v2 {
 
 namespace {
 
 template <class ProtoMessageClass>
 ProtoMessageClass parseProtobuf(const QByteArray& payload_bytes) {
   ProtoMessageClass payload_proto;
-  if(payload_bytes.isEmpty() || !payload_proto.ParseFromArray(payload_bytes.data(), payload_bytes.size()))
+  if (payload_bytes.isEmpty() || !payload_proto.ParseFromArray(payload_bytes.data(), payload_bytes.size()))
     throw librevault::protocol::v2::ProtocolServer::ParseError();
   return payload_proto;
 }
@@ -77,7 +79,7 @@ QByteArray serializeHeader(librevault::protocol::v2::MessageType type) {
   return result;
 }
 
-}
+}  // namespace
 
 void ProtocolServer::parse(const QByteArray& message_bytes) {
   try {
@@ -89,74 +91,57 @@ void ProtocolServer::parse(const QByteArray& message_bytes) {
     stream >> header_bytes;
     stream >> payload_bytes;
 
-    if(header_bytes.isEmpty())
-      throw MessageTruncated();
+    if (header_bytes.isEmpty()) throw MessageTruncated();
 
     Header header = parseProtobuf<Header>(header_bytes);
-    switch(header.type()) {
+    switch (header.type()) {
       case HANDSHAKE: {
         auto payload = parseProtobuf<Handshake>(payload_bytes);
-        parsedHandshake(
-          QByteArray::fromStdString(payload.auth_token()),
-          QString::fromStdString(payload.device_name()),
-          QString::fromStdString(payload.user_agent()),
-          (quint16)payload.dht_port()
-        );
-      }
-        break;
-      case CHOKE: parsedChoke();
-      case UNCHOKE: parsedUnchoke();
-      case INTERESTED: parsedInterested();
-      case NOTINTERESTED: parsedNotInterested();
+        parsedHandshake(QByteArray::fromStdString(payload.auth_token()), QString::fromStdString(payload.device_name()),
+                        QString::fromStdString(payload.user_agent()), (quint16)payload.dht_port());
+      } break;
+      case CHOKE:
+        parsedChoke();
+      case UNCHOKE:
+        parsedUnchoke();
+      case INTERESTED:
+        parsedInterested();
+      case NOTINTERESTED:
+        parsedNotInterested();
       case INDEXUPDATE: {
         auto payload = parseProtobuf<IndexUpdate>(payload_bytes);
-        parsedIndexUpdate(
-          {QByteArray::fromStdString(payload.path_keyed_hash()), payload.revision()},
-          convert_bitfield(QByteArray::fromStdString(payload.bitfield()))
-        );
-      }
-        break;
+        parsedIndexUpdate({QByteArray::fromStdString(payload.path_keyed_hash()), payload.revision()},
+                          convert_bitfield(QByteArray::fromStdString(payload.bitfield())));
+      } break;
       case METAREQUEST: {
         auto payload = parseProtobuf<MetaRequest>(payload_bytes);
-        parsedMetaRequest(
-          {QByteArray::fromStdString(payload.path_keyed_hash()), payload.revision()}
-        );
-      }
-        break;
+        parsedMetaRequest({QByteArray::fromStdString(payload.path_keyed_hash()), payload.revision()});
+      } break;
       case METARESPONSE: {
         auto payload = parseProtobuf<MetaResponse>(payload_bytes);
         parsedMetaResponse(
-          SignedMeta(QByteArray::fromStdString(payload.metainfo()), QByteArray::fromStdString(payload.signature())),
-          convert_bitfield(QByteArray::fromStdString(payload.bitfield()))
-        );
-      }
-        break;
+            SignedMeta(QByteArray::fromStdString(payload.metainfo()), QByteArray::fromStdString(payload.signature())),
+            convert_bitfield(QByteArray::fromStdString(payload.bitfield())));
+      } break;
       case BLOCKREQUEST: {
         auto payload = parseProtobuf<BlockRequest>(payload_bytes);
-        parsedBlockRequest(
-          QByteArray::fromStdString(payload.ct_hash()),
-          payload.offset(),
-          payload.length()
-        );
-      }
-        break;
+        parsedBlockRequest(QByteArray::fromStdString(payload.ct_hash()), payload.offset(), payload.length());
+      } break;
       case BLOCKRESPONSE: {
         auto payload = parseProtobuf<BlockResponse>(payload_bytes);
-        parsedBlockResponse(
-          QByteArray::fromStdString(payload.ct_hash()),
-          payload.offset(),
-          QByteArray::fromStdString(payload.content())
-        );
-      }
-        break;
-      default: throw ParseError();
+        parsedBlockResponse(QByteArray::fromStdString(payload.ct_hash()), payload.offset(),
+                            QByteArray::fromStdString(payload.content()));
+      } break;
+      default:
+        throw ParseError();
     }
-  }catch(const std::exception& e) {
+  } catch (const std::exception& e) {
     emit parseFailed(e.what(), message_bytes);
   }
 }
 
-void ProtocolServer::serializeHandshake(const QByteArray& auth_token, const QString& device_name, const QString& user_agent, quint16 dht_port) {
+void ProtocolServer::serializeHandshake(const QByteArray& auth_token, const QString& device_name,
+                                        const QString& user_agent, quint16 dht_port) {
   Handshake payload;
   payload.set_auth_token(auth_token.toStdString());
   payload.set_device_name(device_name.toStdString());
@@ -165,18 +150,10 @@ void ProtocolServer::serializeHandshake(const QByteArray& auth_token, const QStr
   emit serialized(serializeMessage(HANDSHAKE, payload));
 }
 
-void ProtocolServer::serializeChoke() {
-  emit serialized(serializeHeader(CHOKE));
-}
-void ProtocolServer::serializeUnchoke() {
-  emit serialized(serializeHeader(UNCHOKE));
-}
-void ProtocolServer::serializeInterested() {
-  emit serialized(serializeHeader(INTERESTED));
-}
-void ProtocolServer::serializeNotInterested() {
-  emit serialized(serializeHeader(NOTINTERESTED));
-}
+void ProtocolServer::serializeChoke() { emit serialized(serializeHeader(CHOKE)); }
+void ProtocolServer::serializeUnchoke() { emit serialized(serializeHeader(UNCHOKE)); }
+void ProtocolServer::serializeInterested() { emit serialized(serializeHeader(INTERESTED)); }
+void ProtocolServer::serializeNotInterested() { emit serialized(serializeHeader(NOTINTERESTED)); }
 
 void ProtocolServer::serializeIndexUpdate(const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
   IndexUpdate payload;
@@ -215,4 +192,6 @@ void ProtocolServer::serializeBlockResponse(const QByteArray& ct_hash, quint64 o
   emit serialized(serializeMessage(BLOCKRESPONSE, payload));
 }
 
-}}}
+}  // namespace v2
+}  // namespace protocol
+}  // namespace librevault

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2014-2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 #include "MessageHandler.h"
 #include "PeerServer.h"
 #include "PingHandler.h"
-#include "V1Parser.h"
+#include "Parser.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
@@ -169,38 +169,40 @@ void Peer::sendMessage(const QByteArray& message) {
 }
 
 void Peer::handleMessage(const QByteArray& message) {
-  V1Parser::MessageType message_type = V1Parser().parse_MessageType(message);
+  protocol::v2::Header header;
+  QByteArray payload;
+  std::tie(header, payload) = protocol::v2::Parser().parseMessage(message);
 
   bc_all_.add_down(message.size());
   timeout_handler_->bump();
 
   if (handshake_handler_->isValid()) {
-    switch (message_type) {
-      case V1Parser::CHOKE:
+    switch (header.type) {
+      case protocol::v2::CHOKE:
         message_handler_->handleChoke(message);
         break;
-      case V1Parser::UNCHOKE:
+      case protocol::v2::UNCHOKE:
         message_handler_->handleUnchoke(message);
         break;
-      case V1Parser::INTERESTED:
+      case protocol::v2::INTERESTED:
         message_handler_->handleInterested(message);
         break;
-      case V1Parser::NOTINTERESTED:
+      case protocol::v2::NOTINTERESTED:
         message_handler_->handleNotInterested(message);
         break;
-      case V1Parser::INDEXUPDATE:
+      case protocol::v2::INDEXUPDATE:
         message_handler_->handleHaveMeta(message);
         break;
-      case V1Parser::METAREQUEST:
+      case protocol::v2::METAREQUEST:
         message_handler_->handleMetaRequest(message);
         break;
-      case V1Parser::METARESPONSE:
+      case protocol::v2::METARESPONSE:
         message_handler_->handleMetaReply(message);
         break;
-      case V1Parser::BLOCKREQUEST:
+      case protocol::v2::BLOCKREQUEST:
         message_handler_->handleBlockRequest(message);
         break;
-      case V1Parser::BLOCKRESPONSE:
+      case protocol::v2::BLOCKRESPONSE:
         message_handler_->handleBlockReply(message);
         break;
       default:

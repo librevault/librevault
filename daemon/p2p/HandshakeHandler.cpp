@@ -29,7 +29,7 @@
 #include "HandshakeHandler.h"
 #include "nodekey/NodeKey.h"
 #include "Tokens.h"
-#include "V1Parser.h"
+#include "Parser.h"
 
 namespace librevault {
 
@@ -50,12 +50,12 @@ QByteArray HandshakeHandler::remoteToken() {
 void HandshakeHandler::sendHandshake() {
 	Q_ASSERT(!handshake_sent_);
 
-	V1Parser::Handshake message_struct;
+	protocol::v2::Handshake message_struct;
 	message_struct.auth_token = localToken();
 	message_struct.device_name = local_client_name_;
 	message_struct.user_agent = local_user_agent_;
 
-	messagePrepared(V1Parser().serializeHandshake(message_struct));
+	messagePrepared(protocol::v2::Parser().serializeHandshake(message_struct));
 	handshake_sent_ = true;
 	//LOGD("==> HANDSHAKE");
 }
@@ -82,7 +82,7 @@ void HandshakeHandler::handleMesssage(QByteArray msg) {
 
 	QByteArray rcvd_remote_token;
 	try {
-		auto message_struct = V1Parser().parseHandshake(msg);
+		auto message_struct = protocol::v2::Parser().parseHandshake(msg);
 
 		remote_client_name_ = message_struct.device_name;
 		remote_user_agent_ = message_struct.user_agent;

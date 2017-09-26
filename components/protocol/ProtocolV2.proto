@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2014-2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,59 +27,48 @@
  * files in the program, then also delete it here.
  */
 syntax = "proto3";
-package librevault.protocol.v2;
-
-// Header
-enum MessageType {
-  HANDSHAKE = 0;
-  CHOKE = 1;
-  UNCHOKE = 2;
-  INTERESTED = 3;
-  NOTINTERESTED = 4;
-  INDEXUPDATE = 5;
-  METAREQUEST = 6;
-  METARESPONSE = 7;
-  BLOCKREQUEST = 8;
-  BLOCKRESPONSE = 9;
-}
+package librevault.protocol.v2.serialization;
 
 message Header {
-  MessageType type = 1;
+	uint32 type = 1;
 }
 
-// Payload
 message Handshake {
-  bytes auth_token = 1;
-  string device_name = 2;
-  string user_agent = 3;
-  uint32 dht_port = 4;
+	bytes auth_token = 1;
+	string device_name = 2;
+	string user_agent = 3;
+	uint32 dht_port = 4;
 }
 
-message IndexUpdate {
-  bytes path_keyed_hash = 1;
-  uint64 revision = 2;
-  bytes bitfield = 3;
+message HaveMeta {
+	bytes path_keyed_hash = 1;
+	uint64 revision = 2;
+	bytes bitfield = 3;
+}
+
+message HaveChunk {
+	bytes ct_hash = 1;
 }
 
 message MetaRequest {
-  bytes path_keyed_hash = 1;
-  uint64 revision = 2;
+	bytes path_keyed_hash = 1;
+	uint64 revision = 2;
 }
 
 message MetaResponse {
-  bytes metainfo = 1;
-  bytes signature = 2;
-  bytes bitfield = 3;
+	bytes meta = 1;
+	bytes signature = 2;
+	bytes bitfield = 3;
 }
 
 message BlockRequest {
-  bytes ct_hash = 1;
-  uint64 offset = 2;
-  uint32 length = 3;
+	bytes ct_hash = 1;
+	uint64 offset = 2;
+	uint32 length = 3;
 }
 
 message BlockResponse {
-  bytes ct_hash = 1;
-  uint64 offset = 2;
-  bytes content = 3;
+	bytes ct_hash = 1;
+	uint64 offset = 2;
+	bytes content = 3;
 }

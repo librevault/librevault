@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "MessageHandler.h"
-#include "V1Parser.h"
+#include "Parser.h"
 #include <QDebug>
 
 namespace librevault {
@@ -37,27 +37,27 @@ MessageHandler::MessageHandler(QObject* parent) :
 }
 
 void MessageHandler::sendChoke() {
-	emit messagePrepared(V1Parser().genChoke());
+	emit messagePrepared(protocol::v2::Parser().genChoke());
 	qDebug() << "==> CHOKE";
 }
 void MessageHandler::sendUnchoke() {
-	emit messagePrepared(V1Parser().genUnchoke());
+	emit messagePrepared(protocol::v2::Parser().genUnchoke());
 	qDebug() << "==> UNCHOKE";
 }
 void MessageHandler::sendInterested() {
-	emit messagePrepared(V1Parser().genInterested());
+	emit messagePrepared(protocol::v2::Parser().genInterested());
 	qDebug() << "==> INTERESTED";
 }
 void MessageHandler::sendNotInterested() {
-	emit messagePrepared(V1Parser().genNotInterested());
+	emit messagePrepared(protocol::v2::Parser().genNotInterested());
 	qDebug() << "==> NOT_INTERESTED";
 }
 
 void MessageHandler::sendHaveMeta(const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-	V1Parser::IndexUpdate message;
+	protocol::v2::IndexUpdate message;
 	message.revision = revision;
 	message.bitfield = bitfield;
-	emit messagePrepared(V1Parser().serializeIndexUpdate(message));
+	emit messagePrepared(protocol::v2::Parser().serializeIndexUpdate(message));
 
 	qDebug() << "==> HAVE_META:"
 		<< "path_id=" << message.revision.path_keyed_hash_.toHex()
@@ -66,19 +66,19 @@ void MessageHandler::sendHaveMeta(const MetaInfo::PathRevision& revision, QBitAr
 }
 
 void MessageHandler::sendMetaRequest(const MetaInfo::PathRevision& revision) {
-	V1Parser::MetaRequest message;
+	protocol::v2::MetaRequest message;
 	message.revision = revision;
-	emit messagePrepared(V1Parser().serializeMetaRequest(message));
+	emit messagePrepared(protocol::v2::Parser().serializeMetaRequest(message));
 
 	qDebug() << "==> META_REQUEST:"
 		<< "path_id=" << revision.path_keyed_hash_.toHex()
 		<< "revision=" << revision.revision_;
 }
 void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) {
-	V1Parser::MetaResponse message;
+	protocol::v2::MetaResponse message;
 	message.smeta = smeta;
 	message.bitfield = bitfield;
-	emit messagePrepared(V1Parser().serializeMetaReply(message));
+	emit messagePrepared(protocol::v2::Parser().serializeMetaReply(message));
 
 	qDebug() << "==> META_REPLY:"
 		<< "path_id=" << smeta.metaInfo().pathKeyedHash().toHex()
@@ -87,11 +87,11 @@ void MessageHandler::sendMetaReply(const SignedMeta& smeta, QBitArray bitfield) 
 }
 
 void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint32_t length) {
-	V1Parser::BlockRequest message;
+	protocol::v2::BlockRequest message;
 	message.ct_hash = ct_hash;
 	message.offset = offset;
 	message.length = length;
-	emit messagePrepared(V1Parser().serializeBlockRequest(message));
+	emit messagePrepared(protocol::v2::Parser().serializeBlockRequest(message));
 
 	qDebug() << "==> BLOCK_REQUEST:"
 		<< "ct_hash=" << ct_hash.toHex()
@@ -99,11 +99,11 @@ void MessageHandler::sendBlockRequest(QByteArray ct_hash, uint32_t offset, uint3
 		<< "length=" << length;
 }
 void MessageHandler::sendBlockReply(QByteArray ct_hash, uint32_t offset, QByteArray block) {
-	V1Parser::BlockResponse message;
+	protocol::v2::BlockResponse message;
 	message.ct_hash = ct_hash;
 	message.offset = offset;
 	message.content = block;
-	emit messagePrepared(V1Parser().serializeBlockResponse(message));
+	emit messagePrepared(protocol::v2::Parser().serializeBlockResponse(message));
 
 	qDebug() << "==> BLOCK_REPLY:"
 		<< "ct_hash=" << ct_hash.toHex()
@@ -128,7 +128,7 @@ void MessageHandler::handleNotInterested(QByteArray message_raw) {
 }
 
 void MessageHandler::handleHaveMeta(QByteArray message_raw) {
-	auto message_struct = V1Parser().parseIndexUpdate(message_raw);
+	auto message_struct = protocol::v2::Parser().parseIndexUpdate(message_raw);
 	qDebug() << "<== HAVE_META:"
 		<< "path_id=" << message_struct.revision.path_keyed_hash_.toHex()
 		<< "revision=" << message_struct.revision.revision_
@@ -138,7 +138,7 @@ void MessageHandler::handleHaveMeta(QByteArray message_raw) {
 }
 
 void MessageHandler::handleMetaRequest(QByteArray message_raw) {
-	auto message_struct = V1Parser().parseMetaRequest(message_raw);
+	auto message_struct = protocol::v2::Parser().parseMetaRequest(message_raw);
 	qDebug() << "<== META_REQUEST:"
 		<< "path_id=" << message_struct.revision.path_keyed_hash_.toHex()
 		<< "revision=" << message_struct.revision.revision_;
@@ -146,7 +146,7 @@ void MessageHandler::handleMetaRequest(QByteArray message_raw) {
 	emit rcvdMetaRequest(message_struct.revision);
 }
 void MessageHandler::handleMetaReply(QByteArray message_raw) {
-	auto message_struct = V1Parser().parseMetaReply(message_raw);
+	auto message_struct = protocol::v2::Parser().parseMetaReply(message_raw);
 	qDebug() << "<== META_REPLY:"
 		<< "path_id=" << message_struct.smeta.metaInfo().pathKeyedHash().toHex()
 		<< "revision=" << message_struct.smeta.metaInfo().revision()
@@ -156,7 +156,7 @@ void MessageHandler::handleMetaReply(QByteArray message_raw) {
 }
 
 void MessageHandler::handleBlockRequest(QByteArray message_raw) {
-	auto message_struct = V1Parser().parseBlockRequest(message_raw);
+	auto message_struct = protocol::v2::Parser().parseBlockRequest(message_raw);
 	qDebug() << "<== BLOCK_REQUEST:"
 		<< "ct_hash=" << message_struct.ct_hash.toHex()
 		<< "length=" << message_struct.length
@@ -165,7 +165,7 @@ void MessageHandler::handleBlockRequest(QByteArray message_raw) {
 	emit rcvdBlockRequest(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
 void MessageHandler::handleBlockReply(QByteArray message_raw) {
-	auto message_struct = V1Parser().parseBlockResponse(message_raw);
+	auto message_struct = protocol::v2::Parser().parseBlockResponse(message_raw);
 	qDebug() << "<== BLOCK_REPLY:"
 		<< "ct_hash=" << message_struct.ct_hash.toHex()
 		<< "offset=" << message_struct.offset;

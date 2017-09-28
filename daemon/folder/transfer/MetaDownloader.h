@@ -49,8 +49,8 @@ class MetaDownloader : public QObject {
   MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader, QObject* parent);
 
   /* Message handlers */
-  void handleHaveMeta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield);
-  void handleMetaReply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield);
+  void handleIndexUpdate(Peer* peer, const MetaInfo::PathRevision& revision, QBitArray bitfield);
+  void handleMetaReply(Peer* peer, const SignedMeta& smeta, QBitArray bitfield);
 
  private:
   const FolderParams& params_;

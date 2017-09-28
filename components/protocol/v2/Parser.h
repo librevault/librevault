@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "SignedMeta.h"
-#include "conv_bitfield.h"
+#include "messages.h"
 #include <exception_helper.hpp>
 
 namespace google {
@@ -41,87 +41,34 @@ namespace librevault {
 namespace protocol {
 namespace v2 {
 
-enum MessageType : uint8_t {
-  HANDSHAKE = 0,
-
-  CHOKE = 1,
-  UNCHOKE = 2,
-  INTERESTED = 3,
-  NOTINTERESTED = 4,
-
-  INDEXUPDATE = 5,
-
-  METAREQUEST = 6,
-  METARESPONSE = 7,
-
-  BLOCKREQUEST = 8,
-  BLOCKRESPONSE = 9,
-};
-
-struct Header {
-  MessageType type;
-};
-
-struct Handshake {
-  QByteArray auth_token;
-  QString device_name;
-  QString user_agent;
-};
-struct IndexUpdate {
-  MetaInfo::PathRevision revision;
-  QBitArray bitfield;
-};
-struct MetaRequest {
-  MetaInfo::PathRevision revision;
-};
-struct MetaResponse {
-  SignedMeta smeta;
-  QBitArray bitfield;
-};
-struct BlockRequest {
-  QByteArray ct_hash;
-  quint32 offset;
-  quint32 length;
-};
-struct BlockResponse {
-  QByteArray ct_hash;
-  quint32 offset;
-  QByteArray content;
-};
-
 class Parser {
  public:
   /* Errors */
   DECLARE_EXCEPTION(ParseError, "Parse error");
 
-  MessageType parse_MessageType(const QByteArray& message_raw) {
-    if (message_raw.isEmpty()) throw ParseError();
-    return (MessageType)message_raw.at(0);
-  }
-
   std::tuple<Header, QByteArray /*unpacked_payload*/> parseMessage(const QByteArray& message);
 
-  QByteArray serializeHandshake(const Handshake& message_struct);
+  QByteArray genHandshake(const Handshake& message_struct);
   Handshake parseHandshake(const QByteArray& payload_bytes);
 
   QByteArray genChoke() { return serializeMessage(CHOKE); }
   QByteArray genUnchoke() { return serializeMessage(UNCHOKE); }
-  QByteArray genInterested() { return serializeMessage(INTERESTED); }
-  QByteArray genNotInterested() { return serializeMessage(NOTINTERESTED); }
+  QByteArray genInterest() { return serializeMessage(INTEREST); }
+  QByteArray genUninterest() { return serializeMessage(UNINTEREST); }
 
-  QByteArray serializeIndexUpdate(const IndexUpdate& message_struct);
+  QByteArray genIndexUpdate(const IndexUpdate& message_struct);
   IndexUpdate parseIndexUpdate(const QByteArray& payload_bytes);
 
-  QByteArray serializeMetaRequest(const MetaRequest& message_struct);
+  QByteArray genMetaRequest(const MetaRequest& message_struct);
   MetaRequest parseMetaRequest(const QByteArray& payload_bytes);
 
-  QByteArray serializeMetaReply(const MetaResponse& message_struct);
-  MetaResponse parseMetaReply(const QByteArray& payload_bytes);
+  QByteArray genMetaResponse(const MetaResponse& message_struct);
+  MetaResponse parseMetaResponse(const QByteArray& payload_bytes);
 
-  QByteArray serializeBlockRequest(const BlockRequest& message_struct);
+  QByteArray genBlockRequest(const BlockRequest& message_struct);
   BlockRequest parseBlockRequest(const QByteArray& payload_bytes);
 
-  QByteArray serializeBlockResponse(const BlockResponse& message_struct);
+  QByteArray genBlockResponse(const BlockResponse& message_struct);
   BlockResponse parseBlockResponse(const QByteArray& payload_bytes);
 
  private:

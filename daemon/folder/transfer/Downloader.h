@@ -64,7 +64,7 @@ struct DownloadChunk : boost::noncopyable {
     std::chrono::steady_clock::time_point started;
   };
   QMultiHash<Peer*, BlockRequest> requests;
-  QHash<Peer*, std::shared_ptr<Peer::InterestGuard>> owned_by;
+  QHash<Peer*, std::shared_ptr<InterestGuard>> owned_by;
 
   const QByteArray ct_hash;
 };
@@ -84,16 +84,16 @@ class Downloader : public QObject {
   void notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield);
   void notifyLocalChunk(const QByteArray& ct_hash);
 
-  void notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, const QBitArray& bitfield);
-  void notifyRemoteChunk(Peer* remote, const QByteArray& ct_hash);
+  void notifyRemoteMeta(Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield);
+  void notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash);
 
-  void handleChoke(Peer* remote);
+  void handleChoke(Peer* peer);
   void handleUnchoke(Peer* remote);
 
   void putBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& data, Peer* from);
 
-  void trackRemote(Peer* remote);
-  void untrackRemote(Peer* remote);
+  void trackPeer(Peer* peer);
+  void untrackPeer(Peer* peer);
 
  private:
   const FolderParams& params_;
@@ -109,13 +109,13 @@ class Downloader : public QObject {
 
   void maintainRequests();
   bool requestOne();
-  Peer* nodeForRequest(const QByteArray& ct_hash);
+  Peer* peerForRequest(const QByteArray& ct_hash);
 
   void addChunk(const QByteArray& ct_hash, quint32 size);
   void removeChunk(const QByteArray& ct_hash);
 
   /* Node management */
-  QSet<Peer*> remotes_;
+  QSet<Peer*> peers_;
 
   QSet<QByteArray> getCluster(const QByteArray& ct_hash);
   QSet<QByteArray> getMetaCluster(const QList<QByteArray>& ct_hashes);

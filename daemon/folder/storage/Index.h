@@ -30,6 +30,7 @@
 #include "util/log.h"
 #include "util/SQLiteWrapper.h"
 #include "SignedMeta.h"
+#include <exception_helper.hpp>
 #include <QObject>
 
 namespace librevault {
@@ -44,9 +45,7 @@ signals:
 	void metaAddedExternal(SignedMeta meta);
 
 public:
-  struct NoSuchMeta : public std::runtime_error {
-    NoSuchMeta() : std::runtime_error("Requested Meta not found"){}
-  };
+	DECLARE_EXCEPTION(NoSuchMeta, "Requested Meta not found");
 
 	Index(const FolderParams& params, QObject* parent);
 

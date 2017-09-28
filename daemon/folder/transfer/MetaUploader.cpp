@@ -29,34 +29,45 @@
 #include "MetaUploader.h"
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
-#include "p2p/MessageHandler.h"
 #include "p2p/Peer.h"
+#include <QLoggingCategory>
 
 namespace librevault {
 
-MetaUploader::MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* parent)
-    : QObject(parent), index_(index), chunk_storage_(chunk_storage) {
-  LOGFUNC();
-}
+Q_LOGGING_CATEGORY(log_metauploader, "folder.transfer.metauploader")
 
-void MetaUploader::broadcastMeta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
-  for (auto remote : remotes) {
-    remote->messageHandler()->sendHaveMeta(revision, bitfield);
-  }
+MetaUploader::MetaUploader(Index* index, ChunkStorage* chunk_storage,
+                           QObject* parent)
+    : QObject(parent), index_(index), chunk_storage_(chunk_storage) {}
+
+void MetaUploader::broadcastMeta(QList<Peer*> peers,
+                                 const MetaInfo::PathRevision& revision,
+                                 QBitArray bitfield) {
+  protocol::v2::IndexUpdate update;
+  update.revision = revision;
+  update.bitfield = bitfield;
+
+  for (auto peer : peers) peer->sendIndexUpdate(update);
 }
 
 void MetaUploader::handleHandshake(Peer* remote) {
-  for (auto& meta : index_->getMeta())
-    remote->messageHandler()->sendHaveMeta(meta.metaInfo().path_revision(),
-      chunk_storage_->makeBitfield(meta.metaInfo()));
+  for (auto& meta : index_->getMeta()) {
+    protocol::v2::IndexUpdate update;
+    update.revision = meta.metaInfo().path_revision();
+    update.bitfield = chunk_storage_->makeBitfield(meta.metaInfo());
+    remote->sendIndexUpdate(update);
+  }
 }
 
-void MetaUploader::handleMetaRequest(Peer* remote, const MetaInfo::PathRevision& revision) {
+void MetaUploader::handleMetaRequest(Peer* peer,
+                                     const MetaInfo::PathRevision& revision) {
   try {
-    remote->messageHandler()->sendMetaReply(index_->getMeta(revision),
-      chunk_storage_->makeBitfield(index_->getMeta(revision).metaInfo()));
+    protocol::v2::MetaResponse response;
+    response.smeta = index_->getMeta(revision);
+    response.bitfield = chunk_storage_->makeBitfield(response.smeta.metaInfo());
+    peer->sendMetaResponse(response);
   } catch (Index::NoSuchMeta& e) {
-    LOGW("Requested nonexistent Meta");
+    qCDebug(log_metauploader) << "Requested nonexistent Meta";
   }
 }
 

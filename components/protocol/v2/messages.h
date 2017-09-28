@@ -26,49 +26,75 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-syntax = "proto3";
-package librevault.protocol.v2.serialization;
+#pragma once
 
-message Header {
-	uint32 type = 1;
-}
+#include <SignedMeta.h>
+#include <QBitArray>
+#include <QDebug>
+#include <QString>
+#include <QVariantMap>
 
-message Handshake {
-	bytes auth_token = 1;
-	string device_name = 2;
-	string user_agent = 3;
-	uint32 dht_port = 4;
-}
+namespace librevault {
+namespace protocol {
+namespace v2 {
 
-message HaveMeta {
-	bytes path_keyed_hash = 1;
-	uint64 revision = 2;
-	bytes bitfield = 3;
-}
+enum MessageType : quint8 {
+  HANDSHAKE = 0,
 
-message HaveChunk {
-	bytes ct_hash = 1;
-}
+  CHOKE = 1,
+  UNCHOKE = 2,
+  INTEREST = 3,
+  UNINTEREST = 4,
 
-message MetaRequest {
-	bytes path_keyed_hash = 1;
-	uint64 revision = 2;
-}
+  INDEXUPDATE = 5,
 
-message MetaResponse {
-	bytes meta = 1;
-	bytes signature = 2;
-	bytes bitfield = 3;
-}
+  METAREQUEST = 6,
+  METARESPONSE = 7,
 
-message BlockRequest {
-	bytes ct_hash = 1;
-	uint64 offset = 2;
-	uint32 length = 3;
-}
+  BLOCKREQUEST = 8,
+  BLOCKRESPONSE = 9,
+};
 
-message BlockResponse {
-	bytes ct_hash = 1;
-	uint64 offset = 2;
-	bytes content = 3;
-}
+struct Header {
+  MessageType type;
+};
+
+struct Handshake {
+  QByteArray auth_token;
+  QString device_name;
+  QString user_agent;
+  quint16 dht_port;
+};
+struct IndexUpdate {
+  MetaInfo::PathRevision revision;
+  QBitArray bitfield;
+};
+struct MetaRequest {
+  MetaInfo::PathRevision revision;
+};
+struct MetaResponse {
+  SignedMeta smeta;
+  QBitArray bitfield;
+};
+struct BlockRequest {
+  QByteArray ct_hash;
+  quint32 offset;
+  quint32 length;
+};
+struct BlockResponse {
+  QByteArray ct_hash;
+  quint32 offset;
+  QByteArray content;
+};
+
+QDebug operator<<(QDebug debug, Header message_struct);
+QDebug operator<<(QDebug debug, Handshake message_struct);
+QDebug operator<<(QDebug debug, IndexUpdate message_struct);
+QDebug operator<<(QDebug debug, MetaRequest message_struct);
+QDebug operator<<(QDebug debug, MetaResponse message_struct);
+QDebug operator<<(QDebug debug, BlockRequest message_struct);
+QDebug operator<<(QDebug debug, BlockResponse message_struct);
+
+}  // namespace v2
+}  // namespace protocol
+}  // namespace librevault

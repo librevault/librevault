@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2014-2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,44 +26,49 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "control/FolderParams.h"
-#include "Secret.h"
-#include "MetaInfo.h"
-#include "SignedMeta.h"
-#include <QBitArray>
-#include <QObject>
+syntax = "proto3";
+package librevault.protocol.v2.serialization;
 
-namespace librevault {
+message Header {
+	uint32 type = 1;
+}
 
-#define DECLARE_MESSAGE(message_name, fields...) \
-public: \
-	Q_SIGNAL void rcvd##message_name(fields); \
-	void send##message_name(fields); \
-	Q_SLOT void handle##message_name(QByteArray message);
+message Handshake {
+	bytes auth_token = 1;
+	string device_name = 2;
+	string user_agent = 3;
+	uint32 dht_port = 4;
+}
 
-class MessageHandler : public QObject {
-	Q_OBJECT
+message HaveMeta {
+	bytes path_keyed_hash = 1;
+	uint64 revision = 2;
+	bytes bitfield = 3;
+}
 
-public:
-	MessageHandler(QObject* parent = nullptr);
+message HaveChunk {
+	bytes ct_hash = 1;
+}
 
-	Q_SIGNAL void messagePrepared(QByteArray msg);
+message MetaRequest {
+	bytes path_keyed_hash = 1;
+	uint64 revision = 2;
+}
 
-private:
-	// Messages
-	DECLARE_MESSAGE(Choke);
-	DECLARE_MESSAGE(Unchoke);
-	DECLARE_MESSAGE(Interested);
-	DECLARE_MESSAGE(NotInterested);
+message MetaResponse {
+	bytes meta = 1;
+	bytes signature = 2;
+	bytes bitfield = 3;
+}
 
-	DECLARE_MESSAGE(HaveMeta, const MetaInfo::PathRevision& revision, QBitArray bitfield);
+message BlockRequest {
+	bytes ct_hash = 1;
+	uint32 offset = 2;
+	uint32 length = 3;
+}
 
-	DECLARE_MESSAGE(MetaRequest, const MetaInfo::PathRevision& revision);
-	DECLARE_MESSAGE(MetaReply, const SignedMeta& smeta, QBitArray bitfield);
-
-	DECLARE_MESSAGE(BlockRequest, QByteArray ct_hash, uint32_t offset, uint32_t size);
-	DECLARE_MESSAGE(BlockReply, QByteArray ct_hash, uint32_t offset, QByteArray block);
-};
-
-} /* namespace librevault */
+message BlockResponse {
+	bytes ct_hash = 1;
+	uint32 offset = 2;
+	bytes content = 3;
+}

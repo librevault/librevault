@@ -19,6 +19,7 @@ protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 
 add_library(protocol STATIC ${protocol_SOURCES} ${protocol_HEADERS} ${PROTO_SOURCES} ${PROTO_HEADERS} ${PROTO_LIST})
 target_include_directories(protocol PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(protocol PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 #============================================================================
 # Third-party libraries

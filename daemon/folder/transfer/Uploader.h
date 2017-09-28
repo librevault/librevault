@@ -37,18 +37,18 @@ class ChunkStorage;
 
 class Uploader : public QObject {
   Q_OBJECT
-  LOG_SCOPE("Uploader");
 
  public:
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcastChunk(QList<Peer*> remotes, QByteArray ct_hash);
+  void broadcastChunk(QList<Peer*> peers, QByteArray ct_hash);
 
   /* Message handlers */
-  void handleInterested(Peer* remote);
-  void handleNotInterested(Peer* remote);
+  void handleInterested(Peer* peer);
+  void handleNotInterested(Peer* peer);
 
-  void handleBlockRequest(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
+  void handleBlockRequest(Peer* peer, QByteArray ct_hash, uint32_t offset,
+                          uint32_t size) noexcept;
 
  private:
   ChunkStorage* chunk_storage_;

@@ -30,7 +30,6 @@
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
 #include "folder/storage/Index.h"
-#include "p2p/MessageHandler.h"
 #include "p2p/Peer.h"
 
 namespace librevault {
@@ -40,19 +39,21 @@ Q_LOGGING_CATEGORY(log_metadownloader, "folder.transfer.metadownloader")
 MetaDownloader::MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader, QObject* parent)
     : QObject(parent), params_(params), index_(index), downloader_(downloader) {}
 
-void MetaDownloader::handleHaveMeta(Peer* origin, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
+void MetaDownloader::handleIndexUpdate(Peer* peer, const MetaInfo::PathRevision& revision, QBitArray bitfield) {
   if (index_->haveMeta(revision))
-    downloader_->notifyRemoteMeta(origin, revision, bitfield);
-  else if (index_->putAllowed(revision))
-    origin->messageHandler()->sendMetaRequest(revision);
-  else
+    downloader_->notifyRemoteMeta(peer, revision, bitfield);
+  else if (index_->putAllowed(revision)) {
+    protocol::v2::MetaRequest request;
+    request.revision = revision;
+    peer->sendMetaRequest(request);
+  }else
     qCDebug(log_metadownloader) << "Remote node notified us about an expired Meta";
 }
 
-void MetaDownloader::handleMetaReply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
+void MetaDownloader::handleMetaReply(Peer* peer, const SignedMeta& smeta, QBitArray bitfield) {
   if (smeta.isValid(params_.secret) && index_->putAllowed(smeta.metaInfo().path_revision())) {
     emit metaDownloaded(smeta);
-    downloader_->notifyRemoteMeta(origin, smeta.metaInfo().path_revision(), bitfield);
+    downloader_->notifyRemoteMeta(peer, smeta.metaInfo().path_revision(), bitfield);
   } else
     qCDebug(log_metadownloader) << "Remote node posted to us about an expired Meta";
 }

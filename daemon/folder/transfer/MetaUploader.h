@@ -41,16 +41,16 @@ class ChunkStorage;
 
 class MetaUploader : public QObject {
   Q_OBJECT
-  LOG_SCOPE("MetaUploader");
 
  public:
   MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcastMeta(QList<Peer*> remotes, const MetaInfo::PathRevision& revision, QBitArray bitfield);
+  void broadcastMeta(QList<Peer*> peers, const MetaInfo::PathRevision& revision,
+                     QBitArray bitfield);
 
   /* Message handlers */
   void handleHandshake(Peer* remote);
-  void handleMetaRequest(Peer* remote, const MetaInfo::PathRevision& revision);
+  void handleMetaRequest(Peer* peer, const MetaInfo::PathRevision& revision);
 
  private:
   Index* index_;

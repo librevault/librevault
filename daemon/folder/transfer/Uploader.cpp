@@ -28,45 +28,48 @@
  */
 #include "Uploader.h"
 #include "folder/storage/ChunkStorage.h"
-#include "p2p/MessageHandler.h"
 #include "p2p/Peer.h"
+#include <QLoggingCategory>
 
 namespace librevault {
 
-Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(parent), chunk_storage_(chunk_storage) {
-  LOGFUNC();
-}
+Q_LOGGING_CATEGORY(log_uploader, "folder.transfer.uploader")
 
-void Uploader::broadcastChunk(QList<Peer*> remotes, QByteArray ct_hash) {
-  //for (auto& remote : remotes) {
+Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent)
+    : QObject(parent), chunk_storage_(chunk_storage) {}
+
+void Uploader::broadcastChunk(QList<Peer*> peers, QByteArray ct_hash) {
+  // for (auto& remote : remotes) {
   //  remote->messageHandler()->sendHaveChunk(ct_hash);
   //}
 }
 
-void Uploader::handleInterested(Peer* remote) {
-  LOGFUNC();
-
+void Uploader::handleInterested(Peer* peer) {
   // TODO: write good choking algorithm.
-  remote->messageHandler()->sendUnchoke();
+  peer->sendUnchoke();
 }
-void Uploader::handleNotInterested(Peer* remote) {
-  LOGFUNC();
-
+void Uploader::handleNotInterested(Peer* peer) {
   // TODO: write good choking algorithm.
-  remote->messageHandler()->sendChoke();
+  peer->sendChoke();
 }
 
-void Uploader::handleBlockRequest(Peer* remote, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept {
+void Uploader::handleBlockRequest(Peer* peer, QByteArray ct_hash,
+                                  uint32_t offset, uint32_t size) noexcept {
   try {
-    if (!remote->am_choking() && remote->peer_interested()) {
-      remote->messageHandler()->sendBlockReply(ct_hash, offset, getBlock(ct_hash, offset, size));
+    if (!peer->amChoking() && peer->peerInterested()) {
+      protocol::v2::BlockResponse response;
+      response.offset = offset;
+      response.ct_hash = ct_hash;
+      response.content = getBlock(ct_hash, offset, size);
+      peer->sendBlockResponse(response);
     }
   } catch (ChunkStorage::NoSuchChunk& e) {
-    LOGW("Requested nonexistent block");
+    qCDebug(log_uploader) << "Requested nonexistent block";
   }
 }
 
-QByteArray Uploader::getBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size) {
+QByteArray Uploader::getBlock(const QByteArray& ct_hash, uint32_t offset,
+                              uint32_t size) {
   auto chunk = chunk_storage_->getChunk(ct_hash);
   if ((int)offset < chunk.size() && (int)size <= chunk.size() - (int)offset)
     return chunk.mid(offset, size);

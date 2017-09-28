@@ -37,7 +37,7 @@ float WeightedChunkQueue::Weight::value() const {
 
 	weight_value += CLUSTERED_COEFFICIENT * (clustered ? 1 : 0);
 	weight_value += IMMEDIATE_COEFFICIENT * (immediate ? 1 : 0);
-	float rarity = (float)(remotes_count - owned_by) / (float)remotes_count;
+	float rarity = (float)(peer_count - owned_by) / (float)peer_count;
 	weight_value += rarity * RARITY_COEFFICIENT;
 
 	return weight_value;
@@ -68,19 +68,19 @@ void WeightedChunkQueue::removeChunk(QByteArray chunk) {
 	weight_ordered_chunks_.left.erase(chunk);
 }
 
-void WeightedChunkQueue::setRemotesCount(int count) {
+void WeightedChunkQueue::setPeerCount(int count) {
 	weight_ordered_chunks_t new_queue;
 	for(auto& entry : weight_ordered_chunks_.left) {
 		QByteArray chunk = entry.first;
 		Weight weight = entry.second;
 
-		weight.remotes_count = count;
+		weight.peer_count = count;
 		new_queue.left.insert(queue_left_value(chunk, weight));
 	}
 	weight_ordered_chunks_ = new_queue;
 }
 
-void WeightedChunkQueue::setRemotesCount(QByteArray chunk, int count) {
+void WeightedChunkQueue::setPeerCount(QByteArray chunk, int count) {
 	Weight weight = getCurrentWeight(chunk);
 	weight.owned_by = count;
 

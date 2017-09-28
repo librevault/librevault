@@ -31,7 +31,6 @@
 #include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/storage/Index.h"
-#include "p2p/MessageHandler.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
 
@@ -135,35 +134,35 @@ QSet<QByteArray> Downloader::getMetaCluster(const QList<QByteArray>& ct_hashes) 
   return cluster;
 }
 
-void Downloader::notifyRemoteMeta(Peer* remote, const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
+void Downloader::notifyRemoteMeta(Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
   try {
     auto chunks = index_->getMeta(revision).metaInfo().chunks();
     for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
-      if (bitfield.testBit(chunk_idx)) notifyRemoteChunk(remote, chunks[chunk_idx].ctHash());
+      if (bitfield.testBit(chunk_idx)) notifyRemoteChunk(peer, chunks[chunk_idx].ctHash());
   } catch (const Index::NoSuchMeta&) {
     qCDebug(log_downloader) << "Expired Meta";
     // Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta,
     // so this had been expired. Nevertheless, ignore this notification.
   }
 }
-void Downloader::notifyRemoteChunk(Peer* remote, const QByteArray& ct_hash) {
+void Downloader::notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash) {
   DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
   if (!chunk) return;
 
-  chunk->owned_by.insert(remote, remote->getInterestGuard());
-  download_queue_.setRemotesCount(ct_hash, chunk->owned_by.size());
+  chunk->owned_by.insert(peer, peer->getInterestGuard());
+  download_queue_.setPeerCount(ct_hash, chunk->owned_by.size());
 
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleChoke(Peer* remote) {
+void Downloader::handleChoke(Peer* peer) {
   /* Remove requests to this node */
-  for (DownloadChunkPtr missing_chunk : qAsConst(down_chunks_)) missing_chunk->requests.remove(remote);
+  for (DownloadChunkPtr missing_chunk : qAsConst(down_chunks_)) missing_chunk->requests.remove(peer);
 
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleUnchoke(Peer* remote) { QTimer::singleShot(0, this, &Downloader::maintainRequests); }
+void Downloader::handleUnchoke(Peer* peer) { QTimer::singleShot(0, this, &Downloader::maintainRequests); }
 
 void Downloader::putBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& data, Peer* from) {
   auto missing_chunk = down_chunks_.value(ct_hash);
@@ -198,21 +197,21 @@ void Downloader::putBlock(const QByteArray& ct_hash, uint32_t offset, const QByt
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::trackRemote(Peer* remote) {
-  remotes_.insert(remote);
-  download_queue_.setRemotesCount(remotes_.size());
+void Downloader::trackPeer(Peer* peer) {
+  peers_.insert(peer);
+  download_queue_.setPeerCount(peers_.size());
 }
 
-void Downloader::untrackRemote(Peer* remote) {
-  if (!remotes_.contains(remote)) return;
+void Downloader::untrackPeer(Peer* peer) {
+  if (!peers_.contains(peer)) return;
 
   for (DownloadChunkPtr missing_chunk : down_chunks_.values()) {
-    missing_chunk->requests.remove(remote);
-    missing_chunk->owned_by.remove(remote);
-    download_queue_.setRemotesCount(missing_chunk->ct_hash, missing_chunk->owned_by.size());
+    missing_chunk->requests.remove(peer);
+    missing_chunk->owned_by.remove(peer);
+    download_queue_.setPeerCount(missing_chunk->ct_hash, missing_chunk->owned_by.size());
   }
-  remotes_.remove(remote);
-  download_queue_.setRemotesCount(remotes_.size());
+  peers_.remove(peer);
+  download_queue_.setPeerCount(peers_.size());
 }
 
 void Downloader::maintainRequests() {
@@ -234,9 +233,9 @@ void Downloader::maintainRequests() {
 bool Downloader::requestOne() {
   // Try to choose chunk to request
   for (const QByteArray& ct_hash : download_queue_.chunks()) {
-    // Try to choose a remote to request this block from
-    auto remote = nodeForRequest(ct_hash);
-    if (!remote) continue;
+    // Try to choose a peer to request this block from
+    auto peer = peerForRequest(ct_hash);
+    if (!peer) continue;
 
     DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 
@@ -251,21 +250,26 @@ bool Downloader::requestOne() {
           std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
       request.started = std::chrono::steady_clock::now();
 
-      remote->messageHandler()->sendBlockRequest(ct_hash, request.offset, request.size);
-      chunk->requests.insert(remote, request);
+      protocol::v2::BlockRequest message;
+      message.ct_hash = ct_hash;
+      message.offset = request.offset;
+      message.length = request.size;
+      peer->sendBlockRequest(message);
+
+      chunk->requests.insert(peer, request);
       return true;
     }
   }
   return false;
 }
 
-Peer* Downloader::nodeForRequest(const QByteArray& ct_hash) {
+Peer* Downloader::peerForRequest(const QByteArray& ct_hash) {
   DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
   if (!chunk) return nullptr;
 
-  for (Peer* owner_remote : chunk->owned_by.keys())
-    if (owner_remote->isValid() && !owner_remote->peer_choking())
-      return owner_remote;  // TODO: implement more smart peer selection algorithm, based on peer weights.
+  for (Peer* peer : chunk->owned_by.keys())
+    if (peer->isValid() && !peer->peerChoking())
+      return peer;  // TODO: implement more smart peer selection algorithm, based on peer weights.
 
   return nullptr;
 }

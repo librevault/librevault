@@ -27,13 +27,17 @@
  * files in the program, then also delete it here.
  */
 #include "Parser.h"
-#include "ProtocolV2.pb.h"
-#include <QDataStream>
 #include "protocol_convert.h"
+#include <messages_v2.pb.h>
+#include <QDataStream>
+#include <QDebug>
+#include <QLoggingCategory>
 
 namespace librevault {
 namespace protocol {
 namespace v2 {
+
+Q_LOGGING_CATEGORY(log_protocol, "protocol.v2");
 
 namespace {
 
@@ -54,26 +58,25 @@ typename std::enable_if<std::is_base_of<::google::protobuf::Message, Message>::v
     QDataStream& stream, Message& message_proto) {
   QByteArray message_bytes;
   stream >> message_bytes;
-  if(! message_proto.ParseFromArray(message_bytes.data(), message_bytes.size()))
-    throw Parser::ParseError();
+  if (!message_proto.ParseFromArray(message_bytes.data(), message_bytes.size())) throw Parser::ParseError();
   return stream;
 }
 
 template <class Message>
 Message parsePayload(const QByteArray& payload_bytes) {
   Message message;
-  if(! message.ParseFromArray(payload_bytes.data(), payload_bytes.size()))
-    throw Parser::ParseError();
+  if (!message.ParseFromArray(payload_bytes.data(), payload_bytes.size())) throw Parser::ParseError();
   return message;
 }
 
 }  // namespace
 
-QByteArray Parser::serializeHandshake(const Handshake& message_struct) {
+QByteArray Parser::genHandshake(const Handshake& message_struct) {
   serialization::Handshake message_protobuf;
   message_protobuf.set_auth_token(convert<std::string>(message_struct.auth_token));
   message_protobuf.set_device_name(convert<std::string>(message_struct.device_name));
   message_protobuf.set_user_agent(convert<std::string>(message_struct.user_agent));
+  message_protobuf.set_dht_port((quint16)message_struct.dht_port);
 
   return serializeMessage(HANDSHAKE, message_protobuf);
 }
@@ -84,11 +87,12 @@ Handshake Parser::parseHandshake(const QByteArray& payload_bytes) {
   message_struct.auth_token = convert<QByteArray>(message_protobuf.auth_token());
   message_struct.device_name = convert<QString>(message_protobuf.device_name());
   message_struct.user_agent = convert<QString>(message_protobuf.user_agent());
+  message_struct.dht_port = (quint16)message_protobuf.dht_port();
 
   return message_struct;
 }
 
-QByteArray Parser::serializeIndexUpdate(const IndexUpdate& message_struct) {
+QByteArray Parser::genIndexUpdate(const IndexUpdate& message_struct) {
   serialization::HaveMeta message_protobuf;
 
   message_protobuf.set_path_keyed_hash(convert<std::string>(message_struct.revision.path_keyed_hash_));
@@ -108,7 +112,7 @@ IndexUpdate Parser::parseIndexUpdate(const QByteArray& payload_bytes) {
   return message_struct;
 }
 
-QByteArray Parser::serializeMetaRequest(const MetaRequest& message_struct) {
+QByteArray Parser::genMetaRequest(const MetaRequest& message_struct) {
   serialization::MetaRequest message_protobuf;
   message_protobuf.set_path_keyed_hash(convert<std::string>(message_struct.revision.path_keyed_hash_));
   message_protobuf.set_revision(message_struct.revision.revision_);
@@ -125,7 +129,7 @@ MetaRequest Parser::parseMetaRequest(const QByteArray& payload_bytes) {
   return message_struct;
 }
 
-QByteArray Parser::serializeMetaReply(const MetaResponse& message_struct) {
+QByteArray Parser::genMetaResponse(const MetaResponse& message_struct) {
   serialization::MetaResponse message_protobuf;
   message_protobuf.set_meta(convert<std::string>(message_struct.smeta.rawMetaInfo()));
   message_protobuf.set_signature(convert<std::string>(message_struct.smeta.signature()));
@@ -133,17 +137,20 @@ QByteArray Parser::serializeMetaReply(const MetaResponse& message_struct) {
 
   return serializeMessage(METARESPONSE, message_protobuf);
 }
-MetaResponse Parser::parseMetaReply(const QByteArray& payload_bytes) {
+MetaResponse Parser::parseMetaResponse(const QByteArray& payload_bytes) {
   auto message_protobuf = parsePayload<serialization::MetaResponse>(payload_bytes);
 
-  QByteArray raw_meta = convert<QByteArray>(message_protobuf.meta());
-  QByteArray signature = convert<QByteArray>(message_protobuf.signature());
-  QBitArray converted_bitfield = convert<QBitArray>(message_protobuf.bitfield());
+  MetaResponse message_struct;
+  message_struct.smeta = {
+      convert<QByteArray>(message_protobuf.meta()),
+      convert<QByteArray>(message_protobuf.signature()),
+  };
+  message_struct.bitfield = convert<QBitArray>(message_protobuf.bitfield());
 
-  return MetaResponse{SignedMeta(std::move(raw_meta), std::move(signature)), std::move(converted_bitfield)};
+  return message_struct;
 }
 
-QByteArray Parser::serializeBlockRequest(const BlockRequest& message_struct) {
+QByteArray Parser::genBlockRequest(const BlockRequest& message_struct) {
   serialization::BlockRequest message_protobuf;
   message_protobuf.set_ct_hash(convert<std::string>(message_struct.ct_hash));
   message_protobuf.set_offset(message_struct.offset);
@@ -162,7 +169,7 @@ BlockRequest Parser::parseBlockRequest(const QByteArray& payload_bytes) {
   return message_struct;
 }
 
-QByteArray Parser::serializeBlockResponse(const BlockResponse& message_struct) {
+QByteArray Parser::genBlockResponse(const BlockResponse& message_struct) {
   serialization::BlockResponse message_protobuf;
   message_protobuf.set_ct_hash(convert<std::string>(message_struct.ct_hash));
   message_protobuf.set_offset(message_struct.offset);

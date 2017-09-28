@@ -52,7 +52,7 @@ class WeightedChunkQueue {
 		bool immediate = false;
 
 		int owned_by = 0;
-		int remotes_count = 0;
+		int peer_count = 0;
 
 		float value() const;
 		bool operator<(const Weight& b) const {return value() > b.value();}
@@ -74,8 +74,8 @@ public:
 	void addChunk(QByteArray chunk);
 	void removeChunk(QByteArray chunk);
 
-	void setRemotesCount(int count);
-	void setRemotesCount(QByteArray chunk, int count);
+	void setPeerCount(int count);
+	void setPeerCount(QByteArray chunk, int count);
 
 	void markClustered(QByteArray chunk);
 	void markImmediate(QByteArray chunk);

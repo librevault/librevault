@@ -42,7 +42,7 @@ public:
 	Q_SLOT void handlePong(quint64 elapsedTime, const QByteArray& payload);
 
 	Q_SLOT void start();
-	std::chrono::milliseconds getRtt() {return rtt_;}
+	std::chrono::milliseconds rtt() {return rtt_;}
 
 private:
 	QTimer* ping_timer_ = nullptr;

@@ -39,7 +39,6 @@
 #include "folder/transfer/MetaDownloader.h"
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
-#include "p2p/MessageHandler.h"
 #include "p2p/PeerPool.h"
 #include <QDir>
 #ifdef Q_OS_WIN
@@ -88,7 +87,8 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
     uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
   });
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
-  connect(meta_downloader_, &MetaDownloader::metaDownloaded, this, &FolderGroup::handleMetaDownloaded);
+  connect(meta_downloader_, &MetaDownloader::metaDownloaded, this,
+          &FolderGroup::handleMetaDownloaded);
 
   connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 
@@ -126,40 +126,35 @@ void FolderGroup::handleNewMeta(const SignedMeta& smeta) {
 
 // RemoteFolder actions
 void FolderGroup::handleNewPeer(Peer* peer) {
-  downloader_->trackRemote(peer);
-
   // Messages
-  connect(peer->messageHandler(), &MessageHandler::rcvdChoke, downloader_, [=] { downloader_->handleChoke(peer); });
-  connect(peer->messageHandler(), &MessageHandler::rcvdUnchoke, downloader_, [=] { downloader_->handleUnchoke(peer); });
-  connect(peer->messageHandler(), &MessageHandler::rcvdInterested, downloader_,
-          [=] {uploader_->handleInterested(peer); });
-  connect(peer->messageHandler(), &MessageHandler::rcvdNotInterested, downloader_,
-          [=] {uploader_->handleNotInterested(peer); });
+  connect(peer, &Peer::rcvdChoke, downloader_, [=] { downloader_->handleChoke(peer); });
+  connect(peer, &Peer::rcvdUnchoke, downloader_, [=] { downloader_->handleUnchoke(peer); });
+  connect(peer, &Peer::rcvdInterest, uploader_, [=] { uploader_->handleInterested(peer); });
+  connect(peer, &Peer::rcvdUninterest, uploader_, [=] { uploader_->handleNotInterested(peer); });
 
-  connect(peer->messageHandler(), &MessageHandler::rcvdHaveMeta, meta_downloader_,
-          [=](MetaInfo::PathRevision revision, QBitArray bitfield) {
-            meta_downloader_->handleHaveMeta(peer, revision, bitfield);
+  connect(peer, &Peer::rcvdIndexUpdate, meta_downloader_,
+          [=](const protocol::v2::IndexUpdate& msg) {
+            meta_downloader_->handleIndexUpdate(peer, msg.revision, msg.bitfield);
           });
-  //connect(peer->messageHandler(), &MessageHandler::rcvdHaveChunk, downloader_,
-  //        [=](QByteArray ct_hash) { downloader_->notifyRemoteChunk(peer, ct_hash); });
-  connect(peer->messageHandler(), &MessageHandler::rcvdMetaRequest, meta_uploader_,
-          [=](MetaInfo::PathRevision path_revision) { meta_uploader_->handleMetaRequest(peer, path_revision); });
-  connect(
-      peer->messageHandler(), &MessageHandler::rcvdMetaReply, meta_downloader_,
-      [=](const SignedMeta& smeta, QBitArray bitfield) { meta_downloader_->handleMetaReply(peer, smeta, bitfield); });
-  connect(peer->messageHandler(), &MessageHandler::rcvdBlockRequest, uploader_,
-          [=](QByteArray ct_hash, uint32_t offset, uint32_t size) {
-            uploader_->handleBlockRequest(peer, ct_hash, offset, size);
+  connect(peer, &Peer::rcvdMetaRequest, meta_uploader_, [=](const protocol::v2::MetaRequest& msg) {
+    meta_uploader_->handleMetaRequest(peer, msg.revision);
+  });
+  connect(peer, &Peer::rcvdMetaResponse, meta_downloader_,
+          [=](const protocol::v2::MetaResponse& msg) {
+            meta_downloader_->handleMetaReply(peer, msg.smeta, msg.bitfield);
           });
-  connect(peer->messageHandler(), &MessageHandler::rcvdBlockReply, downloader_,
-          [=](QByteArray ct_hash, uint32_t offset, QByteArray block) {
-            downloader_->putBlock(ct_hash, offset, block, peer);
-          });
+  connect(peer, &Peer::rcvdBlockRequest, uploader_, [=](const protocol::v2::BlockRequest& msg) {
+    uploader_->handleBlockRequest(peer, msg.ct_hash, msg.offset, msg.length);
+  });
+  connect(peer, &Peer::rcvdBlockResponse, downloader_, [=](const protocol::v2::BlockResponse& msg) {
+    downloader_->putBlock(msg.ct_hash, msg.offset, msg.content, peer);
+  });
 
   // States
-  connect(peer, &Peer::disconnected, downloader_, [=] { downloader_->untrackRemote(peer); });
+  connect(peer, &Peer::disconnected, downloader_, [=] { downloader_->untrackPeer(peer); });
 
-  QTimer::singleShot(0, meta_uploader_, [=] { meta_uploader_->handleHandshake(peer); });
+  downloader_->trackPeer(peer);
+  meta_uploader_->handleHandshake(peer);
 }
 
 void FolderGroup::createServiceDirectory() {

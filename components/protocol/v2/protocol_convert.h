@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2014-2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,45 +27,58 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "MetaInfo.h"
-#include <QFile>
-#include <exception_helper.hpp>
+
+#include <QByteArray>
+#include <QDataStream>
+#include <boost/lexical_cast.hpp>
 
 namespace librevault {
+namespace protocol {
 
-class Index;
-class FolderGroup;
-
-class MemoryCachedStorage;
-class EncStorage;
-class OpenStorage;
-class Archive;
-class AssemblerQueue;
-
-class ChunkStorage : public QObject {
-	Q_OBJECT
-public:
-	DECLARE_EXCEPTION(NoSuchChunk, "Requested Chunk not found");
-
-	ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent);
-
-	bool haveChunk(QByteArray ct_hash) const noexcept ;
-	QByteArray getChunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void putChunk(QByteArray ct_hash, QFile* chunk_f);
-
-	QBitArray makeBitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
-
-  void gcChunk(const QByteArray& ct_hash);
-
- signals:
-	void chunkAdded(QByteArray ct_hash);
-
-protected:
-	FolderGroup* fgroup_;
-
-	MemoryCachedStorage* mem_storage;
-	EncStorage* enc_storage;
-	OpenStorage* open_storage;
+template <class To, class From>
+To convert(const From& from) {
+  return boost::lexical_cast<To>(from);
 };
 
-} /* namespace librevault */
+template <>
+std::string convert(const QByteArray& from) {
+  return from.toStdString();
+};
+
+template <>
+QByteArray convert(const std::string& from) {
+  return QByteArray::fromStdString(from);
+};
+
+template <>
+std::string convert(const QString& from) {
+  return from.toStdString();
+};
+
+template <>
+QString convert(const std::string& from) {
+  return QString::fromStdString(from);
+};
+
+template <>
+std::string convert(const QBitArray& from) {
+  QByteArray buffer;
+  QDataStream stream(&buffer, QIODevice::Append);
+  stream.setByteOrder(QDataStream::BigEndian);
+  stream.setVersion(QDataStream::Qt_5_0);
+  return buffer.toStdString();
+};
+
+template <>
+QBitArray convert(const std::string& from) {
+  QByteArray buffer_in = QByteArray::fromRawData(from.data(), from.size());
+  QBitArray result;
+  QDataStream stream(buffer_in);
+  stream.setByteOrder(QDataStream::BigEndian);
+  stream.setVersion(QDataStream::Qt_5_0);
+  stream >> result;
+  return result;
+};
+
+}  // namespace protocol
+}  // namespace librevault

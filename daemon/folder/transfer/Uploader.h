@@ -41,8 +41,6 @@ class Uploader : public QObject {
  public:
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcastChunk(QList<Peer*> peers, QByteArray ct_hash);
-
   /* Message handlers */
   void handleInterested(Peer* peer);
   void handleNotInterested(Peer* peer);

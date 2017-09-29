@@ -30,55 +30,47 @@
 #include "PortMapper.h"
 #include <natpmp.h>
 #include <QTimer>
-#include <memory>
 #include <chrono>
+#include <memory>
+#include <set>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
 
-class NATPMPMapping;
-class NATPMPService : public QObject {
-	Q_OBJECT
-signals:
-	void portMapped(QString id, quint16 mapped);
+class NATPMPMappedPort;
+class NATPMPService : public MappingService {
+  Q_OBJECT
 
-public:
-	NATPMPService(PortMapper& parent);
-	virtual ~NATPMPService();
+ public:
+  NATPMPService(QObject* parent);
+  virtual ~NATPMPService();
 
-	inline natpmp_t* getNATPMPHandle() {return &natpmp;}
-	inline std::chrono::seconds getNATPMPLifetime() {return natpmp_lifetime;}
+  natpmp_t* handle() { return &natpmp; }
+  std::chrono::seconds defaultLifetime() { return mapping_lifetime; }
 
-public slots:
-	void addPort(QString id, Mapping mapping);
-	void removePort(QString id);
+  MappedPort* map(const MappingRequest& request);
 
-protected:
-	natpmp_t natpmp;
-	std::chrono::seconds natpmp_lifetime = std::chrono::seconds(3600);
-
-	std::map<QString, std::unique_ptr<NATPMPMapping>> mappings_;
+ protected:
+  natpmp_t natpmp;
+  std::chrono::seconds mapping_lifetime = std::chrono::seconds(3600);
 };
 
-class NATPMPMapping : public QObject {
-	Q_OBJECT
-signals:
-	void portMapped(quint16 mapped);
+class NATPMPMappedPort : public MappedPort {
+  Q_OBJECT
 
-public:
-	NATPMPMapping(NATPMPService& parent, Mapping mapping);
-	~NATPMPMapping();
+ public:
+  NATPMPMappedPort(const MappingRequest& mapping, NATPMPService* parent);
+  ~NATPMPMappedPort();
 
-private:
-	NATPMPService& parent_;
-	Mapping mapping_;
+ private:
+  NATPMPService* parent_;
+  MappingRequest mapping_;
 
-	QTimer* timer_;
+  QTimer* timer_;
 
-private slots:
-	void sendPeriodicRequest();
-	void sendZeroRequest();
+  Q_SLOT void sendPeriodicRequest();
+  Q_SLOT void sendZeroRequest();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

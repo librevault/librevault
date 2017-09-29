@@ -68,9 +68,9 @@ void HandshakeHandler::sendHandshake() {
   // LOGD("==> HANDSHAKE");
 }
 
-void HandshakeHandler::handleEstablishedConnection(Peer::Role role,
-                                                   QByteArray local_digest,
-                                                   QByteArray remote_digest) {
+void HandshakeHandler::handleEstablished(Peer::Role role,
+                                         const QByteArray& local_digest,
+                                         const QByteArray& remote_digest) {
   Q_ASSERT(role_ != Peer::UNDEFINED);
 
   role_ = role;
@@ -80,7 +80,7 @@ void HandshakeHandler::handleEstablishedConnection(Peer::Role role,
   if (role_ == Peer::CLIENT) sendHandshake();
 }
 
-void HandshakeHandler::handleMesssage(QByteArray msg) {
+void HandshakeHandler::handleMesssage(const QByteArray& msg) {
   Q_ASSERT(!handshake_received_);
   Q_ASSERT(role_ != Peer::UNDEFINED);
 

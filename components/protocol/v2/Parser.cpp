@@ -93,7 +93,7 @@ Handshake Parser::parseHandshake(const QByteArray& payload_bytes) {
 }
 
 QByteArray Parser::genIndexUpdate(const IndexUpdate& message_struct) {
-  serialization::HaveMeta message_protobuf;
+  serialization::IndexUpdate message_protobuf;
 
   message_protobuf.set_path_keyed_hash(convert<std::string>(message_struct.revision.path_keyed_hash_));
   message_protobuf.set_revision(message_struct.revision.revision_);
@@ -102,7 +102,7 @@ QByteArray Parser::genIndexUpdate(const IndexUpdate& message_struct) {
   return serializeMessage(INDEXUPDATE, message_protobuf);
 }
 IndexUpdate Parser::parseIndexUpdate(const QByteArray& payload_bytes) {
-  auto message_protobuf = parsePayload<serialization::HaveMeta>(payload_bytes);
+  auto message_protobuf = parsePayload<serialization::IndexUpdate>(payload_bytes);
 
   IndexUpdate message_struct;
   message_struct.revision.revision_ = message_protobuf.revision();

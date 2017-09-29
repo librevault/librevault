@@ -29,6 +29,8 @@
 #pragma once
 #include <QAbstractSocket>
 #include <QLoggingCategory>
+#include <memory>
+#include <set>
 
 namespace librevault {
 
@@ -37,35 +39,37 @@ Q_DECLARE_LOGGING_CATEGORY(log_portmapping)
 class NATPMPService;
 class UPnPService;
 
-struct Mapping {
-	quint16 orig_port = 0;
-	quint16 mapped_port = 0;
-	QAbstractSocket::SocketType protocol;
-	QString description;
+struct MappingRequest {
+  QAbstractSocket::SocketType protocol;
+  quint16 orig_port = 0;
+  quint16 mapped_port = 0;
+  QString description;
 };
 
-class PortMapper : public QObject {
-	Q_OBJECT
+class MappedPort : public QObject {
+  Q_OBJECT
 
-signals:
-	void portMapped(QString id, quint16 mapped);
+ public:
+  MappedPort(QObject* parent) : QObject(parent) {}
 
-public:
-	PortMapper(QObject* parent);
-	virtual ~PortMapper();
+  Q_SIGNAL void portMapped(quint16 mapped);
+  virtual bool isMapped() const { return mapped_; }
 
-	void addPort(QString id, quint16 port, QAbstractSocket::SocketType protocol, QString description);
-	void removePort(QString id);
-	quint16 getOriginalPort(QString id);
-	quint16 getMappedPort(QString id);
-
-	inline QMap<QString, Mapping> getMappings() {return mappings_;};
-
-private:
-	QMap<QString, Mapping> mappings_;
-
-	NATPMPService* natpmp_service_;
-	UPnPService* upnp_service_;
+ protected:
+  bool mapped_ = false;
 };
 
-} /* namespace librevault */
+class MappingService : public QObject {
+  Q_OBJECT
+
+ public:
+  MappingService(QObject* parent) : QObject(parent) {}
+  ~MappingService();
+
+  virtual MappedPort* map(const MappingRequest& mapping) = 0;
+
+ protected:
+  std::set<std::unique_ptr<MappedPort>> mappings_;
+};
+
+}  // namespace librevault

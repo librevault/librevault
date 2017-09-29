@@ -32,6 +32,7 @@
 #include <QString>
 #include <array>
 #include <memory>
+#include <set>
 
 struct UPNPUrls;
 struct IGDdatas;
@@ -41,54 +42,36 @@ namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
-class PortMapping;
-class UPnPService : public QObject {
-	Q_OBJECT
-signals:
-	void portMapped(QString id, quint16 mapped);
+class UPnPMappedPort;
+class UPnPService : public MappingService {
+  Q_OBJECT
 
-public:
-	UPnPService(PortMapper& parent);
-	~UPnPService();
+ public:
+  UPnPService(QObject* parent);
+  ~UPnPService();
 
-public slots:
-	void addPort(QString id, Mapping mapping);
-	void removePort(QString id);
+  MappedPort* map(const MappingRequest& request);
 
-protected:
-	// RAII wrappers
-	friend class PortMapping;
-	QMap<QString, std::shared_ptr<PortMapping>> mappings_;
+ protected:
+  // RAII wrappers
+  friend class UPnPMappedPort;
 
-	// Config values
-	std::unique_ptr<UPNPUrls> upnp_urls;
-	std::unique_ptr<IGDdatas> upnp_data;
-	std::array<char, 16> lanaddr;
-
-	bool active = false;
+  // Config values
+  std::unique_ptr<UPNPUrls> upnp_urls;
+  std::unique_ptr<IGDdatas> upnp_data;
+  std::array<char, 16> lanaddr;
 };
 
-struct DevListWrapper {
-	DevListWrapper();
-	~DevListWrapper();
+class UPnPMappedPort : public MappedPort {
+  Q_OBJECT
 
-	UPNPDev* devlist;
+ public:
+  UPnPMappedPort(MappingRequest mapping, UPnPService* parent);
+  ~UPnPMappedPort();
+
+ private:
+  UPnPService* parent_;
+  MappingRequest mapping_;
 };
 
-class PortMapping : public QObject {
-	Q_OBJECT
-signals:
-	void portMapped(quint16 mapped);
-
-public:
-	PortMapping(UPnPService& parent, Mapping mapping);
-	virtual ~PortMapping();
-
-private:
-	UPnPService& parent_;
-	Mapping mapping_;
-
-	inline const char* get_literal_protocol(int protocol) const {return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";}
-};
-
-} /* namespace librevault */
+}  // namespace librevault

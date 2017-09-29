@@ -33,7 +33,6 @@
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
 #include "util/conv_fspath.h"
-#include "util/log.h"
 #include <ChunkInfo.h>
 #include <PathNormalizer.h>
 #include <QBitArray>

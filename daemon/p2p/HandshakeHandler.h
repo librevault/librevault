@@ -46,10 +46,10 @@ class HandshakeHandler : public QObject {
   Q_SIGNAL void handshakeFailed(QString error);
   Q_SIGNAL void messagePrepared(QByteArray msg);
 
-  Q_SLOT void handleEstablishedConnection(Peer::Role role,
-                                          QByteArray local_digest,
-                                          QByteArray remote_digest);
-  Q_SLOT void handleMesssage(QByteArray msg);
+  Q_SLOT void handleEstablished(Peer::Role role,
+                                const QByteArray& local_digest,
+                                const QByteArray& remote_digest);
+  Q_SLOT void handleMesssage(const QByteArray& msg);
 
   /* Getters */
   QString clientName() const { return remote_client_name_; }

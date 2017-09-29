@@ -38,12 +38,6 @@ Q_LOGGING_CATEGORY(log_uploader, "folder.transfer.uploader")
 Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent)
     : QObject(parent), chunk_storage_(chunk_storage) {}
 
-void Uploader::broadcastChunk(QList<Peer*> peers, QByteArray ct_hash) {
-  // for (auto& remote : remotes) {
-  //  remote->messageHandler()->sendHaveChunk(ct_hash);
-  //}
-}
-
 void Uploader::handleInterested(Peer* peer) {
   // TODO: write good choking algorithm.
   peer->sendUnchoke();

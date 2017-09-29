@@ -57,15 +57,14 @@ class Peer : public QObject {
   ~Peer();
 
   DECLARE_EXCEPTION(HandshakeExpected, "Handshake message expected");
-  DECLARE_EXCEPTION(HandshakeUnexpected,
-                    "Handshake message inside an already valid stream");
+  DECLARE_EXCEPTION(HandshakeUnexpected, "Handshake message inside an already valid stream");
   DECLARE_EXCEPTION(InvalidMessageType, "Invalid message type received");
 
   enum Role { UNDEFINED, SERVER, CLIENT };
 
-  static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint,
-                      QByteArray folderid);
+  static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
 
+  Q_SIGNAL void connected();
   Q_SIGNAL void disconnected();
   Q_SIGNAL void handshakeSuccess();
   Q_SIGNAL void handshakeFailed(QString error);
@@ -155,7 +154,6 @@ class Peer : public QObject {
   // Underlying socket management
   Q_SLOT void resetUnderlyingSocket(QWebSocket* socket);
 
-  Q_SLOT void handleDisconnected() { disconnected(); }
   Q_SLOT void handleConnected();
 
   Q_SLOT void send(const QByteArray& message);

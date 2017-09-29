@@ -28,10 +28,9 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include "util/log.h"
+#include <v2/messages.h>
 #include <QBitArray>
 #include <QObject>
-#include <set>
 
 namespace librevault {
 
@@ -45,16 +44,18 @@ class MetaUploader : public QObject {
  public:
   MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcastMeta(QList<Peer*> peers, const MetaInfo::PathRevision& revision,
-                     QBitArray bitfield);
+  Q_SLOT void broadcastMeta(const QList<Peer*>& peers, const SignedMeta& smeta);
+  Q_SLOT void broadcastChunk(const QList<Peer*>& peers, const QByteArray& ct_hash);
 
   /* Message handlers */
-  void handleHandshake(Peer* remote);
-  void handleMetaRequest(Peer* peer, const MetaInfo::PathRevision& revision);
+  Q_SLOT void handleHandshake(Peer* peer);
+  Q_SLOT void handleMetaRequest(Peer* peer, const MetaInfo::PathRevision& revision);
 
  private:
   Index* index_;
   ChunkStorage* chunk_storage_;
+
+  protocol::v2::IndexUpdate makeMessage(const SignedMeta& smeta);
 };
 
 } /* namespace librevault */

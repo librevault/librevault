@@ -35,42 +35,44 @@ namespace librevault {
 PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent)
     : QObject(parent), params_(params), node_key_(node_key) {}
 
-PeerPool::~PeerPool() {}
+PeerPool::~PeerPool() = default;
 
 bool PeerPool::contains(Peer* peer) const {
-  return peers_.contains(peer) || digests_.contains(peer->digest()) || endpoints_.contains(peer->endpoint());
-}
-
-void PeerPool::handleHandshake(Peer* peer) {
-  peers_ready_.insert(peer);
-  emit newValidPeer(peer);
+  return peers_.contains(peer) || digests_.contains(peer->digest()) ||
+         endpoints_.contains(peer->endpoint());
 }
 
 void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
   if (endpoints_.contains(endpoint)) return;
 
-  Peer* folder = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
+  Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
+  connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
+  connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });
+  connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
 
   QUrl ws_url = Peer::makeUrl(endpoint, params_.folderid());
-  folder->open(ws_url);
-}
-
-void PeerPool::handleIncoming(Peer* peer) {
-  Q_ASSUME(!peers_.contains(peer));
-
-  if (contains(peer)) {
-    peer->deleteLater();
-    return;
-  }
-
-  peer->setParent(this);
+  peer->open(ws_url);
 
   peers_.insert(peer);
   endpoints_.insert(peer->endpoint());
-  digests_.insert(peer->digest());
+}
 
+void PeerPool::handleIncoming(QWebSocket* socket) {
+
+  Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
   connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
   connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });
+  connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
+
+  peer->setConnectedSocket(socket);
+
+  peers_.insert(peer);
+  endpoints_.insert(peer->endpoint());
+}
+
+void PeerPool::handleHandshake(Peer* peer) {
+  peers_ready_.insert(peer);
+  emit newValidPeer(peer);
 }
 
 void PeerPool::handleDisconnected(Peer* peer) {
@@ -79,6 +81,17 @@ void PeerPool::handleDisconnected(Peer* peer) {
 
   endpoints_.remove(peer->endpoint());
   digests_.remove(peer->digest());
+
+  peer->deleteLater();
+}
+
+void PeerPool::handleConnected(Peer* peer) {
+  if(contains(peer)) {
+    peer->deleteLater();
+    return;
+  }
+
+  digests_.insert(peer->digest());
 }
 
 } /* namespace librevault */

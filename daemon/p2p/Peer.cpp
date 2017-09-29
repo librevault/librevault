@@ -39,24 +39,16 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_peer, "p2p.peer");
 
-Peer::Peer(const FolderParams& params, NodeKey* node_key,
-           BandwidthCounter* bc_all, BandwidthCounter* bc_blocks,
-           QObject* parent)
-    : QObject(parent),
-      node_key_(node_key),
-      bc_all_(bc_all),
-      bc_blocks_(bc_blocks) {
+Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
+           BandwidthCounter* bc_blocks, QObject* parent)
+    : QObject(parent), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {
   qCDebug(log_peer) << "new peer";
 
   handshake_handler_ = new HandshakeHandler(
-      params, Config::get()->getGlobal("client_name").toString(),
-      Version().user_agent(), this);
-  connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this,
-          &Peer::handshakeSuccess);
-  connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this,
-          &Peer::handshakeFailed);
-  connect(handshake_handler_, &HandshakeHandler::messagePrepared, this,
-          &Peer::send);
+      params, Config::get()->getGlobal("client_name").toString(), Version().user_agent(), this);
+  connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
+  connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
+  connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::send);
   connect(this, &Peer::rcvdChoke, [=] { peer_choking_ = true; });
   connect(this, &Peer::rcvdUnchoke, [=] { peer_choking_ = false; });
   connect(this, &Peer::rcvdInterest, [=] { peer_interested_ = true; });
@@ -64,11 +56,12 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key,
 
   ping_handler_ = new PingHandler(this);
   timeout_handler_ = new TimeoutHandler(this);
-  connect(timeout_handler_, &TimeoutHandler::timedOut, this,
-          &Peer::handleDisconnected);
+  connect(timeout_handler_, &TimeoutHandler::timedOut, this, &Peer::disconnected);
 
   // Internal signal interconnection
-  connect(this, &Peer::handshakeFailed, this, &Peer::handleDisconnected);
+  connect(this, &Peer::connected, this, &Peer::handleConnected);
+  connect(this, &Peer::connected, ping_handler_, &PingHandler::start);
+  connect(this, &Peer::handshakeFailed, this, &Peer::disconnected);
 }
 
 Peer::~Peer() = default;
@@ -91,10 +84,9 @@ void Peer::resetUnderlyingSocket(QWebSocket* socket) {
   connect(socket_, &QWebSocket::pong, ping_handler_, &PingHandler::handlePong);
   connect(socket_, &QWebSocket::pong, timeout_handler_, &TimeoutHandler::bump);
   connect(socket_, &QWebSocket::binaryMessageReceived, this, &Peer::handle);
-  connect(socket_, &QWebSocket::binaryMessageReceived, timeout_handler_,
-          &TimeoutHandler::bump);
-  connect(socket_, &QWebSocket::connected, this, &Peer::handleConnected);
-  connect(socket_, &QWebSocket::disconnected, this, &Peer::handleDisconnected);
+  connect(socket_, &QWebSocket::binaryMessageReceived, timeout_handler_, &TimeoutHandler::bump);
+  connect(socket_, &QWebSocket::connected, this, &Peer::connected);
+  connect(socket_, &QWebSocket::disconnected, this, &Peer::disconnected);
 }
 
 void Peer::setConnectedSocket(QWebSocket* socket) {
@@ -119,8 +111,7 @@ void Peer::open(const QUrl& url) {
 }
 
 QByteArray Peer::digest() const {
-  return socket_->sslConfiguration().peerCertificate().digest(
-      node_key_->digestAlgorithm());
+  return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
 QPair<QHostAddress, quint16> Peer::endpoint() const {
@@ -166,18 +157,10 @@ void Peer::handle(const QByteArray& message) {
       case protocol::v2::UNCHOKE: rcvdUnchoke(); break;
       case protocol::v2::INTEREST: rcvdInterest(); break;
       case protocol::v2::UNINTEREST: rcvdUninterest(); break;
-      case protocol::v2::INDEXUPDATE:
-        rcvdIndexUpdate(parser.parseIndexUpdate(payload));
-        break;
-      case protocol::v2::METAREQUEST:
-        rcvdMetaRequest(parser.parseMetaRequest(payload));
-        break;
-      case protocol::v2::METARESPONSE:
-        rcvdMetaResponse(parser.parseMetaResponse(payload));
-        break;
-      case protocol::v2::BLOCKREQUEST:
-        rcvdBlockRequest(parser.parseBlockRequest(payload));
-        break;
+      case protocol::v2::INDEXUPDATE: rcvdIndexUpdate(parser.parseIndexUpdate(payload)); break;
+      case protocol::v2::METAREQUEST: rcvdMetaRequest(parser.parseMetaRequest(payload)); break;
+      case protocol::v2::METARESPONSE: rcvdMetaResponse(parser.parseMetaResponse(payload)); break;
+      case protocol::v2::BLOCKREQUEST: rcvdBlockRequest(parser.parseBlockRequest(payload)); break;
       case protocol::v2::BLOCKRESPONSE:
         rcvdBlockResponse(parser.parseBlockResponse(payload));
         break;
@@ -195,16 +178,11 @@ void Peer::handle(const QByteArray& message) {
 }  // namespace librevault
 
 void Peer::handleConnected() {
-  ping_handler_->start();
-  handshake_handler_->handleEstablishedConnection(role_, node_key_->digest(),
-                                                  digest());
+  handshake_handler_->handleEstablished(role_, node_key_->digest(), digest());
 }
 
 /* InterestGuard */
-InterestGuard::InterestGuard(Peer* remote) : peer_(remote) {
-  peer_->sendInterest();
-}
-
+InterestGuard::InterestGuard(Peer* remote) : peer_(remote) { peer_->sendInterest(); }
 InterestGuard::~InterestGuard() { peer_->sendUninterest(); }
 
 } /* namespace librevault */

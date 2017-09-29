@@ -40,14 +40,10 @@ message Handshake {
 	uint32 dht_port = 4;
 }
 
-message HaveMeta {
+message IndexUpdate {
 	bytes path_keyed_hash = 1;
 	uint64 revision = 2;
 	bytes bitfield = 3;
-}
-
-message HaveChunk {
-	bytes ct_hash = 1;
 }
 
 message MetaRequest {

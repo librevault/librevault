@@ -27,11 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "control/FolderParams.h"
+#include "util/BandwidthCounter.h"
 #include <QHostAddress>
 #include <QObject>
 #include <QSet>
-#include "control/FolderParams.h"
-#include "util/BandwidthCounter.h"
+#include <QWebSocket>
 
 namespace librevault {
 
@@ -42,16 +43,15 @@ class NodeKey;
 class PeerPool : public QObject {
   Q_OBJECT
 
- signals:
-  void newValidPeer(Peer* peer);
-
  public:
   PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent);
   virtual ~PeerPool();
 
+  Q_SIGNAL void newValidPeer(Peer* peer);
+
   Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) { handleDiscovered({host, port}); }
   Q_SLOT void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
-  Q_SLOT void handleIncoming(Peer* peer);
+  Q_SLOT void handleIncoming(QWebSocket* socket);
 
   /* Getters */
   QList<Peer*> peers() const { return peers_.toList(); }
@@ -77,11 +77,11 @@ class PeerPool : public QObject {
   QSet<QByteArray> digests_;
   QSet<QPair<QHostAddress, quint16>> endpoints_;
 
-  bool contains(Peer* peer) const;
+  Q_SLOT void handleHandshake(Peer* peer);
+  Q_SLOT void handleDisconnected(Peer* peer);
+  Q_SLOT void handleConnected(Peer* peer);
 
- private slots:
-  void handleHandshake(Peer* peer);
-  void handleDisconnected(Peer* peer);
+  bool contains(Peer* peer) const;
 };
 
 } /* namespace librevault */

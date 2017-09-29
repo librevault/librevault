@@ -84,7 +84,7 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   connect(index_, &Index::metaAdded, this, &FolderGroup::handleNewMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash) {
     downloader_->notifyLocalChunk(ct_hash);
-    uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
+    meta_uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
   });
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
   connect(meta_downloader_, &MetaDownloader::metaDownloaded, this,
@@ -121,7 +121,7 @@ void FolderGroup::handleNewMeta(const SignedMeta& smeta) {
   QBitArray bitfield = chunk_storage_->makeBitfield(smeta.metaInfo());
 
   downloader_->notifyLocalMeta(smeta, bitfield);
-  meta_uploader_->broadcastMeta(pool_->validPeers(), revision, bitfield);
+  meta_uploader_->broadcastMeta(pool_->validPeers(), smeta);
 }
 
 // RemoteFolder actions

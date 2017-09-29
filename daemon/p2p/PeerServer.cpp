@@ -34,7 +34,6 @@
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
-#include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
@@ -84,13 +83,10 @@ void PeerServer::handleConnection() {
   QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
   PeerPool* pool = peer_pools_.value(folderid);
 
-  if (pool) {
-    Peer* peer = new Peer(pool->params(), node_key_, pool->getBlockCounterAll(), pool->getBlockCounterBlocks(), pool);
-    peer->setConnectedSocket(socket);
-    pool->handleIncoming(peer);
-  } else {
+  if (pool)
+    pool->handleIncoming(socket);
+  else
     socket->deleteLater();
-  }
 }
 
 void PeerServer::handlePeerVerifyError(const QSslError& error) {

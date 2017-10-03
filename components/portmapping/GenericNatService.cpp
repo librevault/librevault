@@ -26,52 +26,13 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-//#include <miniupnpc/miniupnpc.h>
-#include "PortMapper.h"
-#include <QString>
-#include <array>
-#include <memory>
-#include <set>
-
-struct UPNPUrls;
-struct IGDdatas;
-struct UPNPDev;
+#include "GenericNatService.h"
 
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_upnp)
+Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
 
-class UPnPMappedPort;
-class UPnPService : public MappingService {
-  Q_OBJECT
-
- public:
-  UPnPService(QObject* parent);
-  ~UPnPService();
-
-  MappedPort* map(const MappingRequest& request);
-
- protected:
-  // RAII wrappers
-  friend class UPnPMappedPort;
-
-  // Config values
-  std::unique_ptr<UPNPUrls> upnp_urls;
-  std::unique_ptr<IGDdatas> upnp_data;
-  std::array<char, 16> lanaddr;
-};
-
-class UPnPMappedPort : public MappedPort {
-  Q_OBJECT
-
- public:
-  UPnPMappedPort(MappingRequest mapping, UPnPService* parent);
-  ~UPnPMappedPort();
-
- private:
-  UPnPService* parent_;
-  MappingRequest mapping_;
-};
+PortMapping::PortMapping(const MappingRequest& request, GenericNatService* parent)
+    : QObject(parent), request_(request) {}
 
 }  // namespace librevault

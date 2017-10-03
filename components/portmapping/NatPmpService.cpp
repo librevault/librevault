@@ -26,73 +26,94 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "NATPMPService.h"
+#include "NatPmpService.h"
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_natpmp, "portmapping.natpmp")
 
 namespace {
+
 int makeProtocol(QAbstractSocket::SocketType protocol) {
   return protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP;
 }
+
 }  // namespace
 
-NATPMPService::NATPMPService(QObject* parent) : MappingService(parent) {
-  int natpmp_ec = initnatpmp(&natpmp, 0, 0);
-  qCDebug(log_natpmp) << "initnatpmp:" << natpmp_ec;
+NatPmpService::NatPmpService(QObject* parent) : GenericNatService(parent) {
+  natpmp_ = std::make_unique<natpmp_t>();
 
-  if (natpmp_ec != 0) return;
+  QTimer::singleShot(0, this, &NatPmpService::startup);
 }
 
-NATPMPService::~NATPMPService() { closenatpmp(&natpmp); }
-
-MappedPort* NATPMPService::map(const MappingRequest& request) {
-  auto mapping = new NATPMPMappedPort(request, this);
-  mappings_.emplace(mapping);
-  return mapping;
+NatPmpService::~NatPmpService() {
+  if (isReady()) closenatpmp(natpmp_.get());
 }
 
-/* NATPMPMapping */
-NATPMPMappedPort::NATPMPMappedPort(const MappingRequest& mapping, NATPMPService* parent)
-    : MappedPort(parent), parent_(parent), mapping_(mapping) {
+PortMapping* NatPmpService::createMapping(const MappingRequest& request) {
+  return new NatPmpPortMapping(request, this);
+}
+
+void NatPmpService::startup() {
+  error_ = initnatpmp(natpmp_.get(), 0, 0);
+  qCDebug(log_natpmp) << "initnatpmp:" << error_;
+
+  if (isReady())
+    emit ready();
+  else
+    closenatpmp(natpmp_.get());
+}
+
+NatPmpPortMapping::NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent)
+    : PortMapping(request, parent), service_(parent) {
   timer_ = new QTimer(this);
-  QTimer::singleShot(0, this, &NATPMPMappedPort::sendPeriodicRequest);
+  connect(parent, &NatPmpService::ready, this, &NatPmpPortMapping::serviceReady);
+  serviceReady();
 }
 
-NATPMPMappedPort::~NATPMPMappedPort() { sendZeroRequest(); }
+NatPmpPortMapping::~NatPmpPortMapping() { teardown(); }
 
-void NATPMPMappedPort::sendPeriodicRequest() {
-  int natpmp_ec = sendnewportmappingrequest(parent_->handle(), makeProtocol(mapping_.protocol),
-      mapping_.orig_port, mapping_.mapped_port, parent_->defaultLifetime().count());
+bool NatPmpPortMapping::isMapped() const {
+  return service_ && service_->isReady() && PortMapping::isMapped();
+}
+
+void NatPmpPortMapping::serviceReady() {
+  if (service_ && service_->isReady()) QTimer::singleShot(0, this, &NatPmpPortMapping::refresh);
+}
+
+void NatPmpPortMapping::refresh() {
+  int natpmp_ec =
+      sendnewportmappingrequest(service_->natpmp_.get(), makeProtocol(request_.protocol),
+          request_.internal_port, request_.external_port, request_.ttl.count());
   qCDebug(log_natpmp) << "sendnewportmappingrequest:" << natpmp_ec;
 
   natpmpresp_t natpmp_resp;
   do {
-    natpmp_ec = readnatpmpresponseorretry(parent_->handle(), &natpmp_resp);
+    natpmp_ec = readnatpmpresponseorretry(service_->natpmp_.get(), &natpmp_resp);
   } while (natpmp_ec == NATPMP_TRYAGAIN);
   qCDebug(log_natpmp) << "readnatpmpresponseorretry:" << natpmp_ec;
 
-  std::chrono::seconds next_request_sec;
+  Duration lifetime_sec;
   if (natpmp_ec >= 0) {
-    mapped_ = true;
-
-    mapping_.mapped_port = natpmp_resp.pnu.newportmapping.mappedpublicport;
-    emit portMapped(mapping_.mapped_port);
-    next_request_sec = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
+    actual_external_port_ = natpmp_resp.pnu.newportmapping.mappedpublicport;
+    lifetime_sec = std::chrono::seconds(natpmp_resp.pnu.newportmapping.lifetime);
   } else {
-    mapped_ = false;
-
     qCDebug(log_natpmp) << "Could not set up port mapping";
-    next_request_sec = parent_->defaultLifetime();
+    actual_external_port_ = 0;
+    lifetime_sec = request_.ttl;
   }
 
-  timer_->setInterval(next_request_sec);
+  expiration_ = std::chrono::system_clock::now() + lifetime_sec;
+  timer_->setInterval(lifetime_sec / 3);
+
+  emit refreshed(externalPort(), externalAddress(), expiration());
 }
 
-void NATPMPMappedPort::sendZeroRequest() {
-  int natpmp_ec = sendnewportmappingrequest(parent_->handle(), makeProtocol(mapping_.protocol),
-      mapping_.orig_port, mapping_.mapped_port, 0);
+void NatPmpPortMapping::teardown() {
+  if (!isMapped()) return;
+
+  int natpmp_ec = sendnewportmappingrequest(service_->natpmp_.get(),
+      makeProtocol(request_.protocol), request_.internal_port, actual_external_port_, 0);
   qCDebug(log_natpmp) << "sendnewportmappingrequest:" << natpmp_ec;
 }
 

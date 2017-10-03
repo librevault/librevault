@@ -26,11 +26,53 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "PortMapper.h"
-#include "NATPMPService.h"
-#include "UPnPService.h"
+#pragma once
+#include "GenericNatService.h"
+#include <natpmp.h>
+#include <QPointer>
+#include <QTimer>
+#include <memory>
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
-}
+Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
+
+class NatPmpService : public GenericNatService {
+  Q_OBJECT
+
+ public:
+  explicit NatPmpService(QObject* parent);
+  virtual ~NatPmpService();
+
+  bool isReady() override { return error_ == 0; }
+  PortMapping* createMapping(const MappingRequest& request) override;
+
+ protected:
+  friend class NatPmpPortMapping;
+
+  std::unique_ptr<natpmp_t> natpmp_;
+  int error_ = 0;
+
+  Q_SLOT void startup();
+};
+
+class NatPmpPortMapping : public PortMapping {
+  Q_OBJECT
+
+ public:
+  explicit NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent);
+  virtual ~NatPmpPortMapping();
+
+  Q_SLOT void refresh() override;
+
+  bool isMapped() const override;
+
+ private:
+  QPointer<NatPmpService> service_;
+  QTimer* timer_;
+
+  Q_SLOT void serviceReady();
+  Q_SLOT void teardown();
+};
+
+}  // namespace librevault

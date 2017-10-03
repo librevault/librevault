@@ -27,50 +27,61 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortMapper.h"
-#include <natpmp.h>
-#include <QTimer>
-#include <chrono>
+//#include <miniupnpc/miniupnpc.h>
+#include "GenericNatService.h"
+#include <QString>
+#include <array>
 #include <memory>
 #include <set>
 
+struct UPNPUrls;
+struct IGDdatas;
+struct UPNPDev;
+
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
+Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
-class NATPMPMappedPort;
-class NATPMPService : public MappingService {
+class UpnpPortMapping;
+class UpnpService : public GenericNatService {
   Q_OBJECT
 
  public:
-  NATPMPService(QObject* parent);
-  virtual ~NATPMPService();
+  explicit UpnpService(QObject* parent);
+  virtual ~UpnpService();
 
-  natpmp_t* handle() { return &natpmp; }
-  std::chrono::seconds defaultLifetime() { return mapping_lifetime; }
-
-  MappedPort* map(const MappingRequest& request);
+  bool isReady() override;
+  PortMapping* createMapping(const MappingRequest& request) override;
 
  protected:
-  natpmp_t natpmp;
-  std::chrono::seconds mapping_lifetime = std::chrono::seconds(3600);
+  friend class UpnpPortMapping;
+
+  // Config values
+  std::unique_ptr<UPNPUrls> upnp_urls;
+  std::unique_ptr<IGDdatas> upnp_data;
+  std::array<char, 16> lanaddr;
+
+  bool ready_ = false;
+
+  Q_SLOT void startup();
 };
 
-class NATPMPMappedPort : public MappedPort {
+class UpnpPortMapping : public PortMapping {
   Q_OBJECT
 
  public:
-  NATPMPMappedPort(const MappingRequest& mapping, NATPMPService* parent);
-  ~NATPMPMappedPort();
+  UpnpPortMapping(const MappingRequest& request, UpnpService* parent);
+  virtual ~UpnpPortMapping();
+
+  Q_SLOT void refresh() override;
+
+  bool isMapped() const override;
 
  private:
-  NATPMPService* parent_;
-  MappingRequest mapping_;
+  UpnpService* service;
 
-  QTimer* timer_;
-
-  Q_SLOT void sendPeriodicRequest();
-  Q_SLOT void sendZeroRequest();
+  Q_SLOT void serviceReady();
+  Q_SLOT void teardown();
 };
 
 }  // namespace librevault

@@ -28,48 +28,69 @@
  */
 #pragma once
 #include <QAbstractSocket>
+#include <QHostAddress>
 #include <QLoggingCategory>
-#include <memory>
-#include <set>
+#include <QNetworkInterface>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_portmapping)
 
-class NATPMPService;
-class UPnPService;
+using Protocol = QAbstractSocket::SocketType;
+using Duration = std::chrono::seconds;
+using TimePoint = std::chrono::system_clock::time_point;
+class GenericNatService;
 
 struct MappingRequest {
-  QAbstractSocket::SocketType protocol;
-  quint16 orig_port = 0;
-  quint16 mapped_port = 0;
+  quint16 internal_port = 0;
+  quint16 external_port = 0;
+  Protocol protocol;
   QString description;
+  Duration ttl;
+  QNetworkInterface interface;
 };
 
-class MappedPort : public QObject {
+class PortMapping : public QObject {
   Q_OBJECT
 
  public:
-  MappedPort(QObject* parent) : QObject(parent) {}
+  explicit PortMapping(const MappingRequest& request, GenericNatService* parent);
+  virtual ~PortMapping() = default;
 
-  Q_SIGNAL void portMapped(quint16 mapped);
-  virtual bool isMapped() const { return mapped_; }
+  Q_SLOT virtual void refresh() = 0;
+  Q_SIGNAL void refreshed(
+      quint16 external_port, QHostAddress external_address, TimePoint expiration);
+
+  virtual quint16 internalPort() const { return request_.internal_port; }
+  virtual quint16 externalPort() const {
+    return isMapped() ? actual_external_port_ : request_.internal_port;
+  }
+  virtual Protocol protocol() const { return request_.protocol; }
+  virtual QHostAddress externalAddress() const { return external_address_; }
+  virtual QString description() const { return request_.description; }
+  virtual TimePoint expiration() const { return expiration_; }
+  virtual Duration requestTtl() const { return request_.ttl; }
+  virtual QNetworkInterface interface() const { return request_.interface; }
+  virtual bool isMapped() const { return actual_external_port_ != 0; }
 
  protected:
-  bool mapped_ = false;
+  quint16 actual_external_port_ = 0;
+  QHostAddress external_address_;
+  TimePoint expiration_;
+  MappingRequest request_;
 };
 
-class MappingService : public QObject {
+class GenericNatService : public QObject {
   Q_OBJECT
 
  public:
-  MappingService(QObject* parent) : QObject(parent) {}
-  ~MappingService();
+  explicit GenericNatService(QObject* parent) : QObject(parent) {}
+  virtual ~GenericNatService() = default;
 
-  virtual MappedPort* map(const MappingRequest& mapping) = 0;
+  Q_SIGNAL void ready();
 
- protected:
-  std::set<std::unique_ptr<MappedPort>> mappings_;
+  virtual bool isReady() = 0;
+  virtual PortMapping* createMapping(const MappingRequest& request) = 0;
 };
 
 }  // namespace librevault

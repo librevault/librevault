@@ -66,8 +66,9 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfi
   bool have_complete = false;
   bool have_incomplete = false;
 
-  for (int chunk_idx = 0; chunk_idx < smeta.metaInfo().chunks().size(); chunk_idx++) {
-    auto& meta_chunk = smeta.metaInfo().chunks().at(chunk_idx);
+  auto chunks = smeta.metaInfo().chunks();
+  for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++) {
+    auto& meta_chunk = chunks.at(chunk_idx);
 
     QByteArray ct_hash = meta_chunk.ctHash();
 

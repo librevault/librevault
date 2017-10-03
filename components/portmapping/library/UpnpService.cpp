@@ -71,42 +71,44 @@ UpnpService::~UpnpService() { FreeUPNPUrls(upnp_urls.get()); }
 
 bool UpnpService::isReady() { return upnp_urls && upnp_data && ready_; }
 
-void UpnpService::startup() {
-  DevListWrapper devlist;
+PortMapping* UpnpService::createMapping(const MappingRequest& request) {
+  return new UpnpPortMapping(request, this);
+}
 
-  if (UPNP_GetValidIGD(
-          devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
-    ready_ = true;
-    qCDebug(log_upnp) << "Found IGD:" << upnp_urls->controlURL;
-    emit ready();
-  } else {
-    qCDebug(log_upnp) << "IGD not found. e:" << strerror(errno);
-    throw std::runtime_error("IGD not found");
+void UpnpService::startup() {
+  try {
+    DevListWrapper devlist;
+
+    if (UPNP_GetValidIGD(
+        devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
+      ready_ = true;
+      qCDebug(log_upnp) << "Found IGD:" << upnp_urls->controlURL;
+      emit ready();
+    } else {
+      throw std::runtime_error(strerror(errno));
+    }
+  }catch (const std::exception& e) {
+    FreeUPNPUrls(upnp_urls.get());
+    qCDebug(log_upnp) << "IGD not found. e:" << e.what();
   }
 }
 
 /* PortMapping */
 UpnpPortMapping::UpnpPortMapping(const MappingRequest& request, UpnpService* parent)
-    : PortMapping(request, parent), service(parent) {
-  connect(parent, &UpnpService::ready, this, &UpnpPortMapping::serviceReady);
-  serviceReady();
-}
+    : PortMapping(request, parent) {}
 
-UpnpPortMapping::~UpnpPortMapping() { teardown(); }
+UpnpPortMapping::~UpnpPortMapping() { unmap(); }
 
-bool UpnpPortMapping::isMapped() const {
-  return service && service->isReady() && PortMapping::isMapped();
-}
+void UpnpPortMapping::map() {
+  enabled_ = true;
+  if(isMapped() || !isServiceReady()) return;
 
-void UpnpPortMapping::serviceReady() {
-  if (service && service->isReady()) QTimer::singleShot(0, this, &UpnpPortMapping::refresh);
-}
-
-void UpnpPortMapping::refresh() {
-  int err = UPNP_AddPortMapping(service->upnp_urls->controlURL,
-      service->upnp_data->first.servicetype, std::to_string(request_.internal_port).c_str(),
-      std::to_string(request_.external_port).c_str(), service->lanaddr.data(),
-      request_.description.toUtf8(), makeProtocol(request_.protocol), nullptr, nullptr);
+  int err = UPNP_AddPortMapping(qobject_cast<UpnpService*>(service_)->upnp_urls->controlURL,
+      qobject_cast<UpnpService*>(service_)->upnp_data->first.servicetype,
+      std::to_string(request_.internal_port).c_str(),
+      std::to_string(request_.external_port).c_str(),
+      qobject_cast<UpnpService*>(service_)->lanaddr.data(), request_.description.toUtf8(),
+      makeProtocol(request_.protocol), nullptr, nullptr);
   if (!err) {
     actual_external_port_ = request_.internal_port;  // TODO: fix external port
   } else {
@@ -114,15 +116,16 @@ void UpnpPortMapping::refresh() {
     qCDebug(log_upnp) << "UPnP port forwarding failed: Error" << err;
   }
 
-  emit refreshed(externalPort(), externalAddress(), expiration());
+  emit mapped(externalPort(), externalAddress(), expiration());
 }
 
-void UpnpPortMapping::teardown() {
-  if (!isMapped()) return;
+void UpnpPortMapping::unmap() {
+  enabled_ = false;
+  if (!isMapped() || !isServiceReady()) return;
 
-  auto err =
-      UPNP_DeletePortMapping(service->upnp_urls->controlURL, service->upnp_data->first.servicetype,
-          std::to_string(request_.internal_port).c_str(), makeProtocol(request_.protocol), nullptr);
+  auto err = UPNP_DeletePortMapping(qobject_cast<UpnpService*>(service_)->upnp_urls->controlURL,
+      qobject_cast<UpnpService*>(service_)->upnp_data->first.servicetype,
+      std::to_string(request_.internal_port).c_str(), makeProtocol(request_.protocol), nullptr);
   if (err)
     qCDebug(log_upnp) << makeProtocol(request_.protocol) << "port" << request_.internal_port
                       << "de-forwarding failed: Error" << err;

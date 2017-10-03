@@ -202,6 +202,7 @@ QByteArray Secret::makeBinaryPayload() const {
 }
 
 bool Secret::currentLevelLessThan(Level lvl) const {
+  Q_ASSERT(d);
   if(lvl < Owner || lvl > Download)
     throw UnknownSecretLevel();
   if( (lvl == Owner || lvl == ReadWrite) && (d->level_ == Owner || d->level_ == ReadWrite) )

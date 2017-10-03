@@ -26,62 +26,56 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-//#include <miniupnpc/miniupnpc.h>
-#include "GenericNatService.h"
-#include <QString>
-#include <array>
-#include <memory>
-#include <set>
-
-struct UPNPUrls;
-struct IGDdatas;
-struct UPNPDev;
+#include "AutoNatService.h"
+#include "NatPmpService.h"
+#include "UpnpService.h"
 
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_upnp)
+AutoNatService::AutoNatService(QObject* parent) : GenericNatService(parent) {
+  nested_services_.push_back(new NatPmpService(this));
+  nested_services_.push_back(new UpnpService(this));
+}
 
-class UpnpPortMapping;
-class UpnpService : public GenericNatService {
-  Q_OBJECT
+bool AutoNatService::isReady() {
+  for (auto& service : nested_services_)
+    if (service->isReady()) return true;
+  return false;
+}
 
- public:
-  explicit UpnpService(QObject* parent);
-  virtual ~UpnpService();
+PortMapping* AutoNatService::createMapping(const MappingRequest& request) {
+  QList<PortMapping*> mappings;
+  for (auto& service : nested_services_) mappings.push_back(service->createMapping(request));
 
-  bool isReady() override;
-  PortMapping* createMapping(const MappingRequest& request) override;
+  return new AutoPortMapping(mappings, request, this);
+}
 
- protected:
-  friend class UpnpPortMapping;
+AutoPortMapping::AutoPortMapping(
+    const QList<PortMapping*>& mappings, const MappingRequest& request, GenericNatService* parent)
+    : PortMapping(request, parent), mappings_(mappings) {
+  for (auto& mapping : mappings_) {
+    connect(mapping, &PortMapping::mapped, this, &PortMapping::mapped);
+    mapping->setParent(this);
+  }
+}
 
-  // Config values
-  std::unique_ptr<UPNPUrls> upnp_urls;
-  std::unique_ptr<IGDdatas> upnp_data;
-  std::array<char, 16> lanaddr;
+void AutoPortMapping::map() {
+  if(current_ && current_->isServiceReady())
+    return current_->map();
 
-  bool ready_ = false;
+  for (auto& mapping : mappings_) {
+    if (mapping->isServiceReady()) {
+      current_ = mapping;
+      return current_->map();
+    }
+  }
 
-  Q_SLOT void startup();
-};
+  current_ = nullptr;
+}
 
-class UpnpPortMapping : public PortMapping {
-  Q_OBJECT
-
- public:
-  UpnpPortMapping(const MappingRequest& request, UpnpService* parent);
-  virtual ~UpnpPortMapping();
-
-  Q_SLOT void refresh() override;
-
-  bool isMapped() const override;
-
- private:
-  UpnpService* service;
-
-  Q_SLOT void serviceReady();
-  Q_SLOT void teardown();
-};
+void AutoPortMapping::unmap() {
+  if(current_)
+    return current_->unmap();
+}
 
 }  // namespace librevault

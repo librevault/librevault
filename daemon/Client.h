@@ -40,7 +40,7 @@ namespace librevault {
 class DiscoveryAdapter;
 class NodeKey;
 class PeerServer;
-class PortMapper;
+class GenericNatService;
 
 class FolderGroup;
 class FolderParams;
@@ -60,7 +60,7 @@ class Client : public QCoreApplication {
  private:
   BandwidthCounter bc_all_, bc_blocks_;
   NodeKey* node_key_;
-  PortMapper* portmanager_;
+  GenericNatService* portmanager_;
   PeerServer* peerserver_;
 
   // Folders

@@ -21,17 +21,11 @@
 namespace librevault {
 
 ChunkInfo::ChunkInfo() { d = new ChunkInfoPrivate; }
-ChunkInfo::ChunkInfo(const ChunkInfo& r) { *this = r; }
-ChunkInfo::ChunkInfo(ChunkInfo&& r) noexcept { *this = std::move(r); }
-ChunkInfo::~ChunkInfo() {}
-ChunkInfo& ChunkInfo::operator=(const ChunkInfo& r) {
-  d = r.d;
-  return *this;
-}
-ChunkInfo& ChunkInfo::operator=(ChunkInfo&& r) noexcept {
-  d = std::move(r.d);
-  return *this;
-}
+ChunkInfo::ChunkInfo(const ChunkInfo& r) = default;
+ChunkInfo::ChunkInfo(ChunkInfo&& r) noexcept = default;
+ChunkInfo::~ChunkInfo() = default;
+ChunkInfo& ChunkInfo::operator=(const ChunkInfo& r) = default;
+ChunkInfo& ChunkInfo::operator=(ChunkInfo&& r) noexcept = default;
 
 QByteArray ChunkInfo::ctHash() const { return QByteArray::fromStdString(d->proto.ct_hash()); }
 void ChunkInfo::ctHash(const QByteArray& ct_hash) { d->proto.set_ct_hash(ct_hash.toStdString()); }

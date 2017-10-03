@@ -83,7 +83,7 @@ class MetaTaskScheduler : public QObject {
   QThreadPool* threadpool_;
 
   Q_SLOT void process(QByteArray path_keyed_hash);
-  Q_SLOT void handleFinished();
+  Q_SLOT void handleFinished(QueuedTask* task);
 };
 
 } /* namespace librevault */

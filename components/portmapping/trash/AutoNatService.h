@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,36 +27,42 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "GenericNatService.h"
 
-#include <docopt.h>
-#include <QtCore/QVariantMap>
+namespace librevault {
 
-QVariantHash qdocopt(const QString& doc, int argc, char** argv, bool help = true, const QString& version = QString(), bool options_first = false) {
-  std::map<std::string, docopt::value> docopt_args = docopt::docopt(doc.toStdString(), {argv + 1, argv+argc}, help, version.toStdString(), options_first);
+class AutoNatService : public GenericNatService {
+  Q_OBJECT
 
-  QVariantHash qmap;
-  for(auto& value : docopt_args) {
-    QString qkey = QString::fromStdString(value.first);
-    QVariant qvalue;
+ public:
+  explicit AutoNatService(QObject* parent);
+  virtual ~AutoNatService() = default;
 
-    if(value.second) {
-      if(value.second.isBool()) {
-        qvalue = value.second.asBool();
-      }else if(value.second.isLong()) {
-        qvalue = (qlonglong)value.second.asLong();
-      }else if(value.second.isString()) {
-        qvalue = QString::fromStdString(value.second.asString());
-      }else if(value.second.isStringList()) {
-        QStringList sl;
-        for(const std::string& str : value.second.asStringList()) {
-          sl.push_back(QString::fromStdString(str));
-        }
-        qvalue = sl;
-      }
-    }
+  bool isReady() override;
+  PortMapping* createMapping(const MappingRequest& request) override;
 
-    qmap.insert(qkey, qvalue);
-  }
+  QList<GenericNatService*> nested_services_;
+};
 
-  return qmap;
-}
+class AutoPortMapping : public PortMapping {
+  Q_OBJECT
+
+ public:
+  AutoPortMapping(const QList<PortMapping*>& mappings, const MappingRequest& request,
+      GenericNatService* parent);
+  virtual ~AutoPortMapping() = default;
+
+  Q_SLOT void map() override;
+  Q_SLOT void unmap() override;
+
+  quint16 externalPort() const override {return current_ ? current_->externalPort() : PortMapping::externalPort();}
+  QHostAddress externalAddress() const override {return current_ ? current_->externalAddress() : PortMapping::externalAddress();}
+  TimePoint expiration() const override {return current_ ? current_->expiration() : PortMapping::expiration();}
+  bool isMapped() const override {return current_ ? current_->isMapped() : false;}
+
+ protected:
+  QList<PortMapping*> mappings_;
+  PortMapping* current_ = nullptr;
+};
+
+}  // namespace librevault

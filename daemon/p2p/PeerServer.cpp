@@ -29,7 +29,7 @@
 #include "PeerServer.h"
 #include "Peer.h"
 #include "PeerPool.h"
-#include "PortMapper.h"
+#include <GenericNatService.h>
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
@@ -39,7 +39,7 @@ Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
 namespace librevault {
 
-PeerServer::PeerServer(NodeKey* node_key, PortMapper* port_mapping, QObject* parent)
+PeerServer::PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent)
     : QObject(parent), node_key_(node_key), port_mapping_(port_mapping) {
   server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
   server_->setSslConfiguration(node_key_->getSslConfiguration());
@@ -67,12 +67,22 @@ void PeerServer::start() {
     qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
                        << "E:" << server_->errorString();
   }
-  port_mapping_->addPort("main", server_->serverPort(), QAbstractSocket::TcpSocket, "Librevault");
+
+  {
+    MappingRequest request;
+    request.internal_port = server_->serverPort();
+    request.external_port = server_->serverPort();
+    request.protocol = QAbstractSocket::TcpSocket;
+    request.description = "Librevault";
+    request.ttl = std::chrono::seconds(3600);
+    main_port_ = port_mapping_->createMapping(request);
+    main_port_->setParent(this);
+    main_port_->map();
+  }
 }
 
 void PeerServer::stop() {
   server_->close();
-  port_mapping_->removePort("main");
 }
 
 /* Here are where new QWebSocket created */

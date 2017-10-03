@@ -27,52 +27,54 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+//#include <miniupnpc/miniupnpc.h>
 #include "GenericNatService.h"
-#include <natpmp.h>
-#include <QPointer>
-#include <QTimer>
+#include <QString>
+#include <array>
 #include <memory>
+#include <set>
+
+struct UPNPUrls;
+struct IGDdatas;
+struct UPNPDev;
 
 namespace librevault {
 
-Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
+Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
-class NatPmpService : public GenericNatService {
+class UpnpPortMapping;
+class UpnpService : public GenericNatService {
   Q_OBJECT
 
  public:
-  explicit NatPmpService(QObject* parent);
-  virtual ~NatPmpService();
+  explicit UpnpService(QObject* parent);
+  virtual ~UpnpService();
 
-  bool isReady() override { return error_ == 0; }
+  bool isReady() override;
   PortMapping* createMapping(const MappingRequest& request) override;
 
  protected:
-  friend class NatPmpPortMapping;
+  friend class UpnpPortMapping;
 
-  std::unique_ptr<natpmp_t> natpmp_;
-  int error_ = 0;
+  // Config values
+  std::unique_ptr<UPNPUrls> upnp_urls;
+  std::unique_ptr<IGDdatas> upnp_data;
+  std::array<char, 16> lanaddr;
+
+  bool ready_ = false;
 
   Q_SLOT void startup();
 };
 
-class NatPmpPortMapping : public PortMapping {
+class UpnpPortMapping : public PortMapping {
   Q_OBJECT
 
  public:
-  explicit NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent);
-  virtual ~NatPmpPortMapping();
+  UpnpPortMapping(const MappingRequest& request, UpnpService* parent);
+  virtual ~UpnpPortMapping();
 
-  Q_SLOT void refresh() override;
-
-  bool isMapped() const override;
-
- private:
-  QPointer<NatPmpService> service_;
-  QTimer* timer_;
-
-  Q_SLOT void serviceReady();
-  Q_SLOT void teardown();
+  Q_SLOT void map() override;
+  Q_SLOT void unmap() override;
 };
 
 }  // namespace librevault

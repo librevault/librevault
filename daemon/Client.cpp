@@ -27,12 +27,12 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
-#include "PortMapper.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
+#include <NatPmpService.h>
 #include <QTimer>
 
 namespace librevault {
@@ -40,7 +40,7 @@ namespace librevault {
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
   // Initializing components
   node_key_ = new NodeKey(this);
-  portmanager_ = new PortMapper(this);
+  portmanager_ = new NatPmpService(this);
   peerserver_ = new PeerServer(node_key_, portmanager_, this);
 
   /* Connecting signals */

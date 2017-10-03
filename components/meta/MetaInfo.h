@@ -30,7 +30,7 @@ class MetaPrivate;
 class MetaInfo {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
-  enum Kind : quint32 { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
+  enum Kind : quint32 { DELETED = 0, FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/  };
 
  public:
   /* Nested structs & classes */

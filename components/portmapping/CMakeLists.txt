@@ -2,23 +2,24 @@
 # Internal compiler options
 #============================================================================
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 #============================================================================
 # Sources & headers
 #============================================================================
 
-file(GLOB_RECURSE portmapping_SOURCES "*.cpp")
-file(GLOB_RECURSE portmapping_HEADERS "*.h")
+file(GLOB_RECURSE portmapping_SOURCES "library/*.cpp" "library/*.h")
+file(GLOB_RECURSE portmapping_testapp_SOURCES "testapp/*.cpp" "testapp/*.h")
 
 #============================================================================
 # Compile targets
 #============================================================================
 
-add_library(portmapping STATIC ${portmapping_SOURCES} ${portmapping_HEADERS})
+add_library(portmapping STATIC ${portmapping_SOURCES})
 set_target_properties(portmapping PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-target_include_directories(portmapping PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(portmapping PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/library)
+
+add_executable(portmapping-testapp ${portmapping_testapp_SOURCES})
 
 #============================================================================
 # Third-party libraries
@@ -34,9 +35,7 @@ endif()
 
 ### Threads
 target_link_libraries(portmapping PRIVATE Threads::Threads)
+target_link_libraries(portmapping PUBLIC Qt5::Network)
 
-## Qt5
-target_link_libraries(portmapping PRIVATE Qt5::Network)
-
-### CryptoPP
-target_link_libraries(portmapping PRIVATE cryptopp)
+target_link_libraries(portmapping-testapp PRIVATE portmapping)
+target_link_libraries(portmapping-testapp PRIVATE QDocopt)

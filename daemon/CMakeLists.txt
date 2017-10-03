@@ -33,6 +33,7 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
+target_link_libraries(librevault-daemon QDocopt)
 target_link_libraries(librevault-daemon secret)
 target_link_libraries(librevault-daemon meta)
 target_link_libraries(librevault-daemon aes)
@@ -43,7 +44,6 @@ target_link_libraries(librevault-daemon discovery)
 target_link_libraries(librevault-daemon pathnormalizer)
 target_link_libraries(librevault-daemon librevault-common)
 target_link_libraries(librevault-daemon dir_monitor)
-target_link_libraries(librevault-daemon QDocopt)
 target_link_libraries(librevault-daemon rabin-cpp)
 target_link_libraries(librevault-daemon sqlite3)
 target_link_libraries(librevault-daemon Threads::Threads)

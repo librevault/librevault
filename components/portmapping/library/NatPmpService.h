@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,36 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "GenericNatService.h"
+#include <natpmp.h>
+#include <QPointer>
+#include <QTimer>
+#include <memory>
 
-#include <docopt.h>
-#include <QtCore/QVariantMap>
+namespace librevault {
 
-QVariantHash qdocopt(const QString& doc, int argc, char** argv, bool help = true, const QString& version = QString(), bool options_first = false) {
-  std::map<std::string, docopt::value> docopt_args = docopt::docopt(doc.toStdString(), {argv + 1, argv+argc}, help, version.toStdString(), options_first);
+Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
 
-  QVariantHash qmap;
-  for(auto& value : docopt_args) {
-    QString qkey = QString::fromStdString(value.first);
-    QVariant qvalue;
+class NatPmpService : public GenericNatService {
+  Q_OBJECT
 
-    if(value.second) {
-      if(value.second.isBool()) {
-        qvalue = value.second.asBool();
-      }else if(value.second.isLong()) {
-        qvalue = (qlonglong)value.second.asLong();
-      }else if(value.second.isString()) {
-        qvalue = QString::fromStdString(value.second.asString());
-      }else if(value.second.isStringList()) {
-        QStringList sl;
-        for(const std::string& str : value.second.asStringList()) {
-          sl.push_back(QString::fromStdString(str));
-        }
-        qvalue = sl;
-      }
-    }
+ public:
+  explicit NatPmpService(QObject* parent);
+  virtual ~NatPmpService();
 
-    qmap.insert(qkey, qvalue);
-  }
+  bool isReady() override { return error_ == 0; }
+  PortMapping* createMapping(const MappingRequest& request) override;
 
-  return qmap;
-}
+ protected:
+  friend class NatPmpPortMapping;
+
+  std::unique_ptr<natpmp_t> natpmp_;
+  int error_ = 0;
+
+  Q_SLOT void startup();
+};
+
+class NatPmpPortMapping : public PortMapping {
+  Q_OBJECT
+
+ public:
+  NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent);
+  virtual ~NatPmpPortMapping();
+
+  Q_SLOT void map() override;
+  Q_SLOT void unmap() override;
+
+ private:
+  QTimer* timer_;
+};
+
+}  // namespace librevault

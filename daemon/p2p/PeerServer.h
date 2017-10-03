@@ -38,11 +38,12 @@ class FolderService;
 class NodeKey;
 class Peer;
 class PeerPool;
-class PortMapper;
+class GenericNatService;
+class PortMapping;
 class PeerServer : public QObject {
   Q_OBJECT
  public:
-  PeerServer(NodeKey* node_key, PortMapper* port_mapping, QObject* parent);
+  PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent);
   virtual ~PeerServer();
 
   /* Loopback detection */
@@ -53,7 +54,8 @@ class PeerServer : public QObject {
 
  private:
   NodeKey* node_key_;
-  PortMapper* port_mapping_;
+  GenericNatService* port_mapping_;
+  PortMapping* main_port_;
 
   QWebSocketServer* server_;
 

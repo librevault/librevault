@@ -26,7 +26,6 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
-option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "none" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
@@ -81,10 +80,6 @@ if(OS_MAC)
 	add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
 	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fobjc-arc")
 	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-arc")
-endif()
-
-if(NOT DEBUG_QT)
-	add_definitions(-DQT_NO_DEBUG_OUTPUT)
 endif()
 
 ## Calculating version

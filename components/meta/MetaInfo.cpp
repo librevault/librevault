@@ -62,7 +62,7 @@ MetaInfo::~MetaInfo() = default;
 
 bool MetaInfo::operator==(const MetaInfo& r) const { return ::google::protobuf::util::MessageDifferencer::Equals(d->proto, r.d->proto); }
 
-MetaInfo::MetaInfo(const QByteArray& meta_s) { parseFromBinary(meta_s); }
+MetaInfo::MetaInfo(const QByteArray& meta_s) : MetaInfo() { parseFromBinary(meta_s); }
 
 bool MetaInfo::isEmpty() const { return *this == MetaInfo(); }
 

@@ -27,12 +27,19 @@
  * files in the program, then also delete it here.
  */
 #include "GenericNatService.h"
+#include <QTimer>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
 
 PortMapping::PortMapping(const MappingRequest& request, GenericNatService* parent)
-    : QObject(parent), request_(request) {}
+    : QObject(parent), service_(parent), request_(request) {
+  connect(service_, &GenericNatService::ready, this, &PortMapping::serviceReady);
+}
+
+void PortMapping::serviceReady() {
+  if (isServiceReady() && isEnabled()) QTimer::singleShot(0, this, &PortMapping::map);
+}
 
 }  // namespace librevault

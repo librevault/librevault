@@ -46,12 +46,12 @@ void Rabin::slide(char b) {
   uint8_t out = window.empty() ? 0 : window.front();
   window.push_back(b);
 
-  digest ^= out_table[out];
+  digest = (digest ^ out_table[out]);
   append(b);
 }
 
 void Rabin::append(char b) {
-  uint8_t index = digest >> polynomial_shift;
+  uint8_t index = (uint8_t)(digest >> polynomial_shift);
   digest <<= 8;
   digest |= (uint64_t)b;
   digest ^= mod_table[index];

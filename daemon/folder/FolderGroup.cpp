@@ -60,11 +60,11 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   // Initializing local storage
   ignore_list = std::make_unique<IgnoreList>(params_);
 
-  task_scheduler_ = new MetaTaskScheduler(params, this);
-  index_ = new Index(params, this);
+  task_scheduler_ = new MetaTaskScheduler(params_, this);
+  index_ = new Index(params_, this);
   chunk_storage_ = new ChunkStorage(this, index_, this);
   poller_ = new DirectoryPoller(ignore_list.get(), index_, this);
-  watcher_ = new DirectoryWatcher(params, ignore_list.get(), this);
+  watcher_ = new DirectoryWatcher(params_, ignore_list.get(), this);
 
   if (params_.secret.canSign()) poller_->setEnabled(true);
 
@@ -78,7 +78,7 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   meta_uploader_ = new MetaUploader(index_, chunk_storage_, this);
   meta_downloader_ = new MetaDownloader(params_, index_, downloader_, this);
 
-  pool_ = new PeerPool(params, node_key, this);
+  pool_ = new PeerPool(params_, node_key, this);
 
   // Connecting signals and slots
   connect(index_, &Index::metaAdded, this, &FolderGroup::handleNewMeta);

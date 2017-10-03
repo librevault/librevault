@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationDomain("librevault.com");
 
   // Argument parsing
-  QVariantMap args = qdocopt(USAGE, argc, argv, true, librevault::Version().version_string());
+  QVariantHash args = qdocopt(USAGE, argc, argv, true, librevault::Version().version_string());
 
   // Initializing log verbosity
   spdlog::level::level_enum log_level;

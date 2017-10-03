@@ -29,6 +29,7 @@
 #include <control/FolderParams.h>
 #include "MetaTaskScheduler.h"
 #include <QTimer>
+#include <QDebug>
 
 namespace librevault {
 
@@ -75,16 +76,18 @@ void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
   });
 }
 
-void MetaTaskScheduler::handleFinished() {
+void MetaTaskScheduler::handleFinished(QueuedTask* task) {
+  qDebug() << "Finished task:" << task;
+
   QMutexLocker lk(&tq_mtx);
 
-  QByteArray path_keyed_hash = current_tasks.key(static_cast<QueuedTask*>(sender()));
+  QByteArray path_keyed_hash = current_tasks.key(task);
   current_tasks.remove(path_keyed_hash);
   process(path_keyed_hash);
 }
 
 void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
-  connect(task, &QObject::destroyed, this, &MetaTaskScheduler::handleFinished, Qt::BlockingQueuedConnection);
+  connect(task, &QObject::destroyed, this, [=]{handleFinished(task);}, Qt::DirectConnection);
   connect(this, &MetaTaskScheduler::aboutToStop, task, &QueuedTask::interrupt, Qt::DirectConnection);
 
   QMutexLocker lk(&tq_mtx);

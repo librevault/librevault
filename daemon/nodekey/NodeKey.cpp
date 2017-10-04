@@ -38,7 +38,7 @@
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_nodekey, "log.nodekey");
+Q_LOGGING_CATEGORY(log_nodekey, "nodekey");
 
 NodeKey::NodeKey(QObject* parent) : QObject(parent) {
   private_key_ = generateKey();

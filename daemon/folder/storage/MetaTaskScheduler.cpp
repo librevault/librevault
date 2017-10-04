@@ -30,8 +30,11 @@
 #include "MetaTaskScheduler.h"
 #include <QTimer>
 #include <QDebug>
+#include <QLoggingCategory>
 
 namespace librevault {
+
+Q_LOGGING_CATEGORY(log_scheduler, "folder.storage.scheduler")
 
 MetaTaskScheduler::MetaTaskScheduler(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
   threadpool_ = new QThreadPool(this);
@@ -77,7 +80,7 @@ void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
 }
 
 void MetaTaskScheduler::handleFinished(QueuedTask* task) {
-  qDebug() << "Finished task:" << task;
+  qCDebug(log_scheduler) << "Finished task:" << task;
 
   QMutexLocker lk(&tq_mtx);
 
@@ -92,6 +95,7 @@ void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
 
   QMutexLocker lk(&tq_mtx);
   pending_tasks[task->pathKeyedHash()].append(task);
+  qCDebug(log_scheduler) << "Scheduled task:" << task;
 
   process(task->pathKeyedHash());
 }

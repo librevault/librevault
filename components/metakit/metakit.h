@@ -27,37 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "MetaInfo.h"
-#include <QTimer>
+#include <QString>
 
 namespace librevault {
+namespace metakit {
 
-class FolderGroup;
-class IgnoreList;
-class Index;
+qint64 getMtime(const QString& path, bool preserve_symlink);
+quint64 getMtimeGranularity(const QString& path);
 
-class DirectoryPoller : public QObject {
-  Q_OBJECT
- signals:
-  void newPath(QString denormpath);
+int fuzzyCompareMtime(qint64 mtime1, quint64 gran1, qint64 mtime2, quint64 gran2);
 
- public:
-  DirectoryPoller(IgnoreList* ignore_list, Index* index, FolderGroup* parent);
-  virtual ~DirectoryPoller();
-
- public slots:
-  void setEnabled(bool enabled);
-
- private:
-  FolderGroup* fgroup_;
-  Index* index_;
-  IgnoreList* ignore_list_;
-
-  QTimer* polling_timer_;
-
-  QList<QString> getReindexList();
-
-  void addPathsToQueue();
-};
-
-} /* namespace librevault */
+}
+}

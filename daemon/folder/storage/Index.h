@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include "util/SQLiteWrapper.h"
 #include "SignedMeta.h"
 #include <exception_helper.hpp>
@@ -39,7 +38,6 @@ class FolderParams;
 
 class Index : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("Index");
 signals:
 	void metaAdded(SignedMeta meta);
 	void metaAddedExternal(SignedMeta meta);

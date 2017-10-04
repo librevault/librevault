@@ -37,6 +37,7 @@
 #include <QFile>
 #include <boost/filesystem.hpp>
 #include <Rabin.hpp>
+#include <metakit.h>
 #ifdef Q_OS_UNIX
 #  include <sys/stat.h>
 #endif
@@ -56,7 +57,7 @@ ScanTask::ScanTask(QString abspath, const FolderParams& params, Index* index, Ig
       ignore_list_(ignore_list),
       secret_(params.secret) {}
 
-ScanTask::~ScanTask() {}
+ScanTask::~ScanTask() = default;
 
 void ScanTask::run() noexcept {
   QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
@@ -68,9 +69,11 @@ void ScanTask::run() noexcept {
     try {
       old_smeta_ = index_->getMeta(MetaInfo::makePathId(normpath, secret_));
       old_meta_ = old_smeta_.metaInfo();
-      if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
-        throw AbortIndex("Modification time is not changed");
-      }
+
+      auto new_mtime = metakit::getMtime(abspath_, params_.preserve_symlinks);
+      auto new_mtime_granularity = metakit::getMtimeGranularity(abspath_);
+      int cmp = metakit::fuzzyCompareMtime(new_mtime, new_mtime_granularity, old_meta_.mtime(), old_meta_.mtimeGranularity());
+      if (cmp == 0) throw AbortIndex("Modification time is not changed");
     } catch (boost::filesystem::filesystem_error& e) {
     } catch (Index::NoSuchMeta& e) {
     } catch (MetaInfo::error& e) {
@@ -134,8 +137,7 @@ void ScanTask::makeMetaInfo() {
 }
 
 MetaInfo::Kind ScanTask::get_type() {
-  QString abspath = abspath_;
-  boost::filesystem::path babspath(abspath.toStdWString());
+  boost::filesystem::path babspath(abspath_.toStdWString());
 
   boost::filesystem::file_status file_status =
       params_.preserve_symlinks ? boost::filesystem::symlink_status(babspath)
@@ -157,20 +159,14 @@ MetaInfo::Kind ScanTask::get_type() {
 }
 
 void ScanTask::update_fsattrib() {
-  boost::filesystem::path babspath(abspath_.toStdWString());
-
   // First, preserve old values of attributes
   new_meta_.windowsAttrib(old_meta_.windowsAttrib());
   new_meta_.mode(old_meta_.mode());
   new_meta_.uid(old_meta_.uid());
   new_meta_.gid(old_meta_.gid());
 
-  if (new_meta_.kind() != MetaInfo::SYMLINK)
-    new_meta_.mtime(boost::filesystem::last_write_time(babspath));  // File/directory modification time
-  else {
-    // TODO: make alternative function for symlinks. Use boost::filesystem::last_write_time as an example. lstat for
-    // Unix and GetFileAttributesEx for Windows.
-  }
+  new_meta_.mtime(metakit::getMtime(abspath_, params_.preserve_symlinks));  // File/directory modification time
+  new_meta_.mtimeGranularity(metakit::getMtimeGranularity(abspath_));
 
   // Then, write new values of attributes (if enabled in config)
 #if defined(Q_OS_WIN)
@@ -184,9 +180,9 @@ void ScanTask::update_fsattrib() {
     struct stat stat_buf;
     int stat_err = 0;
     if (params_.preserve_symlinks)
-      stat_err = lstat(babspath.c_str(), &stat_buf);
+      stat_err = lstat(abspath_.toUtf8(), &stat_buf);
     else
-      stat_err = stat(babspath.c_str(), &stat_buf);
+      stat_err = stat(abspath_.toUtf8(), &stat_buf);
     if (stat_err == 0) {
       new_meta_.mode(stat_buf.st_mode);
       new_meta_.uid(stat_buf.st_uid);

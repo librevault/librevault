@@ -46,8 +46,7 @@ class PeerServer : public QObject {
   PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent);
   virtual ~PeerServer();
 
-  /* Loopback detection */
-  void addPeerPool(QByteArray folderid, PeerPool* pool);
+  void addPeerPool(const QByteArray& folderid, PeerPool* pool);
 
   Q_SLOT void start();
   Q_SLOT void stop();

@@ -61,28 +61,30 @@ class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent);
+  FolderGroup(FolderParams params, QObject* parent);
   virtual ~FolderGroup();
 
   const FolderParams& params() const { return params_; }
+
+  void setPeerPool(PeerPool* pool);
 
  private:
   const FolderParams params_;
 
   // Local storage
-  std::unique_ptr<IgnoreList> ignore_list;
-  MetaTaskScheduler* task_scheduler_;
-  Index* index_;
-  ChunkStorage* chunk_storage_;
-  DirectoryPoller* poller_;
-  DirectoryWatcher* watcher_;
+  IgnoreList* ignore_list_ = nullptr;
+  MetaTaskScheduler* task_scheduler_ = nullptr;
+  Index* index_ = nullptr;
+  ChunkStorage* chunk_storage_ = nullptr;
+  DirectoryPoller* poller_ = nullptr;
+  DirectoryWatcher* watcher_ = nullptr;
 
   // P2P transfers
-  PeerPool* pool_;
-  Uploader* uploader_;
-  Downloader* downloader_;
-  MetaUploader* meta_uploader_;
-  MetaDownloader* meta_downloader_;
+  PeerPool* pool_ = nullptr;
+  Uploader* uploader_ = nullptr;
+  Downloader* downloader_ = nullptr;
+  MetaUploader* meta_uploader_ = nullptr;
+  MetaDownloader* meta_downloader_ = nullptr;
 
  private slots:
   // void handleAddedChunk(const QByteArray& ct_hash);
@@ -91,6 +93,7 @@ class FolderGroup : public QObject {
   void handleMetaDownloaded(SignedMeta smeta);
 
   void handleNewMeta(const SignedMeta& smeta);
+  void handleNewChunk(const QByteArray& ct_hash);
   void handleNewPeer(Peer* peer);
 
  private:

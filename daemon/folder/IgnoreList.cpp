@@ -36,7 +36,7 @@ Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 
 namespace librevault {
 
-IgnoreList::IgnoreList(const FolderParams& params) : params_(params), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) { lazyRebuildIgnores(); }
+IgnoreList::IgnoreList(const FolderParams& params, QObject* parent) : QObject(parent), params_(params), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) { lazyRebuildIgnores(); }
 
 bool IgnoreList::isIgnored(QByteArray normpath) {
   lazyRebuildIgnores();

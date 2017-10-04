@@ -30,14 +30,16 @@
 #include <QDateTime>
 #include <QReadWriteLock>
 #include <QStringList>
+#include <QObject>
 
 namespace librevault {
 
 class FolderParams;
 
-class IgnoreList {
+class IgnoreList : public QObject {
+  Q_OBJECT
  public:
-  IgnoreList(const FolderParams& params);
+  IgnoreList(const FolderParams& params, QObject* parent);
 
   bool isIgnored(QByteArray normpath);
 

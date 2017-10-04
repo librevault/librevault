@@ -64,15 +64,13 @@ void Client::initializeAll() {
   peerserver_->start();
 
   // Initialize all existing folders
-  for (QByteArray folderid : Config::get()->listFolders()) {
+  for (const QByteArray& folderid : Config::get()->listFolders())
     initFolder(Config::get()->getFolder(folderid));
-  }
 }
 
 void Client::deinitializeAll() {
-  for (QByteArray folderid : Config::get()->listFolders()) {
+  for (const QByteArray& folderid : Config::get()->listFolders())
     deinitFolder(folderid);
-  }
 
   peerserver_->stop();
 }
@@ -90,10 +88,12 @@ void Client::shutdown() {
 }
 
 void Client::initFolder(const FolderParams& params) {
-  auto fgroup = new FolderGroup(params, node_key_, this);
+  auto fgroup = new FolderGroup(params, this);
   groups_[params.folderid()] = fgroup;
 
-  //peerserver_->addPeerPool(params.folderid(), peer_pool);
+  auto peer_pool = new PeerPool(params, node_key_, this);
+  fgroup->setPeerPool(peer_pool);
+  peerserver_->addPeerPool(params.folderid(), peer_pool);
 
   qCInfo(log_client) << "Folder initialized: " << params.folderid().toHex();
 }

@@ -37,7 +37,11 @@
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_client, "client")
+
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
+  qRegisterMetaType<SignedMeta>("SignedMeta");
+
   // Initializing components
   node_key_ = new NodeKey(this);
   portmanager_ = new NatPmpService(this);
@@ -75,13 +79,13 @@ void Client::deinitializeAll() {
 
 void Client::restart() {
   deinitializeAll();
-  qInfo() << "Restarting...";
+  qCInfo(log_client) << "Restarting...";
   this->exit(EXIT_RESTART);
 }
 
 void Client::shutdown() {
   deinitializeAll();
-  qInfo() << "Exiting...";
+  qCInfo(log_client) << "Exiting...";
   this->exit();
 }
 
@@ -91,7 +95,7 @@ void Client::initFolder(const FolderParams& params) {
 
   //peerserver_->addPeerPool(params.folderid(), peer_pool);
 
-  qInfo() << "Folder initialized: " << params.folderid().toHex();
+  qCInfo(log_client) << "Folder initialized: " << params.folderid().toHex();
 }
 
 void Client::deinitFolder(const QByteArray& folderid) {
@@ -99,7 +103,7 @@ void Client::deinitFolder(const QByteArray& folderid) {
   groups_.remove(folderid);
 
   fgroup->deleteLater();
-  qInfo() << "Folder deinitialized:" << folderid.toHex();
+  qCInfo(log_client) << "Folder deinitialized:" << folderid.toHex();
 }
 
 } /* namespace librevault */

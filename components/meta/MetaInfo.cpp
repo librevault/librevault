@@ -109,18 +109,17 @@ void MetaInfo::pathKeyedHash(const QByteArray& path_id) { d->proto.set_path_keye
 quint64 MetaInfo::revision() const { return d->proto.revision(); }
 void MetaInfo::revision(quint64 revision) { d->proto.set_revision(revision); }
 
-EncryptedData MetaInfo::path() const { return conv_encdata(d->proto.path()); }
-
 MetaInfo::Timestamp MetaInfo::timestamp() const { return conv_timestamp(d->proto.timestamp()); }
 void MetaInfo::timestamp(Timestamp revision) { d->proto.mutable_timestamp()->CopyFrom(conv_timestamp(revision)); }
 
+EncryptedData MetaInfo::path() const { return conv_encdata(d->proto.path()); }
 void MetaInfo::path(const EncryptedData& path) { d->proto.mutable_path()->CopyFrom(conv_encdata(path)); }
 
 MetaInfo::Kind MetaInfo::kind() const { return (MetaInfo::Kind)d->proto.kind(); }
 void MetaInfo::kind(Kind meta_kind) { d->proto.set_kind(meta_kind); }
 
 qint64 MetaInfo::mtime() const { return conv_timestamp(d->proto.mtime()).time_since_epoch().count(); }
-void MetaInfo::mtime(qint64 mtime) { d->proto.mutable_mtime()->CopyFrom(conv_timestamp(Timestamp(std::chrono::seconds(mtime)))); }
+void MetaInfo::mtime(qint64 mtime) { d->proto.mutable_mtime()->CopyFrom(conv_timestamp(Timestamp(std::chrono::nanoseconds(mtime)))); }
 
 quint64 MetaInfo::mtimeGranularity() const { return d->proto.mtime_granularity(); }
 void MetaInfo::mtimeGranularity(quint64 mtime) { d->proto.set_mtime_granularity(mtime); }

@@ -35,6 +35,8 @@
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_poller, "folder.storage.poller")
+
 DirectoryPoller::DirectoryPoller(IgnoreList* ignore_list, Index* index, FolderGroup* parent)
     : QObject(parent), fgroup_(parent), index_(index), ignore_list_(ignore_list) {
   polling_timer_ = new QTimer(this);
@@ -59,7 +61,6 @@ QList<QString> DirectoryPoller::getReindexList() {
   QSet<QString> file_list;
 
   // Files present in the file system
-  qDebug() << fgroup_->params().path;
   QDirIterator dir_it(fgroup_->params().path, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
                       fgroup_->params().preserve_symlinks
                           ? (QDirIterator::Subdirectories)
@@ -91,7 +92,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 }
 
 void DirectoryPoller::addPathsToQueue() {
-  qDebug() << "Performing full directory rescan";
+  qCDebug(log_poller) << "Performing full directory rescan";
 
   for (auto& denormpath : getReindexList()) emit newPath(denormpath);
 }

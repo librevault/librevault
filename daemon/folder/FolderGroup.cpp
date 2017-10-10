@@ -47,7 +47,7 @@
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_folder, "log.folder");
+Q_LOGGING_CATEGORY(log_folder, "folder");
 
 FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent)
     : QObject(parent), params_(std::move(params)) {

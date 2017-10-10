@@ -33,6 +33,7 @@
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
 #include "util/conv_fspath.h"
+#include "util/log.h"
 #include <ChunkInfo.h>
 #include <PathNormalizer.h>
 #include <QBitArray>
@@ -40,14 +41,13 @@
 #include <QLoggingCategory>
 #include <QSaveFile>
 #include <boost/filesystem.hpp>
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
 #  include <sys/stat.h>
-#endif
-#ifdef Q_OS_WIN
+#elif defined(Q_OS_WIN)
 #  include <windows.h>
 #endif
 
-Q_LOGGING_CATEGORY(log_assembler, "folder.chunk.assembler")
+Q_LOGGING_CATEGORY(log_assembler, "folder.storage.assembler")
 
 namespace librevault {
 

@@ -32,8 +32,11 @@
 #include "util/conv_fspath.h"
 #include <PathNormalizer.h>
 #include <QTimer>
+#include <QLoggingCategory>
 
 namespace librevault {
+
+Q_LOGGING_CATEGORY(log_watcher, "folder.storage.watcher")
 
 DirectoryWatcherThread::DirectoryWatcherThread(QString abspath, QObject* parent)
     : QThread(parent), monitor_(monitor_ios_) {

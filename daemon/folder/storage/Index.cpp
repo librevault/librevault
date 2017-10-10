@@ -31,16 +31,19 @@
 #include "blob.h"
 #include <QFile>
 #include <ChunkInfo.h>
+#include <QLoggingCategory>
 
 namespace librevault {
+
+Q_LOGGING_CATEGORY(log_index, "folder.storage.index")
 
 Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
 	auto db_filepath = params_.system_path + "/librevault.db";
 
 	if(QFile::exists(db_filepath))
-		LOGD("Opening SQLite3 DB:" << db_filepath);
+		qCDebug(log_index) << "Opening SQLite3 DB:" << db_filepath;
 	else
-		LOGD("Creating new SQLite3 DB:" << db_filepath);
+		qCDebug(log_index) << "Creating new SQLite3 DB:" << db_filepath;
 	db_ = std::make_unique<SQLiteDB>(db_filepath.toStdString());
 	db_->exec("PRAGMA foreign_keys = ON;");
 
@@ -91,7 +94,6 @@ SignedMeta Index::getMeta(const MetaInfo::PathRevision& path_revision) {
 /* Meta manipulators */
 
 void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
-	LOGFUNC();
 	qsrand(time(nullptr));
 	QString transaction_name = QStringLiteral("put_Meta_%1").arg(qrand());
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
@@ -105,7 +107,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	});
 
 	uint64_t offset = 0;
-	for(auto chunk : signed_meta.metaInfo().chunks()){
+	for(const auto& chunk : signed_meta.metaInfo().chunks()){
 		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
 				{":ct_hash", conv_bytearray(chunk.ctHash())},
 				{":size", (uint64_t)chunk.size()},
@@ -125,9 +127,9 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	raii_transaction.commit();  // End transaction
 
 	if(fully_assembled)
-		LOGD("Added fully assembled Meta of " << signed_meta.metaInfo().pathKeyedHash().toHex() << " t:" << signed_meta.metaInfo().kind());
+		qCDebug(log_index) << "Added fully assembled Meta of" << signed_meta.metaInfo().pathKeyedHash().toHex() << "t:" << signed_meta.metaInfo().kind();
 	else
-		LOGD("Added Meta of " << signed_meta.metaInfo().pathKeyedHash().toHex() << " t:" << signed_meta.metaInfo().kind());
+		qCDebug(log_index) << "Added Meta of" << signed_meta.metaInfo().pathKeyedHash().toHex() << "t:" << signed_meta.metaInfo().kind();
 
 	emit metaAdded(signed_meta);
 	if(!fully_assembled)

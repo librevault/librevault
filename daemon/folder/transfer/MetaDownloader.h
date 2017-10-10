@@ -29,7 +29,6 @@
 #pragma once
 #include "SignedMeta.h"
 #include "control/FolderParams.h"
-#include "util/log.h"
 #include <QBitArray>
 #include <QObject>
 

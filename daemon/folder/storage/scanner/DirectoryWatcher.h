@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include "util/log.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 #include <dir_monitor/dir_monitor.hpp>

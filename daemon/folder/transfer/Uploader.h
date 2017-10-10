@@ -27,7 +27,6 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include <QObject>
 
 namespace librevault {

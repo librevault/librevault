@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include "util/log.h"
 #include <QTimer>
 
 namespace librevault {
@@ -39,7 +38,6 @@ class Index;
 
 class DirectoryPoller : public QObject {
   Q_OBJECT
-  LOG_SCOPE("DirectoryPoller");
  signals:
   void newPath(QString denormpath);
 

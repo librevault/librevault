@@ -175,7 +175,7 @@ void Peer::handle(const QByteArray& message) {
   } catch (const std::exception& e) {
     socket_->close(QWebSocketProtocol::CloseCodeAbnormalDisconnection);
   }
-}  // namespace librevault
+}
 
 void Peer::handleConnected() {
   handshake_handler_->handleEstablished(role_, node_key_->digest(), digest());

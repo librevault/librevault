@@ -31,7 +31,6 @@
 #include "downloader/WeightedChunkQueue.h"
 #include "p2p/Peer.h"
 #include "util/AvailabilityMap.h"
-#include "util/log.h"
 #include <QBitArray>
 #include <QList>
 #include <QTimer>

@@ -91,7 +91,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 }
 
 void DirectoryPoller::addPathsToQueue() {
-  LOGD("Performing full directory rescan");
+  qDebug() << "Performing full directory rescan";
 
   for (auto& denormpath : getReindexList()) emit newPath(denormpath);
 }

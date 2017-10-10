@@ -49,7 +49,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "folder");
 
-FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent)
+FolderGroup::FolderGroup(FolderParams params, QObject* parent)
     : QObject(parent), params_(std::move(params)) {
   createServiceDirectory();
 
@@ -58,13 +58,13 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
                       << "System path=" << params_.system_path;
 
   // Initializing local storage
-  ignore_list = std::make_unique<IgnoreList>(params_);
+  ignore_list_ = new IgnoreList(params_, this);
 
   task_scheduler_ = new MetaTaskScheduler(params_, this);
   index_ = new Index(params_, this);
   chunk_storage_ = new ChunkStorage(this, index_, this);
-  poller_ = new DirectoryPoller(ignore_list.get(), index_, this);
-  watcher_ = new DirectoryWatcher(params_, ignore_list.get(), this);
+  poller_ = new DirectoryPoller(ignore_list_, index_, this);
+  watcher_ = new DirectoryWatcher(params_, ignore_list_, this);
 
   if (params_.secret.canSign()) poller_->setEnabled(true);
 
@@ -78,19 +78,12 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
   meta_uploader_ = new MetaUploader(index_, chunk_storage_, this);
   meta_downloader_ = new MetaDownloader(params_, index_, downloader_, this);
 
-  pool_ = new PeerPool(params_, node_key, this);
-
   // Connecting signals and slots
   connect(index_, &Index::metaAdded, this, &FolderGroup::handleNewMeta);
-  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](QByteArray ct_hash) {
-    downloader_->notifyLocalChunk(ct_hash);
-    meta_uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
-  });
+  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, &FolderGroup::handleNewChunk);
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
   connect(meta_downloader_, &MetaDownloader::metaDownloaded, this,
           &FolderGroup::handleMetaDownloaded);
-
-  connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 
   // Go through index
   QTimer::singleShot(0, this, [=] {
@@ -101,7 +94,7 @@ FolderGroup::FolderGroup(FolderParams params, NodeKey* node_key, QObject* parent
 FolderGroup::~FolderGroup() = default;
 
 void FolderGroup::addIndexing(QString abspath) {
-  QueuedTask* task = new ScanTask(abspath, params(), index_, ignore_list.get(), this);
+  QueuedTask* task = new ScanTask(abspath, params(), index_, ignore_list_, this);
   task_scheduler_->scheduleTask(task);
 }
 
@@ -117,11 +110,20 @@ void FolderGroup::handleMetaDownloaded(SignedMeta smeta) {
 
 /* Actions */
 void FolderGroup::handleNewMeta(const SignedMeta& smeta) {
+  Q_ASSERT(pool_);
+
   MetaInfo::PathRevision revision = smeta.metaInfo().path_revision();
   QBitArray bitfield = chunk_storage_->makeBitfield(smeta.metaInfo());
 
   downloader_->notifyLocalMeta(smeta, bitfield);
   meta_uploader_->broadcastMeta(pool_->validPeers(), smeta);
+}
+
+void FolderGroup::handleNewChunk(const QByteArray& ct_hash) {
+  Q_ASSERT(pool_);
+
+  downloader_->notifyLocalChunk(ct_hash);
+  meta_uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
 }
 
 // RemoteFolder actions
@@ -155,6 +157,13 @@ void FolderGroup::handleNewPeer(Peer* peer) {
 
   downloader_->trackPeer(peer);
   meta_uploader_->handleHandshake(peer);
+}
+
+void FolderGroup::setPeerPool(PeerPool* pool) {
+  pool_ = pool;
+  pool_->setParent(this);
+
+  connect(pool_, &PeerPool::newValidPeer, this, &FolderGroup::handleNewPeer);
 }
 
 void FolderGroup::createServiceDirectory() {

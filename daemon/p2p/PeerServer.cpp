@@ -53,7 +53,7 @@ PeerServer::PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObje
 
 PeerServer::~PeerServer() = default;
 
-void PeerServer::addPeerPool(QByteArray folderid, PeerPool* pool) {
+void PeerServer::addPeerPool(const QByteArray& folderid, PeerPool* pool) {
   Q_ASSUME(!peer_pools_.contains(folderid));
 
   peer_pools_[folderid] = pool;
@@ -61,28 +61,28 @@ void PeerServer::addPeerPool(QByteArray folderid, PeerPool* pool) {
 }
 
 void PeerServer::start() {
-  if (server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
-    qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
-  } else {
+  if (! server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
     qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
                        << "E:" << server_->errorString();
+    return;
   }
 
-  {
-    MappingRequest request;
-    request.internal_port = server_->serverPort();
-    request.external_port = server_->serverPort();
-    request.protocol = QAbstractSocket::TcpSocket;
-    request.description = "Librevault";
-    request.ttl = std::chrono::seconds(3600);
-    main_port_ = port_mapping_->createMapping(request);
-    main_port_->setParent(this);
-    main_port_->map();
-  }
+  qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
+
+  MappingRequest request;
+  request.internal_port = server_->serverPort();
+  request.external_port = server_->serverPort();
+  request.protocol = QAbstractSocket::TcpSocket;
+  request.description = "Librevault";
+  request.ttl = std::chrono::seconds(3600);
+  main_port_ = port_mapping_->createMapping(request);
+  main_port_->setParent(this);
+  main_port_->map();
 }
 
 void PeerServer::stop() {
   server_->close();
+  main_port_->deleteLater();
 }
 
 /* Here are where new QWebSocket created */
@@ -104,7 +104,7 @@ void PeerServer::handlePeerVerifyError(const QSslError& error) {
 }
 
 void PeerServer::handleServerError(QWebSocketProtocol::CloseCode closeCode) {
-  qCDebug(log_p2p) << "ServerError:" << server_->errorString();
+  qCDebug(log_p2p) << "ServerError:" << server_->errorString() << "Close code:" << closeCode;
 }
 
 void PeerServer::handleSslErrors(const QList<QSslError>& errors) {

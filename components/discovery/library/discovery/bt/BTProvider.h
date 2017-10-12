@@ -40,31 +40,24 @@ Q_DECLARE_LOGGING_CATEGORY(log_bt)
 class BTProvider : public GenericProvider {
   Q_OBJECT
 
- signals:
-  void receivedConnect(quint32 transaction_id, quint64 connection_id);
-  void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders,
-      QList<QPair<QHostAddress, quint16>> peers);
-  void receivedError(quint32 transaction_id, QString error_message);
-
  public:
   explicit BTProvider(QObject* parent);
-  BTProvider(const BTProvider&) = delete;
-  BTProvider(BTProvider&&) = delete;
-  ~BTProvider();
 
   QByteArray getPeerId() const { return peer_id_; }
   QUdpSocket* getSocket() { return socket_; }
 
- public slots:
-  void setIDPrefix(QByteArray peer_id_prefix = QByteArray());
+  Q_SIGNAL void receivedConnect(quint32 transaction_id, quint64 connection_id);
+  Q_SIGNAL void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers,
+      quint32 seeders, EndpointList peers);
+  Q_SIGNAL void receivedError(quint32 transaction_id, QString error_message);
+
+  Q_SLOT void setIDPrefix(QByteArray peer_id_prefix = QByteArray());
 
  private:
   QUdpSocket* socket_;
-
   QByteArray peer_id_;
 
- private slots:
-  void processDatagram();
+  Q_SLOT void processDatagram();
 };
 
 } /* namespace librevault */

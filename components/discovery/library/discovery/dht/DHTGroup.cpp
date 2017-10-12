@@ -32,26 +32,25 @@
 namespace librevault {
 
 DHTGroup::DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent)
-    : QObject(parent), provider_(provider), discovery_id_(discovery_id) {
+    : GenericGroup(provider, parent), provider_(provider), discovery_id_(discovery_id) {
   timer_ = new QTimer(this);
 
-  timer_->setInterval(60 * 1000);
+  timer_->setInterval(std::chrono::seconds(60));
   timer_->setTimerType(Qt::VeryCoarseTimer);
 
   connect(provider_, &DHTProvider::discovered, this, &DHTGroup::handleDiscovered);
   connect(timer_, &QTimer::timeout, this, &DHTGroup::startSearches);
 }
 
-void DHTGroup::setEnabled(bool enable) {
-  if (enable) {
-    QTimer::singleShot(0, this, &DHTGroup::startSearches);
-    timer_->start();
-  } else
-    timer_->stop();
+void DHTGroup::start() {
+  QTimer::singleShot(0, this, &DHTGroup::startSearches);
+  timer_->start();
 }
 
+void DHTGroup::stop() { timer_->stop(); }
+
 void DHTGroup::startSearches() {
-  if (!enabled() || !provider_) return;
+  if (!isOperational()) return;
 
   qCDebug(log_dht) << "Starting DHT searches for:" << getInfoHash().toHex()
                    << "on port:" << provider_->getAnnouncePort();
@@ -61,9 +60,9 @@ void DHTGroup::startSearches() {
       getInfoHash(), QAbstractSocket::IPv6Protocol, provider_->getAnnouncePort());
 }
 
-void DHTGroup::handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port) {
-  if (!enabled() || ih != getInfoHash()) return;
-  emit discovered(addr, port);
+void DHTGroup::handleDiscovered(const QByteArray& ih, const Endpoint& endpoint) {
+  if (!isOperational() || ih != getInfoHash()) return;
+  emit discovered(endpoint);
 }
 
 } /* namespace librevault */

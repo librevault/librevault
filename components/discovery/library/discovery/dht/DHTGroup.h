@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include <QHostAddress>
 #include <QPointer>
 #include <QTimer>
@@ -34,23 +36,18 @@
 namespace librevault {
 
 class DHTProvider;
-class FolderGroup;
 
-class DHTGroup : public QObject {
+class DHTGroup : public GenericGroup {
   Q_OBJECT
-
- signals:
-  void discovered(QHostAddress addr, quint16 port);
 
  public:
   DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
   DHTGroup(const DHTGroup&) = delete;
   DHTGroup(DHTGroup&&) = delete;
 
-  bool enabled() { return timer_->isActive(); }
-
- public slots:
-  void setEnabled(bool enable);
+ protected:
+  void start() override;
+  void stop() override;
 
  private:
   QPointer<DHTProvider> provider_;
@@ -60,9 +57,8 @@ class DHTGroup : public QObject {
 
   inline QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
 
- private slots:
-  void startSearches();
-  void handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port);
+  Q_SLOT void startSearches();
+  Q_SLOT void handleDiscovered(const QByteArray& ih, const Endpoint& endpoint);
 };
 
 } /* namespace librevault */

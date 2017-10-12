@@ -43,8 +43,8 @@ class ChunkInfo {
   void ptKeyedHash(const QByteArray& pt_keyed_hash);
 
   //
-  static QByteArray encrypt(QByteArray chunk, QByteArray key, QByteArray iv);
-  static QByteArray decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv);
+  static QByteArray encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv);
+  static QByteArray decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv);
 
   static QByteArray compute_hash(QByteArray chunk);
 

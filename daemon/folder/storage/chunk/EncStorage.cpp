@@ -39,7 +39,7 @@ Q_LOGGING_CATEGORY(log_encstorage, "folder.storage.chunk.openstorage")
 EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QString EncStorage::makeChunkCtName(const QByteArray& ct_hash) const noexcept {
-  return "chunk-" + QString::fromLatin1(fromBase32(ct_hash));
+  return "chunk-" + QString::fromLatin1(toBase32(ct_hash));
 }
 
 QString EncStorage::makeChunkCtPath(const QByteArray& ct_hash) const noexcept {

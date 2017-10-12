@@ -44,30 +44,27 @@ class DHTProvider : public GenericProvider {
   Q_OBJECT
 
  signals:
-  void discovered(QByteArray ih, QHostAddress addr, quint16 port);
+  void discovered(QByteArray ih, Endpoint endpoint);
   void nodeCountChanged(int count);
 
  public:
   explicit DHTProvider(QObject* parent);
-  DHTProvider(const DHTProvider&) = delete;
-  DHTProvider(DHTProvider&&) = delete;
-  ~DHTProvider();
-
-  // Start/Stop
-  void start(quint16 port);
-  void stop();
 
   int getNodeCount() const;
-  QList<QPair<QHostAddress, quint16>> getNodes();
-  bool isEnabled() { return socket4_->isValid() || socket6_->isValid(); }
+  QList<Endpoint> getNodes();
+  bool isBound() { return socket4_->isValid() || socket6_->isValid(); }
 
- public slots:
-  void addRouter(QString host, quint16 port);
-  void addNode(QHostAddress addr, quint16 port);
+  Q_SLOT void addRouter(QString host, quint16 port);
+  Q_SLOT void addNode(QHostAddress addr, quint16 port);
+  Q_SLOT void setPort(quint16 port) { port_ = port; }
 
   // internal
   void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
   void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+
+ protected:
+  void start() override;
+  void stop() override;
 
  private:
   DHTWrapper* dht_wrapper_ = nullptr;
@@ -76,15 +73,16 @@ class DHTProvider : public GenericProvider {
   QUdpSocket* socket4_;
   QUdpSocket* socket6_;
 
+  quint16 port_ = 0;
+
   // Initialization
-  void readSessionFile(QString path);
-  void writeSessionFile(QString path);
+  void readSession(QIODevice* io);
+  void writeSession(QIODevice* io);
 
   QMap<int, quint16> resolves_;
 
- private slots:
-  void handleResolve(const QHostInfo& host);
-  void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
+  Q_SLOT void handleResolve(const QHostInfo& host);
+  Q_SLOT void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
       QList<QPair<QHostAddress, quint16>> nodes);
 };
 

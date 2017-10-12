@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include <QHostAddress>
 #include <QLoggingCategory>
 #include <QObject>
@@ -40,30 +42,21 @@ Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
 class BTConnection;
 class BTProvider;
-class BTGroup : public QObject {
+class BTGroup : public GenericGroup {
   Q_OBJECT
 
- signals:
-  void discovered(QHostAddress addr, quint16 port);
-
  public:
-  BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent);
-  BTGroup(const BTGroup&) = delete;
-  BTGroup(BTGroup&&) = delete;
+  BTGroup(BTProvider* provider, const QByteArray& discovery_id, QObject* parent);
 
   QByteArray getDiscoveryID() { return discovery_id_; }
   QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
 
- public slots:
-  void setEnabled(bool enabled);
-  void setTrackerList(QList<QUrl> trackers);
+  Q_SLOT void setTrackerList(QList<QUrl> trackers);
 
  protected:
   BTProvider* provider_;
   QByteArray discovery_id_;
   std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
-
-  bool enabled_ = false;
 };
 
 } /* namespace librevault */

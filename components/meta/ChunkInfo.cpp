@@ -39,10 +39,10 @@ void ChunkInfo::iv(const QByteArray& iv) { d->proto.set_iv(iv.toStdString()); }
 QByteArray ChunkInfo::ptKeyedHash() const { return QByteArray::fromStdString(d->proto.pt_keyed_hash()); }
 void ChunkInfo::ptKeyedHash(const QByteArray& pt_keyed_hash) { d->proto.set_pt_keyed_hash(pt_keyed_hash.toStdString()); }
 
-QByteArray ChunkInfo::encrypt(QByteArray chunk, QByteArray key, QByteArray iv) { return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0); }
+QByteArray ChunkInfo::encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv) { return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0); }
 
-QByteArray ChunkInfo::decrypt(QByteArray chunk, uint32_t size, QByteArray key, QByteArray iv) {
-  return decryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0);
+QByteArray ChunkInfo::decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv) {
+  return decryptAesCbc(chunk, key, iv, size % 16 != 0);
 }
 
 QByteArray ChunkInfo::compute_hash(QByteArray chunk) {

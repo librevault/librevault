@@ -28,22 +28,20 @@
  */
 #include "BTGroup.h"
 #include "BTConnection.h"
+#include "BTProvider.h"
 
 namespace librevault {
 
-BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent)
-    : QObject(parent), provider_(provider), discovery_id_(discovery_id) {}
-
-void BTGroup::setEnabled(bool enabled) {
-  enabled_ = enabled;
-  for (auto& i : connections_) i.second->setEnabled(enabled_);
-}
+BTGroup::BTGroup(BTProvider* provider, const QByteArray& discovery_id, QObject* parent)
+    : GenericGroup(provider, parent), provider_(provider), discovery_id_(discovery_id) {}
 
 void BTGroup::setTrackerList(QList<QUrl> trackers) {
   connections_.clear();
-  for (QUrl tracker : qAsConst(trackers)) {
-    connections_[tracker] = std::make_unique<BTConnection>(tracker, this, provider_);
-    connections_[tracker]->setEnabled(enabled_);
+  for (const QUrl& tracker : qAsConst(trackers)) {
+    auto connection = std::make_unique<BTConnection>(tracker, this, provider_);
+    connection->setEnabled(true);
+    connect(connection.get(), &BTConnection::discovered, this, &BTGroup::discovered);
+    connections_[tracker] = std::move(connection);
   }
 }
 

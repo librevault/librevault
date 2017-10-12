@@ -38,7 +38,8 @@
 
 namespace librevault {
 
-BTConnection::BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider)
+BTConnection::BTConnection(
+    const QUrl& tracker_address, BTGroup* btgroup, BTProvider* tracker_provider)
     : provider_(tracker_provider), btgroup_(btgroup), tracker_unresolved_(tracker_address) {
   // Resolve loop
   resolver_timer_ = new QTimer(this);
@@ -63,15 +64,15 @@ BTConnection::BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* t
   connect(this, &BTConnection::discovered, btgroup_, &BTGroup::discovered);
 }
 
-void BTConnection::setEnabled(bool enabled) {
-  if (enabled) {
-    QTimer::singleShot(0, this, &BTConnection::resolve);
-    resolver_timer_->start();
-  } else {
-    announce_timer_->stop();
-    connect_timer_->stop();
-    resolver_timer_->stop();
-  }
+void BTConnection::start() {
+  QTimer::singleShot(0, this, &BTConnection::resolve);
+  resolver_timer_->start();
+}
+
+void BTConnection::stop() {
+  announce_timer_->stop();
+  connect_timer_->stop();
+  resolver_timer_->stop();
 }
 
 void BTConnection::resolve() {
@@ -158,14 +159,14 @@ void BTConnection::handleConnect(quint32 transaction_id, quint64 connection_id) 
 }
 
 void BTConnection::handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers,
-    quint32 seeders, QList<QPair<QHostAddress, quint16>> peers) {
+    quint32 seeders, EndpointList peers) {
   if (transaction_id != transaction_id_) return;
 
   qCDebug(log_bt) << "<=== ANNOUNCE from:" << tracker_unresolved_.host()
                   << "transaction:" << transaction_id << "interval:" << interval
                   << "leechers:" << leechers << "seeders:" << seeders << "peers:" << peers;
 
-  for (auto& peer : qAsConst(peers)) emit discovered(peer.first, peer.second);
+  for (auto& peer : qAsConst(peers)) emit discovered(peer);
 
   announce_timer_->setInterval(std::max((quint32)RECONNECT_INTERVAL, interval) * 1000);
 }

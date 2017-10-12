@@ -27,37 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include "../GenericProvider.h"
-#include <QUdpSocket>
+#include <QObject>
+#include <QPointer>
 
 namespace librevault {
 
-class MulticastGroup;
-
-class MulticastProvider : public GenericProvider {
+class HierarchicalService : public QObject {
   Q_OBJECT
 
  public:
-  explicit MulticastProvider(QObject* parent);
+  explicit HierarchicalService(HierarchicalService* parent_svc = nullptr, QObject* parent = nullptr);
+  HierarchicalService(const HierarchicalService&) = delete;
+  HierarchicalService(HierarchicalService&&) = delete;
 
-  Endpoint endpoint() const { return group_endpoint_; }
-  QUdpSocket* getSocket() { return socket_; }
+  bool isEnabled() const { return enabled_; }
+  void setEnabled(bool enabled);
 
-  Q_SIGNAL void discovered(const QByteArray& id, const Endpoint& endpoint);
-  Q_SLOT void setGroupEndpoint(const Endpoint& endpoint) { group_endpoint_ = endpoint; }
+  bool isOperational() const;
+
+  Q_SIGNAL void started();
+  Q_SIGNAL void stopped();
 
  protected:
-  void start() override;
-  void stop() override;
+  QPointer<HierarchicalService> parent_svc_;
+
+  Q_SLOT virtual void start() {}
+  Q_SLOT virtual void stop() {}
+
+  bool isParentOperational() const;
 
  private:
-  Endpoint group_endpoint_;
-  QUdpSocket* socket_;
-
-  static constexpr size_t buffer_size_ = 65535;
-
-  Q_SLOT void processDatagram(QUdpSocket* socket);
+  const bool root_ = true;
+  bool enabled_ = false;
 };
 
 } /* namespace librevault */

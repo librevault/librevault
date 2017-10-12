@@ -64,14 +64,12 @@ class QueuedTask : public QObject, public QRunnable {
 class MetaTaskScheduler : public QObject {
  Q_OBJECT
 
- signals:
-  void aboutToStop();
-
  public:
   MetaTaskScheduler(const FolderParams& params, QObject* parent);
   ~MetaTaskScheduler();
 
   Q_SLOT void scheduleTask(QueuedTask* task);
+  Q_SIGNAL void aboutToStop();
 
  private:
   const FolderParams& params_;

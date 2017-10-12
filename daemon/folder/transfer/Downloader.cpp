@@ -31,6 +31,7 @@
 #include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/storage/Index.h"
+#include "util/log.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
 
@@ -86,7 +87,8 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfi
   }
 
   if (have_complete && have_incomplete)
-    for (const QByteArray& ct_hash : getMetaCluster(incomplete_chunks)) download_queue_.markClustered(ct_hash);
+    for (const QByteArray& ct_hash : getMetaCluster(incomplete_chunks))
+      download_queue_.markClustered(ct_hash);
 }
 
 void Downloader::addChunk(const QByteArray& ct_hash, quint32 size) {
@@ -113,9 +115,8 @@ void Downloader::notifyLocalChunk(const QByteArray& ct_hash) {
   removeChunk(ct_hash);
 
   // Mark all other chunks "clustered"
-  for (QByteArray cluster_hash : getCluster(ct_hash)) {
+  for (const QByteArray& cluster_hash : getCluster(ct_hash))
     download_queue_.markClustered(cluster_hash);
-  }
 }
 
 QSet<QByteArray> Downloader::getCluster(const QByteArray& ct_hash) {
@@ -135,15 +136,16 @@ QSet<QByteArray> Downloader::getMetaCluster(const QList<QByteArray>& ct_hashes) 
   return cluster;
 }
 
-void Downloader::notifyRemoteMeta(Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
+void Downloader::notifyRemoteMeta(
+    Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
   try {
     auto chunks = index_->getMeta(revision).metaInfo().chunks();
     for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
       if (bitfield.testBit(chunk_idx)) notifyRemoteChunk(peer, chunks[chunk_idx].ctHash());
   } catch (const Index::NoSuchMeta&) {
     qCDebug(log_downloader) << "Expired Meta";
-    // Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta,
-    // so this had been expired. Nevertheless, ignore this notification.
+    // Well, remote node notifies us about expired meta. It was not requested by us OR another peer
+    // sent us newer meta, so this had been expired. Nevertheless, ignore this notification.
   }
 }
 void Downloader::notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash) {
@@ -158,12 +160,15 @@ void Downloader::notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash) {
 
 void Downloader::handleChoke(Peer* peer) {
   /* Remove requests to this node */
-  for (DownloadChunkPtr missing_chunk : qAsConst(down_chunks_)) missing_chunk->requests.remove(peer);
+  for (DownloadChunkPtr missing_chunk : qAsConst(down_chunks_))
+    missing_chunk->requests.remove(peer);
 
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleUnchoke(Peer* peer) { QTimer::singleShot(0, this, &Downloader::maintainRequests); }
+void Downloader::handleUnchoke(Peer* peer) {
+  QTimer::singleShot(0, this, &Downloader::maintainRequests);
+}
 
 void Downloader::putBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& data, Peer* from) {
   auto missing_chunk = down_chunks_.value(ct_hash);
@@ -191,9 +196,8 @@ void Downloader::putBlock(const QByteArray& ct_hash, uint32_t offset, const QByt
     }
   }
 
-  for (QPair<QByteArray, QFile*> chunk : downloaded_chunks) {
+  for (QPair<QByteArray, QFile*> chunk : qAsConst(downloaded_chunks))
     emit chunkDownloaded(chunk.first, chunk.second);
-  }
 
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
@@ -221,7 +225,8 @@ void Downloader::maintainRequests() {
   for (DownloadChunkPtr missing_chunk : down_chunks_.values()) {
     QMutableHashIterator<Peer*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
     while (request_it.hasNext())
-      if (request_it.next().value().started + request_timeout < std::chrono::steady_clock::now()) request_it.remove();
+      if (request_it.next().value().started + request_timeout < std::chrono::steady_clock::now())
+        request_it.remove();
   }
 
   // Make new requests
@@ -247,8 +252,10 @@ bool Downloader::requestOne() {
     if (!request_map.full()) {
       DownloadChunk::BlockRequest request;
       request.offset = request_map.begin()->first;
-      request.size =
-          std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
+      request.size = std::min(
+          request_map.begin()->second,
+          uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt())
+      );
       request.started = std::chrono::steady_clock::now();
 
       protocol::v2::BlockRequest message;

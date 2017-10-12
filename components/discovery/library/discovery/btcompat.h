@@ -53,7 +53,7 @@ inline QPair<QHostAddress, quint16> unpackEndpoint6(QByteArray packed) {
 	return {addr, port};
 };
 
-inline QList<QPair<QHostAddress, quint16>> unpackEnpointList4(QByteArray packed) {
+inline QList<QPair<QHostAddress, quint16>> unpackEnpointList4(const QByteArray& packed) {
 	QList<QPair<QHostAddress, quint16>> l;
 	for(int i=0; i < packed.size(); i += 6) {
 		l.push_back(unpackEndpoint4(packed.mid(i, 6)));
@@ -61,7 +61,7 @@ inline QList<QPair<QHostAddress, quint16>> unpackEnpointList4(QByteArray packed)
 	return l;
 };
 
-inline QList<QPair<QHostAddress, quint16>> unpackEnpointList6(QByteArray packed) {
+inline QList<QPair<QHostAddress, quint16>> unpackEnpointList6(const QByteArray& packed) {
 	QList<QPair<QHostAddress, quint16>> l;
 	for(int i=0; i < packed.size(); i += 18) {
 		l.push_back(unpackEndpoint6(packed.mid(i, 18)));

@@ -28,41 +28,48 @@
  */
 #include "MulticastProvider.h"
 #include "MulticastGroup.h"
-#include <QLoggingCategory>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(log_multicast, "discovery.multicast")
 
 namespace librevault {
 
+namespace {
+
+QHostAddress makeBindAddress(const QHostAddress& addr) {
+  Q_ASSERT(addr.protocol() == QAbstractSocket::IPv4Protocol ||
+           addr.protocol() == QAbstractSocket::IPv6Protocol);
+
+  return addr.protocol() == QAbstractSocket::IPv4Protocol ? QHostAddress::AnyIPv4
+                                                          : QHostAddress::AnyIPv6;
+}
+
+}  // namespace
+
 MulticastProvider::MulticastProvider(QObject* parent) : GenericProvider(parent) {
   socket_ = new QUdpSocket(this);
-  connect(socket_, &QUdpSocket::readyRead, [=] {processDatagram(socket_);});
+  connect(socket_, &QUdpSocket::readyRead, [=] { processDatagram(socket_); });
 }
 
-MulticastProvider::~MulticastProvider() {
-  stop();
-}
+void MulticastProvider::start() {
+  Q_ASSERT(group_endpoint_.first.protocol() == QAbstractSocket::IPv4Protocol ||
+           group_endpoint_.first.protocol() == QAbstractSocket::IPv6Protocol);
 
-void MulticastProvider::start(QHostAddress addr, quint16 port) {
-  addr_ = addr;
-  multicast_port_ = port;
+  QHostAddress bind_addr = makeBindAddress(group_endpoint_.first);
+  if (!socket_->bind(bind_addr, group_endpoint_.second))
+    qCWarning(log_multicast) << "Could not bind MulticastProvider's socket:"
+                             << socket_->errorString();
 
-  Q_ASSERT(addr.protocol() == QAbstractSocket::IPv4Protocol || addr.protocol() == QAbstractSocket::IPv6Protocol);
-
-  QHostAddress bind_addr = (addr.protocol() == QAbstractSocket::IPv4Protocol) ? QHostAddress::AnyIPv4 : QHostAddress::AnyIPv6 ;
-  if(!socket_->bind(bind_addr, multicast_port_))
-    qCWarning(log_multicast) << "Could not bind MulticastProvider's socket:" << socket_->errorString();
-
-  if(!socket_->joinMulticastGroup(addr_))
+  if (!socket_->joinMulticastGroup(group_endpoint_.first))
     qCWarning(log_multicast) << "Could not join multicast group:" << socket_->errorString();
 
   socket_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 }
 
 void MulticastProvider::stop() {
-  socket_->leaveMulticastGroup(addr_);
+  socket_->leaveMulticastGroup(group_endpoint_.first);
   socket_->close();
 }
 
@@ -70,19 +77,23 @@ void MulticastProvider::processDatagram(QUdpSocket* socket) {
   char datagram_buffer[buffer_size_];
   QHostAddress peer_address;
   quint16 peer_port;
-  qint64 datagram_size = socket->readDatagram(datagram_buffer, buffer_size_, &peer_address, &peer_port);
+  qint64 datagram_size =
+      socket->readDatagram(datagram_buffer, buffer_size_, &peer_address, &peer_port);
 
   // JSON parsing
-  QJsonObject message = QJsonDocument::fromJson(QByteArray(datagram_buffer, datagram_size)).object();
-  if(!message.isEmpty()) {
-    qCDebug(log_multicast) << "<=== Multicast message received from:" << peer_address << ":" << peer_port;
+  QJsonObject message =
+      QJsonDocument::fromJson(QByteArray::fromRawData(datagram_buffer, datagram_size)).object();
+  if (!message.isEmpty()) {
+    qCDebug(log_multicast) << "<=== Multicast message received from:" << peer_address << ":"
+                           << peer_port;
 
     QByteArray id = QByteArray::fromBase64(message["id"].toString().toUtf8());
     quint16 announce_port = message["port"].toInt();
 
-    emit discovered(id, peer_address, announce_port);
-  }else {
-    qCDebug(log_multicast) << "<=X= Malformed multicast message from:" << peer_address << ":" << peer_port;
+    emit discovered(id, {peer_address, announce_port});
+  } else {
+    qCDebug(log_multicast) << "<=X= Malformed multicast message from:" << peer_address << ":"
+                           << peer_port;
   }
 }
 

@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include "../btcompat.h"
 #include <QByteArray>
 #include <QTimer>
@@ -36,9 +38,6 @@ namespace librevault {
 
 class DHTWrapper : public QObject {
   Q_OBJECT
-
- public:
-  using EndpointList = QList<QPair<QHostAddress, quint16>>;
 
  signals:
   void searchDone(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);

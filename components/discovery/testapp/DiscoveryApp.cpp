@@ -40,7 +40,8 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   mcast_p = new MulticastProvider(this);
   mcast_p->setAnnouncePort(12345);
 
-  mcast_p->start(QHostAddress("239.192.152.144"), 28914);
+  mcast_p->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
+  mcast_p->setEnabled(true);
 
   mcast_g = new MulticastGroup(mcast_p, discovery_id, this);
   mcast_g->setEnabled(true);
@@ -51,7 +52,8 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   dht_p = new DHTProvider(this);
   dht_p->setAnnouncePort(12345);
 
-  dht_p->start(53342);
+  dht_p->setPort(53342);
+  dht_p->setEnabled(true);
   dht_p->addRouter("router.utorrent.com", 6881);
   dht_p->addRouter("router.bittorrent.com", 6881);
   dht_p->addRouter("dht.transmissionbt.com", 6881);
@@ -78,16 +80,16 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   connect(bt_g, &BTGroup::discovered, this, &DiscoveryApp::handleDiscoveredTorrent);
 }
 
-void DiscoveryApp::handleDiscoveredMulticast(QHostAddress addr, quint16 port) {
-  qInfo() << "Discovered:" << addr.toString() << port << "from UDP multicast";
+void DiscoveryApp::handleDiscoveredMulticast(QPair<QHostAddress, quint16> endpoint) {
+  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from UDP multicast";
 }
 
-void DiscoveryApp::handleDiscoveredDht(QHostAddress addr, quint16 port) {
-  qInfo() << "Discovered:" << addr.toString() << port << "from Kademlia DHT";
+void DiscoveryApp::handleDiscoveredDht(QPair<QHostAddress, quint16> endpoint) {
+  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from Kademlia DHT";
 }
 
-void DiscoveryApp::handleDiscoveredTorrent(QHostAddress addr, quint16 port) {
-  qInfo() << "Discovered:" << addr.toString() << port << "from BitTorrent trackers";
+void DiscoveryApp::handleDiscoveredTorrent(QPair<QHostAddress, quint16> endpoint) {
+  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from BitTorrent trackers";
 }
 
 } /* namespace librevault */

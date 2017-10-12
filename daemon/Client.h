@@ -47,6 +47,10 @@ class FolderParams;
 
 class BandwidthCounter;
 
+class BTProvider;
+class DHTProvider;
+class MulticastProvider;
+
 class Client : public QCoreApplication {
   Q_OBJECT
  public:
@@ -63,10 +67,17 @@ class Client : public QCoreApplication {
   GenericNatService* portmanager_;
   PeerServer* peerserver_;
 
+  BTProvider* discovery_bt_;
+  DHTProvider* discovery_dht_;
+  MulticastProvider* discovery_multicast_;
+
   // Folders
   QMap<QByteArray, FolderGroup*> groups_;
 
  private slots:
+  void initDiscovery();
+  void deinitDiscovery();
+
   void initFolder(const FolderParams& params);
   void deinitFolder(const QByteArray& folderid);
 

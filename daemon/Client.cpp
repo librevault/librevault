@@ -32,6 +32,9 @@
 #include "nodekey/NodeKey.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
+#include <discovery/bt/BTProvider.h>
+#include <discovery/dht/DHTProvider.h>
+#include <discovery/multicast/MulticastProvider.h>
 #include <NatPmpService.h>
 #include <QTimer>
 
@@ -85,6 +88,36 @@ void Client::shutdown() {
   deinitializeAll();
   qCInfo(log_client) << "Exiting...";
   this->exit();
+}
+
+void Client::initDiscovery() {
+  QByteArray discovery_id = node_key_->digest();
+
+  // Multicast
+  discovery_multicast_ = new MulticastProvider(this);
+  discovery_multicast_->setAnnouncePort(12345);
+
+  discovery_multicast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
+  discovery_multicast_->setEnabled(true);
+
+  // DHT
+  discovery_dht_ = new DHTProvider(this);
+  discovery_dht_->setAnnouncePort(12345);
+  discovery_dht_->setEnabled(true);
+
+  discovery_dht_->addRouter("router.utorrent.com", 6881);
+  discovery_dht_->addRouter("router.bittorrent.com", 6881);
+  discovery_dht_->addRouter("dht.transmissionbt.com", 6881);
+  discovery_dht_->addRouter("dht.aelitis.com", 6881);
+  discovery_dht_->addRouter("dht.libtorrent.org", 25401);
+
+  // BitTorrent
+  discovery_bt_ = new BTProvider(this);
+  discovery_bt_->setAnnouncePort(12345);
+}
+
+void Client::deinitDiscovery() {
+
 }
 
 void Client::initFolder(const FolderParams& params) {

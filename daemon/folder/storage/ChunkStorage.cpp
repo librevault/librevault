@@ -41,9 +41,8 @@ ChunkStorage::ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent) :
 	fgroup_(fgroup) {
 	mem_storage = new MemoryCachedStorage(this);
 	enc_storage = new EncStorage(fgroup_->params(), this);
-	if(fgroup_->params().secret.level() <= Secret::Level::ReadOnly) {
+	if(fgroup_->params().secret.canDecrypt())
 		open_storage = new OpenStorage(fgroup_->params(), index, this);
-	}
 };
 
 bool ChunkStorage::haveChunk(QByteArray ct_hash) const noexcept {

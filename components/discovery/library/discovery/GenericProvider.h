@@ -27,37 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-
-#include "../GenericProvider.h"
-#include <QUdpSocket>
+#include <QObject>
+#include <QPointer>
+#include "HierarchicalService.h"
 
 namespace librevault {
 
-class MulticastGroup;
+class GenericProvider : public QObject {
+ Q_OBJECT
 
-class MulticastProvider : public GenericProvider {
-  Q_OBJECT
+public:
+  explicit GenericProvider(QObject* parent) : QObject(parent) {}
+  GenericProvider(const GenericProvider&) = delete;
+  GenericProvider(GenericProvider&&) = delete;
+  virtual ~GenericProvider() = default;
 
- public:
-  explicit MulticastProvider(QObject* parent);
+  quint16 getAnnouncePort() const {return announce_port_;}
+  Q_SLOT void setAnnouncePort(quint16 port) {announce_port_ = port;}
 
-  Endpoint endpoint() const { return group_endpoint_; }
-  QUdpSocket* getSocket() { return socket_; }
-
-  Q_SIGNAL void discovered(const QByteArray& id, const Endpoint& endpoint);
-  Q_SLOT void setGroupEndpoint(const Endpoint& endpoint) { group_endpoint_ = endpoint; }
-
- protected:
-  void start() override;
-  void stop() override;
+  bool isEnabled() const {return enabled_;}
+  void setEnabled(bool enabled) {enabled_ = enabled;}
 
  private:
-  Endpoint group_endpoint_;
-  QUdpSocket* socket_;
+  quint16 announce_port_ = 0;
+  bool enabled_ = false;
+};
 
-  static constexpr size_t buffer_size_ = 65535;
+class GenericGroup : public QObject {
+ Q_OBJECT
 
-  Q_SLOT void processDatagram(QUdpSocket* socket);
+ public:
+  explicit GenericGroup(QObject* parent) : QObject(parent) {}
+  GenericGroup(const GenericGroup&) = delete;
+  GenericGroup(GenericGroup&&) = delete;
+  virtual ~GenericGroup() = default;
+
+  bool isEnabled() const {return enabled_;}
+  void setEnabled(bool enabled) {enabled_ = enabled;}
+
+ private:
+  QPointer<GenericProvider> provider_;
+  bool enabled_ = false;
+
+  bool readyToDiscover() {return isEnabled() && provider_ && provider_->isEnabled();}
 };
 
 } /* namespace librevault */

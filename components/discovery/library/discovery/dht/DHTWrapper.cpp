@@ -50,11 +50,12 @@ static void lv_dht_callback_wrapper(
     return;
 
   // Set nodes
-  librevault::DHTWrapper::EndpointList nodes;
+  librevault::EndpointList nodes;
+  QByteArray packed_nodes = QByteArray::fromRawData((const char*)data, data_len);
   if (af == QAbstractSocket::IPv4Protocol)
-    nodes = librevault::btcompat::unpackEnpointList4(QByteArray((const char*)data, data_len));
+    nodes = librevault::btcompat::unpackEnpointList4(packed_nodes);
   else
-    nodes = librevault::btcompat::unpackEnpointList6(QByteArray((const char*)data, data_len));
+    nodes = librevault::btcompat::unpackEnpointList6(packed_nodes);
 
   if (event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6)
     ((librevault::DHTWrapper*)closure)->foundNodes(id, af, nodes);
@@ -147,12 +148,12 @@ int DHTWrapper::goodNodeCount() {
   return good + dubious;
 }
 
-DHTWrapper::EndpointList DHTWrapper::getNodes() {
+EndpointList DHTWrapper::getNodes() {
   int good, dubious, cached, incoming;
   nodeCount(good, dubious, cached, incoming);
   int all = good + dubious + cached + incoming;
 
-  DHTWrapper::EndpointList endpoints;
+  EndpointList endpoints;
   endpoints.reserve(all);
 
   std::vector<sockaddr_in> sa4(all);

@@ -26,27 +26,37 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QString>
+#include "HierarchicalService.h"
 
 namespace librevault {
 
-inline QString regex_escape(QString escaped) {
-	escaped.replace("\\", "\\\\");
-	escaped.replace("^", "\\^");
-	escaped.replace(".", "\\.");
-	escaped.replace("$", "\\$");
-	escaped.replace("|", "\\|");
-	escaped.replace("(", "\\(");
-	escaped.replace(")", "\\)");
-	escaped.replace("[", "\\[");
-	escaped.replace("]", "\\]");
-	escaped.replace("*", "\\*");
-	escaped.replace("+", "\\+");
-	escaped.replace("?", "\\?");
-	escaped.replace("/", "\\/");
+HierarchicalService::HierarchicalService(HierarchicalService* parent_svc, QObject* parent)
+    : QObject(parent), parent_svc_(parent_svc), root_(!parent_svc) {
+  connect(this, &HierarchicalService::started, this, &HierarchicalService::start);
+  connect(this, &HierarchicalService::stopped, this, &HierarchicalService::stop);
 
-	return escaped;
+  if (parent_svc) {
+    connect(parent_svc, &HierarchicalService::started, this, [this] {
+      if (isOperational()) emit started();
+    });
+    connect(parent_svc, &HierarchicalService::stopped, this, &HierarchicalService::stopped);
+  }
+}
+
+void HierarchicalService::setEnabled(bool enabled) {
+  if (enabled_ == enabled) return;
+
+  enabled_ = enabled;
+  if (isOperational())
+    emit started();
+  else if (!isEnabled() && isParentOperational())
+    emit stopped();
+}
+
+bool HierarchicalService::isOperational() const { return isEnabled() && isParentOperational(); }
+
+bool HierarchicalService::isParentOperational() const {
+  return root_ ? true : parent_svc_ && parent_svc_->isOperational();
 }
 
 } /* namespace librevault */

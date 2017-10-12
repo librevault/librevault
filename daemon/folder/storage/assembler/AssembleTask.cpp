@@ -62,7 +62,7 @@ AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* 
 
 AssembleTask::~AssembleTask() {}
 
-QByteArray AssembleTask::get_chunk_pt(const QByteArray& ct_hash) const {
+QByteArray AssembleTask::getChunkPt(const QByteArray& ct_hash) const {
   try {
     QPair<quint32, QByteArray> size_iv = index_->getChunkSizeIv(ct_hash);
     return ChunkInfo::decrypt(chunk_storage_->getChunk(ct_hash), size_iv.first, params_.secret.encryptionKey(),
@@ -163,7 +163,7 @@ bool AssembleTask::assemble_file() {
   }
 
   for (auto chunk : meta_.chunks()) {
-    assembly_f.write(get_chunk_pt(chunk.ctHash()));  // Writing to file
+    assembly_f.write(getChunkPt(chunk.ctHash()));  // Writing to file
   }
 
   if (!assembly_f.commit()) {

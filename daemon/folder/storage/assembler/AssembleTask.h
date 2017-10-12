@@ -72,7 +72,7 @@ class AssembleTask : public QueuedTask {
 
   void apply_attrib();
 
-  QByteArray get_chunk_pt(const QByteArray& ct_hash) const;
+  QByteArray getChunkPt(const QByteArray& ct_hash) const;
 };
 
 } /* namespace librevault */

@@ -40,8 +40,7 @@ Q_LOGGING_CATEGORY(log_poller, "folder.storage.poller")
 DirectoryPoller::DirectoryPoller(IgnoreList* ignore_list, Index* index, FolderGroup* parent)
     : QObject(parent), fgroup_(parent), index_(index), ignore_list_(ignore_list) {
   polling_timer_ = new QTimer(this);
-  polling_timer_->setInterval(
-      std::chrono::duration_cast<std::chrono::milliseconds>(fgroup_->params().full_rescan_interval));
+  polling_timer_->setInterval(fgroup_->params().full_rescan_interval);
   polling_timer_->setTimerType(Qt::VeryCoarseTimer);
 
   connect(polling_timer_, &QTimer::timeout, this, &DirectoryPoller::addPathsToQueue);
@@ -61,10 +60,11 @@ QList<QString> DirectoryPoller::getReindexList() {
   QSet<QString> file_list;
 
   // Files present in the file system
-  QDirIterator dir_it(fgroup_->params().path, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System,
-                      fgroup_->params().preserve_symlinks
-                          ? (QDirIterator::Subdirectories)
-                          : (QDirIterator::Subdirectories | QDirIterator::FollowSymlinks));
+  auto filter = QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System;
+  auto flags = fgroup_->params().preserve_symlinks
+               ? (QDirIterator::Subdirectories)
+               : (QDirIterator::Subdirectories | QDirIterator::FollowSymlinks);
+  QDirIterator dir_it(fgroup_->params().path, filter, flags);
   while (dir_it.hasNext()) {
     QString abspath = dir_it.next();
     QByteArray normpath = PathNormalizer::normalizePath(abspath, fgroup_->params().path);
@@ -94,7 +94,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 void DirectoryPoller::addPathsToQueue() {
   qCDebug(log_poller) << "Performing full directory rescan";
 
-  for (auto& denormpath : getReindexList()) emit newPath(denormpath);
+  for (const auto& denormpath : getReindexList()) emit newPath(denormpath);
 }
 
 } /* namespace librevault */

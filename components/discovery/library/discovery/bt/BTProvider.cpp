@@ -42,8 +42,6 @@ BTProvider::BTProvider(QObject* parent) : GenericProvider(parent) {
   setIDPrefix();
 }
 
-BTProvider::~BTProvider() {}
-
 void BTProvider::setIDPrefix(QByteArray peer_id_prefix) {
   peer_id_ = peer_id_prefix + getRandomArray(20);
   peer_id_.resize(20);

@@ -27,8 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QTimer>
+
+#include "../GenericProvider.h"
 #include <QPointer>
+#include <QTimer>
 #include <QUdpSocket>
 #include <chrono>
 
@@ -36,29 +38,27 @@ namespace librevault {
 
 class MulticastProvider;
 
-class MulticastGroup : public QObject {
-Q_OBJECT
+class MulticastGroup : public GenericGroup {
+  Q_OBJECT
 
-signals:
-  void discovered(QHostAddress addr, quint16 port);
+ public:
+  MulticastGroup(
+      MulticastProvider* provider, const QByteArray& discovery_id, QObject* parent = nullptr);
 
-public:
-  MulticastGroup(MulticastProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
-  MulticastGroup(const MulticastGroup&) = delete;
-  MulticastGroup(MulticastGroup&&) = delete;
-
-  void setEnabled(bool enabled);
   void setInterval(std::chrono::seconds interval);
 
-private:
+ protected:
+  void start() override;
+  void stop() override;
+
+ private:
   QPointer<MulticastProvider> provider_;
   QTimer* timer_;
   QByteArray discovery_id_;
 
   QByteArray getMessage();
 
-private slots:
-  void sendMulticast();
+  Q_SLOT void sendMulticast();
 };
 
 } /* namespace librevault */

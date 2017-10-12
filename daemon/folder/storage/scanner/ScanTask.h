@@ -29,6 +29,7 @@
 #pragma once
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
+#include "exception_helper.hpp"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
@@ -43,9 +44,7 @@ class ScanTask : public QueuedTask {
   Q_OBJECT
 
  public:
-  struct AbortIndex : public std::runtime_error {
-    AbortIndex(QString what) : std::runtime_error(what.toStdString()) {}
-  };
+  DECLARE_EXCEPTION(AbortIndex, "Indexing had been aborted");
 
   ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent);
   virtual ~ScanTask();

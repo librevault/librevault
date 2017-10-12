@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include <QHostInfo>
 #include <QLoggingCategory>
 #include <QTimer>
@@ -41,17 +43,16 @@ class BTProvider;
 class BTGroup;
 
 // BEP-0015 partial implementation (without scrape mechanism)
-class BTConnection : public QObject {
+class BTConnection : public HierarchicalService {
   Q_OBJECT
+
  public:
-  BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
-  BTConnection(const BTConnection&) = delete;
-  BTConnection(BTConnection&&) = delete;
+  BTConnection(const QUrl& tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
+  Q_SIGNAL void discovered(Endpoint endpoint);
 
-  void setEnabled(bool enabled);
-
- signals:
-  void discovered(QHostAddress addr, quint16 port);
+ protected:
+  void start() override;
+  void stop() override;
 
  private:
   BTProvider* provider_;
@@ -59,7 +60,7 @@ class BTConnection : public QObject {
 
   // Tracker address
   QUrl tracker_unresolved_;
-  QPair<QHostAddress, quint16> tracker_resolved_;
+  Endpoint tracker_resolved_;
 
   // Connection state
   quint64 conn_id_;
@@ -71,17 +72,16 @@ class BTConnection : public QObject {
   QTimer* announce_timer_;
   int resolver_lookup_id_ = 0;
 
-  void resolve();
-  void btconnect();
-  void announce();
-
   quint32 startTransaction();
 
- private slots:
-  void handleResolve(const QHostInfo& host);
-  void handleConnect(quint32 transaction_id, quint64 connection_id);
-  void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders,
-      QList<QPair<QHostAddress, quint16>> peers);
+  Q_SLOT void resolve();
+  Q_SLOT void btconnect();
+  Q_SLOT void announce();
+
+  Q_SLOT void handleResolve(const QHostInfo& host);
+  Q_SLOT void handleConnect(quint32 transaction_id, quint64 connection_id);
+  Q_SLOT void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders,
+      EndpointList peers);
 };
 
 } /* namespace librevault */

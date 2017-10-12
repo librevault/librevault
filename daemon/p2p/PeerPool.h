@@ -39,6 +39,9 @@ namespace librevault {
 class Peer;
 class FolderGroup;
 class NodeKey;
+class DHTGroup;
+class BTGroup;
+class MulticastGroup;
 
 class PeerPool : public QObject {
   Q_OBJECT
@@ -67,7 +70,9 @@ class PeerPool : public QObject {
   NodeKey* node_key_;
   BandwidthCounter bc_all_, bc_blocks_;
 
-  // DiscoveryGroup* dgroup_;
+  DHTGroup* dht_group_;
+  BTGroup* bt_group_;
+  MulticastGroup* multicast_group_;
 
   /* Members */
   QSet<Peer*> peers_;

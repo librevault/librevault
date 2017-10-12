@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QPointer>
 #include <QHostAddress>
+#include <QPointer>
 #include <QTimer>
 
 namespace librevault {
@@ -37,32 +37,32 @@ class DHTProvider;
 class FolderGroup;
 
 class DHTGroup : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-signals:
-	void discovered(QHostAddress addr, quint16 port);
+ signals:
+  void discovered(QHostAddress addr, quint16 port);
 
-public:
-	DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
-	DHTGroup(const DHTGroup&) = delete;
-	DHTGroup(DHTGroup&&) = delete;
+ public:
+  DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
+  DHTGroup(const DHTGroup&) = delete;
+  DHTGroup(DHTGroup&&) = delete;
 
-	bool enabled() {return timer_->isActive();}
+  bool enabled() { return timer_->isActive(); }
 
-public slots:
-	void setEnabled(bool enable);
+ public slots:
+  void setEnabled(bool enable);
 
-private:
-	QPointer<DHTProvider> provider_;
-	QTimer* timer_;
+ private:
+  QPointer<DHTProvider> provider_;
+  QTimer* timer_;
 
-	QByteArray discovery_id_;
+  QByteArray discovery_id_;
 
-	inline QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
+  inline QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
 
-private slots:
-	void startSearches();
-	void handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port);
+ private slots:
+  void startSearches();
+  void handleDiscovered(QByteArray ih, QHostAddress addr, quint16 port);
 };
 
 } /* namespace librevault */

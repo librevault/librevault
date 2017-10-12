@@ -27,48 +27,43 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include "../btcompat.h"
-#include <QUdpSocket>
 #include <QLoggingCategory>
+#include <QUdpSocket>
 
 namespace librevault {
 
 Q_DECLARE_LOGGING_CATEGORY(log_bt)
 
-class FolderGroup;
+class BTProvider : public GenericProvider {
+  Q_OBJECT
 
-class NodeKey;
-
-class BTProvider : public QObject {
-Q_OBJECT
-
-signals:
+ signals:
   void receivedConnect(quint32 transaction_id, quint64 connection_id);
-  void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+  void receivedAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders,
+      QList<QPair<QHostAddress, quint16>> peers);
   void receivedError(quint32 transaction_id, QString error_message);
 
-public:
+ public:
   explicit BTProvider(QObject* parent);
   BTProvider(const BTProvider&) = delete;
   BTProvider(BTProvider&&) = delete;
   ~BTProvider();
 
-  quint16 getAnnouncePort() const {return announce_port_;}
-  QByteArray getPeerId() const {return peer_id_;}
-  QUdpSocket* getSocket() {return socket_;}
+  QByteArray getPeerId() const { return peer_id_; }
+  QUdpSocket* getSocket() { return socket_; }
 
-public slots:
-  void setAnnouncePort(quint16 port) {announce_port_ = port;}
+ public slots:
   void setIDPrefix(QByteArray peer_id_prefix = QByteArray());
 
-private:
+ private:
   QUdpSocket* socket_;
-
-  quint16 announce_port_ = 0;
 
   QByteArray peer_id_;
 
-private slots:
+ private slots:
   void processDatagram();
 };
 

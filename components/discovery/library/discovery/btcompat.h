@@ -38,7 +38,7 @@ namespace btcompat {
 inline QPair<QHostAddress, quint16> unpackEndpoint4(QByteArray packed) {
 	packed = packed.leftJustified(6, 0, true);
 
-	QHostAddress addr = QHostAddress(qToBigEndian(*reinterpret_cast<quint32*>(packed.mid(0, 4).data())));
+	QHostAddress addr = QHostAddress(qFromBigEndian(*reinterpret_cast<quint32*>(packed.mid(0, 4).data())));
 	quint16 port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(4, 2).data()));
 
 	return {addr, port};

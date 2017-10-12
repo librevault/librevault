@@ -34,7 +34,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_bt, "discovery.bt")
 
-BTProvider::BTProvider(QObject* parent) : QObject(parent) {
+BTProvider::BTProvider(QObject* parent) : GenericProvider(parent) {
   socket_ = new QUdpSocket();
   socket_->bind();
 
@@ -58,34 +58,34 @@ void BTProvider::processDatagram() {
   {
     bool ok = false;
     quint32 addr4 = tracker_addr.toIPv4Address(&ok);
-    if(ok) tracker_addr = QHostAddress(addr4);
+    if (ok) tracker_addr = QHostAddress(addr4);
   }
 
   qCDebug(log_bt) << "Received BitTorrent tracker message from" << tracker_addr;
 
-  if(message.size() < 8) return;
+  if (message.size() < 8) return;
 
   QDataStream stream(&message, QIODevice::ReadOnly);
   quint32 action = 0, transaction_id = 0;
   stream >> action >> transaction_id;
 
-  if(action == 0) {   // CONNECT
+  if (action == 0) {  // CONNECT
     quint64 connection_id = 0;
     stream >> connection_id;
     emit receivedConnect(transaction_id, connection_id);
-  }else if(action == 1) { // ANNOUNCE
+  } else if (action == 1) {  // ANNOUNCE
     quint32 interval = 0, leechers = 0, seeders = 0;
     stream >> interval >> leechers >> seeders;
     QList<QPair<QHostAddress, quint16>> peers;
-    if(tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
+    if (tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
       peers = btcompat::unpackEnpointList4(message.mid(20));
-    }else if(tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {
+    } else if (tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {
       peers = btcompat::unpackEnpointList6(message.mid(20));
     }
     emit receivedAnnounce(transaction_id, interval, leechers, seeders, peers);
-  }else if(action == 2) { // SCRAPE
+  } else if (action == 2) {  // SCRAPE
     // no-op
-  }else if(action == 3) { // ERROR
+  } else if (action == 3) {  // ERROR
     emit receivedError(transaction_id, message.mid(8));
   }
 }

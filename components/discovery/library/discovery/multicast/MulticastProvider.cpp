@@ -36,7 +36,7 @@ Q_LOGGING_CATEGORY(log_multicast, "discovery.multicast")
 
 namespace librevault {
 
-MulticastProvider::MulticastProvider(QObject* parent) : QObject(parent) {
+MulticastProvider::MulticastProvider(QObject* parent) : GenericProvider(parent) {
   socket_ = new QUdpSocket(this);
   connect(socket_, &QUdpSocket::readyRead, [=] {processDatagram(socket_);});
 }

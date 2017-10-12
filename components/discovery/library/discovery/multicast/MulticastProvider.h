@@ -27,15 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "../GenericProvider.h"
 #include <QUdpSocket>
 
 namespace librevault {
 
-class FolderGroup;
-
 class MulticastGroup;
 
-class MulticastProvider : public QObject {
+class MulticastProvider : public GenericProvider {
 Q_OBJECT
 
 signals:
@@ -47,7 +47,6 @@ public:
   MulticastProvider(MulticastProvider&&) = delete;
   ~MulticastProvider();
 
-  quint16 getAnnouncePort() const {return announce_port_;}
   quint16 getMulticastPort() const {return multicast_port_;}
   QHostAddress getAddress() const {return addr_;}
   QUdpSocket* getSocket() {return socket_;}
@@ -57,12 +56,11 @@ public:
 public slots:
   void start(QHostAddress addr, quint16 port);
   void stop();
-  void setAnnouncePort(quint16 port) {announce_port_ = port;}
 
 private:
   QHostAddress addr_;
 
-  quint16 announce_port_, multicast_port_;
+  quint16 multicast_port_;
   QUdpSocket* socket_;
 
   static constexpr size_t buffer_size_ = 65535;

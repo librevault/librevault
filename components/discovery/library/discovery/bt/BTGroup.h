@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QObject>
 #include <QHostAddress>
-#include <QUrl>
 #include <QLoggingCategory>
+#include <QObject>
+#include <QUrl>
 #include <memory>
 #include <set>
 
@@ -41,29 +41,29 @@ Q_DECLARE_LOGGING_CATEGORY(log_bt)
 class BTConnection;
 class BTProvider;
 class BTGroup : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-signals:
-	void discovered(QHostAddress addr, quint16 port);
+ signals:
+  void discovered(QHostAddress addr, quint16 port);
 
-public:
-	BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent);
-	BTGroup(const BTGroup&) = delete;
-	BTGroup(BTGroup&&) = delete;
+ public:
+  BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent);
+  BTGroup(const BTGroup&) = delete;
+  BTGroup(BTGroup&&) = delete;
 
-	QByteArray getDiscoveryID() {return discovery_id_;}
-	QByteArray getInfoHash() {return discovery_id_.leftJustified(20, 0, true);}
+  QByteArray getDiscoveryID() { return discovery_id_; }
+  QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
 
-public slots:
-	void setEnabled(bool enabled);
-	void setTrackerList(QList<QUrl> trackers);
+ public slots:
+  void setEnabled(bool enabled);
+  void setTrackerList(QList<QUrl> trackers);
 
-protected:
-	BTProvider* provider_;
-	QByteArray discovery_id_;
-	std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
+ protected:
+  BTProvider* provider_;
+  QByteArray discovery_id_;
+  std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
 
-	bool enabled_ = false;
+  bool enabled_ = false;
 };
 
 } /* namespace librevault */

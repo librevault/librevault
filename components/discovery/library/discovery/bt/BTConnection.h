@@ -28,10 +28,10 @@
  */
 #pragma once
 #include <QHostInfo>
+#include <QLoggingCategory>
 #include <QTimer>
 #include <QUdpSocket>
 #include <QUrl>
-#include <QLoggingCategory>
 
 namespace librevault {
 
@@ -42,45 +42,46 @@ class BTGroup;
 
 // BEP-0015 partial implementation (without scrape mechanism)
 class BTConnection : public QObject {
-	Q_OBJECT
-public:
-	BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
-	BTConnection(const BTConnection&) = delete;
-	BTConnection(BTConnection&&) = delete;
+  Q_OBJECT
+ public:
+  BTConnection(QUrl tracker_address, BTGroup* btgroup, BTProvider* tracker_provider);
+  BTConnection(const BTConnection&) = delete;
+  BTConnection(BTConnection&&) = delete;
 
-	void setEnabled(bool enabled);
+  void setEnabled(bool enabled);
 
-signals:
-	void discovered(QHostAddress addr, quint16 port);
+ signals:
+  void discovered(QHostAddress addr, quint16 port);
 
-private:
-	BTProvider* provider_;
-	BTGroup* btgroup_;
+ private:
+  BTProvider* provider_;
+  BTGroup* btgroup_;
 
-	// Tracker address
-	QUrl tracker_unresolved_;
-	QPair<QHostAddress, quint16> tracker_resolved_;
+  // Tracker address
+  QUrl tracker_unresolved_;
+  QPair<QHostAddress, quint16> tracker_resolved_;
 
-	// Connection state
-	quint64 conn_id_;
-	quint32 transaction_id_;
+  // Connection state
+  quint64 conn_id_;
+  quint32 transaction_id_;
 
-	// Timers
-	QTimer* resolver_timer_;
-	QTimer* connect_timer_;
-	QTimer* announce_timer_;
-	int resolver_lookup_id_ = 0;
+  // Timers
+  QTimer* resolver_timer_;
+  QTimer* connect_timer_;
+  QTimer* announce_timer_;
+  int resolver_lookup_id_ = 0;
 
-	void resolve();
-	void btconnect();
-	void announce();
+  void resolve();
+  void btconnect();
+  void announce();
 
-	quint32 startTransaction();
+  quint32 startTransaction();
 
-private slots:
-	void handleResolve(const QHostInfo& host);
-	void handleConnect(quint32 transaction_id, quint64 connection_id);
-	void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders, QList<QPair<QHostAddress, quint16>> peers);
+ private slots:
+  void handleResolve(const QHostInfo& host);
+  void handleConnect(quint32 transaction_id, quint64 connection_id);
+  void handleAnnounce(quint32 transaction_id, quint32 interval, quint32 leechers, quint32 seeders,
+      QList<QPair<QHostAddress, quint16>> peers);
 };
 
 } /* namespace librevault */

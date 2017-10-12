@@ -31,23 +31,20 @@
 
 namespace librevault {
 
-BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent) :
-	QObject(parent),
-	provider_(provider),
-	discovery_id_(discovery_id) {}
+BTGroup::BTGroup(BTProvider* provider, QByteArray discovery_id, QObject* parent)
+    : QObject(parent), provider_(provider), discovery_id_(discovery_id) {}
 
 void BTGroup::setEnabled(bool enabled) {
-	enabled_ = enabled;
-	for(auto& i : connections_)
-		i.second->setEnabled(enabled_);
+  enabled_ = enabled;
+  for (auto& i : connections_) i.second->setEnabled(enabled_);
 }
 
 void BTGroup::setTrackerList(QList<QUrl> trackers) {
-	connections_.clear();
-	for(QUrl tracker : qAsConst(trackers)) {
-		connections_[tracker] = std::make_unique<BTConnection>(tracker, this, provider_);
-		connections_[tracker]->setEnabled(enabled_);
-	}
+  connections_.clear();
+  for (QUrl tracker : qAsConst(trackers)) {
+    connections_[tracker] = std::make_unique<BTConnection>(tracker, this, provider_);
+    connections_[tracker]->setEnabled(enabled_);
+  }
 }
 
 } /* namespace librevault */

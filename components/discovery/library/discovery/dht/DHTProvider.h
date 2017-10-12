@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "../GenericProvider.h"
 #include "../btcompat.h"
-#include <QLoggingCategory>
 #include <QHostInfo>
+#include <QLoggingCategory>
 #include <QTimer>
 #include <QUdpSocket>
 
@@ -39,57 +40,52 @@ namespace librevault {
 
 class Discovery;
 class DHTWrapper;
-class DHTProvider : public QObject {
-	Q_OBJECT
+class DHTProvider : public GenericProvider {
+  Q_OBJECT
 
-signals:
-	void discovered(QByteArray ih, QHostAddress addr, quint16 port);
-	void nodeCountChanged(int count);
+ signals:
+  void discovered(QByteArray ih, QHostAddress addr, quint16 port);
+  void nodeCountChanged(int count);
 
-public:
-	explicit DHTProvider(QObject* parent);
-	DHTProvider(const DHTProvider&) = delete;
-	DHTProvider(DHTProvider&&) = delete;
-	~DHTProvider();
+ public:
+  explicit DHTProvider(QObject* parent);
+  DHTProvider(const DHTProvider&) = delete;
+  DHTProvider(DHTProvider&&) = delete;
+  ~DHTProvider();
 
-	// Start/Stop
-	void start(quint16 port);
-	void stop();
+  // Start/Stop
+  void start(quint16 port);
+  void stop();
 
-	int getNodeCount() const;
-	quint16 getAnnouncePort() const {return announce_port_;}
+  int getNodeCount() const;
+  QList<QPair<QHostAddress, quint16>> getNodes();
+  bool isEnabled() { return socket4_->isValid() || socket6_->isValid(); }
 
-	QList<QPair<QHostAddress, quint16>> getNodes();
+ public slots:
+  void addRouter(QString host, quint16 port);
+  void addNode(QHostAddress addr, quint16 port);
 
-	bool isEnabled() {return socket4_->isValid() || socket6_->isValid();}
+  // internal
+  void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
+  void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
 
-public slots:
-	void addRouter(QString host, quint16 port);
-	void addNode(QHostAddress addr, quint16 port);
-	void setAnnouncePort(quint16 port) {announce_port_ = port;}
+ private:
+  DHTWrapper* dht_wrapper_ = nullptr;
 
-	// internal
-	void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
-	void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+  // Sockets
+  QUdpSocket* socket4_;
+  QUdpSocket* socket6_;
 
-private:
-	DHTWrapper* dht_wrapper_ = nullptr;
+  // Initialization
+  void readSessionFile(QString path);
+  void writeSessionFile(QString path);
 
-	quint16 announce_port_;
+  QMap<int, quint16> resolves_;
 
-	// Sockets
-	QUdpSocket* socket4_;
-	QUdpSocket* socket6_;
-
-	// Initialization
-	void readSessionFile(QString path);
-	void writeSessionFile(QString path);
-
-	QMap<int, quint16> resolves_;
-
-private slots:
-	void handleResolve(const QHostInfo& host);
-	void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes);
+ private slots:
+  void handleResolve(const QHostInfo& host);
+  void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
+      QList<QPair<QHostAddress, quint16>> nodes);
 };
 
 } /* namespace librevault */

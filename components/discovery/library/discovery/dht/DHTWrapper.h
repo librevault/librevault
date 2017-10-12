@@ -35,17 +35,17 @@
 namespace librevault {
 
 class DHTWrapper : public QObject {
-Q_OBJECT
+  Q_OBJECT
 
-public:
+ public:
   using EndpointList = QList<QPair<QHostAddress, quint16>>;
 
-signals:
+ signals:
   void searchDone(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
   void foundNodes(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
   void nodeCountChanged(int node_count);
 
-public:
+ public:
   DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent);
   DHTWrapper(const DHTWrapper&) = delete;
   DHTWrapper(DHTWrapper&&) = delete;
@@ -56,22 +56,22 @@ public:
 
   EndpointList getNodes();
 
-public slots:
+ public slots:
   void pingNode(QHostAddress addr, quint16 port);
   void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
   void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
 
-  void enable() {periodic_->start();}
-  void disable() {periodic_->stop();}
+  void enable() { periodic_->start(); }
+  void disable() { periodic_->stop(); }
 
-private:
+ private:
   QTimer* periodic_;
   int last_node_count_ = 0;
 
   int convertAF(QAbstractSocket::NetworkLayerProtocol qaf);
-  bool enabled() {return periodic_->isActive();}
+  bool enabled() { return periodic_->isActive(); }
 
-private slots:
+ private slots:
   void processDatagram(QUdpSocket* socket);
   void periodicRequest();
   void updateNodeCount();

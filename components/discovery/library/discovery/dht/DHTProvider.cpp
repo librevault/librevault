@@ -27,135 +27,129 @@
  * files in the program, then also delete it here.
  */
 #include "DHTProvider.h"
-#include "DHTWrapper.h"
-#include "../rand.h"
 #include "../nativeaddr.h"
+#include "../rand.h"
+#include "DHTWrapper.h"
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
-#include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonObject>
 
 Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
 
 namespace librevault {
 
-DHTProvider::DHTProvider(QObject* parent) :
-	QObject(parent) {
-
-	socket4_ = new QUdpSocket(this);
-	socket6_ = new QUdpSocket(this);
+DHTProvider::DHTProvider(QObject* parent) : GenericProvider(parent) {
+  socket4_ = new QUdpSocket(this);
+  socket6_ = new QUdpSocket(this);
 }
 
-DHTProvider::~DHTProvider() {
-	stop();
-}
+DHTProvider::~DHTProvider() { stop(); }
 
 void DHTProvider::start(quint16 port) {
-	stop(); // Cleanup if initialized
+  stop();  // Cleanup if initialized
 
-	socket4_->bind(QHostAddress::AnyIPv4, port);
-	socket6_->bind(QHostAddress::AnyIPv6, port);
-	dht_wrapper_ = new DHTWrapper(socket4_, socket6_, getRandomArray(20), this);
-	connect(dht_wrapper_, &DHTWrapper::nodeCountChanged, this, &DHTProvider::nodeCountChanged);
-	connect(dht_wrapper_, &DHTWrapper::foundNodes, this, &DHTProvider::handleSearch);
-	connect(dht_wrapper_, &DHTWrapper::searchDone, this, &DHTProvider::handleSearch);
-	dht_wrapper_->enable();
+  socket4_->bind(QHostAddress::AnyIPv4, port);
+  socket6_->bind(QHostAddress::AnyIPv6, port);
+  dht_wrapper_ = new DHTWrapper(socket4_, socket6_, getRandomArray(20), this);
+  connect(dht_wrapper_, &DHTWrapper::nodeCountChanged, this, &DHTProvider::nodeCountChanged);
+  connect(dht_wrapper_, &DHTWrapper::foundNodes, this, &DHTProvider::handleSearch);
+  connect(dht_wrapper_, &DHTWrapper::searchDone, this, &DHTProvider::handleSearch);
+  dht_wrapper_->enable();
 }
 
 void DHTProvider::stop() {
-	if(dht_wrapper_) dht_wrapper_->disable();
+  if (dht_wrapper_) dht_wrapper_->disable();
 
-	delete dht_wrapper_;
-	dht_wrapper_ = nullptr;
-	socket4_->close();
-	socket6_->close();
+  delete dht_wrapper_;
+  dht_wrapper_ = nullptr;
+  socket4_->close();
+  socket6_->close();
 }
 
 void DHTProvider::readSessionFile(QString path) {
-	QJsonObject session_json;
-	QFile session_f(path);
-	if(session_f.open(QIODevice::ReadOnly)) {
-		session_json = QJsonDocument::fromJson(session_f.readAll()).object();
-		qCDebug(log_dht) << "DHT session file loaded";
-	}
+  QJsonObject session_json;
+  QFile session_f(path);
+  if (session_f.open(QIODevice::ReadOnly)) {
+    session_json = QJsonDocument::fromJson(session_f.readAll()).object();
+    qCDebug(log_dht) << "DHT session file loaded";
+  }
 
-	QJsonArray nodes = session_json["nodes"].toArray();
-	qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
-	for(const QJsonValue& node_v : qAsConst(nodes)) {
-		QJsonObject node = node_v.toObject();
-		addNode(QHostAddress(node["ip"].toString()), node["port"].toInt());
-	}
-}
-
-void DHTProvider::writeSessionFile(QString path) {
-	QList<QPair<QHostAddress, quint16>> nodes = dht_wrapper_->getNodes();
-	qCInfo(log_dht) << "Saving" << nodes.count() << "nodes to session file";
-
-	QJsonObject json_object;
-
-	QJsonArray nodes_j;
-	for(auto& node : nodes) {
-		QJsonObject node_j;
-		node_j["ip"] = node.first.toString();
-		node_j["port"] = node.second;
-		nodes_j.append(node_j);
-	}
-	json_object["nodes"] = nodes_j;
-
-	QFile session_f(path);
-	if(session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) && session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
-		qCDebug(log_dht) << "DHT session saved";
-	else
-		qCWarning(log_dht) << "DHT session not saved";
-}
-
-int DHTProvider::getNodeCount() const {
-	return (dht_wrapper_) ? dht_wrapper_->goodNodeCount() : 0;
-}
-
-QList<QPair<QHostAddress, quint16>> DHTProvider::getNodes() {
-	return (dht_wrapper_) ? dht_wrapper_->getNodes() : QList<QPair<QHostAddress, quint16>>();
-}
-
-void DHTProvider::addRouter(QString host, quint16 port) {
-	int id = QHostInfo::lookupHost(host, this, SLOT(handleResolve(QHostInfo)));
-	resolves_[id] = port;
-}
-
-void DHTProvider::addNode(QHostAddress addr, quint16 port) {
-	if(dht_wrapper_)
-		dht_wrapper_->pingNode(addr, port);
-}
-
-void DHTProvider::startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
-	if(dht_wrapper_)
-		dht_wrapper_->startAnnounce(id, af, port);
-}
-
-void DHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af) {
-	if(dht_wrapper_)
-		dht_wrapper_->startSearch(id, af);
-}
-
-void DHTProvider::handleResolve(const QHostInfo& host) {
-	if(host.error()) {
-		qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
-		resolves_.remove(host.lookupId());
-		return;
-	}
-
-	quint16 port = resolves_.take(host.lookupId());
-
-  for(const QHostAddress& address : host.addresses()) {
-    addNode(address, port);
-    qCDebug(log_dht) << "Added a DHT router:" << host.hostName() << "Resolved:" << address.toString();
+  QJsonArray nodes = session_json["nodes"].toArray();
+  qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
+  for (const QJsonValue& node_v : qAsConst(nodes)) {
+    QJsonObject node = node_v.toObject();
+    addNode(QHostAddress(node["ip"].toString()), node["port"].toInt());
   }
 }
 
-void DHTProvider::handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, QList<QPair<QHostAddress, quint16>> nodes) {
-	for(auto& endpoint : qAsConst(nodes))
-		emit discovered(id, endpoint.first, endpoint.second);
+void DHTProvider::writeSessionFile(QString path) {
+  QList<QPair<QHostAddress, quint16>> nodes = dht_wrapper_->getNodes();
+  qCInfo(log_dht) << "Saving" << nodes.count() << "nodes to session file";
+
+  QJsonObject json_object;
+
+  QJsonArray nodes_j;
+  for (auto& node : nodes) {
+    QJsonObject node_j;
+    node_j["ip"] = node.first.toString();
+    node_j["port"] = node.second;
+    nodes_j.append(node_j);
+  }
+  json_object["nodes"] = nodes_j;
+
+  QFile session_f(path);
+  if (session_f.open(QIODevice::WriteOnly | QIODevice::Truncate) &&
+      session_f.write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
+    qCDebug(log_dht) << "DHT session saved";
+  else
+    qCWarning(log_dht) << "DHT session not saved";
+}
+
+int DHTProvider::getNodeCount() const { return (dht_wrapper_) ? dht_wrapper_->goodNodeCount() : 0; }
+
+QList<QPair<QHostAddress, quint16>> DHTProvider::getNodes() {
+  return (dht_wrapper_) ? dht_wrapper_->getNodes() : QList<QPair<QHostAddress, quint16>>();
+}
+
+void DHTProvider::addRouter(QString host, quint16 port) {
+  int id = QHostInfo::lookupHost(host, this, SLOT(handleResolve(QHostInfo)));
+  resolves_[id] = port;
+}
+
+void DHTProvider::addNode(QHostAddress addr, quint16 port) {
+  if (dht_wrapper_) dht_wrapper_->pingNode(addr, port);
+}
+
+void DHTProvider::startAnnounce(
+    QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port) {
+  if (dht_wrapper_) dht_wrapper_->startAnnounce(id, af, port);
+}
+
+void DHTProvider::startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af) {
+  if (dht_wrapper_) dht_wrapper_->startSearch(id, af);
+}
+
+void DHTProvider::handleResolve(const QHostInfo& host) {
+  if (host.error()) {
+    qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
+    resolves_.remove(host.lookupId());
+    return;
+  }
+
+  quint16 port = resolves_.take(host.lookupId());
+
+  for (const QHostAddress& address : host.addresses()) {
+    addNode(address, port);
+    qCDebug(log_dht) << "Added a DHT router:" << host.hostName()
+                     << "Resolved:" << address.toString();
+  }
+}
+
+void DHTProvider::handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
+    QList<QPair<QHostAddress, quint16>> nodes) {
+  for (auto& endpoint : qAsConst(nodes)) emit discovered(id, endpoint.first, endpoint.second);
 }
 
 } /* namespace librevault */

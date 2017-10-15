@@ -30,7 +30,7 @@
 #include "FolderModel.h"
 #include "control/Daemon.h"
 #include "control/RemoteState.h"
-#include "human_size.h"
+#include "util/human_size.h"
 #include <QFileIconProvider>
 
 PeerModel::PeerModel(QByteArray folderid, Daemon* daemon, FolderModel* parent) :

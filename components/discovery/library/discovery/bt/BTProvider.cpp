@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "BTProvider.h"
-#include "../rand.h"
+#include "util/rand.h"
 #include <QDataStream>
 
 namespace librevault {
@@ -74,7 +74,7 @@ void BTProvider::processDatagram() {
   } else if (action == 1) {  // ANNOUNCE
     quint32 interval = 0, leechers = 0, seeders = 0;
     stream >> interval >> leechers >> seeders;
-    QList<QPair<QHostAddress, quint16>> peers;
+    EndpointList peers;
     if (tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
       peers = btcompat::unpackEnpointList4(message.mid(20));
     } else if (tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {

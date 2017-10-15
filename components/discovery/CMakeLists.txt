@@ -28,6 +28,7 @@ add_executable(discovery-testapp ${discovery_testapp_SOURCES} ${discovery_testap
 # Third-party libraries
 #============================================================================
 
+target_link_libraries(discovery PUBLIC librevault-common)
 target_link_libraries(discovery PRIVATE dht)
 target_link_libraries(discovery PRIVATE Threads::Threads)
 target_link_libraries(discovery PUBLIC Qt5::Network)

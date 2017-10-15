@@ -26,41 +26,29 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-
-#include "util/Endpoint.h"
-#include <QtEndian>
-#ifdef Q_OS_WIN
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-#else
-#  include <netinet/ip.h>
-#  include <sys/socket.h>
-#endif
+#include "Endpoint.h"
+#include <QDebug>
+#include <QDebugStateSaver>
 
 namespace librevault {
 
-inline sockaddr_storage convertSockaddr(const QHostAddress& addr, quint16 port) {
-  sockaddr_storage sa = {};
-  if (addr.protocol() == QAbstractSocket::IPv4Protocol) {
-    sockaddr_in* sa4 = (sockaddr_in*)&sa;
-    sa4->sin_family = AF_INET;
-    sa4->sin_port = qToBigEndian(port);
-    sa4->sin_addr.s_addr = addr.toIPv4Address();
-  } else if (addr.protocol() == QAbstractSocket::IPv6Protocol) {
-    sockaddr_in6* sa6 = (sockaddr_in6*)&sa;
-    sa6->sin6_family = AF_INET6;
-    sa6->sin6_port = qToBigEndian(port);
-    Q_IPV6ADDR addr6 = addr.toIPv6Address();
-    std::copy((const char*)&addr6, (const char*)&addr6 + 16, (char*)&sa6->sin6_addr);
+QString Endpoint::toString() const {
+  QHostAddress addr_tmp = addr;
+  {
+    bool ok = false;
+    quint32 addr4 = addr_tmp.toIPv4Address(&ok);
+    if (ok) addr_tmp = QHostAddress(addr4);
   }
-  return sa;
+
+  return QStringLiteral("%1:%2").arg(addr_tmp.toString()).arg(port);
 }
 
-inline size_t getSockaddrSize(const sockaddr_storage& sa) {
-  if (sa.ss_family == AF_INET) return sizeof(sockaddr_in);
-  if (sa.ss_family == AF_INET6) return sizeof(sockaddr_in6);
-  return sizeof(sockaddr_storage);
+QDebug operator<<(QDebug debug, const Endpoint &endpoint) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "Endpoint(" << endpoint.toString() << ")";
+  return debug;
 }
+
+using EndpointList = QList<Endpoint>;
 
 }  // namespace librevault

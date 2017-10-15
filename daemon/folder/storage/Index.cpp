@@ -28,7 +28,7 @@
  */
 #include "Index.h"
 #include "control/FolderParams.h"
-#include "blob.h"
+#include "util/blob.h"
 #include <QFile>
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
@@ -99,9 +99,9 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
-			{":path_id", conv_bytearray(signed_meta.metaInfo().pathKeyedHash())},
-			{":meta", conv_bytearray(signed_meta.rawMetaInfo())},
-			{":signature", conv_bytearray(signed_meta.signature())},
+			{":path_id", convertBlob(signed_meta.metaInfo().pathKeyedHash())},
+			{":meta", convertBlob(signed_meta.rawMetaInfo())},
+			{":signature", convertBlob(signed_meta.signature())},
 			{":type", (uint64_t) signed_meta.metaInfo().kind()},
 			{":assembled", (uint64_t)fully_assembled}
 	});
@@ -109,14 +109,14 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	uint64_t offset = 0;
 	for(const auto& chunk : signed_meta.metaInfo().chunks()){
 		db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);", {
-				{":ct_hash", conv_bytearray(chunk.ctHash())},
+				{":ct_hash", convertBlob(chunk.ctHash())},
 				{":size", (uint64_t)chunk.size()},
-				{":iv", conv_bytearray(chunk.iv())}
+				{":iv", convertBlob(chunk.iv())}
 		});
 
 		db_->exec("INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, :assembled);", {
-				{":ct_hash", conv_bytearray(chunk.ctHash())},
-				{":path_id", conv_bytearray(signed_meta.metaInfo().pathKeyedHash())},
+				{":ct_hash", convertBlob(chunk.ctHash())},
+				{":path_id", convertBlob(signed_meta.metaInfo().pathKeyedHash())},
 				{":offset", (uint64_t)offset},
 				{":assembled", (uint64_t)fully_assembled}
 		});
@@ -139,12 +139,12 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values){
 	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
-		result_list << SignedMeta(conv_bytearray(row[0]), conv_bytearray(row[1]));
+		result_list << SignedMeta(convertBlob(row[0]), convertBlob(row[1]));
 	return result_list;
 }
 SignedMeta Index::getMeta(const QByteArray& path_id){
 	auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {
-		{":path_id", conv_bytearray(path_id)}
+		{":path_id", convertBlob(path_id)}
 	});
 
 	if(meta_list.empty()) throw Index::NoSuchMeta();
@@ -171,27 +171,27 @@ bool Index::putAllowed(const MetaInfo::PathRevision& path_revision) noexcept {
 }
 
 void Index::setAssembled(const QByteArray& path_id) {
-	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
-	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", conv_bytearray(path_id)}});
+	db_->exec("UPDATE meta SET assembled=1 WHERE path_id=:path_id", {{":path_id", convertBlob(path_id)}});
+	db_->exec("UPDATE openfs SET assembled=1 WHERE path_id=:path_id", {{":path_id", convertBlob(path_id)}});
 }
 
 bool Index::isChunkAssembled(const QByteArray& ct_hash) {
 	auto sql_result = db_->exec("SELECT assembled FROM openfs WHERE ct_hash=:ct_hash AND openfs.assembled=1 LIMIT 1", {
-		{":ct_hash", conv_bytearray(ct_hash)}
+		{":ct_hash", convertBlob(ct_hash)}
 	});
 	return sql_result.have_rows();
 }
 
 QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
-	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", conv_bytearray(ct_hash)}})) {
-		return qMakePair(row[0].as_uint(), conv_bytearray(row[1].as_blob()));
+	for(auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", convertBlob(ct_hash)}})) {
+		return qMakePair(row[0].as_uint(), convertBlob(row[1].as_blob()));
 	}
 	throw Index::NoSuchMeta();
 };
 
 QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {
 	return getMeta("SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE openfs.ct_hash=:ct_hash",
-		{{":ct_hash", conv_bytearray(ct_hash)}});
+		{{":ct_hash", convertBlob(ct_hash)}});
 }
 
 void Index::wipe() {

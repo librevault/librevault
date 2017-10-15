@@ -36,7 +36,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QWebSocket>
-#include <exception_helper.hpp>
+#include <util/exception.hpp>
 #include <memory>
 
 namespace librevault {

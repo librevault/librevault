@@ -36,7 +36,7 @@
 #include <QFileIconProvider>
 #include <QJsonArray>
 #include <QClipboard>
-#include "human_size.h"
+#include "util/human_size.h"
 
 FolderProperties::FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent) :
 		QDialog(parent), daemon_(daemon), folder_model_(folder_model), folderid_(folderid) {

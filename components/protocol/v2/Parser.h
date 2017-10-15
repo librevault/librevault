@@ -29,7 +29,7 @@
 #pragma once
 #include "SignedMeta.h"
 #include "messages.h"
-#include <exception_helper.hpp>
+#include <util/exception.hpp>
 
 namespace google {
 namespace protobuf {

@@ -31,7 +31,7 @@
 #include "control/RemoteConfig.h"
 #include "control/RemoteState.h"
 #include "icons/GUIIconProvider.h"
-#include "human_size.h"
+#include "util/human_size.h"
 #include <QtWidgets/QMenu>
 
 StatusBar::StatusBar(QStatusBar* bar, Daemon* daemon) : QObject(bar), bar_(bar), daemon_(daemon) {

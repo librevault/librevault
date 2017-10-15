@@ -80,16 +80,16 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   connect(bt_g, &BTGroup::discovered, this, &DiscoveryApp::handleDiscoveredTorrent);
 }
 
-void DiscoveryApp::handleDiscoveredMulticast(QPair<QHostAddress, quint16> endpoint) {
-  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from UDP multicast";
+void DiscoveryApp::handleDiscoveredMulticast(Endpoint endpoint) {
+  qInfo() << "Discovered:" << endpoint << "from UDP multicast";
 }
 
-void DiscoveryApp::handleDiscoveredDht(QPair<QHostAddress, quint16> endpoint) {
-  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from Kademlia DHT";
+void DiscoveryApp::handleDiscoveredDht(Endpoint endpoint) {
+  qInfo() << "Discovered:" << endpoint << "from Kademlia DHT";
 }
 
-void DiscoveryApp::handleDiscoveredTorrent(QPair<QHostAddress, quint16> endpoint) {
-  qInfo() << "Discovered:" << endpoint.first.toString() << endpoint.second << "from BitTorrent trackers";
+void DiscoveryApp::handleDiscoveredTorrent(Endpoint endpoint) {
+  qInfo() << "Discovered:" << endpoint << "from BitTorrent trackers";
 }
 
 } /* namespace librevault */

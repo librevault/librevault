@@ -53,9 +53,9 @@ private:
   BTGroup* bt_g;
 
 private slots:
-	void handleDiscoveredMulticast(QPair<QHostAddress, quint16> endpoint);
-	void handleDiscoveredDht(QPair<QHostAddress, quint16> endpoint);
-	void handleDiscoveredTorrent(QPair<QHostAddress, quint16> endpoint);
+	void handleDiscoveredMulticast(Endpoint endpoint);
+	void handleDiscoveredDht(Endpoint endpoint);
+	void handleDiscoveredTorrent(Endpoint endpoint);
 };
 
 } /* namespace librevault */

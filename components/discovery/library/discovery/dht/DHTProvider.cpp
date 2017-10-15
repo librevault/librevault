@@ -28,7 +28,7 @@
  */
 #include "DHTProvider.h"
 #include "../nativeaddr.h"
-#include "../rand.h"
+#include "util/rand.h"
 #include "DHTWrapper.h"
 #include <QCryptographicHash>
 #include <QFile>
@@ -87,8 +87,8 @@ void DHTProvider::writeSession(QIODevice* io) {
   QJsonArray nodes_j;
   for (auto& node : qAsConst(nodes)) {
     QJsonObject node_j;
-    node_j["ip"] = node.first.toString();
-    node_j["port"] = node.second;
+    node_j["ip"] = node.addr.toString();
+    node_j["port"] = node.port;
     nodes_j.append(node_j);
   }
   json_object["nodes"] = nodes_j;
@@ -101,8 +101,8 @@ void DHTProvider::writeSession(QIODevice* io) {
 
 int DHTProvider::getNodeCount() const { return dht_wrapper_ ? dht_wrapper_->goodNodeCount() : 0; }
 
-QList<QPair<QHostAddress, quint16>> DHTProvider::getNodes() {
-  return (dht_wrapper_) ? dht_wrapper_->getNodes() : QList<QPair<QHostAddress, quint16>>();
+EndpointList DHTProvider::getNodes() {
+  return (dht_wrapper_) ? dht_wrapper_->getNodes() : EndpointList();
 }
 
 void DHTProvider::addRouter(QString host, quint16 port) {
@@ -140,7 +140,7 @@ void DHTProvider::handleResolve(const QHostInfo& host) {
 }
 
 void DHTProvider::handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
-    QList<QPair<QHostAddress, quint16>> nodes) {
+                               EndpointList nodes) {
   for (auto& endpoint : qAsConst(nodes)) emit discovered(id, endpoint);
 }
 

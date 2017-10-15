@@ -31,7 +31,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/Index.h"
-#include "human_size.h"
+#include "util/human_size.h"
 #include <ChunkInfo.h>
 #include <PathNormalizer.h>
 #include <QFile>

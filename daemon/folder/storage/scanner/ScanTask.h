@@ -29,7 +29,7 @@
 #pragma once
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
-#include "exception_helper.hpp"
+#include "util/exception.hpp"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>

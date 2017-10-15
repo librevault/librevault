@@ -54,22 +54,22 @@ MulticastProvider::MulticastProvider(QObject* parent) : GenericProvider(parent) 
 }
 
 void MulticastProvider::start() {
-  Q_ASSERT(group_endpoint_.first.protocol() == QAbstractSocket::IPv4Protocol ||
-           group_endpoint_.first.protocol() == QAbstractSocket::IPv6Protocol);
+  Q_ASSERT(group_endpoint_.addr.protocol() == QAbstractSocket::IPv4Protocol ||
+           group_endpoint_.addr.protocol() == QAbstractSocket::IPv6Protocol);
 
-  QHostAddress bind_addr = makeBindAddress(group_endpoint_.first);
-  if (!socket_->bind(bind_addr, group_endpoint_.second))
+  QHostAddress bind_addr = makeBindAddress(group_endpoint_.addr);
+  if (!socket_->bind(bind_addr, group_endpoint_.port))
     qCWarning(log_multicast) << "Could not bind MulticastProvider's socket:"
                              << socket_->errorString();
 
-  if (!socket_->joinMulticastGroup(group_endpoint_.first))
+  if (!socket_->joinMulticastGroup(group_endpoint_.addr))
     qCWarning(log_multicast) << "Could not join multicast group:" << socket_->errorString();
 
   socket_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 }
 
 void MulticastProvider::stop() {
-  socket_->leaveMulticastGroup(group_endpoint_.first);
+  socket_->leaveMulticastGroup(group_endpoint_.addr);
   socket_->close();
 }
 

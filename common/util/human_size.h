@@ -27,63 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "../GenericProvider.h"
-#include "../btcompat.h"
-#include <QHostInfo>
-#include <QLoggingCategory>
-#include <QTimer>
-#include <QUdpSocket>
 
-Q_DECLARE_LOGGING_CATEGORY(log_dht)
+#include <QtCore>
 
-namespace librevault {
+inline QString human_size(qreal size) {
+	qreal num = size;
 
-class Discovery;
-class DHTWrapper;
-class DHTProvider : public GenericProvider {
-  Q_OBJECT
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%n bytes", 0, size);
+	num /= 1024.0;
 
- signals:
-  void discovered(QByteArray ih, Endpoint endpoint);
-  void nodeCountChanged(int count);
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
+	num /= 1024.0;
 
- public:
-  explicit DHTProvider(QObject* parent);
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
 
-  int getNodeCount() const;
-  QList<Endpoint> getNodes();
-  bool isBound() { return socket4_->isValid() || socket6_->isValid(); }
+	if(num < 1024.0)
+		return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
+	num /= 1024.0;
 
-  Q_SLOT void addRouter(QString host, quint16 port);
-  Q_SLOT void addNode(QHostAddress addr, quint16 port);
-  Q_SLOT void setPort(quint16 port) { port_ = port; }
+	return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
+}
 
-  // internal
-  void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
-  void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
+inline QString human_bandwidth(qreal bandwidth) {
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
+	bandwidth /= 1024.0;
 
- protected:
-  void start() override;
-  void stop() override;
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
 
- private:
-  DHTWrapper* dht_wrapper_ = nullptr;
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
 
-  // Sockets
-  QUdpSocket* socket4_;
-  QUdpSocket* socket6_;
+	if(bandwidth < 1024.0)
+		return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
+	bandwidth /= 1024.0;
 
-  quint16 port_ = 0;
-
-  // Initialization
-  void readSession(QIODevice* io);
-  void writeSession(QIODevice* io);
-
-  QMap<int, quint16> resolves_;
-
-  Q_SLOT void handleResolve(const QHostInfo& host);
-  Q_SLOT void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
-                           EndpointList nodes);
-};
-
-} /* namespace librevault */
+	return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
+}

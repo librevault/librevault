@@ -28,7 +28,7 @@
  */
 #include "DHTWrapper.h"
 #include "../nativeaddr.h"
-#include "../rand.h"
+#include "util/rand.h"
 #include <dht.h>
 #include <QCryptographicHash>
 

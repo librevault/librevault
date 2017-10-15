@@ -29,7 +29,7 @@
 #pragma once
 #include "util/SQLiteWrapper.h"
 #include "SignedMeta.h"
-#include <exception_helper.hpp>
+#include <util/exception.hpp>
 #include <QObject>
 
 namespace librevault {

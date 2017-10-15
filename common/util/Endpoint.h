@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,47 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QHostAddress>
 
-#include <QtCore>
+namespace librevault {
 
-inline QString human_size(uintmax_t size) {
-	qreal num = size;
+struct Endpoint {
+  QHostAddress addr;
+  quint16 port;
 
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%n bytes", 0, size);
-	num /= 1024.0;
+  QString toString() const;
+};
 
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
-	num /= 1024.0;
+QDebug operator<<(QDebug debug, const Endpoint &endpoint);
 
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
-	num /= 1024.0;
+using EndpointList = QList<Endpoint>;
 
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
-	num /= 1024.0;
-
-	return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
-}
-
-inline QString human_bandwidth(qreal bandwidth) {
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
-}
+}  // namespace librevault

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "BTConnection.h"
-#include "../rand.h"
+#include "util/rand.h"
 #include "BTGroup.h"
 #include "BTProvider.h"
 #include <QDataStream>
@@ -98,7 +98,7 @@ void BTConnection::btconnect() {
   qCDebug(log_bt) << "===> CONNECT to:" << tracker_unresolved_.host()
                   << "transaction:" << transaction_id_;
 
-  provider_->getSocket()->writeDatagram(message, tracker_resolved_.first, tracker_resolved_.second);
+  provider_->getSocket()->writeDatagram(message, tracker_resolved_.addr, tracker_resolved_.port);
 }
 
 void BTConnection::announce() {
@@ -123,7 +123,7 @@ void BTConnection::announce() {
   qCDebug(log_bt) << "===> ANNOUNCE to:" << tracker_unresolved_.host()
                   << "transaction:" << transaction_id_;
 
-  provider_->getSocket()->writeDatagram(message, tracker_resolved_.first, tracker_resolved_.second);
+  provider_->getSocket()->writeDatagram(message, tracker_resolved_.addr, tracker_resolved_.port);
 }
 
 quint32 BTConnection::startTransaction() {
@@ -139,7 +139,7 @@ void BTConnection::handleResolve(const QHostInfo& host) {
     resolve();
   } else {
     tracker_resolved_ = {host.addresses().first(), (quint16)tracker_unresolved_.port(80)};
-    qCDebug(log_bt) << "Resolved" << tracker_unresolved_.host() << "as" << tracker_resolved_.first;
+    qCDebug(log_bt) << "Resolved" << tracker_unresolved_.host() << "as" << tracker_resolved_.addr;
 
     resolver_timer_->stop();
     QTimer::singleShot(0, this, &BTConnection::btconnect);

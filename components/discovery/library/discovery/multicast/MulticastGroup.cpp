@@ -73,12 +73,10 @@ void MulticastGroup::sendMulticast() {
   Q_ASSERT(provider_);
 
   const auto& endpoint = provider_->endpoint();
-  if (provider_->getSocket()->writeDatagram(getMessage(), endpoint.first, endpoint.second))
-    qCDebug(log_multicast) << "===> Multicast message sent to:" << endpoint.first << ":"
-                           << endpoint.second;
+  if (provider_->getSocket()->writeDatagram(getMessage(), endpoint.addr, endpoint.port))
+    qCDebug(log_multicast) << "===> Multicast message sent to:" << endpoint.toString();
   else
-    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint.first << ":"
-                           << endpoint.second << "E:" << provider_->getSocket()->errorString();
+    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint.toString() << "E:" << provider_->getSocket()->errorString();
 }
 
 } /* namespace librevault */

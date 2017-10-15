@@ -29,47 +29,32 @@
 #pragma once
 #include <QObject>
 #include <QPointer>
-#include "HierarchicalService.h"
+#include <QtNetwork/QHostAddress>
+#include "hiersvc/HierarchicalService.h"
+#include "util/Endpoint.h"
 
 namespace librevault {
 
-class GenericProvider : public QObject {
+class GenericProvider : public HierarchicalService {
  Q_OBJECT
 
 public:
-  explicit GenericProvider(QObject* parent) : QObject(parent) {}
-  GenericProvider(const GenericProvider&) = delete;
-  GenericProvider(GenericProvider&&) = delete;
-  virtual ~GenericProvider() = default;
+  explicit GenericProvider(QObject* parent) : HierarchicalService(nullptr, parent) {}
 
   quint16 getAnnouncePort() const {return announce_port_;}
   Q_SLOT void setAnnouncePort(quint16 port) {announce_port_ = port;}
 
-  bool isEnabled() const {return enabled_;}
-  void setEnabled(bool enabled) {enabled_ = enabled;}
-
  private:
   quint16 announce_port_ = 0;
-  bool enabled_ = false;
 };
 
-class GenericGroup : public QObject {
+class GenericGroup : public HierarchicalService {
  Q_OBJECT
 
  public:
-  explicit GenericGroup(QObject* parent) : QObject(parent) {}
-  GenericGroup(const GenericGroup&) = delete;
-  GenericGroup(GenericGroup&&) = delete;
-  virtual ~GenericGroup() = default;
+  explicit GenericGroup(GenericProvider* provider, QObject* parent) : HierarchicalService(provider, parent) {}
 
-  bool isEnabled() const {return enabled_;}
-  void setEnabled(bool enabled) {enabled_ = enabled;}
-
- private:
-  QPointer<GenericProvider> provider_;
-  bool enabled_ = false;
-
-  bool readyToDiscover() {return isEnabled() && provider_ && provider_->isEnabled();}
+  Q_SIGNAL void discovered(const Endpoint& endpoint);
 };
 
 } /* namespace librevault */

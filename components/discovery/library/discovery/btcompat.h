@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "util/Endpoint.h"
 #include <QByteArray>
 #include <QHostAddress>
 #include <QtEndian>
@@ -35,38 +36,35 @@ namespace librevault {
 namespace btcompat {
 
 // Function declaration
-inline QPair<QHostAddress, quint16> unpackEndpoint4(QByteArray packed) {
-	packed = packed.leftJustified(6, 0, true);
+inline Endpoint unpackEndpoint4(QByteArray packed) {
+  packed = packed.leftJustified(6, 0, true);
 
-	QHostAddress addr = QHostAddress(qFromBigEndian(*reinterpret_cast<quint32*>(packed.mid(0, 4).data())));
-	quint16 port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(4, 2).data()));
-
-	return {addr, port};
+  Endpoint endpoint;
+  endpoint.addr =
+      QHostAddress(qFromBigEndian(*reinterpret_cast<quint32*>(packed.mid(0, 4).data())));
+  endpoint.port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(4, 2).data()));
+  return endpoint;
 };
 
-inline QPair<QHostAddress, quint16> unpackEndpoint6(QByteArray packed) {
-	packed = packed.leftJustified(18, 0, true);
+inline Endpoint unpackEndpoint6(QByteArray packed) {
+  packed = packed.leftJustified(18, 0, true);
 
-	QHostAddress addr = QHostAddress(reinterpret_cast<quint8*>(packed.mid(0, 16).data()));
-	quint16 port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(16, 2).data()));
-
-	return {addr, port};
+  Endpoint endpoint;
+  endpoint.addr = QHostAddress(reinterpret_cast<quint8*>(packed.mid(0, 16).data()));
+  endpoint.port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(16, 2).data()));
+  return endpoint;
 };
 
-inline QList<QPair<QHostAddress, quint16>> unpackEnpointList4(const QByteArray& packed) {
-	QList<QPair<QHostAddress, quint16>> l;
-	for(int i=0; i < packed.size(); i += 6) {
-		l.push_back(unpackEndpoint4(packed.mid(i, 6)));
-	}
-	return l;
+inline EndpointList unpackEnpointList4(const QByteArray& packed) {
+  EndpointList l;
+  for (int i = 0; i < packed.size(); i += 6) l.push_back(unpackEndpoint4(packed.mid(i, 6)));
+  return l;
 };
 
-inline QList<QPair<QHostAddress, quint16>> unpackEnpointList6(const QByteArray& packed) {
-	QList<QPair<QHostAddress, quint16>> l;
-	for(int i=0; i < packed.size(); i += 18) {
-		l.push_back(unpackEndpoint6(packed.mid(i, 18)));
-	}
-	return l;
+inline EndpointList unpackEnpointList6(const QByteArray& packed) {
+  EndpointList l;
+  for (int i = 0; i < packed.size(); i += 18) l.push_back(unpackEndpoint6(packed.mid(i, 18)));
+  return l;
 };
 
 } /* namespace btcompat */

@@ -35,6 +35,7 @@ struct Endpoint {
   QHostAddress addr;
   quint16 port;
 
+  static Endpoint fromString(const QString& str);
   QString toString() const;
 };
 

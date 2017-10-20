@@ -29,7 +29,6 @@
 #pragma once
 #include "GenericNatService.h"
 #include <natpmp.h>
-#include <QPointer>
 #include <QTimer>
 #include <memory>
 
@@ -42,18 +41,19 @@ class NatPmpService : public GenericNatService {
 
  public:
   explicit NatPmpService(QObject* parent);
-  virtual ~NatPmpService();
 
   bool isReady() override { return error_ == 0; }
   PortMapping* createMapping(const MappingRequest& request) override;
 
  protected:
+  void start() override;
+  void stop() override;
+
+ private:
   friend class NatPmpPortMapping;
 
   std::unique_ptr<natpmp_t> natpmp_;
   int error_ = 0;
-
-  Q_SLOT void startup();
 };
 
 class NatPmpPortMapping : public PortMapping {

@@ -27,20 +27,31 @@
  * files in the program, then also delete it here.
  */
 #include "Endpoint.h"
-#include <QDebug>
-#include <QDebugStateSaver>
+#include <QRegularExpression>
 
 namespace librevault {
 
+namespace {
+  QRegularExpression endpoint_regexp(R"(^\[?([[:xdigit:].:]{2,45})\]?:(\d{1,5})$)");
+}
+
+Endpoint Endpoint::fromString(const QString& str) {
+  Endpoint endpoint;
+
+  auto match = endpoint_regexp.match(str);
+  endpoint.addr = QHostAddress(match.captured(1));
+  endpoint.port = match.captured(2).toUInt();
+}
+
 QString Endpoint::toString() const {
-  QHostAddress addr_tmp = addr;
+  QHostAddress addr_converted = addr;
   {
     bool ok = false;
-    quint32 addr4 = addr_tmp.toIPv4Address(&ok);
-    if (ok) addr_tmp = QHostAddress(addr4);
+    quint32 addr4 = addr_converted.toIPv4Address(&ok);
+    if (ok) addr_converted = QHostAddress(addr4);
   }
 
-  return QStringLiteral("%1:%2").arg(addr_tmp.toString()).arg(port);
+  return QStringLiteral("%1:%2").arg(addr_converted.toString()).arg(port);
 }
 
 QDebug operator<<(QDebug debug, const Endpoint &endpoint) {

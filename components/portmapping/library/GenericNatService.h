@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "hiersvc/HierarchicalService.h"
 #include <QAbstractSocket>
 #include <QHostAddress>
 #include <QLoggingCategory>
@@ -51,11 +52,11 @@ struct MappingRequest {
   QNetworkInterface interface;
 };
 
-class GenericNatService : public QObject {
+class GenericNatService : public HierarchicalService {
   Q_OBJECT
 
  public:
-  explicit GenericNatService(QObject* parent) : QObject(parent) {}
+  explicit GenericNatService(QObject* parent = nullptr) : HierarchicalService(nullptr, parent) {}
   virtual ~GenericNatService() = default;
 
   Q_SIGNAL void ready();
@@ -64,11 +65,11 @@ class GenericNatService : public QObject {
   virtual PortMapping* createMapping(const MappingRequest& request) = 0;
 };
 
-class PortMapping : public QObject {
+class PortMapping : public HierarchicalService {
   Q_OBJECT
 
  public:
-  PortMapping(const MappingRequest& request, GenericNatService* parent);
+  PortMapping(const MappingRequest& request, GenericNatService* service, QObject* parent = nullptr);
   virtual ~PortMapping() = default;
 
   Q_SLOT virtual void map() = 0;

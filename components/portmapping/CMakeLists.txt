@@ -37,5 +37,7 @@ endif()
 target_link_libraries(portmapping PRIVATE Threads::Threads)
 target_link_libraries(portmapping PUBLIC Qt5::Network)
 
+target_link_libraries(portmapping PUBLIC librevault-common)
+
 #target_link_libraries(portmapping-testapp PRIVATE portmapping)
 #target_link_libraries(portmapping-testapp PRIVATE QDocopt)

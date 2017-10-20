@@ -23,4 +23,5 @@ target_include_directories(librevault-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-common Qt5::Core Qt5::Network)
+target_link_libraries(librevault-common PUBLIC Qt5::Core Qt5::Network)
+target_link_libraries(librevault-common PUBLIC Threads::Threads)

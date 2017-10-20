@@ -42,26 +42,19 @@ int makeProtocol(QAbstractSocket::SocketType protocol) {
 
 NatPmpService::NatPmpService(QObject* parent) : GenericNatService(parent) {
   natpmp_ = std::make_unique<natpmp_t>();
-
-  QTimer::singleShot(0, this, &NatPmpService::startup);
-}
-
-NatPmpService::~NatPmpService() {
-  if (isReady()) closenatpmp(natpmp_.get());
 }
 
 PortMapping* NatPmpService::createMapping(const MappingRequest& request) {
   return new NatPmpPortMapping(request, this);
 }
 
-void NatPmpService::startup() {
+void NatPmpService::start() {
   error_ = initnatpmp(natpmp_.get(), 0, 0);
   qCDebug(log_natpmp) << "initnatpmp:" << error_;
+}
 
-  if (isReady())
-    emit ready();
-  else
-    closenatpmp(natpmp_.get());
+void NatPmpService::stop() {
+  closenatpmp(natpmp_.get());
 }
 
 NatPmpPortMapping::NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent)

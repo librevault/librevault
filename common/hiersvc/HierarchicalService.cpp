@@ -27,36 +27,60 @@
  * files in the program, then also delete it here.
  */
 #include "HierarchicalService.h"
+#include <QLoggingCategory>
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_hiersvc, "hiersvc")
+
 HierarchicalService::HierarchicalService(HierarchicalService* parent_svc, QObject* parent)
     : QObject(parent), parent_svc_(parent_svc), root_(!parent_svc) {
-  connect(this, &HierarchicalService::started, this, &HierarchicalService::start);
-  connect(this, &HierarchicalService::stopped, this, &HierarchicalService::stop);
-
+  connect(this, &HierarchicalService::started, this, [this] { setState(State::STARTED); });
   if (parent_svc) {
-    connect(parent_svc, &HierarchicalService::started, this, [this] {
-      if (isOperational()) emit started();
-    });
-    connect(parent_svc, &HierarchicalService::stopped, this, &HierarchicalService::stopped);
+    connect(parent_svc, &HierarchicalService::started, this, &HierarchicalService::tryStart);
+    connect(parent_svc, &HierarchicalService::stopChildren, this,
+        [this] { setState(State::DISABLED); });
   }
 }
 
-void HierarchicalService::setEnabled(bool enabled) {
-  if (enabled_ == enabled) return;
-
-  enabled_ = enabled;
-  if (isOperational())
-    emit started();
-  else if (!isEnabled() && isParentOperational())
-    emit stopped();
-}
-
-bool HierarchicalService::isOperational() const { return isEnabled() && isParentOperational(); }
-
 bool HierarchicalService::isParentOperational() const {
   return root_ ? true : parent_svc_ && parent_svc_->isOperational();
+}
+
+void HierarchicalService::tryStart() {
+  qCDebug(log_hiersvc) << this << "tryStart";
+  if (state_ == State::ENABLED && isParentOperational()) setState(State::STARTING);
+}
+
+void HierarchicalService::teardown(State old_state) {
+  qCDebug(log_hiersvc) << this << "teardown";
+  if (old_state == State::STARTED) stopChildren();
+  if (old_state == State::STARTING || old_state == State::STARTED) {
+    stop();
+    stopped();
+  }
+}
+
+void HierarchicalService::setState(State new_state) {
+  State old_state = state_;
+  qCDebug(log_hiersvc) << this << "state transition " << old_state << "-->" << new_state;
+  if (state_ == new_state) return;
+  state_ = new_state;
+
+  switch (new_state) {
+    case State::DISABLED: teardown(old_state); break;
+    case State::ENABLED:
+      teardown(old_state);
+      tryStart();
+      break;
+    case State::STARTING:
+      Q_ASSERT(old_state != State::DISABLED && old_state != State::STARTED);
+      start();
+      break;
+    case State::STARTED:
+      Q_ASSERT(old_state != State::DISABLED && old_state != State::ENABLED);
+      break;
+  }
 }
 
 } /* namespace librevault */

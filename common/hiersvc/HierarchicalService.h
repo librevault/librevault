@@ -36,14 +36,27 @@ class HierarchicalService : public QObject {
   Q_OBJECT
 
  public:
-  explicit HierarchicalService(HierarchicalService* parent_svc = nullptr, QObject* parent = nullptr);
+  enum class State {
+    DISABLED = 0,
+    ENABLED = 1,
+    STARTING = 2,
+    STARTED = 3
+  } state_ = State::DISABLED;
+  Q_ENUM(State);
+
+  explicit HierarchicalService(
+      HierarchicalService* parent_svc = nullptr, QObject* parent = nullptr);
   HierarchicalService(const HierarchicalService&) = delete;
   HierarchicalService(HierarchicalService&&) = delete;
+  ~HierarchicalService() { setState(State::DISABLED); }
 
-  bool isEnabled() const { return enabled_; }
-  void setEnabled(bool enabled);
-
-  bool isOperational() const;
+  bool isEnabled() const { return state_ != State::DISABLED; }
+  void setEnabled(bool enabled) {
+    if (!isEnabled() && enabled)
+      setState(State::ENABLED);
+    else if (isEnabled() && !enabled)
+      setState(State::DISABLED);
+  }
 
   Q_SIGNAL void started();
   Q_SIGNAL void stopped();
@@ -51,14 +64,20 @@ class HierarchicalService : public QObject {
  protected:
   QPointer<HierarchicalService> parent_svc_;
 
-  Q_SLOT virtual void start() {}
-  Q_SLOT virtual void stop() {}
+  virtual void start() { emit started(); }
+  virtual void stop() {}
 
+  bool isOperational() const { return state_ == State::STARTED; }
   bool isParentOperational() const;
 
  private:
   const bool root_ = true;
-  bool enabled_ = false;
+
+  Q_SIGNAL void stopChildren();
+  void tryStart();
+  void teardown(State old_state);
+
+  void setState(State new_state);
 };
 
 } /* namespace librevault */

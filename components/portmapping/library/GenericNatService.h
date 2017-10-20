@@ -59,9 +59,6 @@ class GenericNatService : public HierarchicalService {
   explicit GenericNatService(QObject* parent = nullptr) : HierarchicalService(nullptr, parent) {}
   virtual ~GenericNatService() = default;
 
-  Q_SIGNAL void ready();
-
-  virtual bool isReady() = 0;
   virtual PortMapping* createMapping(const MappingRequest& request) = 0;
 };
 
@@ -72,8 +69,6 @@ class PortMapping : public HierarchicalService {
   PortMapping(const MappingRequest& request, GenericNatService* service, QObject* parent = nullptr);
   virtual ~PortMapping() = default;
 
-  Q_SLOT virtual void map() = 0;
-  Q_SLOT virtual void unmap() = 0;
   Q_SIGNAL void mapped(quint16 external_port, QHostAddress external_address, TimePoint expiration);
 
   quint16 internalPort() const { return request_.internal_port; }
@@ -89,7 +84,6 @@ class PortMapping : public HierarchicalService {
 
   bool isEnabled() const { return enabled_; }
   bool isMapped() const { return actual_external_port_ != 0; }
-  bool isServiceReady() const { return service_ && service_->isReady(); }
 
  protected:
   QPointer<GenericNatService> service_;
@@ -99,8 +93,6 @@ class PortMapping : public HierarchicalService {
   QHostAddress external_address_;
   TimePoint expiration_;
   const MappingRequest request_;
-
-  Q_SLOT virtual void serviceReady();
 };
 
 }  // namespace librevault

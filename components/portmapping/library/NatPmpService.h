@@ -42,7 +42,6 @@ class NatPmpService : public GenericNatService {
  public:
   explicit NatPmpService(QObject* parent);
 
-  bool isReady() override { return error_ == 0; }
   PortMapping* createMapping(const MappingRequest& request) override;
 
  protected:
@@ -61,13 +60,14 @@ class NatPmpPortMapping : public PortMapping {
 
  public:
   NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent);
-  virtual ~NatPmpPortMapping();
 
-  Q_SLOT void map() override;
-  Q_SLOT void unmap() override;
+ protected:
+  void start() override;
+  void stop() override;
 
  private:
-  QTimer* timer_;
+  QTimer* timer_ = nullptr;
+  int error_ = 0;
 };
 
 }  // namespace librevault

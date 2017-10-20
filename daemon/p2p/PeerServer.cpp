@@ -77,7 +77,7 @@ void PeerServer::start() {
   request.ttl = std::chrono::seconds(3600);
   main_port_ = port_mapping_->createMapping(request);
   main_port_->setParent(this);
-  main_port_->map();
+  main_port_->setEnabled(true);
 }
 
 void PeerServer::stop() {

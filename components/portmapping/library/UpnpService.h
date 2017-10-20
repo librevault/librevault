@@ -50,7 +50,6 @@ class UpnpService : public GenericNatService {
   explicit UpnpService(QObject* parent);
   virtual ~UpnpService();
 
-  bool isReady() override;
   PortMapping* createMapping(const MappingRequest& request) override;
 
  protected:
@@ -61,9 +60,11 @@ class UpnpService : public GenericNatService {
   std::unique_ptr<IGDdatas> upnp_data;
   std::array<char, 16> lanaddr;
 
-  bool ready_ = false;
+  void start() override;
+  void stop() override;
 
-  Q_SLOT void startup();
+ private:
+  int error_ = 0;
 };
 
 class UpnpPortMapping : public PortMapping {
@@ -71,10 +72,13 @@ class UpnpPortMapping : public PortMapping {
 
  public:
   UpnpPortMapping(const MappingRequest& request, UpnpService* parent);
-  virtual ~UpnpPortMapping();
 
-  Q_SLOT void map() override;
-  Q_SLOT void unmap() override;
+ protected:
+  void start() override;
+  void stop() override;
+
+ private:
+  int error_ = 0;
 };
 
 }  // namespace librevault

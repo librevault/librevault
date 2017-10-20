@@ -37,8 +37,4 @@ PortMapping::PortMapping(const MappingRequest& request, GenericNatService* servi
     : HierarchicalService(service, parent), service_(service), request_(request) {
 }
 
-void PortMapping::serviceReady() {
-  if (isServiceReady() && isEnabled()) QTimer::singleShot(0, this, &PortMapping::map);
-}
-
 }  // namespace librevault

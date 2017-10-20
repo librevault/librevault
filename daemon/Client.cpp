@@ -50,6 +50,8 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
   portmanager_ = new NatPmpService(this);
   peerserver_ = new PeerServer(node_key_, portmanager_, this);
 
+  portmanager_->setEnabled(true);
+
   /* Connecting signals */
   connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
   connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);

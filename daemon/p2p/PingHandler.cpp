@@ -33,19 +33,17 @@ namespace librevault {
 PingHandler::PingHandler(QObject* parent) : QObject(parent) {}
 
 void PingHandler::handlePong(quint64 elapsedTime, const QByteArray& payload) {
-	rtt_ = std::chrono::milliseconds(elapsedTime);
+  rtt_ = std::chrono::milliseconds(elapsedTime);
 }
 
 void PingHandler::start() {
-	if(ping_timer_) ping_timer_->deleteLater();
-	ping_timer_ = new QTimer();
+  if (ping_timer_) ping_timer_->deleteLater();
+  ping_timer_ = new QTimer();
 
-	ping_timer_->setInterval(20*1000);
-	ping_timer_->start();
+  ping_timer_->setInterval(20 * 1000);
+  ping_timer_->start();
 
-	connect(ping_timer_, &QTimer::timeout, this, [this]{
-		emit sendPing(QByteArray());
-	});
+  connect(ping_timer_, &QTimer::timeout, this, [this] { emit sendPing(QByteArray()); });
 }
 
 } /* namespace librevault */

@@ -34,19 +34,20 @@
 namespace librevault {
 
 class BandwidthCounter {
-public:
-	BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
+ public:
+  BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
 
-	QJsonObject heartbeat_json();
+  QJsonObject heartbeat_json();
 
-	void add_down(quint64 bytes);
-	void add_up(quint64 bytes);
-private:
-	BandwidthCounter* parent_counter_;
-	QElapsedTimer last_heartbeat_;
-	QMutex mutex_;
+  void add_down(quint64 bytes);
+  void add_up(quint64 bytes);
 
-	quint64 download_bytes_ = 0, download_bytes_last_ = 0, upload_bytes_ = 0, upload_bytes_last_ = 0;
+ private:
+  BandwidthCounter* parent_counter_;
+  QElapsedTimer last_heartbeat_;
+  QMutex mutex_;
+
+  quint64 download_bytes_ = 0, download_bytes_last_ = 0, upload_bytes_ = 0, upload_bytes_last_ = 0;
 };
 
 } /* namespace librevault */

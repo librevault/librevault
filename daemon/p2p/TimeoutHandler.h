@@ -33,18 +33,18 @@
 namespace librevault {
 
 class TimeoutHandler : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit TimeoutHandler(QObject* parent = nullptr);
+ public:
+  explicit TimeoutHandler(QObject* parent = nullptr);
 
-	Q_SIGNAL void timedOut();
-	Q_SLOT void start();
+  Q_SIGNAL void timedOut();
+  Q_SLOT void start();
 
-	Q_SLOT void bump();
+  Q_SLOT void bump();
 
-private:
-	QTimer* timeout_timer_ = nullptr;
+ private:
+  QTimer* timeout_timer_ = nullptr;
 };
 
 } /* namespace librevault */

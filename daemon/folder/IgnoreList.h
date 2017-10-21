@@ -28,9 +28,9 @@
  */
 #pragma once
 #include <QDateTime>
+#include <QObject>
 #include <QReadWriteLock>
 #include <QStringList>
-#include <QObject>
 
 namespace librevault {
 

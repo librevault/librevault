@@ -54,7 +54,7 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
   createServiceDirectory();
 
   qCDebug(log_folder) << "New folder:"
-                      << "Key type=" << params_.secret.level() << "Path=" << params_.path
+                      << "Key type=" << (char)params_.secret.level() << "Path=" << params_.path
                       << "System path=" << params_.system_path;
 
   // Initializing local storage
@@ -82,8 +82,8 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
   connect(index_, &Index::metaAdded, this, &FolderGroup::handleNewMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, &FolderGroup::handleNewChunk);
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
-  connect(meta_downloader_, &MetaDownloader::metaDownloaded, this,
-          &FolderGroup::handleMetaDownloaded);
+  connect(
+      meta_downloader_, &MetaDownloader::metaDownloaded, this, &FolderGroup::handleMetaDownloaded);
 
   // Go through index
   QTimer::singleShot(0, this, [=] {
@@ -134,17 +134,17 @@ void FolderGroup::handleNewPeer(Peer* peer) {
   connect(peer, &Peer::rcvdInterest, uploader_, [=] { uploader_->handleInterested(peer); });
   connect(peer, &Peer::rcvdUninterest, uploader_, [=] { uploader_->handleNotInterested(peer); });
 
-  connect(peer, &Peer::rcvdIndexUpdate, meta_downloader_,
-          [=](const protocol::v2::IndexUpdate& msg) {
-            meta_downloader_->handleIndexUpdate(peer, msg.revision, msg.bitfield);
-          });
+  connect(
+      peer, &Peer::rcvdIndexUpdate, meta_downloader_, [=](const protocol::v2::IndexUpdate& msg) {
+        meta_downloader_->handleIndexUpdate(peer, msg.revision, msg.bitfield);
+      });
   connect(peer, &Peer::rcvdMetaRequest, meta_uploader_, [=](const protocol::v2::MetaRequest& msg) {
     meta_uploader_->handleMetaRequest(peer, msg.revision);
   });
-  connect(peer, &Peer::rcvdMetaResponse, meta_downloader_,
-          [=](const protocol::v2::MetaResponse& msg) {
-            meta_downloader_->handleMetaReply(peer, msg.smeta, msg.bitfield);
-          });
+  connect(
+      peer, &Peer::rcvdMetaResponse, meta_downloader_, [=](const protocol::v2::MetaResponse& msg) {
+        meta_downloader_->handleMetaReply(peer, msg.smeta, msg.bitfield);
+      });
   connect(peer, &Peer::rcvdBlockRequest, uploader_, [=](const protocol::v2::BlockRequest& msg) {
     uploader_->handleBlockRequest(peer, msg.ct_hash, msg.offset, msg.length);
   });

@@ -33,20 +33,18 @@ namespace librevault {
 TimeoutHandler::TimeoutHandler(QObject* parent) : QObject(parent) {}
 
 void TimeoutHandler::start() {
-	if(timeout_timer_) timeout_timer_->deleteLater();
-	timeout_timer_ = new QTimer();
+  if (timeout_timer_) timeout_timer_->deleteLater();
+  timeout_timer_ = new QTimer();
 
-	timeout_timer_->setInterval(120*1000);
-	timeout_timer_->start();
+  timeout_timer_->setInterval(120 * 1000);
+  timeout_timer_->start();
 
-	connect(timeout_timer_, &QTimer::timeout, this, [this]{
-		emit timedOut();
-	});
+  connect(timeout_timer_, &QTimer::timeout, this, [this] { emit timedOut(); });
 }
 
 void TimeoutHandler::bump() {
-	Q_ASSERT(timeout_timer_);
-	timeout_timer_->setInterval(120*1000);
+  Q_ASSERT(timeout_timer_);
+  timeout_timer_->setInterval(120 * 1000);
 }
 
 } /* namespace librevault */

@@ -27,22 +27,20 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QJsonValue>
 #include <QJsonObject>
+#include <QJsonValue>
 
 QJsonValue mergePatch(QJsonValue target, const QJsonValue& patch) {
-  if(Q_UNLIKELY(! patch.isObject()))
-    return patch;
+  if (Q_UNLIKELY(!patch.isObject())) return patch;
 
   QJsonObject patch_o = patch.toObject();
   QJsonObject target_o;
 
-  if(target.isObject())
-    target_o = target.toObject();
-  for(const auto& key : patch_o.keys()) {
-    if(patch_o[key].isNull()) {
+  if (target.isObject()) target_o = target.toObject();
+  for (const auto& key : patch_o.keys()) {
+    if (patch_o[key].isNull()) {
       target_o.remove(key);
-    }else{
+    } else {
       target_o[key] = mergePatch(target_o[key], patch_o[key]);
     }
   }

@@ -39,16 +39,15 @@ class HandshakeHandler : public QObject {
   Q_OBJECT
 
  public:
-  HandshakeHandler(const FolderParams& params, QString client_name,
-                   QString user_agent, QObject* parent = nullptr);
+  HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent,
+      QObject* parent = nullptr);
 
   Q_SIGNAL void handshakeSuccess();
   Q_SIGNAL void handshakeFailed(QString error);
   Q_SIGNAL void messagePrepared(QByteArray msg);
 
-  Q_SLOT void handleEstablished(Peer::Role role,
-                                const QByteArray& local_digest,
-                                const QByteArray& remote_digest);
+  Q_SLOT void handleEstablished(
+      Peer::Role role, const QByteArray& local_digest, const QByteArray& remote_digest);
   Q_SLOT void handleMesssage(const QByteArray& msg);
 
   /* Getters */

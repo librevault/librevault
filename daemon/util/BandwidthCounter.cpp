@@ -26,49 +26,47 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <QtCore/QPoint>
 #include "BandwidthCounter.h"
+#include <QtCore/QPoint>
 
 namespace librevault {
 
-BandwidthCounter::BandwidthCounter(BandwidthCounter* parent_counter) :
-	parent_counter_(parent_counter) {
-	last_heartbeat_.start();
+BandwidthCounter::BandwidthCounter(BandwidthCounter* parent_counter)
+    : parent_counter_(parent_counter) {
+  last_heartbeat_.start();
 }
 
 QJsonObject BandwidthCounter::heartbeat_json() {
-	QMutexLocker lk(&mutex_);
+  QMutexLocker lk(&mutex_);
 
-	qreal period = qreal(last_heartbeat_.restart())/1000;
+  qreal period = qreal(last_heartbeat_.restart()) / 1000;
 
-	QJsonObject state_traffic_stats;
-	state_traffic_stats["up_bandwidth"] = qreal(upload_bytes_last_) / period;
-	state_traffic_stats["down_bandwidth"] = qreal(download_bytes_last_) / period;
-	state_traffic_stats["up_bytes"] = (qreal)upload_bytes_;
-	state_traffic_stats["down_bytes"] = (qreal)download_bytes_;
+  QJsonObject state_traffic_stats;
+  state_traffic_stats["up_bandwidth"] = qreal(upload_bytes_last_) / period;
+  state_traffic_stats["down_bandwidth"] = qreal(download_bytes_last_) / period;
+  state_traffic_stats["up_bytes"] = (qreal)upload_bytes_;
+  state_traffic_stats["down_bytes"] = (qreal)download_bytes_;
 
-	upload_bytes_last_ = 0;
-	download_bytes_last_ = 0;
+  upload_bytes_last_ = 0;
+  download_bytes_last_ = 0;
 
-	return state_traffic_stats;
+  return state_traffic_stats;
 }
 
 void BandwidthCounter::add_down(quint64 bytes) {
-	QMutexLocker lk(&mutex_);
+  QMutexLocker lk(&mutex_);
 
-	download_bytes_ += bytes;
-	download_bytes_last_ += bytes;
-	if(parent_counter_)
-		parent_counter_->add_down(bytes);
+  download_bytes_ += bytes;
+  download_bytes_last_ += bytes;
+  if (parent_counter_) parent_counter_->add_down(bytes);
 }
 
 void BandwidthCounter::add_up(quint64 bytes) {
-	QMutexLocker lk(&mutex_);
+  QMutexLocker lk(&mutex_);
 
-	upload_bytes_ += bytes;
-	download_bytes_ += bytes;
-	if(parent_counter_)
-		parent_counter_->add_up(bytes);
+  upload_bytes_ += bytes;
+  download_bytes_ += bytes;
+  if (parent_counter_) parent_counter_->add_up(bytes);
 }
 
 } /* namespace librevault */

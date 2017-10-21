@@ -33,20 +33,20 @@
 namespace librevault {
 
 class PingHandler : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit PingHandler(QObject* parent = nullptr);
+ public:
+  explicit PingHandler(QObject* parent = nullptr);
 
-	Q_SIGNAL void sendPing(const QByteArray& payload);
-	Q_SLOT void handlePong(quint64 elapsedTime, const QByteArray& payload);
+  Q_SIGNAL void sendPing(const QByteArray& payload);
+  Q_SLOT void handlePong(quint64 elapsedTime, const QByteArray& payload);
 
-	Q_SLOT void start();
-	std::chrono::milliseconds rtt() {return rtt_;}
+  Q_SLOT void start();
+  std::chrono::milliseconds rtt() { return rtt_; }
 
-private:
-	QTimer* ping_timer_ = nullptr;
-	std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
+ private:
+  QTimer* ping_timer_ = nullptr;
+  std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 };
 
 } /* namespace librevault */

@@ -33,27 +33,21 @@
 
 namespace librevault {
 
-HandshakeHandler::HandshakeHandler(const FolderParams& params,
-                                   QString client_name, QString user_agent,
-                                   QObject* parent)
+HandshakeHandler::HandshakeHandler(
+    const FolderParams& params, QString client_name, QString user_agent, QObject* parent)
     : QObject(parent),
       params_(params),
       local_client_name_(client_name),
       local_user_agent_(user_agent) {
   connect(this, &HandshakeHandler::handshakeSuccess,
-          [=] { qDebug() << "Librevault handshake successful"; });
-  connect(this, &HandshakeHandler::handshakeFailed, [=](QString error) {
-    qDebug() << "Librevault handshake failed: " + error;
-  });
+      [=] { qDebug() << "Librevault handshake successful"; });
+  connect(this, &HandshakeHandler::handshakeFailed,
+      [=](QString error) { qDebug() << "Librevault handshake failed: " + error; });
 }
 
-QByteArray HandshakeHandler::localToken() {
-  return derive_token(params_.secret, local_digest_);
-}
+QByteArray HandshakeHandler::localToken() { return derive_token(params_.secret, local_digest_); }
 
-QByteArray HandshakeHandler::remoteToken() {
-  return derive_token(params_.secret, remote_digest_);
-}
+QByteArray HandshakeHandler::remoteToken() { return derive_token(params_.secret, remote_digest_); }
 
 void HandshakeHandler::sendHandshake() {
   Q_ASSERT(!handshake_sent_);
@@ -68,9 +62,8 @@ void HandshakeHandler::sendHandshake() {
   // LOGD("==> HANDSHAKE");
 }
 
-void HandshakeHandler::handleEstablished(Peer::Role role,
-                                         const QByteArray& local_digest,
-                                         const QByteArray& remote_digest) {
+void HandshakeHandler::handleEstablished(
+    Peer::Role role, const QByteArray& local_digest, const QByteArray& remote_digest) {
   Q_ASSERT(role_ != Peer::UNDEFINED);
 
   role_ = role;
@@ -100,8 +93,7 @@ void HandshakeHandler::handleMesssage(const QByteArray& msg) {
     remote_user_agent_ = message_struct.user_agent;
     rcvd_remote_token = message_struct.auth_token;
   } catch (std::exception& e) {
-    emit handshakeFailed(QStringLiteral("Handshake message parse error: ") +
-                         e.what());
+    emit handshakeFailed(QStringLiteral("Handshake message parse error: ") + e.what());
     return;
   }
 

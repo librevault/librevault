@@ -36,8 +36,9 @@
 #include <QDocopt.hpp>
 #include <boost/filesystem/path.hpp>
 
-using namespace librevault;  // This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any
-                             // other file.
+using namespace librevault;  // This is allowed only because this is main.cpp file and it is
+                             // extremely unlikely that this file will be included in any other
+                             // file.
 
 ///////////////////////////////////////////////////////////////////////80 chars/
 static const char* USAGE =
@@ -61,29 +62,27 @@ Options:
   --version               show version
 )";
 
+static const char* BANNER =
+    R"(   __    __ _                                _ __ )" "\n"
+    R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" "\n"
+    R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" "\n"
+    R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" "\n"
+    R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)";
+
 void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
   auto logger = spdlog::get(Version::current().name().toStdString());
   if (!logger) return;
 
   switch (msg_type) {
-    case QtDebugMsg:
-      logger->debug(std::string(ctx.category) + " | " + msg.toStdString());
-      break;
-    case QtWarningMsg:
-      logger->warn(std::string(ctx.category) + " | " + msg.toStdString());
-      break;
-    case QtCriticalMsg:
-      logger->error(std::string(ctx.category) + " | " + msg.toStdString());
-      break;
+    case QtDebugMsg: logger->debug(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    case QtWarningMsg: logger->warn(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    case QtCriticalMsg: logger->error(std::string(ctx.category) + " | " + msg.toStdString()); break;
     case QtFatalMsg:
       logger->critical(std::string(ctx.category) + " | " + msg.toStdString());
       logger->flush();
       abort();
-    case QtInfoMsg:
-      logger->info(std::string(ctx.category) + " | " + msg.toStdString());
-      break;
-    default:
-      logger->info(std::string(ctx.category) + " | " + msg.toStdString());
+    case QtInfoMsg: logger->info(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    default: logger->info(std::string(ctx.category) + " | " + msg.toStdString());
   }
 }
 
@@ -92,19 +91,14 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationDomain("librevault.com");
 
   // Argument parsing
-  QVariantHash args = qdocopt(USAGE, argc, argv, true, librevault::Version().version_string());
+  QVariantHash args = qdocopt(USAGE, argc, argv, true, librevault::Version().versionString());
 
   // Initializing log verbosity
   spdlog::level::level_enum log_level;
   switch (args["-v"].toLongLong()) {
-    case 2:
-      log_level = spdlog::level::trace;
-      break;
-    case 1:
-      log_level = spdlog::level::debug;
-      break;
-    default:
-      log_level = spdlog::level::info;
+    case 2: log_level = spdlog::level::trace; break;
+    case 1: log_level = spdlog::level::debug; break;
+    default: log_level = spdlog::level::info;
   }
 
   // Initializing paths
@@ -122,7 +116,8 @@ int main(int argc, char** argv) {
       boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
       sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
 
-      log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
+      log = std::make_shared<spdlog::logger>(
+          Version::current().name().toStdString(), sinks.begin(), sinks.end());
       spdlog::register_logger(log);
 
       log->set_level(log_level);
@@ -132,16 +127,12 @@ int main(int argc, char** argv) {
     // This overrides default Qt behavior, which is fine in many cases;
     qInstallMessageHandler(spdlogMessageHandler);
 
+    std::cout << BANNER << std::endl;  // Print banner string.
+    log->info(Version::current().name().toStdString() + " " +
+        Version::current().versionString().toStdString());
+
     // Initializing config
     Config::get();
-
-    // Okay, that's a bit of fun, actually.
-    std::cout << R"(   __    __ _                                _ __ )" << std::endl
-              << R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
-              << R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
-              << R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
-              << R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-    log->info(Version::current().name().toStdString() + " " + Version::current().version_string().toStdString());
 
     // And, run!
     auto client = std::make_unique<Client>(argc, argv);

@@ -34,7 +34,6 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
 
 PortMapping::PortMapping(const MappingRequest& request, GenericNatService* service, QObject* parent)
-    : HierarchicalService(service, parent), service_(service), request_(request) {
-}
+    : HierarchicalService(service, parent), service_(service), request_(request) {}
 
 }  // namespace librevault

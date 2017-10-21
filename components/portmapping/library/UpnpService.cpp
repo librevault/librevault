@@ -77,29 +77,27 @@ void UpnpService::start() {
     DevListWrapper devlist;
 
     error_ = UPNP_GetValidIGD(
-      devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size());
+        devlist.devlist, upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size());
     if (!error_) {
       qCDebug(log_upnp) << "Found IGD:" << upnp_urls->controlURL;
       emit started();
     } else {
       throw std::runtime_error(strerror(errno));
     }
-  }catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     FreeUPNPUrls(upnp_urls.get());
     qCDebug(log_upnp) << "IGD not found. e:" << e.what();
   }
 }
 
-void UpnpService::stop() {
-  FreeUPNPUrls(upnp_urls.get());
-}
+void UpnpService::stop() { FreeUPNPUrls(upnp_urls.get()); }
 
 /* PortMapping */
 UpnpPortMapping::UpnpPortMapping(const MappingRequest& request, UpnpService* parent)
     : PortMapping(request, parent, parent) {}
 
 void UpnpPortMapping::start() {
-  if(isMapped()) return;
+  if (isMapped()) return;
 
   error_ = UPNP_AddPortMapping(qobject_cast<UpnpService*>(service_)->upnp_urls->controlURL,
       qobject_cast<UpnpService*>(service_)->upnp_data->first.servicetype,

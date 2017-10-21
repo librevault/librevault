@@ -29,7 +29,6 @@
 #pragma once
 
 #include "../GenericProvider.h"
-#include "../btcompat.h"
 #include <QByteArray>
 #include <QTimer>
 #include <QUdpSocket>
@@ -45,7 +44,7 @@ class DHTWrapper : public QObject {
   void nodeCountChanged(int node_count);
 
  public:
-  DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent);
+  DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, const QByteArray& own_id, QObject* parent);
   DHTWrapper(const DHTWrapper&) = delete;
   DHTWrapper(DHTWrapper&&) = delete;
   virtual ~DHTWrapper();
@@ -67,7 +66,6 @@ class DHTWrapper : public QObject {
   QTimer* periodic_;
   int last_node_count_ = 0;
 
-  int convertAF(QAbstractSocket::NetworkLayerProtocol qaf);
   bool enabled() { return periodic_->isActive(); }
 
  private slots:

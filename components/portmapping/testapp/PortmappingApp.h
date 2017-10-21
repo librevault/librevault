@@ -26,56 +26,18 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "AutoNatService.h"
-#include "NatPmpService.h"
-#include "UpnpService.h"
+#pragma once
+#include <QCoreApplication>
+#include <QHostAddress>
+#include <QUrl>
 
 namespace librevault {
 
-AutoNatService::AutoNatService(QObject* parent) : GenericNatService(parent) {
-  nested_services_.push_back(new NatPmpService(this));
-  nested_services_.push_back(new UpnpService(this));
-}
+class PortmappingApp : public QCoreApplication {
+  Q_OBJECT
+public:
+  PortmappingApp(int argc, char** argv, const char* USAGE);
+private:
+};
 
-bool AutoNatService::isReady() {
-  for (auto& service : nested_services_)
-    if (service->isReady()) return true;
-  return false;
-}
-
-PortMapping* AutoNatService::createMapping(const MappingRequest& request) {
-  QList<PortMapping*> mappings;
-  for (auto& service : nested_services_) mappings.push_back(service->createMapping(request));
-
-  return new AutoPortMapping(mappings, request, this);
-}
-
-AutoPortMapping::AutoPortMapping(
-    const QList<PortMapping*>& mappings, const MappingRequest& request, GenericNatService* parent)
-    : PortMapping(request, parent), mappings_(mappings) {
-  for (auto& mapping : mappings_) {
-    connect(mapping, &PortMapping::mapped, this, &PortMapping::mapped);
-    mapping->setParent(this);
-  }
-}
-
-void AutoPortMapping::map() {
-  if(current_ && current_->isServiceReady())
-    return current_->map();
-
-  for (auto& mapping : mappings_) {
-    if (mapping->isServiceReady()) {
-      current_ = mapping;
-      return current_->map();
-    }
-  }
-
-  current_ = nullptr;
-}
-
-void AutoPortMapping::unmap() {
-  if(current_)
-    return current_->unmap();
-}
-
-}  // namespace librevault
+} /* namespace librevault */

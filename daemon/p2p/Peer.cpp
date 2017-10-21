@@ -44,15 +44,10 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
     : QObject(parent), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {
   qCDebug(log_peer) << "new peer";
 
-  handshake_handler_ = new HandshakeHandler(
-      params, Config::get()->getGlobal("client_name").toString(), Version().user_agent(), this);
+  handshake_handler_ = new HandshakeHandler(params,
+      Config::get()->getGlobal("client_name").toString(), Version().userAgent(), this);
   connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
-  connect(handshake_handler_, &HandshakeHandler::handshakeFailed, this, &Peer::handshakeFailed);
   connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::send);
-  connect(this, &Peer::rcvdChoke, [=] { peer_choking_ = true; });
-  connect(this, &Peer::rcvdUnchoke, [=] { peer_choking_ = false; });
-  connect(this, &Peer::rcvdInterest, [=] { peer_interested_ = true; });
-  connect(this, &Peer::rcvdUninterest, [=] { peer_interested_ = false; });
 
   ping_handler_ = new PingHandler(this);
   timeout_handler_ = new TimeoutHandler(this);
@@ -60,13 +55,11 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
 
   // Internal signal interconnection
   connect(this, &Peer::connected, this, &Peer::handleConnected);
-  connect(this, &Peer::connected, ping_handler_, &PingHandler::start);
-  connect(this, &Peer::handshakeFailed, this, &Peer::disconnected);
 }
 
-Peer::~Peer() = default;
+Peer::~Peer() { qCDebug(log_peer) << "Peer is going to be disconnected:" << endpoint(); }
 
-QUrl Peer::makeUrl(const Endpoint& endpoint, QByteArray folderid) {
+QUrl Peer::makeUrl(const Endpoint& endpoint, const QByteArray& folderid) {
   QUrl url;
   url.setScheme("wss");
   url.setPath("/" + folderid.toHex());
@@ -100,7 +93,7 @@ void Peer::setConnectedSocket(QWebSocket* socket) {
 }
 
 void Peer::open(const QUrl& url) {
-  resetUnderlyingSocket(new QWebSocket(Version().user_agent()));
+  resetUnderlyingSocket(new QWebSocket(Version::current().userAgent()));
 
   role_ = Role::CLIENT;
   qCDebug(log_peer) << "New outgoing connection:" << url;
@@ -119,67 +112,107 @@ QString Peer::clientName() const { return handshake_handler_->clientName(); }
 QString Peer::userAgent() const { return handshake_handler_->userAgent(); }
 bool Peer::isValid() const { return handshake_handler_->isValid(); }
 
-std::shared_ptr<InterestGuard> Peer::getInterestGuard() {
+std::shared_ptr<StateGuard> Peer::getInterestGuard() {
+  return getStateGuard(
+      interest_guard_, protocol::v2::MessageType::INTEREST, protocol::v2::MessageType::UNINTEREST);
+}
+
+std::shared_ptr<StateGuard> Peer::getUnchokeGuard() {
+  return getStateGuard(
+      unchoke_guard_, protocol::v2::MessageType::UNCHOKE, protocol::v2::MessageType::CHOKE);
+}
+
+std::shared_ptr<StateGuard> Peer::getStateGuard(std::weak_ptr<StateGuard>& var,
+    protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state) {
   try {
-    return std::shared_ptr<InterestGuard>(interest_guard_);
-  } catch (std::bad_weak_ptr& e) {
-    auto guard = std::make_shared<InterestGuard>(this);
-    interest_guard_ = guard;
+    return std::shared_ptr<StateGuard>(var);
+  } catch (const std::bad_weak_ptr& e) {
+    auto guard = std::make_shared<StateGuard>(this, enter_state, exit_state);
+    var = guard;
     return guard;
   }
 }
 
-/* RPC Actions */
-void Peer::send(const QByteArray& message) {
-  bc_all_.add_up(message.size());
-  socket_->sendBinaryMessage(message);
+// RPC Actions
+void Peer::send(const protocol::v2::Message& message) {
+  QByteArray message_bytes = parser_.serialize(message);
+
+  bc_all_.add_up(message_bytes.size());
+  if (message.header.type == protocol::v2::MessageType::BLOCKRESPONSE)
+    bc_blocks_.add_up(message.blockresponse.content.size());
+
+  socket_->sendBinaryMessage(message_bytes);
 }
 
-void Peer::handle(const QByteArray& message) {
+void Peer::handle(const QByteArray& message_bytes) {
   try {
-    protocol::v2::Header header;
-    QByteArray payload;
-    std::tie(header, payload) = parser.parseMessage(message);
+    protocol::v2::Message message = parser_.parse(message_bytes);
+    bc_all_.add_down(message_bytes.size());
 
-    bc_all_.add_down(message.size());
-    timeout_handler_->bump();
+    using MessageType = protocol::v2::MessageType;
 
-    if (!handshake_handler_->isValid()) {
-      if (header.type != protocol::v2::HANDSHAKE) throw HandshakeExpected();
-      return handshake_handler_->handleMesssage(message);
-    }
+    if (!handshake_handler_->isValid())
+      if (message.header.type == MessageType::HANDSHAKE)
+        return handshake_handler_->handlePayload(message.handshake);
+      else
+        throw HandshakeExpected();
+    else if (message.header.type == MessageType::HANDSHAKE)
+      throw HandshakeUnexpected();
 
-    switch (header.type) {
-      case protocol::v2::CHOKE: rcvdChoke(); break;
-      case protocol::v2::UNCHOKE: rcvdUnchoke(); break;
-      case protocol::v2::INTEREST: rcvdInterest(); break;
-      case protocol::v2::UNINTEREST: rcvdUninterest(); break;
-      case protocol::v2::INDEXUPDATE: rcvdIndexUpdate(parser.parseIndexUpdate(payload)); break;
-      case protocol::v2::METAREQUEST: rcvdMetaRequest(parser.parseMetaRequest(payload)); break;
-      case protocol::v2::METARESPONSE: rcvdMetaResponse(parser.parseMetaResponse(payload)); break;
-      case protocol::v2::BLOCKREQUEST: rcvdBlockRequest(parser.parseBlockRequest(payload)); break;
-      case protocol::v2::BLOCKRESPONSE:
-        rcvdBlockResponse(parser.parseBlockResponse(payload));
+    switch (message.header.type) {
+      case MessageType::CHOKE: peer_choking_ = true; break;
+      case MessageType::UNCHOKE: peer_choking_ = false; break;
+      case MessageType::INTEREST: peer_interested_ = true; break;
+      case MessageType::UNINTEREST: peer_interested_ = false; break;
+      case MessageType::INDEXUPDATE: break;
+      case MessageType::METAREQUEST: break;
+      case MessageType::METARESPONSE: break;
+      case MessageType::BLOCKREQUEST: break;
+      case MessageType::BLOCKRESPONSE:
+        bc_blocks_.add_down(message.blockresponse.content.size());
         break;
       default: throw InvalidMessageType();
     }
+
+    emit received(message);
+  } catch (const protocol::v2::Parser::ParseError& e) {
+    qCWarning(log_peer) << this << e.what();
+    socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
+  } catch (const HandshakeHandler::HandshakeError& e) {
+    qCWarning(log_peer) << this << e.what();
+    socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
   } catch (const HandshakeExpected& e) {
+    qCWarning(log_peer) << this << e.what();
     socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
   } catch (const HandshakeUnexpected& e) {
+    qCWarning(log_peer) << this << e.what();
     socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
   } catch (const InvalidMessageType& e) {
-    socket_->close(QWebSocketProtocol::CloseCodeProtocolError);
+    qCWarning(log_peer) << this << e.what();
+    socket_->close(QWebSocketProtocol::CloseCodeBadOperation);
   } catch (const std::exception& e) {
-    socket_->close(QWebSocketProtocol::CloseCodeAbnormalDisconnection);
+    qCWarning(log_peer) << this << e.what();
+    socket_->close(QWebSocketProtocol::CloseCodeBadOperation);
   }
 }
 
 void Peer::handleConnected() {
+  ping_handler_->start();
   handshake_handler_->handleEstablished(role_, node_key_->digest(), digest());
 }
 
-/* InterestGuard */
-InterestGuard::InterestGuard(Peer* remote) : peer_(remote) { peer_->sendInterest(); }
-InterestGuard::~InterestGuard() { peer_->sendUninterest(); }
+/* StateGuard */
+StateGuard::StateGuard(
+    Peer* remote, protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state)
+    : peer_(remote), enter_state_(enter_state), exit_state_(exit_state) {
+  protocol::v2::Message message;
+  message.header.type = enter_state_;
+  peer_->send(message);
+}
+StateGuard::~StateGuard() {
+  protocol::v2::Message message;
+  message.header.type = exit_state_;
+  peer_->send(message);
+}
 
-} /* namespace librevault */
+}  // namespace librevault

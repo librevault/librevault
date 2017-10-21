@@ -43,9 +43,10 @@ void MetaDownloader::handleIndexUpdate(Peer* peer, const MetaInfo::PathRevision&
   if (index_->haveMeta(revision))
     downloader_->notifyRemoteMeta(peer, revision, bitfield);
   else if (index_->putAllowed(revision)) {
-    protocol::v2::MetaRequest request;
-    request.revision = revision;
-    peer->sendMetaRequest(request);
+    protocol::v2::Message request;
+    request.header.type = protocol::v2::MessageType::METAREQUEST;
+    request.metarequest.revision = revision;
+    peer->send(request);
   }else
     qCDebug(log_metadownloader) << "Remote node notified us about an expired Meta";
 }

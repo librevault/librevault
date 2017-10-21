@@ -258,11 +258,12 @@ bool Downloader::requestOne() {
       );
       request.started = std::chrono::steady_clock::now();
 
-      protocol::v2::BlockRequest message;
-      message.ct_hash = ct_hash;
-      message.offset = request.offset;
-      message.length = request.size;
-      peer->sendBlockRequest(message);
+      protocol::v2::Message message;
+      message.header.type = protocol::v2::MessageType::BLOCKREQUEST;
+      message.blockrequest.ct_hash = ct_hash;
+      message.blockrequest.offset = request.offset;
+      message.blockrequest.length = request.size;
+      peer->send(message);
 
       chunk->requests.insert(peer, request);
       return true;

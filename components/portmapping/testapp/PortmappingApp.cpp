@@ -26,46 +26,15 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "util/Endpoint.h"
-#include <QByteArray>
-#include <QHostAddress>
-#include <QtEndian>
+#include "PortmappingApp.h"
+#include <QDocopt.hpp>
 
 namespace librevault {
-namespace btcompat {
 
-// Function declaration
-inline Endpoint unpackEndpoint4(QByteArray packed) {
-  packed = packed.leftJustified(6, 0, true);
+PortmappingApp::PortmappingApp(int argc, char** argv, const char* USAGE) : QCoreApplication(argc, argv) {
+  auto args = qdocopt(USAGE, argc, argv);
 
-  Endpoint endpoint;
-  endpoint.addr =
-      QHostAddress(qFromBigEndian(*reinterpret_cast<quint32*>(packed.mid(0, 4).data())));
-  endpoint.port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(4, 2).data()));
-  return endpoint;
-};
+  //if(args)
+}
 
-inline Endpoint unpackEndpoint6(QByteArray packed) {
-  packed = packed.leftJustified(18, 0, true);
-
-  Endpoint endpoint;
-  endpoint.addr = QHostAddress(reinterpret_cast<quint8*>(packed.mid(0, 16).data()));
-  endpoint.port = qFromBigEndian(*reinterpret_cast<quint16*>(packed.mid(16, 2).data()));
-  return endpoint;
-};
-
-inline EndpointList unpackEnpointList4(const QByteArray& packed) {
-  EndpointList l;
-  for (int i = 0; i < packed.size(); i += 6) l.push_back(unpackEndpoint4(packed.mid(i, 6)));
-  return l;
-};
-
-inline EndpointList unpackEnpointList6(const QByteArray& packed) {
-  EndpointList l;
-  for (int i = 0; i < packed.size(); i += 18) l.push_back(unpackEndpoint6(packed.mid(i, 18)));
-  return l;
-};
-
-} /* namespace btcompat */
 } /* namespace librevault */

@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include <v2/messages.h>
+#include "v2/messages.h"
 #include <QBitArray>
 #include <QObject>
 
@@ -55,7 +55,7 @@ class MetaUploader : public QObject {
   Index* index_;
   ChunkStorage* chunk_storage_;
 
-  protocol::v2::IndexUpdate makeMessage(const SignedMeta& smeta);
+  protocol::v2::Message makeMessage(const SignedMeta& smeta);
 };
 
 } /* namespace librevault */

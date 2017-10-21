@@ -30,6 +30,7 @@
 #include "folder/storage/ChunkStorage.h"
 #include "p2p/Peer.h"
 #include <QLoggingCategory>
+#include <QHash>
 
 namespace librevault {
 
@@ -40,22 +41,27 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent)
 
 void Uploader::handleInterested(Peer* peer) {
   // TODO: write good choking algorithm.
-  peer->sendUnchoke();
+  all_interested_.insert(peer, peer->getUnchokeGuard());
 }
 void Uploader::handleNotInterested(Peer* peer) {
   // TODO: write good choking algorithm.
-  peer->sendChoke();
+  all_interested_.remove(peer);
+}
+
+void Uploader::untrackPeer(Peer* peer) {
+  all_interested_.remove(peer);
 }
 
 void Uploader::handleBlockRequest(Peer* peer, QByteArray ct_hash,
                                   uint32_t offset, uint32_t size) noexcept {
   try {
     if (!peer->amChoking() && peer->peerInterested()) {
-      protocol::v2::BlockResponse response;
-      response.offset = offset;
-      response.ct_hash = ct_hash;
-      response.content = getBlock(ct_hash, offset, size);
-      peer->sendBlockResponse(response);
+      protocol::v2::Message response;
+      response.header.type = protocol::v2::MessageType::BLOCKRESPONSE;
+      response.blockresponse.offset = offset;
+      response.blockresponse.ct_hash = ct_hash;
+      response.blockresponse.content = getBlock(ct_hash, offset, size);
+      peer->send(response);
     }
   } catch (ChunkStorage::NoSuchChunk& e) {
     qCDebug(log_uploader) << "Requested nonexistent block";

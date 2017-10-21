@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "p2p/Peer.h"
 #include <QObject>
 
 namespace librevault {
@@ -44,11 +45,13 @@ class Uploader : public QObject {
   void handleInterested(Peer* peer);
   void handleNotInterested(Peer* peer);
 
-  void handleBlockRequest(Peer* peer, QByteArray ct_hash, uint32_t offset,
-                          uint32_t size) noexcept;
+  void untrackPeer(Peer* peer);
+
+  void handleBlockRequest(Peer* peer, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
 
  private:
   ChunkStorage* chunk_storage_;
+  QHash<Peer*, std::shared_ptr<StateGuard>> all_interested_;
 
   QByteArray getBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
 };

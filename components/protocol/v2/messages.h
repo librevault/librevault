@@ -32,68 +32,72 @@
 #include <QBitArray>
 #include <QDebug>
 #include <QString>
-#include <QVariantMap>
 
 namespace librevault {
 namespace protocol {
 namespace v2 {
 
-enum MessageType : quint8 {
-  HANDSHAKE = 0,
+struct Message {
+  struct Header {
+    enum MessageType : quint8 {
+      HANDSHAKE = 0,
 
-  CHOKE = 1,
-  UNCHOKE = 2,
-  INTEREST = 3,
-  UNINTEREST = 4,
+      CHOKE = 1,
+      UNCHOKE = 2,
+      INTEREST = 3,
+      UNINTEREST = 4,
 
-  INDEXUPDATE = 5,
+      INDEXUPDATE = 5,
 
-  METAREQUEST = 6,
-  METARESPONSE = 7,
+      METAREQUEST = 6,
+      METARESPONSE = 7,
 
-  BLOCKREQUEST = 8,
-  BLOCKRESPONSE = 9,
-};
+      BLOCKREQUEST = 8,
+      BLOCKRESPONSE = 9,
+    } type;
+  } header;
 
-struct Header {
-  MessageType type;
-};
-
-struct Handshake {
-  QByteArray auth_token;
-  QString device_name;
-  QString user_agent;
-  quint16 dht_port;
-};
-struct IndexUpdate {
-  MetaInfo::PathRevision revision;
-  QBitArray bitfield;
-};
-struct MetaRequest {
-  MetaInfo::PathRevision revision;
-};
-struct MetaResponse {
-  SignedMeta smeta;
-  QBitArray bitfield;
-};
-struct BlockRequest {
-  QByteArray ct_hash;
-  quint32 offset;
-  quint32 length;
-};
-struct BlockResponse {
-  QByteArray ct_hash;
-  quint32 offset;
-  QByteArray content;
+  struct Handshake {
+    QByteArray auth_token;
+    QString device_name;
+    QString user_agent;
+    quint16 dht_port;
+  } handshake;
+  struct IndexUpdate {
+    MetaInfo::PathRevision revision;
+    QBitArray bitfield;
+  } indexupdate;
+  struct MetaRequest {
+    MetaInfo::PathRevision revision;
+  } metarequest;
+  struct MetaResponse {
+    SignedMeta smeta;
+    QBitArray bitfield;
+  } metaresponse;
+  struct BlockRequest {
+    QByteArray ct_hash;
+    quint32 offset;
+    quint32 length;
+  } blockrequest;
+  struct BlockResponse {
+    QByteArray ct_hash;
+    quint32 offset;
+    QByteArray content;
+  } blockresponse;
 };
 
-QDebug operator<<(QDebug debug, Header message_struct);
-QDebug operator<<(QDebug debug, Handshake message_struct);
-QDebug operator<<(QDebug debug, IndexUpdate message_struct);
-QDebug operator<<(QDebug debug, MetaRequest message_struct);
-QDebug operator<<(QDebug debug, MetaResponse message_struct);
-QDebug operator<<(QDebug debug, BlockRequest message_struct);
-QDebug operator<<(QDebug debug, BlockResponse message_struct);
+#pragma mark Debug output
+QDebug operator<<(QDebug debug, const Message::Header::MessageType& obj);
+QDebug operator<<(QDebug debug, const Message::Header& obj);
+QDebug operator<<(QDebug debug, const Message::Handshake& obj);
+QDebug operator<<(QDebug debug, const Message::IndexUpdate& obj);
+QDebug operator<<(QDebug debug, const Message::MetaRequest& obj);
+QDebug operator<<(QDebug debug, const Message::MetaResponse& obj);
+QDebug operator<<(QDebug debug, const Message::BlockRequest& obj);
+QDebug operator<<(QDebug debug, const Message::BlockResponse& obj);
+QDebug operator<<(QDebug debug, const Message& obj);
+
+using MessageType = Message::Header::MessageType;
 
 }  // namespace v2
 }  // namespace protocol

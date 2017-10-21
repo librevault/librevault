@@ -57,7 +57,7 @@ class GenericNatService : public HierarchicalService {
 
  public:
   explicit GenericNatService(QObject* parent = nullptr) : HierarchicalService(nullptr, parent) {}
-  virtual ~GenericNatService() = default;
+  ~GenericNatService() override = default;
 
   virtual PortMapping* createMapping(const MappingRequest& request) = 0;
 };
@@ -67,7 +67,7 @@ class PortMapping : public HierarchicalService {
 
  public:
   PortMapping(const MappingRequest& request, GenericNatService* service, QObject* parent = nullptr);
-  virtual ~PortMapping() = default;
+  ~PortMapping() override = default;
 
   Q_SIGNAL void mapped(quint16 external_port, QHostAddress external_address, TimePoint expiration);
 
@@ -82,12 +82,10 @@ class PortMapping : public HierarchicalService {
   Duration requestTtl() const { return request_.ttl; }
   QNetworkInterface interface() const { return request_.interface; }
 
-  bool isEnabled() const { return enabled_; }
   bool isMapped() const { return actual_external_port_ != 0; }
 
  protected:
   QPointer<GenericNatService> service_;
-  bool enabled_ = false;
 
   quint16 actual_external_port_ = 0;
   QHostAddress external_address_;

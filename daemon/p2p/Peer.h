@@ -32,8 +32,7 @@
 #include "TimeoutHandler.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
-#include <v2/Parser.h>
-#include <v2/messages.h>
+#include "v2/Parser.h"
 #include <QObject>
 #include <QTimer>
 #include <QWebSocket>
@@ -47,7 +46,7 @@ class NodeKey;
 class HandshakeHandler;
 class PingHandler;
 class FolderParams;
-class InterestGuard;
+class StateGuard;
 
 class Peer : public QObject {
   Q_OBJECT
@@ -55,7 +54,7 @@ class Peer : public QObject {
  public:
   Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
       BandwidthCounter* bc_blocks, QObject* parent);
-  ~Peer();
+  ~Peer() override;
 
   DECLARE_EXCEPTION(HandshakeExpected, "Handshake message expected");
   DECLARE_EXCEPTION(HandshakeUnexpected, "Handshake message inside an already valid stream");
@@ -63,58 +62,18 @@ class Peer : public QObject {
 
   enum Role { UNDEFINED, SERVER, CLIENT };
 
-  static QUrl makeUrl(const Endpoint& endpoint, QByteArray folderid);
+  static QUrl makeUrl(const Endpoint& endpoint, const QByteArray& folderid);
 
   Q_SIGNAL void connected();
   Q_SIGNAL void disconnected();
   Q_SIGNAL void handshakeSuccess();
-  Q_SIGNAL void handshakeFailed(QString error);
 
   Q_SLOT void setConnectedSocket(QWebSocket* socket);
   Q_SLOT void open(const QUrl& url);
 
   /* Messages */
-  Q_SIGNAL void rcvdChoke();
-  Q_SIGNAL void rcvdUnchoke();
-  Q_SIGNAL void rcvdInterest();
-  Q_SIGNAL void rcvdUninterest();
-  Q_SIGNAL void rcvdIndexUpdate(const protocol::v2::IndexUpdate& msg);
-  Q_SIGNAL void rcvdMetaRequest(const protocol::v2::MetaRequest& msg);
-  Q_SIGNAL void rcvdMetaResponse(const protocol::v2::MetaResponse& msg);
-  Q_SIGNAL void rcvdBlockRequest(const protocol::v2::BlockRequest& msg);
-  Q_SIGNAL void rcvdBlockResponse(const protocol::v2::BlockResponse& msg);
-
-  Q_SLOT void sendChoke() {
-    am_choking_ = true;
-    send(parser.genChoke());
-  }
-  Q_SLOT void sendUnchoke() {
-    am_choking_ = false;
-    send(parser.genUnchoke());
-  }
-  Q_SLOT void sendInterest() {
-    am_interested_ = true;
-    send(parser.genInterest());
-  }
-  Q_SLOT void sendUninterest() {
-    am_interested_ = false;
-    send(parser.genUninterest());
-  }
-  Q_SLOT void sendIndexUpdate(const protocol::v2::IndexUpdate& msg) {
-    send(parser.genIndexUpdate(msg));
-  }
-  Q_SLOT void sendMetaRequest(const protocol::v2::MetaRequest& msg) {
-    send(parser.genMetaRequest(msg));
-  }
-  Q_SLOT void sendMetaResponse(const protocol::v2::MetaResponse& msg) {
-    send(parser.genMetaResponse(msg));
-  }
-  Q_SLOT void sendBlockRequest(const protocol::v2::BlockRequest& msg) {
-    send(parser.genBlockRequest(msg));
-  }
-  Q_SLOT void sendBlockResponse(const protocol::v2::BlockResponse& msg) {
-    send(parser.genBlockResponse(msg));
-  }
+  Q_SLOT void send(const protocol::v2::Message& message);
+  Q_SIGNAL void received(const protocol::v2::Message& message);
 
   /* Getters */
   bool amChoking() const { return am_choking_; }
@@ -129,7 +88,8 @@ class Peer : public QObject {
 
   bool isValid() const;
 
-  std::shared_ptr<InterestGuard> getInterestGuard();
+  std::shared_ptr<StateGuard> getInterestGuard();
+  std::shared_ptr<StateGuard> getUnchokeGuard();
 
  private:
   NodeKey* node_key_;
@@ -141,9 +101,7 @@ class Peer : public QObject {
   TimeoutHandler* timeout_handler_;
   HandshakeHandler* handshake_handler_;
 
-  std::weak_ptr<InterestGuard> interest_guard_;
-
-  protocol::v2::Parser parser;
+  protocol::v2::Parser parser_;
 
   Role role_ = Role::UNDEFINED;
 
@@ -151,22 +109,26 @@ class Peer : public QObject {
   bool am_interested_ = false;
   bool peer_choking_ = true;
   bool peer_interested_ = false;
+  std::weak_ptr<StateGuard> interest_guard_, unchoke_guard_;
 
   // Underlying socket management
   Q_SLOT void resetUnderlyingSocket(QWebSocket* socket);
 
   Q_SLOT void handleConnected();
+  Q_SLOT void handle(const QByteArray& message_bytes);
 
-  Q_SLOT void send(const QByteArray& message);
-  Q_SLOT void handle(const QByteArray& message);
+  std::shared_ptr<StateGuard> getStateGuard(std::weak_ptr<StateGuard>& var,
+      protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state);
 };
 
-struct InterestGuard {
-  explicit InterestGuard(Peer* remote);
-  ~InterestGuard();
+struct StateGuard {
+  explicit StateGuard(
+      Peer* remote, protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state);
+  ~StateGuard();
 
  private:
   Peer* peer_;
+  protocol::v2::MessageType enter_state_, exit_state_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -27,15 +27,22 @@
  * files in the program, then also delete it here.
  */
 #include "DHTWrapper.h"
-#include "../nativeaddr.h"
 #include "util/rand.h"
 #include <dht.h>
 #include <QCryptographicHash>
+#ifdef Q_OS_WIN
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#  include <netinet/ip.h>
+#  include <sys/socket.h>
+#endif
 
 extern "C" {
-
 static void lv_dht_callback_wrapper(
     void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
+  using namespace librevault;
+
   // Set ID
   QByteArray id((const char*)info_hash, 20);
 
@@ -50,17 +57,17 @@ static void lv_dht_callback_wrapper(
     return;
 
   // Set nodes
-  librevault::EndpointList nodes;
+  EndpointList nodes;
   QByteArray packed_nodes = QByteArray::fromRawData((const char*)data, data_len);
   if (af == QAbstractSocket::IPv4Protocol)
-    nodes = librevault::btcompat::unpackEnpointList4(packed_nodes);
+    nodes = Endpoint::fromPackedList4(packed_nodes);
   else
-    nodes = librevault::btcompat::unpackEnpointList6(packed_nodes);
+    nodes = Endpoint::fromPackedList6(packed_nodes);
 
   if (event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6)
-    ((librevault::DHTWrapper*)closure)->foundNodes(id, af, nodes);
+    ((DHTWrapper*)closure)->foundNodes(id, af, nodes);
   else if (event == DHT_EVENT_SEARCH_DONE || event == DHT_EVENT_SEARCH_DONE6)
-    ((librevault::DHTWrapper*)closure)->searchDone(id, af, nodes);
+    ((DHTWrapper*)closure)->searchDone(id, af, nodes);
 }
 
 // DHT library overrides
@@ -88,13 +95,22 @@ int dht_random_bytes(void* buf, size_t size) {
   fillRandomBuf(buf, size);
   return size;
 }
-
-} /* extern "C" */
+}
 
 namespace librevault {
 
+namespace {
+
+int convertAF(QAbstractSocket::NetworkLayerProtocol qaf) {
+  if (qaf == QAbstractSocket::IPv4Protocol) return AF_INET;
+  if (qaf == QAbstractSocket::IPv6Protocol) return AF_INET6;
+  return 0;
+}
+
+}  // namespace
+
 DHTWrapper::DHTWrapper(
-    QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent) {
+    QUdpSocket* socket4, QUdpSocket* socket6, const QByteArray& own_id, QObject* parent) {
   int rc = dht_init(socket4->socketDescriptor(), socket6->socketDescriptor(),
       (const unsigned char*)own_id.leftJustified(20, 0, true).data(), nullptr);
   Q_ASSERT(rc > 0);
@@ -115,8 +131,11 @@ DHTWrapper::~DHTWrapper() {
 
 void DHTWrapper::pingNode(const Endpoint& endpoint) {
   if (!enabled()) return;
-  sockaddr_storage sa = convertSockaddr(endpoint.addr, endpoint.port);
-  dht_ping_node((const sockaddr*)&sa, getSockaddrSize(sa));
+
+  sockaddr_storage sa;
+  quint16 sa_size;
+  std::tie(sa, sa_size) = endpoint.toSockaddr();
+  dht_ping_node((const sockaddr*)&sa, sa_size);
 }
 
 void DHTWrapper::startAnnounce(
@@ -167,19 +186,10 @@ EndpointList DHTWrapper::getNodes() {
   sa4.resize(sa4_count);
   sa6.resize(sa6_count);
 
-  for (sockaddr_in& sa : sa4)
-    endpoints.push_back({QHostAddress((sockaddr*)&sa), qFromBigEndian(sa.sin_port)});
-
-  for (sockaddr_in6& sa : sa6)
-    endpoints.push_back({QHostAddress((sockaddr*)&sa), qFromBigEndian(sa.sin6_port)});
+  for (sockaddr_in& sa : sa4) endpoints << Endpoint::fromSockaddr((sockaddr&)sa);
+  for (sockaddr_in6& sa : sa6) endpoints << Endpoint::fromSockaddr((sockaddr&)sa);
 
   return endpoints;
-}
-
-int DHTWrapper::convertAF(QAbstractSocket::NetworkLayerProtocol qaf) {
-  if (qaf == QAbstractSocket::IPv4Protocol) return AF_INET;
-  if (qaf == QAbstractSocket::IPv6Protocol) return AF_INET6;
-  return 0;
 }
 
 void DHTWrapper::processDatagram(QUdpSocket* socket) {
@@ -192,10 +202,12 @@ void DHTWrapper::processDatagram(QUdpSocket* socket) {
   qint64 datagram_size = socket->readDatagram(buffer.data(), buffer.size(), &addr, &port);
   buffer.leftJustified(datagram_size + 1, 0);  // strictly must be null-terminated
 
-  sockaddr_storage sa = convertSockaddr(addr, port);
+  sockaddr_storage sa;
+  quint16 sa_size;
+  std::tie(sa, sa_size) = Endpoint{addr, port}.toSockaddr();
 
   time_t tosleep;
-  dht_periodic(buffer.data(), buffer.size(), (sockaddr*)&sa, getSockaddrSize(sa), &tosleep,
+  dht_periodic(buffer.data(), buffer.size(), (sockaddr*)&sa, sa_size, &tosleep,
       lv_dht_callback_wrapper, this);
   updateNodeCount();
 
@@ -209,7 +221,7 @@ void DHTWrapper::periodicRequest() {
   dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_wrapper, this);
   updateNodeCount();
 
-  periodic_->setInterval(tosleep * 1000);
+  periodic_->setInterval(std::chrono::seconds(tosleep));
 }
 
 void DHTWrapper::updateNodeCount() {

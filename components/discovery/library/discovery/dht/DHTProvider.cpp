@@ -27,9 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "DHTProvider.h"
-#include "../nativeaddr.h"
-#include "util/rand.h"
 #include "DHTWrapper.h"
+#include "util/rand.h"
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
@@ -67,40 +66,6 @@ void DHTProvider::stop() {
   socket6_->close();
 }
 
-void DHTProvider::readSession(QIODevice* io) {
-  QJsonObject session_json;
-  session_json = QJsonDocument::fromJson(io->readAll()).object();
-  qCDebug(log_dht) << "DHT session file loaded";
-
-  QJsonArray nodes = session_json["nodes"].toArray();
-  qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
-  for (const QJsonValue& node_v : qAsConst(nodes)) {
-    QJsonObject node = node_v.toObject();
-    addNode({QHostAddress(node["ip"].toString()), (quint16)node["port"].toInt()});
-  }
-}
-
-void DHTProvider::writeSession(QIODevice* io) {
-  QList<Endpoint> nodes = dht_wrapper_->getNodes();
-  qCInfo(log_dht) << "Saving" << nodes.count() << "nodes to session file";
-
-  QJsonObject json_object;
-
-  QJsonArray nodes_j;
-  for (auto& node : qAsConst(nodes)) {
-    QJsonObject node_j;
-    node_j["ip"] = node.addr.toString();
-    node_j["port"] = node.port;
-    nodes_j.append(node_j);
-  }
-  json_object["nodes"] = nodes_j;
-
-  if (io->write(QJsonDocument(json_object).toJson(QJsonDocument::Indented)))
-    qCDebug(log_dht) << "DHT session saved";
-  else
-    qCWarning(log_dht) << "DHT session not saved";
-}
-
 int DHTProvider::getNodeCount() const { return dht_wrapper_ ? dht_wrapper_->goodNodeCount() : 0; }
 
 EndpointList DHTProvider::getNodes() {
@@ -133,7 +98,6 @@ void DHTProvider::handleResolve(const QHostInfo& host) {
   }
 
   quint16 port = resolves_.take(host.lookupId());
-
   for (const QHostAddress& address : host.addresses()) {
     addNode({address, port});
     qCDebug(log_dht) << "Added a DHT router:" << host.hostName()
@@ -141,8 +105,8 @@ void DHTProvider::handleResolve(const QHostInfo& host) {
   }
 }
 
-void DHTProvider::handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
-                               EndpointList nodes) {
+void DHTProvider::handleSearch(
+    QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes) {
   for (auto& endpoint : qAsConst(nodes)) emit discovered(id, endpoint);
 }
 

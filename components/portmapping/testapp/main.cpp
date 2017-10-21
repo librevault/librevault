@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,41 +26,26 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
+#include "PortmappingApp.h"
 
-#include "util/Endpoint.h"
-#include <QtEndian>
-#ifdef Q_OS_WIN
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-#else
-#  include <netinet/ip.h>
-#  include <sys/socket.h>
-#endif
+using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
 
-namespace librevault {
+///////////////////////////////////////////////////////////////////////80 chars/
+static const char* USAGE =
+R"(Librevault command-line interface.
 
-inline sockaddr_storage convertSockaddr(const QHostAddress& addr, quint16 port) {
-  sockaddr_storage sa = {};
-  if (addr.protocol() == QAbstractSocket::IPv4Protocol) {
-    sockaddr_in* sa4 = (sockaddr_in*)&sa;
-    sa4->sin_family = AF_INET;
-    sa4->sin_port = qToBigEndian(port);
-    sa4->sin_addr.s_addr = addr.toIPv4Address();
-  } else if (addr.protocol() == QAbstractSocket::IPv6Protocol) {
-    sockaddr_in6* sa6 = (sockaddr_in6*)&sa;
-    sa6->sin6_family = AF_INET6;
-    sa6->sin6_port = qToBigEndian(port);
-    Q_IPV6ADDR addr6 = addr.toIPv6Address();
-    std::copy((const char*)&addr6, (const char*)&addr6 + 16, (char*)&sa6->sin6_addr);
-  }
-  return sa;
+Librevault is an open source peer-to-peer file synchronization
+solution with an optional centralized cloud storage, that can be used as a traditional cloud storage.
+
+See on: https://librevault.com
+GitHub: https://github.com/Librevault/librevault
+
+Usage:
+  portmapping-testapp <internal> <external>
+  portmapping-testapp (-h | --help)
+)";
+
+int main(int argc, char** argv) {
+	PortmappingApp app(argc, argv, USAGE);
+	return app.exec();
 }
-
-inline size_t getSockaddrSize(const sockaddr_storage& sa) {
-  if (sa.ss_family == AF_INET) return sizeof(sockaddr_in);
-  if (sa.ss_family == AF_INET6) return sizeof(sockaddr_in6);
-  return sizeof(sockaddr_storage);
-}
-
-}  // namespace librevault

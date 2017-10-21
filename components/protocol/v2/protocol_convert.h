@@ -36,32 +36,32 @@ namespace librevault {
 namespace protocol {
 
 template <class To, class From>
-To convert(const From& from) {
+inline To convert(const From& from) {
   return boost::lexical_cast<To>(from);
 };
 
 template <>
-std::string convert(const QByteArray& from) {
+inline std::string convert(const QByteArray& from) {
   return from.toStdString();
 };
 
 template <>
-QByteArray convert(const std::string& from) {
+inline QByteArray convert(const std::string& from) {
   return QByteArray::fromStdString(from);
 };
 
 template <>
-std::string convert(const QString& from) {
+inline std::string convert(const QString& from) {
   return from.toStdString();
 };
 
 template <>
-QString convert(const std::string& from) {
+inline QString convert(const std::string& from) {
   return QString::fromStdString(from);
 };
 
 template <>
-std::string convert(const QBitArray& from) {
+inline std::string convert(const QBitArray& from) {
   QByteArray buffer;
   QDataStream stream(&buffer, QIODevice::Append);
   stream.setByteOrder(QDataStream::BigEndian);
@@ -70,7 +70,7 @@ std::string convert(const QBitArray& from) {
 };
 
 template <>
-QBitArray convert(const std::string& from) {
+inline QBitArray convert(const std::string& from) {
   QByteArray buffer_in = QByteArray::fromRawData(from.data(), from.size());
   QBitArray result;
   QDataStream stream(buffer_in);

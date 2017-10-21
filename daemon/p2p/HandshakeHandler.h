@@ -39,16 +39,21 @@ class HandshakeHandler : public QObject {
   Q_OBJECT
 
  public:
+  DECLARE_EXCEPTION(HandshakeError, "Handshake error");
+  DECLARE_EXCEPTION_DETAIL(HandshakeOrderingError, HandshakeError,
+      "Unexpected handshake message from server (client must send its message first)");
+  DECLARE_EXCEPTION_DETAIL(
+      InvalidTokenError, HandshakeError, "Remote authentication token is invalid");
+
   HandshakeHandler(const FolderParams& params, QString client_name, QString user_agent,
       QObject* parent = nullptr);
 
   Q_SIGNAL void handshakeSuccess();
-  Q_SIGNAL void handshakeFailed(QString error);
-  Q_SIGNAL void messagePrepared(QByteArray msg);
+  Q_SIGNAL void messagePrepared(const protocol::v2::Message& message);
 
   Q_SLOT void handleEstablished(
       Peer::Role role, const QByteArray& local_digest, const QByteArray& remote_digest);
-  Q_SLOT void handleMesssage(const QByteArray& msg);
+  void handlePayload(const protocol::v2::Message::Handshake& payload);
 
   /* Getters */
   QString clientName() const { return remote_client_name_; }
@@ -60,20 +65,17 @@ class HandshakeHandler : public QObject {
   FolderParams params_;
   Peer::Role role_ = Peer::UNDEFINED;
 
-  /* Handshake fields */
-  QString local_client_name_, remote_client_name_;
-  QString local_user_agent_, remote_user_agent_;
-
-  /* Digests */
-  QByteArray local_digest_, remote_digest_;
+  QString local_client_name_, remote_client_name_;  // Client name
+  QString local_user_agent_, remote_user_agent_;    // User agent
+  QByteArray local_digest_, remote_digest_;         // Certificate digest
 
   bool handshake_received_ = false, handshake_sent_ = false;
 
   Q_SLOT void sendHandshake();
 
   /* Token generators */
-  QByteArray localToken();
-  QByteArray remoteToken();
+  QByteArray localToken() const;
+  QByteArray remoteToken() const;
 };
 
 } /* namespace librevault */

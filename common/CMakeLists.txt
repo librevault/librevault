@@ -25,3 +25,6 @@ target_include_directories(librevault-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(librevault-common PUBLIC Qt5::Core Qt5::Network)
 target_link_libraries(librevault-common PUBLIC Threads::Threads)
+if(WIN32)
+    target_link_libraries(librevault-common PUBLIC ws2_32)
+endif()

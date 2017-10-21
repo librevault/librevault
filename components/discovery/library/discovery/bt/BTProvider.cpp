@@ -76,9 +76,9 @@ void BTProvider::processDatagram() {
     stream >> interval >> leechers >> seeders;
     EndpointList peers;
     if (tracker_addr.protocol() == QAbstractSocket::IPv4Protocol) {
-      peers = btcompat::unpackEnpointList4(message.mid(20));
+      peers = Endpoint::fromPackedList4(message.mid(20));
     } else if (tracker_addr.protocol() == QAbstractSocket::IPv6Protocol) {
-      peers = btcompat::unpackEnpointList6(message.mid(20));
+      peers = Endpoint::fromPackedList6(message.mid(20));
     }
     emit receivedAnnounce(transaction_id, interval, leechers, seeders, peers);
   } else if (action == 2) {  // SCRAPE

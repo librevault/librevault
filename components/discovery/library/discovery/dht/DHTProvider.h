@@ -28,7 +28,6 @@
  */
 #pragma once
 #include "../GenericProvider.h"
-#include "../btcompat.h"
 #include <QHostInfo>
 #include <QLoggingCategory>
 #include <QTimer>
@@ -51,7 +50,7 @@ class DHTProvider : public GenericProvider {
   explicit DHTProvider(QObject* parent);
 
   int getNodeCount() const;
-  QList<Endpoint> getNodes();
+  EndpointList getNodes();
   bool isBound() { return socket4_->isValid() || socket6_->isValid(); }
 
   Q_SLOT void addRouter(QString host, quint16 port);
@@ -75,15 +74,11 @@ class DHTProvider : public GenericProvider {
 
   quint16 port_ = 0;
 
-  // Initialization
-  void readSession(QIODevice* io);
-  void writeSession(QIODevice* io);
-
   QMap<int, quint16> resolves_;
 
   Q_SLOT void handleResolve(const QHostInfo& host);
-  Q_SLOT void handleSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af,
-                           EndpointList nodes);
+  Q_SLOT void handleSearch(
+      QByteArray id, QAbstractSocket::NetworkLayerProtocol af, EndpointList nodes);
 };
 
 } /* namespace librevault */

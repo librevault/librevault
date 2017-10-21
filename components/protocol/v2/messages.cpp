@@ -27,57 +27,112 @@
  * files in the program, then also delete it here.
  */
 #include "messages.h"
+#include <QDataStream>
+#include <messages_v2.pb.h>
 
 namespace librevault {
 namespace protocol {
 namespace v2 {
 
-QDebug operator<<(QDebug debug, Header message_struct) {
-  return debug << QVariantMap{
-      {"type", message_struct.type},
-  };
+#pragma mark Debug output
+QDebug operator<<(QDebug debug, const Message::Header::MessageType& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "MessageType(" << [=] {
+    switch (obj) {
+      case Message::Header::MessageType::HANDSHAKE: return "HANDSHAKE";
+      case Message::Header::MessageType::CHOKE: return "CHOKE";
+      case Message::Header::MessageType::UNCHOKE: return "UNCHOKE";
+      case Message::Header::MessageType::INTEREST: return "INTEREST";
+      case Message::Header::MessageType::UNINTEREST: return "UNINTEREST";
+      case Message::Header::MessageType::INDEXUPDATE: return "INDEXUPDATE";
+      case Message::Header::MessageType::METAREQUEST: return "METAREQUEST";
+      case Message::Header::MessageType::METARESPONSE: return "METARESPONSE";
+      case Message::Header::MessageType::BLOCKREQUEST: return "BLOCKREQUEST";
+      case Message::Header::MessageType::BLOCKRESPONSE: return "BLOCKRESPONSE";
+      default: return "UNKNOWN";
+    }
+  }() << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, Handshake message_struct) {
-  return debug << QVariantMap{
-      {"auth_token", message_struct.auth_token},
-      {"device_name", message_struct.device_name},
-      {"user_agent", message_struct.user_agent},
-      {"dht_port", message_struct.dht_port},
-  };
+
+QDebug operator<<(QDebug debug, const Message::Header& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "Header(" << obj.type << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, IndexUpdate message_struct) {
-  return debug << QVariantMap{
-      {"path_keyed_hash", message_struct.revision.path_keyed_hash_},
-      {"revision", message_struct.revision.revision_},
-      {"bitfield", message_struct.bitfield},
-  };
+
+QDebug operator<<(QDebug debug, const Message::Handshake& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "Handshake("
+                  << "auth_token: " << obj.auth_token << "device_name: " << obj.device_name
+                  << "user_agent: " << obj.user_agent << "dht_port: " << obj.dht_port << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, MetaRequest message_struct) {
-  return debug << QVariantMap{
-      {"path_keyed_hash", message_struct.revision.path_keyed_hash_},
-      {"revision", message_struct.revision.revision_},
-  };
+
+QDebug operator<<(QDebug debug, const Message::IndexUpdate& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "IndexUpdate("
+                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_
+                  << "revision: " << obj.revision.revision_ << "bitfield: " << obj.bitfield << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, MetaResponse message_struct) {
-  return debug << QVariantMap{
-      {"metainfo", message_struct.smeta.rawMetaInfo()},
-      {"signature", message_struct.smeta.signature()},
-      {"bitfield", message_struct.bitfield},
-  };
+
+QDebug operator<<(QDebug debug, const Message::MetaRequest& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "MetaRequest("
+                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_
+                  << "revision: " << obj.revision.revision_ << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, BlockRequest message_struct) {
-  return debug << QVariantMap{
-      {"ct_hash", message_struct.ct_hash},
-      {"offset", message_struct.offset},
-      {"length", message_struct.length},
-  };
+
+QDebug operator<<(QDebug debug, const Message::MetaResponse& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "MetaResponse("
+                  << "smeta: " << obj.smeta << "bitfield: " << obj.bitfield << ")";
+  return debug;
 }
-QDebug operator<<(QDebug debug, BlockResponse message_struct) {
-  return debug << QVariantMap{
-      {"ct_hash", message_struct.ct_hash},
-      {"offset", message_struct.offset},
-      {"content", "(actual content size: " + QString::number(message_struct.content.size()) + ")"},
-  };
+
+QDebug operator<<(QDebug debug, const Message::BlockRequest& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "BlockRequest("
+                  << "ct_hash: " << obj.ct_hash << "offset: " << obj.offset
+                  << "length: " << obj.length << ")";
+  return debug;
+}
+
+QDebug operator<<(QDebug debug, const Message::BlockResponse& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "BlockRequest("
+                  << "ct_hash: " << obj.ct_hash << "offset: " << obj.offset << "content: "
+                  << "(actual content size: " + QString::number(obj.content.size()) + ")"
+                  << ")";
+  return debug;
+}
+
+QDebug operator<<(QDebug debug, const Message& obj) {
+  QDebugStateSaver saver(debug);
+  debug.nospace();
+  debug << "Message(";
+  debug << obj.header;
+
+  if (obj.header.type != Message::Header::MessageType::CHOKE &&
+      obj.header.type != Message::Header::MessageType::UNCHOKE &&
+      obj.header.type != Message::Header::MessageType::INTEREST &&
+      obj.header.type != Message::Header::MessageType::UNINTEREST) {
+    debug << ", ";
+  }
+
+  switch (obj.header.type) {
+    case Message::Header::MessageType::HANDSHAKE: debug << obj.handshake;
+    case Message::Header::MessageType::INDEXUPDATE: debug << obj.indexupdate;
+    case Message::Header::MessageType::METAREQUEST: debug << obj.metarequest;
+    case Message::Header::MessageType::METARESPONSE: debug << obj.metaresponse;
+    case Message::Header::MessageType::BLOCKREQUEST: debug << obj.blockrequest;
+    case Message::Header::MessageType::BLOCKRESPONSE: debug << obj.blockresponse;
+    default:;
+  }
+  debug << ")";
+  return debug;
 }
 
 }  // namespace v2

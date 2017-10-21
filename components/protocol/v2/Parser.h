@@ -46,34 +46,8 @@ class Parser {
   /* Errors */
   DECLARE_EXCEPTION(ParseError, "Parse error");
 
-  std::tuple<Header, QByteArray /*unpacked_payload*/> parseMessage(const QByteArray& message);
-
-  QByteArray genHandshake(const Handshake& message_struct);
-  Handshake parseHandshake(const QByteArray& payload_bytes);
-
-  QByteArray genChoke() { return serializeMessage(CHOKE); }
-  QByteArray genUnchoke() { return serializeMessage(UNCHOKE); }
-  QByteArray genInterest() { return serializeMessage(INTEREST); }
-  QByteArray genUninterest() { return serializeMessage(UNINTEREST); }
-
-  QByteArray genIndexUpdate(const IndexUpdate& message_struct);
-  IndexUpdate parseIndexUpdate(const QByteArray& payload_bytes);
-
-  QByteArray genMetaRequest(const MetaRequest& message_struct);
-  MetaRequest parseMetaRequest(const QByteArray& payload_bytes);
-
-  QByteArray genMetaResponse(const MetaResponse& message_struct);
-  MetaResponse parseMetaResponse(const QByteArray& payload_bytes);
-
-  QByteArray genBlockRequest(const BlockRequest& message_struct);
-  BlockRequest parseBlockRequest(const QByteArray& payload_bytes);
-
-  QByteArray genBlockResponse(const BlockResponse& message_struct);
-  BlockResponse parseBlockResponse(const QByteArray& payload_bytes);
-
- private:
-  QByteArray serializeMessage(MessageType type);
-  QByteArray serializeMessage(MessageType type, const ::google::protobuf::Message& payload_proto);
+  QByteArray serialize(const Message& msg) const;
+  Message parse(const QByteArray& binary) const;
 };
 
 } /* namespace v2 */

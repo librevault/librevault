@@ -27,8 +27,11 @@
  * files in the program, then also delete it here.
  */
 #include "TimeoutHandler.h"
+#include <QLoggingCategory>
 
 namespace librevault {
+
+Q_LOGGING_CATEGORY(log_timeout, "p2p.timeout")
 
 TimeoutHandler::TimeoutHandler(QObject* parent) : QObject(parent) {}
 
@@ -39,7 +42,10 @@ void TimeoutHandler::start() {
   timeout_timer_->setInterval(120 * 1000);
   timeout_timer_->start();
 
-  connect(timeout_timer_, &QTimer::timeout, this, [this] { emit timedOut(); });
+  connect(timeout_timer_, &QTimer::timeout, this, [this] {
+    qCDebug(log_timeout, "Connection timed out");
+    emit timedOut();
+  });
 }
 
 void TimeoutHandler::bump() {

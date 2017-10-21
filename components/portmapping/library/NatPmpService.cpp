@@ -55,9 +55,7 @@ void NatPmpService::start() {
   emit started();
 }
 
-void NatPmpService::stop() {
-  closenatpmp(natpmp_.get());
-}
+void NatPmpService::stop() { closenatpmp(natpmp_.get()); }
 
 NatPmpPortMapping::NatPmpPortMapping(const MappingRequest& request, NatPmpService* parent)
     : PortMapping(request, parent, parent) {

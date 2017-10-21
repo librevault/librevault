@@ -27,26 +27,44 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "exception.hpp"
 #include <QHostAddress>
+
+struct sockaddr;
+struct sockaddr_storage;
 
 namespace librevault {
 
+struct Endpoint;  // forward declaration
+
+using EndpointList = QList<Endpoint>;
+using EndpointSet = QSet<Endpoint>;
+
 struct Endpoint {
+  DECLARE_EXCEPTION(InvalidEndpoint, "Invalid endpoint");
+  DECLARE_EXCEPTION(InvalidAddressFamily, "Invalid address family inside sockaddr");
+  DECLARE_EXCEPTION(EndpointNotMatched, "Endpoint has not match the endpoint pattern");
+
   QHostAddress addr;
   quint16 port;
 
   static Endpoint fromString(const QString& str);
   QString toString() const;
 
+  static Endpoint fromPacked4(QByteArray packed);
+  static Endpoint fromPacked6(QByteArray packed);
+  static EndpointList fromPackedList4(const QByteArray& packed);
+  static EndpointList fromPackedList6(const QByteArray& packed);
+
+  static Endpoint fromSockaddr(const sockaddr& sa);
+  std::tuple<sockaddr_storage, size_t> toSockaddr() const;
+
   inline QPair<QHostAddress, quint16> toPair() const { return {addr, port}; };
   inline bool operator==(const Endpoint& that) const { return toPair() == that.toPair(); }
 };
 
-inline uint qHash(const Endpoint& key, uint seed = 0) Q_DECL_NOTHROW { return qHash(key.toPair()); }
+inline uint qHash(const Endpoint& key, uint seed = 0) noexcept { return qHash(key.toPair()); }
 
 QDebug operator<<(QDebug debug, const Endpoint& endpoint);
-
-using EndpointList = QList<Endpoint>;
-using EndpointSet = QSet<Endpoint>;
 
 }  // namespace librevault

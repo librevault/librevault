@@ -41,24 +41,25 @@ MetaUploader::MetaUploader(Index* index, ChunkStorage* chunk_storage, QObject* p
     : QObject(parent), index_(index), chunk_storage_(chunk_storage) {}
 
 void MetaUploader::broadcastMeta(const QList<Peer*>& peers, const SignedMeta& smeta) {
-  for (auto peer : peers) peer->sendIndexUpdate(makeMessage(smeta));
+  for (auto peer : peers) peer->send(makeMessage(smeta));
 }
 
 void MetaUploader::broadcastChunk(const QList<Peer*>& peers, const QByteArray& ct_hash) {
   for (const auto& smeta : index_->containingChunk(ct_hash))
-    for (auto peer : peers) peer->sendIndexUpdate(makeMessage(smeta));
+    for (auto peer : peers) peer->send(makeMessage(smeta));
 }
 
 void MetaUploader::handleHandshake(Peer* peer) {
-  for (auto& smeta : index_->getMeta()) peer->sendIndexUpdate(makeMessage(smeta));
+  for (auto& smeta : index_->getMeta()) peer->send(makeMessage(smeta));
 }
 
 void MetaUploader::handleMetaRequest(Peer* peer, const MetaInfo::PathRevision& revision) {
   try {
-    protocol::v2::MetaResponse response;
-    response.smeta = index_->getMeta(revision);
-    response.bitfield = chunk_storage_->makeBitfield(response.smeta.metaInfo());
-    peer->sendMetaResponse(response);
+    protocol::v2::Message response;
+    response.header.type = protocol::v2::MessageType::METARESPONSE;
+    response.metaresponse.smeta = index_->getMeta(revision);
+    response.metaresponse.bitfield = chunk_storage_->makeBitfield(response.metaresponse.smeta.metaInfo());
+    peer->send(response);
   } catch (const Index::NoSuchMeta& e) {
     qCDebug(log_metauploader) << "Requested nonexistent Meta";
   } catch (const std::exception& e) {
@@ -66,12 +67,13 @@ void MetaUploader::handleMetaRequest(Peer* peer, const MetaInfo::PathRevision& r
   }
 }
 
-protocol::v2::IndexUpdate MetaUploader::makeMessage(const SignedMeta& smeta) {
-  protocol::v2::IndexUpdate update;
-  update.revision = smeta.metaInfo().path_revision();
-  update.bitfield = chunk_storage_->makeBitfield(smeta.metaInfo());
+protocol::v2::Message MetaUploader::makeMessage(const SignedMeta& smeta) {
+  protocol::v2::Message update;
+  update.header.type = protocol::v2::MessageType::INDEXUPDATE;
+  update.indexupdate.revision = smeta.metaInfo().path_revision();
+  update.indexupdate.bitfield = chunk_storage_->makeBitfield(smeta.metaInfo());
 
-  Q_ASSERT(update.bitfield.size() == smeta.metaInfo().chunks().size());
+  Q_ASSERT(update.indexupdate.bitfield.size() == smeta.metaInfo().chunks().size());
 
   return update;
 }

@@ -35,6 +35,8 @@
 
 namespace librevault {
 
+Q_LOGGING_CATEGORY(log_peerpool, "p2p.peerpool")
+
 PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
     MulticastProvider* multicast, QObject* parent)
     : QObject(parent), params_(params), node_key_(node_key) {
@@ -50,6 +52,9 @@ PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, BTProvider* bt
   multicast_group_->setEnabled(true);
 
   connect(multicast_group_, &GenericGroup::discovered, this, &PeerPool::handleDiscovered);
+
+  qCDebug(log_peerpool) << "Adding" << params_.nodes.size() << "nodes from configuration";
+  for (const auto& url : params_.nodes) handleNewUrl(url);
 }
 
 PeerPool::~PeerPool() = default;
@@ -67,9 +72,11 @@ void PeerPool::handleDiscovered(const Endpoint& endpoint) {
 }
 
 void PeerPool::handleNewUrl(const QUrl& url) {
+  qCDebug(log_peerpool) << "Handling an url:" << url;
+
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
   connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
-  connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });
+  connect(peer, &Peer::disconnected, this, [=] { handleDisconnected(peer); });
   connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
 
   peer->open(url);
@@ -79,9 +86,12 @@ void PeerPool::handleNewUrl(const QUrl& url) {
 }
 
 void PeerPool::handleIncoming(QWebSocket* socket) {
+  qCDebug(log_peerpool) << "Handling an incoming connection:"
+                        << Endpoint{socket->peerAddress(), socket->peerPort()};
+
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
   connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
-  connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });
+  connect(peer, &Peer::disconnected, this, [=] { handleDisconnected(peer); });
   connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
 
   peer->setConnectedSocket(socket);
@@ -106,7 +116,7 @@ void PeerPool::handleDisconnected(Peer* peer) {
 }
 
 void PeerPool::handleConnected(Peer* peer) {
-  if (contains(peer)) {
+  if (digests_.contains(peer->digest())) {
     peer->deleteLater();
     return;
   }

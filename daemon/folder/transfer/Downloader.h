@@ -63,7 +63,7 @@ struct DownloadChunk : boost::noncopyable {
     std::chrono::steady_clock::time_point started;
   };
   QMultiHash<Peer*, BlockRequest> requests;
-  QHash<Peer*, std::shared_ptr<InterestGuard>> owned_by;
+  QHash<Peer*, std::shared_ptr<StateGuard>> owned_by;
 
   const QByteArray ct_hash;
 };

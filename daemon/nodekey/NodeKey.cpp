@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "NodeKey.h"
+#include "control/Paths.h"
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/oids.h>
@@ -34,7 +35,6 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <QDir>
-#include "control/Paths.h"
 
 namespace librevault {
 
@@ -98,7 +98,8 @@ QSslKey NodeKey::generateKey() {
   // Named curve
   CryptoPP::OID oid;
   if (!private_key.GetVoidValue(CryptoPP::Name::GroupOID(), typeid(oid), &oid))
-    throw CryptoPP::Exception(CryptoPP::Exception::OTHER_ERROR, "PEM_DEREncode: failed to retrieve curve OID");
+    throw CryptoPP::Exception(
+        CryptoPP::Exception::OTHER_ERROR, "PEM_DEREncode: failed to retrieve curve OID");
 
   // Encoder for OID
   CryptoPP::DERGeneralEncoder cs1(seq, CryptoPP::CONTEXT_SPECIFIC | CryptoPP::CONSTRUCTED | 0);
@@ -133,7 +134,8 @@ QSslCertificate NodeKey::createCertificate(const QSslKey& key) {
   // Read private key from buffer
   {
     QByteArray private_key_pem = key.toPem();
-    std::unique_ptr<BIO, decltype(&BIO_free)> private_key_bio(BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size()), &BIO_free);
+    std::unique_ptr<BIO, decltype(&BIO_free)> private_key_bio(
+        BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size()), &BIO_free);
     EVP_PKEY* evp_pkey = openssl_pkey.get();
     PEM_read_bio_PrivateKey(private_key_bio.get(), &evp_pkey, 0, 0);
   }
@@ -155,7 +157,8 @@ QSslCertificate NodeKey::createCertificate(const QSslKey& key) {
     /* Set the country code and common name. */
     // X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (uchar*) "CA", -1, -1, 0);
     // X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC, (uchar*) "MyCompany", -1, -1, 0);
-    X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (uchar*)"Librevault", -1, -1, 0);  // Use some sort of user-agent
+    X509_NAME_add_entry_by_txt(
+        name, "CN", MBSTRING_ASC, (uchar*)"Librevault", -1, -1, 0);  // Use some sort of user-agent
 
     /* Now set the issuer name. */
     X509_set_issuer_name(x509.get(), name);

@@ -44,7 +44,7 @@ class PeerServer : public QObject {
   Q_OBJECT
  public:
   PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent);
-  virtual ~PeerServer();
+  ~PeerServer() override;
 
   void addPeerPool(const QByteArray& folderid, PeerPool* pool);
 
@@ -55,20 +55,21 @@ class PeerServer : public QObject {
   Q_SLOT void stop();
 
  private:
-  NodeKey* node_key_;
-  GenericNatService* port_mapping_;
-  PortMapping* main_port_;
+  NodeKey* node_key_ = nullptr;
+  GenericNatService* port_mapping_ = nullptr;
+  PortMapping* main_port_ = nullptr;
 
-  QWebSocketServer* server_;
+  QWebSocketServer* server_ = nullptr;
 
   QMap<QByteArray, PeerPool*> peer_pools_;
 
- private slots:
-  void handleConnection();
-  void handlePeerVerifyError(const QSslError& error);
-  void handleServerError(QWebSocketProtocol::CloseCode closeCode);
-  void handleSslErrors(const QList<QSslError>& errors);
-  void handleAcceptError(QAbstractSocket::SocketError socketError);
+  quint16 configPort() const;
+
+  Q_SLOT void handleConnection();
+  Q_SLOT void handlePeerVerifyError(const QSslError& error);
+  Q_SLOT void handleServerError(QWebSocketProtocol::CloseCode closeCode);
+  Q_SLOT void handleSslErrors(const QList<QSslError>& errors);
+  Q_SLOT void handleAcceptError(QAbstractSocket::SocketError socketError);
 };
 
 } /* namespace librevault */

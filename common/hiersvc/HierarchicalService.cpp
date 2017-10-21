@@ -69,7 +69,7 @@ void HierarchicalService::teardown(State old_state) {
 
 void HierarchicalService::setState(State new_state) {
   State old_state = state_;
-  qCDebug(log_hiersvc) << this << "state transition " << old_state << "-->" << new_state;
+  qCDebug(log_hiersvc) << this << "state transition" << old_state << "-->" << new_state;
   if (state_ == new_state) return;
   state_ = new_state;
 

@@ -79,7 +79,7 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
   meta_downloader_ = new MetaDownloader(params_, index_, downloader_, this);
 
   // Connecting signals and slots
-  connect(index_, &Index::metaAdded, this, &FolderGroup::handleNewMeta);
+  connect(index_, &Index::metaAdded, this, &FolderGroup::notifyLocalMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, &FolderGroup::handleNewChunk);
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
   connect(
@@ -87,7 +87,7 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
 
   // Go through index
   QTimer::singleShot(0, this, [=] {
-    for (auto& smeta : index_->getMeta()) handleNewMeta(smeta);
+    for (auto& smeta : index_->getMeta()) notifyLocalMeta(smeta);
   });
 }
 
@@ -109,7 +109,7 @@ void FolderGroup::handleMetaDownloaded(SignedMeta smeta) {
 }
 
 /* Actions */
-void FolderGroup::handleNewMeta(const SignedMeta& smeta) {
+void FolderGroup::notifyLocalMeta(const SignedMeta& smeta) {
   Q_ASSERT(pool_);
 
   MetaInfo::PathRevision revision = smeta.metaInfo().path_revision();
@@ -129,31 +129,37 @@ void FolderGroup::handleNewChunk(const QByteArray& ct_hash) {
 // RemoteFolder actions
 void FolderGroup::handleNewPeer(Peer* peer) {
   // Messages
-  connect(peer, &Peer::rcvdChoke, downloader_, [=] { downloader_->handleChoke(peer); });
-  connect(peer, &Peer::rcvdUnchoke, downloader_, [=] { downloader_->handleUnchoke(peer); });
-  connect(peer, &Peer::rcvdInterest, uploader_, [=] { uploader_->handleInterested(peer); });
-  connect(peer, &Peer::rcvdUninterest, uploader_, [=] { uploader_->handleNotInterested(peer); });
-
-  connect(
-      peer, &Peer::rcvdIndexUpdate, meta_downloader_, [=](const protocol::v2::IndexUpdate& msg) {
-        meta_downloader_->handleIndexUpdate(peer, msg.revision, msg.bitfield);
-      });
-  connect(peer, &Peer::rcvdMetaRequest, meta_uploader_, [=](const protocol::v2::MetaRequest& msg) {
-    meta_uploader_->handleMetaRequest(peer, msg.revision);
-  });
-  connect(
-      peer, &Peer::rcvdMetaResponse, meta_downloader_, [=](const protocol::v2::MetaResponse& msg) {
-        meta_downloader_->handleMetaReply(peer, msg.smeta, msg.bitfield);
-      });
-  connect(peer, &Peer::rcvdBlockRequest, uploader_, [=](const protocol::v2::BlockRequest& msg) {
-    uploader_->handleBlockRequest(peer, msg.ct_hash, msg.offset, msg.length);
-  });
-  connect(peer, &Peer::rcvdBlockResponse, downloader_, [=](const protocol::v2::BlockResponse& msg) {
-    downloader_->putBlock(msg.ct_hash, msg.offset, msg.content, peer);
+  connect(peer, &Peer::received, this, [=](const protocol::v2::Message& msg) {
+    switch (msg.header.type) {
+      case protocol::v2::MessageType::CHOKE: downloader_->handleChoke(peer); break;
+      case protocol::v2::MessageType::UNCHOKE: downloader_->handleUnchoke(peer); break;
+      case protocol::v2::MessageType::INTEREST: uploader_->handleInterested(peer); break;
+      case protocol::v2::MessageType::UNINTEREST: uploader_->handleNotInterested(peer); break;
+      case protocol::v2::MessageType::INDEXUPDATE:
+        meta_downloader_->handleIndexUpdate(
+            peer, msg.indexupdate.revision, msg.indexupdate.bitfield);
+        break;
+      case protocol::v2::MessageType::METAREQUEST:
+        meta_uploader_->handleMetaRequest(peer, msg.metarequest.revision);
+        break;
+      case protocol::v2::MessageType::METARESPONSE:
+        meta_downloader_->handleMetaReply(peer, msg.metaresponse.smeta, msg.metaresponse.bitfield);
+        break;
+      case protocol::v2::MessageType::BLOCKREQUEST:
+        uploader_->handleBlockRequest(
+            peer, msg.blockrequest.ct_hash, msg.blockrequest.offset, msg.blockrequest.length);
+        break;
+      case protocol::v2::MessageType::BLOCKRESPONSE:
+        downloader_->putBlock(
+            msg.blockresponse.ct_hash, msg.blockresponse.offset, msg.blockresponse.content, peer);
+        break;
+      default:;  // Nothing can go wrong here
+    }
   });
 
   // States
   connect(peer, &Peer::disconnected, downloader_, [=] { downloader_->untrackPeer(peer); });
+  connect(peer, &Peer::disconnected, uploader_, [=] { uploader_->untrackPeer(peer); });
 
   downloader_->trackPeer(peer);
   meta_uploader_->handleHandshake(peer);

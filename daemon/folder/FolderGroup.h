@@ -92,7 +92,7 @@ class FolderGroup : public QObject {
   void addAssemble(SignedMeta smeta);
   void handleMetaDownloaded(SignedMeta smeta);
 
-  void handleNewMeta(const SignedMeta& smeta);
+  void notifyLocalMeta(const SignedMeta& smeta);
   void handleNewChunk(const QByteArray& ct_hash);
   void handleNewPeer(Peer* peer);
 

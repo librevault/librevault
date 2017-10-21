@@ -33,7 +33,7 @@
 
 namespace librevault {
 
-inline QByteArray derive_token(const Secret& secret, QByteArray cert_digest) {
+inline QByteArray deriveToken(const Secret& secret, const QByteArray& cert_digest) {
 	QCryptographicHash token(QCryptographicHash::Sha3_256);
 	token.addData(secret.publicKey());
 	token.addData(cert_digest);

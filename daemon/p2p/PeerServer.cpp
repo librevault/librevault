@@ -41,7 +41,7 @@ namespace librevault {
 
 PeerServer::PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent)
     : QObject(parent), node_key_(node_key), port_mapping_(port_mapping) {
-  server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
+  server_ = new QWebSocketServer(Version().versionString(), QWebSocketServer::SecureMode, this);
   server_->setSslConfiguration(node_key_->getSslConfiguration());
 
   connect(server_, &QWebSocketServer::newConnection, this, &PeerServer::handleConnection);
@@ -60,17 +60,19 @@ void PeerServer::addPeerPool(const QByteArray& folderid, PeerPool* pool) {
   connect(pool, &QObject::destroyed, this, [=] { peer_pools_.remove(folderid); });
 }
 
-quint16 PeerServer::externalPort() const { return main_port_->externalPort(); }
+quint16 PeerServer::externalPort() const {
+  return main_port_ ? main_port_->externalPort() : configPort();
+}
 
 void PeerServer::start() {
-  if (!server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
+  if (!server_->listen(QHostAddress::Any, configPort())) {
     qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
                        << "E:" << server_->errorString();
     return;
   }
-
   qCInfo(log_p2p) << "Librevault is listening on port:" << server_->serverPort();
 
+  // Port mapping
   MappingRequest request;
   request.internal_port = server_->serverPort();
   request.external_port = server_->serverPort();
@@ -86,8 +88,10 @@ void PeerServer::start() {
 
 void PeerServer::stop() {
   server_->close();
-  main_port_->deleteLater();
+  main_port_->setEnabled(false);
 }
+
+quint16 PeerServer::configPort() const { return Config::get()->getGlobal("p2p_listen").toUInt(); }
 
 /* Here are where new QWebSocket created */
 void PeerServer::handleConnection() {

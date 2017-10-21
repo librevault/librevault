@@ -29,7 +29,6 @@
 #pragma once
 
 #include "../GenericProvider.h"
-#include "../btcompat.h"
 #include <QLoggingCategory>
 #include <QUdpSocket>
 

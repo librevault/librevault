@@ -40,7 +40,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_peer, "p2p.peer");
 
 Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
-           BandwidthCounter* bc_blocks, QObject* parent)
+    BandwidthCounter* bc_blocks, QObject* parent)
     : QObject(parent), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {
   qCDebug(log_peer) << "new peer";
 
@@ -66,12 +66,12 @@ Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_a
 
 Peer::~Peer() = default;
 
-QUrl Peer::makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid) {
+QUrl Peer::makeUrl(const Endpoint& endpoint, QByteArray folderid) {
   QUrl url;
   url.setScheme("wss");
   url.setPath("/" + folderid.toHex());
-  url.setHost(endpoint.first.toString());
-  url.setPort(endpoint.second);
+  url.setHost("[" + endpoint.addr.toString() + "]");
+  url.setPort(endpoint.port);
   return url;
 }
 
@@ -114,10 +114,7 @@ QByteArray Peer::digest() const {
   return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
-QPair<QHostAddress, quint16> Peer::endpoint() const {
-  return {socket_->peerAddress(), socket_->peerPort()};
-}
-
+Endpoint Peer::endpoint() const { return {socket_->peerAddress(), socket_->peerPort()}; }
 QString Peer::clientName() const { return handshake_handler_->clientName(); }
 QString Peer::userAgent() const { return handshake_handler_->userAgent(); }
 bool Peer::isValid() const { return handshake_handler_->isValid(); }

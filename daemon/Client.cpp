@@ -119,7 +119,9 @@ void Client::initDiscovery() {
 }
 
 void Client::deinitDiscovery() {
-
+  delete discovery_bt_;
+  delete discovery_dht_;
+  delete discovery_multicast_;
 }
 
 void Client::initFolder(const FolderParams& params) {

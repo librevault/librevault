@@ -28,19 +28,19 @@
  */
 #pragma once
 #include <QByteArray>
-#include <random>
-#include <climits>
 #include <algorithm>
+#include <climits>
 #include <functional>
+#include <random>
 
 inline void fillRandomBuf(void* buf, size_t size) {
-	std::independent_bits_engine<std::random_device, CHAR_BIT, uint8_t> rd;
-	std::independent_bits_engine<std::mt19937, CHAR_BIT, uint8_t> engine(rd());
-	std::generate((char*)buf, (char*)buf+size, std::ref(engine));
+  std::independent_bits_engine<std::random_device, CHAR_BIT, uint8_t> rd;
+  std::independent_bits_engine<std::mt19937, CHAR_BIT, uint8_t> engine(rd());
+  std::generate((char*)buf, (char*)buf + size, std::ref(engine));
 }
 
 inline QByteArray getRandomArray(int size) {
-	QByteArray arr(size, 0);
-	fillRandomBuf(arr.data(), size);
-	return arr;
+  QByteArray arr(size, 0);
+  fillRandomBuf(arr.data(), size);
+  return arr;
 }

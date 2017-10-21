@@ -42,7 +42,7 @@ bool PeerPool::contains(Peer* peer) const {
          endpoints_.contains(peer->endpoint());
 }
 
-void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
+void PeerPool::handleDiscovered(Endpoint endpoint) {
   if (endpoints_.contains(endpoint)) return;
 
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
@@ -58,7 +58,6 @@ void PeerPool::handleDiscovered(QPair<QHostAddress, quint16> endpoint) {
 }
 
 void PeerPool::handleIncoming(QWebSocket* socket) {
-
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
   connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
   connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });

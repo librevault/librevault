@@ -29,6 +29,7 @@
 #pragma once
 #include "control/FolderParams.h"
 #include "util/BandwidthCounter.h"
+#include "util/Endpoint.h"
 #include <QHostAddress>
 #include <QObject>
 #include <QSet>
@@ -52,8 +53,7 @@ class PeerPool : public QObject {
 
   Q_SIGNAL void newValidPeer(Peer* peer);
 
-  Q_SLOT void handleDiscovered(QHostAddress host, quint16 port) { handleDiscovered({host, port}); }
-  Q_SLOT void handleDiscovered(QPair<QHostAddress, quint16> endpoint);
+  Q_SLOT void handleDiscovered(Endpoint endpoint);
   Q_SLOT void handleIncoming(QWebSocket* socket);
 
   /* Getters */
@@ -80,7 +80,7 @@ class PeerPool : public QObject {
 
   // Member lookup optimization
   QSet<QByteArray> digests_;
-  QSet<QPair<QHostAddress, quint16>> endpoints_;
+  EndpointSet endpoints_;
 
   Q_SLOT void handleHandshake(Peer* peer);
   Q_SLOT void handleDisconnected(Peer* peer);

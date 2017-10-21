@@ -37,10 +37,16 @@ struct Endpoint {
 
   static Endpoint fromString(const QString& str);
   QString toString() const;
+
+  inline QPair<QHostAddress, quint16> toPair() const { return {addr, port}; };
+  inline bool operator==(const Endpoint& that) const { return toPair() == that.toPair(); }
 };
 
-QDebug operator<<(QDebug debug, const Endpoint &endpoint);
+inline uint qHash(const Endpoint& key, uint seed = 0) Q_DECL_NOTHROW { return qHash(key.toPair()); }
+
+QDebug operator<<(QDebug debug, const Endpoint& endpoint);
 
 using EndpointList = QList<Endpoint>;
+using EndpointSet = QSet<Endpoint>;
 
 }  // namespace librevault

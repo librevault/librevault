@@ -27,19 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <vector>
 #include <QByteArray>
+#include <vector>
 
 namespace librevault {
 
 using blob = std::vector<quint8>;
 
 inline QByteArray convertBlob(const blob& bl) {
-	return QByteArray((const char*)bl.data(), bl.size());
+  return QByteArray((const char*)bl.data(), bl.size());
 }
 
-inline blob convertBlob(const QByteArray& ba) {
-	return blob(ba.begin(), ba.end());
-}
+inline blob convertBlob(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
 
 } /* namespace librevault */

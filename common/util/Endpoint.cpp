@@ -32,7 +32,7 @@
 namespace librevault {
 
 namespace {
-  QRegularExpression endpoint_regexp(R"(^\[?([[:xdigit:].:]{2,45})\]?:(\d{1,5})$)");
+QRegularExpression endpoint_regexp(R"(^\[?([[:xdigit:].:]{2,45})\]?:(\d{1,5})$)");
 }
 
 Endpoint Endpoint::fromString(const QString& str) {
@@ -54,7 +54,7 @@ QString Endpoint::toString() const {
   return QStringLiteral("%1:%2").arg(addr_converted.toString()).arg(port);
 }
 
-QDebug operator<<(QDebug debug, const Endpoint &endpoint) {
+QDebug operator<<(QDebug debug, const Endpoint& endpoint) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "Endpoint(" << endpoint.toString() << ")";
   return debug;

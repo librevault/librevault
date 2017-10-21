@@ -31,13 +31,14 @@
 #include "SignedMeta.h"
 #include "TimeoutHandler.h"
 #include "util/BandwidthCounter.h"
+#include "util/Endpoint.h"
 #include <v2/Parser.h>
 #include <v2/messages.h>
 #include <QObject>
 #include <QTimer>
 #include <QWebSocket>
-#include <util/exception.hpp>
 #include <memory>
+#include "util/exception.hpp"
 
 namespace librevault {
 
@@ -53,7 +54,7 @@ class Peer : public QObject {
 
  public:
   Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
-       BandwidthCounter* bc_blocks, QObject* parent);
+      BandwidthCounter* bc_blocks, QObject* parent);
   ~Peer();
 
   DECLARE_EXCEPTION(HandshakeExpected, "Handshake message expected");
@@ -62,7 +63,7 @@ class Peer : public QObject {
 
   enum Role { UNDEFINED, SERVER, CLIENT };
 
-  static QUrl makeUrl(QPair<QHostAddress, quint16> endpoint, QByteArray folderid);
+  static QUrl makeUrl(const Endpoint& endpoint, QByteArray folderid);
 
   Q_SIGNAL void connected();
   Q_SIGNAL void disconnected();
@@ -122,7 +123,7 @@ class Peer : public QObject {
   bool peerInterested() const { return peer_interested_; }
 
   QByteArray digest() const;
-  QPair<QHostAddress, quint16> endpoint() const;
+  Endpoint endpoint() const;
   QString clientName() const;
   QString userAgent() const;
 

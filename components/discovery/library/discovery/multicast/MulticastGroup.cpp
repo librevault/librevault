@@ -37,8 +37,8 @@ Q_DECLARE_LOGGING_CATEGORY(log_multicast)
 namespace librevault {
 
 MulticastGroup::MulticastGroup(
-    MulticastProvider* provider, const QByteArray& discovery_id, QObject* parent)
-    : GenericGroup(provider, parent), provider_(provider), discovery_id_(discovery_id) {
+    QByteArray discovery_id, MulticastProvider* provider, QObject* parent)
+    : GenericGroup(std::move(discovery_id), provider, parent), provider_(provider) {
   timer_ = new QTimer(this);
   timer_->setInterval(std::chrono::seconds(30));
 
@@ -46,13 +46,14 @@ MulticastGroup::MulticastGroup(
   connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticast);
   connect(provider_, &MulticastProvider::discovered, this,
       [=](const QByteArray& id, const Endpoint& endpoint) {
-        if (id == discovery_id_) emit discovered(endpoint);
+        if (id == getDiscoveryID()) emit discovered(endpoint);
       });
 }
 
 void MulticastGroup::start() {
   QTimer::singleShot(0, this, &MulticastGroup::sendMulticast);
   timer_->start();
+  started();
 }
 
 void MulticastGroup::stop() { timer_->stop(); }
@@ -64,7 +65,7 @@ QByteArray MulticastGroup::getMessage() {
 
   QJsonObject message;
   message["port"] = provider_->getAnnouncePort();
-  message["id"] = QString::fromLatin1(discovery_id_.toBase64());
+  message["id"] = QString::fromLatin1(getDiscoveryID().toBase64());
 
   return QJsonDocument(message).toJson(QJsonDocument::Compact);
 }
@@ -76,7 +77,8 @@ void MulticastGroup::sendMulticast() {
   if (provider_->getSocket()->writeDatagram(getMessage(), endpoint.addr, endpoint.port))
     qCDebug(log_multicast) << "===> Multicast message sent to:" << endpoint.toString();
   else
-    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint.toString() << "E:" << provider_->getSocket()->errorString();
+    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint.toString()
+                           << "E:" << provider_->getSocket()->errorString();
 }
 
 } /* namespace librevault */

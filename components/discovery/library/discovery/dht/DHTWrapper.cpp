@@ -113,9 +113,9 @@ DHTWrapper::~DHTWrapper() {
   dht_uninit();
 }
 
-void DHTWrapper::pingNode(QHostAddress addr, quint16 port) {
+void DHTWrapper::pingNode(const Endpoint& endpoint) {
   if (!enabled()) return;
-  sockaddr_storage sa = convertSockaddr(addr, port);
+  sockaddr_storage sa = convertSockaddr(endpoint.addr, endpoint.port);
   dht_ping_node((const sockaddr*)&sa, getSockaddrSize(sa));
 }
 

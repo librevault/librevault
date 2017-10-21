@@ -27,13 +27,30 @@
  * files in the program, then also delete it here.
  */
 #include "PeerPool.h"
+#include "discovery/bt/BTGroup.h"
+#include "discovery/dht/DHTGroup.h"
+#include "discovery/multicast/MulticastGroup.h"
 #include "p2p/Peer.h"
 #include "p2p/PeerServer.h"
 
 namespace librevault {
 
-PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent)
-    : QObject(parent), params_(params), node_key_(node_key) {}
+PeerPool::PeerPool(const FolderParams& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
+    MulticastProvider* multicast, QObject* parent)
+    : QObject(parent), params_(params), node_key_(node_key) {
+  bt_group_ = new BTGroup(params.folderid(), bt, this);
+  bt_group_->setEnabled(true);
+  connect(bt_group_, &GenericGroup::discovered, this, &PeerPool::handleDiscovered);
+
+  dht_group_ = new DHTGroup(params.folderid(), dht, this);
+  dht_group_->setEnabled(true);
+  connect(dht_group_, &GenericGroup::discovered, this, &PeerPool::handleDiscovered);
+
+  multicast_group_ = new MulticastGroup(params.folderid(), multicast, this);
+  multicast_group_->setEnabled(true);
+
+  connect(multicast_group_, &GenericGroup::discovered, this, &PeerPool::handleDiscovered);
+}
 
 PeerPool::~PeerPool() = default;
 
@@ -42,16 +59,20 @@ bool PeerPool::contains(Peer* peer) const {
          endpoints_.contains(peer->endpoint());
 }
 
-void PeerPool::handleDiscovered(Endpoint endpoint) {
+void PeerPool::handleDiscovered(const Endpoint& endpoint) {
   if (endpoints_.contains(endpoint)) return;
 
+  QUrl ws_url = Peer::makeUrl(endpoint, params_.folderid());
+  return handleNewUrl(ws_url);
+}
+
+void PeerPool::handleNewUrl(const QUrl& url) {
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, this);
   connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
   connect(peer, &Peer::handshakeFailed, this, [=] { handleDisconnected(peer); });
   connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
 
-  QUrl ws_url = Peer::makeUrl(endpoint, params_.folderid());
-  peer->open(ws_url);
+  peer->open(url);
 
   peers_.insert(peer);
   endpoints_.insert(peer->endpoint());
@@ -85,7 +106,7 @@ void PeerPool::handleDisconnected(Peer* peer) {
 }
 
 void PeerPool::handleConnected(Peer* peer) {
-  if(contains(peer)) {
+  if (contains(peer)) {
     peer->deleteLater();
     return;
   }

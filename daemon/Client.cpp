@@ -32,10 +32,10 @@
 #include "nodekey/NodeKey.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
+#include <NatPmpService.h>
 #include <discovery/bt/BTProvider.h>
 #include <discovery/dht/DHTProvider.h>
 #include <discovery/multicast/MulticastProvider.h>
-#include <NatPmpService.h>
 #include <QTimer>
 
 namespace librevault {
@@ -68,14 +68,17 @@ Client::~Client() {
 void Client::initializeAll() {
   peerserver_->start();
 
+  initDiscovery();
+
   // Initialize all existing folders
   for (const QByteArray& folderid : Config::get()->listFolders())
     initFolder(Config::get()->getFolder(folderid));
 }
 
 void Client::deinitializeAll() {
-  for (const QByteArray& folderid : Config::get()->listFolders())
-    deinitFolder(folderid);
+  for (const QByteArray& folderid : Config::get()->listFolders()) deinitFolder(folderid);
+
+  deinitDiscovery();
 
   peerserver_->stop();
 }
@@ -96,43 +99,49 @@ void Client::initDiscovery() {
   QByteArray discovery_id = node_key_->digest();
 
   // Multicast
-  discovery_multicast_ = new MulticastProvider(this);
-  discovery_multicast_->setAnnouncePort(12345);
-
-  discovery_multicast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
-  discovery_multicast_->setEnabled(true);
+  mcast_ = new MulticastProvider(this);
+  mcast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
+  mcast_->setEnabled(Config::get()->getGlobal("multicast_enabled").toBool());
 
   // DHT
-  discovery_dht_ = new DHTProvider(this);
-  discovery_dht_->setAnnouncePort(12345);
-  discovery_dht_->setEnabled(true);
-
-  discovery_dht_->addRouter("router.utorrent.com", 6881);
-  discovery_dht_->addRouter("router.bittorrent.com", 6881);
-  discovery_dht_->addRouter("dht.transmissionbt.com", 6881);
-  discovery_dht_->addRouter("dht.aelitis.com", 6881);
-  discovery_dht_->addRouter("dht.libtorrent.org", 25401);
+  dht_ = new DHTProvider(this);
+  dht_->setEnabled(Config::get()->getGlobal("mainline_dht_enabled").toBool());
+  dht_->addRouter("router.utorrent.com", 6881);
+  dht_->addRouter("router.bittorrent.com", 6881);
+  dht_->addRouter("dht.transmissionbt.com", 6881);
+  dht_->addRouter("dht.aelitis.com", 6881);
+  dht_->addRouter("dht.libtorrent.org", 25401);
 
   // BitTorrent
-  discovery_bt_ = new BTProvider(this);
-  discovery_bt_->setAnnouncePort(12345);
+  bt_ = new BTProvider(this);
+  bt_->setEnabled(Config::get()->getGlobal("bttracker_enabled").toBool());
+  bt_->setIDPrefix(Config::get()->getGlobal("bttracker_azureus_id").toString().toLatin1());
+
+  // common
+  mcast_->setAnnouncePort(peerserver_->externalPort());
+  dht_->setAnnouncePort(peerserver_->externalPort());
+  bt_->setAnnouncePort(peerserver_->externalPort());
+
+  connect(peerserver_, &PeerServer::externalPortChanged, mcast_, &GenericProvider::setAnnouncePort);
+  connect(peerserver_, &PeerServer::externalPortChanged, dht_, &GenericProvider::setAnnouncePort);
+  connect(peerserver_, &PeerServer::externalPortChanged, bt_, &GenericProvider::setAnnouncePort);
 }
 
 void Client::deinitDiscovery() {
-  delete discovery_bt_;
-  delete discovery_dht_;
-  delete discovery_multicast_;
+  delete bt_;
+  delete dht_;
+  delete mcast_;
 }
 
 void Client::initFolder(const FolderParams& params) {
   auto fgroup = new FolderGroup(params, this);
   groups_[params.folderid()] = fgroup;
 
-  auto peer_pool = new PeerPool(params, node_key_, this);
+  auto peer_pool = new PeerPool(params, node_key_, bt_, dht_, mcast_, this);
   fgroup->setPeerPool(peer_pool);
   peerserver_->addPeerPool(params.folderid(), peer_pool);
 
-  qCInfo(log_client) << "Folder initialized: " << params.folderid().toHex();
+  qCInfo(log_client) << "Folder initialized:" << params.path << "as" << params.folderid().toHex();
 }
 
 void Client::deinitFolder(const QByteArray& folderid) {

@@ -54,6 +54,8 @@ void DHTProvider::start() {
   connect(dht_wrapper_, &DHTWrapper::searchDone, this, &DHTProvider::handleSearch);
 
   dht_wrapper_->enable();
+
+  started();
 }
 
 void DHTProvider::stop() {
@@ -74,7 +76,7 @@ void DHTProvider::readSession(QIODevice* io) {
   qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
   for (const QJsonValue& node_v : qAsConst(nodes)) {
     QJsonObject node = node_v.toObject();
-    addNode(QHostAddress(node["ip"].toString()), node["port"].toInt());
+    addNode({QHostAddress(node["ip"].toString()), (quint16)node["port"].toInt()});
   }
 }
 
@@ -110,8 +112,8 @@ void DHTProvider::addRouter(QString host, quint16 port) {
   resolves_[id] = port;
 }
 
-void DHTProvider::addNode(QHostAddress addr, quint16 port) {
-  if (dht_wrapper_) dht_wrapper_->pingNode(addr, port);
+void DHTProvider::addNode(const Endpoint& endpoint) {
+  if (dht_wrapper_) dht_wrapper_->pingNode(endpoint);
 }
 
 void DHTProvider::startAnnounce(
@@ -133,7 +135,7 @@ void DHTProvider::handleResolve(const QHostInfo& host) {
   quint16 port = resolves_.take(host.lookupId());
 
   for (const QHostAddress& address : host.addresses()) {
-    addNode(address, port);
+    addNode({address, port});
     qCDebug(log_dht) << "Added a DHT router:" << host.hostName()
                      << "Resolved:" << address.toString();
   }

@@ -43,7 +43,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   mcast_p->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
   mcast_p->setEnabled(true);
 
-  mcast_g = new MulticastGroup(mcast_p, discovery_id, this);
+  mcast_g = new MulticastGroup(discovery_id, mcast_p, this);
   mcast_g->setEnabled(true);
 
   connect(mcast_g, &MulticastGroup::discovered, this, &DiscoveryApp::handleDiscoveredMulticast);
@@ -64,7 +64,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   	qDebug() << "DHT node count:" << count;
   });
 
-  dht_g = new DHTGroup(dht_p, discovery_id, this);
+  dht_g = new DHTGroup(discovery_id, dht_p, this);
   dht_g->setEnabled(true);
 
   connect(dht_g, &DHTGroup::discovered, this, &DiscoveryApp::handleDiscoveredDht);
@@ -73,7 +73,7 @@ DiscoveryApp::DiscoveryApp(int argc, char** argv, const char* USAGE) : QCoreAppl
   bt_p = new BTProvider(this);
   bt_p->setAnnouncePort(12345);
 
-  bt_g = new BTGroup(bt_p, discovery_id, this);
+  bt_g = new BTGroup(discovery_id, bt_p, this);
   bt_g->setTrackerList({QUrl("udp://discovery.librevault.com:6969/announce")});
   bt_g->setEnabled(true);
 

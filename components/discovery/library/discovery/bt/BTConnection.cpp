@@ -67,6 +67,8 @@ BTConnection::BTConnection(
 void BTConnection::start() {
   QTimer::singleShot(0, this, &BTConnection::resolve);
   resolver_timer_->start();
+
+  started();
 }
 
 void BTConnection::stop() {

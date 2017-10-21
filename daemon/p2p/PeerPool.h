@@ -40,6 +40,9 @@ namespace librevault {
 class Peer;
 class FolderGroup;
 class NodeKey;
+class BTProvider;
+class DHTProvider;
+class MulticastProvider;
 class DHTGroup;
 class BTGroup;
 class MulticastGroup;
@@ -48,12 +51,14 @@ class PeerPool : public QObject {
   Q_OBJECT
 
  public:
-  PeerPool(const FolderParams& params, NodeKey* node_key, QObject* parent);
-  virtual ~PeerPool();
+  PeerPool(const FolderParams& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
+      MulticastProvider* multicast, QObject* parent);
+  ~PeerPool() override;
 
   Q_SIGNAL void newValidPeer(Peer* peer);
 
-  Q_SLOT void handleDiscovered(Endpoint endpoint);
+  Q_SLOT void handleDiscovered(const Endpoint& endpoint);
+  Q_SLOT void handleNewUrl(const QUrl& url);
   Q_SLOT void handleIncoming(QWebSocket* socket);
 
   /* Getters */

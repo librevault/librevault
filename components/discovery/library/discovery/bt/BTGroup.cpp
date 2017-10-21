@@ -32,8 +32,8 @@
 
 namespace librevault {
 
-BTGroup::BTGroup(BTProvider* provider, const QByteArray& discovery_id, QObject* parent)
-    : GenericGroup(provider, parent), provider_(provider), discovery_id_(discovery_id) {}
+BTGroup::BTGroup(QByteArray discovery_id, BTProvider* provider, QObject* parent)
+    : GenericGroup(std::move(discovery_id), provider, parent), provider_(provider) {}
 
 void BTGroup::setTrackerList(QList<QUrl> trackers) {
   connections_.clear();

@@ -51,12 +51,7 @@ class HierarchicalService : public QObject {
   ~HierarchicalService() { setState(State::DISABLED); }
 
   bool isEnabled() const { return state_ != State::DISABLED; }
-  void setEnabled(bool enabled) {
-    if (!isEnabled() && enabled)
-      setState(State::ENABLED);
-    else if (isEnabled() && !enabled)
-      setState(State::DISABLED);
-  }
+  void setEnabled(bool enabled);
 
   Q_SIGNAL void started();
   Q_SIGNAL void stopped();

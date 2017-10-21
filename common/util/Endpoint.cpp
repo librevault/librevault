@@ -41,6 +41,8 @@ Endpoint Endpoint::fromString(const QString& str) {
   auto match = endpoint_regexp.match(str);
   endpoint.addr = QHostAddress(match.captured(1));
   endpoint.port = match.captured(2).toUInt();
+
+  return endpoint;
 }
 
 QString Endpoint::toString() const {

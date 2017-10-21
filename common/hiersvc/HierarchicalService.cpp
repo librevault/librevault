@@ -43,17 +43,23 @@ HierarchicalService::HierarchicalService(HierarchicalService* parent_svc, QObjec
   }
 }
 
+void HierarchicalService::setEnabled(bool enabled) {
+  qCDebug(log_hiersvc) << this << "setEnabled:" << enabled;
+  if (!isEnabled() && enabled)
+    setState(State::ENABLED);
+  else if (isEnabled() && !enabled)
+    setState(State::DISABLED);
+}
+
 bool HierarchicalService::isParentOperational() const {
   return root_ ? true : parent_svc_ && parent_svc_->isOperational();
 }
 
 void HierarchicalService::tryStart() {
-  qCDebug(log_hiersvc) << this << "tryStart";
   if (state_ == State::ENABLED && isParentOperational()) setState(State::STARTING);
 }
 
 void HierarchicalService::teardown(State old_state) {
-  qCDebug(log_hiersvc) << this << "teardown";
   if (old_state == State::STARTED) stopChildren();
   if (old_state == State::STARTING || old_state == State::STARTED) {
     stop();

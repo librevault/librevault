@@ -48,7 +48,7 @@ class DHTWrapper : public QObject {
   DHTWrapper(QUdpSocket* socket4, QUdpSocket* socket6, QByteArray own_id, QObject* parent);
   DHTWrapper(const DHTWrapper&) = delete;
   DHTWrapper(DHTWrapper&&) = delete;
-  ~DHTWrapper();
+  virtual ~DHTWrapper();
 
   void nodeCount(int& good_return, int& dubious_return, int& cached_return, int& incoming_return);
   int goodNodeCount();
@@ -56,7 +56,7 @@ class DHTWrapper : public QObject {
   EndpointList getNodes();
 
  public slots:
-  void pingNode(QHostAddress addr, quint16 port);
+  void pingNode(const Endpoint& endpoint);
   void startAnnounce(QByteArray id, QAbstractSocket::NetworkLayerProtocol af, quint16 port);
   void startSearch(QByteArray id, QAbstractSocket::NetworkLayerProtocol af);
 

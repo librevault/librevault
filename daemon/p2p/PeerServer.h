@@ -48,6 +48,9 @@ class PeerServer : public QObject {
 
   void addPeerPool(const QByteArray& folderid, PeerPool* pool);
 
+  quint16 externalPort() const;
+  Q_SIGNAL quint16 externalPortChanged(quint16 port);
+
   Q_SLOT void start();
   Q_SLOT void stop();
 

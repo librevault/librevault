@@ -55,7 +55,7 @@ class DHTProvider : public GenericProvider {
   bool isBound() { return socket4_->isValid() || socket6_->isValid(); }
 
   Q_SLOT void addRouter(QString host, quint16 port);
-  Q_SLOT void addNode(QHostAddress addr, quint16 port);
+  Q_SLOT void addNode(const Endpoint& endpoint);
   Q_SLOT void setPort(quint16 port) { port_ = port; }
 
   // internal

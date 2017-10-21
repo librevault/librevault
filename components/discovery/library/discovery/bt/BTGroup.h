@@ -46,16 +46,12 @@ class BTGroup : public GenericGroup {
   Q_OBJECT
 
  public:
-  BTGroup(BTProvider* provider, const QByteArray& discovery_id, QObject* parent);
-
-  QByteArray getDiscoveryID() { return discovery_id_; }
-  QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
+  BTGroup(QByteArray discovery_id, BTProvider* provider, QObject* parent);
 
   Q_SLOT void setTrackerList(QList<QUrl> trackers);
 
  protected:
   BTProvider* provider_;
-  QByteArray discovery_id_;
   std::map<QUrl, std::unique_ptr<BTConnection>> connections_;
 };
 

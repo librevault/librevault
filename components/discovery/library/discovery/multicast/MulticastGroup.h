@@ -42,8 +42,7 @@ class MulticastGroup : public GenericGroup {
   Q_OBJECT
 
  public:
-  MulticastGroup(
-      MulticastProvider* provider, const QByteArray& discovery_id, QObject* parent = nullptr);
+  MulticastGroup(QByteArray discovery_id, MulticastProvider* provider, QObject* parent = nullptr);
 
   void setInterval(std::chrono::seconds interval);
 
@@ -54,7 +53,6 @@ class MulticastGroup : public GenericGroup {
  private:
   QPointer<MulticastProvider> provider_;
   QTimer* timer_;
-  QByteArray discovery_id_;
 
   QByteArray getMessage();
 

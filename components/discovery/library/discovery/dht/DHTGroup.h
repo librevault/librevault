@@ -41,7 +41,7 @@ class DHTGroup : public GenericGroup {
   Q_OBJECT
 
  public:
-  DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent = nullptr);
+  DHTGroup(QByteArray discovery_id, DHTProvider* provider, QObject* parent = nullptr);
   DHTGroup(const DHTGroup&) = delete;
   DHTGroup(DHTGroup&&) = delete;
 
@@ -52,10 +52,6 @@ class DHTGroup : public GenericGroup {
  private:
   QPointer<DHTProvider> provider_;
   QTimer* timer_;
-
-  QByteArray discovery_id_;
-
-  inline QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
 
   Q_SLOT void startSearches();
   Q_SLOT void handleDiscovered(const QByteArray& ih, const Endpoint& endpoint);

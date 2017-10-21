@@ -66,6 +66,8 @@ void MulticastProvider::start() {
     qCWarning(log_multicast) << "Could not join multicast group:" << socket_->errorString();
 
   socket_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+
+  started();
 }
 
 void MulticastProvider::stop() {

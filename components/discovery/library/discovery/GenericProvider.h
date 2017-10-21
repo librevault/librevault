@@ -27,34 +27,41 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "hiersvc/HierarchicalService.h"
+#include "util/Endpoint.h"
 #include <QObject>
 #include <QPointer>
 #include <QtNetwork/QHostAddress>
-#include "hiersvc/HierarchicalService.h"
-#include "util/Endpoint.h"
 
 namespace librevault {
 
 class GenericProvider : public HierarchicalService {
- Q_OBJECT
+  Q_OBJECT
 
-public:
+ public:
   explicit GenericProvider(QObject* parent) : HierarchicalService(nullptr, parent) {}
 
-  quint16 getAnnouncePort() const {return announce_port_;}
-  Q_SLOT void setAnnouncePort(quint16 port) {announce_port_ = port;}
+  quint16 getAnnouncePort() const { return announce_port_; }
+  Q_SLOT void setAnnouncePort(quint16 port) { announce_port_ = port; }
 
  private:
   quint16 announce_port_ = 0;
 };
 
 class GenericGroup : public HierarchicalService {
- Q_OBJECT
+  Q_OBJECT
 
  public:
-  explicit GenericGroup(GenericProvider* provider, QObject* parent) : HierarchicalService(provider, parent) {}
+  GenericGroup(QByteArray discovery_id, GenericProvider* provider, QObject* parent)
+      : HierarchicalService(provider, parent), discovery_id_(std::move(discovery_id)) {}
 
   Q_SIGNAL void discovered(const Endpoint& endpoint);
+
+  QByteArray getDiscoveryID() { return discovery_id_; }
+  QByteArray getInfoHash() { return discovery_id_.leftJustified(20, 0, true); }
+
+ private:
+  QByteArray discovery_id_;
 };
 
 } /* namespace librevault */

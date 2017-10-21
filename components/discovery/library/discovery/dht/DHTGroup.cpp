@@ -31,8 +31,8 @@
 
 namespace librevault {
 
-DHTGroup::DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* parent)
-    : GenericGroup(provider, parent), provider_(provider), discovery_id_(discovery_id) {
+DHTGroup::DHTGroup(QByteArray discovery_id, DHTProvider* provider, QObject* parent)
+    : GenericGroup(std::move(discovery_id), provider, parent), provider_(provider) {
   timer_ = new QTimer(this);
 
   timer_->setInterval(std::chrono::seconds(60));
@@ -45,6 +45,7 @@ DHTGroup::DHTGroup(DHTProvider* provider, QByteArray discovery_id, QObject* pare
 void DHTGroup::start() {
   QTimer::singleShot(0, this, &DHTGroup::startSearches);
   timer_->start();
+  started();
 }
 
 void DHTGroup::stop() { timer_->stop(); }

@@ -29,11 +29,11 @@
 #include "PeerServer.h"
 #include "Peer.h"
 #include "PeerPool.h"
-#include <GenericNatService.h>
 #include "Version.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
+#include <GenericNatService.h>
 
 Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
@@ -60,8 +60,10 @@ void PeerServer::addPeerPool(const QByteArray& folderid, PeerPool* pool) {
   connect(pool, &QObject::destroyed, this, [=] { peer_pools_.remove(folderid); });
 }
 
+quint16 PeerServer::externalPort() const { return main_port_->externalPort(); }
+
 void PeerServer::start() {
-  if (! server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
+  if (!server_->listen(QHostAddress::Any, Config::get()->getGlobal("p2p_listen").toUInt())) {
     qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
                        << "E:" << server_->errorString();
     return;
@@ -77,6 +79,8 @@ void PeerServer::start() {
   request.ttl = std::chrono::seconds(3600);
   main_port_ = port_mapping_->createMapping(request);
   main_port_->setParent(this);
+  connect(main_port_, &PortMapping::mapped, this,
+      [this](quint16 port, QHostAddress addr, TimePoint exp) { externalPortChanged(port); });
   main_port_->setEnabled(true);
 }
 

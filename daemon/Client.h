@@ -37,7 +37,6 @@
 namespace librevault {
 
 /* Components */
-class DiscoveryAdapter;
 class NodeKey;
 class PeerServer;
 class GenericNatService;
@@ -67,9 +66,9 @@ class Client : public QCoreApplication {
   GenericNatService* portmanager_;
   PeerServer* peerserver_;
 
-  BTProvider* discovery_bt_;
-  DHTProvider* discovery_dht_;
-  MulticastProvider* discovery_multicast_;
+  BTProvider* bt_;
+  DHTProvider* dht_;
+  MulticastProvider* mcast_;
 
   // Folders
   QMap<QByteArray, FolderGroup*> groups_;

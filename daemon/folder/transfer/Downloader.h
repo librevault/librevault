@@ -77,6 +77,8 @@ class Downloader : public QObject {
   void chunkDownloaded(QByteArray ct_hash, QFile* chunk_f);
 
  public:
+  DECLARE_EXCEPTION(InconsistentMetaBetweenPeers, "Meta is different between nodes");
+
   Downloader(const FolderParams& params, Index* index, QObject* parent);
 
  public slots:

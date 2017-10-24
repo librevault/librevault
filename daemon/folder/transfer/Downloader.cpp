@@ -138,12 +138,16 @@ void Downloader::notifyRemoteMeta(
     Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield) {
   try {
     auto chunks = index_->getMeta(revision).metaInfo().chunks();
+    if (chunks.size() != bitfield.size()) throw InconsistentMetaBetweenPeers();
+
     for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
       if (bitfield.testBit(chunk_idx)) notifyRemoteChunk(peer, chunks[chunk_idx].ctHash());
   } catch (const Index::NoSuchMeta&) {
     qCDebug(log_downloader) << "Expired Meta";
     // Well, remote node notifies us about expired meta. It was not requested by us OR another peer
     // sent us newer meta, so this had been expired. Nevertheless, ignore this notification.
+  } catch (const InconsistentMetaBetweenPeers& e) {
+    qCWarning(log_downloader) << e.what();
   }
 }
 void Downloader::notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash) {

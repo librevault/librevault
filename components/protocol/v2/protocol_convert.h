@@ -66,6 +66,7 @@ inline std::string convert(const QBitArray& from) {
   QDataStream stream(&buffer, QIODevice::Append);
   stream.setByteOrder(QDataStream::BigEndian);
   stream.setVersion(QDataStream::Qt_5_0);
+  stream << from;
   return buffer.toStdString();
 };
 

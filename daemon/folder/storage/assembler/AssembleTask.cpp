@@ -33,7 +33,6 @@
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
 #include "util/conv_fspath.h"
-#include "util/log.h"
 #include <ChunkInfo.h>
 #include <PathNormalizer.h>
 #include <QBitArray>
@@ -74,8 +73,6 @@ QByteArray AssembleTask::getChunkPt(const QByteArray& ct_hash) const {
 }
 
 void AssembleTask::run() noexcept {
-  LOGFUNC();
-
   normpath_ = meta_.path().plaintext(params_.secret.encryptionKey());
   denormpath_ = PathNormalizer::absolutizePath(normpath_, params_.path);
 
@@ -113,12 +110,12 @@ void AssembleTask::run() noexcept {
 }
 
 bool AssembleTask::assemble_deleted() {
-  LOGFUNC();
+  qDebug(log_assembler) << "Assembling DELETED entry";
   return QFile::remove(denormpath_);
 }
 
 bool AssembleTask::assemble_symlink() {
-  LOGFUNC();
+  qDebug(log_assembler) << "Assembling SYMLINK entry";
 
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
@@ -130,7 +127,7 @@ bool AssembleTask::assemble_symlink() {
 }
 
 bool AssembleTask::assemble_directory() {
-  LOGFUNC();
+  qDebug(log_assembler) << "Assembling DIRECTORY entry";
 
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
@@ -144,7 +141,7 @@ bool AssembleTask::assemble_directory() {
 }
 
 bool AssembleTask::assemble_file() {
-  LOGFUNC();
+  qDebug(log_assembler) << "Assembling FILE entry";
 
   // Check if we have all needed chunks
   auto bitfield = chunk_storage_->makeBitfield(meta_);

@@ -31,7 +31,6 @@
 #include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/storage/Index.h"
-#include "util/log.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
 
@@ -50,7 +49,6 @@ AvailabilityMap<uint32_t> DownloadChunk::requestMap() {
 
 Downloader::Downloader(const FolderParams& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {
-  LOGFUNC();
   maintain_timer_ = new QTimer(this);
   connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
   maintain_timer_->setInterval(Config::get()->getGlobal("p2p_request_timeout").toInt() * 1000);

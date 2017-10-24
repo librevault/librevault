@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #include "messages.h"
-#include <QDataStream>
 #include <messages_v2.pb.h>
+#include <QDataStream>
 
 namespace librevault {
 namespace protocol {
@@ -64,46 +64,47 @@ QDebug operator<<(QDebug debug, const Message::Header& obj) {
 QDebug operator<<(QDebug debug, const Message::Handshake& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "Handshake("
-                  << "auth_token: " << obj.auth_token << "device_name: " << obj.device_name
-                  << "user_agent: " << obj.user_agent << "dht_port: " << obj.dht_port << ")";
+                  << "auth_token: " << obj.auth_token.toHex() << ", device_name: " << obj.device_name
+                  << ", user_agent: " << obj.user_agent << ", dht_port: " << obj.dht_port << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::IndexUpdate& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "IndexUpdate("
-                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_
-                  << "revision: " << obj.revision.revision_ << "bitfield: " << obj.bitfield << ")";
+                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_.toHex()
+                  << ", revision: " << obj.revision.revision_ << ", bitfield: " << obj.bitfield
+                  << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::MetaRequest& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "MetaRequest("
-                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_
-                  << "revision: " << obj.revision.revision_ << ")";
+                  << "path_keyed_hash: " << obj.revision.path_keyed_hash_.toHex()
+                  << ", revision: " << obj.revision.revision_ << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::MetaResponse& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "MetaResponse("
-                  << "smeta: " << obj.smeta << "bitfield: " << obj.bitfield << ")";
+                  << "smeta: " << obj.smeta << ", bitfield: " << obj.bitfield << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::BlockRequest& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "BlockRequest("
-                  << "ct_hash: " << obj.ct_hash << "offset: " << obj.offset
-                  << "length: " << obj.length << ")";
+                  << "ct_hash: " << obj.ct_hash << ", offset: " << obj.offset
+                  << ", length: " << obj.length << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::BlockResponse& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "BlockRequest("
-                  << "ct_hash: " << obj.ct_hash << "offset: " << obj.offset << "content: "
+                  << "ct_hash: " << obj.ct_hash.toHex() << ", offset: " << obj.offset << ", content: "
                   << "(actual content size: " + QString::number(obj.content.size()) + ")"
                   << ")";
   return debug;
@@ -123,12 +124,12 @@ QDebug operator<<(QDebug debug, const Message& obj) {
   }
 
   switch (obj.header.type) {
-    case Message::Header::MessageType::HANDSHAKE: debug << obj.handshake;
-    case Message::Header::MessageType::INDEXUPDATE: debug << obj.indexupdate;
-    case Message::Header::MessageType::METAREQUEST: debug << obj.metarequest;
-    case Message::Header::MessageType::METARESPONSE: debug << obj.metaresponse;
-    case Message::Header::MessageType::BLOCKREQUEST: debug << obj.blockrequest;
-    case Message::Header::MessageType::BLOCKRESPONSE: debug << obj.blockresponse;
+    case Message::Header::MessageType::HANDSHAKE: debug << obj.handshake; break;
+    case Message::Header::MessageType::INDEXUPDATE: debug << obj.indexupdate; break;
+    case Message::Header::MessageType::METAREQUEST: debug << obj.metarequest; break;
+    case Message::Header::MessageType::METARESPONSE: debug << obj.metaresponse; break;
+    case Message::Header::MessageType::BLOCKREQUEST: debug << obj.blockrequest; break;
+    case Message::Header::MessageType::BLOCKRESPONSE: debug << obj.blockresponse; break;
     default:;
   }
   debug << ")";

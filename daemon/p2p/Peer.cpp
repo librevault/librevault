@@ -38,6 +38,7 @@
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_peer, "p2p.peer");
+Q_LOGGING_CATEGORY(log_peer_msg, "p2p.peer.msg");
 
 Peer::Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
     BandwidthCounter* bc_blocks, QObject* parent)
@@ -135,6 +136,8 @@ std::shared_ptr<StateGuard> Peer::getStateGuard(std::weak_ptr<StateGuard>& var,
 
 // RPC Actions
 void Peer::send(const protocol::v2::Message& message) {
+  qCDebug(log_peer_msg) << "===>" << message;
+
   QByteArray message_bytes = parser_.serialize(message);
 
   bc_all_.add_up(message_bytes.size());
@@ -147,6 +150,7 @@ void Peer::send(const protocol::v2::Message& message) {
 void Peer::handle(const QByteArray& message_bytes) {
   try {
     protocol::v2::Message message = parser_.parse(message_bytes);
+    qCDebug(log_peer_msg) << "<===" << message;
     bc_all_.add_down(message_bytes.size());
 
     using MessageType = protocol::v2::MessageType;

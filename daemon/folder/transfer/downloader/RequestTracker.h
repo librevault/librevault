@@ -27,44 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "exception.hpp"
-#include <QHostAddress>
-
-struct sockaddr;
-struct sockaddr_storage;
+#include <QByteArray>
+#include <QLinkedList>
+#include <QList>
+#include <chrono>
+#include <functional>
 
 namespace librevault {
 
-struct Endpoint;  // forward declaration
+class Peer;
 
-using EndpointList = QList<Endpoint>;
-using EndpointSet = QSet<Endpoint>;
-
-struct Endpoint {
-  DECLARE_EXCEPTION(InvalidEndpoint, "Invalid endpoint");
-  DECLARE_EXCEPTION(InvalidAddressFamily, "Invalid address family inside sockaddr");
-  DECLARE_EXCEPTION(EndpointNotMatched, "Endpoint has not match the endpoint pattern");
-
-  QHostAddress addr;
-  quint16 port;
-
-  static Endpoint fromString(const QString& str);
-  QString toString() const;
-
-  static Endpoint fromPacked4(QByteArray packed);
-  static Endpoint fromPacked6(QByteArray packed);
-  static EndpointList fromPackedList4(const QByteArray& packed);
-  static EndpointList fromPackedList6(const QByteArray& packed);
-
-  static Endpoint fromSockaddr(const sockaddr& sa);
-  std::tuple<sockaddr_storage, size_t> toSockaddr() const;
-
-  inline QPair<QHostAddress, quint16> toPair() const { return {addr, port}; };
-  inline bool operator==(const Endpoint& that) const { return toPair() == that.toPair(); }
+struct BlockRequest {
+  QByteArray ct_hash;
+  quint32 offset;
+  quint32 size;
+  std::chrono::steady_clock::time_point started;
+  std::chrono::steady_clock::time_point expires;
+  Peer* peer;
 };
 
-inline uint qHash(const Endpoint& key, uint seed = 0) noexcept { return qHash(key.toPair(), seed); }
+class RequestTracker {
+ public:
+  int count() const { return requests_.size(); }
+  int maxRequests() const;
+  int freeSlots() const { return maxRequests() - requests_.size(); }
+  quint32 maxBlockSize() const;
+  std::chrono::seconds maxRequestTimeout() const;
 
-QDebug operator<<(QDebug debug, const Endpoint& endpoint);
+  void createRequest(const QByteArray& ct_hash, quint32 offset, quint32 size, Peer* peer);
+
+  bool completeRequest(const QByteArray& ct_hash, quint32 offset, quint32 size, Peer* peer);
+  void removeExpired();
+  void peerDisconnected(Peer* peer);
+  void peerChoked(Peer* peer);
+  void removeExisting(const QByteArray& ct_hash);
+
+  QList<BlockRequest> requestsForChunk(const QByteArray& ct_hash);
+
+ private:
+  QLinkedList<BlockRequest> requests_;
+  bool removeRequests(std::function<bool(const BlockRequest&)> pred, const QString& reason);
+  void removeRequest(QMutableLinkedListIterator<BlockRequest>& it, const QString& reason);
+};
 
 }  // namespace librevault

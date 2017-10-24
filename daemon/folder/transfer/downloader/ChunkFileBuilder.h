@@ -52,7 +52,7 @@ private:
 /* ChunkFileBuilder constructs a chunk in a file. If complete(), then an encrypted chunk is located in  */
 class ChunkFileBuilder {
 public:
-	ChunkFileBuilder(QString system_path, QByteArray ct_hash, quint32 size);
+	ChunkFileBuilder(const QString& system_path, const QByteArray& ct_hash, quint32 size);
 	~ChunkFileBuilder();
 
 	QFile* release_chunk();

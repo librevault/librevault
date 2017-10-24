@@ -59,7 +59,7 @@ AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* 
       smeta_(smeta),
       meta_(smeta.metaInfo()) {}
 
-AssembleTask::~AssembleTask() {}
+AssembleTask::~AssembleTask() = default;
 
 QByteArray AssembleTask::getChunkPt(const QByteArray& ct_hash) const {
   try {

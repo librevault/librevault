@@ -96,14 +96,14 @@ QDebug operator<<(QDebug debug, const Message::MetaResponse& obj) {
 QDebug operator<<(QDebug debug, const Message::BlockRequest& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "BlockRequest("
-                  << "ct_hash: " << obj.ct_hash << ", offset: " << obj.offset
+                  << "ct_hash: " << obj.ct_hash.toHex() << ", offset: " << obj.offset
                   << ", length: " << obj.length << ")";
   return debug;
 }
 
 QDebug operator<<(QDebug debug, const Message::BlockResponse& obj) {
   QDebugStateSaver saver(debug);
-  debug.nospace() << "BlockRequest("
+  debug.nospace() << "BlockResponse("
                   << "ct_hash: " << obj.ct_hash.toHex() << ", offset: " << obj.offset << ", content: "
                   << "(actual content size: " + QString::number(obj.content.size()) + ")"
                   << ")";

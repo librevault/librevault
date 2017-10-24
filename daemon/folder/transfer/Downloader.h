@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "downloader/ChunkFileBuilder.h"
+#include "downloader/RequestTracker.h"
 #include "downloader/WeightedChunkQueue.h"
 #include "p2p/Peer.h"
 #include "util/AvailabilityMap.h"
@@ -50,24 +51,12 @@ class Index;
 class ChunkStorage;
 
 struct DownloadChunk : boost::noncopyable {
-  DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size);
+  DownloadChunk(const FolderParams& params, const QByteArray& ct_hash, quint32 size);
 
   ChunkFileBuilder builder;
-
-  AvailabilityMap<uint32_t> requestMap();
-
-  /* Request-oriented functions */
-  struct BlockRequest {
-    uint32_t offset;
-    uint32_t size;
-    std::chrono::steady_clock::time_point started;
-  };
-  QMultiHash<Peer*, BlockRequest> requests;
   QHash<Peer*, std::shared_ptr<StateGuard>> owned_by;
-
   const QByteArray ct_hash;
 };
-
 using DownloadChunkPtr = std::shared_ptr<DownloadChunk>;
 
 class Downloader : public QObject {
@@ -85,7 +74,8 @@ class Downloader : public QObject {
   void notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield);
   void notifyLocalChunk(const QByteArray& ct_hash);
 
-  void notifyRemoteMeta(Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield);
+  void notifyRemoteMeta(
+      Peer* peer, const MetaInfo::PathRevision& revision, const QBitArray& bitfield);
   void notifyRemoteChunk(Peer* peer, const QByteArray& ct_hash);
 
   void handleChoke(Peer* peer);
@@ -103,7 +93,7 @@ class Downloader : public QObject {
   QHash<QByteArray, DownloadChunkPtr> down_chunks_;
   WeightedChunkQueue download_queue_;
 
-  size_t countRequests() const;
+  RequestTracker request_tracker_;
 
   /* Request process */
   QTimer* maintain_timer_;
@@ -122,4 +112,4 @@ class Downloader : public QObject {
   QSet<QByteArray> getMetaCluster(const QList<QByteArray>& ct_hashes);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

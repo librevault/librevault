@@ -32,12 +32,12 @@
 
 namespace librevault {
 
-using blob = std::vector<quint8>;
-
-inline QByteArray convertBlob(const blob& bl) {
+inline QByteArray convertBlob(const std::vector<quint8>& bl) {
   return QByteArray((const char*)bl.data(), bl.size());
 }
 
-inline blob convertBlob(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
+inline std::vector<quint8> convertBlob(const QByteArray& ba) {
+  return std::vector<quint8>(ba.begin(), ba.end());
+}
 
 } /* namespace librevault */

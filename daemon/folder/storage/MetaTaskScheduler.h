@@ -28,10 +28,10 @@
  */
 #pragma once
 
-#include <QObject>
-#include <QThreadPool>
 #include <QHash>
 #include <QMutex>
+#include <QObject>
+#include <QThreadPool>
 
 namespace librevault {
 
@@ -40,12 +40,10 @@ class SignedMeta;
 class Storage;
 
 class QueuedTask : public QObject, public QRunnable {
- Q_OBJECT
+  Q_OBJECT
 
  public:
-  enum TaskKind {
-    SCAN = 0, ASSEMBLE = 1, ADD_DOWNLOADED = 2
-  };
+  enum TaskKind { SCAN = 0, ASSEMBLE = 1, ADD_DOWNLOADED = 2 };
 
   QueuedTask(TaskKind kind, QObject* parent) : QObject(parent), kind_(kind), interrupted(false) {}
   QueuedTask(const QueuedTask&) = delete;
@@ -62,7 +60,7 @@ class QueuedTask : public QObject, public QRunnable {
 };
 
 class MetaTaskScheduler : public QObject {
- Q_OBJECT
+  Q_OBJECT
 
  public:
   MetaTaskScheduler(const FolderParams& params, QObject* parent);
@@ -84,4 +82,4 @@ class MetaTaskScheduler : public QObject {
   Q_SLOT void handleFinished(QueuedTask* task);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

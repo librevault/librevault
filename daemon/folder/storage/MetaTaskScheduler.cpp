@@ -26,17 +26,18 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include <control/FolderParams.h>
 #include "MetaTaskScheduler.h"
-#include <QTimer>
+#include <control/FolderParams.h>
 #include <QDebug>
 #include <QLoggingCategory>
+#include <QTimer>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_scheduler, "folder.storage.scheduler")
 
-MetaTaskScheduler::MetaTaskScheduler(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
+MetaTaskScheduler::MetaTaskScheduler(const FolderParams& params, QObject* parent)
+    : QObject(parent), params_(params) {
   threadpool_ = new QThreadPool(this);
 }
 
@@ -46,20 +47,18 @@ MetaTaskScheduler::~MetaTaskScheduler() {
 }
 
 void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
-  if(path_keyed_hash.isEmpty()) return;
+  if (path_keyed_hash.isEmpty()) return;
 
   QTimer::singleShot(0, this, [=] {
     QMutexLocker lk(&tq_mtx);
 
     // If no task queue is present, then no-op
-    if(!pending_tasks.contains(path_keyed_hash))
-      return;
+    if (!pending_tasks.contains(path_keyed_hash)) return;
 
     // Sort tasks by kind, and pick only last
     QMap<QueuedTask::TaskKind, QueuedTask*> uniq_tasks;
     for (const auto& task : pending_tasks[path_keyed_hash]) {
-      if(uniq_tasks.contains(task->taskKind()))
-        uniq_tasks[task->taskKind()]->deleteLater();
+      if (uniq_tasks.contains(task->taskKind())) uniq_tasks[task->taskKind()]->deleteLater();
       uniq_tasks[task->taskKind()] = task;
     }
     pending_tasks[path_keyed_hash] = uniq_tasks.values();
@@ -74,8 +73,7 @@ void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
     }
 
     // If task queue for current path is empty, then remove the queue itself
-    if (pending_tasks[path_keyed_hash].isEmpty())
-      pending_tasks.remove(path_keyed_hash);
+    if (pending_tasks[path_keyed_hash].isEmpty()) pending_tasks.remove(path_keyed_hash);
   });
 }
 
@@ -90,8 +88,9 @@ void MetaTaskScheduler::handleFinished(QueuedTask* task) {
 }
 
 void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
-  connect(task, &QObject::destroyed, this, [=]{handleFinished(task);}, Qt::DirectConnection);
-  connect(this, &MetaTaskScheduler::aboutToStop, task, &QueuedTask::interrupt, Qt::DirectConnection);
+  connect(task, &QObject::destroyed, this, [=] { handleFinished(task); }, Qt::DirectConnection);
+  connect(
+      this, &MetaTaskScheduler::aboutToStop, task, &QueuedTask::interrupt, Qt::DirectConnection);
 
   QMutexLocker lk(&tq_mtx);
   pending_tasks[task->pathKeyedHash()].append(task);
@@ -100,4 +99,4 @@ void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
   process(task->pathKeyedHash());
 }
 
-} /* namespace librevault */
+}  // namespace librevault

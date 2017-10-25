@@ -33,21 +33,31 @@
 
 namespace librevault {
 
+struct BandwidthStats {
+  double up_bandwidth;
+  double down_bandwidth;
+  double up_bytes;    // imprecise
+  double down_bytes;  // imprecise
+
+  QJsonObject toJson() const;
+  static BandwidthStats fromJson(const QJsonObject& stats_json);
+};
+
 class BandwidthCounter {
  public:
-  BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
+  explicit BandwidthCounter(BandwidthCounter* parent_counter = nullptr);
 
-  QJsonObject heartbeat_json();
+  BandwidthStats makeStats();
 
-  void add_down(quint64 bytes);
-  void add_up(quint64 bytes);
+  void addDown(quint64 bytes);
+  void addUp(quint64 bytes);
 
  private:
   BandwidthCounter* parent_counter_;
   QElapsedTimer last_heartbeat_;
   QMutex mutex_;
 
-  quint64 download_bytes_ = 0, download_bytes_last_ = 0, upload_bytes_ = 0, upload_bytes_last_ = 0;
+  quint64 down_bytes_ = 0, down_bytes_last_ = 0, up_bytes_ = 0, up_bytes_last_ = 0;
 };
 
 } /* namespace librevault */

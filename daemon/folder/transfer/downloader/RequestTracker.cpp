@@ -55,7 +55,7 @@ void RequestTracker::createRequest(
   request.offset = offset;
   request.size = std::min(size, maxBlockSize());
   request.started = std::chrono::steady_clock::now();
-  request.expires = std::chrono::steady_clock::now() + maxRequestTimeout();
+  request.expires = request.started + maxRequestTimeout();
   request.peer = peer;
 
   protocol::v2::Message message;

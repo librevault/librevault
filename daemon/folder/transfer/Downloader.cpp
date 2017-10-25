@@ -167,9 +167,9 @@ void Downloader::putBlock(
     Q_ASSERT(down_chunks_.contains(ct_hash));
     ChunkFileBuilder& builder = down_chunks_[ct_hash]->builder;
 
-    builder.put_block(offset, data);
+    builder.putBlock(offset, data);
     if (builder.complete()) {
-      QFile* downloaded_chunk_f = builder.release_chunk();
+      QFile* downloaded_chunk_f = builder.releaseChunk();
       downloaded_chunk_f->setParent(nullptr);  // make it orphan
       emit chunkDownloaded(ct_hash, downloaded_chunk_f);
     }
@@ -211,7 +211,7 @@ bool Downloader::requestOne() {
     if (!peer) continue;
 
     // Rebuild request map to determine, which block to download now.
-    AvailabilityMap<uint32_t> request_map = down_chunks_[ct_hash]->builder.file_map();
+    AvailabilityMap<quint32> request_map = down_chunks_[ct_hash]->builder.fileMap();
     for (const auto& request : request_tracker_.requestsForChunk(ct_hash))
       request_map.insert({request.offset, request.size});
 

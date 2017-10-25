@@ -53,9 +53,9 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
     : QObject(parent), params_(std::move(params)) {
   createServiceDirectory();
 
-  qCDebug(log_folder) << "New folder:"
-                      << "Key type=" << (char)params_.secret.level() << "Path=" << params_.path
-                      << "System path=" << params_.system_path;
+  qCDebug(log_folder) << "New folder;"
+                      << "Level:" << (char)params_.secret.level() << "Path:" << params_.path
+                      << "System path:" << params_.system_path;
 
   // Initializing local storage
   ignore_list_ = new IgnoreList(params_, this);
@@ -93,12 +93,22 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
 
 FolderGroup::~FolderGroup() = default;
 
-void FolderGroup::addIndexing(QString abspath) {
+void FolderGroup::addIndexing(const QString& abspath) {
+  if(!params_.secret.canSign()) {
+    qCDebug(log_folder) << "Secret level is insufficient for indexing";
+    return;
+  }
+
   QueuedTask* task = new ScanTask(abspath, params(), index_, ignore_list_, this);
   task_scheduler_->scheduleTask(task);
 }
 
 void FolderGroup::addAssemble(SignedMeta smeta) {
+  if(!params_.secret.canDecrypt()) {
+    qCDebug(log_folder) << "Secret level is insufficient for assembling";
+    return;
+  }
+
   QueuedTask* task = new AssembleTask(smeta, params(), index_, chunk_storage_, this);
   task_scheduler_->scheduleTask(task);
 }
@@ -124,6 +134,8 @@ void FolderGroup::handleNewChunk(const QByteArray& ct_hash) {
 
   downloader_->notifyLocalChunk(ct_hash);
   meta_uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
+  for(const auto& meta : index_->containingChunk(ct_hash))
+    addAssemble(meta);
 }
 
 // RemoteFolder actions

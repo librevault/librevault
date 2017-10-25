@@ -27,46 +27,63 @@
  * files in the program, then also delete it here.
  */
 #include "BandwidthCounter.h"
-#include <QtCore/QPoint>
 
 namespace librevault {
+
+QJsonObject BandwidthStats::toJson() const {
+  QJsonObject stats_json;
+  stats_json["up_bandwidth"] = up_bandwidth;
+  stats_json["down_bandwidth"] = down_bandwidth;
+  stats_json["up_bytes"] = up_bytes;
+  stats_json["down_bytes"] = down_bytes;
+  return stats_json;
+}
+
+BandwidthStats BandwidthStats::fromJson(const QJsonObject& stats_json) {
+  BandwidthStats stats{};
+  stats.up_bandwidth = stats_json["up_bandwidth"].toDouble();
+  stats.down_bandwidth = stats_json["down_bandwidth"].toDouble();
+  stats.up_bytes = stats_json["up_bytes"].toDouble();
+  stats.down_bytes = stats_json["down_bytes"].toDouble();
+  return stats;
+}
 
 BandwidthCounter::BandwidthCounter(BandwidthCounter* parent_counter)
     : parent_counter_(parent_counter) {
   last_heartbeat_.start();
 }
 
-QJsonObject BandwidthCounter::heartbeat_json() {
+BandwidthStats BandwidthCounter::makeStats() {
   QMutexLocker lk(&mutex_);
 
-  qreal period = qreal(last_heartbeat_.restart()) / 1000;
+  double period = double(last_heartbeat_.restart()) / 1000;
 
-  QJsonObject state_traffic_stats;
-  state_traffic_stats["up_bandwidth"] = qreal(upload_bytes_last_) / period;
-  state_traffic_stats["down_bandwidth"] = qreal(download_bytes_last_) / period;
-  state_traffic_stats["up_bytes"] = (qreal)upload_bytes_;
-  state_traffic_stats["down_bytes"] = (qreal)download_bytes_;
+  BandwidthStats stats{};
+  stats.up_bandwidth = double(up_bytes_last_) / period;
+  stats.down_bandwidth = double(down_bytes_last_) / period;
+  stats.up_bytes = up_bytes_;
+  stats.down_bytes = down_bytes_;
 
-  upload_bytes_last_ = 0;
-  download_bytes_last_ = 0;
+  up_bytes_last_ = 0;
+  down_bytes_last_ = 0;
 
-  return state_traffic_stats;
+  return stats;
 }
 
-void BandwidthCounter::add_down(quint64 bytes) {
+void BandwidthCounter::addDown(quint64 bytes) {
   QMutexLocker lk(&mutex_);
 
-  download_bytes_ += bytes;
-  download_bytes_last_ += bytes;
-  if (parent_counter_) parent_counter_->add_down(bytes);
+  down_bytes_ += bytes;
+  down_bytes_last_ += bytes;
+  if (parent_counter_) parent_counter_->addDown(bytes);
 }
 
-void BandwidthCounter::add_up(quint64 bytes) {
+void BandwidthCounter::addUp(quint64 bytes) {
   QMutexLocker lk(&mutex_);
 
-  upload_bytes_ += bytes;
-  download_bytes_ += bytes;
-  if (parent_counter_) parent_counter_->add_up(bytes);
+  up_bytes_ += bytes;
+  up_bytes_last_ += bytes;
+  if (parent_counter_) parent_counter_->addUp(bytes);
 }
 
 } /* namespace librevault */

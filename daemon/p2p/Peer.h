@@ -34,6 +34,7 @@
 #include "util/Endpoint.h"
 #include "v2/Parser.h"
 #include <QObject>
+#include <QPointer>
 #include <QTimer>
 #include <QWebSocket>
 #include <memory>
@@ -61,6 +62,7 @@ class Peer : public QObject {
   DECLARE_EXCEPTION(InvalidMessageType, "Invalid message type received");
 
   enum Role { UNDEFINED, SERVER, CLIENT };
+  using MessageType = protocol::v2::MessageType;
 
   static QUrl makeUrl(const Endpoint& endpoint, const QByteArray& folderid);
 
@@ -116,18 +118,20 @@ class Peer : public QObject {
 
   Q_SLOT void handleConnected();
   Q_SLOT void handle(const QByteArray& message_bytes);
-
-  std::shared_ptr<StateGuard> getStateGuard(std::weak_ptr<StateGuard>& var,
-      protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state);
 };
 
 struct StateGuard {
+  using MessageType = protocol::v2::MessageType;
+
   explicit StateGuard(
-      Peer* remote, protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state);
+      Peer* peer, protocol::v2::MessageType enter_state, protocol::v2::MessageType exit_state);
   ~StateGuard();
 
+  static std::shared_ptr<StateGuard> get(Peer* peer, std::weak_ptr<StateGuard>& var,
+      MessageType enter_state, MessageType exit_state);
+
  private:
-  Peer* peer_;
+  QPointer<Peer> peer_;
   protocol::v2::MessageType enter_state_, exit_state_;
 };
 

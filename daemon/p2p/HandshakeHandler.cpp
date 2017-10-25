@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "HandshakeHandler.h"
-#include "Tokens.h"
+#include "tokens.h"
 #include "nodekey/NodeKey.h"
 
 namespace librevault {

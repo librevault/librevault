@@ -29,6 +29,7 @@
 #pragma once
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
+#include "util/exception.hpp"
 #include <QObject>
 #include <QRunnable>
 
@@ -42,16 +43,13 @@ class Secret;
 
 class AssembleTask : public QueuedTask {
  public:
-  struct abort_assembly : std::runtime_error {
-    explicit abort_assembly() : std::runtime_error("Assembly aborted") {}
-  };
+  DECLARE_EXCEPTION(abortAssemble, "Assembly aborted");
 
   AssembleTask(SignedMeta smeta, const FolderParams& params, Index* index, ChunkStorage* chunk_storage,
                QObject* parent);
-  virtual ~AssembleTask();
+  ~AssembleTask() override;
 
   void run() noexcept override;
-
   QByteArray pathKeyedHash() const override;
 
  private:
@@ -65,12 +63,12 @@ class AssembleTask : public QueuedTask {
   QByteArray normpath_;
   QString denormpath_;
 
-  bool assemble_deleted();
-  bool assemble_symlink();
-  bool assemble_directory();
-  bool assemble_file();
+  bool assembleDeleted();
+  bool assembleSymlink();
+  bool assembleDirectory();
+  bool assembleFile();
 
-  void apply_attrib();
+  void applyAttrib();
 
   QByteArray getChunkPt(const QByteArray& ct_hash) const;
 };

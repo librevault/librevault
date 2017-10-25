@@ -43,29 +43,29 @@ class Archive;
 class AssemblerQueue;
 
 class ChunkStorage : public QObject {
-	Q_OBJECT
-public:
-	DECLARE_EXCEPTION(NoSuchChunk, "Requested Chunk not found");
+  Q_OBJECT
+ public:
+  DECLARE_EXCEPTION(NoSuchChunk, "Requested Chunk not found");
 
-	ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent);
+  ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent);
 
-	bool haveChunk(QByteArray ct_hash) const noexcept ;
-	QByteArray getChunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
-	void putChunk(QByteArray ct_hash, QFile* chunk_f);
+  bool haveChunk(const QByteArray& ct_hash) const noexcept;
+  QByteArray getChunk(const QByteArray& ct_hash);  // Throws AbstractFolder::no_such_chunk
+  void putChunk(const QByteArray& ct_hash, QFile* chunk_f);
 
-	QBitArray makeBitfield(const MetaInfo& meta) const noexcept;   // Bulk version of "have_chunk"
+  QBitArray makeBitfield(const MetaInfo& meta) const noexcept;  // Bulk version of "have_chunk"
 
   void gcChunk(const QByteArray& ct_hash);
 
  signals:
-	void chunkAdded(QByteArray ct_hash);
+  void chunkAdded(QByteArray ct_hash);
 
-protected:
-	FolderGroup* fgroup_;
+ protected:
+  FolderGroup* fgroup_;
 
-	MemoryCachedStorage* mem_storage;
-	EncStorage* enc_storage;
-	OpenStorage* open_storage;
+  MemoryCachedStorage* mem_storage;
+  EncStorage* enc_storage;
+  OpenStorage* open_storage;
 };
 
 } /* namespace librevault */

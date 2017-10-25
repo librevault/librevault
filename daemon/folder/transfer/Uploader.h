@@ -39,6 +39,9 @@ class Uploader : public QObject {
   Q_OBJECT
 
  public:
+  DECLARE_EXCEPTION(ChokeMismatch, "Peer is choked or not interested");
+  DECLARE_EXCEPTION(BlockOutOfBounds, "Requested offset or length is out of bounds");
+
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
   /* Message handlers */
@@ -47,13 +50,14 @@ class Uploader : public QObject {
 
   void untrackPeer(Peer* peer);
 
-  void handleBlockRequest(Peer* peer, QByteArray ct_hash, uint32_t offset, uint32_t size) noexcept;
+  void handleBlockRequest(
+      Peer* peer, const QByteArray& ct_hash, quint32 offset, quint32 size) noexcept;
 
  private:
   ChunkStorage* chunk_storage_;
   QHash<Peer*, std::shared_ptr<StateGuard>> all_interested_;
 
-  QByteArray getBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
+  QByteArray getBlock(const QByteArray& ct_hash, quint32 offset, quint32 size);
 };
 
 } /* namespace librevault */

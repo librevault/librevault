@@ -56,8 +56,8 @@ AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* 
       params_(params),
       index_(index),
       chunk_storage_(chunk_storage),
-      smeta_(smeta),
-      meta_(smeta.metaInfo()) {}
+      smeta_(std::move(smeta)),
+      meta_(smeta_.metaInfo()) {}
 
 AssembleTask::~AssembleTask() = default;
 
@@ -80,28 +80,28 @@ void AssembleTask::run() noexcept {
     bool assembled = false;
     switch (meta_.kind()) {
       case MetaInfo::FILE:
-        assembled = assemble_file();
+        assembled = assembleFile();
         break;
       case MetaInfo::DIRECTORY:
-        assembled = assemble_directory();
+        assembled = assembleDirectory();
         break;
       case MetaInfo::SYMLINK:
-        assembled = assemble_symlink();
+        assembled = assembleSymlink();
         break;
       case MetaInfo::DELETED:
-        assembled = assemble_deleted();
+        assembled = assembleDeleted();
         break;
       default:
         qWarning() << QString("Unexpected meta type: %1").arg(meta_.kind());
-        throw abort_assembly();
+        throw abortAssemble();
     }
     if (assembled) {
-      if (meta_.kind() != MetaInfo::DELETED) apply_attrib();
+      if (meta_.kind() != MetaInfo::DELETED) applyAttrib();
 
       index_->setAssembled(meta_.pathKeyedHash());
       for (const auto& chunk : meta_.chunks()) chunk_storage_->gcChunk(chunk.ctHash());
     }
-  } catch (abort_assembly& e) {  // Already handled
+  } catch (abortAssemble& e) {  // Already handled
   } catch (std::exception& e) {
     qCWarning(log_assembler) << "Unknown exception while assembling:"
                              << meta_.path().plaintext(params_.secret.encryptionKey())
@@ -109,12 +109,12 @@ void AssembleTask::run() noexcept {
   }
 }
 
-bool AssembleTask::assemble_deleted() {
+bool AssembleTask::assembleDeleted() {
   qDebug(log_assembler) << "Assembling DELETED entry";
   return QFile::remove(denormpath_);
 }
 
-bool AssembleTask::assemble_symlink() {
+bool AssembleTask::assembleSymlink() {
   qDebug(log_assembler) << "Assembling SYMLINK entry";
 
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
@@ -126,7 +126,7 @@ bool AssembleTask::assemble_symlink() {
   return true;  // Maybe, something else?
 }
 
-bool AssembleTask::assemble_directory() {
+bool AssembleTask::assembleDirectory() {
   qDebug(log_assembler) << "Assembling DIRECTORY entry";
 
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
@@ -140,7 +140,7 @@ bool AssembleTask::assemble_directory() {
   return true;  // Maybe, something else?
 }
 
-bool AssembleTask::assemble_file() {
+bool AssembleTask::assembleFile() {
   qDebug(log_assembler) << "Assembling FILE entry";
 
   // Check if we have all needed chunks
@@ -156,7 +156,7 @@ bool AssembleTask::assemble_file() {
   if (!assembly_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     qCWarning(log_assembler) << "File cannot be opened:" << assembly_path
                              << "E:" << assembly_f.errorString();  // FIXME: #83
-    throw abort_assembly();
+    throw abortAssemble();
   }
 
   for (auto chunk : meta_.chunks()) {
@@ -166,7 +166,7 @@ bool AssembleTask::assemble_file() {
   if (!assembly_f.commit()) {
     qCWarning(log_assembler) << "File cannot be written:" << assembly_path
                              << "E:" << assembly_f.errorString();  // FIXME: #83
-    throw abort_assembly();
+    throw abortAssemble();
   }
 
   {
@@ -178,20 +178,20 @@ bool AssembleTask::assemble_file() {
     }
   }
 
-  if (!QFile::remove(denormpath_)) {
+  if (QFile::exists(denormpath_) && !QFile::remove(denormpath_)) {
     qCWarning(log_assembler) << "Item cannot be archived/removed:" << denormpath_;  // FIXME: #83
-    throw abort_assembly();
+    throw abortAssemble();
   }
   if (!QFile::rename(assembly_path, denormpath_)) {
     qCWarning(log_assembler) << "File cannot be moved to its final location:" << denormpath_
                              << "Current location:" << assembly_path;  // FIXME: #83
-    throw abort_assembly();
+    throw abortAssemble();
   }
 
   return true;
 }
 
-void AssembleTask::apply_attrib() {
+void AssembleTask::applyAttrib() {
 #if defined(Q_OS_UNIX)
   if (params_.preserve_unix_attrib) {
     if (meta_.kind() != MetaInfo::SYMLINK) {

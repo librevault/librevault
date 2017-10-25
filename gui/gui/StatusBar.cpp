@@ -98,8 +98,8 @@ QFrame* StatusBar::create_separator() const {
 }
 
 void StatusBar::refreshBandwidth(float up_bandwidth, float down_bandwidth, double up_bytes, double down_bytes) {
-	up_label_->setText(QStringLiteral("\u2191 %1 (%2)").arg(human_bandwidth(up_bandwidth)).arg(human_size(up_bytes)));
-	down_label_->setText(QStringLiteral("\u2193 %1 (%2)").arg(human_bandwidth(down_bandwidth)).arg(human_size(down_bytes)));
+	up_label_->setText(QStringLiteral("\u2191 %1 (%2)").arg(humanBandwidth(up_bandwidth)).arg(humanSize(up_bytes)));
+	down_label_->setText(QStringLiteral("\u2193 %1 (%2)").arg(humanBandwidth(down_bandwidth)).arg(humanSize(down_bytes)));
 }
 
 void StatusBar::showDHTMenu(const QPoint& pos) {

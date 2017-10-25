@@ -50,7 +50,7 @@ class RequestTracker {
  public:
   int count() const { return requests_.size(); }
   int maxRequests() const;
-  int freeSlots() const { return maxRequests() - requests_.size(); }
+  int freeSlots() const { return maxRequests() - count(); }
   quint32 maxBlockSize() const;
   std::chrono::seconds maxRequestTimeout() const;
 

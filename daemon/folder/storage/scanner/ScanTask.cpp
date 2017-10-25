@@ -51,7 +51,7 @@ namespace librevault {
 
 ScanTask::ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent)
     : QueuedTask(SCAN, parent),
-      abspath_(abspath),
+      abspath_(std::move(abspath)),
       params_(params),
       index_(index),
       ignore_list_(ignore_list),
@@ -86,7 +86,7 @@ void ScanTask::run() noexcept {
     qreal time_spent = qreal(timer_.elapsed()) / 1000;
     qreal bandwidth = qreal(new_smeta_.metaInfo().size()) / time_spent;
 
-    qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << human_bandwidth(bandwidth) << ")"
+    qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << humanBandwidth(bandwidth) << ")"
                          << "Path=" << abspath_
                          << "Rev=" << new_smeta_.metaInfo().timestamp().time_since_epoch().count()
                          << "Chk=" << new_smeta_.metaInfo().chunks().size();
@@ -130,8 +130,11 @@ void ScanTask::makeMetaInfo() {
   if (new_meta_.kind() != MetaInfo::DELETED)
     update_fsattrib();  // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
-  // Revision
+  // Timestamp
   new_meta_.timestamp(std::chrono::system_clock::now());  // Meta is ready. Assigning timestamp.
+
+  // Revision
+  new_meta_.revision(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 
   new_smeta_ = SignedMeta(new_meta_, secret_);
 }

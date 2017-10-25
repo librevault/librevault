@@ -45,11 +45,11 @@ ChunkStorage::ChunkStorage(FolderGroup* fgroup, Index* index, QObject* parent) :
 		open_storage = new OpenStorage(fgroup_->params(), index, this);
 };
 
-bool ChunkStorage::haveChunk(QByteArray ct_hash) const noexcept {
+bool ChunkStorage::haveChunk(const QByteArray& ct_hash) const noexcept {
 	return mem_storage->haveChunk(ct_hash) || enc_storage->haveChunk(ct_hash) || (open_storage && open_storage->haveChunk(ct_hash));
 }
 
-QByteArray ChunkStorage::getChunk(QByteArray ct_hash) {
+QByteArray ChunkStorage::getChunk(const QByteArray& ct_hash) {
 	try {                                       // Cache hit
 		return mem_storage->getChunk(ct_hash);
 	}catch(const NoSuchChunk& e) {                  // Cache missed
@@ -67,7 +67,7 @@ QByteArray ChunkStorage::getChunk(QByteArray ct_hash) {
 	}
 }
 
-void ChunkStorage::putChunk(QByteArray ct_hash, QFile* chunk_f) {
+void ChunkStorage::putChunk(const QByteArray& ct_hash, QFile* chunk_f) {
 	enc_storage->putChunk(ct_hash, chunk_f);
 	emit chunkAdded(ct_hash);
 }

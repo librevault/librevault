@@ -29,8 +29,8 @@
 #include "Uploader.h"
 #include "folder/storage/ChunkStorage.h"
 #include "p2p/Peer.h"
-#include <QLoggingCategory>
 #include <QHash>
+#include <QLoggingCategory>
 
 namespace librevault {
 
@@ -48,33 +48,35 @@ void Uploader::handleNotInterested(Peer* peer) {
   all_interested_.remove(peer);
 }
 
-void Uploader::untrackPeer(Peer* peer) {
-  all_interested_.remove(peer);
-}
+void Uploader::untrackPeer(Peer* peer) { all_interested_.remove(peer); }
 
-void Uploader::handleBlockRequest(Peer* peer, QByteArray ct_hash,
-                                  uint32_t offset, uint32_t size) noexcept {
+void Uploader::handleBlockRequest(
+    Peer* peer, const QByteArray& ct_hash, quint32 offset, quint32 size) noexcept {
   try {
-    if (!peer->amChoking() && peer->peerInterested()) {
-      protocol::v2::Message response;
-      response.header.type = protocol::v2::MessageType::BLOCKRESPONSE;
-      response.blockresponse.offset = offset;
-      response.blockresponse.ct_hash = ct_hash;
-      response.blockresponse.content = getBlock(ct_hash, offset, size);
-      peer->send(response);
-    }
-  } catch (ChunkStorage::NoSuchChunk& e) {
+    if (peer->amChoking() || !peer->peerInterested()) throw ChokeMismatch();
+
+    protocol::v2::Message response;
+    response.header.type = protocol::v2::MessageType::BLOCKRESPONSE;
+    response.blockresponse.offset = offset;
+    response.blockresponse.ct_hash = ct_hash;
+    response.blockresponse.content = getBlock(ct_hash, offset, size);
+    peer->send(response);
+  } catch (const ChunkStorage::NoSuchChunk& e) {
     qCDebug(log_uploader) << "Requested nonexistent block";
+  } catch (const BlockOutOfBounds& e) {
+    qCDebug(log_uploader) << e.what();
+  } catch (const ChokeMismatch& e) {
+    qCDebug(log_uploader) << e.what();
   }
 }
 
-QByteArray Uploader::getBlock(const QByteArray& ct_hash, uint32_t offset,
-                              uint32_t size) {
-  auto chunk = chunk_storage_->getChunk(ct_hash);
-  if ((int)offset < chunk.size() && (int)size <= chunk.size() - (int)offset)
-    return chunk.mid(offset, size);
-  else
-    throw ChunkStorage::NoSuchChunk();
+QByteArray Uploader::getBlock(const QByteArray& ct_hash, quint32 offset, quint32 size) {
+  auto chunk = chunk_storage_->getChunk(ct_hash);  // throws ChunkStorage::NoSuchChunk
+
+  if ((int)offset >= chunk.size() || (int)size > (chunk.size() - (int)offset))
+    throw BlockOutOfBounds();
+
+  return chunk.mid(offset, size);
 }
 
 } /* namespace librevault */

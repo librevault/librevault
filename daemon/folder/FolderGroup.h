@@ -88,7 +88,7 @@ class FolderGroup : public QObject {
 
  private slots:
   // void handleAddedChunk(const QByteArray& ct_hash);
-  void addIndexing(QString abspath);
+  void addIndexing(const QString& abspath);
   void addAssemble(SignedMeta smeta);
   void handleMetaDownloaded(SignedMeta smeta);
 

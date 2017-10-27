@@ -46,7 +46,7 @@ MetaInfoBuilder::MetaInfoBuilder(QString path, QString root, Secret secret, bool
       secret(secret),
       preserve_symlinks(preserve_symlinks) {}
 
-QByteArray MetaInfoBuilder::makePathId() const {
+QByteArray MetaInfoBuilder::makePathKeyedHash() const {
   QCryptographicHash hasher(QCryptographicHash::Sha3_256);
   hasher.addData(secret.encryptionKey());
   hasher.addData(metakit::normalizePath(path, root));

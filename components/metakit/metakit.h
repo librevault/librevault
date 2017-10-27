@@ -50,7 +50,7 @@ class MetaInfoBuilder {
 
   MetaInfoBuilder(QString path, QString root, Secret secret, bool preserve_symlinks);
 
-  QByteArray makePathId() const;
+  QByteArray makePathKeyedHash() const;
 
   qint64 getMtime();
   quint64 getMtimeGranularity();

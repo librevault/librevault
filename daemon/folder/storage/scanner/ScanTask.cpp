@@ -69,7 +69,7 @@ void ScanTask::run() noexcept {
     if (ignore_list_->isIgnored(normpath)) throw AbortIndex("File is ignored");
 
     try {
-      old_smeta_ = index_->getMeta(builder_.makePathId());
+      old_smeta_ = index_->getMeta(builder_.makePathKeyedHash());
       old_meta_ = old_smeta_.metaInfo();
 
       int cmp = metakit::fuzzyCompareMtime(builder_.getMtime(), builder_.getMtimeGranularity(),
@@ -105,7 +105,7 @@ void ScanTask::makeMetaInfo() {
 
   new_meta_.path(EncryptedData::fromPlaintext(normpath, secret_.encryptionKey(),
       generateRandomIV()));  // sets path_id, encrypted_path and encrypted_path_iv
-  new_meta_.pathKeyedHash(builder_.makePathId());
+  new_meta_.pathKeyedHash(builder_.makePathKeyedHash());
 
   new_meta_.kind(builder_.getKind());  // Kind
 
@@ -248,6 +248,6 @@ ChunkInfo ScanTask::populate_chunk(
   return chunk;
 }
 
-QByteArray ScanTask::pathKeyedHash() const { return builder_.makePathId(); }
+QByteArray ScanTask::pathKeyedHash() const { return builder_.makePathKeyedHash(); }
 
 } /* namespace librevault */

@@ -30,7 +30,7 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "util/conv_fspath.h"
-#include <PathNormalizer.h>
+#include <path_normalizer.h>
 #include <QTimer>
 #include <QLoggingCategory>
 
@@ -84,7 +84,7 @@ void DirectoryWatcher::handleDirEvent(boost::asio::dir_monitor_event ev) {
     case boost::asio::dir_monitor_event::removed:
     case boost::asio::dir_monitor_event::null: {
       QString abspath = conv_fspath(ev.path);
-      QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
+      QByteArray normpath = metakit::normalizePath(abspath, params_.path);
 
       if (!ignore_list_->isIgnored(normpath)) emit newPath(abspath);
     }

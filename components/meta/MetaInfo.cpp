@@ -95,13 +95,6 @@ void MetaInfo::parseFromJson(const QJsonDocument& json) {
   ::google::protobuf::util::JsonStringToMessage(json.toJson(QJsonDocument::Compact).toStdString(), &(d->proto), options);
 }
 
-QByteArray MetaInfo::makePathId(QByteArray path, const Secret& secret) {
-  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-  hasher.addData(secret.encryptionKey());
-  hasher.addData(path);
-  return hasher.result();
-}
-
 //
 QByteArray MetaInfo::pathKeyedHash() const { return QByteArray::fromStdString(d->proto.path_keyed_hash()); }
 void MetaInfo::pathKeyedHash(const QByteArray& path_id) { d->proto.set_path_keyed_hash(path_id.toStdString()); }
@@ -164,6 +157,7 @@ QList<ChunkInfo> MetaInfo::chunks() const {
   return result;
 }
 void MetaInfo::chunks(const QList<ChunkInfo>& chunks) {
+  d->proto.clear_chunks();
   for (const auto& info : chunks) {
     serialization::ChunkInfo* chunk = d->proto.add_chunks();
     chunk->set_ct_hash(info.ctHash().toStdString());

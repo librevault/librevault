@@ -26,50 +26,31 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "MetaInfo.h"
-#include "Secret.h"
-#include <QString>
+#include <QStorageInfo>
 #include <chrono>
-#include "util/exception.hpp"
-#if defined(Q_OS_UNIX)
-#  include <sys/stat.h>
-#endif
 
 namespace librevault {
 namespace metakit {
 
-class MetaInfoBuilder {
- public:
-  DECLARE_EXCEPTION(ScanError, "Scan error");
-  DECLARE_EXCEPTION_DETAIL(StatError, ScanError, "stat() call failed");
-  DECLARE_EXCEPTION_DETAIL(MtimeError, ScanError, "Could not get modification time");
-  DECLARE_EXCEPTION_DETAIL(UnsupportedKind, ScanError,
-      "File type is unsuitable for indexing. Only Files, Directories and Symbolic links are "
-      "supported");
+std::chrono::nanoseconds makeTimestampGranularity(const QString& path) {
+  using namespace std::chrono_literals;
 
-  MetaInfoBuilder(QString path, QString root, Secret secret, bool preserve_symlinks);
-
-  QByteArray makePathId() const;
-
-  qint64 getMtime();
-  quint64 getMtimeGranularity();
-  MetaInfo::Kind getKind();
-  QByteArray getSymlinkTarget();
-
- private:
-  QString path;
-  QString root;
-  Secret secret;
-  bool preserve_symlinks;
-
-#ifdef Q_OS_UNIX
-  struct stat cached_stat;
-  void updateStat();
-#endif
-};
-
-int fuzzyCompareMtime(qint64 mtime1, quint64 gran1, qint64 mtime2, quint64 gran2);
+  QString filesystem = QString::fromUtf8(QStorageInfo(path).fileSystemType());
+  // Windows
+  if (filesystem.contains("ntfs", Qt::CaseInsensitive)) return 100ns;
+  if (filesystem.contains("exfat", Qt::CaseInsensitive)) return 10ms;
+  if (filesystem.contains("fat", Qt::CaseInsensitive)) return 2s;
+  // Mac
+  if (filesystem.contains("hfs", Qt::CaseInsensitive)) return 1s;
+  // Linux
+  if (filesystem.contains("ext2", Qt::CaseInsensitive)) return 1s;
+  if (filesystem.contains("ext3", Qt::CaseInsensitive)) return 1s;
+  if (filesystem.contains("reiserfs", Qt::CaseInsensitive)) return 1s;
+  // Other
+  if (filesystem.contains("udf", Qt::CaseInsensitive)) return 1ms;
+  // ext4, btrfs, f2fs, xfs, zfs, reiser4, apfs are considered as supporting nanosecond resolution
+  return 1ns;
+}
 
 }  // namespace metakit
 }  // namespace librevault

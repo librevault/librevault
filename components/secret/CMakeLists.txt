@@ -16,5 +16,6 @@ target_include_directories(secret PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Third-party libraries
 #============================================================================
 
+target_link_libraries(secret PUBLIC librevault-common)
 target_link_libraries(secret PUBLIC Qt5::Core)
 target_link_libraries(secret PUBLIC cryptopp)

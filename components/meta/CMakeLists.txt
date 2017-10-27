@@ -25,9 +25,9 @@ target_include_directories(meta PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(meta PRIVATE librevault-common)
+target_link_libraries(meta PUBLIC librevault-common)
 target_link_libraries(meta PRIVATE aes)
-target_link_libraries(meta PRIVATE secret)
+target_link_libraries(meta PUBLIC secret)
 target_link_libraries(meta PUBLIC protobuf)
-target_link_libraries(meta PRIVATE Qt5::Core)
+target_link_libraries(meta PUBLIC Qt5::Core)
 target_link_libraries(meta PRIVATE cryptopp)

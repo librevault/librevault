@@ -30,6 +30,7 @@ class MetaPrivate;
 class MetaInfo {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
+  using FileSystemTime = qint64;
   enum Kind : quint32 { DELETED = 0, FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/  };
 
  public:
@@ -68,9 +69,6 @@ class MetaInfo {
 
   QJsonDocument serializeToJson() const;
   void parseFromJson(const QJsonDocument& json);
-
-  /* Generators */
-  static QByteArray makePathId(QByteArray path, const Secret& secret);
 
   /* Smart getters+setters */
   bool isEmpty() const;

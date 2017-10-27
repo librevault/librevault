@@ -27,67 +27,83 @@
  * files in the program, then also delete it here.
  */
 #include "metakit.h"
+#include "Secret.h"
+#include "path_normalizer.h"
+#include "timestamp_granularity.h"
 #include <MetaInfo.h>
+#include <QCryptographicHash>
 #include <QDir>
-#include <QStorageInfo>
 #include <boost/filesystem.hpp>
-#include <sys/stat.h>
+
+namespace fs = boost::filesystem;
 
 namespace librevault {
 namespace metakit {
 
-namespace {
+MetaInfoBuilder::MetaInfoBuilder(QString path, QString root, Secret secret, bool preserve_symlinks)
+    : path(std::move(path)),
+      root(std::move(root)),
+      secret(secret),
+      preserve_symlinks(preserve_symlinks) {}
 
-std::chrono::nanoseconds makeTimestampGranularity(const QString& path) {
-  using namespace std::chrono_literals;
-
-  QString filesystem = QString::fromUtf8(QStorageInfo(path).fileSystemType());
-  // Windows
-  if (filesystem.contains("ntfs", Qt::CaseInsensitive)) return 100ns;
-  if (filesystem.contains("exfat", Qt::CaseInsensitive)) return 10ms;
-  if (filesystem.contains("fat", Qt::CaseInsensitive)) return 2s;
-  // Mac
-  if (filesystem.contains("hfs", Qt::CaseInsensitive)) return 1s;
-  // Linux
-  if (filesystem.contains("ext2", Qt::CaseInsensitive)) return 1s;
-  if (filesystem.contains("ext3", Qt::CaseInsensitive)) return 1s;
-  if (filesystem.contains("reiserfs", Qt::CaseInsensitive)) return 1s;
-  // Other
-  if (filesystem.contains("udf", Qt::CaseInsensitive)) return 1ms;
-  // ext4, btrfs, f2fs, xfs, zfs, reiser4, apfs are considered as supporting nanosecond resolution
-  return 1ns;
+QByteArray MetaInfoBuilder::makePathId() const {
+  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+  hasher.addData(secret.encryptionKey());
+  hasher.addData(metakit::normalizePath(path, root));
+  return hasher.result();
 }
 
-}  // namespace
+qint64 MetaInfoBuilder::getMtime() {
+  std::chrono::nanoseconds result{};
 
-qint64 getMtime(const QString& path, bool preserve_symlink) {
-  std::chrono::nanoseconds result;
 #if defined(Q_OS_LINUX)
-  struct stat stat_buf;
-  int stat_err = 0;
-  if (preserve_symlink)
-    stat_err = lstat(path.toUtf8(), &stat_buf);
-  else
-    stat_err = stat(path.toUtf8(), &stat_buf);
-  if (stat_err == 0) {
-    result = std::chrono::nanoseconds(stat_buf.st_mtim.tv_sec * 1000000000ll + stat_buf.st_mtim.tv_nsec);
-  }
+  updateStat();
+  result = std::chrono::nanoseconds(
+      cached_stat.st_mtim.tv_sec * 1000000000ll + cached_stat.st_mtim.tv_nsec);
 #else
-  result =
-      std::chrono::seconds(boost::filesystem::last_write_time(path.toStdWString()));
+  result = std::chrono::seconds(fs::last_write_time(path.toStdWString()));
 #endif
+
   return result.count();
 }
 
-quint64 getMtimeGranularity(const QString& path) { return makeTimestampGranularity(path).count(); }
+quint64 MetaInfoBuilder::getMtimeGranularity() {
+  return (quint64)makeTimestampGranularity(path).count();
+}
+
+MetaInfo::Kind MetaInfoBuilder::getKind() {
+  fs::file_status file_status =
+      preserve_symlinks ? fs::symlink_status(path.toStdWString()) : fs::status(path.toStdWString());
+
+  switch (file_status.type()) {
+    case fs::regular_file: return MetaInfo::FILE;
+    case fs::directory_file: return MetaInfo::DIRECTORY;
+    case fs::symlink_file: return MetaInfo::SYMLINK;
+    case fs::file_not_found: return MetaInfo::DELETED;
+    default: throw UnsupportedKind();
+  }
+}
+
+QByteArray MetaInfoBuilder::getSymlinkTarget() {
+  return QByteArray::fromStdString(
+      boost::filesystem::read_symlink(path.toStdWString()).generic_string());
+}
+
+#ifdef Q_OS_UNIX
+void MetaInfoBuilder::updateStat() {
+  int stat_err =
+      preserve_symlinks ? lstat(path.toUtf8(), &cached_stat) : stat(path.toUtf8(), &cached_stat);
+  if (stat_err) throw StatError();
+}
+#endif
 
 int fuzzyCompareMtime(qint64 mtime1, quint64 gran1, qint64 mtime2, quint64 gran2) {
   quint64 granula_common = std::max(std::max(gran1, gran2), 1ull);
   mtime1 -= (mtime1 % granula_common);
   mtime2 -= (mtime2 % granula_common);
-  if(mtime1 < mtime2)
+  if (mtime1 < mtime2)
     return -1;
-  else if(mtime1 > mtime2)
+  else if (mtime1 > mtime2)
     return 1;
   else
     return 0;

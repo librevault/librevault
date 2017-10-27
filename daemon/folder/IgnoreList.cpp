@@ -28,7 +28,7 @@
  */
 #include "IgnoreList.h"
 #include "control/FolderParams.h"
-#include <PathNormalizer.h>
+#include <path_normalizer.h>
 #include <QDirIterator>
 #include <QLoggingCategory>
 
@@ -41,7 +41,7 @@ IgnoreList::IgnoreList(const FolderParams& params, QObject* parent)
   lazyRebuildIgnores();
 }
 
-bool IgnoreList::isIgnored(QByteArray normpath) {
+bool IgnoreList::isIgnored(const QByteArray& normpath) {
   lazyRebuildIgnores();
 
   QReadLocker lk(&ignorelist_mtx);
@@ -59,19 +59,20 @@ void IgnoreList::lazyRebuildIgnores() {
 void IgnoreList::rebuildIgnores() {
   filters_wildcard_.clear();
 
+  qCDebug(log_ignorelist) << "Rebuilding ignore list";
+
   // System folder
   addIgnorePattern(".librevault");
 
   QDirIterator dir_it(params_.path, QStringList() << ".lvignore",
       QDir::Files | QDir::Hidden | QDir::Readable, QDirIterator::Subdirectories);
-  qCDebug(log_ignorelist) << "Rebuilding ignore list";
   while (dir_it.hasNext()) {
     QString ignorefile_path = dir_it.next();
     qCDebug(log_ignorelist) << "Found ignore file:" << ignorefile_path;
 
     // Compute "root" for current ignore file
     QString ignore_prefix =
-        QString::fromUtf8(PathNormalizer::normalizePath(ignorefile_path, params_.path));
+        QString::fromUtf8(metakit::normalizePath(ignorefile_path, params_.path));
     ignore_prefix.chop(QStringLiteral(".lvignore").size());
     qCDebug(log_ignorelist) << "Ignore file prefix:"
                             << (ignore_prefix.isEmpty() ? "(root)" : ignore_prefix);
@@ -81,9 +82,7 @@ void IgnoreList::rebuildIgnores() {
     if (ignorefile.open(QIODevice::ReadOnly | QIODevice::Text)) {
       QTextStream stream(&ignorefile);
       stream.setCodec("UTF-8");
-      while (!stream.atEnd()) {
-        parseLine(ignore_prefix, stream.readLine());
-      }
+      while (!stream.atEnd()) parseLine(ignore_prefix, stream.readLine());
     } else
       qCWarning(log_ignorelist) << "Could not open ignore file:" << ignorefile_path;
   }

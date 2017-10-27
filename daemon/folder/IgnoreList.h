@@ -41,7 +41,7 @@ class IgnoreList : public QObject {
  public:
   IgnoreList(const FolderParams& params, QObject* parent);
 
-  bool isIgnored(QByteArray normpath);
+  bool isIgnored(const QByteArray& normpath);
 
  private:
   const FolderParams& params_;

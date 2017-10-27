@@ -29,11 +29,12 @@
 #pragma once
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
-#include "util/exception.hpp"
+#include "metakit.h"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
 #include <QString>
+#include "util/exception.hpp"
 
 namespace librevault {
 
@@ -46,7 +47,8 @@ class ScanTask : public QueuedTask {
  public:
   DECLARE_EXCEPTION(AbortIndex, "Indexing had been aborted");
 
-  ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent);
+  ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list,
+      QObject* parent);
   virtual ~ScanTask();
 
   QString absolutePath() const { return abspath_; }
@@ -64,13 +66,14 @@ class ScanTask : public QueuedTask {
 
   const Secret& secret_;
 
+  metakit::MetaInfoBuilder builder_;
+
   MetaInfo old_meta_, new_meta_;
   SignedMeta old_smeta_, new_smeta_;
 
   void makeMetaInfo();
 
   /* File analyzers */
-  MetaInfo::Kind get_type();
   void update_fsattrib();
   void update_chunks();
   ChunkInfo populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);

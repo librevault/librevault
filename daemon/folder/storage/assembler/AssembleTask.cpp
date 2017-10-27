@@ -34,7 +34,7 @@
 #include "folder/storage/Index.h"
 #include "util/conv_fspath.h"
 #include <ChunkInfo.h>
-#include <PathNormalizer.h>
+#include <path_normalizer.h>
 #include <QBitArray>
 #include <QDir>
 #include <QLoggingCategory>
@@ -74,7 +74,7 @@ QByteArray AssembleTask::getChunkPt(const QByteArray& ct_hash) const {
 
 void AssembleTask::run() noexcept {
   normpath_ = meta_.path().plaintext(params_.secret.encryptionKey());
-  denormpath_ = PathNormalizer::absolutizePath(normpath_, params_.path);
+  denormpath_ = metakit::absolutizePath(normpath_, params_.path);
 
   try {
     bool assembled = false;
@@ -197,14 +197,12 @@ void AssembleTask::applyAttrib() {
     if (meta_.kind() != MetaInfo::SYMLINK) {
       int ec = 0;
       ec = chmod(QFile::encodeName(denormpath_), meta_.mode());
-      if (ec) {
+      if (ec)
         qCWarning(log_assembler) << "Error applying mode to" << denormpath_;  // FIXME: #83
-      }
 
       ec = chown(QFile::encodeName(denormpath_), meta_.uid(), meta_.gid());
-      if (ec) {
+      if (ec)
         qCWarning(log_assembler) << "Error applying uid/gid to" << denormpath_;
-      }
     }
   }
 #elif defined(Q_OS_WIN)

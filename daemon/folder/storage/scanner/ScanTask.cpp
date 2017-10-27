@@ -33,11 +33,11 @@
 #include "folder/storage/Index.h"
 #include "util/human_size.h"
 #include <ChunkInfo.h>
-#include <PathNormalizer.h>
+#include <metakit.h>
+#include <path_normalizer.h>
 #include <QFile>
 #include <boost/filesystem.hpp>
 #include <Rabin.hpp>
-#include <metakit.h>
 #ifdef Q_OS_UNIX
 #  include <sys/stat.h>
 #endif
@@ -49,30 +49,31 @@ Q_LOGGING_CATEGORY(log_indexer, "folder.storage.scanner")
 
 namespace librevault {
 
-ScanTask::ScanTask(QString abspath, const FolderParams& params, Index* index, IgnoreList* ignore_list, QObject* parent)
+ScanTask::ScanTask(QString abspath, const FolderParams& params, Index* index,
+    IgnoreList* ignore_list, QObject* parent)
     : QueuedTask(SCAN, parent),
       abspath_(std::move(abspath)),
       params_(params),
       index_(index),
       ignore_list_(ignore_list),
-      secret_(params.secret) {}
+      secret_(params.secret),
+      builder_(abspath_, params.path, params.secret, params_.preserve_symlinks) {}
 
 ScanTask::~ScanTask() = default;
 
 void ScanTask::run() noexcept {
-  QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
+  QByteArray normpath = metakit::normalizePath(abspath_, params_.path);
   qCDebug(log_indexer) << "Started indexing:" << normpath;
 
   try {
     if (ignore_list_->isIgnored(normpath)) throw AbortIndex("File is ignored");
 
     try {
-      old_smeta_ = index_->getMeta(MetaInfo::makePathId(normpath, secret_));
+      old_smeta_ = index_->getMeta(builder_.makePathId());
       old_meta_ = old_smeta_.metaInfo();
 
-      auto new_mtime = metakit::getMtime(abspath_, params_.preserve_symlinks);
-      auto new_mtime_granularity = metakit::getMtimeGranularity(abspath_);
-      int cmp = metakit::fuzzyCompareMtime(new_mtime, new_mtime_granularity, old_meta_.mtime(), old_meta_.mtimeGranularity());
+      int cmp = metakit::fuzzyCompareMtime(builder_.getMtime(), builder_.getMtimeGranularity(),
+          old_meta_.mtime(), old_meta_.mtimeGranularity());
       if (cmp == 0) throw AbortIndex("Modification time is not changed");
     } catch (boost::filesystem::filesystem_error& e) {
     } catch (Index::NoSuchMeta& e) {
@@ -82,11 +83,12 @@ void ScanTask::run() noexcept {
 
     QElapsedTimer timer_;
     timer_.start();  // Starting timer
-    makeMetaInfo();     // Actual indexing
+    makeMetaInfo();  // Actual indexing
     qreal time_spent = qreal(timer_.elapsed()) / 1000;
     qreal bandwidth = qreal(new_smeta_.metaInfo().size()) / time_spent;
 
-    qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s (" << humanBandwidth(bandwidth) << ")"
+    qCDebug(log_indexer) << "Updated index entry in" << time_spent << "s ("
+                         << humanBandwidth(bandwidth) << ")"
                          << "Path=" << abspath_
                          << "Rev=" << new_smeta_.metaInfo().timestamp().time_since_epoch().count()
                          << "Chk=" << new_smeta_.metaInfo().chunks().size();
@@ -99,15 +101,13 @@ void ScanTask::run() noexcept {
 
 /* Actual indexing process */
 void ScanTask::makeMetaInfo() {
-  QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
+  QByteArray normpath = metakit::normalizePath(abspath_, params_.path);
 
-  // LOGD("make_Meta(" << normpath.toStdString() << ")");
+  new_meta_.path(EncryptedData::fromPlaintext(normpath, secret_.encryptionKey(),
+      generateRandomIV()));  // sets path_id, encrypted_path and encrypted_path_iv
+  new_meta_.pathKeyedHash(builder_.makePathId());
 
-  new_meta_.path(EncryptedData::fromPlaintext(
-      normpath, secret_.encryptionKey(), generateRandomIV()));  // sets path_id, encrypted_path and encrypted_path_iv
-  new_meta_.pathKeyedHash(MetaInfo::makePathId(normpath, secret_));
-
-  new_meta_.kind(get_type());  // Kind
+  new_meta_.kind(builder_.getKind());  // Kind
 
   if (!old_smeta_ && new_meta_.kind() == MetaInfo::DELETED)
     throw AbortIndex("Old Meta is not in the index, new Meta is DELETED");
@@ -120,11 +120,9 @@ void ScanTask::makeMetaInfo() {
 
   if (new_meta_.kind() == MetaInfo::FILE) update_chunks();
 
-  if (new_meta_.kind() == MetaInfo::SYMLINK) {
-    QByteArray symlink_target =
-        QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string());
-    new_meta_.symlinkTarget(EncryptedData::fromPlaintext(symlink_target, secret_.encryptionKey(), generateRandomIV()));
-  }
+  if (new_meta_.kind() == MetaInfo::SYMLINK)
+    new_meta_.symlinkTarget(EncryptedData::fromPlaintext(
+        builder_.getSymlinkTarget(), secret_.encryptionKey(), generateRandomIV()));
 
   // FSAttrib
   if (new_meta_.kind() != MetaInfo::DELETED)
@@ -139,28 +137,6 @@ void ScanTask::makeMetaInfo() {
   new_smeta_ = SignedMeta(new_meta_, secret_);
 }
 
-MetaInfo::Kind ScanTask::get_type() {
-  boost::filesystem::path babspath(abspath_.toStdWString());
-
-  boost::filesystem::file_status file_status =
-      params_.preserve_symlinks ? boost::filesystem::symlink_status(babspath)
-                                : boost::filesystem::status(babspath);  // Preserves symlinks if such option is set.
-
-  switch (file_status.type()) {
-    case boost::filesystem::regular_file:
-      return MetaInfo::FILE;
-    case boost::filesystem::directory_file:
-      return MetaInfo::DIRECTORY;
-    case boost::filesystem::symlink_file:
-      return MetaInfo::SYMLINK;
-    case boost::filesystem::file_not_found:
-      return MetaInfo::DELETED;
-    default:
-      throw AbortIndex(
-          "File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported");
-  }
-}
-
 void ScanTask::update_fsattrib() {
   // First, preserve old values of attributes
   new_meta_.windowsAttrib(old_meta_.windowsAttrib());
@@ -168,15 +144,16 @@ void ScanTask::update_fsattrib() {
   new_meta_.uid(old_meta_.uid());
   new_meta_.gid(old_meta_.gid());
 
-  new_meta_.mtime(metakit::getMtime(abspath_, params_.preserve_symlinks));  // File/directory modification time
-  new_meta_.mtimeGranularity(metakit::getMtimeGranularity(abspath_));
+  new_meta_.mtime(builder_.getMtime());  // File/directory modification time
+  new_meta_.mtimeGranularity(builder_.getMtimeGranularity());
 
   // Then, write new values of attributes (if enabled in config)
 #if defined(Q_OS_WIN)
   if (params_.preserve_windows_attrib) {
-    new_meta_.set_windows_attrib(GetFileAttributes(
-        babspath.native()
-            .c_str()));  // Windows attributes (I don't have Windows now to test it), this code is stub for now.
+    new_meta_.set_windows_attrib(
+        GetFileAttributes(babspath.native().c_str()));  // Windows attributes (I don't have Windows
+                                                        // now to test it), this code is stub for
+                                                        // now.
   }
 #elif defined(Q_OS_UNIX)
   if (params_.preserve_unix_attrib) {
@@ -211,7 +188,8 @@ void ScanTask::update_chunks() {
     new_meta_.rabinShift(53 - 8);
     new_meta_.rabinPolynomial(0x3DA3358B4DC173LL);
 
-    // TODO: Generate a new polynomial for rabin_global_params here to prevent a possible fingerprinting attack.
+    // TODO: Generate a new polynomial for rabin_global_params here to prevent a possible
+    // fingerprinting attack.
   }
 
   // IV reuse
@@ -221,8 +199,8 @@ void ScanTask::update_chunks() {
   }
 
   // Initializing chunker
-  Rabin rabin(new_meta_.rabinPolynomial(), new_meta_.rabinShift(), new_meta_.minChunksize(), new_meta_.maxChunksize(),
-              new_meta_.rabinMask());
+  Rabin rabin(new_meta_.rabinPolynomial(), new_meta_.rabinShift(), new_meta_.minChunksize(),
+      new_meta_.maxChunksize(), new_meta_.rabinMask());
 
   // Chunking
   QList<ChunkInfo> chunks;
@@ -250,7 +228,8 @@ void ScanTask::update_chunks() {
   new_meta_.chunks(chunks);
 }
 
-ChunkInfo ScanTask::populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
+ChunkInfo ScanTask::populate_chunk(
+    const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
   qCDebug(log_indexer) << "New chunk size:" << data.size();
   ChunkInfo chunk;
 
@@ -264,13 +243,11 @@ ChunkInfo ScanTask::populate_chunk(const QByteArray& data, QMap<QByteArray, QByt
   chunk.iv(pt_hmac__iv.value(chunk.ptKeyedHash(), generateRandomIV()));
 
   chunk.size(data.size());
-  chunk.ctHash(ChunkInfo::compute_hash(ChunkInfo::encrypt(data, secret_.encryptionKey(), chunk.iv())));
+  chunk.ctHash(
+      ChunkInfo::compute_hash(ChunkInfo::encrypt(data, secret_.encryptionKey(), chunk.iv())));
   return chunk;
 }
 
-QByteArray ScanTask::pathKeyedHash() const {
-  QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
-  return MetaInfo::makePathId(normpath, secret_);
-}
+QByteArray ScanTask::pathKeyedHash() const { return builder_.makePathId(); }
 
 } /* namespace librevault */

@@ -6,7 +6,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_BINARY_DIR})
 
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 #============================================================================
@@ -42,7 +41,6 @@ target_link_libraries(librevault-daemon base32)
 target_link_libraries(librevault-daemon protocol)
 target_link_libraries(librevault-daemon portmapping)
 target_link_libraries(librevault-daemon discovery)
-target_link_libraries(librevault-daemon pathnormalizer)
 target_link_libraries(librevault-daemon librevault-common)
 target_link_libraries(librevault-daemon dir_monitor)
 target_link_libraries(librevault-daemon rabin-cpp)

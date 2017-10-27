@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "SecretPrivate.h"
+#include "util/exception.hpp"
 #include <QString>
 #include <iostream>
 #include <stdexcept>
@@ -44,24 +45,12 @@ class Secret {
     Download = 'D',   /// Public key, used to verify signed modified files
   };
 
-  struct error : public std::runtime_error {
-    error(const char* what) : std::runtime_error(what) {}
-  };
-  struct FormatMismatch : public error {
-    FormatMismatch() : error("Secret format mismatch") {}
-  };
-  struct LevelError : public error {
-    LevelError() : error("Secret has insufficient privileges for this action") {}
-  };
-  struct CryptoError : public error {
-    CryptoError() : error("Cryptographic error. Probably ECDSA domain mismatch") {}
-  };
-  struct UnknownSecretLevel : public error {
-    UnknownSecretLevel() : error("Unknown Secret level") {}
-  };
-  struct UnknownSecretVersion : public error {
-    UnknownSecretVersion() : error("Unknown Secret version") {}
-  };
+  DECLARE_EXCEPTION(SecretError, "Secret error");
+  DECLARE_EXCEPTION_DETAIL(FormatMismatch, SecretError, "Secret format mismatch");
+  DECLARE_EXCEPTION_DETAIL(LevelError, SecretError, "Secret has insufficient privileges for this action");
+  DECLARE_EXCEPTION_DETAIL(CryptoError, SecretError, "Cryptographic error. Probably ECDSA domain mismatch");
+  DECLARE_EXCEPTION_DETAIL(UnknownSecretLevel, SecretError, "Unknown Secret level");
+  DECLARE_EXCEPTION_DETAIL(UnknownSecretVersion, SecretError, "Unknown Secret version");
 
   Secret();
   Secret(const QByteArray& string_secret);

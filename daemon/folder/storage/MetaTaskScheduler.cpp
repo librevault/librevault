@@ -47,7 +47,7 @@ MetaTaskScheduler::~MetaTaskScheduler() {
 }
 
 void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
-  if (path_keyed_hash.isEmpty()) return;
+  Q_ASSERT(!path_keyed_hash.isEmpty());
 
   QTimer::singleShot(0, this, [=] {
     QMutexLocker lk(&tq_mtx);

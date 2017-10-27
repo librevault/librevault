@@ -30,7 +30,7 @@
 #include "folder/FolderGroup.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/Index.h"
-#include <PathNormalizer.h>
+#include <path_normalizer.h>
 #include <QDirIterator>
 
 namespace librevault {
@@ -67,7 +67,7 @@ QList<QString> DirectoryPoller::getReindexList() {
   QDirIterator dir_it(fgroup_->params().path, filter, flags);
   while (dir_it.hasNext()) {
     QString abspath = dir_it.next();
-    QByteArray normpath = PathNormalizer::normalizePath(abspath, fgroup_->params().path);
+    QByteArray normpath = metakit::normalizePath(abspath, fgroup_->params().path);
 
     if (!ignore_list_->isIgnored(normpath)) file_list.insert(abspath);
   }
@@ -75,7 +75,7 @@ QList<QString> DirectoryPoller::getReindexList() {
   // Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
   // They can still be indexed by monitor, though.
   for (auto& smeta : index_->getIncompleteMeta()) {
-    QString denormpath = PathNormalizer::absolutizePath(
+    QString denormpath = metakit::absolutizePath(
         smeta.metaInfo().path().plaintext(fgroup_->params().secret.encryptionKey()), fgroup_->params().path);
     file_list.remove(denormpath);
   }
@@ -83,7 +83,7 @@ QList<QString> DirectoryPoller::getReindexList() {
   // Files present in index (files added from here will be marked as DELETED)
   for (auto& smeta : index_->getExistingMeta()) {
     QByteArray normpath = smeta.metaInfo().path().plaintext(fgroup_->params().secret.encryptionKey());
-    QString denormpath = PathNormalizer::absolutizePath(normpath, fgroup_->params().path);
+    QString denormpath = metakit::absolutizePath(normpath, fgroup_->params().path);
 
     if (!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
   }

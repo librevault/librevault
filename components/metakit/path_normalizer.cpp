@@ -26,14 +26,28 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include <QString>
+#include "path_normalizer.h"
+#include <QDir>
 
 namespace librevault {
-namespace PathNormalizer {
+namespace metakit {
 
-QByteArray normalizePath(QString abspath, QString root);
-QString absolutizePath(QByteArray normpath, QString root);
+QByteArray normalizePath(const QString& abspath, const QString& root) {
+  QDir root_dir(root);
 
-} /* namespace PathNormalizer */
+  QString normpath = QDir::cleanPath(abspath);                     // Cleanup path
+  normpath = root_dir.relativeFilePath(QDir::cleanPath(abspath));  // Make it relative to root
+  normpath = QDir::fromNativeSeparators(normpath);                 // Convert directory separators
+  if (normpath.endsWith('/')) normpath.chop(1);  // Removing last '/' in directories
+  return normpath.toUtf8();                      // Convert to UTF-8
+}
+
+QString absolutizePath(const QByteArray& normpath, const QString& root) {
+  QDir root_dir(root);
+  QString denormpath = QString::fromUtf8(normpath);    // Convert from UTF-8
+  denormpath = root_dir.absoluteFilePath(denormpath);  // Make it absolute
+  return denormpath;
+}
+
+} /* namespace metakit */
 } /* namespace librevault */

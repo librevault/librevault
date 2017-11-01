@@ -35,41 +35,41 @@
 namespace librevault {
 
 QByteArray generateRandomIV() {
-	QByteArray random_iv(16, 0);
-	CryptoPP::AutoSeededRandomPool().GenerateBlock((uchar*)random_iv.data(), random_iv.size());
-	return random_iv;
+  QByteArray random_iv(16, 0);
+  CryptoPP::AutoSeededRandomPool().GenerateBlock((uchar*)random_iv.data(), random_iv.size());
+  return random_iv;
 }
 
-QByteArray encryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
-	iv = iv.leftJustified(16, 0, true);
+QByteArray encryptAesCbc(
+    const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
+  iv = iv.leftJustified(16, 0, true);
 
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter(
+      (const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
 
-	std::string buffer;
-	CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
-		new CryptoPP::StreamTransformationFilter(filter,
-			new CryptoPP::StringSink(buffer),
-			padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-		)
-	);
+  std::string buffer;
+  CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
+      new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(buffer),
+          padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
+                  : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-	return QByteArray::fromStdString(buffer);
+  return QByteArray::fromStdString(buffer);
 }
 
-QByteArray decryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
-	iv = iv.leftJustified(16, 0, true);
+QByteArray decryptAesCbc(
+    const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {
+  iv = iv.leftJustified(16, 0, true);
 
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter(
+      (const uchar*)key.data(), key.size(), (const uchar*)iv.constData());
 
-	std::string buffer;
-	CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
-		new CryptoPP::StreamTransformationFilter(filter,
-			new CryptoPP::StringSink(buffer),
-			padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-		)
-	);
+  std::string buffer;
+  CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
+      new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(buffer),
+          padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
+                  : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-	return QByteArray::fromStdString(buffer);
+  return QByteArray::fromStdString(buffer);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

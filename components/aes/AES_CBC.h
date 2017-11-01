@@ -32,7 +32,9 @@
 namespace librevault {
 
 QByteArray generateRandomIV();
-QByteArray encryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding = true);
-QByteArray decryptAesCbc(const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding = true);
+QByteArray encryptAesCbc(
+    const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding = true);
+QByteArray decryptAesCbc(
+    const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding = true);
 
-} /* namespace librevault */
+}  // namespace librevault

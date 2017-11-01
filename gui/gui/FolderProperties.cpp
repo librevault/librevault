@@ -76,7 +76,7 @@ FolderProperties::FolderProperties(QByteArray folderid, Daemon* daemon, FolderMo
 FolderProperties::~FolderProperties() {}
 
 void FolderProperties::init_secrets() {
-	librevault::Secret secret = daemon_->config()->getFolderValue(folderid_, "secret").toString();
+	librevault::Secret secret = librevault::Secret(daemon_->config()->getFolderValue(folderid_, "secret").toString());
 
 	if(secret.level() <= secret.ReadWrite)
 		ui.secret_rw->setText(secret);

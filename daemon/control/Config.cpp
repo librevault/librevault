@@ -194,7 +194,7 @@ void Config::save() {
     QSaveFile globals_f(Paths::get()->client_config_path);
     if (globals_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       qCDebug(log_config) << "Saving global configuration to:" << globals_f.fileName();
-      globals_f.write(exportUserGlobals().toJson(QJsonDocument::Compact));
+      globals_f.write(exportUserGlobals().toJson(QJsonDocument::Indented));
     }
     if (globals_f.isOpen() && globals_f.commit())
       qCDebug(log_config) << "Saved global configuration to:" << globals_f.fileName();
@@ -206,7 +206,7 @@ void Config::save() {
     QSaveFile folders_f(Paths::get()->folders_config_path);
     if (folders_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
       qCDebug(log_config) << "Saving folder configuration to:" << folders_f.fileName();
-      folders_f.write(exportUserFolders().toJson(QJsonDocument::Compact));
+      folders_f.write(exportUserFolders().toJson(QJsonDocument::Indented));
     }
     if (folders_f.isOpen() && folders_f.commit())
       qCDebug(log_config) << "Saved folder configuration to:" << folders_f.fileName();
@@ -215,4 +215,4 @@ void Config::save() {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

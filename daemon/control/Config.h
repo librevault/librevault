@@ -27,10 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
 #include "AbstractConfig.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
+#include "util/exception.hpp"
 
 namespace librevault {
 
@@ -40,12 +42,8 @@ class Config : public AbstractConfig {
   ~Config();
 
   /* Exceptions */
-  struct samekey_error : std::runtime_error {
-    samekey_error()
-        : std::runtime_error(
-              "Multiple directories with the same key (or derived from the same key) are not "
-              "supported") {}
-  };
+  DECLARE_EXCEPTION(samekey_error,
+      "Multiple directories with the same key (or derived from the same key) are not supported");
 
   static Config* get() {
     if (!instance_) instance_ = new Config();
@@ -95,4 +93,4 @@ class Config : public AbstractConfig {
   void save();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

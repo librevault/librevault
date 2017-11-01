@@ -16,9 +16,10 @@
 #pragma once
 
 #include "EncryptedData.h"
+#include <QDebug>
+#include <QJsonDocument>
 #include <QList>
 #include <QSharedDataPointer>
-#include <QJsonDocument>
 #include <chrono>
 
 namespace librevault {
@@ -31,7 +32,7 @@ class MetaInfo {
  public:
   using Timestamp = std::chrono::system_clock::time_point;
   using FileSystemTime = qint64;
-  enum Kind : quint32 { DELETED = 0, FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/  };
+  enum Kind : quint32 { DELETED = 0, FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/ };
 
  public:
   /* Nested structs & classes */
@@ -65,7 +66,7 @@ class MetaInfo {
 
   /* Serialization */
   QByteArray serializeToBinary() const;
-  void parseFromBinary(const QByteArray &serialized);
+  void parseFromBinary(const QByteArray& serialized);
 
   QJsonDocument serializeToJson() const;
   void parseFromJson(const QJsonDocument& json);
@@ -134,4 +135,6 @@ class MetaInfo {
   QSharedDataPointer<MetaPrivate> d;
 };
 
-} /* namespace librevault */
+QDebug operator<<(QDebug debug, const MetaInfo::PathRevision& id);
+
+}  // namespace librevault

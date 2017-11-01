@@ -20,6 +20,7 @@
 
 namespace librevault {
 
+class Secret;
 class ChunkInfoPrivate;
 class ChunkInfo {
  public:
@@ -43,13 +44,18 @@ class ChunkInfo {
   void ptKeyedHash(const QByteArray& pt_keyed_hash);
 
   //
-  static QByteArray encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv);
-  static QByteArray decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv);
+  static QByteArray encrypt(const QByteArray& chunk, const Secret& secret, const QByteArray& iv);
+  static QByteArray decrypt(const QByteArray& chunk, const Secret& secret, const QByteArray& iv);
 
-  static QByteArray compute_hash(QByteArray chunk);
+  static QByteArray computeHash(const QByteArray& chunk);
+  static QByteArray computeKeyedHash(const QByteArray& chunk, const Secret& secret);
+
+  static bool verifyChunk(const QByteArray& ct_hash, const QByteArray& chunk_pt);
 
  private:
   QSharedDataPointer<ChunkInfoPrivate> d;
 };
 
-} /* namespace librevault */
+QDebug operator<<(QDebug debug, const ChunkInfo& info);
+
+}  // namespace librevault

@@ -29,7 +29,7 @@
 #pragma once
 #include <QDateTime>
 #include <QObject>
-#include <QReadWriteLock>
+#include <QMutex>
 #include <QStringList>
 
 namespace librevault {
@@ -47,7 +47,7 @@ class IgnoreList : public QObject {
   const FolderParams& params_;
   QStringList filters_wildcard_;
 
-  QReadWriteLock ignorelist_mtx;
+  QMutex ignorelist_mtx;
   QDateTime last_rebuild_;
 
   void lazyRebuildIgnores();

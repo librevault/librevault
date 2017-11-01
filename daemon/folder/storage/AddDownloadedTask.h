@@ -28,33 +28,24 @@
  */
 #pragma once
 
-#include <QObject>
-#include <QThreadPool>
-#include <QHash>
-#include <QMutex>
-#include "MetaTaskScheduler.h"
 #include "Index.h"
+#include "MetaTaskScheduler.h"
 
 namespace librevault {
 
 class AddDownloadedTask : public QueuedTask {
- Q_OBJECT
+  Q_OBJECT
 
  public:
-  AddDownloadedTask(const SignedMeta& smeta, Index* index, QObject* parent) :
-          QueuedTask(ADD_DOWNLOADED, parent), index_(index), smeta_(smeta) {}
+  AddDownloadedTask(const SignedMeta& smeta, Index* index, QObject* parent)
+      : QueuedTask(ADD_DOWNLOADED, parent), index_(index), smeta_(smeta) {}
 
-  inline void run() noexcept override {
-    index_->putMeta(smeta_);
-  }
-
-  inline QByteArray pathKeyedHash() const override {
-    return smeta_.metaInfo().pathKeyedHash();
-  }
+  inline void run() noexcept override { index_->putMeta(smeta_); }
+  inline QByteArray pathKeyedHash() const override { return smeta_.metaInfo().pathKeyedHash(); }
 
  private:
   Index* index_;
   SignedMeta smeta_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -37,7 +37,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_scheduler, "folder.storage.scheduler")
 
 MetaTaskScheduler::MetaTaskScheduler(const FolderParams& params, QObject* parent)
-    : QObject(parent), params_(params) {
+    : QObject(parent), params_(params), tq_mtx_(QMutex::Recursive) {
   threadpool_ = new QThreadPool(this);
 }
 
@@ -46,57 +46,59 @@ MetaTaskScheduler::~MetaTaskScheduler() {
   threadpool_->waitForDone();
 }
 
-void MetaTaskScheduler::process(QByteArray path_keyed_hash) {
+void MetaTaskScheduler::process(const QByteArray& path_keyed_hash) {
+  QMutexLocker lk(&tq_mtx_);
+
   Q_ASSERT(!path_keyed_hash.isEmpty());
+  Q_ASSERT(tq_.contains(path_keyed_hash));
 
-  QTimer::singleShot(0, this, [=] {
-    QMutexLocker lk(&tq_mtx);
+  MetaTaskQueue& current_tq = tq_[path_keyed_hash];
 
-    // If no task queue is present, then no-op
-    if (!pending_tasks.contains(path_keyed_hash)) return;
+  // Sort tasks by kind, and pick only last
+  std::stable_sort(current_tq.pending_tasks.begin(), current_tq.pending_tasks.end(),
+      [](QueuedTask* task1, QueuedTask* task2) { return task1->taskKind() < task2->taskKind(); });
 
-    // Sort tasks by kind, and pick only last
-    QMap<QueuedTask::TaskKind, QueuedTask*> uniq_tasks;
-    for (const auto& task : pending_tasks[path_keyed_hash]) {
-      if (uniq_tasks.contains(task->taskKind())) uniq_tasks[task->taskKind()]->deleteLater();
-      uniq_tasks[task->taskKind()] = task;
-    }
-    pending_tasks[path_keyed_hash] = uniq_tasks.values();
+  // If current task is empty, and there are pending tasks
+  if (current_tq.current_task == nullptr && !current_tq.pending_tasks.isEmpty()) {
+    // Run new task
+    QueuedTask* task = current_tq.pending_tasks.dequeue();
+    current_tq.current_task = task;
 
-    // If current task is empty, and there are pending tasks
-    if (!current_tasks.contains(path_keyed_hash) && pending_tasks.contains(path_keyed_hash)) {
-      // Run new task
-      QueuedTask* task = pending_tasks[path_keyed_hash].takeFirst();
-      current_tasks[path_keyed_hash] = task;
+    threadpool_->start(task);
+  }
 
-      threadpool_->start(task);
-    }
-
-    // If task queue for current path is empty, then remove the queue itself
-    if (pending_tasks[path_keyed_hash].isEmpty()) pending_tasks.remove(path_keyed_hash);
-  });
+  // If task queue for current path is empty, then remove the queue itself
+  if (current_tq.pending_tasks.isEmpty() && current_tq.current_task == nullptr)
+    tq_.remove(path_keyed_hash);
 }
 
-void MetaTaskScheduler::handleFinished(QueuedTask* task) {
-  qCDebug(log_scheduler) << "Finished task:" << task;
+void MetaTaskScheduler::handleFinished(const QByteArray& path_keyed_hash, QueuedTask* task) {
+  QMutexLocker lk(&tq_mtx_);
 
-  QMutexLocker lk(&tq_mtx);
+  Q_ASSERT(tq_.contains(path_keyed_hash));
+  Q_ASSERT(tq_[path_keyed_hash].current_task == task);
 
-  QByteArray path_keyed_hash = current_tasks.key(task);
-  current_tasks.remove(path_keyed_hash);
+  tq_[path_keyed_hash].current_task = nullptr;
+  qCDebug(log_scheduler) << "Finished task:" << task << "PKH:" << path_keyed_hash.toHex();
+
   process(path_keyed_hash);
 }
 
 void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
-  connect(task, &QObject::destroyed, this, [=] { handleFinished(task); }, Qt::DirectConnection);
+  QMutexLocker lk(&tq_mtx_);
+
+  auto path_keyed_hash = task->pathKeyedHash();
+  Q_ASSERT(!path_keyed_hash.isEmpty());
+
+  connect(task, &QObject::destroyed, this, [=] { handleFinished(path_keyed_hash, task); },
+      Qt::DirectConnection);
   connect(
       this, &MetaTaskScheduler::aboutToStop, task, &QueuedTask::interrupt, Qt::DirectConnection);
 
-  QMutexLocker lk(&tq_mtx);
-  pending_tasks[task->pathKeyedHash()].append(task);
-  qCDebug(log_scheduler) << "Scheduled task:" << task;
+  tq_[path_keyed_hash].pending_tasks.enqueue(task);
+  qCDebug(log_scheduler) << "Scheduled task:" << task << "PKH:" << path_keyed_hash.toHex();
 
-  process(task->pathKeyedHash());
+  process(path_keyed_hash);
 }
 
 }  // namespace librevault

@@ -53,8 +53,8 @@ class Secret {
   DECLARE_EXCEPTION_DETAIL(UnknownSecretVersion, SecretError, "Unknown Secret version");
 
   Secret();
-  Secret(const QByteArray& string_secret);
-  Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
+  explicit Secret(const QByteArray& string_secret);
+  explicit Secret(const QString& string_secret) : Secret(string_secret.toLatin1()) {}
 
   static Secret generate();
 

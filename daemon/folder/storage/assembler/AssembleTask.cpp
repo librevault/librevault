@@ -50,8 +50,8 @@ Q_LOGGING_CATEGORY(log_assembler, "folder.storage.assembler")
 
 namespace librevault {
 
-AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* index, ChunkStorage* chunk_storage,
-                           QObject* parent)
+AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* index,
+    ChunkStorage* chunk_storage, QObject* parent)
     : QueuedTask(ASSEMBLE, parent),
       params_(params),
       index_(index),
@@ -64,10 +64,10 @@ AssembleTask::~AssembleTask() = default;
 QByteArray AssembleTask::getChunkPt(const QByteArray& ct_hash) const {
   try {
     QPair<quint32, QByteArray> size_iv = index_->getChunkSizeIv(ct_hash);
-    return ChunkInfo::decrypt(chunk_storage_->getChunk(ct_hash), size_iv.first, params_.secret.encryptionKey(),
-                              size_iv.second);
+    return ChunkInfo::decrypt(chunk_storage_->getChunk(ct_hash), params_.secret, size_iv.second);
   } catch (std::exception& e) {
-    qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
+    qCWarning(log_assembler)
+        << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
     throw ChunkStorage::NoSuchChunk();
   }
 }
@@ -79,18 +79,10 @@ void AssembleTask::run() noexcept {
   try {
     bool assembled = false;
     switch (meta_.kind()) {
-      case MetaInfo::FILE:
-        assembled = assembleFile();
-        break;
-      case MetaInfo::DIRECTORY:
-        assembled = assembleDirectory();
-        break;
-      case MetaInfo::SYMLINK:
-        assembled = assembleSymlink();
-        break;
-      case MetaInfo::DELETED:
-        assembled = assembleDeleted();
-        break;
+      case MetaInfo::FILE: assembled = assembleFile(); break;
+      case MetaInfo::DIRECTORY: assembled = assembleDirectory(); break;
+      case MetaInfo::SYMLINK: assembled = assembleSymlink(); break;
+      case MetaInfo::DELETED: assembled = assembleDeleted(); break;
       default:
         qWarning() << QString("Unexpected meta type: %1").arg(meta_.kind());
         throw abortAssemble();
@@ -120,8 +112,8 @@ bool AssembleTask::assembleSymlink() {
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
   boost::filesystem::remove_all(denormpath_fs);
-  boost::filesystem::create_symlink(meta_.symlinkTarget().plaintext(params_.secret.encryptionKey()).toStdString(),
-                                    denormpath_fs);
+  boost::filesystem::create_symlink(
+      meta_.symlinkTarget().plaintext(params_.secret.encryptionKey()).toStdString(), denormpath_fs);
 
   return true;  // Maybe, something else?
 }
@@ -132,7 +124,8 @@ bool AssembleTask::assembleDirectory() {
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
   bool create_new = true;
-  if (boost::filesystem::status(denormpath_fs).type() != boost::filesystem::file_type::directory_file)
+  if (boost::filesystem::status(denormpath_fs).type() !=
+      boost::filesystem::file_type::directory_file)
     create_new = !boost::filesystem::remove(denormpath_fs);
 
   if (create_new) QDir().mkpath(denormpath_);
@@ -149,7 +142,8 @@ bool AssembleTask::assembleFile() {
 
   //
   QString assembly_path =
-      params_.system_path + "/" + conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
+      params_.system_path + "/" +
+      conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
 
   // TODO: Check for assembled chunk and try to extract them and push into encstorage.
   QSaveFile assembly_f(assembly_path);  // Opening file
@@ -197,12 +191,10 @@ void AssembleTask::applyAttrib() {
     if (meta_.kind() != MetaInfo::SYMLINK) {
       int ec = 0;
       ec = chmod(QFile::encodeName(denormpath_), meta_.mode());
-      if (ec)
-        qCWarning(log_assembler) << "Error applying mode to" << denormpath_;  // FIXME: #83
+      if (ec) qCWarning(log_assembler) << "Error applying mode to" << denormpath_;  // FIXME: #83
 
       ec = chown(QFile::encodeName(denormpath_), meta_.uid(), meta_.gid());
-      if (ec)
-        qCWarning(log_assembler) << "Error applying uid/gid to" << denormpath_;
+      if (ec) qCWarning(log_assembler) << "Error applying uid/gid to" << denormpath_;
     }
   }
 #elif defined(Q_OS_WIN)

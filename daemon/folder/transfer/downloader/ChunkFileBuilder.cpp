@@ -77,4 +77,4 @@ void ChunkFileBuilder::putBlock(quint32 offset, const QByteArray& content) {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

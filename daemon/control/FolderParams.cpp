@@ -34,7 +34,7 @@ namespace librevault {
 
 FolderParams::FolderParams(QVariantMap fconfig) {
   // Necessary
-  secret = fconfig["secret"].toString();
+  secret = Secret(fconfig["secret"].toString());
   path = fconfig["path"].toString();
 
   // Optional

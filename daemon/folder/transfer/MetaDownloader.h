@@ -37,15 +37,18 @@ namespace librevault {
 class Peer;
 class Index;
 class Downloader;
+class MetaTaskScheduler;
 
 class MetaDownloader : public QObject {
   Q_OBJECT
 
- signals:
-  void metaDownloaded(SignedMeta smeta);
-
  public:
-  MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader, QObject* parent);
+  MetaDownloader(const FolderParams& params, Index* index, Downloader* downloader,
+      MetaTaskScheduler* task_scheduler, QObject* parent);
+
+  DECLARE_EXCEPTION(CantDownload, "Meta is forbidden for download");
+  DECLARE_EXCEPTION_DETAIL(InvalidSignature, CantDownload, "Meta signature is invalid");
+  DECLARE_EXCEPTION_DETAIL(OldMeta, CantDownload, "Remote node notified us about an older Meta than ours");
 
   /* Message handlers */
   void handleIndexUpdate(Peer* peer, const MetaInfo::PathRevision& revision, QBitArray bitfield);
@@ -55,6 +58,7 @@ class MetaDownloader : public QObject {
   const FolderParams& params_;
   Index* index_;
   Downloader* downloader_;
+  MetaTaskScheduler* task_scheduler_;
 };
 
 } /* namespace librevault */

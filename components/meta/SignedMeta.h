@@ -35,8 +35,8 @@ public:
 
 	// Getters
 	const MetaInfo& metaInfo() const {return meta_info_;}
-	QByteArray rawMetaInfo() const {return raw_meta_info_;}
-	QByteArray signature() const {return signature_;}
+	const QByteArray& rawMetaInfo() const {return raw_meta_info_;}
+	const QByteArray& signature() const {return signature_;}
 private:
 	MetaInfo meta_info_;
 

@@ -32,6 +32,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QThreadPool>
+#include <QQueue>
 
 namespace librevault {
 
@@ -45,18 +46,22 @@ class QueuedTask : public QObject, public QRunnable {
  public:
   enum TaskKind { SCAN = 0, ASSEMBLE = 1, ADD_DOWNLOADED = 2 };
 
-  QueuedTask(TaskKind kind, QObject* parent) : QObject(parent), kind_(kind), interrupted(false) {}
+  QueuedTask(TaskKind kind, QObject* parent) : QObject(parent), kind_(kind), interrupted_(false) {}
   QueuedTask(const QueuedTask&) = delete;
 
   virtual QByteArray pathKeyedHash() const = 0;
   virtual TaskKind taskKind() const { return kind_; }
 
-  Q_SLOT virtual void interrupt() { interrupted = true; }
-  Q_SIGNAL void finished();
+  Q_SLOT virtual void interrupt() { interrupted_ = true; }
 
  protected:
   TaskKind kind_;
-  std::atomic_bool interrupted;
+  std::atomic_bool interrupted_;
+};
+
+struct MetaTaskQueue {
+  QueuedTask* current_task = nullptr;
+  QQueue<QueuedTask*> pending_tasks;
 };
 
 class MetaTaskScheduler : public QObject {
@@ -64,7 +69,7 @@ class MetaTaskScheduler : public QObject {
 
  public:
   MetaTaskScheduler(const FolderParams& params, QObject* parent);
-  ~MetaTaskScheduler();
+  ~MetaTaskScheduler() override;
 
   Q_SLOT void scheduleTask(QueuedTask* task);
   Q_SIGNAL void aboutToStop();
@@ -72,14 +77,13 @@ class MetaTaskScheduler : public QObject {
  private:
   const FolderParams& params_;
 
-  QMutex tq_mtx;
-  QHash<QByteArray, QueuedTask*> current_tasks;
-  QHash<QByteArray, QList<QueuedTask*>> pending_tasks;
+  QMutex tq_mtx_;
+  QHash<QByteArray, MetaTaskQueue> tq_;
 
   QThreadPool* threadpool_;
 
-  Q_SLOT void process(QByteArray path_keyed_hash);
-  Q_SLOT void handleFinished(QueuedTask* task);
+  void process(const QByteArray& path_keyed_hash);
+  Q_SLOT void handleFinished(const QByteArray& path_keyed_hash, QueuedTask* task);
 };
 
 }  // namespace librevault

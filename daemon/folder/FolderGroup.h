@@ -90,7 +90,6 @@ class FolderGroup : public QObject {
   // void handleAddedChunk(const QByteArray& ct_hash);
   void addIndexing(const QString& abspath);
   void addAssemble(SignedMeta smeta);
-  void handleMetaDownloaded(SignedMeta smeta);
 
   void notifyLocalMeta(const SignedMeta& smeta);
   void handleNewChunk(const QByteArray& ct_hash);

@@ -13,10 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <AES_CBC.h>
-#include <QCryptographicHash>
 #include "ChunkInfo.h"
 #include "ChunkInfo_p.h"
+#include "Secret.h"
+#include <AES_CBC.h>
+#include <QCryptographicHash>
+#include <QDebug>
 
 namespace librevault {
 
@@ -36,19 +38,44 @@ void ChunkInfo::size(quint64 size) { d->proto.set_size(size); }
 QByteArray ChunkInfo::iv() const { return QByteArray::fromStdString(d->proto.iv()); }
 void ChunkInfo::iv(const QByteArray& iv) { d->proto.set_iv(iv.toStdString()); }
 
-QByteArray ChunkInfo::ptKeyedHash() const { return QByteArray::fromStdString(d->proto.pt_keyed_hash()); }
-void ChunkInfo::ptKeyedHash(const QByteArray& pt_keyed_hash) { d->proto.set_pt_keyed_hash(pt_keyed_hash.toStdString()); }
-
-QByteArray ChunkInfo::encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv) { return encryptAesCbc(chunk, key, iv, chunk.size() % 16 != 0); }
-
-QByteArray ChunkInfo::decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv) {
-  return decryptAesCbc(chunk, key, iv, size % 16 != 0);
+QByteArray ChunkInfo::ptKeyedHash() const {
+  return QByteArray::fromStdString(d->proto.pt_keyed_hash());
+}
+void ChunkInfo::ptKeyedHash(const QByteArray& pt_keyed_hash) {
+  d->proto.set_pt_keyed_hash(pt_keyed_hash.toStdString());
 }
 
-QByteArray ChunkInfo::compute_hash(QByteArray chunk) {
+QByteArray ChunkInfo::encrypt(const QByteArray& chunk, const Secret& secret, const QByteArray& iv) {
+  return encryptAesCbc(chunk, secret.encryptionKey(), iv);
+}
+
+QByteArray ChunkInfo::decrypt(const QByteArray& chunk, const Secret& secret, const QByteArray& iv) {
+  return decryptAesCbc(chunk, secret.encryptionKey(), iv);
+}
+
+QByteArray ChunkInfo::computeHash(const QByteArray& chunk) {
   QCryptographicHash hasher(QCryptographicHash::Sha3_256);
   hasher.addData(chunk);
   return hasher.result();
 }
 
-} /* namespace librevault */
+QByteArray ChunkInfo::computeKeyedHash(const QByteArray& chunk, const Secret& secret) {
+  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+  hasher.addData(secret.encryptionKey());
+  hasher.addData(chunk);
+
+  return hasher.result();
+}
+
+bool ChunkInfo::verifyChunk(const QByteArray& ct_hash, const QByteArray& chunk_pt) {
+  return ct_hash == computeHash(chunk_pt);
+}
+
+QDebug operator<<(QDebug debug, const ChunkInfo& info) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "ChunkInfo(ct_hash: " << info.ctHash().toHex() << ", size:" << info.size()
+                  << ", iv:" << info.iv() << ", pt_keyed_hash:" << info.ptKeyedHash() << ")";
+  return debug;
+}
+
+}  // namespace librevault

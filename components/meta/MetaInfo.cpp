@@ -19,8 +19,8 @@
 #include "EncryptedData.h"
 #include "MetaInfo_p.h"
 #include <Secret.h>
-#include <google/protobuf/util/message_differencer.h>
 #include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/message_differencer.h>
 #include <QCryptographicHash>
 
 namespace librevault {
@@ -68,9 +68,8 @@ bool MetaInfo::isEmpty() const { return *this == MetaInfo(); }
 
 quint64 MetaInfo::size() const {
   quint64 total_size = 0;
-  for (auto& chunk : chunks()) {
+  for (auto& chunk : chunks())
     total_size += chunk.size();
-  }
   return total_size;
 }
 
@@ -170,4 +169,11 @@ void MetaInfo::chunks(const QList<ChunkInfo>& chunks) {
 EncryptedData MetaInfo::symlinkTarget() const { return conv_encdata(d->proto.symlink_target()); }
 void MetaInfo::symlinkTarget(const EncryptedData& symlink_target) { d->proto.mutable_symlink_target()->CopyFrom(conv_encdata(symlink_target)); }
 
-} /* namespace librevault */
+QDebug operator<<(QDebug debug, const MetaInfo::PathRevision& id) {
+  QDebugStateSaver saver(debug);
+  debug.nospace() << "PathRevision(path_keyed_hash: " << id.path_keyed_hash_.toHex()
+                  << ", revision:" << id.revision_ << ")";
+  return debug;
+}
+
+}  // namespace librevault

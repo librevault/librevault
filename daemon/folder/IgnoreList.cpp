@@ -37,19 +37,21 @@ Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 namespace librevault {
 
 IgnoreList::IgnoreList(const FolderParams& params, QObject* parent)
-    : QObject(parent), params_(params), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) {
+    : QObject(parent),
+      params_(params),
+      ignorelist_mtx(QMutex::Recursive),
+      last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) {
   lazyRebuildIgnores();
 }
 
 bool IgnoreList::isIgnored(const QByteArray& normpath) {
+  QMutexLocker lk(&ignorelist_mtx);
   lazyRebuildIgnores();
-
-  QReadLocker lk(&ignorelist_mtx);
   return QDir::match(filters_wildcard_, QString::fromUtf8(normpath));
 }
 
 void IgnoreList::lazyRebuildIgnores() {
-  QWriteLocker lk(&ignorelist_mtx);
+  QMutexLocker lk(&ignorelist_mtx);
   if (last_rebuild_.msecsTo(QDateTime::currentDateTimeUtc()) > 10 * 1000) {
     rebuildIgnores();
     last_rebuild_ = QDateTime::currentDateTimeUtc();
@@ -57,6 +59,7 @@ void IgnoreList::lazyRebuildIgnores() {
 }
 
 void IgnoreList::rebuildIgnores() {
+  QMutexLocker lk(&ignorelist_mtx);
   filters_wildcard_.clear();
 
   qCDebug(log_ignorelist) << "Rebuilding ignore list";
@@ -89,6 +92,8 @@ void IgnoreList::rebuildIgnores() {
 }
 
 void IgnoreList::parseLine(QString prefix, QString line) {
+  QMutexLocker lk(&ignorelist_mtx);
+
   if (line.size() == 0) return;
   if (line.left(1) == "#") return;                  // comment encountered
   if (line.left(2) == R"(\#)") line = line.mid(1);  // escape hash
@@ -109,6 +114,8 @@ void IgnoreList::parseLine(QString prefix, QString line) {
 }
 
 void IgnoreList::addIgnorePattern(QString pattern, bool can_be_dir) {
+  QMutexLocker lk(&ignorelist_mtx);
+
   filters_wildcard_ << pattern;
   qCDebug(log_ignorelist) << "Added ignore pattern:" << pattern;
   if (can_be_dir) {

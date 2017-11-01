@@ -76,14 +76,12 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
   uploader_ = new Uploader(chunk_storage_, this);
   downloader_ = new Downloader(params_, index_, this);
   meta_uploader_ = new MetaUploader(index_, chunk_storage_, this);
-  meta_downloader_ = new MetaDownloader(params_, index_, downloader_, this);
+  meta_downloader_ = new MetaDownloader(params_, index_, downloader_, task_scheduler_, this);
 
   // Connecting signals and slots
   connect(index_, &Index::metaAdded, this, &FolderGroup::notifyLocalMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, &FolderGroup::handleNewChunk);
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
-  connect(
-      meta_downloader_, &MetaDownloader::metaDownloaded, this, &FolderGroup::handleMetaDownloaded);
 
   // Go through index
   QTimer::singleShot(0, this, [=] {
@@ -110,11 +108,6 @@ void FolderGroup::addAssemble(SignedMeta smeta) {
   }
 
   QueuedTask* task = new AssembleTask(smeta, params(), index_, chunk_storage_, this);
-  task_scheduler_->scheduleTask(task);
-}
-
-void FolderGroup::handleMetaDownloaded(SignedMeta smeta) {
-  QueuedTask* task = new AddDownloadedTask(smeta, index_, this);
   task_scheduler_->scheduleTask(task);
 }
 

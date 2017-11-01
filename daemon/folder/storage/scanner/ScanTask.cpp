@@ -38,10 +38,9 @@
 #include <QFile>
 #include <boost/filesystem.hpp>
 #include <Rabin.hpp>
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX)
 #  include <sys/stat.h>
-#endif
-#ifdef Q_OS_WIN
+#elif defined(Q_OS_WIN)
 #  include <windows.h>
 #endif
 
@@ -118,7 +117,7 @@ void ScanTask::makeMetaInfo() {
   if (old_meta_.kind() == MetaInfo::DELETED && new_meta_.kind() == MetaInfo::DELETED)
     throw AbortIndex("Old Meta is DELETED, new Meta is DELETED");
 
-  if (new_meta_.kind() == MetaInfo::FILE) update_chunks();
+  if (new_meta_.kind() == MetaInfo::FILE) updateChunks();
 
   if (new_meta_.kind() == MetaInfo::SYMLINK)
     new_meta_.symlinkTarget(EncryptedData::fromPlaintext(
@@ -126,7 +125,7 @@ void ScanTask::makeMetaInfo() {
 
   // FSAttrib
   if (new_meta_.kind() != MetaInfo::DELETED)
-    update_fsattrib();  // Platform-dependent attributes (windows attrib, uid, gid, mode)
+    updateFsattrib();  // Platform-dependent attributes (windows attrib, uid, gid, mode)
 
   // Timestamp
   new_meta_.timestamp(std::chrono::system_clock::now());  // Meta is ready. Assigning timestamp.
@@ -137,7 +136,7 @@ void ScanTask::makeMetaInfo() {
   new_smeta_ = SignedMeta(new_meta_, secret_);
 }
 
-void ScanTask::update_fsattrib() {
+void ScanTask::updateFsattrib() {
   // First, preserve old values of attributes
   new_meta_.windowsAttrib(old_meta_.windowsAttrib());
   new_meta_.mode(old_meta_.mode());
@@ -172,7 +171,7 @@ void ScanTask::update_fsattrib() {
 #endif
 }
 
-void ScanTask::update_chunks() {
+void ScanTask::updateChunks() {
   if (old_meta_.kind() == MetaInfo::FILE) {
     new_meta_.maxChunksize(old_meta_.maxChunksize());
     new_meta_.minChunksize(old_meta_.minChunksize());
@@ -212,39 +211,33 @@ void ScanTask::update_chunks() {
   if (!f.open(QIODevice::ReadOnly)) throw AbortIndex("I/O error: " + f.errorString());
 
   char byte;
-  while (f.getChar(&byte) && !interrupted) {
+  while (f.getChar(&byte) && !interrupted_) {
     buffer.push_back(byte);
 
     if (rabin.next_chunk(byte)) {  // Found a chunk
-      chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+      chunks.push_back(populateChunk(buffer, pt_hmac__iv));
       buffer.clear();
     }
   }
 
-  if (interrupted) throw AbortIndex("Indexing had been interruped");
-
-  if (rabin.finalize()) chunks << populate_chunk(buffer, pt_hmac__iv);
+  if (interrupted_) throw AbortIndex("Indexing had been interruped");
+  if (rabin.finalize()) chunks << populateChunk(buffer, pt_hmac__iv);
 
   new_meta_.chunks(chunks);
 }
 
-ChunkInfo ScanTask::populate_chunk(
+ChunkInfo ScanTask::populateChunk(
     const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
   qCDebug(log_indexer) << "New chunk size:" << data.size();
   ChunkInfo chunk;
 
-  QCryptographicHash hasher(QCryptographicHash::Sha3_256);
-  hasher.addData(secret_.encryptionKey());
-  hasher.addData(data);
-
-  chunk.ptKeyedHash(hasher.result());
+  chunk.ptKeyedHash(ChunkInfo::computeKeyedHash(data, secret_));
 
   // IV reuse
   chunk.iv(pt_hmac__iv.value(chunk.ptKeyedHash(), generateRandomIV()));
 
   chunk.size(data.size());
-  chunk.ctHash(
-      ChunkInfo::compute_hash(ChunkInfo::encrypt(data, secret_.encryptionKey(), chunk.iv())));
+  chunk.ctHash(ChunkInfo::computeHash(ChunkInfo::encrypt(data, secret_, chunk.iv())));
   return chunk;
 }
 

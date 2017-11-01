@@ -85,8 +85,6 @@ class Config : public AbstractConfig {
 
   void make_defaults();
 
-  QJsonObject make_merged(QJsonObject custom_value, QJsonObject default_value) const;
-
   // File config
   void load();
   void save();

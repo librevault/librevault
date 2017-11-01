@@ -67,7 +67,7 @@ void Config::setGlobal(QString name, QVariant value) {
 QJsonDocument Config::exportUserGlobals() { return QJsonDocument(globals_custom_); }
 
 QJsonDocument Config::exportGlobals() {
-  return QJsonDocument(make_merged(globals_custom_, globals_defaults_));
+  return QJsonDocument(mergePatch(globals_defaults_, globals_custom_).toObject());
 }
 
 void Config::importGlobals(QJsonDocument globals_conf) {
@@ -80,15 +80,16 @@ void Config::importGlobals(QJsonDocument globals_conf) {
   globals_custom_ = globals_conf.object();
 
   // Notify other components
-  for (const auto& key : qAsConst(all_keys)) emit globalChanged(key, getGlobal(key));
+  for (const auto& key : qAsConst(changed_keys)) emit globalChanged(key, getGlobal(key));
 }
 
 void Config::addFolder(QVariantMap fconfig) {
   QByteArray folderid = Secret(fconfig["secret"].toString()).folderid();
   if (folders_custom_.contains(folderid)) throw samekey_error();
   folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));
-  emit folderAdded(
-      make_merged(QJsonObject::fromVariantMap(fconfig), folders_defaults_).toVariantMap());
+  emit folderAdded(mergePatch(folders_defaults_, QJsonObject::fromVariantMap(fconfig))
+                       .toObject()
+                       .toVariantMap());
   save();
 }
 
@@ -100,7 +101,7 @@ void Config::removeFolder(QByteArray folderid) {
 
 QVariantMap Config::getFolder(QByteArray folderid) {
   return folders_custom_.contains(folderid)
-             ? make_merged(folders_custom_[folderid], folders_defaults_).toVariantMap()
+             ? mergePatch(folders_defaults_, folders_custom_[folderid]).toObject().toVariantMap()
              : QVariantMap();
 }
 
@@ -148,16 +149,6 @@ void Config::make_defaults() {
   globals_defaults_["client_name"] = QSysInfo::machineHostName();
 
   folders_defaults_ = folders_defaults.object();
-}
-
-QJsonObject Config::make_merged(QJsonObject custom_value, QJsonObject default_value) const {
-  QStringList all_keys = custom_value.keys() + default_value.keys();
-  all_keys.removeDuplicates();
-
-  QJsonObject merged;
-  for (const auto& key : qAsConst(all_keys))
-    merged[key] = custom_value.contains(key) ? custom_value[key] : default_value[key];
-  return merged;
 }
 
 void Config::load() {

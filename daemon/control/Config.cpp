@@ -41,7 +41,10 @@ Q_LOGGING_CATEGORY(log_config, "config")
 namespace librevault {
 
 Config::Config() {
-  make_defaults();
+  globals_defaults_ = readDefault(":/config/globals.json");
+  globals_defaults_["client_name"] = QSysInfo::machineHostName();
+  folders_defaults_ = readDefault(":/config/folders.json");
+
   load();
 
   connect(this, &Config::globalChanged, this, [this](QString key, QVariant value) {
@@ -55,8 +58,7 @@ Config::~Config() { save(); }
 Config* Config::instance_ = nullptr;
 
 QVariant Config::getGlobal(QString name) {
-  return (globals_custom_.contains(name) ? globals_custom_[name] : globals_defaults_[name])
-      .toVariant();
+  return mergePatch(globals_defaults_.value(name), globals_custom_.value(name)).toVariant();
 }
 
 void Config::setGlobal(QString name, QVariant value) {
@@ -126,29 +128,14 @@ void Config::importFolders(QJsonDocument folders_conf) {
     addFolder(folder_params_v.toObject().toVariantMap());
 }
 
-void Config::make_defaults() {
-  QJsonDocument globals_defaults, folders_defaults;
+QJsonObject Config::readDefault(const QString& path) {
+  QFile defaults_f(path);
+  defaults_f.open(QIODevice::ReadOnly);
 
-  {
-    QFile globals_defaults_f(":/config/globals.json");
-    globals_defaults_f.open(QIODevice::ReadOnly);
+  QJsonDocument defaults = QJsonDocument::fromJson(defaults_f.readAll());
+  Q_ASSERT(defaults.isObject());
 
-    globals_defaults = QJsonDocument::fromJson(globals_defaults_f.readAll());
-    Q_ASSERT(!globals_defaults.isEmpty());
-  }
-
-  {
-    QFile folders_defaults_f(":/config/folders.json");
-    folders_defaults_f.open(QIODevice::ReadOnly);
-
-    folders_defaults = QJsonDocument::fromJson(folders_defaults_f.readAll());
-    Q_ASSERT(!folders_defaults.isEmpty());
-  }
-
-  globals_defaults_ = globals_defaults.object();
-  globals_defaults_["client_name"] = QSysInfo::machineHostName();
-
-  folders_defaults_ = folders_defaults.object();
+  return defaults.object();
 }
 
 void Config::load() {

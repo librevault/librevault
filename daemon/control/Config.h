@@ -83,7 +83,7 @@ class Config : public AbstractConfig {
   QJsonObject globals_custom_, globals_defaults_, folders_defaults_;
   QMap<QByteArray, QJsonObject> folders_custom_;
 
-  void make_defaults();
+  QJsonObject readDefault(const QString& path);
 
   // File config
   void load();

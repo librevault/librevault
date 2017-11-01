@@ -142,7 +142,7 @@ bool AssembleTask::assembleFile() {
 
   //
   QString assembly_path =
-      params_.system_path + "/" +
+      params_.effectiveSystemPath() + "/" +
       conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
 
   // TODO: Check for assembled chunk and try to extract them and push into encstorage.

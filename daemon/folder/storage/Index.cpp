@@ -38,7 +38,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_index, "folder.storage.index")
 
 Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
-	auto db_filepath = params_.system_path + "/librevault.db";
+	auto db_filepath = params_.effectiveSystemPath() + "/librevault.db";
 
 	if(QFile::exists(db_filepath))
 		qCDebug(log_index) << "Opening SQLite3 DB:" << db_filepath;
@@ -63,7 +63,7 @@ Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), par
 	//db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from it. Anyway, we can add it anytime later.
 
 	/* Create a special hash-file */
-	QFile hash_file(params_.system_path + "/hash.txt");
+	QFile hash_file(params_.effectiveSystemPath() + "/hash.txt");
 	QByteArray hexhash_conf = params_.secret.folderid();
 	if(hash_file.exists()) {
 		hash_file.open(QIODevice::ReadOnly);

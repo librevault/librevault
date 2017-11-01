@@ -39,7 +39,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_downloader, "folder.transfer.downloader")
 
 DownloadChunk::DownloadChunk(const FolderParams& params, const QByteArray& ct_hash, quint32 size)
-    : builder(params.system_path, ct_hash, size), ct_hash(ct_hash) {}
+    : builder(params.effectiveSystemPath(), ct_hash, size), ct_hash(ct_hash) {}
 
 Downloader::Downloader(const FolderParams& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {

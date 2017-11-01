@@ -41,6 +41,9 @@ struct FolderParams {
   FolderParams(QVariantMap fconfig);
 
   QByteArray folderid() const { return secret.folderid(); }
+  QString effectiveSystemPath() const {
+    return system_path.isEmpty() ? path + "/.libvervault" : system_path;
+  };
 
   /* Parameters */
   Secret secret;

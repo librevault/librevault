@@ -36,7 +36,6 @@
 #include <discovery/bt/BTProvider.h>
 #include <discovery/dht/DHTProvider.h>
 #include <discovery/multicast/MulticastProvider.h>
-#include <QTimer>
 
 namespace librevault {
 
@@ -152,4 +151,4 @@ void Client::deinitFolder(const QByteArray& folderid) {
   qCInfo(log_client) << "Folder deinitialized:" << folderid.toHex();
 }
 
-} /* namespace librevault */
+}  // namespace librevault

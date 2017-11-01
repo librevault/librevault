@@ -38,7 +38,7 @@ FolderParams::FolderParams(QVariantMap fconfig) {
   path = fconfig["path"].toString();
 
   // Optional
-  system_path = fconfig["system_path"].isValid() ? fconfig["system_path"].toString() : path + "/.librevault";
+  system_path = fconfig["system_path"].toString();
   index_event_timeout = std::chrono::milliseconds(fconfig["index_event_timeout"].toInt());
   preserve_unix_attrib = fconfig["preserve_unix_attrib"].toBool();
   preserve_windows_attrib = fconfig["preserve_windows_attrib"].toBool();
@@ -47,12 +47,11 @@ FolderParams::FolderParams(QVariantMap fconfig) {
 
   for (const QString& ignore_path : fconfig["ignore_paths"].toStringList())
     ignore_paths.push_back(ignore_path);
-  for (const QString& node : fconfig["nodes"].toStringList())
-    nodes.push_back(node);
+  for (const QString& node : fconfig["nodes"].toStringList()) nodes.push_back(node);
 
   archive_trash_ttl = fconfig["archive_trash_ttl"].toInt();
   archive_timestamp_count = fconfig["archive_timestamp_count"].toInt();
   mainline_dht_enabled = fconfig["mainline_dht_enabled"].toBool();
 }
 
-} /* namespace librevault */
+}  // namespace librevault

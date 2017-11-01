@@ -55,7 +55,7 @@ FolderGroup::FolderGroup(FolderParams params, QObject* parent)
 
   qCDebug(log_folder) << "New folder;"
                       << "Level:" << (char)params_.secret.level() << "Path:" << params_.path
-                      << "System path:" << params_.system_path;
+                      << "System path:" << params_.effectiveSystemPath();
 
   // Initializing local storage
   ignore_list_ = new IgnoreList(params_, this);
@@ -178,7 +178,7 @@ void FolderGroup::setPeerPool(PeerPool* pool) {
 }
 
 void FolderGroup::createServiceDirectory() {
-  QDir().mkpath(params_.system_path);
+  QDir().mkpath(params_.effectiveSystemPath());
 #ifdef Q_OS_WIN
   SetFileAttributesW(params_.system_path.toStdWString().c_str(), FILE_ATTRIBUTE_HIDDEN);
 #endif

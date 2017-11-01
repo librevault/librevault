@@ -43,7 +43,7 @@ QString EncStorage::makeChunkCtName(const QByteArray& ct_hash) const noexcept {
 }
 
 QString EncStorage::makeChunkCtPath(const QByteArray& ct_hash) const noexcept {
-  return params_.system_path + "/" + makeChunkCtName(ct_hash);
+  return params_.effectiveSystemPath() + "/" + makeChunkCtName(ct_hash);
 }
 
 bool EncStorage::haveChunk(const QByteArray& ct_hash) const noexcept {

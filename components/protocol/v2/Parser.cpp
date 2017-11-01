@@ -146,20 +146,20 @@ Message Parser::parse(const QByteArray& binary) const {
       result.handshake.device_name = convert<QString>(message_protobuf.device_name());
       result.handshake.user_agent = convert<QString>(message_protobuf.user_agent());
       result.handshake.dht_port = (quint16)message_protobuf.dht_port();
-    }
+    } break;
     case Message::Header::MessageType::INDEXUPDATE: {
       auto message_protobuf = parsePayload<serialization::IndexUpdate>(payload_bytes);
       result.indexupdate.revision.revision_ = message_protobuf.revision();
       result.indexupdate.revision.path_keyed_hash_ =
           convert<QByteArray>(message_protobuf.path_keyed_hash());
       result.indexupdate.bitfield = convert<QBitArray>(message_protobuf.bitfield());
-    }
+    } break;
     case Message::Header::MessageType::METAREQUEST: {
       auto message_protobuf = parsePayload<serialization::MetaRequest>(payload_bytes);
       result.metarequest.revision.path_keyed_hash_ =
           convert<QByteArray>(message_protobuf.path_keyed_hash());
       result.metarequest.revision.revision_ = message_protobuf.revision();
-    }
+    } break;
     case Message::Header::MessageType::METARESPONSE: {
       auto message_protobuf = parsePayload<serialization::MetaResponse>(payload_bytes);
       result.metaresponse.smeta = {
@@ -167,19 +167,19 @@ Message Parser::parse(const QByteArray& binary) const {
           convert<QByteArray>(message_protobuf.signature()),
       };
       result.metaresponse.bitfield = convert<QBitArray>(message_protobuf.bitfield());
-    }
+    } break;
     case Message::Header::MessageType::BLOCKREQUEST: {
       auto message_protobuf = parsePayload<serialization::BlockRequest>(payload_bytes);
       result.blockrequest.ct_hash = convert<QByteArray>(message_protobuf.ct_hash());
       result.blockrequest.offset = message_protobuf.offset();
       result.blockrequest.length = message_protobuf.length();
-    }
+    } break;
     case Message::Header::MessageType::BLOCKRESPONSE: {
       auto message_protobuf = parsePayload<serialization::BlockResponse>(payload_bytes);
       result.blockresponse.ct_hash = convert<QByteArray>(message_protobuf.ct_hash());
       result.blockresponse.offset = message_protobuf.offset();
       result.blockresponse.content = convert<QByteArray>(message_protobuf.content());
-    }
+    } break;
     default:;
   }
 

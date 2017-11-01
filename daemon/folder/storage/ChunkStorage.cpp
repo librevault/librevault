@@ -87,7 +87,7 @@ QBitArray ChunkStorage::makeBitfield(const MetaInfo& meta) const noexcept {
 
 void ChunkStorage::gcChunk(const QByteArray& ct_hash) {
   if(fgroup_->params().secret.canDecrypt())
-    if(open_storage->haveChunk(ct_hash))
+    if(open_storage->haveChunk(ct_hash) && enc_storage->haveChunk(ct_hash))
 			enc_storage->removeChunk(ct_hash);
 }
 

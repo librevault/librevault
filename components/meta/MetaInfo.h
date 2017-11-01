@@ -16,6 +16,7 @@
 #pragma once
 
 #include "EncryptedData.h"
+#include "util/exception.hpp"
 #include <QDebug>
 #include <QJsonDocument>
 #include <QList>
@@ -34,17 +35,8 @@ class MetaInfo {
   using FileSystemTime = qint64;
   enum Kind : quint32 { DELETED = 0, FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/ };
 
- public:
-  /* Nested structs & classes */
-  struct error : std::runtime_error {
-    error(const char* what) : std::runtime_error(what) {}
-    error() : error("Meta error") {}
-  };
-
-  struct parse_error : error {
-    parse_error(const char* what) : error(what) {}
-    parse_error() : error("Parse error") {}
-  };
+  DECLARE_EXCEPTION(error, "Meta error");
+  DECLARE_EXCEPTION_DETAIL(parse_error, error, "Parse error");
 
   /// Used for querying specific version of Meta
   struct PathRevision {

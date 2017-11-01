@@ -75,7 +75,10 @@ quint64 MetaInfo::size() const {
 
 QByteArray MetaInfo::serializeToBinary() const { return QByteArray::fromStdString(d->proto.SerializeAsString()); }
 
-void MetaInfo::parseFromBinary(const QByteArray &serialized) { d->proto.ParseFromArray(serialized, serialized.size()); }
+void MetaInfo::parseFromBinary(const QByteArray &serialized) {
+  if(! d->proto.ParseFromArray(serialized, serialized.size()))
+    throw parse_error();
+}
 
 QJsonDocument MetaInfo::serializeToJson() const {
   std::string result;

@@ -29,7 +29,7 @@
 #pragma once
 #include "MetaInfo.h"
 #include <QFile>
-#include <util/exception.hpp>
+#include "util/exception.hpp"
 
 namespace librevault {
 

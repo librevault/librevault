@@ -57,7 +57,6 @@ class Config : public AbstractConfig {
   /* Global configuration */
   QVariant getGlobal(QString name) override;
   void setGlobal(QString name, QVariant value) override;
-  void removeGlobal(QString name) override;
 
   /* Folder configuration */
   void addFolder(QVariantMap fconfig) override;
@@ -67,13 +66,13 @@ class Config : public AbstractConfig {
   QList<QByteArray> listFolders() override;
 
   /* Export/Import */
-  QJsonDocument exportUserGlobals() override;
+  QJsonDocument exportUserGlobals();
   QJsonDocument exportGlobals() override;
-  void importGlobals(QJsonDocument globals_conf) override;
+  void importGlobals(QJsonDocument globals_conf);
 
-  QJsonDocument exportUserFolders() override;
+  QJsonDocument exportUserFolders();
   QJsonDocument exportFolders() override;
-  void importFolders(QJsonDocument folders_conf) override;
+  void importFolders(QJsonDocument folders_conf);
 
  protected:
   Config();

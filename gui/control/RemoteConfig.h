@@ -41,13 +41,11 @@ signals:
 
 public:
 	explicit RemoteConfig(Daemon* daemon);
-	virtual ~RemoteConfig() {}
 
 public slots:
 	/* Global configuration */
 	QVariant getGlobal(QString name) override;
 	void setGlobal(QString name, QVariant value) override;
-	void removeGlobal(QString name) override;
 
 	/* Folder configuration */
 	void addFolder(QVariantMap fconfig) override;
@@ -57,13 +55,8 @@ public slots:
 	QList<QByteArray> listFolders() override;
 
 	/* Export/Import */
-	QJsonDocument exportUserGlobals() override;
 	QJsonDocument exportGlobals() override;
-	void importGlobals(QJsonDocument globals_conf) override;
-
-	QJsonDocument exportUserFolders() override;
 	QJsonDocument exportFolders() override;
-	void importFolders(QJsonDocument folders_conf) override;
 
 private:
 	QVariantMap cached_globals_;

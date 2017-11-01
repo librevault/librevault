@@ -58,13 +58,6 @@ void RemoteConfig::setGlobal(QString name, QVariant value) {
 	}
 }
 
-void RemoteConfig::removeGlobal(QString name) {
-	if(cached_globals_.contains(name) && daemon_->isConnected()) {
-		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/globals/%1").arg(name));
-		daemon_->nam()->deleteResource(request);
-	}
-}
-
 void RemoteConfig::addFolder(QVariantMap fconfig) {
 	if(daemon_->isConnected()) {
 		librevault::Secret secret(fconfig["secret"].toString());
@@ -98,20 +91,8 @@ QList<QByteArray> RemoteConfig::listFolders() {
 	return cached_folders_.keys();
 }
 
-QJsonDocument RemoteConfig::exportUserGlobals() {
-	qFatal("User values are not supported on client side");
-}
-
 QJsonDocument RemoteConfig::exportGlobals() {
 	return QJsonDocument::fromVariant(cached_globals_);
-}
-
-void RemoteConfig::importGlobals(QJsonDocument globals_conf) {
-	Q_ASSERT(!"Not implemented yet");
-}
-
-QJsonDocument RemoteConfig::exportUserFolders() {
-	qFatal("User values are not supported on client side");
 }
 
 QJsonDocument RemoteConfig::exportFolders() {
@@ -120,10 +101,6 @@ QJsonDocument RemoteConfig::exportFolders() {
 		folders.append(QJsonValue::fromVariant(folder));
 	}
 	return QJsonDocument(folders);
-}
-
-void RemoteConfig::importFolders(QJsonDocument folders_conf) {
-	Q_ASSERT(!"Not implemented yet");
 }
 
 void RemoteConfig::renew() {

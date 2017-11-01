@@ -45,7 +45,6 @@ public:
 	/* Global configuration */
 	virtual QVariant getGlobal(QString name) = 0;
 	virtual void setGlobal(QString name, QVariant value) = 0;
-	virtual void removeGlobal(QString name) = 0;
 
 	/* Folder configuration */
 	virtual void addFolder(QVariantMap fconfig) = 0;
@@ -56,13 +55,8 @@ public:
 	virtual QList<QByteArray> listFolders() = 0;
 
 	/* Export/Import */
-	virtual QJsonDocument exportUserGlobals() = 0;
 	virtual QJsonDocument exportGlobals() = 0;
-	virtual void importGlobals(QJsonDocument globals_conf) = 0;
-
-	virtual QJsonDocument exportUserFolders() = 0;
 	virtual QJsonDocument exportFolders() = 0;
-	virtual void importFolders(QJsonDocument folders_conf) = 0;
 };
 
 } /* namespace librevault */

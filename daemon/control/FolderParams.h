@@ -54,10 +54,7 @@ struct FolderParams {
   bool preserve_windows_attrib;
   bool preserve_symlinks;
   std::chrono::seconds full_rescan_interval;
-  QStringList ignore_paths;
   QList<QUrl> nodes;
-  unsigned archive_trash_ttl;
-  unsigned archive_timestamp_count;
   bool mainline_dht_enabled;
 };
 

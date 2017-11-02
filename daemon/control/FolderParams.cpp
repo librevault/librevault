@@ -28,12 +28,10 @@
  */
 #include "FolderParams.h"
 #include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonValue>
 
 namespace librevault {
 
-FolderParams::FolderParams(QJsonObject fconfig) {
+FolderParams::FolderParams(const QJsonObject& fconfig) {
   // Necessary
   secret = Secret(fconfig["secret"].toString());
   path = fconfig["path"].toString();

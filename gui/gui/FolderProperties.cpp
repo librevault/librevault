@@ -52,7 +52,7 @@ FolderProperties::FolderProperties(QByteArray folderid, Daemon* daemon, FolderMo
 #endif
 
 	ui.folder_icon->setPixmap(QFileIconProvider().icon(QFileIconProvider::Folder).pixmap(32, 32));
-	ui.folder_name->setText(daemon_->config()->getFolderValue(folderid_, "path").toString());
+	ui.folder_name->setText(daemon_->config()->getFolder(folderid_).value("path").toString());
 
 	init_secrets();
 
@@ -76,7 +76,7 @@ FolderProperties::FolderProperties(QByteArray folderid, Daemon* daemon, FolderMo
 FolderProperties::~FolderProperties() {}
 
 void FolderProperties::init_secrets() {
-	librevault::Secret secret = librevault::Secret(daemon_->config()->getFolderValue(folderid_, "secret").toString());
+	librevault::Secret secret = librevault::Secret(daemon_->config()->getFolder(folderid_).value("secret").toString());
 
 	if(secret.level() <= secret.ReadWrite)
 		ui.secret_rw->setText(secret);

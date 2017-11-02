@@ -225,7 +225,7 @@ void MainWindow::handleOpenDestinationFolder() {
 	for(auto model_index : selection_model) {
 		QByteArray folderid = folder_model_->data(model_index, FolderModel::HashRole).toByteArray();
 
-		QString path = daemon_->config()->getFolderValue(folderid, "path").toString();
+		QString path = daemon_->config()->getFolder(folderid).value("path").toString();
 		if(!path.isEmpty())
 			QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 	}

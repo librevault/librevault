@@ -53,7 +53,7 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
 
 	if(role == Qt::DisplayRole) {
 		switch(column) {
-			case Column::NAME: return daemon_->config()->getFolderValue(folderid, "path").toString();
+			case Column::NAME: return daemon_->config()->getFolder(folderid).value("path").toString();
 			case Column::STATUS: return [&, this]{
 					if(daemon_->state()->getFolderValue(folderid, "is_indexing").toBool())
 						return tr("Indexing");

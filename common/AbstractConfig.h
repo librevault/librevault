@@ -52,7 +52,6 @@ public:
 	virtual void removeFolder(QByteArray folderid) = 0;
 
 	virtual QJsonObject getFolder(QByteArray folderid) = 0;
-	virtual QVariant getFolderValue(QByteArray folderid, QString name) {return getFolder(folderid).value(name);}
 	virtual QList<QByteArray> listFolders() = 0;
 
 	/* Export/Import */

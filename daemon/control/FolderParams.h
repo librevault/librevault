@@ -29,16 +29,16 @@
 #pragma once
 #include "MetaInfo.h"
 #include "Secret.h"
+#include <QJsonObject>
 #include <QList>
 #include <QString>
 #include <QUrl>
-#include <QVariantMap>
 #include <chrono>
 
 namespace librevault {
 
 struct FolderParams {
-  FolderParams(QJsonObject fconfig);
+  FolderParams(const QJsonObject& fconfig);
 
   QByteArray folderid() const { return secret.folderid(); }
   QString effectiveSystemPath() const {

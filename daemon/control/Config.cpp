@@ -67,6 +67,10 @@ void Config::setGlobal(QString name, QVariant value) {
   emit globalChanged(name, value);
 }
 
+ConfigModel Config::getGlobals() {
+  return ConfigModel(mergePatch(globals_defaults_, globals_custom_).toObject());
+}
+
 QJsonDocument Config::exportUserGlobals() { return QJsonDocument(globals_custom_); }
 
 QJsonDocument Config::exportGlobals() {

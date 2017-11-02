@@ -29,6 +29,7 @@
 #pragma once
 
 #include "AbstractConfig.h"
+#include "ConfigModel.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
@@ -57,6 +58,7 @@ class Config : public AbstractConfig {
   /* Global configuration */
   QVariant getGlobal(QString name) override;
   void setGlobal(QString name, QVariant value) override;
+  ConfigModel getGlobals();
 
   /* Folder configuration */
   void addFolder(QJsonObject fconfig) override;

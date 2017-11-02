@@ -91,7 +91,7 @@ void PeerServer::stop() {
   main_port_->setEnabled(false);
 }
 
-quint16 PeerServer::configPort() const { return Config::get()->getGlobal("p2p_listen").toUInt(); }
+quint16 PeerServer::configPort() const { return Config::get()->getGlobals().p2p_listen; }
 
 /* Here are where new QWebSocket created */
 void PeerServer::handleConnection() {

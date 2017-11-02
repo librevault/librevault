@@ -48,19 +48,15 @@ Config::Config() {
 
   load();
 
-//  connect(this, &Config::globalChanged, this, [this](QString key, QVariant value) {
-//    qCInfo(log_config) << "Global var" << key << "is set to" << value;
-//  });
+  //  connect(this, &Config::globalChanged, this, [this](QString key, QVariant value) {
+  //    qCInfo(log_config) << "Global var" << key << "is set to" << value;
+  //  });
   connect(this, &Config::changed, this, &Config::save);
 }
 
 Config::~Config() { save(); }
 
 Config* Config::instance_ = nullptr;
-
-QVariant Config::getGlobal(QString name) {
-  return mergePatch(globals_defaults_.value(name), globals_custom_.value(name)).toVariant();
-}
 
 void Config::setGlobal(QString name, QVariant value) {
   globals_custom_[name] = QJsonValue::fromVariant(value);
@@ -87,7 +83,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
   globals_custom_ = globals_conf.object();
 
   // Notify other components
-  if(!changed_keys.empty()) emit changed();
+  if (!changed_keys.empty()) emit changed();
 }
 
 void Config::addFolder(QJsonObject fconfig) {
@@ -105,9 +101,7 @@ void Config::removeFolder(QByteArray folderid) {
 }
 
 QJsonObject Config::getFolder(QByteArray folderid) {
-  return folders_custom_.contains(folderid)
-             ? mergePatch(folders_defaults_, folders_custom_[folderid]).toObject()
-             : QJsonObject();
+  return mergePatch(folders_defaults_, folders_custom_.value(folderid)).toObject();
 }
 
 QList<QByteArray> Config::listFolders() { return folders_custom_.keys(); }
@@ -149,7 +143,7 @@ QJsonDocument Config::readConfig(const QString& source) {
   return {};
 }
 
-void Config::writeConfig(const QJsonDocument doc, const QString& target) {
+void Config::writeConfig(const QJsonDocument& doc, const QString& target) {
   QSaveFile config_file(target);
   if (config_file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     qCDebug(log_config) << "Saving configuration to:" << config_file.fileName();

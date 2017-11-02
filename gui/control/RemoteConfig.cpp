@@ -43,10 +43,6 @@ RemoteConfig::RemoteConfig(Daemon* daemon) : daemon_(daemon) {
 	connect(this, &librevault::AbstractConfig::folderRemoved, this, &RemoteConfig::changed);
 }
 
-QVariant RemoteConfig::getGlobal(QString name) {
-	return cached_globals_[name];
-}
-
 void RemoteConfig::setGlobal(QString name, QVariant value) {
 	if(daemon_->isConnected()) {	// TODO: do not save if value is same
 		QJsonObject value_setter;
@@ -81,6 +77,10 @@ void RemoteConfig::removeFolder(QByteArray folderid) {
 			// handle somehow!
 		}
 	}
+}
+
+librevault::ConfigModel RemoteConfig::getGlobals() {
+	return librevault::ConfigModel(cached_globals_);
 }
 
 QJsonObject RemoteConfig::getFolder(QByteArray folderid) {
@@ -132,7 +132,7 @@ void RemoteConfig::renew() {
 }
 
 void RemoteConfig::handleGlobals(QJsonDocument globals) {
-	QVariantMap globals_new = globals.object().toVariantMap();
+	QJsonObject globals_new = globals.object();
 
 	// Prepare notifications
 	QStringList all_keys = globals_new.keys() + cached_globals_.keys();

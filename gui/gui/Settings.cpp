@@ -96,34 +96,33 @@ void Settings::reset_ui_states() {
 	}
 
 	/* Daemon settings */
-	ui_pane_general_.line_device->setText(daemon_->config()->getGlobal("client_name").toString()); // client_name
+	ui_pane_general_.line_device->setText(daemon_->config()->getGlobals().client_name); // client_name
 
 	// p2p_download_slots
-	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobal("p2p_download_slots").toInt());
+	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobals().p2p_download_slots);
 
 	// p2p_listen
-	unsigned short p2p_listen = daemon_->config()->getGlobal("p2p_listen").toInt();
+	unsigned short p2p_listen = daemon_->config()->getGlobals().p2p_listen;
 	ui_pane_network_.box_port_random->setChecked(p2p_listen == 0);
 	ui_pane_network_.spin_port->setEnabled(p2p_listen != 0);
 	ui_pane_network_.spin_port->setValue(p2p_listen);
 
 	// natpmp_enabled
-	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobal("natpmp_enabled").toBool());
+	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobals().natpmp_enabled);
 
 	// upnp_enabled
-	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobal("upnp_enabled").toBool());
+	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobals().upnp_enabled);
 
 	// bttracker_enabled
-	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobal("bttracker_enabled").toBool());
+	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobals().bttracker_enabled);
 
 	// multicast4_enabled || multicast6_enabled
 	ui_pane_network_.local_discovery_box->setChecked(
-		daemon_->config()->getGlobal("multicast4_enabled").toBool() ||
-		daemon_->config()->getGlobal("multicast6_enabled").toBool()
+		daemon_->config()->getGlobals().multicast_enabled
 	);
 
 	// mainline_dht_enabled
-	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobal("mainline_dht_enabled").toBool());
+	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobals().mainline_dht_enabled);
 }
 
 void Settings::process_ui_states() {

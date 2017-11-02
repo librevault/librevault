@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "ConfigModel.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>
@@ -44,8 +46,8 @@ signals:
 
 public:
 	/* Global configuration */
-	virtual QVariant getGlobal(QString name) = 0;
 	virtual void setGlobal(QString name, QVariant value) = 0;
+	virtual ConfigModel getGlobals() = 0;
 
 	/* Folder configuration */
 	virtual void addFolder(QJsonObject fconfig) = 0;

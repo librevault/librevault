@@ -44,7 +44,7 @@ public:
 
 public slots:
 	/* Global configuration */
-	QVariant getGlobal(QString name) override;
+	librevault::ConfigModel getGlobals() override;
 	void setGlobal(QString name, QVariant value) override;
 
 	/* Folder configuration */
@@ -59,7 +59,7 @@ public slots:
 	QJsonDocument exportFolders() override;
 
 private:
-	QVariantMap cached_globals_;
+	QJsonObject cached_globals_;
 	QMap<QByteArray, QVariantMap> cached_folders_;
 
 	Daemon* daemon_;

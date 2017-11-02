@@ -56,9 +56,8 @@ class Config : public AbstractConfig {
   }
 
   /* Global configuration */
-  QVariant getGlobal(QString name) override;
   void setGlobal(QString name, QVariant value) override;
-  ConfigModel getGlobals();
+  ConfigModel getGlobals() override;
 
   /* Folder configuration */
   void addFolder(QJsonObject fconfig) override;
@@ -87,7 +86,7 @@ class Config : public AbstractConfig {
 
   QJsonObject readDefault(const QString& path);
   QJsonDocument readConfig(const QString& source);
-  void writeConfig(const QJsonDocument doc, const QString& target);
+  void writeConfig(const QJsonDocument& doc, const QString& target);
 
   // File config
   void load();

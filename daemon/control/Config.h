@@ -29,7 +29,7 @@
 #pragma once
 
 #include "AbstractConfig.h"
-#include "ConfigModel.h"
+#include "config/ConfigModel.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>

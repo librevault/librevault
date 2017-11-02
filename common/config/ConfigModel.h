@@ -27,20 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "MetaInfo.h"
-#include "Secret.h"
 #include <QJsonObject>
 #include <QList>
 #include <QString>
-#include <QUrl>
 #include <chrono>
 
 namespace librevault {
 
 struct ConfigModel {
-  ConfigModel(const QJsonObject& fconfig);
+  explicit ConfigModel(const QJsonObject& fconfig);
 
-  /* Parameters */
+  // Parameters
   QString client_name;
   quint16 control_listen;
   quint16 p2p_listen;
@@ -64,4 +61,4 @@ struct ConfigModel {
   QList<QString> mainline_dht_routers;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

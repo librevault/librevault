@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "AbstractConfig.h"
+#include "config/AbstractConfig.h"
 #include "config/ConfigModel.h"
 #include <QJsonObject>
 #include <QObject>

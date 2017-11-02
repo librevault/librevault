@@ -87,7 +87,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfi
 void Downloader::addChunk(const QByteArray& ct_hash, quint32 size) {
   qCDebug(log_downloader) << "Added" << ct_hash.toHex() << "to download queue";
 
-  uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;  // TODO: pad always
+  uint32_t padded_size = ((size / 16) + 1) * 16;
 
   DownloadChunkPtr chunk = std::make_shared<DownloadChunk>(params_, ct_hash, padded_size);
   down_chunks_.insert(ct_hash, chunk);

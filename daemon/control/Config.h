@@ -84,6 +84,8 @@ class Config : public AbstractConfig {
   QMap<QByteArray, QJsonObject> folders_custom_;
 
   QJsonObject readDefault(const QString& path);
+  QJsonDocument readConfig(const QString& source);
+  void writeConfig(const QJsonDocument doc, const QString& target);
 
   // File config
   void load();

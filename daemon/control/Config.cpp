@@ -31,6 +31,7 @@
 #include "Secret.h"
 #include "util/MergePatch.h"
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLoggingCategory>
@@ -121,8 +122,7 @@ QJsonDocument Config::exportFolders() {
 
 void Config::importFolders(QJsonDocument folders_conf) {
   for (const auto& folderid : folders_custom_.keys()) removeFolder(folderid);
-  for (const auto& folder_params_v : folders_conf.array())
-    addFolder(folder_params_v.toObject());
+  for (const auto& folder_params_v : folders_conf.array()) addFolder(folder_params_v.toObject());
 }
 
 QJsonObject Config::readDefault(const QString& path) {
@@ -135,46 +135,36 @@ QJsonObject Config::readDefault(const QString& path) {
   return defaults.object();
 }
 
-void Config::load() {
-  QFile globals_f(Paths::get()->client_config_path);
-  if (globals_f.open(QIODevice::ReadOnly)) {
-    qCDebug(log_config) << "Loading global configuration from:" << globals_f.fileName();
-    importGlobals(QJsonDocument::fromJson(globals_f.readAll()));
+QJsonDocument Config::readConfig(const QString& source) {
+  QFile config_file(source);
+  if (config_file.open(QIODevice::ReadOnly)) {
+    qCDebug(log_config) << "Loading configuration from:" << config_file.fileName();
+    return QJsonDocument::fromJson(config_file.readAll());
   } else
-    qCWarning(log_config) << "Could not load global configuration from:" << globals_f.fileName();
+    qCWarning(log_config) << "Could not load configuration from:" << config_file.fileName();
+  return {};
+}
 
-  QFile folders_f(Paths::get()->folders_config_path);
-  if (folders_f.open(QIODevice::ReadOnly)) {
-    qCDebug(log_config) << "Loading folder configuration from:" << folders_f.fileName();
-    importFolders(QJsonDocument::fromJson(folders_f.readAll()));
-  } else
-    qCWarning(log_config) << "Could not load folder configuration from:" << folders_f.fileName();
+void Config::writeConfig(const QJsonDocument doc, const QString& target) {
+  QSaveFile config_file(target);
+  if (config_file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+    qCDebug(log_config) << "Saving configuration to:" << config_file.fileName();
+    config_file.write(doc.toJson(QJsonDocument::Indented));
+  }
+  if (config_file.isOpen() && config_file.commit())
+    qCDebug(log_config) << "Saved configuration to:" << config_file.fileName();
+  else
+    qCWarning(log_config) << "Could not save configuration to:" << config_file.fileName();
+}
+
+void Config::load() {
+  importGlobals(readConfig(Paths::get()->client_config_path));
+  importFolders(readConfig(Paths::get()->folders_config_path));
 }
 
 void Config::save() {
-  {
-    QSaveFile globals_f(Paths::get()->client_config_path);
-    if (globals_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-      qCDebug(log_config) << "Saving global configuration to:" << globals_f.fileName();
-      globals_f.write(exportUserGlobals().toJson(QJsonDocument::Indented));
-    }
-    if (globals_f.isOpen() && globals_f.commit())
-      qCDebug(log_config) << "Saved global configuration to:" << globals_f.fileName();
-    else
-      qCWarning(log_config) << "Could not save global configuration to:" << globals_f.fileName();
-  }
-
-  {
-    QSaveFile folders_f(Paths::get()->folders_config_path);
-    if (folders_f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-      qCDebug(log_config) << "Saving folder configuration to:" << folders_f.fileName();
-      folders_f.write(exportUserFolders().toJson(QJsonDocument::Indented));
-    }
-    if (folders_f.isOpen() && folders_f.commit())
-      qCDebug(log_config) << "Saved folder configuration to:" << folders_f.fileName();
-    else
-      qCWarning(log_config) << "Could not save folder configuration to:" << folders_f.fileName();
-  }
+  writeConfig(exportUserGlobals(), Paths::get()->client_config_path);
+  writeConfig(exportUserFolders(), Paths::get()->folders_config_path);
 }
 
 }  // namespace librevault

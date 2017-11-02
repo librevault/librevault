@@ -38,9 +38,9 @@ class AbstractConfig : public QObject {
 	Q_OBJECT
 
 signals:
-	void globalChanged(QString key, QVariant value);
 	void folderAdded(const QJsonObject& fconfig);
 	void folderRemoved(QByteArray folderid);
+	void changed();
 
 public:
 	/* Global configuration */

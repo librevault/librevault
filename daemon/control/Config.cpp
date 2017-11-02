@@ -48,10 +48,10 @@ Config::Config() {
 
   load();
 
-  connect(this, &Config::globalChanged, this, [this](QString key, QVariant value) {
-    qCInfo(log_config) << "Global var" << key << "is set to" << value;
-  });
-  connect(this, &Config::globalChanged, this, &Config::save);
+//  connect(this, &Config::globalChanged, this, [this](QString key, QVariant value) {
+//    qCInfo(log_config) << "Global var" << key << "is set to" << value;
+//  });
+  connect(this, &Config::changed, this, &Config::save);
 }
 
 Config::~Config() { save(); }
@@ -64,7 +64,7 @@ QVariant Config::getGlobal(QString name) {
 
 void Config::setGlobal(QString name, QVariant value) {
   globals_custom_[name] = QJsonValue::fromVariant(value);
-  emit globalChanged(name, value);
+  emit changed();
 }
 
 ConfigModel Config::getGlobals() {
@@ -87,7 +87,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
   globals_custom_ = globals_conf.object();
 
   // Notify other components
-  for (const auto& key : qAsConst(changed_keys)) emit globalChanged(key, getGlobal(key));
+  if(!changed_keys.empty()) emit changed();
 }
 
 void Config::addFolder(QJsonObject fconfig) {

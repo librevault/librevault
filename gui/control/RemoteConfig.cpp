@@ -38,7 +38,7 @@ RemoteConfig::RemoteConfig(Daemon* daemon) : daemon_(daemon) {
 	connect(daemon_, &Daemon::connected, this, &RemoteConfig::renew);
 	connect(daemon_, &Daemon::eventReceived, this, &RemoteConfig::handleEvent);
 
-	connect(this, &librevault::AbstractConfig::globalChanged, this, &RemoteConfig::changed);
+	connect(this, &librevault::AbstractConfig::changed, this, &RemoteConfig::changed);
 	connect(this, &librevault::AbstractConfig::folderAdded, this, &RemoteConfig::changed);
 	connect(this, &librevault::AbstractConfig::folderRemoved, this, &RemoteConfig::changed);
 }
@@ -48,7 +48,7 @@ QVariant RemoteConfig::getGlobal(QString name) {
 }
 
 void RemoteConfig::setGlobal(QString name, QVariant value) {
-	if((getGlobal(name) != value) && daemon_->isConnected()) {
+	if(daemon_->isConnected()) {	// TODO: do not save if value is same
 		QJsonObject value_setter;
 		value_setter["key"] = name;
 		value_setter["value"] = QJsonValue::fromVariant(value);
@@ -149,9 +149,7 @@ void RemoteConfig::handleGlobals(QJsonDocument globals) {
 	cached_globals_ = globals_new;
 
 	// Notify
-	foreach(const QString& key, all_keys) {
-		globalChanged(key, cached_globals_.value(key));
-	}
+	emit changed();
 }
 
 void RemoteConfig::handleFolders(QJsonDocument folders) {
@@ -168,7 +166,7 @@ void RemoteConfig::handleEvent(QString name, QJsonObject event) {
 		QJsonValue value = event["value"];
 		if(cached_globals_.value(key) != value) {
 			cached_globals_[key] = value;
-			emit globalChanged(key, value);
+			emit changed();
 		}
 	}else if(name == "EVENT_FOLDER_ADDED") {
 		QByteArray folderid = QByteArray::fromHex(event["folderid"].toString().toLatin1());

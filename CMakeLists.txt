@@ -148,12 +148,6 @@ endif()
 
 ## SQLite
 find_package(Sqlite3 3.9 QUIET)
-add_library(sqlite3 INTERFACE)
-target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
-target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
-if(OS_LINUX)
-	target_link_libraries(sqlite3 INTERFACE pthread dl)
-endif()
 
 ##### External libraries #####
 

@@ -4,6 +4,6 @@ class LibrevaultConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = "docopt.cpp/latest@signal9/stable",\
                "spdlog/0.14.0@bincrafters/stable",\
-               "sqlite3/3.18.0@jgsogo/stable"
+               "sqlite3/3.21.0@bincrafters/stable"
     generators = "cmake"
     default_options = ""

@@ -58,8 +58,8 @@ Config::~Config() { save(); }
 
 Config* Config::instance_ = nullptr;
 
-void Config::setGlobal(QString name, QVariant value) {
-  globals_custom_[name] = QJsonValue::fromVariant(value);
+void Config::patchGlobals(const QJsonObject& patch) {
+  globals_custom_ = mergePatch(globals_custom_, patch).toObject();
   emit changed();
 }
 
@@ -74,16 +74,8 @@ QJsonDocument Config::exportGlobals() {
 }
 
 void Config::importGlobals(QJsonDocument globals_conf) {
-  QStringList all_keys = globals_custom_.keys() + globals_conf.object().keys();
-  QSet<QString> changed_keys;
-
-  for (const auto& key : qAsConst(all_keys))
-    if (globals_custom_.value(key) != globals_conf.object().value(key)) changed_keys.insert(key);
-
   globals_custom_ = globals_conf.object();
-
-  // Notify other components
-  if (!changed_keys.empty()) emit changed();
+  emit changed();
 }
 
 void Config::addFolder(QJsonObject fconfig) {

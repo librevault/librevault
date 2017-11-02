@@ -45,7 +45,7 @@ public:
 public slots:
 	/* Global configuration */
 	librevault::ConfigModel getGlobals() override;
-	void setGlobal(QString name, QVariant value) override;
+	void setGlobal(QString name, QVariant value);
 
 	/* Folder configuration */
 	void addFolder(QJsonObject fconfig) override;

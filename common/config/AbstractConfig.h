@@ -46,7 +46,7 @@ signals:
 
 public:
 	/* Global configuration */
-	virtual void setGlobal(QString name, QVariant value) = 0;
+	virtual void patchGlobals(const QJsonObject& patch) {};
 	virtual ConfigModel getGlobals() = 0;
 
 	/* Folder configuration */

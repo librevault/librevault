@@ -56,7 +56,7 @@ class Config : public AbstractConfig {
   }
 
   /* Global configuration */
-  void setGlobal(QString name, QVariant value) override;
+  void patchGlobals(const QJsonObject& patch) override;
   ConfigModel getGlobals() override;
 
   /* Folder configuration */

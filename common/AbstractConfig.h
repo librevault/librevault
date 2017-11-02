@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QObject>
 #include <QVariant>
 
@@ -38,7 +39,7 @@ class AbstractConfig : public QObject {
 
 signals:
 	void globalChanged(QString key, QVariant value);
-	void folderAdded(QVariantMap fconfig);
+	void folderAdded(const QJsonObject& fconfig);
 	void folderRemoved(QByteArray folderid);
 
 public:
@@ -47,10 +48,10 @@ public:
 	virtual void setGlobal(QString name, QVariant value) = 0;
 
 	/* Folder configuration */
-	virtual void addFolder(QVariantMap fconfig) = 0;
+	virtual void addFolder(QJsonObject fconfig) = 0;
 	virtual void removeFolder(QByteArray folderid) = 0;
 
-	virtual QVariantMap getFolder(QByteArray folderid) = 0;
+	virtual QJsonObject getFolder(QByteArray folderid) = 0;
 	virtual QVariant getFolderValue(QByteArray folderid, QString name) {return getFolder(folderid).value(name);}
 	virtual QList<QByteArray> listFolders() = 0;
 

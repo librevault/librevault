@@ -58,13 +58,13 @@ void RemoteConfig::setGlobal(QString name, QVariant value) {
 	}
 }
 
-void RemoteConfig::addFolder(QVariantMap fconfig) {
+void RemoteConfig::addFolder(QJsonObject fconfig) {
 	if(daemon_->isConnected()) {
 		librevault::Secret secret(fconfig["secret"].toString());
 		QByteArray folderid = secret.folderid();
 
 		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/folders/%1").arg(QString(folderid.toHex())));
-		daemon_->nam()->put(request, QJsonDocument::fromVariant(fconfig).toJson());
+		daemon_->nam()->put(request, QJsonDocument(fconfig).toJson());
 	}
 }
 
@@ -83,8 +83,8 @@ void RemoteConfig::removeFolder(QByteArray folderid) {
 	}
 }
 
-QVariantMap RemoteConfig::getFolder(QByteArray folderid) {
-	return cached_folders_.value(folderid);
+QJsonObject RemoteConfig::getFolder(QByteArray folderid) {
+	return QJsonObject::fromVariantMap(cached_folders_.value(folderid));
 }
 
 QList<QByteArray> RemoteConfig::listFolders() {
@@ -173,7 +173,7 @@ void RemoteConfig::handleEvent(QString name, QJsonObject event) {
 	}else if(name == "EVENT_FOLDER_ADDED") {
 		QByteArray folderid = QByteArray::fromHex(event["folderid"].toString().toLatin1());
 		cached_folders_[folderid] = event["folder_params"].toObject().toVariantMap();
-		emit folderAdded(cached_folders_[folderid]);
+		emit folderAdded(QJsonObject::fromVariantMap(cached_folders_[folderid]));
 	}else if(name == "EVENT_FOLDER_REMOVED") {
 		QByteArray folderid = QByteArray::fromHex(event["folderid"].toString().toLatin1());
 		cached_folders_.remove(folderid);

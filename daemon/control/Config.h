@@ -59,10 +59,10 @@ class Config : public AbstractConfig {
   void setGlobal(QString name, QVariant value) override;
 
   /* Folder configuration */
-  void addFolder(QVariantMap fconfig) override;
+  void addFolder(QJsonObject fconfig) override;
   void removeFolder(QByteArray folderid) override;
 
-  QVariantMap getFolder(QByteArray folderid) override;
+  QJsonObject getFolder(QByteArray folderid) override;
   QList<QByteArray> listFolders() override;
 
   /* Export/Import */

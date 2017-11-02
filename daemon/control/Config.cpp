@@ -85,13 +85,11 @@ void Config::importGlobals(QJsonDocument globals_conf) {
   for (const auto& key : qAsConst(changed_keys)) emit globalChanged(key, getGlobal(key));
 }
 
-void Config::addFolder(QVariantMap fconfig) {
+void Config::addFolder(QJsonObject fconfig) {
   QByteArray folderid = Secret(fconfig["secret"].toString()).folderid();
   if (folders_custom_.contains(folderid)) throw samekey_error();
-  folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));
-  emit folderAdded(mergePatch(folders_defaults_, QJsonObject::fromVariantMap(fconfig))
-                       .toObject()
-                       .toVariantMap());
+  folders_custom_.insert(folderid, fconfig);
+  emit folderAdded(mergePatch(folders_defaults_, fconfig).toObject());
   save();
 }
 
@@ -101,10 +99,10 @@ void Config::removeFolder(QByteArray folderid) {
   save();
 }
 
-QVariantMap Config::getFolder(QByteArray folderid) {
+QJsonObject Config::getFolder(QByteArray folderid) {
   return folders_custom_.contains(folderid)
-             ? mergePatch(folders_defaults_, folders_custom_[folderid]).toObject().toVariantMap()
-             : QVariantMap();
+             ? mergePatch(folders_defaults_, folders_custom_[folderid]).toObject()
+             : QJsonObject();
 }
 
 QList<QByteArray> Config::listFolders() { return folders_custom_.keys(); }
@@ -117,15 +115,14 @@ QJsonDocument Config::exportUserFolders() {
 
 QJsonDocument Config::exportFolders() {
   QJsonArray folders_merged;
-  for (const auto& folderid : listFolders())
-    folders_merged.append(QJsonValue::fromVariant(getFolder(folderid)));
+  for (const auto& folderid : listFolders()) folders_merged.append(getFolder(folderid));
   return QJsonDocument(folders_merged);
 }
 
 void Config::importFolders(QJsonDocument folders_conf) {
   for (const auto& folderid : folders_custom_.keys()) removeFolder(folderid);
   for (const auto& folder_params_v : folders_conf.array())
-    addFolder(folder_params_v.toObject().toVariantMap());
+    addFolder(folder_params_v.toObject());
 }
 
 QJsonObject Config::readDefault(const QString& path) {

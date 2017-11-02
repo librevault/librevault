@@ -38,7 +38,7 @@
 namespace librevault {
 
 struct FolderParams {
-  FolderParams(QVariantMap fconfig);
+  FolderParams(QJsonObject fconfig);
 
   QByteArray folderid() const { return secret.folderid(); }
   QString effectiveSystemPath() const {

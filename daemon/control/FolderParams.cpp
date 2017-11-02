@@ -28,11 +28,12 @@
  */
 #include "FolderParams.h"
 #include <QJsonArray>
-#include <QtDebug>
+#include <QJsonObject>
+#include <QJsonValue>
 
 namespace librevault {
 
-FolderParams::FolderParams(QVariantMap fconfig) {
+FolderParams::FolderParams(QJsonObject fconfig) {
   // Necessary
   secret = Secret(fconfig["secret"].toString());
   path = fconfig["path"].toString();
@@ -45,7 +46,7 @@ FolderParams::FolderParams(QVariantMap fconfig) {
   preserve_symlinks = fconfig["preserve_symlinks"].toBool();
   full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
 
-  for (const QString& node : fconfig["nodes"].toStringList()) nodes.push_back(node);
+  for (const auto& node : fconfig["nodes"].toArray()) nodes.push_back(node.toString());
 
   mainline_dht_enabled = fconfig["mainline_dht_enabled"].toBool();
 }

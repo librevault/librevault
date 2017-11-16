@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,66 +26,52 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
+#include "UndefinedSession.h"
 
-#define EXIT_RESTART 451
-
-#include "util/BandwidthCounter.h"
-#include <QCoreApplication>
-#include <QMap>
+#include <QRegularExpression>
+#include <QTcpSocket>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-/* Components */
-class NodeKey;
-class PeerServer;
-class GenericNatService;
+Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
 
-class FolderGroup;
-class FolderParams;
+static QRegularExpression header_regex(R"((\S): (\S)\n)");
 
-class BandwidthCounter;
+UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
+    : QObject(parent), sock_(sock) {
+  sock->setParent(this);
+  sock->startTransaction();
+  connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
 
-class BTProvider;
-class DHTProvider;
-class MulticastProvider;
+  qCDebug(log_undef_session) << "Got:" << this;
+}
 
-class Webserver;
+void UndefinedSession::readHandler() {
+  qCDebug(log_undef_session) << "Got1:" << last_header_buf_;
+  last_header_buf_ += sock_->readLine(4096);
+  qCDebug(log_undef_session) << "Got:" << last_header_buf_;
 
-class Client : public QCoreApplication {
-  Q_OBJECT
- public:
-  Client(int argc, char** argv);
-  virtual ~Client();
+  if (last_header_buf_ == "\n") {
+    sock_->rollbackTransaction();
+    return haveHttp(sock_);
+  }
 
- public slots:
-  void restart();
-  void shutdown();
+  auto match = header_regex.match(last_header_buf_);
+  if (match.hasMatch()) {
+    QString name = match.captured(1);
+    QString value = match.captured(2);
 
- private:
-  BandwidthCounter bc_all_, bc_blocks_;
-  NodeKey* node_key_;
-  GenericNatService* portmanager_;
-  PeerServer* peerserver_;
+    qCDebug(log_undef_session) << "Got header:" << name << ":" << value;
 
-  BTProvider* bt_;
-  DHTProvider* dht_;
-  MulticastProvider* mcast_;
+    if (name.compare("Upgrade", Qt::CaseInsensitive) == 1 &&
+        value.compare("WebSocket", Qt::CaseInsensitive) == 1) {
+      sock_->rollbackTransaction();
+      return haveWebSocket(sock_);
+    }
+  }
 
-  Webserver* webserver_;
+  if(last_header_buf_.right(1) == "\n") last_header_buf_.clear();
+}
 
-  // Folders
-  QMap<QByteArray, FolderGroup*> groups_;
-
- private slots:
-  void initDiscovery();
-  void deinitDiscovery();
-
-  void initFolder(const FolderParams& params);
-  void deinitFolder(const QByteArray& folderid);
-
-  void initializeAll();
-  void deinitializeAll();
-};
-
-} /* namespace librevault */
+}  // namespace librevault

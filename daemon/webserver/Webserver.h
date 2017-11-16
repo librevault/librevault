@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,64 +28,32 @@
  */
 #pragma once
 
-#define EXIT_RESTART 451
-
-#include "util/BandwidthCounter.h"
-#include <QCoreApplication>
-#include <QMap>
+#include <QObject>
+#include <QTcpServer>
+#include <QSet>
+#include <memory>
+#include <unordered_map>
 
 namespace librevault {
 
-/* Components */
-class NodeKey;
-class PeerServer;
-class GenericNatService;
+class UndefinedSession;
 
-class FolderGroup;
-class FolderParams;
-
-class BandwidthCounter;
-
-class BTProvider;
-class DHTProvider;
-class MulticastProvider;
-
-class Webserver;
-
-class Client : public QCoreApplication {
+class Webserver : public QObject {
   Q_OBJECT
- public:
-  Client(int argc, char** argv);
-  virtual ~Client();
 
- public slots:
-  void restart();
-  void shutdown();
+ public:
+  Webserver(QObject* parent);
+
+  void start();
 
  private:
-  BandwidthCounter bc_all_, bc_blocks_;
-  NodeKey* node_key_;
-  GenericNatService* portmanager_;
-  PeerServer* peerserver_;
+  QTcpServer* server_;
+  QHash<QTcpSocket*, QSharedPointer<UndefinedSession>> undefined_sessions_;
 
-  BTProvider* bt_;
-  DHTProvider* dht_;
-  MulticastProvider* mcast_;
+  Q_SLOT void handleConnection();
+  Q_SLOT void handleHttpSession(QTcpSocket* sock);
+  Q_SLOT void handleWebsocketSession(QTcpSocket* sock);
 
-  Webserver* webserver_;
-
-  // Folders
-  QMap<QByteArray, FolderGroup*> groups_;
-
- private slots:
-  void initDiscovery();
-  void deinitDiscovery();
-
-  void initFolder(const FolderParams& params);
-  void deinitFolder(const QByteArray& folderid);
-
-  void initializeAll();
-  void deinitializeAll();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -36,6 +36,7 @@
 #include <discovery/bt/BTProvider.h>
 #include <discovery/dht/DHTProvider.h>
 #include <discovery/multicast/MulticastProvider.h>
+#include "webserver/Webserver.h"
 
 namespace librevault {
 
@@ -49,6 +50,8 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
   portmanager_ = new NatPmpService(this);
   peerserver_ = new PeerServer(node_key_, portmanager_, this);
 
+  webserver_ = new Webserver(this);
+
   portmanager_->setEnabled(true);
 
   /* Connecting signals */
@@ -59,6 +62,7 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 }
 
 Client::~Client() {
+  delete webserver_;
   delete peerserver_;
   delete portmanager_;
   delete node_key_;
@@ -68,6 +72,8 @@ void Client::initializeAll() {
   peerserver_->start();
 
   initDiscovery();
+
+  webserver_->start();
 
   // Initialize all existing folders
   for (const QByteArray& folderid : Config::get()->listFolders())

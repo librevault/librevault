@@ -53,7 +53,6 @@ class Webserver : public QObject {
   Q_SLOT void handleConnection();
   Q_SLOT void handleHttpSession(QTcpSocket* sock);
   Q_SLOT void handleWebsocketSession(QTcpSocket* sock);
-
 };
 
 }  // namespace librevault

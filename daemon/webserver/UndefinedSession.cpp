@@ -36,22 +36,19 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
 
-static QRegularExpression header_regex(R"(^(\S+): (.+))");
+static QRegularExpression header_regex(R"(^(\S+): (.+)\r\n)");
 
 UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
     : QObject(parent), sock_(sock) {
-  qCDebug(log_undef_session) << "Got:" << this;
+  qCDebug(log_undef_session) << "Started session:" << this;
 
   sock->setParent(this);
   sock->startTransaction();
   connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
-
-  qCDebug(log_undef_session) << "Got:" << this;
 }
 
 void UndefinedSession::readHandler() {
   last_header_buf_ += sock_->readLine(4096);
-  qCDebug(log_undef_session) << "Got:" << last_header_buf_;
 
   if (last_header_buf_ == "\n" || last_header_buf_ == "\r\n") {
     sock_->rollbackTransaction();

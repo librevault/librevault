@@ -48,7 +48,7 @@ class Webserver : public QObject {
 
  private:
   QTcpServer* server_;
-  QHash<QTcpSocket*, QSharedPointer<UndefinedSession>> undefined_sessions_;
+  QHash<QTcpSocket*, UndefinedSession*> undefined_sessions_;
 
   Q_SLOT void handleConnection();
   Q_SLOT void handleHttpSession(QTcpSocket* sock);

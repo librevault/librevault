@@ -36,10 +36,12 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
 
-static QRegularExpression header_regex(R"((\S): (\S)\n)");
+static QRegularExpression header_regex(R"(^(\S+): (.+))");
 
 UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
     : QObject(parent), sock_(sock) {
+  qCDebug(log_undef_session) << "Got:" << this;
+
   sock->setParent(this);
   sock->startTransaction();
   connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
@@ -48,16 +50,15 @@ UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
 }
 
 void UndefinedSession::readHandler() {
-  qCDebug(log_undef_session) << "Got1:" << last_header_buf_;
   last_header_buf_ += sock_->readLine(4096);
   qCDebug(log_undef_session) << "Got:" << last_header_buf_;
 
-  if (last_header_buf_ == "\n") {
+  if (last_header_buf_ == "\n" || last_header_buf_ == "\r\n") {
     sock_->rollbackTransaction();
     return haveHttp(sock_);
   }
 
-  auto match = header_regex.match(last_header_buf_);
+  auto match = header_regex.match(QString::fromLatin1(last_header_buf_));
   if (match.hasMatch()) {
     QString name = match.captured(1);
     QString value = match.captured(2);
@@ -71,7 +72,7 @@ void UndefinedSession::readHandler() {
     }
   }
 
-  if(last_header_buf_.right(1) == "\n") last_header_buf_.clear();
+  if(last_header_buf_.right(1) == "\n"){ last_header_buf_.clear(); readHandler();}
 }
 
 }  // namespace librevault

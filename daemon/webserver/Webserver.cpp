@@ -42,6 +42,7 @@ Webserver::Webserver(QObject* parent) : QObject(parent) { server_ = new QTcpServ
 
 void Webserver::start() {
   connect(server_, &QTcpServer::newConnection, this, &Webserver::handleConnection);
+
   server_->listen(QHostAddress::Any, Config::get()->getGlobals().control_listen);
   qCDebug(log_webserver) << "Started listening on port:" << server_->serverPort();
 }
@@ -49,16 +50,19 @@ void Webserver::start() {
 void Webserver::handleConnection() {
   QTcpSocket* sock = server_->nextPendingConnection();
   auto session =
-      QSharedPointer<UndefinedSession>(new UndefinedSession(sock, this), &QObject::deleteLater);
-  connect(session.data(), &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
+      new UndefinedSession(sock, this);
+  connect(session, &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
   connect(
-      session.data(), &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
+      session, &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
   undefined_sessions_.insert(sock, session);
 }
 
 void Webserver::handleHttpSession(QTcpSocket* sock) {
   sock->setParent(this);
-  undefined_sessions_.remove(sock);
+  if(undefined_sessions_.contains(sock)) {
+    undefined_sessions_[sock]->deleteLater();
+    undefined_sessions_.remove(sock);
+  }
 
   qCDebug(log_webserver) << "Got HTTP session from" << sock->peerAddress();
   // handle

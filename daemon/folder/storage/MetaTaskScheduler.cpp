@@ -47,6 +47,7 @@ MetaTaskScheduler::~MetaTaskScheduler() {
 }
 
 void MetaTaskScheduler::process(const QByteArray& path_keyed_hash) {
+  QTimer::singleShot(0, this, [=]{
   QMutexLocker lk(&tq_mtx_);
 
   Q_ASSERT(!path_keyed_hash.isEmpty());
@@ -70,6 +71,7 @@ void MetaTaskScheduler::process(const QByteArray& path_keyed_hash) {
   // If task queue for current path is empty, then remove the queue itself
   if (current_tq.pending_tasks.isEmpty() && current_tq.current_task == nullptr)
     tq_.remove(path_keyed_hash);
+  });
 }
 
 void MetaTaskScheduler::handleFinished(const QByteArray& path_keyed_hash, QueuedTask* task) {

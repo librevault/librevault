@@ -28,26 +28,41 @@
  */
 #pragma once
 
-#include "HTTPRequest.h"
-#include <QObject>
-#include <QTcpServer>
+#include <QByteArray>
+#include <QHash>
+#include <QString>
+#include "util/exception.hpp"
 
 namespace librevault {
 
-class UndefinedSession : public QObject {
-  Q_OBJECT
-
+class HTTPRequest {
  public:
-  UndefinedSession(QTcpSocket* sock, QObject* parent);
+  DECLARE_EXCEPTION(ParseError, "HTTP request parsing failed");
+  DECLARE_EXCEPTION_DETAIL(NoContentLength, ParseError,
+      "Content-Length header not found, and chunked transfer is not supported");
+  DECLARE_EXCEPTION_DETAIL(InvalidHeader, ParseError, "HTTP header is invalid");
+  DECLARE_EXCEPTION_DETAIL(DataOverflow, ParseError, "Too much request data");
 
-  Q_SIGNAL void haveWebSocket(QTcpSocket* sock);
-  Q_SIGNAL void haveHttp(QTcpSocket* sock);
+  using HeaderMap = QHash<QString, QStringList>;
+
+  void addData(const QByteArray& data);
+  bool atEnd() const { return complete_1st_line && complete_header && content_length_ == 0; };
+
+  const HeaderMap& headers() const { return headers_; }
 
  private:
-  Q_SLOT void readHandler();
+  bool complete_1st_line = false;
+  bool complete_header = false;
+  int content_length_ = 0;
+  QByteArray incomplete_header_buf;
 
-  QTcpSocket* sock_;
-  HTTPRequest request;
+  QString method_, path_, http_;
+  QByteArray request_data_;
+
+  HeaderMap headers_;
+
+  bool parseLine(QByteArray line);
+  void processHeaders();
 };
 
 }  // namespace librevault

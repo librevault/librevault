@@ -48,28 +48,14 @@ UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
 }
 
 void UndefinedSession::readHandler() {
-  last_header_buf_ += sock_->readLine(4096);
-
-  if (last_header_buf_ == "\n" || last_header_buf_ == "\r\n") {
+  request.addData(sock_->readAll());
+  if(request.atEnd()) {
     sock_->rollbackTransaction();
-    return haveHttp(sock_);
-  }
-
-  auto match = header_regex.match(QString::fromLatin1(last_header_buf_));
-  if (match.hasMatch()) {
-    QString name = match.captured(1);
-    QString value = match.captured(2);
-
-    qCDebug(log_undef_session) << "Got header:" << name << ":" << value;
-
-    if (name.compare("Upgrade", Qt::CaseInsensitive) == 1 &&
-        value.compare("WebSocket", Qt::CaseInsensitive) == 1) {
-      sock_->rollbackTransaction();
+    if(request.headers()["upgrade"].contains("WebSocket", Qt::CaseInsensitive))
       return haveWebSocket(sock_);
-    }
+    else
+      return haveHttp(sock_);
   }
-
-  if(last_header_buf_.right(1) == "\n"){ last_header_buf_.clear(); readHandler();}
 }
 
 }  // namespace librevault

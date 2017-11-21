@@ -49,17 +49,15 @@ void Webserver::start() {
 
 void Webserver::handleConnection() {
   QTcpSocket* sock = server_->nextPendingConnection();
-  auto session =
-      new UndefinedSession(sock, this);
+  auto session = new UndefinedSession(sock, this);
   connect(session, &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
-  connect(
-      session, &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
+  connect(session, &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
   undefined_sessions_.insert(sock, session);
 }
 
 void Webserver::handleHttpSession(QTcpSocket* sock) {
   sock->setParent(this);
-  if(undefined_sessions_.contains(sock)) {
+  if (undefined_sessions_.contains(sock)) {
     undefined_sessions_[sock]->deleteLater();
     undefined_sessions_.remove(sock);
   }
@@ -70,7 +68,10 @@ void Webserver::handleHttpSession(QTcpSocket* sock) {
 
 void Webserver::handleWebsocketSession(QTcpSocket* sock) {
   sock->setParent(this);
-  undefined_sessions_.remove(sock);
+  if (undefined_sessions_.contains(sock)) {
+    undefined_sessions_[sock]->deleteLater();
+    undefined_sessions_.remove(sock);
+  }
 
   qCDebug(log_webserver) << "Got WebSocket session from" << sock->peerAddress();
   // handle

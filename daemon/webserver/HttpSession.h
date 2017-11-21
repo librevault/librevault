@@ -26,35 +26,22 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "UndefinedSession.h"
+#pragma once
 
-#include <QLoggingCategory>
-#include <QRegularExpression>
-#include <QTcpSocket>
+#include "HTTPRequest.h"
+#include "HTTPResponse.h"
+#include "Session.h"
+#include <QObject>
+#include <QTcpServer>
+#include <QTimer>
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
+class HttpSession : public Session {
+  Q_OBJECT
 
-UndefinedSession::UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
-    : Session(sessid, sock, {}, parent) {
-  qCDebug(log_undef_session) << "Started session:" << this;
-
-  sock->setParent(this);
-  sock->startTransaction();
-  connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
-  timer_->setInterval(std::chrono::seconds(30));
-}
-
-void UndefinedSession::readHandler() {
-  request_.addData(sock_->readAll());
-  if (request_.atEnd()) {
-    sock_->rollbackTransaction();
-    if (request_.headers()["upgrade"].contains("WebSocket", Qt::CaseInsensitive))
-      return haveWebSocket(sessionId());
-    else
-      return haveHttp(sessionId());
-  }
-}
+ public:
+  HttpSession(const QUuid& sessid, QTcpSocket* sock, const HTTPRequest& request, QObject* parent);
+};
 
 }  // namespace librevault

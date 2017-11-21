@@ -41,8 +41,8 @@ class Session : public QObject {
   Q_OBJECT
 
  public:
-  Session(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
-      : QObject(parent), sessid_(sessid), sock_(sock) {
+  Session(const QUuid& sessid, QTcpSocket* sock, const HTTPRequest& request, QObject* parent)
+      : QObject(parent), sessid_(sessid), sock_(sock), request_(request) {
     sock_->setParent(nullptr);
     timer_ = new QTimer(this);
 
@@ -52,11 +52,14 @@ class Session : public QObject {
   Q_SIGNAL void timeout(const QUuid& sessid);
 
   const QUuid& sessionId() { return sessid_; }
+
   std::unique_ptr<QTcpSocket> socket() { return std::move(sock_); }
 
  protected:
   const QUuid sessid_;
   std::unique_ptr<QTcpSocket> sock_ = nullptr;
+  HTTPRequest request_;
+
   QTimer* timer_ = nullptr;
 };
 

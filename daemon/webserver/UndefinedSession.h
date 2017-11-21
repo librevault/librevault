@@ -29,7 +29,6 @@
 #pragma once
 
 #include "Session.h"
-#include "HTTPRequest.h"
 #include <QObject>
 #include <QTcpServer>
 #include <QTimer>
@@ -47,8 +46,6 @@ class UndefinedSession : public Session {
 
  private:
   Q_SLOT void readHandler();
-
-  HTTPRequest request;
 };
 
 }  // namespace librevault

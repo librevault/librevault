@@ -26,7 +26,8 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "UndefinedSession.h"
+#include "HttpSession.h"
+#include "HTTPResponse.h"
 
 #include <QLoggingCategory>
 #include <QRegularExpression>
@@ -34,27 +35,18 @@
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
+Q_LOGGING_CATEGORY(log_http_session, "webserver.http")
 
-UndefinedSession::UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
-    : Session(sessid, sock, {}, parent) {
-  qCDebug(log_undef_session) << "Started session:" << this;
+HttpSession::HttpSession(const QUuid& sessid, QTcpSocket* sock, const HTTPRequest& request, QObject* parent)
+    : Session(sessid, sock, request, parent) {
+  qCDebug(log_http_session) << "Started session:" << this;
 
-  sock->setParent(this);
-  sock->startTransaction();
-  connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
-  timer_->setInterval(std::chrono::seconds(30));
-}
+  HTTPResponse response;
+  response.setCode(200);
+  response.setCodeComment("OK");
 
-void UndefinedSession::readHandler() {
-  request_.addData(sock_->readAll());
-  if (request_.atEnd()) {
-    sock_->rollbackTransaction();
-    if (request_.headers()["upgrade"].contains("WebSocket", Qt::CaseInsensitive))
-      return haveWebSocket(sessionId());
-    else
-      return haveHttp(sessionId());
-  }
+  qCDebug(log_http_session) << response.makeResponse();
+  sock->write(response.makeResponse());
 }
 
 }  // namespace librevault

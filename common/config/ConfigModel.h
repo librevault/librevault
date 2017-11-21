@@ -35,7 +35,7 @@
 namespace librevault {
 
 struct ConfigModel {
-  explicit ConfigModel(const QJsonObject& fconfig);
+  explicit ConfigModel(const QJsonObject& doc);
 
   // Parameters
   QString client_name;

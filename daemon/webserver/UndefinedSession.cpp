@@ -28,33 +28,32 @@
  */
 #include "UndefinedSession.h"
 
+#include <QLoggingCategory>
 #include <QRegularExpression>
 #include <QTcpSocket>
-#include <QLoggingCategory>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
 
-static QRegularExpression header_regex(R"(^(\S+): (.+)\r\n)");
-
-UndefinedSession::UndefinedSession(QTcpSocket* sock, QObject* parent)
-    : QObject(parent), sock_(sock) {
+UndefinedSession::UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
+    : Session(sessid, sock, parent) {
   qCDebug(log_undef_session) << "Started session:" << this;
 
   sock->setParent(this);
   sock->startTransaction();
   connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
+  timer_->setInterval(std::chrono::seconds(30));
 }
 
 void UndefinedSession::readHandler() {
   request.addData(sock_->readAll());
-  if(request.atEnd()) {
+  if (request.atEnd()) {
     sock_->rollbackTransaction();
-    if(request.headers()["upgrade"].contains("WebSocket", Qt::CaseInsensitive))
-      return haveWebSocket(sock_);
+    if (request.headers()["upgrade"].contains("WebSocket", Qt::CaseInsensitive))
+      return haveWebSocket(sessionId());
     else
-      return haveHttp(sock_);
+      return haveHttp(sessionId());
   }
 }
 

@@ -33,6 +33,8 @@
 #include <QDebug>
 #include <QLoggingCategory>
 #include <QTcpSocket>
+#include <QSharedPointer>
+#include <QUuid>
 
 namespace librevault {
 
@@ -49,32 +51,30 @@ void Webserver::start() {
 
 void Webserver::handleConnection() {
   QTcpSocket* sock = server_->nextPendingConnection();
-  auto session = new UndefinedSession(sock, this);
-  connect(session, &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
-  connect(session, &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
-  undefined_sessions_.insert(sock, session);
+  auto session = QSharedPointer<UndefinedSession>(new UndefinedSession(QUuid::createUuid(), sock, this));
+  connect(session.data(), &Session::timeout, this, &Webserver::handleTimeout);
+  connect(session.data(), &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
+  connect(session.data(), &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
+  sessions_.insert(session->sessionId(), session);
 }
 
-void Webserver::handleHttpSession(QTcpSocket* sock) {
-  sock->setParent(this);
-  if (undefined_sessions_.contains(sock)) {
-    undefined_sessions_[sock]->deleteLater();
-    undefined_sessions_.remove(sock);
-  }
+void Webserver::handleHttpSession(const QUuid& sessid) {
+  Q_ASSERT(sessions_.contains(sessid));
 
-  qCDebug(log_webserver) << "Got HTTP session from" << sock->peerAddress();
-  // handle
+  auto sock_owned = sessions_[sessid]->socket();
+  qCDebug(log_webserver) << "Got HTTP session from" << sock_owned->peerAddress();
 }
 
-void Webserver::handleWebsocketSession(QTcpSocket* sock) {
-  sock->setParent(this);
-  if (undefined_sessions_.contains(sock)) {
-    undefined_sessions_[sock]->deleteLater();
-    undefined_sessions_.remove(sock);
-  }
+void Webserver::handleWebsocketSession(const QUuid& sessid) {
+  Q_ASSERT(sessions_.contains(sessid));
 
-  qCDebug(log_webserver) << "Got WebSocket session from" << sock->peerAddress();
-  // handle
+  auto sock_owned = sessions_[sessid]->socket();
+  qCDebug(log_webserver) << "Got WebSocket session from" << sock_owned->peerAddress();
+}
+
+Q_SLOT void Webserver::handleTimeout(const QUuid& sessid) {
+  Q_ASSERT(sessions_.contains(sessid));
+  sessions_.remove(sessid);
 }
 
 }  // namespace librevault

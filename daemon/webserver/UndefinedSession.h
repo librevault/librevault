@@ -28,25 +28,26 @@
  */
 #pragma once
 
+#include "Session.h"
 #include "HTTPRequest.h"
 #include <QObject>
 #include <QTcpServer>
+#include <QTimer>
 
 namespace librevault {
 
-class UndefinedSession : public QObject {
+class UndefinedSession : public Session {
   Q_OBJECT
 
  public:
-  UndefinedSession(QTcpSocket* sock, QObject* parent);
+  UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObject* parent);
 
-  Q_SIGNAL void haveWebSocket(QTcpSocket* sock);
-  Q_SIGNAL void haveHttp(QTcpSocket* sock);
+  Q_SIGNAL void haveWebSocket(const QUuid& sessid);
+  Q_SIGNAL void haveHttp(const QUuid& sessid);
 
  private:
   Q_SLOT void readHandler();
 
-  QTcpSocket* sock_;
   HTTPRequest request;
 };
 

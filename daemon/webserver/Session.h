@@ -28,33 +28,36 @@
  */
 #pragma once
 
+#include "HTTPRequest.h"
 #include <QObject>
-#include <QSet>
-#include <QTcpServer>
+#include <QTcpSocket>
+#include <QTimer>
 #include <QUuid>
 #include <memory>
-#include <unordered_map>
 
 namespace librevault {
 
-class Session;
-
-class Webserver : public QObject {
+class Session : public QObject {
   Q_OBJECT
 
  public:
-  Webserver(QObject* parent);
+  Session(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
+      : QObject(parent), sessid_(sessid), sock_(sock) {
+    sock_->setParent(nullptr);
+    timer_ = new QTimer(this);
 
-  void start();
+    connect(timer_, &QTimer::timeout, this, [=] { emit timeout(sessionId()); });
+  }
 
- private:
-  QTcpServer* server_;
-  QHash<QUuid, QSharedPointer<Session>> sessions_;
+  Q_SIGNAL void timeout(const QUuid& sessid);
 
-  Q_SLOT void handleConnection();
-  Q_SLOT void handleHttpSession(const QUuid& sessid);
-  Q_SLOT void handleWebsocketSession(const QUuid& sessid);
-  Q_SLOT void handleTimeout(const QUuid& sessid);
+  const QUuid& sessionId() { return sessid_; }
+  std::unique_ptr<QTcpSocket> socket() { return std::move(sock_); }
+
+ protected:
+  const QUuid sessid_;
+  std::unique_ptr<QTcpSocket> sock_ = nullptr;
+  QTimer* timer_ = nullptr;
 };
 
 }  // namespace librevault

@@ -48,6 +48,9 @@ class HTTPRequest {
   void addData(const QByteArray& data);
   bool atEnd() const { return complete_1st_line && complete_header && content_length_ == 0; };
 
+  const QString& method() const {return method_;}
+  const QString& path() const {return path_;}
+  const QString& httpVersion() const {return http_;}
   const HeaderMap& headers() const { return headers_; }
 
  private:

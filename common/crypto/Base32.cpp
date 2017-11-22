@@ -31,17 +31,17 @@
 
 namespace librevault {
 
-QByteArray toBase32(QByteArray src) {
+QByteArray toBase32(const QByteArray& src) {
   std::string buffer;
-  CryptoPP::StringSource((uchar*)src.data(), src.size(), true,
+  CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
       new CryptoPP::Base32Encoder(new CryptoPP::StringSink(buffer)));
 
   return QByteArray::fromStdString(buffer);
 }
 
-QByteArray fromBase32(QByteArray src) {
+QByteArray fromBase32(const QByteArray& src) {
   std::string buffer;
-  CryptoPP::StringSource((uchar*)src.data(), src.size(), true,
+  CryptoPP::StringSource((const uchar*)src.data(), src.size(), true,
       new CryptoPP::Base32Decoder(new CryptoPP::StringSink(buffer)));
 
   return QByteArray::fromStdString(buffer);

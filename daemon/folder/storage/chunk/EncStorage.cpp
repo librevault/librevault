@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "EncStorage.h"
-#include "Base32.h"
+#include "crypto/Base32.h"
 #include "control/FolderParams.h"
 #include "folder/storage/ChunkStorage.h"
 #include <QLoggingCategory>

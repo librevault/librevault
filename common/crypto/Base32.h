@@ -31,7 +31,7 @@
 
 namespace librevault {
 
-QByteArray toBase32(QByteArray src);
-QByteArray fromBase32(QByteArray src);
+QByteArray toBase32(const QByteArray& src);
+QByteArray fromBase32(const QByteArray& src);
 
 }  // namespace librevault

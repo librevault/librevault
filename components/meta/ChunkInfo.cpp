@@ -16,7 +16,7 @@
 #include "ChunkInfo.h"
 #include "ChunkInfo_p.h"
 #include "Secret.h"
-#include <AES_CBC.h>
+#include "crypto/AES_CBC.h"
 #include <QCryptographicHash>
 #include <QDebug>
 

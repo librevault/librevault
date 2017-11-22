@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "EncryptedData.h"
-#include "AES_CBC.h"
+#include "crypto/AES_CBC.h"
 
 namespace librevault {
 

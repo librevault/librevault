@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "MetaInfo.h"
-#include "AES_CBC.h"
+#include "crypto/AES_CBC.h"
 #include "ChunkInfo.h"
 #include "EncryptedData.h"
 #include "MetaInfo_p.h"

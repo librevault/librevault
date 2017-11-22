@@ -27,18 +27,14 @@
  * files in the program, then also delete it here.
  */
 #include "AES_CBC.h"
+#include "util/rand.h"
 #include <cryptopp/aes.h>
 #include <cryptopp/ccm.h>
 #include <cryptopp/filters.h>
-#include <cryptopp/osrng.h>
 
 namespace librevault {
 
-QByteArray generateRandomIV() {
-  QByteArray random_iv(16, 0);
-  CryptoPP::AutoSeededRandomPool().GenerateBlock((uchar*)random_iv.data(), random_iv.size());
-  return random_iv;
-}
+QByteArray generateRandomIV() { return getRandomArray(16); }
 
 QByteArray encryptAesCbc(
     const QByteArray& src, const QByteArray& key, QByteArray iv, bool padding) {

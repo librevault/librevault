@@ -26,33 +26,37 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "HttpSession.h"
-#include "HttpResponse.h"
+#pragma once
 
-#include <QLoggingCategory>
-#include <QUrl>
+#include <QByteArray>
+#include <QHash>
+#include <QString>
+#include "util/exception.hpp"
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_http_session, "webserver.session.http")
+class HttpResponse {
+ public:
+  using HeaderMap = QHash<QString, QStringList>;
 
-HttpSession::HttpSession(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent)
-    : Session(sessid, sock, request, parent) {
-  HttpResponse response;
-  response.headers()["Connection"] = QStringList{"close"};
-  response.headers()["Content-Type"] = QStringList{"application/json"};
+  void setHttpVersion(const QString& version) { http_ = version; }
+  void setCode(quint16 code, const QString& comment = "");
+  void setData(QByteArray data) { data_ = std::move(data); }
 
-  QUrl request_url;
-  request_url.setAuthority(request.headers()["host"][0]);
-  request_url.setPath(request.path());
+  const HeaderMap& headers() const { return headers_; }
+  HeaderMap& headers() { return headers_; }
 
-  response.setData("{}");
-  response.setCode(200);
+  QByteArray makeResponse() const;
 
-  qCDebug(log_http_session) << response.makeResponse();
-  sock->write(response.makeResponse());
+ private:
+  QString http_ = QStringLiteral("1.1");
+  quint16 code_ = 200;
+  QString code_comment_ = QStringLiteral("OK");
+  QByteArray data_;
 
-  connect(sock, &QTcpSocket::disconnected, this, [=]{emit disconnected(sessid_);});
-}
+  HeaderMap headers_;
+
+  static QString fixupHeaderName(const QString& header);
+};
 
 }  // namespace librevault

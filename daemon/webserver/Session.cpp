@@ -26,46 +26,26 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
+#include "Session.h"
 
-#include <QByteArray>
-#include <QHash>
-#include <QString>
-#include "util/exception.hpp"
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class HTTPRequest {
- public:
-  DECLARE_EXCEPTION(ParseError, "HTTP request parsing failed");
-  DECLARE_EXCEPTION_DETAIL(NoContentLength, ParseError,
-      "Content-Length header not found, and chunked transfer is not supported");
-  DECLARE_EXCEPTION_DETAIL(InvalidHeader, ParseError, "HTTP header is invalid");
-  DECLARE_EXCEPTION_DETAIL(DataOverflow, ParseError, "Too much request data");
+Q_LOGGING_CATEGORY(log_session, "webserver.session");
 
-  using HeaderMap = QHash<QString, QStringList>;
+Session::Session(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent)
+    : QObject(parent), sessid_(sessid), sock_(sock), request_(request) {
+  sock_->setParent(this);
+  timer_ = new QTimer(this);
 
-  void addData(const QByteArray& data);
-  bool atEnd() const { return complete_1st_line && complete_header && content_length_ == 0; };
+  qCDebug(log_session) << "Started session:" << sessionId() << "this:" << this;
 
-  const QString& method() const {return method_;}
-  const QString& path() const {return path_;}
-  const QString& httpVersion() const {return http_;}
-  const HeaderMap& headers() const { return headers_; }
+  connect(timer_, &QTimer::timeout, this, [=] { emit timeout(sessionId()); });
+}
 
- private:
-  bool complete_1st_line = false;
-  bool complete_header = false;
-  int content_length_ = 0;
-  QByteArray incomplete_header_buf;
-
-  QString method_, path_, http_;
-  QByteArray request_data_;
-
-  HeaderMap headers_;
-
-  bool parseLine(QByteArray line);
-  void processHeaders();
-};
+Session::~Session() {
+  qCDebug(log_session) << "Stopped session:" << sessionId() << "this:" << this;
+}
 
 }  // namespace librevault

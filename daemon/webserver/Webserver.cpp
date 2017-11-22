@@ -28,12 +28,13 @@
  */
 #include "Webserver.h"
 
+#include "HttpSession.h"
 #include "UndefinedSession.h"
 #include "control/Config.h"
 #include <QDebug>
 #include <QLoggingCategory>
-#include <QTcpSocket>
 #include <QSharedPointer>
+#include <QTcpSocket>
 #include <QUuid>
 
 namespace librevault {
@@ -51,28 +52,36 @@ void Webserver::start() {
 
 void Webserver::handleConnection() {
   QTcpSocket* sock = server_->nextPendingConnection();
-  auto session = QSharedPointer<UndefinedSession>(new UndefinedSession(QUuid::createUuid(), sock, this));
-  connect(session.data(), &Session::timeout, this, &Webserver::handleTimeout);
+  auto session = QSharedPointer<UndefinedSession>(
+      new UndefinedSession(QUuid::createUuid(), sock, this), &QObject::deleteLater);
+  connect(session.data(), &Session::timeout, this, &Webserver::handleDisconnect);
   connect(session.data(), &UndefinedSession::haveHttp, this, &Webserver::handleHttpSession);
-  connect(session.data(), &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
+  connect(
+      session.data(), &UndefinedSession::haveWebSocket, this, &Webserver::handleWebsocketSession);
   sessions_.insert(session->sessionId(), session);
 }
 
 void Webserver::handleHttpSession(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
 
-  auto sock_owned = sessions_[sessid]->socket();
-  qCDebug(log_webserver) << "Got HTTP session from" << sock_owned->peerAddress();
+  sessions_[sessid] = QSharedPointer<HttpSession>(
+      new HttpSession(sessid, sessions_[sessid]->socket(), sessions_[sessid]->request(), this),
+      &QObject::deleteLater);
+  qCDebug(log_webserver) << "Got HTTP session from" << sessions_[sessid]->socket()->peerAddress();
+  connect(sessions_[sessid].data(), &Session::disconnected, this, &Webserver::handleDisconnect);
 }
 
 void Webserver::handleWebsocketSession(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
 
-  auto sock_owned = sessions_[sessid]->socket();
-  qCDebug(log_webserver) << "Got WebSocket session from" << sock_owned->peerAddress();
+  //sessions_[sessid] = QSharedPointer<UndefinedSession>(
+  //    new HttpSession(sessid, sessions_[sessid]->socket(), sessions_[sessid]->request(), this),
+  //    &QObject::deleteLater);
+  qCDebug(log_webserver) << "Got WebSocket session from" << sessions_[sessid]->socket()->peerAddress();
+  connect(sessions_[sessid].data(), &Session::disconnected, this, &Webserver::handleDisconnect);
 }
 
-Q_SLOT void Webserver::handleTimeout(const QUuid& sessid) {
+Q_SLOT void Webserver::handleDisconnect(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
   sessions_.remove(sessid);
 }

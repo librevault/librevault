@@ -28,8 +28,7 @@
  */
 #pragma once
 
-#include "HTTPRequest.h"
-#include "HTTPResponse.h"
+#include "HttpRequest.h"
 #include "Session.h"
 #include <QObject>
 #include <QTcpServer>
@@ -41,7 +40,7 @@ class HttpSession : public Session {
   Q_OBJECT
 
  public:
-  HttpSession(const QUuid& sessid, QTcpSocket* sock, const HTTPRequest& request, QObject* parent);
-};
+  HttpSession(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent);
+}; 
 
 }  // namespace librevault

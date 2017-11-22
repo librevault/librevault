@@ -26,20 +26,50 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "HTTPResponse.h"
+#include "HttpResponse.h"
 #include <QTextStream>
 
 namespace librevault {
 
-QByteArray HTTPResponse::makeResponse() const {
+static QHash<quint16, QString> code_map = {{200, "OK"}, {404, "Not Found"}};
+
+void HttpResponse::setCode(quint16 code, const QString& comment) {
+  code_ = code;
+  code_comment_ = comment.isEmpty() ? code_map.value(code_, comment) : comment;
+}
+
+QByteArray HttpResponse::makeResponse() const {
   QByteArray result;
-  QTextStream stream(&result, QIODevice::WriteOnly);
 
-  stream << QStringLiteral("HTTP/%1 %2 %3").arg(http_, QString::number(code_), code_comment_) << "\r\n";
-  stream << "\r\n";
+  HeaderMap auto_headers;
+  for (const auto& key : headers_.keys()) auto_headers[fixupHeaderName(key)] = headers_[key];
+  auto_headers["Content-Length"] = QStringList{QString::number(data_.size())};
 
-  stream.flush();
+  {
+    QTextStream header_stream(&result, QIODevice::WriteOnly);
+
+    header_stream
+        << QStringLiteral("HTTP/%1 %2 %3").arg(http_, QString::number(code_), code_comment_)
+        << "\r\n";
+    for (const auto& header_name : auto_headers.keys())
+      for (const auto& header_val : auto_headers[header_name])
+        header_stream << QStringLiteral("%1: %2").arg(header_name, header_val) << "\r\n";
+
+    header_stream << "\r\n";
+  }
+
+  result += data_;
+
   return result;
+}
+
+QString HttpResponse::fixupHeaderName(const QString& header) {
+  QStringList words = header.split('-');
+  for (auto& word : words) {
+    word = word.toLower();
+    word[0] = word[0].toUpper();
+  }
+  return words.join('-');
 }
 
 }  // namespace librevault

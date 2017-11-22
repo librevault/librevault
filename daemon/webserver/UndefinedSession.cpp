@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_undef_session, "webserver.undef")
+Q_LOGGING_CATEGORY(log_undef_session, "webserver.session.undef")
 
 UndefinedSession::UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObject* parent)
     : Session(sessid, sock, {}, parent) {
@@ -43,7 +43,9 @@ UndefinedSession::UndefinedSession(const QUuid& sessid, QTcpSocket* sock, QObjec
   sock->setParent(this);
   sock->startTransaction();
   connect(sock, &QIODevice::readyRead, this, &UndefinedSession::readHandler);
+  timer_->setSingleShot(true);
   timer_->setInterval(std::chrono::seconds(30));
+  timer_->start();
 }
 
 void UndefinedSession::readHandler() {

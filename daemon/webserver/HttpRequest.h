@@ -35,19 +35,23 @@
 
 namespace librevault {
 
-class HTTPResponse {
+class HttpRequest {
  public:
+  DECLARE_EXCEPTION(ParseError, "HTTP request parsing failed");
+  DECLARE_EXCEPTION_DETAIL(NoContentLength, ParseError,
+      "Content-Length header not found, and chunked transfer is not supported");
+  DECLARE_EXCEPTION_DETAIL(InvalidHeader, ParseError, "HTTP header is invalid");
+  DECLARE_EXCEPTION_DETAIL(DataOverflow, ParseError, "Too much request data");
+
   using HeaderMap = QHash<QString, QStringList>;
 
-  void setHttpVersion(const QString& version) { http_ = version; }
-  void setCode(quint16 code) { code_ = code; }
-  void setCodeComment(const QString& comment) { code_comment_ = comment; }
-  void setData(QByteArray data) { data_ = std::move(data); }
+  void addData(const QByteArray& data);
+  bool atEnd() const { return complete_1st_line && complete_header && content_length_ == 0; };
 
+  const QString& method() const {return method_;}
+  const QString& path() const {return path_;}
+  const QString& httpVersion() const {return http_;}
   const HeaderMap& headers() const { return headers_; }
-  HeaderMap& headers() { return headers_; }
-
-  QByteArray makeResponse() const;
 
  private:
   bool complete_1st_line = false;
@@ -55,12 +59,13 @@ class HTTPResponse {
   int content_length_ = 0;
   QByteArray incomplete_header_buf;
 
-  QString http_ = QStringLiteral("1.1");
-  quint16 code_ = 200;
-  QString code_comment_ = QStringLiteral("OK");
-  QByteArray data_;
+  QString method_, path_, http_;
+  QByteArray request_data_;
 
   HeaderMap headers_;
+
+  bool parseLine(QByteArray line);
+  void processHeaders();
 };
 
 }  // namespace librevault

@@ -54,7 +54,7 @@ class Webserver : public QObject {
   Q_SLOT void handleConnection();
   Q_SLOT void handleHttpSession(const QUuid& sessid);
   Q_SLOT void handleWebsocketSession(const QUuid& sessid);
-  Q_SLOT void handleTimeout(const QUuid& sessid);
+  Q_SLOT void handleDisconnect(const QUuid& sessid);
 };
 
 }  // namespace librevault

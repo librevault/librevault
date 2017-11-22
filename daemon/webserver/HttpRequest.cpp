@@ -26,7 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "HTTPRequest.h"
+#include "HttpRequest.h"
 #include <QBuffer>
 #include <QDebug>
 #include <QLoggingCategory>
@@ -39,7 +39,7 @@ Q_LOGGING_CATEGORY(log_parser, "webserver.http_parser")
 static QRegularExpression http_1st_line(R"(^(\S+) (\S+) HTTP\/(\d\.\d)$)");
 static QRegularExpression header_regex(R"(^(\S+): (.+)$)");
 
-void HTTPRequest::addData(const QByteArray& data) {
+void HttpRequest::addData(const QByteArray& data) {
   QBuffer data_buf;
   data_buf.setData(data);
   data_buf.open(QIODevice::ReadOnly);
@@ -71,7 +71,7 @@ void HTTPRequest::addData(const QByteArray& data) {
   }
 }
 
-bool HTTPRequest::parseLine(QByteArray line) {
+bool HttpRequest::parseLine(QByteArray line) {
   line = line.trimmed();
 
   if (!complete_1st_line) {
@@ -79,7 +79,7 @@ bool HTTPRequest::parseLine(QByteArray line) {
     if (!match.hasMatch()) throw InvalidHeader();
 
     method_ = match.captured(1).toUpper();
-    path_ = match.captured(2);
+    path_ = QByteArray::fromPercentEncoding(match.captured(2).toLatin1());
     http_ = match.captured(3);
 
     qCDebug(log_parser) << "Method:" << method_ << "Path:" << path_ << "Version" << http_;
@@ -98,7 +98,7 @@ bool HTTPRequest::parseLine(QByteArray line) {
   return line.isEmpty();
 }
 
-void HTTPRequest::processHeaders() {
+void HttpRequest::processHeaders() {
   if (method_ != "GET" && headers_.contains("content-length")) {
     if (!headers_.contains("content-length")) throw NoContentLength();
 

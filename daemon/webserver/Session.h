@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "HTTPRequest.h"
+#include "HttpRequest.h"
 #include <QObject>
 #include <QTcpSocket>
 #include <QTimer>
@@ -41,24 +41,20 @@ class Session : public QObject {
   Q_OBJECT
 
  public:
-  Session(const QUuid& sessid, QTcpSocket* sock, const HTTPRequest& request, QObject* parent)
-      : QObject(parent), sessid_(sessid), sock_(sock), request_(request) {
-    sock_->setParent(nullptr);
-    timer_ = new QTimer(this);
-
-    connect(timer_, &QTimer::timeout, this, [=] { emit timeout(sessionId()); });
-  }
+  Session(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent);
+  ~Session();
 
   Q_SIGNAL void timeout(const QUuid& sessid);
+  Q_SIGNAL void disconnected(const QUuid& sessid);
 
-  const QUuid& sessionId() { return sessid_; }
-
-  std::unique_ptr<QTcpSocket> socket() { return std::move(sock_); }
+  const QUuid& sessionId() const { return sessid_; }
+  QTcpSocket* socket() { return sock_; }
+  const HttpRequest& request() const {return request_;}
 
  protected:
   const QUuid sessid_;
-  std::unique_ptr<QTcpSocket> sock_ = nullptr;
-  HTTPRequest request_;
+  QTcpSocket* sock_ = nullptr;
+  HttpRequest request_;
 
   QTimer* timer_ = nullptr;
 };

@@ -88,41 +88,41 @@ QByteArray Parser::serialize(const Message& msg) const {
       payload.set_user_agent(convert<std::string>(msg.handshake.user_agent));
       payload.set_dht_port((quint16)msg.handshake.dht_port);
       stream << payload;
-    }
+    } break;
     case Message::Header::MessageType::INDEXUPDATE: {
       serialization::IndexUpdate payload;
       payload.set_path_keyed_hash(convert<std::string>(msg.indexupdate.revision.path_keyed_hash_));
       payload.set_revision(msg.indexupdate.revision.revision_);
       payload.set_bitfield(convert<std::string>(msg.indexupdate.bitfield));
       stream << payload;
-    }
+    } break;
     case Message::Header::MessageType::METAREQUEST: {
       serialization::MetaRequest payload;
       payload.set_path_keyed_hash(convert<std::string>(msg.metarequest.revision.path_keyed_hash_));
       payload.set_revision(msg.metarequest.revision.revision_);
       stream << payload;
-    }
+    } break;
     case Message::Header::MessageType::METARESPONSE: {
       serialization::MetaResponse payload;
       payload.set_meta(convert<std::string>(msg.metaresponse.smeta.rawMetaInfo()));
       payload.set_signature(convert<std::string>(msg.metaresponse.smeta.signature()));
       payload.set_bitfield(convert<std::string>(msg.metaresponse.bitfield));
       stream << payload;
-    }
+    } break;
     case Message::Header::MessageType::BLOCKREQUEST: {
       serialization::BlockRequest payload;
       payload.set_ct_hash(convert<std::string>(msg.blockrequest.ct_hash));
       payload.set_offset(msg.blockrequest.offset);
       payload.set_length(msg.blockrequest.length);
       stream << payload;
-    }
+    } break;
     case Message::Header::MessageType::BLOCKRESPONSE: {
       serialization::BlockResponse payload;
       payload.set_ct_hash(convert<std::string>(msg.blockresponse.ct_hash));
       payload.set_offset(msg.blockresponse.offset);
       payload.set_content(convert<std::string>(msg.blockresponse.content));
       stream << payload;
-    }
+    } break;
     default:;
   }
   return result;

@@ -27,7 +27,6 @@ target_include_directories(protocol PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 #============================================================================
 
 target_link_libraries(protocol PRIVATE librevault-common)
-target_link_libraries(protocol PRIVATE secret)
 target_link_libraries(protocol PRIVATE meta)
 target_link_libraries(protocol PUBLIC protobuf)
 target_link_libraries(protocol PRIVATE Qt5::Core)

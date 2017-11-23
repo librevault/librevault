@@ -29,7 +29,7 @@
 #include "AddFolder.h"
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include <QFileDialog>
 #include <QJsonObject>
 #include <QShowEvent>

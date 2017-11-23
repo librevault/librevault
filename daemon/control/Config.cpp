@@ -28,7 +28,7 @@
  */
 #include "Config.h"
 #include "Paths.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include "util/MergePatch.h"
 #include <QFile>
 #include <QFileInfo>

@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "Secret.h"
+#include "secret/Secret.h"
 #include <QCryptographicHash>
 
 namespace librevault {

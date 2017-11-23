@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "Secret.h"
+#include "secret/Secret.h"
 #include "SignedMeta.h"
 #include "control/FolderParams.h"
 #include "util/BandwidthCounter.h"

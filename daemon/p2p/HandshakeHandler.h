@@ -29,7 +29,7 @@
 #pragma once
 
 #include "Peer.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include "control/FolderParams.h"
 #include <QObject>
 

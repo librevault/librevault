@@ -33,7 +33,6 @@ add_executable(librevault-daemon ${SRCS})
 
 ##### Bundled libraries #####
 target_link_libraries(librevault-daemon QDocopt)
-target_link_libraries(librevault-daemon secret)
 target_link_libraries(librevault-daemon meta)
 target_link_libraries(librevault-daemon metakit)
 target_link_libraries(librevault-daemon protocol)
@@ -54,7 +53,6 @@ endif()
 
 target_link_libraries(librevault-daemon Boost::system Boost::filesystem Boost::thread)
 target_link_libraries(librevault-daemon Qt5::Core Qt5::Network Qt5::WebSockets)
-target_link_libraries(librevault-daemon cryptopp)
 target_link_libraries(librevault-daemon OpenSSL::SSL)
 
 ##### System libraries #####

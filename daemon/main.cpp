@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "control/FolderParams.h"
+#include "config/FolderParams.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
 #include <QHostAddress>

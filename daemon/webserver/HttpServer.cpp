@@ -26,21 +26,50 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
+#include "HttpServer.h"
 
-#include "HttpRequest.h"
-#include "Session.h"
-#include <QObject>
-#include <QTcpServer>
-#include <QTimer>
+#include "HttpResponse.h"
+#include "control/Config.h"
+#include <QLoggingCategory>
+#include <QUrl>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QRegularExpression>
 
 namespace librevault {
 
-class HttpSession : public Session {
-  Q_OBJECT
+Q_LOGGING_CATEGORY(log_http_session, "webserver.session.http")
 
- public:
-  HttpSession(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent);
-}; 
+HttpServer::HttpServer(QObject* parent) : QObject(parent) {}
+
+void HttpServer::handleConnection(
+    const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request) {
+  sock->setParent(this);
+  qCDebug(log_http_session) << "Handling HTTP request from:" << sock->peerAddress()
+                            << "sessid:" << sessid;
+
+  HttpResponse response;
+  response.headers()["Connection"] = QStringList{"close"};
+  response.headers()["Content-Type"] = QStringList{"application/json"};
+  response.setDate(QDateTime::currentDateTimeUtc());
+
+  try {
+    QRegularExpression regex(R"(^\/v1\/config)");
+    if(regex.match(request.path()).hasMatch()) {
+      response.setData(Config::get()->exportGlobals().toJson());
+    }
+  }catch(const std::exception& e) {
+    QJsonObject obj;
+    obj["error"] = e.what();
+
+    response.setCode(500);
+    response.setData(QJsonDocument(obj).toJson(QJsonDocument::Compact));
+  }
+
+  qCDebug(log_http_session) << response.makeResponse();
+  sock->write(response.makeResponse());
+
+  connect(sock, &QTcpSocket::disconnected, this, [=] { sock->deleteLater(); });
+}
 
 }  // namespace librevault

@@ -87,7 +87,7 @@ void Config::addFolder(QJsonObject fconfig) {
 }
 
 void Config::removeFolder(QByteArray folderid) {
-  emit folderRemoved(QByteArray((const char*)folderid.data(), folderid.size()));
+  emit folderRemoved(folderid);
   folders_custom_.remove(folderid);
   save();
 }

@@ -31,11 +31,18 @@
 
 namespace librevault {
 
-static QHash<quint16, QString> code_map = {{200, "OK"}, {404, "Not Found"}};
+static QHash<quint16, QString> code_map = {
+    {200, "OK"}, {404, "Not Found"}, {500, "Internal Server Error"}};
 
 void HttpResponse::setCode(quint16 code, const QString& comment) {
   code_ = code;
   code_comment_ = comment.isEmpty() ? code_map.value(code_, comment) : comment;
+}
+
+void HttpResponse::setDate(QDateTime datetime) {
+  datetime = datetime.toUTC();
+  QString date_string = QLocale::c().toString(datetime, "ddd, dd MMM yyyy hh:mm:ss") + " GMT";
+  headers_["Date"] = QStringList{date_string};
 }
 
 QByteArray HttpResponse::makeResponse() const {
@@ -43,21 +50,9 @@ QByteArray HttpResponse::makeResponse() const {
 
   HeaderMap auto_headers;
   for (const auto& key : headers_.keys()) auto_headers[fixupHeaderName(key)] = headers_[key];
-  auto_headers["Content-Length"] = QStringList{QString::number(data_.size())};
+  if (auto_length) auto_headers["Content-Length"] = QStringList{QString::number(data_.size())};
 
-  {
-    QTextStream header_stream(&result, QIODevice::WriteOnly);
-
-    header_stream
-        << QStringLiteral("HTTP/%1 %2 %3").arg(http_, QString::number(code_), code_comment_)
-        << "\r\n";
-    for (const auto& header_name : auto_headers.keys())
-      for (const auto& header_val : auto_headers[header_name])
-        header_stream << QStringLiteral("%1: %2").arg(header_name, header_val) << "\r\n";
-
-    header_stream << "\r\n";
-  }
-
+  result += writeHeaders(auto_headers);
   result += data_;
 
   return result;
@@ -70,6 +65,20 @@ QString HttpResponse::fixupHeaderName(const QString& header) {
     word[0] = word[0].toUpper();
   }
   return words.join('-');
+}
+
+QByteArray HttpResponse::writeHeaders(const HeaderMap& header_map) const {
+  QByteArray result;
+  QTextStream header_stream(&result, QIODevice::WriteOnly);
+
+  header_stream << QStringLiteral("HTTP/%1 %2 %3").arg(http_, QString::number(code_), code_comment_)
+                << "\r\n";
+  for (const auto& header_name : header_map.keys())
+    for (const auto& header_val : header_map[header_name])
+      header_stream << QStringLiteral("%1: %2").arg(header_name, header_val) << "\r\n";
+  header_stream << "\r\n";
+
+  return result;
 }
 
 }  // namespace librevault

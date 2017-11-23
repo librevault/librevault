@@ -26,33 +26,26 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "HttpSession.h"
-#include "HttpResponse.h"
+#pragma once
 
-#include <QLoggingCategory>
-#include <QUrl>
+#include "HttpRequest.h"
+#include "Session.h"
+#include <QObject>
+#include <QTcpServer>
+#include <QTimer>
 
 namespace librevault {
 
-Q_LOGGING_CATEGORY(log_http_session, "webserver.session.http")
+class HttpServer : public QObject {
+  Q_OBJECT
 
-HttpSession::HttpSession(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request, QObject* parent)
-    : Session(sessid, sock, request, parent) {
-  HttpResponse response;
-  response.headers()["Connection"] = QStringList{"close"};
-  response.headers()["Content-Type"] = QStringList{"application/json"};
+ public:
+  HttpServer(QObject* parent);
 
-  QUrl request_url;
-  request_url.setAuthority(request.headers()["host"][0]);
-  request_url.setPath(request.path());
+  Q_SLOT void handleConnection(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request);
 
-  response.setData("{}");
-  response.setCode(200);
+ private:
 
-  qCDebug(log_http_session) << response.makeResponse();
-  sock->write(response.makeResponse());
-
-  connect(sock, &QTcpSocket::disconnected, this, [=]{emit disconnected(sessid_);});
-}
+};
 
 }  // namespace librevault

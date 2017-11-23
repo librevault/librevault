@@ -29,6 +29,7 @@
 #pragma once
 
 #include <QByteArray>
+#include <QDateTime>
 #include <QHash>
 #include <QString>
 #include "util/exception.hpp"
@@ -40,11 +41,14 @@ class HttpResponse {
   using HeaderMap = QHash<QString, QStringList>;
 
   void setHttpVersion(const QString& version) { http_ = version; }
-  void setCode(quint16 code, const QString& comment = "");
+  void setCode(quint16 code, const QString& comment = QString());
   void setData(QByteArray data) { data_ = std::move(data); }
 
   const HeaderMap& headers() const { return headers_; }
   HeaderMap& headers() { return headers_; }
+
+  void setDate(QDateTime datetime);
+  void setAutoLength(bool content_length) { auto_length = content_length; }
 
   QByteArray makeResponse() const;
 
@@ -53,10 +57,12 @@ class HttpResponse {
   quint16 code_ = 200;
   QString code_comment_ = QStringLiteral("OK");
   QByteArray data_;
+  bool auto_length = true;
 
   HeaderMap headers_;
 
   static QString fixupHeaderName(const QString& header);
+  QByteArray writeHeaders(const HeaderMap& header_map) const;
 };
 
 }  // namespace librevault

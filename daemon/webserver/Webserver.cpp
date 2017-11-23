@@ -28,7 +28,7 @@
  */
 #include "Webserver.h"
 
-#include "HttpSession.h"
+#include "HttpServer.h"
 #include "UndefinedSession.h"
 #include "control/Config.h"
 #include <QDebug>
@@ -41,7 +41,10 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_webserver, "webserver")
 
-Webserver::Webserver(QObject* parent) : QObject(parent) { server_ = new QTcpServer(this); }
+Webserver::Webserver(QObject* parent) : QObject(parent) {
+  server_ = new QTcpServer(this);
+  http_server_ = new HttpServer(this);
+}
 
 void Webserver::start() {
   connect(server_, &QTcpServer::newConnection, this, &Webserver::handleConnection);
@@ -63,26 +66,35 @@ void Webserver::handleConnection() {
 
 void Webserver::handleHttpSession(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
+  Q_ASSERT(sessions_[sessid] != nullptr);
 
-  sessions_[sessid] = QSharedPointer<HttpSession>(
-      new HttpSession(sessid, sessions_[sessid]->socket(), sessions_[sessid]->request(), this),
-      &QObject::deleteLater);
-  qCDebug(log_webserver) << "Got HTTP session from" << sessions_[sessid]->socket()->peerAddress();
-  connect(sessions_[sessid].data(), &Session::disconnected, this, &Webserver::handleDisconnect);
+  auto& current_session = sessions_[sessid];
+  auto request = current_session->request();
+  auto sock = current_session->socket();
+  sock->setParent(this);
+
+  sessions_.remove(sessid);
+
+  qCDebug(log_webserver) << "Got HTTP request from" << sock->peerAddress();
+  http_server_->handleConnection(sessid, sock, request);
 }
 
 void Webserver::handleWebsocketSession(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
+  Q_ASSERT(sessions_[sessid] != nullptr);
 
-  //sessions_[sessid] = QSharedPointer<UndefinedSession>(
+  // sessions_[sessid] = QSharedPointer<UndefinedSession>(
   //    new HttpSession(sessid, sessions_[sessid]->socket(), sessions_[sessid]->request(), this),
   //    &QObject::deleteLater);
-  qCDebug(log_webserver) << "Got WebSocket session from" << sessions_[sessid]->socket()->peerAddress();
+  qCDebug(log_webserver) << "Got WebSocket session from"
+                         << sessions_[sessid]->socket()->peerAddress();
   connect(sessions_[sessid].data(), &Session::disconnected, this, &Webserver::handleDisconnect);
 }
 
 Q_SLOT void Webserver::handleDisconnect(const QUuid& sessid) {
   Q_ASSERT(sessions_.contains(sessid));
+  Q_ASSERT(sessions_[sessid] != nullptr);
+
   sessions_.remove(sessid);
 }
 

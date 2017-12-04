@@ -26,12 +26,12 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "ConfigModel.h"
+#include "ClientSettings.h"
 #include <QJsonArray>
 
-namespace librevault {
+namespace librevault::models {
 
-ConfigModel::ConfigModel(const QJsonObject& doc) {
+ClientSettings::ClientSettings(const QJsonObject& doc) {
   // Necessary
   client_name = doc["client_name"].toString();
   control_listen = doc["control_listen"].toInt();
@@ -49,8 +49,7 @@ ConfigModel::ConfigModel(const QJsonObject& doc) {
   bttracker_num_want = doc["bttracker_num_want"].toInt();
   bttracker_min_interval = std::chrono::seconds(doc["bttracker_min_interval"].toInt());
   bttracker_azureus_id = doc["bttracker_azureus_id"].toString();
-  bttracker_reconnect_interval =
-      std::chrono::seconds(doc["bttracker_reconnect_interval"].toInt());
+  bttracker_reconnect_interval = std::chrono::seconds(doc["bttracker_reconnect_interval"].toInt());
   bttracker_packet_timeout = std::chrono::seconds(doc["bttracker_packet_timeout"].toInt());
   mainline_dht_enabled = doc["mainline_dht_enabled"].toBool();
   mainline_dht_port = doc["mainline_dht_port"].toInt();
@@ -58,4 +57,4 @@ ConfigModel::ConfigModel(const QJsonObject& doc) {
     mainline_dht_routers << router.toString();
 }
 
-}  // namespace librevault
+}  // namespace librevault::models

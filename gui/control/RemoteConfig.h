@@ -44,7 +44,7 @@ public:
 
 public slots:
 	/* Global configuration */
-	librevault::ConfigModel getGlobals() override;
+	librevault::models::ClientSettings getGlobals() override;
 	void setGlobal(QString name, QVariant value);
 
 	/* Folder configuration */

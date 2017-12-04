@@ -33,12 +33,12 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class EncStorage : public QObject {
   Q_OBJECT
 
  public:
-  EncStorage(const FolderParams& params, QObject* parent);
+  EncStorage(const FolderSettings& params, QObject* parent);
 
   bool haveChunk(const QByteArray& ct_hash) const noexcept;
   QByteArray getChunk(const QByteArray& ct_hash) const;
@@ -46,7 +46,7 @@ class EncStorage : public QObject {
   void removeChunk(const QByteArray& ct_hash);
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
   mutable QReadWriteLock storage_mtx_;
 
   QString makeChunkCtName(const QByteArray& ct_hash) const noexcept;

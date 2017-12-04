@@ -63,8 +63,8 @@ void Config::patchGlobals(const QJsonObject& patch) {
   emit changed();
 }
 
-ConfigModel Config::getGlobals() {
-  return ConfigModel(mergePatch(globals_defaults_, globals_custom_).toObject());
+models::ClientSettings Config::getGlobals() {
+  return models::ClientSettings(mergePatch(globals_defaults_, globals_custom_).toObject());
 }
 
 QJsonDocument Config::exportUserGlobals() { return QJsonDocument(globals_custom_); }

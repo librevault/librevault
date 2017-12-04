@@ -36,7 +36,7 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class SignedMeta;
 class Storage;
 
@@ -68,14 +68,14 @@ class MetaTaskScheduler : public QObject {
   Q_OBJECT
 
  public:
-  MetaTaskScheduler(const FolderParams& params, QObject* parent);
+  MetaTaskScheduler(const FolderSettings& params, QObject* parent);
   ~MetaTaskScheduler() override;
 
   Q_SLOT void scheduleTask(QueuedTask* task);
   Q_SIGNAL void aboutToStop();
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
 
   QMutex tq_mtx_;
   QHash<QByteArray, MetaTaskQueue> tq_;

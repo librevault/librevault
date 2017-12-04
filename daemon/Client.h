@@ -42,7 +42,7 @@ class PeerServer;
 class GenericNatService;
 
 class FolderGroup;
-class FolderParams;
+class FolderSettings;
 
 class BandwidthCounter;
 
@@ -81,7 +81,7 @@ class Client : public QCoreApplication {
   void initDiscovery();
   void deinitDiscovery();
 
-  void initFolder(const FolderParams& params);
+  void initFolder(const FolderSettings& params);
   void deinitFolder(const QByteArray& folderid);
 
   void initializeAll();

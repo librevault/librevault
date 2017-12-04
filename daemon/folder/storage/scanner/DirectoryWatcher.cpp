@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DirectoryWatcher.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "folder/IgnoreList.h"
 #include "util/conv_fspath.h"
 #include <path_normalizer.h>
@@ -64,7 +64,7 @@ void DirectoryWatcherThread::monitorLoop() {
   });
 }
 
-DirectoryWatcher::DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent)
+DirectoryWatcher::DirectoryWatcher(const FolderSettings& params, IgnoreList* ignore_list, QObject* parent)
     : QObject(parent), params_(params), ignore_list_(ignore_list) {
   qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
 

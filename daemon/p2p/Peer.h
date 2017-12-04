@@ -46,14 +46,14 @@ class FolderGroup;
 class NodeKey;
 class HandshakeHandler;
 class PingHandler;
-class FolderParams;
+class FolderSettings;
 class StateGuard;
 
 class Peer : public QObject {
   Q_OBJECT
 
  public:
-  Peer(const FolderParams& params, NodeKey* node_key, BandwidthCounter* bc_all,
+  Peer(const FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
       BandwidthCounter* bc_blocks, QObject* parent);
   ~Peer() override;
 

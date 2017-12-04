@@ -26,35 +26,27 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#pragma once
-#include "secret/Secret.h"
-#include <QJsonObject>
-#include <QList>
-#include <QString>
-#include <QUrl>
-#include <chrono>
+#include "FolderSettings.h"
+#include <QJsonArray>
 
 namespace librevault {
 
-struct FolderParams {
-  FolderParams(const QJsonObject& fconfig);
+FolderSettings::FolderSettings(const QJsonObject& doc) {
+  // Necessary
+  secret = Secret(doc["secret"].toString());
+  path = doc["path"].toString();
 
-  QByteArray folderid() const { return secret.folderid(); }
-  QString effectiveSystemPath() const {
-    return system_path.isEmpty() ? path + "/.libvervault" : system_path;
-  };
+  // Optional
+  system_path = doc["system_path"].toString();
+  index_event_timeout = std::chrono::milliseconds(doc["index_event_timeout"].toInt());
+  preserve_unix_attrib = doc["preserve_unix_attrib"].toBool();
+  preserve_windows_attrib = doc["preserve_windows_attrib"].toBool();
+  preserve_symlinks = doc["preserve_symlinks"].toBool();
+  full_rescan_interval = std::chrono::seconds(doc["full_rescan_interval"].toInt());
 
-  /* Parameters */
-  Secret secret;
-  QString path;
-  QString system_path;
-  std::chrono::milliseconds index_event_timeout;
-  bool preserve_unix_attrib;
-  bool preserve_windows_attrib;
-  bool preserve_symlinks;
-  std::chrono::seconds full_rescan_interval;
-  QList<QUrl> nodes;
-  bool mainline_dht_enabled;
-};
+  for (const auto& node : doc["nodes"].toArray()) nodes.push_back(node.toString());
 
-} /* namespace librevault */
+  mainline_dht_enabled = doc["mainline_dht_enabled"].toBool();
+}
+
+}  // namespace librevault

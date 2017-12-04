@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Index.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "util/blob.h"
 #include <QFile>
 #include <ChunkInfo.h>
@@ -37,7 +37,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_index, "folder.storage.index")
 
-Index::Index(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {
+Index::Index(const FolderSettings& params, QObject* parent) : QObject(parent), params_(params) {
 	auto db_filepath = params_.effectiveSystemPath() + "/librevault.db";
 
 	if(QFile::exists(db_filepath))

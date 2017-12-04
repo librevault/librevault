@@ -34,17 +34,17 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 
 class IgnoreList : public QObject {
   Q_OBJECT
  public:
-  IgnoreList(const FolderParams& params, QObject* parent);
+  IgnoreList(const FolderSettings& params, QObject* parent);
 
   bool isIgnored(const QByteArray& normpath);
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
   QStringList filters_wildcard_;
 
   QMutex ignorelist_mtx;

@@ -28,7 +28,7 @@
  */
 #include "EncStorage.h"
 #include "crypto/Base32.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "folder/storage/ChunkStorage.h"
 #include <QLoggingCategory>
 
@@ -36,7 +36,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_encstorage, "folder.storage.chunk.openstorage")
 
-EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
+EncStorage::EncStorage(const FolderSettings& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QString EncStorage::makeChunkCtName(const QByteArray& ct_hash) const noexcept {
   return "chunk-" + QString::fromLatin1(toBase32(ct_hash));

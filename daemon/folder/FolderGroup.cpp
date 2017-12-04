@@ -49,7 +49,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "folder");
 
-FolderGroup::FolderGroup(FolderParams params, QObject* parent)
+FolderGroup::FolderGroup(FolderSettings params, QObject* parent)
     : QObject(parent), params_(std::move(params)) {
   createServiceDirectory();
 

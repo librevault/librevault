@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "OpenStorage.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
 #include <path_normalizer.h>
@@ -37,7 +37,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_openstorage, "folder.storage.chunk.openstorage")
 
-OpenStorage::OpenStorage(const FolderParams& params, Index* index, QObject* parent)
+OpenStorage::OpenStorage(const FolderSettings& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {}
 
 bool OpenStorage::haveChunk(const QByteArray& ct_hash) const noexcept {

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
 #include <QHostAddress>
@@ -51,7 +51,7 @@ class PeerPool : public QObject {
   Q_OBJECT
 
  public:
-  PeerPool(const FolderParams& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
+  PeerPool(const FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
       MulticastProvider* multicast, QObject* parent);
   ~PeerPool() override;
 
@@ -68,10 +68,10 @@ class PeerPool : public QObject {
   BandwidthCounter* getBlockCounterAll() { return &bc_all_; }
   BandwidthCounter* getBlockCounterBlocks() { return &bc_blocks_; }
 
-  inline const FolderParams& params() const { return params_; }
+  inline const FolderSettings& params() const { return params_; }
 
  private:
-  FolderParams params_;
+  FolderSettings params_;
   NodeKey* node_key_;
   BandwidthCounter bc_all_, bc_blocks_;
 

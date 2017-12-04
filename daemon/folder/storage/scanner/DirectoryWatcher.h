@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class IgnoreList;
 
 class DirectoryWatcherThread : public QThread {
@@ -62,11 +62,11 @@ class DirectoryWatcher : public QObject {
   void newPath(QString abspath);
 
  public:
-  DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
+  DirectoryWatcher(const FolderSettings& params, IgnoreList* ignore_list, QObject* parent);
   virtual ~DirectoryWatcher();
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
   IgnoreList* ignore_list_;
 
   DirectoryWatcherThread* watcher_thread_;

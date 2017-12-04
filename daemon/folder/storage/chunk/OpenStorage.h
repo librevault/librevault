@@ -34,7 +34,7 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class Secret;
 class Index;
 
@@ -42,13 +42,13 @@ class OpenStorage : public QObject {
   Q_OBJECT
 
  public:
-  OpenStorage(const FolderParams& params, Index* index, QObject* parent);
+  OpenStorage(const FolderSettings& params, Index* index, QObject* parent);
 
   bool haveChunk(const QByteArray& ct_hash) const noexcept;
   QByteArray getChunk(const QByteArray& ct_hash) const;
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
   Index* index_;
 };
 

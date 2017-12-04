@@ -42,7 +42,7 @@ inline std::size_t hash_value(const QByteArray& val) {
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class Storage;
 class ChunkStorage;
 

@@ -29,7 +29,7 @@
 #pragma once
 #include "secret/Secret.h"
 #include "SignedMeta.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
 #include <QObject>
@@ -61,15 +61,15 @@ class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(FolderParams params, QObject* parent);
+  FolderGroup(FolderSettings params, QObject* parent);
   virtual ~FolderGroup();
 
-  const FolderParams& params() const { return params_; }
+  const FolderSettings& params() const { return params_; }
 
   void setPeerPool(PeerPool* pool);
 
  private:
-  const FolderParams params_;
+  const FolderSettings params_;
 
   // Local storage
   IgnoreList* ignore_list_ = nullptr;

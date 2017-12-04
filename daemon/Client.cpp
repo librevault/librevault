@@ -138,7 +138,7 @@ void Client::deinitDiscovery() {
   delete mcast_;
 }
 
-void Client::initFolder(const FolderParams& params) {
+void Client::initFolder(const FolderSettings& params) {
   auto fgroup = new FolderGroup(params, this);
   groups_[params.folderid()] = fgroup;
 

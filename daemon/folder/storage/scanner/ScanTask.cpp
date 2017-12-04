@@ -28,7 +28,7 @@
  */
 #include "ScanTask.h"
 #include "crypto/AES_CBC.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/Index.h"
 #include "util/human_size.h"
@@ -48,7 +48,7 @@ Q_LOGGING_CATEGORY(log_indexer, "folder.storage.scanner")
 
 namespace librevault {
 
-ScanTask::ScanTask(QString abspath, const FolderParams& params, Index* index,
+ScanTask::ScanTask(QString abspath, const FolderSettings& params, Index* index,
     IgnoreList* ignore_list, QObject* parent)
     : QueuedTask(SCAN, parent),
       abspath_(std::move(abspath)),

@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "ConfigModel.h"
+#include "ClientSettings.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>
@@ -47,7 +47,7 @@ signals:
 public:
 	/* Global configuration */
 	virtual void patchGlobals(const QJsonObject& patch) {};
-	virtual ConfigModel getGlobals() = 0;
+	virtual models::ClientSettings getGlobals() = 0;
 
 	/* Folder configuration */
 	virtual void addFolder(QJsonObject fconfig) = 0;

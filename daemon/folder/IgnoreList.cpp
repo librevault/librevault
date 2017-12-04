@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "IgnoreList.h"
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include <path_normalizer.h>
 #include <QDirIterator>
 #include <QLoggingCategory>
@@ -36,7 +36,7 @@ Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 
 namespace librevault {
 
-IgnoreList::IgnoreList(const FolderParams& params, QObject* parent)
+IgnoreList::IgnoreList(const FolderSettings& params, QObject* parent)
     : QObject(parent),
       params_(params),
       ignorelist_mtx(QMutex::Recursive),

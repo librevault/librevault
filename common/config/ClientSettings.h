@@ -26,27 +26,39 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "FolderParams.h"
-#include <QJsonArray>
+#pragma once
+#include <QJsonObject>
+#include <QList>
+#include <QString>
+#include <chrono>
 
-namespace librevault {
+namespace librevault::models {
 
-FolderParams::FolderParams(const QJsonObject& fconfig) {
-  // Necessary
-  secret = Secret(fconfig["secret"].toString());
-  path = fconfig["path"].toString();
+struct ClientSettings {
+  explicit ClientSettings(const QJsonObject& doc);
 
-  // Optional
-  system_path = fconfig["system_path"].toString();
-  index_event_timeout = std::chrono::milliseconds(fconfig["index_event_timeout"].toInt());
-  preserve_unix_attrib = fconfig["preserve_unix_attrib"].toBool();
-  preserve_windows_attrib = fconfig["preserve_windows_attrib"].toBool();
-  preserve_symlinks = fconfig["preserve_symlinks"].toBool();
-  full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
+  // Parameters
+  QString client_name;
+  quint16 control_listen;
+  quint16 p2p_listen;
+  qint16 p2p_download_slots;
+  std::chrono::seconds p2p_request_timeout;
+  quint32 p2p_block_size;
+  bool natpmp_enabled;
+  std::chrono::seconds natpmp_lifetime;
+  bool upnp_enabled;
+  std::chrono::seconds predef_repeat_interval;
+  bool multicast_enabled;
+  std::chrono::seconds multicast_repeat_interval;
+  bool bttracker_enabled;
+  quint16 bttracker_num_want;
+  std::chrono::seconds bttracker_min_interval;
+  QString bttracker_azureus_id;
+  std::chrono::seconds bttracker_reconnect_interval;
+  std::chrono::seconds bttracker_packet_timeout;
+  bool mainline_dht_enabled;
+  quint16 mainline_dht_port;
+  QList<QString> mainline_dht_routers;
+};
 
-  for (const auto& node : fconfig["nodes"].toArray()) nodes.push_back(node.toString());
-
-  mainline_dht_enabled = fconfig["mainline_dht_enabled"].toBool();
-}
-
-}  // namespace librevault
+}  // namespace librevault::models

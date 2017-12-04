@@ -46,12 +46,12 @@
 
 namespace librevault {
 
-class FolderParams;
+class FolderSettings;
 class Index;
 class ChunkStorage;
 
 struct DownloadChunk : boost::noncopyable {
-  DownloadChunk(const FolderParams& params, const QByteArray& ct_hash, quint32 size);
+  DownloadChunk(const FolderSettings& params, const QByteArray& ct_hash, quint32 size);
 
   ChunkFileBuilder builder;
   QHash<Peer*, std::shared_ptr<StateGuard>> owned_by;
@@ -68,7 +68,7 @@ class Downloader : public QObject {
  public:
   DECLARE_EXCEPTION(InconsistentMetaBetweenPeers, "Meta is different between nodes");
 
-  Downloader(const FolderParams& params, Index* index, QObject* parent);
+  Downloader(const FolderSettings& params, Index* index, QObject* parent);
 
  public slots:
   void notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield);
@@ -87,7 +87,7 @@ class Downloader : public QObject {
   void untrackPeer(Peer* peer);
 
  private:
-  const FolderParams& params_;
+  const FolderSettings& params_;
   Index* index_;
 
   QHash<QByteArray, DownloadChunkPtr> down_chunks_;

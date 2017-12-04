@@ -28,7 +28,7 @@
  */
 #include "AssembleTask.h"
 
-#include "config/FolderParams.h"
+#include "config/FolderSettings.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
@@ -50,7 +50,7 @@ Q_LOGGING_CATEGORY(log_assembler, "folder.storage.assembler")
 
 namespace librevault {
 
-AssembleTask::AssembleTask(SignedMeta smeta, const FolderParams& params, Index* index,
+AssembleTask::AssembleTask(SignedMeta smeta, const FolderSettings& params, Index* index,
     ChunkStorage* chunk_storage, QObject* parent)
     : QueuedTask(ASSEMBLE, parent),
       params_(params),

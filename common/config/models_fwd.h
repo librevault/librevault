@@ -27,34 +27,15 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "secret/Secret.h"
-#include <QJsonObject>
-#include <QList>
-#include <QString>
-#include <QUrl>
-#include <chrono>
+
+namespace librevault::models {
+
+struct ClientSettings;
+
+}  // namespace librevault::models
 
 namespace librevault {
 
-struct FolderSettings {
-  FolderSettings(const QJsonObject& doc);
+struct FolderSettings;
 
-  QByteArray folderid() const { return secret.folderid(); }
-  QString effectiveSystemPath() const {
-    return system_path.isEmpty() ? path + "/.libvervault" : system_path;
-  };
-
-  /* Parameters */
-  Secret secret;
-  QString path;
-  QString system_path;
-  std::chrono::milliseconds index_event_timeout;
-  bool preserve_unix_attrib;
-  bool preserve_windows_attrib;
-  bool preserve_symlinks;
-  std::chrono::seconds full_rescan_interval;
-  QList<QUrl> nodes;
-  bool mainline_dht_enabled;
-};
-
-} /* namespace librevault */
+}  // namespace librevault::models

@@ -28,7 +28,7 @@
  */
 #include "AssembleTask.h"
 
-#include "config/FolderSettings.h"
+#include "config/models.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"

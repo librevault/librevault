@@ -29,7 +29,7 @@
 #include "Downloader.h"
 
 #include "control/Config.h"
-#include "config/FolderSettings.h"
+#include "config/models.h"
 #include "folder/storage/Index.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>

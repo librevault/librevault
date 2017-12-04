@@ -31,6 +31,7 @@
 #define EXIT_RESTART 451
 
 #include "util/BandwidthCounter.h"
+#include "config/models_fwd.h"
 #include <QCoreApplication>
 #include <QMap>
 
@@ -42,7 +43,6 @@ class PeerServer;
 class GenericNatService;
 
 class FolderGroup;
-class FolderSettings;
 
 class BandwidthCounter;
 

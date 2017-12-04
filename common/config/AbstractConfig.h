@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "ClientSettings.h"
+#include "models.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>

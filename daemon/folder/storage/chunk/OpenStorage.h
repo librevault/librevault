@@ -28,13 +28,13 @@
  */
 #pragma once
 #include "MetaInfo.h"
+#include "config/models_fwd.h"
 #include <ChunkInfo.h>
 #include <QObject>
 #include <memory>
 
 namespace librevault {
 
-class FolderSettings;
 class Secret;
 class Index;
 

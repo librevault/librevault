@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "config/models_fwd.h"
 #include <QList>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
@@ -42,7 +44,6 @@ inline std::size_t hash_value(const QByteArray& val) {
 
 namespace librevault {
 
-class FolderSettings;
 class Storage;
 class ChunkStorage;
 

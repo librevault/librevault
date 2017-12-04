@@ -27,18 +27,20 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
 #include "MetaInfo.h"
 #include "SignedMeta.h"
 #include "TimeoutHandler.h"
+#include "config/models_fwd.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
+#include "util/exception.hpp"
 #include "v2/Parser.h"
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
 #include <QWebSocket>
 #include <memory>
-#include "util/exception.hpp"
 
 namespace librevault {
 
@@ -46,7 +48,6 @@ class FolderGroup;
 class NodeKey;
 class HandshakeHandler;
 class PingHandler;
-class FolderSettings;
 class StateGuard;
 
 class Peer : public QObject {

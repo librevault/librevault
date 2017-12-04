@@ -28,6 +28,7 @@
  */
 #pragma once
 
+#include "config/models_fwd.h"
 #include <QHash>
 #include <QMutex>
 #include <QObject>
@@ -36,7 +37,6 @@
 
 namespace librevault {
 
-class FolderSettings;
 class SignedMeta;
 class Storage;
 

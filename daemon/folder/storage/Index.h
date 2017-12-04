@@ -27,14 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/SQLiteWrapper.h"
+
 #include "SignedMeta.h"
-#include <util/exception.hpp>
+#include "config/models_fwd.h"
+#include "util/exception.hpp"
+#include "util/SQLiteWrapper.h"
 #include <QObject>
 
 namespace librevault {
-
-class FolderSettings;
 
 class Index : public QObject {
 	Q_OBJECT

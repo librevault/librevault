@@ -27,17 +27,18 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "models_fwd.h"
+#include "secret/Secret.h"
 #include <QJsonObject>
 #include <QList>
 #include <QString>
+#include <QUrl>
 #include <chrono>
 
 namespace librevault::models {
 
 struct ClientSettings {
-  explicit ClientSettings(const QJsonObject& doc);
-
-  // Parameters
   QString client_name;
   quint16 control_listen;
   quint16 p2p_listen;
@@ -58,7 +59,37 @@ struct ClientSettings {
   std::chrono::seconds bttracker_packet_timeout;
   bool mainline_dht_enabled;
   quint16 mainline_dht_port;
-  QList<QString> mainline_dht_routers;
+  QStringList mainline_dht_routers;
+
+  QJsonObject toJson() const;
+  static ClientSettings fromJson(const QJsonObject& j);
 };
 
 }  // namespace librevault::models
+
+namespace librevault {
+
+struct FolderSettings {
+  FolderSettings(const QJsonObject& doc);
+
+  QByteArray folderid() const { return secret.folderid(); }
+  QString effectiveSystemPath() const {
+    return system_path.isEmpty() ? path + "/.libvervault" : system_path;
+  };
+
+  /* Parameters */
+  Secret secret;
+  QString path;
+  QString system_path;
+  bool preserve_unix_attrib;
+  bool preserve_windows_attrib;
+  bool preserve_symlinks;
+  std::chrono::seconds full_rescan_interval;
+  QList<QUrl> nodes;
+  bool mainline_dht_enabled;
+
+  QJsonObject toJson() const;
+  static FolderSettings fromJson(const QJsonObject& j);
+};
+
+}  // namespace librevault

@@ -27,13 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include "config/models_fwd.h"
 #include <QFile>
 #include <QReadWriteLock>
 #include <memory>
 
 namespace librevault {
 
-class FolderSettings;
 class EncStorage : public QObject {
   Q_OBJECT
 

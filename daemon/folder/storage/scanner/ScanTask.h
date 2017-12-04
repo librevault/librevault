@@ -30,15 +30,15 @@
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
 #include "metakit.h"
+#include "config/models_fwd.h"
+#include "util/exception.hpp"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
 #include <QString>
-#include "util/exception.hpp"
 
 namespace librevault {
 
-class FolderSettings;
 class Index;
 class IgnoreList;
 class ScanTask : public QueuedTask {

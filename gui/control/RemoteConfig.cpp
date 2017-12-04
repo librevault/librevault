@@ -80,7 +80,7 @@ void RemoteConfig::removeFolder(QByteArray folderid) {
 }
 
 librevault::models::ClientSettings RemoteConfig::getGlobals() {
-	return librevault::models::ClientSettings(cached_globals_);
+	return librevault::models::ClientSettings::fromJson(cached_globals_);
 }
 
 QJsonObject RemoteConfig::getFolder(QByteArray folderid) {

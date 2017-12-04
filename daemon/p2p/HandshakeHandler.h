@@ -30,7 +30,7 @@
 
 #include "Peer.h"
 #include "secret/Secret.h"
-#include "config/FolderSettings.h"
+#include "config/models.h"
 #include <QObject>
 
 namespace librevault {

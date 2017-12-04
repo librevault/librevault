@@ -64,7 +64,7 @@ void Config::patchGlobals(const QJsonObject& patch) {
 }
 
 models::ClientSettings Config::getGlobals() {
-  return models::ClientSettings(mergePatch(globals_defaults_, globals_custom_).toObject());
+  return models::ClientSettings::fromJson(mergePatch(globals_defaults_, globals_custom_).toObject());
 }
 
 QJsonDocument Config::exportUserGlobals() { return QJsonDocument(globals_custom_); }

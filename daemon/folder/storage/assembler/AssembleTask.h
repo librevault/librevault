@@ -28,6 +28,7 @@
  */
 #pragma once
 #include "SignedMeta.h"
+#include "config/models_fwd.h"
 #include "folder/storage/MetaTaskScheduler.h"
 #include "util/exception.hpp"
 #include <QObject>
@@ -37,7 +38,6 @@ namespace librevault {
 
 class Archive;
 class Index;
-class FolderSettings;
 class ChunkStorage;
 class Secret;
 

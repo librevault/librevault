@@ -28,13 +28,13 @@
  */
 #pragma once
 #include "MetaInfo.h"
+#include "config/models_fwd.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 #include <dir_monitor/dir_monitor.hpp>
 
 namespace librevault {
 
-class FolderSettings;
 class IgnoreList;
 
 class DirectoryWatcherThread : public QThread {

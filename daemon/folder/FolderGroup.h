@@ -29,7 +29,7 @@
 #pragma once
 #include "secret/Secret.h"
 #include "SignedMeta.h"
-#include "config/FolderSettings.h"
+#include "config/models.h"
 #include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
 #include <QObject>

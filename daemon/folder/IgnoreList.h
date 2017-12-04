@@ -27,14 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+
+#include "config/models_fwd.h"
 #include <QDateTime>
 #include <QObject>
 #include <QMutex>
 #include <QStringList>
 
 namespace librevault {
-
-class FolderSettings;
 
 class IgnoreList : public QObject {
   Q_OBJECT

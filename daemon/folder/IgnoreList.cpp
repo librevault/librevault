@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "IgnoreList.h"
-#include "control/FolderParams.h"
+#include "config/FolderParams.h"
 #include <path_normalizer.h>
 #include <QDirIterator>
 #include <QLoggingCategory>

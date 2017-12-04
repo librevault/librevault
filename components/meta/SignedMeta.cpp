@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SignedMeta.h"
-#include <Secret.h>
+#include "secret/Secret.h"
 #include <cryptopp/osrng.h>
 #include <cryptopp/ecp.h>
 #include <cryptopp/sha3.h>

@@ -28,7 +28,7 @@
  */
 #include "Secret.h"
 #include "SecretPrivate.h"
-#include "LuhnModN.h"
+#include "crypto/LuhnModN.h"
 
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/oids.h>

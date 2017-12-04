@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "ui_FolderProperties.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include <QDialog>
 #include <QJsonObject>
 #include <memory>

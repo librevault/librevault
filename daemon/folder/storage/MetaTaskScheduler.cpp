@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "MetaTaskScheduler.h"
-#include <control/FolderParams.h>
+#include "config/FolderParams.h"
 #include <QDebug>
 #include <QLoggingCategory>
 #include <QTimer>

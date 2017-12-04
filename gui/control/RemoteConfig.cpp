@@ -28,7 +28,7 @@
  */
 #include "RemoteConfig.h"
 #include "Daemon.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QNetworkReply>

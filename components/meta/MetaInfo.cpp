@@ -18,7 +18,7 @@
 #include "ChunkInfo.h"
 #include "EncryptedData.h"
 #include "MetaInfo_p.h"
-#include <Secret.h>
+#include "secret/Secret.h"
 #include <google/protobuf/util/json_util.h>
 #include <google/protobuf/util/message_differencer.h>
 #include <QCryptographicHash>

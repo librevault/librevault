@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "metakit.h"
-#include "Secret.h"
+#include "secret/Secret.h"
 #include "path_normalizer.h"
 #include "timestamp_granularity.h"
 #include <MetaInfo.h>

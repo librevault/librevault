@@ -30,7 +30,7 @@
 #include "folder/storage/chunk/MemoryCachedStorage.h"
 #include "folder/storage/chunk/EncStorage.h"
 #include "folder/storage/chunk/OpenStorage.h"
-#include "control/FolderParams.h"
+#include "config/FolderParams.h"
 #include "folder/FolderGroup.h"
 #include <QBitArray>
 

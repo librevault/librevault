@@ -28,7 +28,7 @@
  */
 #include "EncStorage.h"
 #include "crypto/Base32.h"
-#include "control/FolderParams.h"
+#include "config/FolderParams.h"
 #include "folder/storage/ChunkStorage.h"
 #include <QLoggingCategory>
 

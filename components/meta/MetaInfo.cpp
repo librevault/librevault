@@ -144,7 +144,7 @@ quint32 MetaInfo::rabinShift() const { return d->proto.rabin_shift(); }
 void MetaInfo::rabinShift(quint32 rabin_shift) { d->proto.set_rabin_shift(rabin_shift); }
 
 quint64 MetaInfo::rabinMask() const { return d->proto.rabin_mask(); }
-void MetaInfo::rabinMask(quint64 rabin_mask) { d->proto.rabin_mask(); }
+void MetaInfo::rabinMask(quint64 rabin_mask) { d->proto.set_rabin_mask(rabin_mask); }
 
 QList<ChunkInfo> MetaInfo::chunks() const {
   QList<ChunkInfo> result;

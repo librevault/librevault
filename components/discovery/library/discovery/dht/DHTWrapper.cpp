@@ -110,7 +110,8 @@ int convertAF(QAbstractSocket::NetworkLayerProtocol qaf) {
 }  // namespace
 
 DHTWrapper::DHTWrapper(
-    QUdpSocket* socket4, QUdpSocket* socket6, const QByteArray& own_id, QObject* parent) {
+    QUdpSocket* socket4, QUdpSocket* socket6, const QByteArray& own_id, QObject* parent)
+    : QObject(parent) {
   int rc = dht_init(socket4->socketDescriptor(), socket6->socketDescriptor(),
       (const unsigned char*)own_id.leftJustified(20, 0, true).data(), nullptr);
   Q_ASSERT(rc > 0);
@@ -132,9 +133,7 @@ DHTWrapper::~DHTWrapper() {
 void DHTWrapper::pingNode(const Endpoint& endpoint) {
   if (!enabled()) return;
 
-  sockaddr_storage sa;
-  quint16 sa_size;
-  std::tie(sa, sa_size) = endpoint.toSockaddr();
+  auto [sa, sa_size] = endpoint.toSockaddr();
   dht_ping_node((const sockaddr*)&sa, sa_size);
 }
 
@@ -200,11 +199,10 @@ void DHTWrapper::processDatagram(QUdpSocket* socket) {
   QHostAddress addr;
   quint16 port;
   qint64 datagram_size = socket->readDatagram(buffer.data(), buffer.size(), &addr, &port);
-  buffer.leftJustified(datagram_size + 1, 0);  // strictly must be null-terminated
+  buffer.resize(datagram_size);
+  buffer.push_back('\0'); // strictly must be null-terminated
 
-  sockaddr_storage sa;
-  quint16 sa_size;
-  std::tie(sa, sa_size) = Endpoint{addr, port}.toSockaddr();
+  auto [sa, sa_size] = Endpoint{addr, port}.toSockaddr();
 
   time_t tosleep;
   dht_periodic(buffer.data(), buffer.size(), (sockaddr*)&sa, sa_size, &tosleep,

@@ -30,17 +30,24 @@
 
 #include "HttpResponse.h"
 #include "control/Config.h"
-#include <QLoggingCategory>
-#include <QUrl>
-#include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QList>
+#include <QLoggingCategory>
+#include <QPair>
 #include <QRegularExpression>
+#include <QUrl>
+#include <QTcpSocket>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_http_session, "webserver.session.http")
 
-HttpServer::HttpServer(QObject* parent) : QObject(parent) {}
+HttpServer::HttpServer(QObject* parent) : QObject(parent) {
+  registerHandler(R"(^\/v1\/config)", [](HandlerContext& ctx){
+    ctx.response.setData(Config::get()->exportGlobals().toJson(QJsonDocument::Compact));
+  });
+}
 
 void HttpServer::handleConnection(
     const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request) {
@@ -54,11 +61,15 @@ void HttpServer::handleConnection(
   response.setDate(QDateTime::currentDateTimeUtc());
 
   try {
-    QRegularExpression regex(R"(^\/v1\/config)");
-    if(regex.match(request.path()).hasMatch()) {
-      response.setData(Config::get()->exportGlobals().toJson());
+    for (auto& handler : handlers_) {
+      auto match = handler.first.match(request.path());
+      if (!match.hasMatch()) continue;
+
+      HandlerContext context{sessid, request, response, match};
+      handler.second(context);
+      break;
     }
-  }catch(const std::exception& e) {
+  } catch (const std::exception& e) {
     QJsonObject obj;
     obj["error"] = e.what();
 
@@ -70,6 +81,10 @@ void HttpServer::handleConnection(
   sock->write(response.makeResponse());
 
   connect(sock, &QTcpSocket::disconnected, this, [=] { sock->deleteLater(); });
+}
+
+void HttpServer::registerHandler(const QString& regex, Handler handler) {
+  handlers_.push_back({QRegularExpression(regex), handler});
 }
 
 }  // namespace librevault

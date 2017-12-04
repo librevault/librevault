@@ -29,12 +29,22 @@
 #pragma once
 
 #include "HttpRequest.h"
-#include "Session.h"
+#include "HttpResponse.h"
 #include <QObject>
+#include <QRegularExpression>
 #include <QTcpServer>
 #include <QTimer>
 
 namespace librevault {
+
+struct HandlerContext {
+  const QUuid& sessid;
+  const HttpRequest& request;
+  HttpResponse& response;
+  const QRegularExpressionMatch& regex_path_match;
+};
+
+using Handler = std::function<void(HandlerContext&)>;
 
 class HttpServer : public QObject {
   Q_OBJECT
@@ -45,7 +55,9 @@ class HttpServer : public QObject {
   Q_SLOT void handleConnection(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& request);
 
  private:
+  QList<QPair<QRegularExpression, Handler>> handlers_;
 
+  void registerHandler(const QString& regex, Handler handler);
 };
 
 }  // namespace librevault

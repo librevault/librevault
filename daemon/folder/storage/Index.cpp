@@ -37,7 +37,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_index, "folder.storage.index")
 
-Index::Index(const FolderSettings& params, QObject* parent) : QObject(parent), params_(params) {
+Index::Index(const models::FolderSettings& params, QObject* parent) : QObject(parent), params_(params) {
 	auto db_filepath = params_.effectiveSystemPath() + "/librevault.db";
 
 	if(QFile::exists(db_filepath))

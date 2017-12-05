@@ -35,7 +35,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_handshake, "p2p.handshake")
 
 HandshakeHandler::HandshakeHandler(
-    const FolderSettings& params, QString client_name, QString user_agent, QObject* parent)
+    const models::FolderSettings& params, QString client_name, QString user_agent, QObject* parent)
     : QObject(parent),
       params_(params),
       local_client_name_(std::move(client_name)),

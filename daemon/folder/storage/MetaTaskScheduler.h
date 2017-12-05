@@ -68,14 +68,14 @@ class MetaTaskScheduler : public QObject {
   Q_OBJECT
 
  public:
-  MetaTaskScheduler(const FolderSettings& params, QObject* parent);
+  MetaTaskScheduler(const models::FolderSettings& params, QObject* parent);
   ~MetaTaskScheduler() override;
 
   Q_SLOT void scheduleTask(QueuedTask* task);
   Q_SIGNAL void aboutToStop();
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
 
   QMutex tq_mtx_;
   QHash<QByteArray, MetaTaskQueue> tq_;

@@ -81,7 +81,7 @@ class Client : public QCoreApplication {
   void initDiscovery();
   void deinitDiscovery();
 
-  void initFolder(const FolderSettings& params);
+  void initFolder(const models::FolderSettings& params);
   void deinitFolder(const QByteArray& folderid);
 
   void initializeAll();

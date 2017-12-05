@@ -61,15 +61,15 @@ class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(FolderSettings params, QObject* parent);
+  FolderGroup(models::FolderSettings params, QObject* parent);
   virtual ~FolderGroup();
 
-  const FolderSettings& params() const { return params_; }
+  const models::FolderSettings& params() const { return params_; }
 
   void setPeerPool(PeerPool* pool);
 
  private:
-  const FolderSettings params_;
+  const models::FolderSettings params_;
 
   // Local storage
   IgnoreList* ignore_list_ = nullptr;

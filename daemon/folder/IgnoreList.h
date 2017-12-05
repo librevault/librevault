@@ -39,12 +39,12 @@ namespace librevault {
 class IgnoreList : public QObject {
   Q_OBJECT
  public:
-  IgnoreList(const FolderSettings& params, QObject* parent);
+  IgnoreList(const models::FolderSettings& params, QObject* parent);
 
   bool isIgnored(const QByteArray& normpath);
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   QStringList filters_wildcard_;
 
   QMutex ignorelist_mtx;

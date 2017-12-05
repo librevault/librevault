@@ -45,7 +45,7 @@ class HandshakeHandler : public QObject {
   DECLARE_EXCEPTION_DETAIL(
       InvalidTokenError, HandshakeError, "Remote authentication token is invalid");
 
-  HandshakeHandler(const FolderSettings& params, QString client_name, QString user_agent,
+  HandshakeHandler(const models::FolderSettings& params, QString client_name, QString user_agent,
       QObject* parent = nullptr);
 
   Q_SIGNAL void handshakeSuccess();
@@ -62,7 +62,7 @@ class HandshakeHandler : public QObject {
   bool isValid() const { return handshake_received_; }
 
  private:
-  FolderSettings params_;
+  models::FolderSettings params_;
   Peer::Role role_ = Peer::UNDEFINED;
 
   QString local_client_name_, remote_client_name_;  // Client name

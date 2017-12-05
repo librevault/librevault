@@ -40,7 +40,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_peer, "p2p.peer");
 Q_LOGGING_CATEGORY(log_peer_msg, "p2p.peer.msg");
 
-Peer::Peer(const FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
+Peer::Peer(const models::FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
     BandwidthCounter* bc_blocks, QObject* parent)
     : QObject(parent), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {
   qCDebug(log_peer) << "new peer";

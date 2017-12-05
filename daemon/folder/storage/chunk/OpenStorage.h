@@ -42,13 +42,13 @@ class OpenStorage : public QObject {
   Q_OBJECT
 
  public:
-  OpenStorage(const FolderSettings& params, Index* index, QObject* parent);
+  OpenStorage(const models::FolderSettings& params, Index* index, QObject* parent);
 
   bool haveChunk(const QByteArray& ct_hash) const noexcept;
   QByteArray getChunk(const QByteArray& ct_hash) const;
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   Index* index_;
 };
 

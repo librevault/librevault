@@ -36,7 +36,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_scheduler, "folder.storage.scheduler")
 
-MetaTaskScheduler::MetaTaskScheduler(const FolderSettings& params, QObject* parent)
+MetaTaskScheduler::MetaTaskScheduler(const models::FolderSettings& params, QObject* parent)
     : QObject(parent), params_(params), tq_mtx_(QMutex::Recursive) {
   threadpool_ = new QThreadPool(this);
 }

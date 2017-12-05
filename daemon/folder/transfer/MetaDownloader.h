@@ -43,7 +43,7 @@ class MetaDownloader : public QObject {
   Q_OBJECT
 
  public:
-  MetaDownloader(const FolderSettings& params, Index* index, Downloader* downloader,
+  MetaDownloader(const models::FolderSettings& params, Index* index, Downloader* downloader,
       MetaTaskScheduler* task_scheduler, QObject* parent);
 
   DECLARE_EXCEPTION(CantDownload, "Meta is forbidden for download");
@@ -55,7 +55,7 @@ class MetaDownloader : public QObject {
   void handleMetaReply(Peer* peer, const SignedMeta& smeta, QBitArray bitfield);
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   Index* index_;
   Downloader* downloader_;
   MetaTaskScheduler* task_scheduler_;

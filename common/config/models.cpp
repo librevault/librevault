@@ -130,10 +130,6 @@ ClientSettings ClientSettings::fromJson(const QJsonObject& j) {
   return st;
 }
 
-}  // namespace librevault::models
-
-namespace librevault {
-
 FolderSettings::FolderSettings(const QJsonObject& doc) { fromJson(doc); }
 
 QJsonObject FolderSettings::toJson() const {
@@ -168,4 +164,4 @@ FolderSettings FolderSettings::fromJson(const QJsonObject& j) {
   return st;
 }
 
-}  // namespace librevault
+}  // namespace librevault::models

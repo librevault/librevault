@@ -54,7 +54,7 @@ class Peer : public QObject {
   Q_OBJECT
 
  public:
-  Peer(const FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
+  Peer(const models::FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
       BandwidthCounter* bc_blocks, QObject* parent);
   ~Peer() override;
 

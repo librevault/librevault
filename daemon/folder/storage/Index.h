@@ -45,7 +45,7 @@ signals:
 public:
 	DECLARE_EXCEPTION(NoSuchMeta, "Requested Meta not found");
 
-	Index(const FolderSettings& params, QObject* parent);
+	Index(const models::FolderSettings& params, QObject* parent);
 
 	/* Meta manipulators */
 	bool haveMeta(const MetaInfo::PathRevision& path_revision) noexcept;
@@ -66,7 +66,7 @@ public:
 	QList<SignedMeta> containingChunk(const QByteArray& ct_hash);
 
 private:
-	const FolderSettings& params_;
+	const models::FolderSettings& params_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 

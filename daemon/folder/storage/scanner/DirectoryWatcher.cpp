@@ -64,7 +64,7 @@ void DirectoryWatcherThread::monitorLoop() {
   });
 }
 
-DirectoryWatcher::DirectoryWatcher(const FolderSettings& params, IgnoreList* ignore_list, QObject* parent)
+DirectoryWatcher::DirectoryWatcher(const models::FolderSettings& params, IgnoreList* ignore_list, QObject* parent)
     : QObject(parent), params_(params), ignore_list_(ignore_list) {
   qRegisterMetaType<boost::asio::dir_monitor_event>("boost::asio::dir_monitor_event");
 

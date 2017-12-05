@@ -38,10 +38,10 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_downloader, "folder.transfer.downloader")
 
-DownloadChunk::DownloadChunk(const FolderSettings& params, const QByteArray& ct_hash, quint32 size)
+DownloadChunk::DownloadChunk(const models::FolderSettings& params, const QByteArray& ct_hash, quint32 size)
     : builder(params.effectiveSystemPath(), ct_hash, size), ct_hash(ct_hash) {}
 
-Downloader::Downloader(const FolderSettings& params, Index* index, QObject* parent)
+Downloader::Downloader(const models::FolderSettings& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {
   maintain_timer_ = new QTimer(this);
   connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);

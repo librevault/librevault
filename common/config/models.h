@@ -65,10 +65,6 @@ struct ClientSettings {
   static ClientSettings fromJson(const QJsonObject& j);
 };
 
-}  // namespace librevault::models
-
-namespace librevault {
-
 struct FolderSettings {
   FolderSettings(const QJsonObject& doc);
 
@@ -92,4 +88,4 @@ struct FolderSettings {
   static FolderSettings fromJson(const QJsonObject& j);
 };
 
-}  // namespace librevault
+}  // namespace librevault::models

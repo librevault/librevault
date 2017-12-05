@@ -38,7 +38,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_metadownloader, "folder.transfer.metadownloader")
 
-MetaDownloader::MetaDownloader(const FolderSettings& params, Index* index, Downloader* downloader,
+MetaDownloader::MetaDownloader(const models::FolderSettings& params, Index* index, Downloader* downloader,
     MetaTaskScheduler* task_scheduler, QObject* parent)
     : QObject(parent),
       params_(params),

@@ -62,11 +62,11 @@ class DirectoryWatcher : public QObject {
   void newPath(QString abspath);
 
  public:
-  DirectoryWatcher(const FolderSettings& params, IgnoreList* ignore_list, QObject* parent);
+  DirectoryWatcher(const models::FolderSettings& params, IgnoreList* ignore_list, QObject* parent);
   virtual ~DirectoryWatcher();
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   IgnoreList* ignore_list_;
 
   DirectoryWatcherThread* watcher_thread_;

@@ -50,7 +50,7 @@ Q_LOGGING_CATEGORY(log_assembler, "folder.storage.assembler")
 
 namespace librevault {
 
-AssembleTask::AssembleTask(SignedMeta smeta, const FolderSettings& params, Index* index,
+AssembleTask::AssembleTask(SignedMeta smeta, const models::FolderSettings& params, Index* index,
     ChunkStorage* chunk_storage, QObject* parent)
     : QueuedTask(ASSEMBLE, parent),
       params_(params),

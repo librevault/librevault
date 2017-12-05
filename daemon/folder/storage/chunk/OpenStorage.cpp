@@ -37,7 +37,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_openstorage, "folder.storage.chunk.openstorage")
 
-OpenStorage::OpenStorage(const FolderSettings& params, Index* index, QObject* parent)
+OpenStorage::OpenStorage(const models::FolderSettings& params, Index* index, QObject* parent)
     : QObject(parent), params_(params), index_(index) {}
 
 bool OpenStorage::haveChunk(const QByteArray& ct_hash) const noexcept {

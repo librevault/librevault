@@ -38,7 +38,7 @@ class EncStorage : public QObject {
   Q_OBJECT
 
  public:
-  EncStorage(const FolderSettings& params, QObject* parent);
+  EncStorage(const models::FolderSettings& params, QObject* parent);
 
   bool haveChunk(const QByteArray& ct_hash) const noexcept;
   QByteArray getChunk(const QByteArray& ct_hash) const;
@@ -46,7 +46,7 @@ class EncStorage : public QObject {
   void removeChunk(const QByteArray& ct_hash);
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   mutable QReadWriteLock storage_mtx_;
 
   QString makeChunkCtName(const QByteArray& ct_hash) const noexcept;

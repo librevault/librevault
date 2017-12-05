@@ -51,7 +51,7 @@ class PeerPool : public QObject {
   Q_OBJECT
 
  public:
-  PeerPool(const FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
+  PeerPool(const models::FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
       MulticastProvider* multicast, QObject* parent);
   ~PeerPool() override;
 
@@ -68,10 +68,10 @@ class PeerPool : public QObject {
   BandwidthCounter* getBlockCounterAll() { return &bc_all_; }
   BandwidthCounter* getBlockCounterBlocks() { return &bc_blocks_; }
 
-  inline const FolderSettings& params() const { return params_; }
+  inline const models::FolderSettings& params() const { return params_; }
 
  private:
-  FolderSettings params_;
+  models::FolderSettings params_;
   NodeKey* node_key_;
   BandwidthCounter bc_all_, bc_blocks_;
 

@@ -47,7 +47,7 @@ class ScanTask : public QueuedTask {
  public:
   DECLARE_EXCEPTION(AbortIndex, "Indexing had been aborted");
 
-  ScanTask(QString abspath, const FolderSettings& params, Index* index, IgnoreList* ignore_list,
+  ScanTask(QString abspath, const models::FolderSettings& params, Index* index, IgnoreList* ignore_list,
       QObject* parent);
   virtual ~ScanTask();
 
@@ -60,7 +60,7 @@ class ScanTask : public QueuedTask {
 
  private:
   QString abspath_;
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   Index* index_;
   IgnoreList* ignore_list_;
 

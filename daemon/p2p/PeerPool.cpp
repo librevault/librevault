@@ -37,7 +37,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_peerpool, "p2p.peerpool")
 
-PeerPool::PeerPool(const FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
+PeerPool::PeerPool(const models::FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
     MulticastProvider* multicast, QObject* parent)
     : QObject(parent), params_(params), node_key_(node_key) {
   bt_group_ = new BTGroup(params.folderid(), bt, this);

@@ -45,7 +45,7 @@ class AssembleTask : public QueuedTask {
  public:
   DECLARE_EXCEPTION(abortAssemble, "Assembly aborted");
 
-  AssembleTask(SignedMeta smeta, const FolderSettings& params, Index* index, ChunkStorage* chunk_storage,
+  AssembleTask(SignedMeta smeta, const models::FolderSettings& params, Index* index, ChunkStorage* chunk_storage,
                QObject* parent);
   ~AssembleTask() override;
 
@@ -53,7 +53,7 @@ class AssembleTask : public QueuedTask {
   QByteArray pathKeyedHash() const override;
 
  private:
-  const FolderSettings& params_;
+  const models::FolderSettings& params_;
   Index* index_;
   ChunkStorage* chunk_storage_;
 

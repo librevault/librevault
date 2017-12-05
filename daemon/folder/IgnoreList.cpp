@@ -36,7 +36,7 @@ Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 
 namespace librevault {
 
-IgnoreList::IgnoreList(const FolderSettings& params, QObject* parent)
+IgnoreList::IgnoreList(const models::FolderSettings& params, QObject* parent)
     : QObject(parent),
       params_(params),
       ignorelist_mtx(QMutex::Recursive),

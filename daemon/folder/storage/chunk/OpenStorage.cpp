@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "OpenStorage.h"
-#include "config/models.h"
+#include "config/FolderSettings.h"
 #include "folder/storage/ChunkStorage.h"
 #include "folder/storage/Index.h"
 #include <path_normalizer.h>

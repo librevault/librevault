@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "models.h"
+#include "FolderSettings.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>
@@ -47,7 +47,7 @@ signals:
 public:
 	/* Global configuration */
 	virtual void patchGlobals(const QJsonObject& patch) {};
-	virtual models::ClientSettings getGlobals() = 0;
+	virtual QJsonObject getGlobals() = 0;
 
 	/* Folder configuration */
 	virtual void addFolder(QJsonObject fconfig) = 0;
@@ -57,8 +57,8 @@ public:
 	virtual QList<QByteArray> listFolders() = 0;
 
 	/* Export/Import */
-	virtual QJsonDocument exportGlobals() = 0;
-	virtual QJsonDocument exportFolders() = 0;
+	virtual QJsonObject exportGlobals() = 0;
+	virtual QJsonArray exportFolders() = 0;
 };
 
 } /* namespace librevault */

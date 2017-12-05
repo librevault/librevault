@@ -26,7 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "models.h"
+#include "FolderSettings.h"
 #include <QJsonArray>
 #include <QVariant>
 
@@ -73,62 +73,6 @@ void unpackValue(Secret& val, const QJsonValue& j) {
 }  // namespace librevault
 
 namespace librevault::models {
-
-QJsonObject ClientSettings::toJson() const {
-  QJsonObject j;
-
-  packValue(j["client_name"], client_name);
-  packValue(j["control_listen"], control_listen);
-  packValue(j["p2p_listen"], p2p_listen);
-  packValue(j["p2p_download_slots"], p2p_download_slots);
-  packValue(j["p2p_request_timeout"], p2p_request_timeout);
-  packValue(j["p2p_block_size"], (int)p2p_block_size);
-  packValue(j["natpmp_enabled"], natpmp_enabled);
-  packValue(j["natpmp_lifetime"], natpmp_lifetime);
-  packValue(j["upnp_enabled"], upnp_enabled);
-  packValue(j["predef_repeat_interval"], predef_repeat_interval);
-  packValue(j["multicast_enabled"], multicast_enabled);
-  packValue(j["multicast_repeat_interval"], multicast_repeat_interval);
-  packValue(j["bttracker_enabled"], bttracker_enabled);
-  packValue(j["bttracker_num_want"], bttracker_num_want);
-  packValue(j["bttracker_min_interval"], bttracker_min_interval);
-  packValue(j["bttracker_azureus_id"], bttracker_azureus_id);
-  packValue(j["bttracker_reconnect_interval"], bttracker_reconnect_interval);
-  packValue(j["bttracker_packet_timeout"], bttracker_packet_timeout);
-  packValue(j["mainline_dht_enabled"], mainline_dht_enabled);
-  packValue(j["mainline_dht_port"], mainline_dht_port);
-  packValue(j["mainline_dht_routers"], mainline_dht_routers);
-
-  return j;
-}
-
-ClientSettings ClientSettings::fromJson(const QJsonObject& j) {
-  ClientSettings st{};
-
-  unpackValue(st.client_name, j["client_name"]);
-  unpackValue(st.control_listen, j["control_listen"]);
-  unpackValue(st.p2p_listen, j["p2p_listen"]);
-  unpackValue(st.p2p_download_slots, j["p2p_download_slots"]);
-  unpackValue(st.p2p_request_timeout, j["p2p_request_timeout"]);
-  unpackValue(st.p2p_block_size, j["p2p_block_size"]);
-  unpackValue(st.natpmp_enabled, j["natpmp_enabled"]);
-  unpackValue(st.natpmp_lifetime, j["natpmp_lifetime"]);
-  unpackValue(st.upnp_enabled, j["upnp_enabled"]);
-  unpackValue(st.predef_repeat_interval, j["predef_repeat_interval"]);
-  unpackValue(st.multicast_enabled, j["multicast_enabled"]);
-  unpackValue(st.multicast_repeat_interval, j["multicast_repeat_interval"]);
-  unpackValue(st.bttracker_enabled, j["bttracker_enabled"]);
-  unpackValue(st.bttracker_num_want, j["bttracker_num_want"]);
-  unpackValue(st.bttracker_min_interval, j["bttracker_min_interval"]);
-  unpackValue(st.bttracker_azureus_id, j["bttracker_azureus_id"]);
-  unpackValue(st.bttracker_reconnect_interval, j["bttracker_reconnect_interval"]);
-  unpackValue(st.bttracker_packet_timeout, j["bttracker_packet_timeout"]);
-  unpackValue(st.mainline_dht_enabled, j["mainline_dht_enabled"]);
-  unpackValue(st.mainline_dht_port, j["mainline_dht_port"]);
-  unpackValue(st.mainline_dht_routers, j["mainline_dht_routers"]);
-
-  return st;
-}
 
 FolderSettings::FolderSettings(const QJsonObject& doc) { fromJson(doc); }
 

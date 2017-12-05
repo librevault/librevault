@@ -29,7 +29,7 @@
 #pragma once
 
 #include "config/AbstractConfig.h"
-#include "config/models.h"
+#include "config/FolderSettings.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
@@ -57,7 +57,7 @@ class Config : public AbstractConfig {
 
   /* Global configuration */
   void patchGlobals(const QJsonObject& patch) override;
-  models::ClientSettings getGlobals() override;
+  QJsonObject getGlobals() override;
 
   /* Folder configuration */
   void addFolder(QJsonObject fconfig) override;
@@ -67,12 +67,12 @@ class Config : public AbstractConfig {
   QList<QByteArray> listFolders() override;
 
   /* Export/Import */
-  QJsonDocument exportUserGlobals();
-  QJsonDocument exportGlobals() override;
+  QJsonObject exportUserGlobals();
+  QJsonObject exportGlobals() override;
   void importGlobals(QJsonDocument globals_conf);
 
-  QJsonDocument exportUserFolders();
-  QJsonDocument exportFolders() override;
+  QJsonArray exportUserFolders();
+  QJsonArray exportFolders() override;
   void importFolders(QJsonDocument folders_conf);
 
  protected:

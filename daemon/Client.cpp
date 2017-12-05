@@ -106,11 +106,11 @@ void Client::initDiscovery() {
   // Multicast
   mcast_ = new MulticastProvider(this);
   mcast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
-  mcast_->setEnabled(Config::get()->getGlobals().multicast_enabled);
+  mcast_->setEnabled(Config::get()->getGlobals()["multicast_enabled"].toBool());
 
   // DHT
   dht_ = new DHTProvider(this);
-  dht_->setEnabled(Config::get()->getGlobals().mainline_dht_enabled);
+  dht_->setEnabled(Config::get()->getGlobals()["mainline_dht_enabled"].toBool());
   dht_->addRouter("router.utorrent.com", 6881);
   dht_->addRouter("router.bittorrent.com", 6881);
   dht_->addRouter("dht.transmissionbt.com", 6881);
@@ -119,8 +119,8 @@ void Client::initDiscovery() {
 
   // BitTorrent
   bt_ = new BTProvider(this);
-  bt_->setEnabled(Config::get()->getGlobals().bttracker_enabled);
-  bt_->setIDPrefix(Config::get()->getGlobals().bttracker_azureus_id.toLatin1());
+  bt_->setEnabled(Config::get()->getGlobals()["bttracker_enabled"].toBool());
+  bt_->setIDPrefix(Config::get()->getGlobals()["bttracker_azureus_id"].toString().toLatin1());
 
   // common
   mcast_->setAnnouncePort(peerserver_->externalPort());

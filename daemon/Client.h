@@ -31,7 +31,7 @@
 #define EXIT_RESTART 451
 
 #include "util/BandwidthCounter.h"
-#include "config/models_fwd.h"
+#include "config/FolderSettings_fwd.h"
 #include <QCoreApplication>
 #include <QMap>
 

@@ -96,33 +96,33 @@ void Settings::reset_ui_states() {
 	}
 
 	/* Daemon settings */
-	ui_pane_general_.line_device->setText(daemon_->config()->getGlobals().client_name); // client_name
+	ui_pane_general_.line_device->setText(daemon_->config()->getGlobals()["client_name"].toString()); // client_name
 
 	// p2p_download_slots
-	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobals().p2p_download_slots);
+	ui_pane_network_.spin_down_slots->setValue(daemon_->config()->getGlobals()["p2p_download_slots"].toInt());
 
 	// p2p_listen
-	unsigned short p2p_listen = daemon_->config()->getGlobals().p2p_listen;
+	unsigned short p2p_listen = daemon_->config()->getGlobals()["p2p_listen"].toInt();
 	ui_pane_network_.box_port_random->setChecked(p2p_listen == 0);
 	ui_pane_network_.spin_port->setEnabled(p2p_listen != 0);
 	ui_pane_network_.spin_port->setValue(p2p_listen);
 
 	// natpmp_enabled
-	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobals().natpmp_enabled);
+	ui_pane_network_.natpmp_box->setChecked(daemon_->config()->getGlobals()["natpmp_enabled"].toBool());
 
 	// upnp_enabled
-	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobals().upnp_enabled);
+	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobals()["upnp_enabled"].toBool());
 
 	// bttracker_enabled
-	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobals().bttracker_enabled);
+	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobals()["bttracker_enabled"].toBool());
 
 	// multicast4_enabled || multicast6_enabled
 	ui_pane_network_.local_discovery_box->setChecked(
-		daemon_->config()->getGlobals().multicast_enabled
+		daemon_->config()->getGlobals()["multicast_enabled"].toBool()
 	);
 
 	// mainline_dht_enabled
-	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobals().mainline_dht_enabled);
+	ui_pane_network_.dht_discovery_box->setChecked(daemon_->config()->getGlobals()["mainline_dht_enabled"].toBool());
 }
 
 void Settings::process_ui_states() {

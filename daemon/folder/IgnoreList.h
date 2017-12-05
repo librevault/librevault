@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "config/models_fwd.h"
+#include "config/FolderSettings_fwd.h"
 #include <QDateTime>
 #include <QObject>
 #include <QMutex>

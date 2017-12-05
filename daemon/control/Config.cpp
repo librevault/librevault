@@ -63,14 +63,14 @@ void Config::patchGlobals(const QJsonObject& patch) {
   emit changed();
 }
 
-models::ClientSettings Config::getGlobals() {
-  return models::ClientSettings::fromJson(mergePatch(globals_defaults_, globals_custom_).toObject());
+QJsonObject Config::getGlobals() {
+  return mergePatch(globals_defaults_, globals_custom_).toObject();
 }
 
-QJsonDocument Config::exportUserGlobals() { return QJsonDocument(globals_custom_); }
+QJsonObject Config::exportUserGlobals() { return globals_custom_; }
 
-QJsonDocument Config::exportGlobals() {
-  return QJsonDocument(mergePatch(globals_defaults_, globals_custom_).toObject());
+QJsonObject Config::exportGlobals() {
+  return mergePatch(globals_defaults_, globals_custom_).toObject();
 }
 
 void Config::importGlobals(QJsonDocument globals_conf) {
@@ -98,16 +98,16 @@ QJsonObject Config::getFolder(QByteArray folderid) {
 
 QList<QByteArray> Config::listFolders() { return folders_custom_.keys(); }
 
-QJsonDocument Config::exportUserFolders() {
+QJsonArray Config::exportUserFolders() {
   QJsonArray folders_merged;
   for (const auto& folder_params : folders_custom_.values()) folders_merged.append(folder_params);
-  return QJsonDocument(folders_merged);
+  return folders_merged;
 }
 
-QJsonDocument Config::exportFolders() {
+QJsonArray Config::exportFolders() {
   QJsonArray folders_merged;
   for (const auto& folderid : listFolders()) folders_merged.append(getFolder(folderid));
-  return QJsonDocument(folders_merged);
+  return folders_merged;
 }
 
 void Config::importFolders(QJsonDocument folders_conf) {
@@ -153,8 +153,8 @@ void Config::load() {
 }
 
 void Config::save() {
-  writeConfig(exportUserGlobals(), Paths::get()->client_config_path);
-  writeConfig(exportUserFolders(), Paths::get()->folders_config_path);
+  writeConfig(QJsonDocument(exportUserGlobals()), Paths::get()->client_config_path);
+  writeConfig(QJsonDocument(exportUserFolders()), Paths::get()->folders_config_path);
 }
 
 }  // namespace librevault

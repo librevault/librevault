@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "Index.h"
-#include "config/models.h"
+#include "config/FolderSettings.h"
 #include "util/blob.h"
 #include <QFile>
 #include <ChunkInfo.h>

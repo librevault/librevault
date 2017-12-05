@@ -31,7 +31,7 @@
 #include "MetaInfo.h"
 #include "SignedMeta.h"
 #include "TimeoutHandler.h"
-#include "config/models_fwd.h"
+#include "config/FolderSettings_fwd.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
 #include "util/exception.hpp"

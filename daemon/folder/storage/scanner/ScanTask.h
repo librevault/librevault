@@ -30,7 +30,7 @@
 #include "SignedMeta.h"
 #include "folder/storage/MetaTaskScheduler.h"
 #include "metakit.h"
-#include "config/models_fwd.h"
+#include "config/FolderSettings_fwd.h"
 #include "util/exception.hpp"
 #include <QLoggingCategory>
 #include <QObject>

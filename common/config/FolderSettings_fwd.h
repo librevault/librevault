@@ -30,7 +30,6 @@
 
 namespace librevault::models {
 
-struct ClientSettings;
 struct FolderSettings;
 
 }  // namespace librevault::models

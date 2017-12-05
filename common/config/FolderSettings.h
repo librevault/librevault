@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "models_fwd.h"
+#include "FolderSettings_fwd.h"
 #include "secret/Secret.h"
 #include <QJsonObject>
 #include <QList>
@@ -37,33 +37,6 @@
 #include <chrono>
 
 namespace librevault::models {
-
-struct ClientSettings {
-  QString client_name;
-  quint16 control_listen;
-  quint16 p2p_listen;
-  qint16 p2p_download_slots;
-  std::chrono::seconds p2p_request_timeout;
-  quint32 p2p_block_size;
-  bool natpmp_enabled;
-  std::chrono::seconds natpmp_lifetime;
-  bool upnp_enabled;
-  std::chrono::seconds predef_repeat_interval;
-  bool multicast_enabled;
-  std::chrono::seconds multicast_repeat_interval;
-  bool bttracker_enabled;
-  quint16 bttracker_num_want;
-  std::chrono::seconds bttracker_min_interval;
-  QString bttracker_azureus_id;
-  std::chrono::seconds bttracker_reconnect_interval;
-  std::chrono::seconds bttracker_packet_timeout;
-  bool mainline_dht_enabled;
-  quint16 mainline_dht_port;
-  QStringList mainline_dht_routers;
-
-  QJsonObject toJson() const;
-  static ClientSettings fromJson(const QJsonObject& j);
-};
 
 struct FolderSettings {
   FolderSettings(const QJsonObject& doc);

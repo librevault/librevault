@@ -29,7 +29,7 @@
 #include "Downloader.h"
 
 #include "control/Config.h"
-#include "config/models.h"
+#include "config/FolderSettings.h"
 #include "folder/storage/Index.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
@@ -45,7 +45,7 @@ Downloader::Downloader(const models::FolderSettings& params, Index* index, QObje
     : QObject(parent), params_(params), index_(index) {
   maintain_timer_ = new QTimer(this);
   connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
-  maintain_timer_->setInterval(Config::get()->getGlobals().p2p_request_timeout * 1000);
+  maintain_timer_->setInterval(Config::get()->getGlobals()["p2p_request_timeout"].toInt() * 1000);
   maintain_timer_->setTimerType(Qt::VeryCoarseTimer);
   maintain_timer_->start();
 }

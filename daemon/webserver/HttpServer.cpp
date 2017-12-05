@@ -36,16 +36,17 @@
 #include <QLoggingCategory>
 #include <QPair>
 #include <QRegularExpression>
-#include <QUrl>
 #include <QTcpSocket>
+#include <QUrl>
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_http_session, "webserver.session.http")
 
 HttpServer::HttpServer(QObject* parent) : QObject(parent) {
-  registerHandler(R"(^\/v1\/config)", [](HandlerContext& ctx){
-    ctx.response.setData(Config::get()->exportGlobals().toJson(QJsonDocument::Compact));
+  registerHandler(R"(^\/v1\/config)", [](HandlerContext& ctx) {
+    ctx.response.setData(
+        QJsonDocument(Config::get()->exportGlobals()).toJson(QJsonDocument::Compact));
   });
 }
 

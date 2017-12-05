@@ -31,7 +31,7 @@
 #include "downloader/RequestTracker.h"
 #include "downloader/WeightedChunkQueue.h"
 #include "p2p/Peer.h"
-#include "config/models_fwd.h"
+#include "config/FolderSettings_fwd.h"
 #include "util/AvailabilityMap.h"
 #include <QBitArray>
 #include <QList>

@@ -37,15 +37,15 @@ namespace librevault {
 Q_DECLARE_LOGGING_CATEGORY(log_downloader)
 
 int RequestTracker::maxRequests() const {
-  return Config::get()->getGlobals().p2p_download_slots;
+  return Config::get()->getGlobals()["p2p_download_slots"].toInt();
 }
 
 quint32 RequestTracker::maxBlockSize() const {
-  return Config::get()->getGlobals().p2p_block_size;
+  return Config::get()->getGlobals()["p2p_block_size"].toInt();
 }
 
 std::chrono::seconds RequestTracker::maxRequestTimeout() const {
-  return std::chrono::seconds(Config::get()->getGlobals().p2p_request_timeout);
+  return std::chrono::seconds(Config::get()->getGlobals()["p2p_request_timeout"].toInt());
 }
 
 void RequestTracker::createRequest(

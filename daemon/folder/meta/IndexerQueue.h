@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QMap>
 #include <QString>
 #include <QThreadPool>
@@ -37,8 +37,6 @@ namespace librevault {
 class FolderParams;
 class MetaStorage;
 class IgnoreList;
-class PathNormalizer;
-class StateCollector;
 class IndexerWorker;
 class IndexerQueue : public QObject {
 	Q_OBJECT
@@ -49,7 +47,7 @@ signals:
 	void finishedIndexing();
 
 public:
-	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
+	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
 	virtual ~IndexerQueue();
 
 public slots:
@@ -59,8 +57,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
-	StateCollector* state_collector_;
 
 	QThreadPool* threadpool_;
 

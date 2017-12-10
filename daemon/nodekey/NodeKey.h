@@ -27,17 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include <QObject>
 #include <QFile>
 #include <QSslCertificate>
+#include <QSslConfiguration>
 #include <QSslKey>
+#include <QLoggingCategory>
 
 namespace librevault {
 
+Q_DECLARE_LOGGING_CATEGORY(log_nodekey);
+
 class NodeKey : public QObject {
 	Q_OBJECT
-	LOG_SCOPE("NodeKey");
 public:
 	NodeKey(QObject* parent);
 	virtual ~NodeKey();
@@ -48,9 +50,11 @@ public:
 	QSslKey privateKey() const {return private_key_;}
 	QSslCertificate certificate() const {return certificate_;}
 
+	QSslConfiguration getSslConfiguration() const;
+
 private:
-	void write_key();
-	void gen_certificate();
+	void writeKey();
+	void writeCertificate();
 
 	QFile cert_file_, private_key_file_;
 	QSslKey private_key_;

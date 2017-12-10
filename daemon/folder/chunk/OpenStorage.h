@@ -29,7 +29,7 @@
 #pragma once
 #include "blob.h"
 #include "util/log.h"
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QObject>
 #include <memory>
 
@@ -38,23 +38,21 @@ namespace librevault {
 class FolderParams;
 class Secret;
 class MetaStorage;
-class PathNormalizer;
 
 class OpenStorage : public QObject {
 	Q_OBJECT
 	LOG_SCOPE("OpenStorage");
 public:
-	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	QByteArray get_chunk(const blob& ct_hash) const;
+	bool have_chunk(QByteArray ct_hash) const noexcept;
+	QByteArray get_chunk(QByteArray ct_hash) const;
 
 private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
-	PathNormalizer* path_normalizer_;
 
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+	inline bool verify_chunk(QByteArray ct_hash, QByteArray chunk_pt, Meta::StrongHashType strong_hash_type) const {
 		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
 	}
 };

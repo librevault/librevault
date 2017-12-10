@@ -28,26 +28,23 @@
  */
 #pragma once
 #include "control/FolderParams.h"
-#include "p2p/BandwidthCounter.h"
-#include "blob.h"
-#include <librevault/Secret.h>
-#include <librevault/SignedMeta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "util/BandwidthCounter.h"
+#include "Secret.h"
+#include "SignedMeta.h"
+#include "conv_bitfield.h"
 #include <QObject>
 #include <QTimer>
 #include <QSet>
-#include <set>
 #include <QHostAddress>
+#include <QLoggingCategory>
 
 namespace librevault {
 
-class RemoteFolder;
-class FSFolder;
-class P2PFolder;
+Q_DECLARE_LOGGING_CATEGORY(log_folder);
 
-class PathNormalizer;
+class Peer;
+
 class IgnoreList;
-class StateCollector;
 
 class ChunkStorage;
 class MetaStorage;
@@ -57,39 +54,22 @@ class MetaDownloader;
 class Uploader;
 class Downloader;
 
+class PeerPool;
+
 class FolderGroup : public QObject {
 	Q_OBJECT
-	friend class ControlServer;
-
-signals:
-	void attached(P2PFolder* remote_ptr);
-	void detached(P2PFolder* remote_ptr);
 
 public:
-	FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
+	FolderGroup(FolderParams params, PeerPool* pool, QObject* parent);
 	virtual ~FolderGroup();
 
-	/* Membership management */
-	bool attach(P2PFolder* remote);
-	void detach(P2PFolder* remote);
-
 	/* Getters */
-	QList<RemoteFolder*> remotes() const;
-
 	inline const FolderParams& params() const {return params_;}
-
-	inline const Secret& secret() const {return params().secret;}
-	QByteArray folderid() const {return conv_bytearray(secret().get_Hash());}
-
-	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
-
-	QString log_tag() const;
 
 private:
 	const FolderParams params_;
-	StateCollector* state_collector_;
+	PeerPool* pool_;
 
-	std::unique_ptr<PathNormalizer> path_normalizer_;
 	std::unique_ptr<IgnoreList> ignore_list;
 
 	ChunkStorage* chunk_storage_;
@@ -100,22 +80,12 @@ private:
 	MetaUploader* meta_uploader_;
 	MetaDownloader* meta_downloader_;
 
-	BandwidthCounter bandwidth_counter_;
-
 	QTimer* state_pusher_;
-
-	/* Members */
-	QSet<RemoteFolder*> remotes_;
-	QSet<RemoteFolder*> remotes_ready_;
-
-	// Member lookup optimization
-	QSet<QByteArray> p2p_folders_digests_;
-	QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
 
 private slots:
 	void push_state();
 	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(RemoteFolder* origin);
+	void handleNewPeer(Peer* peer);
 };
 
 } /* namespace librevault */

@@ -31,7 +31,7 @@
 #include "TimestampArchive.h"
 #include "TrashArchive.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
 #include <QTimer>
@@ -40,20 +40,20 @@
 
 namespace librevault {
 
-Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
 	QObject(parent),
-	meta_storage_(meta_storage),
-	path_normalizer_(path_normalizer) {
+	params_(params),
+	meta_storage_(meta_storage) {
 
 	switch(params.archive_type) {
 		case FolderParams::ArchiveType::NO_ARCHIVE:
 			archive_strategy_ = new NoArchive(this);
 			break;
 		case FolderParams::ArchiveType::TIMESTAMP_ARCHIVE:
-			archive_strategy_ = new TimestampArchive(params, path_normalizer_, this);
+			archive_strategy_ = new TimestampArchive(params, this);
 			break;
 		case FolderParams::ArchiveType::TRASH_ARCHIVE:
-			archive_strategy_ = new TrashArchive(params, path_normalizer_, this);
+			archive_strategy_ = new TrashArchive(params, this);
 			break;
 //		case FolderParams::ArchiveType::BLOCK_ARCHIVE:
 //			archive_strategy_ = new NoArchive(this);
@@ -67,7 +67,7 @@ bool Archive::archive(QString denormpath) {
 	auto file_type = boost::filesystem::symlink_status(denormpath_fs).type();
 
 	// Suppress unnecessary events on dir_monitor.
-	meta_storage_->prepareAssemble(path_normalizer_->normalizePath(conv_fspath(denormpath_fs)), Meta::DELETED);
+	meta_storage_->prepareAssemble(PathNormalizer::normalizePath(conv_fspath(denormpath_fs), params_.path), Meta::DELETED);
 
 	if(file_type == boost::filesystem::directory_file) {
 		if(boost::filesystem::is_empty(denormpath_fs)) // Okay, just remove this empty directory

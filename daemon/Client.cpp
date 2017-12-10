@@ -28,14 +28,12 @@
  */
 #include "Client.h"
 #include "control/Config.h"
-#include "control/server/ControlServer.h"
-#include "control/StateCollector.h"
-#include "discovery/Discovery.h"
+#include "adapters/DiscoveryAdapter.h"
 #include "folder/FolderGroup.h"
-#include "folder/FolderService.h"
-#include "nat/PortMappingService.h"
+#include "PortMapper.h"
 #include "nodekey/NodeKey.h"
-#include "p2p/P2PProvider.h"
+#include "p2p/PeerServer.h"
+#include "p2p/PeerPool.h"
 
 namespace librevault {
 
@@ -44,47 +42,30 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 	setOrganizationDomain("librevault.com");
 
 	// Initializing components
-	state_collector_ = new StateCollector(this);
 	node_key_ = new NodeKey(this);
-	portmanager_ = new PortMappingService(this);
-	discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
-	folder_service_ = new FolderService(state_collector_, this);
-	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
-	control_server_ = new ControlServer(state_collector_, this);
+	portmanager_ = new PortMapper(this);
+	discovery_ = new DiscoveryAdapter(portmanager_, this);
+	peerserver_ = new PeerServer(node_key_, portmanager_, this);
 
 	/* Connecting signals */
-	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
-	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
+	connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
+	connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);
 
-	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
-
-	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
+	QTimer::singleShot(0, this, [this] {
+			foreach(QByteArray folderid, Config::get()->listFolders()) {
+				initFolder(Config::get()->getFolder(folderid));
+			}
 	});
-	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_removed(group->folderid());
-	});
-
-	connect(folder_service_, &FolderService::folderAdded, discovery_, &Discovery::addGroup);
-
-	connect(control_server_, &ControlServer::restart, this, &Client::restart);
-	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }
 
 Client::~Client() {
-	delete control_server_;
-	delete p2p_provider_;
-	delete folder_service_;
+	delete peerserver_;
 	delete discovery_;
 	delete portmanager_;
 	delete node_key_;
-	delete state_collector_;
 }
 
 int Client::run() {
-	folder_service_->run();
-	control_server_->run();
-
 	return this->exec();
 }
 
@@ -96,6 +77,24 @@ void Client::restart() {
 void Client::shutdown(){
 	qInfo() << "Exiting...";
 	this->exit();
+}
+
+void Client::initFolder(const FolderParams& params) {
+	auto peer_pool = new PeerPool(params, discovery_, node_key_, &bc_all_, &bc_blocks_, this);
+	auto fgroup = new FolderGroup(params, peer_pool, this);
+	groups_[params.folderid()] = fgroup;
+
+	peerserver_->addPeerPool(params.folderid(), peer_pool);
+
+	qInfo() << "Folder initialized: " << params.folderid().toHex();
+}
+
+void Client::deinitFolder(const QByteArray& folderid) {
+	auto fgroup = groups_[folderid];
+	groups_.remove(folderid);
+
+	fgroup->deleteLater();
+	qInfo() << "Folder deinitialized:" << folderid.toHex();
 }
 
 } /* namespace librevault */

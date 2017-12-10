@@ -29,9 +29,8 @@
 #pragma once
 #include "downloader/ChunkFileBuilder.h"
 #include "downloader/WeightedChunkQueue.h"
-#include "folder/RemoteFolder.h"
+#include "p2p/Peer.h"
 #include "util/AvailabilityMap.h"
-#include "blob.h"
 #include "util/log.h"
 #include <QList>
 #include <QTimer>
@@ -63,8 +62,8 @@ struct DownloadChunk : boost::noncopyable {
 		uint32_t size;
 		std::chrono::steady_clock::time_point started;
 	};
-	QMultiHash<RemoteFolder*, BlockRequest> requests;
-	QHash<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
+	QMultiHash<Peer*, BlockRequest> requests;
+	QHash<Peer*, std::shared_ptr<Peer::InterestGuard>> owned_by;
 
 	const QByteArray ct_hash;
 };
@@ -81,19 +80,19 @@ public:
 	~Downloader();
 
 public slots:
-	void notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield);
-	void notifyLocalChunk(const blob& ct_hash);
+	void notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield);
+	void notifyLocalChunk(QByteArray ct_hash);
 
-	void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notifyRemoteChunk(RemoteFolder* remote, const blob& ct_hash);
+	void notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, QBitArray bitfield);
+	void notifyRemoteChunk(Peer* remote, QByteArray ct_hash);
 
-	void handleChoke(RemoteFolder* remote);
-	void handleUnchoke(RemoteFolder* remote);
+	void handleChoke(Peer* remote);
+	void handleUnchoke(Peer* remote);
 
-	void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
+	void putBlock(QByteArray ct_hash, uint32_t offset, QByteArray data, Peer* from);
 
-	void trackRemote(RemoteFolder* remote);
-	void untrackRemote(RemoteFolder* remote);
+	void trackRemote(Peer* remote);
+	void untrackRemote(Peer* remote);
 
 private:
 	const FolderParams& params_;
@@ -109,13 +108,13 @@ private:
 
 	void maintainRequests();
 	bool requestOne();
-	RemoteFolder* nodeForRequest(QByteArray ct_hash);
+	Peer* nodeForRequest(QByteArray ct_hash);
 
 	void addChunk(QByteArray ct_hash, quint32 size);
 	void removeChunk(QByteArray ct_hash);
 
 	/* Node management */
-	QSet<RemoteFolder*> remotes_;
+	QSet<Peer*> remotes_;
 
 	QSet<QByteArray> getCluster(QByteArray ct_hash);
 	QSet<QByteArray> getMetaCluster(QList<QByteArray> ct_hashes);

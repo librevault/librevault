@@ -29,29 +29,31 @@
 #include "MetaDownloader.h"
 #include "Downloader.h"
 #include "folder/FolderGroup.h"
-#include "folder/RemoteFolder.h"
+#include "p2p/Peer.h"
+#include "p2p/MessageHandler.h"
 #include "folder/meta/MetaStorage.h"
 
 namespace librevault {
 
-MetaDownloader::MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent) :
+MetaDownloader::MetaDownloader(const FolderParams& params, MetaStorage* meta_storage, Downloader* downloader, QObject* parent) :
 	QObject(parent),
+	params_(params),
 	meta_storage_(meta_storage),
 	downloader_(downloader) {
 	LOGFUNC();
 }
 
-void MetaDownloader::handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaDownloader::handle_have_meta(Peer* origin, const Meta::PathRevision& revision, QBitArray bitfield) {
 	if(meta_storage_->haveMeta(revision))
 		downloader_->notifyRemoteMeta(origin, revision, bitfield);
 	else if(meta_storage_->putAllowed(revision))
-		origin->request_meta(revision);
+		origin->messageHandler()->sendMetaRequest(revision);
 	else
 		LOGD("Remote node notified us about an expired Meta");
 }
 
-void MetaDownloader::handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
-	if(meta_storage_->putAllowed(smeta.meta().path_revision())) {
+void MetaDownloader::handle_meta_reply(Peer* origin, const SignedMeta& smeta, QBitArray bitfield) {
+	if(smeta.isValid(params_.secret), meta_storage_->putAllowed(smeta.meta().path_revision())) {
 		meta_storage_->putMeta(smeta);
 		downloader_->notifyRemoteMeta(origin, smeta.meta().path_revision(), bitfield);
 	}else

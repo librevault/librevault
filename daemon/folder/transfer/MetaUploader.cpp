@@ -29,7 +29,8 @@
 #include "MetaUploader.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "folder/RemoteFolder.h"
+#include "p2p/Peer.h"
+#include "p2p/MessageHandler.h"
 
 namespace librevault {
 
@@ -39,21 +40,21 @@ MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storag
 	LOGFUNC();
 }
 
-void MetaUploader::broadcast_meta(QList<RemoteFolder*> remotes, const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void MetaUploader::broadcast_meta(QList<Peer*> remotes, const Meta::PathRevision& revision, QBitArray bitfield) {
 	for(auto remote : remotes) {
-		remote->post_have_meta(revision, bitfield);
+		remote->messageHandler()->sendHaveMeta(revision, bitfield);
 	}
 }
 
-void MetaUploader::handle_handshake(RemoteFolder* remote) {
+void MetaUploader::handle_handshake(Peer* remote) {
 	for(auto& meta : meta_storage_->getMeta()) {
-		remote->post_have_meta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
+		remote->messageHandler()->sendHaveMeta(meta.meta().path_revision(), chunk_storage_->make_bitfield(meta.meta()));
 	}
 }
 
-void MetaUploader::handle_meta_request(RemoteFolder* remote, const Meta::PathRevision& revision) {
+void MetaUploader::handle_meta_request(Peer* remote, const Meta::PathRevision& revision) {
 	try {
-		remote->post_meta(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
+		remote->messageHandler()->sendMetaReply(meta_storage_->getMeta(revision), chunk_storage_->make_bitfield(meta_storage_->getMeta(revision).meta()));
 	}catch(MetaStorage::no_such_meta& e){
 		LOGW("Requested nonexistent Meta");
 	}

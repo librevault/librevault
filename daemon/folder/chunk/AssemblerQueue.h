@@ -27,13 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QTimer>
 #include <QThreadPool>
 
 namespace librevault {
-
-class PathNormalizer;
 
 class Archive;
 class MetaStorage;
@@ -53,7 +51,6 @@ public:
 	AssemblerQueue(const FolderParams& params,
 	              MetaStorage* meta_storage,
 	              ChunkStorage* chunk_storage,
-	              PathNormalizer* path_normalizer,
 	              Archive* archive, QObject* parent);
 	virtual ~AssemblerQueue();
 
@@ -64,7 +61,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	ChunkStorage* chunk_storage_;
-	PathNormalizer* path_normalizer_;
 	Archive* archive_;
 
 	QThreadPool* threadpool_;

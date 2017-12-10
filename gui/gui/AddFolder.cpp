@@ -29,7 +29,7 @@
 #include "AddFolder.h"
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QFileDialog>
 #include <QJsonObject>
 #include <QShowEvent>
@@ -66,7 +66,7 @@ void AddFolder::showEvent(QShowEvent* e) {
 
 void AddFolder::generateSecret() {
 	librevault::Secret s;
-	ui.line_Secret->setText(QString::fromStdString(s.string()));
+	ui.line_Secret->setText(s);
 }
 
 void AddFolder::browseFolder() {

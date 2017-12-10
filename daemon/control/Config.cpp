@@ -28,8 +28,7 @@
  */
 #include "Config.h"
 #include "Paths.h"
-#include "blob.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -97,7 +96,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
 }
 
 void Config::addFolder(QVariantMap fconfig) {
-	QByteArray folderid = conv_bytearray(Secret(fconfig["secret"].toString().toStdString()).get_Hash());
+	QByteArray folderid = Secret(fconfig["secret"].toString()).getHash();
 	if(folders_custom_.contains(folderid))
 		throw samekey_error();
 	folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));

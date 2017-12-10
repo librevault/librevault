@@ -30,27 +30,19 @@
 #include "IndexerWorker.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
-#include "control/StateCollector.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
 
 Q_LOGGING_CATEGORY(log_indexer, "folder.meta.indexer")
 
 namespace librevault {
 
-IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) :
+IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	params_(params),
 	meta_storage_(qobject_cast<MetaStorage*>(parent)),
 	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer),
-	state_collector_(state_collector),
 	secret_(params.secret) {
 	qRegisterMetaType<SignedMeta>("SignedMeta");
-	state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", false);
-
-	connect(this, &IndexerQueue::startedIndexing, this, [this]{state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", true);});
-	connect(this, &IndexerQueue::finishedIndexing, this, [this]{state_collector_->folder_state_set(conv_bytearray(secret_.get_Hash()), "is_indexing", false);});
 
 	threadpool_ = new QThreadPool(this);
 }
@@ -68,7 +60,7 @@ void IndexerQueue::addIndexing(QString abspath) {
 		threadpool_->cancel(worker);
 		worker->stop();
 	}
-	IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
+	IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, this);
 	worker->setAutoDelete(false);
 	connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
 	connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);

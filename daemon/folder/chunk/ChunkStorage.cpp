@@ -38,15 +38,15 @@
 
 namespace librevault {
 
-ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
 	QObject(parent),
 	meta_storage_(meta_storage) {
 	mem_storage = new MemoryCachedStorage(this);
 	enc_storage = new EncStorage(params, this);
-	if(params.secret.get_type() <= Secret::Type::ReadOnly) {
-		open_storage = new OpenStorage(params, meta_storage_, path_normalizer, this);
-		archive = new Archive(params, meta_storage_, path_normalizer, this);
-		file_assembler = new AssemblerQueue(params, meta_storage_,  this, path_normalizer, archive, this);
+	if(params.secret.getType() <= Secret::Type::ReadOnly) {
+		open_storage = new OpenStorage(params, meta_storage_, this);
+		archive = new Archive(params, meta_storage_, this);
+		file_assembler = new AssemblerQueue(params, meta_storage_, this, archive, this);
 	}
 
 	connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
@@ -54,11 +54,11 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
 
 ChunkStorage::~ChunkStorage() {}
 
-bool ChunkStorage::have_chunk(const blob& ct_hash) const noexcept {
+bool ChunkStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) || (open_storage && open_storage->have_chunk(ct_hash));
 }
 
-QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
+QByteArray ChunkStorage::get_chunk(QByteArray ct_hash) {
 	try {
 		// Cache hit
 		return mem_storage->get_chunk(ct_hash);
@@ -80,23 +80,23 @@ QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
 
 void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
 	enc_storage->put_chunk(ct_hash, chunk_f);
-	for(auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash)))
+	for(auto& smeta : meta_storage_->containingChunk(ct_hash))
 		file_assembler->addAssemble(smeta);
 
-	emit chunkAdded(conv_bytearray(ct_hash));
+	emit chunkAdded(ct_hash);
 }
 
-bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
+QBitArray ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 	if(meta.meta_type() == meta.FILE) {
-		bitfield_type bitfield(meta.chunks().size());
+		QBitArray bitfield(meta.chunks().size());
 
-		for(unsigned int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
+		for(int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
 			if(have_chunk(meta.chunks().at(bitfield_idx).ct_hash))
 				bitfield[bitfield_idx] = true;
 
 		return bitfield;
 	}else
-		return bitfield_type();
+		return QBitArray();
 }
 
 void ChunkStorage::cleanup(const Meta& meta) {

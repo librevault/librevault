@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/log.h"
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QTimer>
 
 namespace librevault {
@@ -36,7 +36,6 @@ namespace librevault {
 class FolderParams;
 class IgnoreList;
 class MetaStorage;
-class PathNormalizer;
 
 class DirectoryPoller : public QObject {
 	Q_OBJECT
@@ -45,7 +44,7 @@ signals:
 	void newPath(QString denormpath);
 
 public:
-	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, MetaStorage* parent);
+	DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, MetaStorage* parent);
 	virtual ~DirectoryPoller();
 
 public slots:
@@ -55,7 +54,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
 
 	QTimer* polling_timer_;
 

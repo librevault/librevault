@@ -7,7 +7,7 @@ AppId=com.librevault.desktop
 AppVersion=@librevault_VERSION@
 AppPublisher=Librevault Team
 AppPublisherURL=https://librevault.com
-VersionInfoVersion=@librevault_VERSION@
+VersionInfoVersion=@librevault_versioninfo@
 
 DisableWelcomePage=no
 DisableProgramGroupPage=yes
@@ -19,7 +19,7 @@ DefaultDirName={userpf}\Librevault
 SetupIconFile=librevault.ico
 UninstallDisplayIcon={app}\librevault-gui.exe
 OutputDir=.
-OutputBaseFilename=librevault_@LV_APPVER@
+OutputBaseFilename=librevault_@librevault_versionstring@
 PrivilegesRequired=lowest
 ShowLanguageDialog=no
 
@@ -27,17 +27,20 @@ SignTool=signtool_lv
 ; librevault-daemon is used to stuck sometimes on Windows
 CloseApplications=force
 
+ArchitecturesInstallIn64BitMode=x64
+
+; Compression
+SolidCompression=yes
+
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
 
-[Dirs]
-Name: "{app}\x32"
-Name: "{app}\x64"
-
 [Files]
-Source: "release\*"; Excludes: "*.exe"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
-Source: "release\*.exe"; DestDir: "{app}"; Flags: signonce recursesubdirs ignoreversion
+Source: "release-x32\*"; Excludes: "*.exe"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion; Check: not Is64BitInstallMode
+Source: "release-x32\*.exe"; DestDir: "{app}"; Flags: signonce recursesubdirs ignoreversion; Check: not Is64BitInstallMode
+Source: "release-x64\*"; Excludes: "*.exe"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion solidbreak; Check: Is64BitInstallMode
+Source: "release-x64\*.exe"; DestDir: "{app}"; Flags: signonce recursesubdirs ignoreversion; Check: Is64BitInstallMode
 
 [Icons]
 Name: "{commonprograms}\Librevault"; Filename: "{app}\librevault-gui.exe"

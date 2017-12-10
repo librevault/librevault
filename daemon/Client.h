@@ -30,19 +30,23 @@
 
 #define EXIT_RESTART 451
 
+#include "util/BandwidthCounter.h"
 #include <QCoreApplication>
+#include <QMap>
 #include <memory>
 
 namespace librevault {
 
 /* Components */
-class ControlServer;
-class Discovery;
-class FolderService;
+class DiscoveryAdapter;
 class NodeKey;
-class P2PProvider;
-class PortMappingService;
-class StateCollector;
+class PeerServer;
+class PortMapper;
+
+class FolderGroup;
+class FolderParams;
+
+class BandwidthCounter;
 
 class Client : public QCoreApplication {
 	Q_OBJECT
@@ -51,16 +55,24 @@ public:
 	virtual ~Client();
 
 	int run();
+
+public slots:
 	void restart();
 	void shutdown();
+
 private:
-	StateCollector* state_collector_;
+	BandwidthCounter bc_all_, bc_blocks_;
 	NodeKey* node_key_;
-	PortMappingService* portmanager_;
-	Discovery* discovery_;
-	FolderService* folder_service_;
-	P2PProvider* p2p_provider_;
-	ControlServer* control_server_;
+	PortMapper* portmanager_;
+	DiscoveryAdapter* discovery_;
+	PeerServer* peerserver_;
+
+	// Folders
+	QMap<QByteArray, FolderGroup*> groups_;
+
+private slots:
+	void initFolder(const FolderParams& params);
+	void deinitFolder(const QByteArray& folderid);
 };
 
 } /* namespace librevault */

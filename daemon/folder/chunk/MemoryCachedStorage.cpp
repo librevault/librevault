@@ -33,31 +33,31 @@ namespace librevault {
 
 MemoryCachedStorage::MemoryCachedStorage(QObject* parent) : QObject(parent), cache_(50*1024*1024) {}    // 50 MB cache is enough for most purposes
 
-bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
-	return cache_.contains(conv_bytearray(ct_hash));
+bool MemoryCachedStorage::have_chunk(QByteArray ct_hash) const noexcept {
+	return cache_.contains(ct_hash);
 }
 
-QByteArray MemoryCachedStorage::get_chunk(const blob& ct_hash) const {
+QByteArray MemoryCachedStorage::get_chunk(QByteArray ct_hash) const {
 	QMutexLocker lk(&cache_lock_);
 
-	QByteArray* cached_chunk = cache_[conv_bytearray(ct_hash)];
+	QByteArray* cached_chunk = cache_[ct_hash];
 	if(cached_chunk)
 		return *cached_chunk;
 	else
 		throw ChunkStorage::no_such_chunk();
 }
 
-void MemoryCachedStorage::put_chunk(const blob& ct_hash, QByteArray data) {
+void MemoryCachedStorage::put_chunk(QByteArray ct_hash, QByteArray data) {
 	QMutexLocker lk(&cache_lock_);
 
 	QByteArray* cached_chunk = new QByteArray(data);
-	cache_.insert(conv_bytearray(ct_hash), cached_chunk, cached_chunk->size());
+	cache_.insert(ct_hash, cached_chunk, cached_chunk->size());
 }
 
-void MemoryCachedStorage::remove_chunk(const blob& ct_hash) noexcept {
+void MemoryCachedStorage::remove_chunk(QByteArray ct_hash) noexcept {
 	QMutexLocker lk(&cache_lock_);
 
-	cache_.remove(conv_bytearray(ct_hash));
+	cache_.remove(ct_hash);
 }
 
 } /* namespace librevault */

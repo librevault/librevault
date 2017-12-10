@@ -34,7 +34,7 @@ namespace librevault {
 
 FolderParams::FolderParams(QVariantMap fconfig) {
 	// Necessary
-	secret = fconfig["secret"].toString().toStdString();
+	secret = fconfig["secret"].toString();
 	path = fconfig["path"].toString();
 
 	// Optional
@@ -43,7 +43,6 @@ FolderParams::FolderParams(QVariantMap fconfig) {
 	preserve_unix_attrib = fconfig["preserve_unix_attrib"].toBool();
 	preserve_windows_attrib = fconfig["preserve_windows_attrib"].toBool();
 	preserve_symlinks = fconfig["preserve_symlinks"].toBool();
-	normalize_unicode = fconfig["normalize_unicode"].toBool();
 	chunk_strong_hash_type = Meta::StrongHashType(fconfig["chunk_strong_hash_type"].toInt());
 	full_rescan_interval = std::chrono::seconds(fconfig["full_rescan_interval"].toInt());
 

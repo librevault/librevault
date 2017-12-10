@@ -27,16 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
 #include "util/log.h"
 #include "util/SQLiteWrapper.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QObject>
 
 namespace librevault {
 
 class FolderParams;
-class StateCollector;
 
 class Index : public QObject {
 	Q_OBJECT
@@ -46,12 +44,12 @@ signals:
 	void metaAddedExternal(SignedMeta meta);
 
 public:
-	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
+	Index(const FolderParams& params, QObject* parent);
 
 	/* Meta manipulators */
 	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
 	SignedMeta getMeta(const Meta::PathRevision& path_revision);
-	SignedMeta getMeta(const blob& path_id);
+	SignedMeta getMeta(QByteArray path_id);
 	QList<SignedMeta> getMeta();
 	QList<SignedMeta> getExistingMeta();
 	QList<SignedMeta> getIncompleteMeta();
@@ -59,23 +57,20 @@ public:
 
 	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 
-	void setAssembled(blob path_id);
-	bool isAssembledChunk(blob ct_hash);
-	QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+	void setAssembled(QByteArray path_id);
+	bool isAssembledChunk(QByteArray ct_hash);
+	QPair<quint32, QByteArray> getChunkSizeIv(QByteArray ct_hash);
 
 	/* Properties */
-	QList<SignedMeta> containingChunk(const blob& ct_hash);
+	QList<SignedMeta> containingChunk(QByteArray ct_hash);
 
 private:
 	const FolderParams& params_;
-	StateCollector* state_collector_;
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
 	QList<SignedMeta> getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 	void wipe();
-
-	void notifyState();
 };
 
 } /* namespace librevault */

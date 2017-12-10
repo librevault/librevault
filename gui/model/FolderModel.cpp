@@ -32,7 +32,7 @@
 #include "control/RemoteConfig.h"
 #include "control/RemoteState.h"
 #include "human_size.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QFileIconProvider>
 
 FolderModel::FolderModel(Daemon* daemon) :

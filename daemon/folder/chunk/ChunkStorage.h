@@ -28,15 +28,14 @@
  */
 #pragma once
 #include "blob.h"
-#include <librevault/Meta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "Meta.h"
+#include "conv_bitfield.h"
 #include <QFile>
 
 namespace librevault {
 
 class FolderParams;
 class MetaStorage;
-class PathNormalizer;
 
 class MemoryCachedStorage;
 class EncStorage;
@@ -51,19 +50,19 @@ public:
 		no_such_chunk() : std::runtime_error("Requested Chunk not found"){}
 	};
 
-	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+	ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
 	virtual ~ChunkStorage();
 
-	bool have_chunk(const blob& ct_hash) const noexcept ;
-	QByteArray get_chunk(const blob& ct_hash);  // Throws AbstractFolder::no_such_chunk
+	bool have_chunk(QByteArray ct_hash) const noexcept ;
+	QByteArray get_chunk(QByteArray ct_hash);  // Throws AbstractFolder::no_such_chunk
 	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
 
-	bitfield_type make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
+	QBitArray make_bitfield(const Meta& meta) const noexcept;   // Bulk version of "have_chunk"
 
 	void cleanup(const Meta& meta);
 
 signals:
-	void chunkAdded(blob ct_hash);
+	void chunkAdded(QByteArray ct_hash);
 
 protected:
 	MetaStorage* meta_storage_;

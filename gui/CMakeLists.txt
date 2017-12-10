@@ -65,7 +65,6 @@ qt5_add_translation(librevault-gui_QM
 		"lang/librevault_en.ts"
 		"lang/librevault_ru.ts"
 		)
-message(${librevault-gui_QM})
 qt5_add_resources(librevault-gui_QM_RC ${CMAKE_CURRENT_BINARY_DIR}/lang.qrc)
 list(APPEND SRCS ${librevault-gui_QM_RC})
 
@@ -91,9 +90,8 @@ endif()
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-gui lvcommon)
 target_link_libraries(librevault-gui librevault-common)
-target_link_libraries(librevault-gui openssl)
+target_link_libraries(librevault-gui secret)
 
 # Qt
 target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)

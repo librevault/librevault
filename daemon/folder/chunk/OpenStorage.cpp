@@ -30,28 +30,26 @@
 #include "control/FolderParams.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "folder/PathNormalizer.h"
-#include "util/readable.h"
+#include <PathNormalizer.h>
 
 namespace librevault {
 
-OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent) :
+OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, QObject* parent) :
 	QObject(parent),
 	params_(params),
-	meta_storage_(meta_storage),
-	path_normalizer_(path_normalizer) {}
+	meta_storage_(meta_storage) {}
 
-bool OpenStorage::have_chunk(const blob& ct_hash) const noexcept {
+bool OpenStorage::have_chunk(QByteArray ct_hash) const noexcept {
 	return meta_storage_->isChunkAssembled(ct_hash);
 }
 
-QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
-	LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
+QByteArray OpenStorage::get_chunk(QByteArray ct_hash) const {
+	LOGD("get_chunk(" << ct_hash.toHex() << ")");
 
 	foreach(auto& smeta, meta_storage_->containingChunk(ct_hash)) {
 		// Search for chunk offset and index
 		uint64_t offset = 0;
-		unsigned chunk_idx = 0;
+		int chunk_idx = 0;
 		for(auto& chunk : smeta.meta().chunks()) {
 			if(chunk.ct_hash == ct_hash) break;
 			offset += chunk.size;
@@ -63,15 +61,15 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
 		auto chunk = smeta.meta().chunks().at(chunk_idx);
 		blob chunk_pt = blob(chunk.size);
 
-		QFile f(path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret))));
+		QFile f(PathNormalizer::absolutizePath(smeta.meta().path(params_.secret), params_.path));
 		if(! f.open(QIODevice::ReadOnly)) continue;
 		if(! f.seek(offset)) continue;
 		if(f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
 
-		blob chunk_ct = Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv);
+		QByteArray chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.getEncryptionKey(), chunk.iv);
 
 		// Check
-		if(verify_chunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return conv_bytearray(chunk_ct);
+		if(verify_chunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
 	}
 	throw ChunkStorage::no_such_chunk();
 }

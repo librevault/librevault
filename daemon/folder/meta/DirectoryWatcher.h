@@ -29,7 +29,7 @@
 #pragma once
 #include "util/log.h"
 #include <dir_monitor/dir_monitor.hpp>
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 
@@ -37,7 +37,6 @@ namespace librevault {
 
 class FolderParams;
 class IgnoreList;
-class PathNormalizer;
 
 class DirectoryWatcherThread : public QThread {
 	Q_OBJECT
@@ -63,7 +62,7 @@ signals:
 	void newPath(QString abspath);
 
 public:
-	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	DirectoryWatcher(const FolderParams& params, IgnoreList* ignore_list, QObject* parent);
 	virtual ~DirectoryWatcher();
 
 	// A VERY DIRTY HACK
@@ -72,7 +71,6 @@ public:
 private:
 	const FolderParams& params_;
 	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
 
 	DirectoryWatcherThread* watcher_thread_;
 

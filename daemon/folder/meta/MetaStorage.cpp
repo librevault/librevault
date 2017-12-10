@@ -32,17 +32,16 @@
 #include "Index.h"
 #include "IndexerQueue.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
 
 namespace librevault {
 
-MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) : QObject(parent) {
-	index_ = new Index(params, state_collector, this);
-	indexer_ = new IndexerQueue(params, ignore_list, path_normalizer, state_collector, this);
-	poller_ = new DirectoryPoller(params, ignore_list, path_normalizer, this);
-	watcher_ = new DirectoryWatcher(params, ignore_list, path_normalizer, this);
+MetaStorage::MetaStorage(const FolderParams& params, IgnoreList* ignore_list, QObject* parent) : QObject(parent) {
+	index_ = new Index(params, this);
+	indexer_ = new IndexerQueue(params, ignore_list, this);
+	poller_ = new DirectoryPoller(params, ignore_list, this);
+	watcher_ = new DirectoryWatcher(params, ignore_list, this);
 
-	if(params.secret.get_type() <= Secret::Type::ReadWrite){
+	if(params.secret.getType() <= Secret::Type::ReadWrite){
 		connect(poller_, &DirectoryPoller::newPath, indexer_, &IndexerQueue::addIndexing);
 		connect(watcher_, &DirectoryWatcher::newPath, indexer_, &IndexerQueue::addIndexing);
 
@@ -63,7 +62,7 @@ SignedMeta MetaStorage::getMeta(const Meta::PathRevision& path_revision) {
 	return index_->getMeta(path_revision);
 }
 
-SignedMeta MetaStorage::getMeta(const blob& path_id) {
+SignedMeta MetaStorage::getMeta(QByteArray path_id) {
 	return index_->getMeta(path_id);
 }
 
@@ -83,19 +82,19 @@ void MetaStorage::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	return index_->putMeta(signed_meta, fully_assembled);
 }
 
-QList<SignedMeta> MetaStorage::containingChunk(const blob& ct_hash) {
+QList<SignedMeta> MetaStorage::containingChunk(QByteArray ct_hash) {
 	return index_->containingChunk(ct_hash);
 }
 
-void MetaStorage::markAssembled(blob path_id) {
+void MetaStorage::markAssembled(QByteArray path_id) {
 	index_->setAssembled(path_id);
 }
 
-bool MetaStorage::isChunkAssembled(blob ct_hash) {
+bool MetaStorage::isChunkAssembled(QByteArray ct_hash) {
 	return index_->isAssembledChunk(ct_hash);
 }
 
-QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(blob ct_hash) {
+QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(QByteArray ct_hash) {
 	return index_->getChunkSizeIv(ct_hash);
 };
 

@@ -27,8 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
@@ -40,7 +39,6 @@ namespace librevault {
 class FolderParams;
 class MetaStorage;
 class IgnoreList;
-class PathNormalizer;
 class IndexerWorker : public QObject, public QRunnable {
 	Q_OBJECT
 signals:
@@ -52,7 +50,7 @@ public:
 		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
 	};
 
-	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
+	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent);
 	virtual ~IndexerWorker();
 
 	QString absolutePath() const {return abspath_;}
@@ -66,7 +64,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
 
 	const Secret& secret_;
 
@@ -82,7 +79,7 @@ private:
 	Meta::Type get_type();
 	void update_fsattrib();
 	void update_chunks();
-	Meta::Chunk populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+	Meta::Chunk populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv);
 };
 
 } /* namespace librevault */

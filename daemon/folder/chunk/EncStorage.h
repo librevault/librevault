@@ -42,17 +42,16 @@ class EncStorage : public QObject {
 public:
 	EncStorage(const FolderParams& params, QObject* parent);
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	QByteArray get_chunk(const blob& ct_hash) const;
-	void put_chunk(const QByteArray& ct_hash, QFile* chunk_f);
-	void remove_chunk(const blob& ct_hash);
+	bool have_chunk(QByteArray ct_hash) const noexcept;
+	QByteArray get_chunk(QByteArray ct_hash) const;
+	void put_chunk(QByteArray ct_hash, QFile* chunk_f);
+	void remove_chunk(QByteArray ct_hash);
 
 private:
 	const FolderParams& params_;
 	mutable QReadWriteLock storage_mtx_;
 
 	QString make_chunk_ct_name(QByteArray ct_hash) const noexcept;
-	QString make_chunk_ct_path(const blob& ct_hash) const noexcept;
 	QString make_chunk_ct_path(QByteArray ct_hash) const noexcept;
 };
 

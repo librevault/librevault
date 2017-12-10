@@ -31,11 +31,10 @@
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
-#include "util/readable.h"
 #include <boost/filesystem.hpp>
 #include <QDir>
 #include <QLoggingCategory>
@@ -54,25 +53,20 @@ namespace librevault {
 AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params,
 	                             MetaStorage* meta_storage,
 	                             ChunkStorage* chunk_storage,
-	                             PathNormalizer* path_normalizer,
 	                             Archive* archive) :
 	params_(params),
 	meta_storage_(meta_storage),
 	chunk_storage_(chunk_storage),
-	path_normalizer_(path_normalizer),
 	archive_(archive),
 	smeta_(smeta),
 	meta_(smeta.meta()) {}
 
 AssemblerWorker::~AssemblerWorker() {}
 
-QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-	blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
-
+QByteArray AssemblerWorker::get_chunk_pt(QByteArray ct_hash) const {
 	try {
 		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
-		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(), conv_bytearray(size_iv.second));
-		return conv_bytearray(chunk_pt_v);
+		return Meta::Chunk::decrypt(chunk_storage_->get_chunk(ct_hash), size_iv.first, params_.secret.getEncryptionKey(), size_iv.second);
 	}catch(std::exception& e){
 		qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
 		throw ChunkStorage::no_such_chunk();
@@ -82,8 +76,8 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 void AssemblerWorker::run() noexcept {
 	LOGFUNC();
 
-	normpath_ = QByteArray::fromStdString(meta_.path(params_.secret));
-	denormpath_ = path_normalizer_->denormalizePath(normpath_);
+	normpath_ = meta_.path(params_.secret);
+	denormpath_ = PathNormalizer::absolutizePath(normpath_, params_.path);
 
 	try {
 		bool assembled = false;
@@ -104,12 +98,12 @@ void AssemblerWorker::run() noexcept {
 			if(meta_.meta_type() != Meta::DELETED)
 				apply_attrib();
 
-			meta_storage_->markAssembled(meta_.path_id());
+			meta_storage_->markAssembled(meta_.pathId());
 			chunk_storage_->cleanup(meta_);
 		}
 	}catch(abort_assembly& e) {  // Already handled
 	}catch(std::exception& e) {
-		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).c_str() << "E:" << e.what();    // FIXME: #83
+		qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).data() << "E:" << e.what();    // FIXME: #83
 	}
 }
 
@@ -125,7 +119,7 @@ bool AssemblerWorker::assemble_symlink() {
 	boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
 	boost::filesystem::remove_all(denormpath_fs);
-	boost::filesystem::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
+	boost::filesystem::create_symlink(meta_.symlinkPath(params_.secret).toStdString(), denormpath_fs);
 
 	return true;    // Maybe, something else?
 }
@@ -150,8 +144,8 @@ bool AssemblerWorker::assemble_file() {
 	LOGFUNC();
 
 	// Check if we have all needed chunks
-	for(auto b : chunk_storage_->make_bitfield(meta_))
-		if(!b) return false;    // retreat!
+	auto bitfield = chunk_storage_->make_bitfield(meta_);
+	if(bitfield.count(true) != bitfield.size()) return false;
 
 	//
 	QString assembly_path = params_.system_path + "/" + conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));

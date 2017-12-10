@@ -28,7 +28,7 @@
  */
 #include "IgnoreList.h"
 #include "control/FolderParams.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include <QDirIterator>
 #include <QLoggingCategory>
 
@@ -36,7 +36,7 @@ Q_LOGGING_CATEGORY(log_ignorelist, "folder.ignorelist")
 
 namespace librevault {
 
-IgnoreList::IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer) : params_(params), path_normalizer_(path_normalizer), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) {
+IgnoreList::IgnoreList(const FolderParams& params) : params_(params), last_rebuild_(QDateTime::fromMSecsSinceEpoch(0)) {
 	lazyRebuildIgnores();
 }
 
@@ -68,7 +68,7 @@ void IgnoreList::rebuildIgnores() {
 		qCDebug(log_ignorelist) << "Found ignore file:" << ignorefile_path;
 
 		// Compute "root" for current ignore file
-		QString ignore_prefix = QString::fromUtf8(path_normalizer_.normalizePath(ignorefile_path));
+		QString ignore_prefix = QString::fromUtf8(PathNormalizer::normalizePath(ignorefile_path, params_.path));
 		ignore_prefix.chop(QStringLiteral(".lvignore").size());
 		qCDebug(log_ignorelist) << "Ignore file prefix:" << (ignore_prefix.isEmpty() ? "(root)" : ignore_prefix);
 

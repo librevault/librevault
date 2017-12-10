@@ -1,10 +1,10 @@
 install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
-macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
+function(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION DEPENDENCY_RESOLVE_PATHS EXCLUDE_SYSTEM)
 	install(CODE "
 		include(GetPrerequisites)
 		foreach(INSTALLED_BINARY ${INDEPENDENT_BINARIES})
-			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"\")
+			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies ${EXCLUDE_SYSTEM} 1 \"\" \"${DEPENDENCY_RESOLVE_PATHS}\")
 			foreach(dependency \${dependencies})
 				gp_resolve_item(\"\${INSTALLED_BINARY}\" \"\${dependency}\" \"\" \"\" resolved_file)
 				get_filename_component(resolved_file \${resolved_file} ABSOLUTE)
@@ -19,7 +19,7 @@ macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
 			file(INSTALL \${PREREQUISITE_LIB} DESTINATION ${INSTALL_LOCATION})
 		endforeach()
 	")
-endmacro()
+endfunction()
 
 if(OS_WINDOWS)
 	if(BUILD_DAEMON)
@@ -44,7 +44,7 @@ if(OS_WINDOWS)
 
 	list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
-	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}")
+	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}" "" 1)
 elseif(OS_LINUX)
 	if(INSTALL_BUNDLE)
 		set(CMAKE_INSTALL_BINDIR opt/librevault/bin/elf)
@@ -55,24 +55,20 @@ elseif(OS_LINUX)
 
 	if(BUILD_DAEMON)
 		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${CMAKE_INSTALL_BINDIR})
-		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_BINDIR}/librevault-daemon)
+		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/librevault-daemon)
 	endif()
 	if(BUILD_GUI)
 		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${CMAKE_INSTALL_BINDIR})
 		install(FILES "gui/resources/Librevault.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 		install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
-		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_BINDIR}/librevault-gui)
-	endif()
-	if(BUILD_CLI)
-		install(PROGRAMS $<TARGET_FILE:librevault-cli> DESTINATION ${CMAKE_INSTALL_BINDIR})
-		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_BINDIR}/librevault-cli)
+		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/librevault-gui)
 	endif()
 
 	if(INSTALL_BUNDLE AND BUILD_DAEMON AND BUILD_GUI AND BUILD_CLI)
 		include(InstallQt5Plugin)
 
 		# Install Qt5 plugins
-		set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_LIBDIR}/qt5/plugins)
+		set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/qt5/plugins)
 		install_qt5_plugin("Qt5::QMinimalIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 		install_qt5_plugin("Qt5::QXcbIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 		install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
@@ -81,10 +77,9 @@ elseif(OS_LINUX)
 
 		list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 		list(APPEND DEPENDENCY_RESOLVE_PATHS "${Qt5_DIR}/../..")
-		list(APPEND DEPENDENCY_RESOLVE_PATHS "/usr/lib")
 
 		# Dependencies of targets and plugins
-		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" "${DEPENDENCY_RESOLVE_PATHS}" 0)
 
 		# qt.conf
 		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -141,7 +136,7 @@ elseif(OS_MAC)
 	install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	#install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 
 	install(CODE "
 	include(BundleUtilities)

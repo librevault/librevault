@@ -28,13 +28,11 @@
  */
 #pragma once
 #include "blob.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QObject>
 #include <QRunnable>
 
 namespace librevault {
-
-class PathNormalizer;
 
 class Archive;
 class MetaStorage;
@@ -52,7 +50,6 @@ public:
 	                const FolderParams& params,
 					MetaStorage* meta_storage,
 					ChunkStorage* chunk_storage,
-					PathNormalizer* path_normalizer,
 					Archive* archive);
 	virtual ~AssemblerWorker();
 
@@ -62,7 +59,6 @@ private:
 	const FolderParams& params_;
 	MetaStorage* meta_storage_;
 	ChunkStorage* chunk_storage_;
-	PathNormalizer* path_normalizer_;
 	Archive* archive_;
 
 	SignedMeta smeta_;
@@ -78,7 +74,7 @@ private:
 
 	void apply_attrib();
 
-	QByteArray get_chunk_pt(const blob& ct_hash) const;
+	QByteArray get_chunk_pt(QByteArray ct_hash) const;
 };
 
 } /* namespace librevault */

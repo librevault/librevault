@@ -34,17 +34,15 @@
 namespace librevault {
 
 class FolderParams;
-class PathNormalizer;
 
 class IgnoreList {
 public:
-	IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer);
+	IgnoreList(const FolderParams& params);
 
 	bool isIgnored(QByteArray normpath);
 
 private:
 	const FolderParams& params_;
-	PathNormalizer& path_normalizer_;
 	QStringList filters_wildcard_;
 
 	QReadWriteLock ignorelist_mtx;

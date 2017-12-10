@@ -54,40 +54,30 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
-target_link_libraries(librevault-daemon lvcommon)
+target_link_libraries(librevault-daemon secret)
+target_link_libraries(librevault-daemon meta)
+target_link_libraries(librevault-daemon aes)
+target_link_libraries(librevault-daemon base32)
+target_link_libraries(librevault-daemon protocol)
+target_link_libraries(librevault-daemon portmapping)
+target_link_libraries(librevault-daemon discovery)
+target_link_libraries(librevault-daemon pathnormalizer)
 target_link_libraries(librevault-daemon librevault-common)
 target_link_libraries(librevault-daemon dir_monitor)
-target_link_libraries(librevault-daemon spdlog)
-target_link_libraries(librevault-daemon docopt_s)
-target_link_libraries(librevault-daemon natpmp)
-target_link_libraries(librevault-daemon libminiupnpc)
-target_link_libraries(librevault-daemon rabin)
-target_link_libraries(librevault-daemon dht)
+target_link_libraries(librevault-daemon QDocopt)
+target_link_libraries(librevault-daemon rabin-cpp)
 target_link_libraries(librevault-daemon sqlite3)
-target_link_libraries(librevault-daemon websocketpp)
+target_link_libraries(librevault-daemon Threads::Threads)
+if(TARGET CONAN_PKG::spdlog)
+	target_link_libraries(librevault-daemon CONAN_PKG::spdlog)
+endif()
 
 ##### External libraries #####
 
-## Boost
-target_link_libraries(librevault-daemon boost)
-
-## Qt5
-target_link_libraries(librevault-daemon Qt5::WebSockets)
-
-## Protobuf
-file(GLOB_RECURSE PROTO_LIST "*.proto")
-protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
-
-add_library(librevault-protobuf STATIC ${PROTO_SOURCES} ${PROTO_HEADERS})
-target_link_libraries(librevault-protobuf PUBLIC protobuf)
-
-target_link_libraries(librevault-daemon librevault-protobuf)
-
-## CryptoPP
+target_link_libraries(librevault-daemon Boost::system Boost::filesystem Boost::thread)
+target_link_libraries(librevault-daemon Qt5::Core Qt5::Network Qt5::WebSockets)
 target_link_libraries(librevault-daemon cryptopp)
-
-## OpenSSL
-target_link_libraries(librevault-daemon openssl)
+target_link_libraries(librevault-daemon OpenSSL::SSL)
 
 ##### System libraries #####
 
@@ -101,8 +91,4 @@ if(OS_MAC)
 	target_link_libraries(librevault-daemon "-framework Foundation")
 	target_link_libraries(librevault-daemon "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon "-framework CoreServices")
-endif()
-
-if(BUILD_STATIC AND OS_LINUX)
-	target_link_libraries(librevault-daemon dl)
 endif()

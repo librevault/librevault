@@ -31,17 +31,16 @@
 #include "IndexerQueue.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include <QDirIterator>
 
 namespace librevault {
 
-DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, MetaStorage* parent) :
+DirectoryPoller::DirectoryPoller(const FolderParams& params, IgnoreList* ignore_list, MetaStorage* parent) :
 	QObject(parent),
 	params_(params),
 	meta_storage_(parent),
-	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer) {
+	ignore_list_(ignore_list) {
 
 	polling_timer_ = new QTimer(this);
 	polling_timer_->setInterval(std::chrono::duration_cast<std::chrono::milliseconds>(params_.full_rescan_interval).count());
@@ -73,7 +72,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 	);
 	while(dir_it.hasNext()) {
 		QString abspath = dir_it.next();
-		QByteArray normpath = path_normalizer_->normalizePath(abspath);
+		QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
 
 		if(!ignore_list_->isIgnored(normpath)) file_list.insert(abspath);
 	}
@@ -81,14 +80,14 @@ QList<QString> DirectoryPoller::getReindexList() {
 	// Prevent incomplete (not assembled, partially-downloaded, whatever) from periodical scans.
 	// They can still be indexed by monitor, though.
 	for(auto& smeta : meta_storage_->getIncompleteMeta()) {
-		QString denormpath = path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret)));
+		QString denormpath = PathNormalizer::absolutizePath(smeta.meta().path(params_.secret), params_.path);
 		file_list.remove(denormpath);
 	}
 
 	// Files present in index (files added from here will be marked as DELETED)
 	for(auto& smeta : meta_storage_->getExistingMeta()) {
-		QByteArray normpath = QByteArray::fromStdString(smeta.meta().path(params_.secret));
-		QString denormpath = path_normalizer_->denormalizePath(normpath);
+		QByteArray normpath = smeta.meta().path(params_.secret);
+		QString denormpath = PathNormalizer::absolutizePath(normpath, params_.path);
 
 		if(!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
 	}

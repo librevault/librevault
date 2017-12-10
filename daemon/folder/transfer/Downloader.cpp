@@ -31,7 +31,7 @@
 #include "control/Config.h"
 #include "control/FolderParams.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/readable.h"
+#include "p2p/MessageHandler.h"
 #include <QLoggingCategory>
 #include <boost/range/adaptor/map.hpp>
 
@@ -62,7 +62,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 
 Downloader::~Downloader() {}
 
-void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield) {
+void Downloader::notifyLocalMeta(const SignedMeta& smeta, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 
 	Q_ASSERT(bitfield.size() == smeta.meta().chunks().size());
@@ -73,12 +73,12 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
 	bool have_complete = false;
 	bool have_incomplete = false;
 
-	for(size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
+	for(int chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
 		auto& meta_chunk = smeta.meta().chunks().at(chunk_idx);
 
-		QByteArray ct_hash = conv_bytearray(meta_chunk.ct_hash);
+		QByteArray ct_hash = meta_chunk.ct_hash;
 
-		if(bitfield[chunk_idx]) {
+		if(bitfield.testBit(chunk_idx)) {
 			have_complete = true;   // We have chunk, remove from missing
 			removeChunk(ct_hash); // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
 		}else{
@@ -96,7 +96,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
 }
 
 void Downloader::addChunk(QByteArray ct_hash, quint32 size) {
-	qCDebug(log_downloader) << "Added" << ct_hash_readable(ct_hash) << "to download queue";
+	qCDebug(log_downloader) << "Added" << ct_hash.toHex() << "to download queue";
 
 	uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;
 
@@ -111,17 +111,17 @@ void Downloader::removeChunk(QByteArray ct_hash) {
 		download_queue_.removeChunk(ct_hash);
 		down_chunks_.remove(ct_hash);
 
-		qCDebug(log_downloader) << "Removed" << ct_hash_readable(ct_hash) << "from download queue";
+		qCDebug(log_downloader) << "Removed" << ct_hash.toHex() << "from download queue";
 	}
 }
 
-void Downloader::notifyLocalChunk(const blob& ct_hash) {
+void Downloader::notifyLocalChunk(QByteArray ct_hash) {
 	SCOPELOG(log_downloader);
 
-	removeChunk(conv_bytearray(ct_hash));
+	removeChunk(ct_hash);
 
 	// Mark all other chunks "clustered"
-	foreach(QByteArray cluster_hash, getCluster(conv_bytearray(ct_hash))) {
+	for(QByteArray cluster_hash : getCluster(ct_hash)) {
 		download_queue_.markClustered(cluster_hash);
 	}
 }
@@ -129,9 +129,9 @@ void Downloader::notifyLocalChunk(const blob& ct_hash) {
 QSet<QByteArray> Downloader::getCluster(QByteArray ct_hash) {
 	QSet<QByteArray> cluster;
 
-	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(conv_bytearray(ct_hash))) {
+	foreach(const SignedMeta& smeta, meta_storage_->containingChunk(ct_hash)) {
 		for(auto& chunk : smeta.meta().chunks()) {
-			cluster << conv_bytearray(chunk.ct_hash);
+			cluster << chunk.ct_hash;
 		}
 	}
 
@@ -148,13 +148,13 @@ QSet<QByteArray> Downloader::getMetaCluster(QList<QByteArray> ct_hashes) {
 	return cluster;
 }
 
-void Downloader::notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notifyRemoteMeta(Peer* remote, const Meta::PathRevision& revision, QBitArray bitfield) {
 	SCOPELOG(log_downloader);
 	try {
 		auto chunks = meta_storage_->getMeta(revision).meta().chunks();
-		bitfield.resize(chunks.size(), 0);  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
-		for(size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
-			if(bitfield[chunk_idx])
+		bitfield.resize(chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
+		for(int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
+			if(bitfield.testBit(chunk_idx))
 				notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
 	}catch(MetaStorage::no_such_meta){
 		qCDebug(log_downloader) << "Expired Meta";
@@ -162,21 +162,19 @@ void Downloader::notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision
 		// Nevertheless, ignore this notification.
 	}
 }
-void Downloader::notifyRemoteChunk(RemoteFolder* remote, const blob& ct_hash) {
+void Downloader::notifyRemoteChunk(Peer* remote, QByteArray ct_hash) {
 	SCOPELOG(log_downloader);
-	QByteArray ct_hash_q = conv_bytearray(ct_hash);
-
-	DownloadChunkPtr chunk = down_chunks_.value(ct_hash_q);
+	DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 	if(! chunk)
 		return;
 
 	chunk->owned_by.insert(remote, remote->get_interest_guard());
-	download_queue_.setRemotesCount(ct_hash_q, chunk->owned_by.size());
+	download_queue_.setRemotesCount(ct_hash, chunk->owned_by.size());
 
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleChoke(RemoteFolder* remote) {
+void Downloader::handleChoke(Peer* remote) {
 	SCOPELOG(log_downloader);
 
 	/* Remove requests to this node */
@@ -186,33 +184,33 @@ void Downloader::handleChoke(RemoteFolder* remote) {
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::handleUnchoke(RemoteFolder* remote) {
+void Downloader::handleUnchoke(Peer* remote) {
 	SCOPELOG(log_downloader);
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from) {
+void Downloader::putBlock(QByteArray ct_hash, uint32_t offset, QByteArray data, Peer* from) {
 	SCOPELOG(log_downloader);
-	auto missing_chunk = down_chunks_.value(conv_bytearray(ct_hash));
+	auto missing_chunk = down_chunks_.value(ct_hash);
 	if(! missing_chunk) return;
 
 	QList<QPair<QByteArray, QFile*>> downloaded_chunks;
 
-	QMutableHashIterator<RemoteFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
+	QMutableHashIterator<Peer*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
 	while(request_it.hasNext()) {
 		request_it.next();
 
 		if(request_it.value().offset == offset      // Chunk position incorrect
-		&& request_it.value().size == data.size()   // Chunk size incorrect
+		&& request_it.value().size == (uint)data.size()   // Chunk size incorrect
 		&& request_it.key() == from) {              // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
 			request_it.remove();
 
-			missing_chunk->builder.put_block(offset, QByteArray::fromRawData((const char*)data.data(), data.size()));
+			missing_chunk->builder.put_block(offset, data);
 			if(missing_chunk->builder.complete()) {
 				QFile* chunk_f = missing_chunk->builder.release_chunk();
 				chunk_f->setParent(this);
 
-				downloaded_chunks << qMakePair(conv_bytearray(ct_hash), chunk_f);
+				downloaded_chunks << qMakePair(ct_hash, chunk_f);
 			}   // TODO: catch "invalid hash" exception here
 		}
 	}
@@ -224,12 +222,12 @@ void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data
 	QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
 
-void Downloader::trackRemote(RemoteFolder* remote) {
+void Downloader::trackRemote(Peer* remote) {
 	remotes_.insert(remote);
 	download_queue_.setRemotesCount(remotes_.size());
 }
 
-void Downloader::untrackRemote(RemoteFolder* remote) {
+void Downloader::untrackRemote(Peer* remote) {
 	SCOPELOG(log_downloader);
 
 	if(! remotes_.contains(remote)) return;
@@ -250,7 +248,7 @@ void Downloader::maintainRequests() {
 	{
 		auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
 		foreach(DownloadChunkPtr missing_chunk, down_chunks_.values()) {
-			QMutableHashIterator<RemoteFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
+			QMutableHashIterator<Peer*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
 			while(request_it.hasNext()) {
 				if(request_it.next().value().started + request_timeout < std::chrono::steady_clock::now())
 					request_it.remove();
@@ -287,7 +285,7 @@ bool Downloader::requestOne() {
 			request.size = std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
 			request.started = std::chrono::steady_clock::now();
 
-			remote->request_block(conv_bytearray(ct_hash), request.offset, request.size);
+			remote->messageHandler()->sendBlockRequest(ct_hash, request.offset, request.size);
 			chunk->requests.insert(remote, request);
 			return true;
 		}
@@ -295,13 +293,13 @@ bool Downloader::requestOne() {
 	return false;
 }
 
-RemoteFolder* Downloader::nodeForRequest(QByteArray ct_hash) {
+Peer* Downloader::nodeForRequest(QByteArray ct_hash) {
 	DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 	if(! chunk)
 		return nullptr;
 
-	foreach(RemoteFolder* owner_remote, chunk->owned_by.keys())
-		if(owner_remote->ready() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
+	for(Peer* owner_remote : chunk->owned_by.keys())
+		if(owner_remote->isValid() && !owner_remote->peer_choking()) return owner_remote; // TODO: implement more smart peer selection algorithm, based on peer weights.
 
 	return nullptr;
 }

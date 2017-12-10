@@ -3,11 +3,13 @@
 	"preserve_unix_attrib": false,
 	"preserve_windows_attrib": false,
 	"preserve_symlinks": false,
-	"normalize_unicode": true,
 	"chunk_strong_hash_type": 0,
 	"full_rescan_interval": 600,
 	"archive_type": "trash",
 	"archive_trash_ttl": 30,
 	"archive_timestamp_count": 5,
-	"mainline_dht_enabled": true
+	"mainline_dht_enabled": true,
+	"bt_enabled": true,
+	"bt_trackers": ["udp://discovery.librevault.com:6969/announce"],
+	"multicast_enabled": true
 }

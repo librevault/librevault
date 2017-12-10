@@ -31,11 +31,10 @@
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
-#include "folder/PathNormalizer.h"
+#include <PathNormalizer.h>
 #include "human_size.h"
-#include <librevault/crypto/HMAC-SHA3.h>
-#include <librevault/crypto/AES_CBC.h>
-#include <rabin.h>
+#include "AES_CBC.h"
+#include <Rabin.hpp>
 #include <boost/filesystem.hpp>
 #include <QFile>
 #ifdef Q_OS_UNIX
@@ -49,27 +48,26 @@ Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
-IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent) :
+IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, QObject* parent) :
 	QObject(parent),
 	abspath_(abspath),
 	params_(params),
 	meta_storage_(meta_storage),
 	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer),
 	secret_(params.secret),
 	active_(true) {}
 
 IndexerWorker::~IndexerWorker() {}
 
 void IndexerWorker::run() noexcept {
-	QByteArray normpath = path_normalizer_->normalizePath(abspath_);
+	QByteArray normpath = PathNormalizer::normalizePath(abspath_, params_.path);
 	qCDebug(log_indexer) << "Started indexing:" << normpath;
 
 	try {
 		if(ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
 		try {
-			old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath.toStdString(), secret_));
+			old_smeta_ = meta_storage_->getMeta(Meta::makePathId(normpath, secret_));
 			old_meta_ = old_smeta_.meta();
 			if(boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
 				throw abort_index("Modification time is not changed");
@@ -99,11 +97,11 @@ void IndexerWorker::run() noexcept {
 /* Actual indexing process */
 void IndexerWorker::make_Meta() {
 	QString abspath = abspath_;
-	QByteArray normpath = path_normalizer_->normalizePath(abspath);
+	QByteArray normpath = PathNormalizer::normalizePath(abspath, params_.path);
 
 	//LOGD("make_Meta(" << normpath.toStdString() << ")");
 
-	new_meta_.set_path(normpath.toStdString(), secret_);    // sets path_id, encrypted_path and encrypted_path_iv
+	new_meta_.setPath(normpath, secret_);    // sets path_id, encrypted_path and encrypted_path_iv
 
 	new_meta_.set_meta_type(get_type());  // Type
 
@@ -120,7 +118,7 @@ void IndexerWorker::make_Meta() {
 		update_chunks();
 
 	if(new_meta_.meta_type() == Meta::SYMLINK) {
-		new_meta_.set_symlink_path(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string(), secret_);
+		new_meta_.setSymlinkPath(QByteArray::fromStdString(boost::filesystem::read_symlink(abspath_.toStdWString()).generic_string()), secret_);
 	}
 
 	// FSAttrib
@@ -208,29 +206,20 @@ void IndexerWorker::update_chunks() {
 	}
 
 	// IV reuse
-	std::map<blob, blob> pt_hmac__iv;
+	QMap<QByteArray, QByteArray> pt_hmac__iv;
 	for(auto& chunk : old_meta_.chunks()) {
-		pt_hmac__iv.insert({chunk.pt_hmac, chunk.iv});
+		pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
 	}
 
 	// Initializing chunker
-	rabin_t hasher;
-	hasher.average_bits = rabin_global_params.avg_bits;
-	hasher.minsize = new_meta_.min_chunksize();
-	hasher.maxsize = new_meta_.max_chunksize();
-	hasher.polynomial = rabin_global_params.polynomial;
-	hasher.polynomial_degree = rabin_global_params.polynomial_degree;
-	hasher.polynomial_shift = rabin_global_params.polynomial_shift;
-
-	hasher.mask = uint64_t((1<<uint64_t(hasher.average_bits))-1);
-
-	rabin_init(&hasher);
+  uint64_t rabin_mask = (1ull<<uint64_t(rabin_global_params.avg_bits))-1ull;
+  Rabin rabin(rabin_global_params.polynomial, rabin_global_params.polynomial_shift, new_meta_.min_chunksize(), new_meta_.max_chunksize(), rabin_mask);
 
 	// Chunking
-	std::vector<Meta::Chunk> chunks;
+	QList<Meta::Chunk> chunks;
 
-	blob buffer;
-	buffer.reserve(hasher.maxsize);
+	QByteArray buffer;
+	buffer.reserve(new_meta_.max_chunksize());
 
 	QFile f(abspath_);
 	if(!f.open(QIODevice::ReadOnly))
@@ -239,10 +228,8 @@ void IndexerWorker::update_chunks() {
 	char byte;
 	while(f.getChar(&byte) && active_) {
 		buffer.push_back(byte);
-		//size_t len = fread(buf, 1, sizeof(buf), stdin);
-		uint8_t *ptr = &buffer.back();
 
-		if(rabin_next_chunk(&hasher, ptr, 1) == 1) {    // Found a chunk
+		if(rabin.next_chunk(byte)) {    // Found a chunk
 			chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
 			buffer.clear();
 		}
@@ -251,23 +238,27 @@ void IndexerWorker::update_chunks() {
 	if(!active_)
 		throw abort_index("Indexing had been interruped");
 
-	if(rabin_finalize(&hasher) != 0)
-		chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+	if(rabin.finalize())
+		chunks << populate_chunk(buffer, pt_hmac__iv);
 
 	new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
+Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, QMap<QByteArray, QByteArray> pt_hmac__iv) {
 	qCDebug(log_indexer) << "New chunk size:" << data.size();
 	Meta::Chunk chunk;
-	chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
+
+	QCryptographicHash hasher(QCryptographicHash::Sha3_256);
+	hasher.addData(secret_.getEncryptionKey());
+	hasher.addData(data);
+
+	chunk.pt_hmac = hasher.result();
 
 	// IV reuse
-	auto it = pt_hmac__iv.find(chunk.pt_hmac);
-	chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
+	chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, generateRandomIV());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.getEncryptionKey(), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

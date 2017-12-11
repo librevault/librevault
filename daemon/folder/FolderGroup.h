@@ -29,7 +29,7 @@
 #pragma once
 #include "secret/Secret.h"
 #include "SignedMeta.h"
-#include "config/FolderSettings.h"
+#include "control/FolderSettings.h"
 #include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
 #include <QObject>
@@ -57,11 +57,13 @@ class Downloader;
 class PeerPool;
 class NodeKey;
 
+class Config;
+
 class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(models::FolderSettings params, QObject* parent);
+  FolderGroup(models::FolderSettings params, Config* config, QObject* parent);
   virtual ~FolderGroup();
 
   const models::FolderSettings& params() const { return params_; }
@@ -69,6 +71,8 @@ class FolderGroup : public QObject {
   void setPeerPool(PeerPool* pool);
 
  private:
+  Config* config_;
+
   const models::FolderSettings params_;
 
   // Local storage

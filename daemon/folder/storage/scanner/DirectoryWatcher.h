@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 #include <dir_monitor/dir_monitor.hpp>

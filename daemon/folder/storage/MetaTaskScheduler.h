@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include <QHash>
 #include <QMutex>
 #include <QObject>

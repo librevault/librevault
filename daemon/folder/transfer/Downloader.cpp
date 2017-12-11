@@ -29,7 +29,7 @@
 #include "Downloader.h"
 
 #include "control/Config.h"
-#include "config/FolderSettings.h"
+#include "control/FolderSettings.h"
 #include "folder/storage/Index.h"
 #include <ChunkInfo.h>
 #include <QLoggingCategory>
@@ -41,11 +41,11 @@ Q_LOGGING_CATEGORY(log_downloader, "folder.transfer.downloader")
 DownloadChunk::DownloadChunk(const models::FolderSettings& params, const QByteArray& ct_hash, quint32 size)
     : builder(params.effectiveSystemPath(), ct_hash, size), ct_hash(ct_hash) {}
 
-Downloader::Downloader(const models::FolderSettings& params, Index* index, QObject* parent)
-    : QObject(parent), params_(params), index_(index) {
+Downloader::Downloader(const models::FolderSettings& params, Index* index, Config* config, QObject* parent)
+    : QObject(parent), params_(params), index_(index), request_tracker_(config) {
   maintain_timer_ = new QTimer(this);
   connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
-  maintain_timer_->setInterval(Config::get()->getGlobals()["p2p_request_timeout"].toInt() * 1000);
+  maintain_timer_->setInterval(config->getGlobals()["p2p_request_timeout"].toInt() * 1000);
   maintain_timer_->setTimerType(Qt::VeryCoarseTimer);
   maintain_timer_->start();
 }

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include <QFile>
 #include <QReadWriteLock>
 #include <memory>

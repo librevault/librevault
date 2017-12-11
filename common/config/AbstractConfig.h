@@ -28,7 +28,6 @@
  */
 #pragma once
 
-#include "FolderSettings.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>

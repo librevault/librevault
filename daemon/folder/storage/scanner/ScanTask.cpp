@@ -28,7 +28,7 @@
  */
 #include "ScanTask.h"
 #include "crypto/AES_CBC.h"
-#include "config/FolderSettings.h"
+#include "control/FolderSettings.h"
 #include "folder/IgnoreList.h"
 #include "folder/storage/Index.h"
 #include "util/human_size.h"

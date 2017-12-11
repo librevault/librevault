@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "MetaInfo.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include <ChunkInfo.h>
 #include <QObject>
 #include <memory>

@@ -131,11 +131,8 @@ int main(int argc, char** argv) {
     log->info(Version::current().name().toStdString() + " " +
         Version::current().versionString().toStdString());
 
-    // Initializing config
-    Config::get();
-
     // And, run!
-    auto client = std::make_unique<Client>(argc, argv);
+    auto client = std::make_unique<Client>(Config::get(), argc, argv);
     int ret = client->exec();
     client.reset();
 

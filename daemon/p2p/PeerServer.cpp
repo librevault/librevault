@@ -39,8 +39,8 @@ Q_LOGGING_CATEGORY(log_p2p, "p2p")
 
 namespace librevault {
 
-PeerServer::PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent)
-    : QObject(parent), node_key_(node_key), port_mapping_(port_mapping) {
+PeerServer::PeerServer(NodeKey* node_key, GenericNatService* port_mapping, Config* config, QObject* parent)
+    : QObject(parent), node_key_(node_key), port_mapping_(port_mapping), config_(config) {
   server_ = new QWebSocketServer(Version().versionString(), QWebSocketServer::SecureMode, this);
   server_->setSslConfiguration(node_key_->getSslConfiguration());
 
@@ -89,9 +89,10 @@ void PeerServer::start() {
 void PeerServer::stop() {
   server_->close();
   main_port_->setEnabled(false);
+  main_port_->deleteLater();
 }
 
-quint16 PeerServer::configPort() const { return Config::get()->getGlobals()["p2p_listen"].toInt(); }
+quint16 PeerServer::configPort() const { return config_->getGlobals()["p2p_listen"].toInt(); }
 
 /* Here are where new QWebSocket created */
 void PeerServer::handleConnection() {

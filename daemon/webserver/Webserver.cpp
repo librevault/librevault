@@ -41,7 +41,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_webserver, "webserver")
 
-Webserver::Webserver(QObject* parent) : QObject(parent) {
+Webserver::Webserver(Config* config, QObject* parent) : QObject(parent), config_(config) {
   server_ = new QTcpServer(this);
   http_server_ = new HttpServer(this);
 }
@@ -49,7 +49,7 @@ Webserver::Webserver(QObject* parent) : QObject(parent) {
 void Webserver::start() {
   connect(server_, &QTcpServer::newConnection, this, &Webserver::handleConnection);
 
-  server_->listen(QHostAddress::Any, Config::get()->getGlobals()["control_listen"].toInt());
+  server_->listen(QHostAddress::Any, config_->getGlobals()["control_listen"].toInt());
   qCDebug(log_webserver) << "Started listening on port:" << server_->serverPort();
 }
 

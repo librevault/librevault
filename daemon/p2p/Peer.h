@@ -31,7 +31,7 @@
 #include "MetaInfo.h"
 #include "SignedMeta.h"
 #include "TimeoutHandler.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
 #include "util/exception.hpp"
@@ -49,13 +49,14 @@ class NodeKey;
 class HandshakeHandler;
 class PingHandler;
 class StateGuard;
+class Config;
 
 class Peer : public QObject {
   Q_OBJECT
 
  public:
   Peer(const models::FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
-      BandwidthCounter* bc_blocks, QObject* parent);
+      BandwidthCounter* bc_blocks, Config* config, QObject* parent);
   ~Peer() override;
 
   DECLARE_EXCEPTION(HandshakeExpected, "Handshake message expected");

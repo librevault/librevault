@@ -29,7 +29,7 @@
 #pragma once
 
 #include "SignedMeta.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include "util/exception.hpp"
 #include "util/SQLiteWrapper.h"
 #include <QObject>

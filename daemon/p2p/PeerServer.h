@@ -40,10 +40,12 @@ class Peer;
 class PeerPool;
 class GenericNatService;
 class PortMapping;
+class Config;
+
 class PeerServer : public QObject {
   Q_OBJECT
  public:
-  PeerServer(NodeKey* node_key, GenericNatService* port_mapping, QObject* parent);
+  PeerServer(NodeKey* node_key, GenericNatService* port_mapping, Config* config, QObject* parent);
   ~PeerServer() override;
 
   void addPeerPool(const QByteArray& folderid, PeerPool* pool);
@@ -57,6 +59,7 @@ class PeerServer : public QObject {
  private:
   NodeKey* node_key_ = nullptr;
   GenericNatService* port_mapping_ = nullptr;
+  Config* config_ = nullptr;
   PortMapping* main_port_ = nullptr;
 
   QWebSocketServer* server_ = nullptr;

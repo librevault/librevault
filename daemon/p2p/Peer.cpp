@@ -41,12 +41,12 @@ Q_LOGGING_CATEGORY(log_peer, "p2p.peer");
 Q_LOGGING_CATEGORY(log_peer_msg, "p2p.peer.msg");
 
 Peer::Peer(const models::FolderSettings& params, NodeKey* node_key, BandwidthCounter* bc_all,
-    BandwidthCounter* bc_blocks, QObject* parent)
+    BandwidthCounter* bc_blocks, Config* config, QObject* parent)
     : QObject(parent), node_key_(node_key), bc_all_(bc_all), bc_blocks_(bc_blocks) {
   qCDebug(log_peer) << "new peer";
 
   handshake_handler_ = new HandshakeHandler(
-      params, Config::get()->getGlobals()["client_name"].toString(), Version().userAgent(), this);
+      params, config->getGlobals()["client_name"].toString(), Version().userAgent(), this);
   connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
   connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::send);
 

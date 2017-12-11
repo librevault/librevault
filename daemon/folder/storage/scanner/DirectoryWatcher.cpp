@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DirectoryWatcher.h"
-#include "config/FolderSettings.h"
+#include "control/FolderSettings.h"
 #include "folder/IgnoreList.h"
 #include "util/conv_fspath.h"
 #include <path_normalizer.h>

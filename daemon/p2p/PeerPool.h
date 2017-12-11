@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "config/FolderSettings.h"
+#include "control/FolderSettings.h"
 #include "util/BandwidthCounter.h"
 #include "util/Endpoint.h"
 #include <QHostAddress>
@@ -46,13 +46,14 @@ class MulticastProvider;
 class DHTGroup;
 class BTGroup;
 class MulticastGroup;
+class Config;
 
 class PeerPool : public QObject {
   Q_OBJECT
 
  public:
   PeerPool(const models::FolderSettings& params, NodeKey* node_key, BTProvider* bt, DHTProvider* dht,
-      MulticastProvider* multicast, QObject* parent);
+      MulticastProvider* multicast, Config* config, QObject* parent);
   ~PeerPool() override;
 
   Q_SIGNAL void newValidPeer(Peer* peer);
@@ -78,6 +79,8 @@ class PeerPool : public QObject {
   DHTGroup* dht_group_;
   BTGroup* bt_group_;
   MulticastGroup* multicast_group_;
+
+  Config* config_;
 
   /* Members */
   QSet<Peer*> peers_;

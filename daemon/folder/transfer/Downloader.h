@@ -31,7 +31,7 @@
 #include "downloader/RequestTracker.h"
 #include "downloader/WeightedChunkQueue.h"
 #include "p2p/Peer.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include "util/AvailabilityMap.h"
 #include <QBitArray>
 #include <QList>
@@ -68,7 +68,7 @@ class Downloader : public QObject {
  public:
   DECLARE_EXCEPTION(InconsistentMetaBetweenPeers, "Meta is different between nodes");
 
-  Downloader(const models::FolderSettings& params, Index* index, QObject* parent);
+  Downloader(const models::FolderSettings& params, Index* index, Config* config, QObject* parent);
 
  public slots:
   void notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield);

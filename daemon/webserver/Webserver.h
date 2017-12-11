@@ -39,12 +39,13 @@ namespace librevault {
 
 class Session;
 class HttpServer;
+class Config;
 
 class Webserver : public QObject {
   Q_OBJECT
 
  public:
-  Webserver(QObject* parent);
+  Webserver(Config* config, QObject* parent);
 
   void start();
 
@@ -52,6 +53,8 @@ class Webserver : public QObject {
   QTcpServer* server_;
   HttpServer* http_server_;
   QHash<QUuid, QSharedPointer<Session>> sessions_;
+
+  Config* config_;
 
   Q_SLOT void handleConnection();
   Q_SLOT void handleHttpSession(const QUuid& sessid);

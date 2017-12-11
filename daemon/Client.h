@@ -31,7 +31,7 @@
 #define EXIT_RESTART 451
 
 #include "util/BandwidthCounter.h"
-#include "config/FolderSettings_fwd.h"
+#include "control/FolderSettings_fwd.h"
 #include <QCoreApplication>
 #include <QMap>
 
@@ -51,11 +51,12 @@ class DHTProvider;
 class MulticastProvider;
 
 class Webserver;
+class Config;
 
 class Client : public QCoreApplication {
   Q_OBJECT
  public:
-  Client(int argc, char** argv);
+  Client(Config* config, int argc, char** argv);
   virtual ~Client();
 
  public slots:
@@ -63,6 +64,8 @@ class Client : public QCoreApplication {
   void shutdown();
 
  private:
+  Config* config_;
+
   BandwidthCounter bc_all_, bc_blocks_;
   NodeKey* node_key_;
   GenericNatService* portmanager_;

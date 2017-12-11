@@ -42,21 +42,21 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_client, "client")
 
-Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
+Client::Client(Config* config, int argc, char** argv) : QCoreApplication(argc, argv), config_(config) {
   qRegisterMetaType<SignedMeta>("SignedMeta");
 
   // Initializing components
   node_key_ = new NodeKey(this);
   portmanager_ = new NatPmpService(this);
-  peerserver_ = new PeerServer(node_key_, portmanager_, this);
+  peerserver_ = new PeerServer(node_key_, portmanager_, config_, this);
 
-  webserver_ = new Webserver(this);
+  webserver_ = new Webserver(config_, this);
 
   portmanager_->setEnabled(true);
 
   /* Connecting signals */
-  connect(Config::get(), &Config::folderAdded, this, &Client::initFolder);
-  connect(Config::get(), &Config::folderRemoved, this, &Client::deinitFolder);
+  connect(config_, &Config::folderAdded, this, &Client::initFolder);
+  connect(config_, &Config::folderRemoved, this, &Client::deinitFolder);
 
   QTimer::singleShot(0, this, &Client::initializeAll);
 }
@@ -76,12 +76,12 @@ void Client::initializeAll() {
   webserver_->start();
 
   // Initialize all existing folders
-  for (const QByteArray& folderid : Config::get()->listFolders())
-    initFolder(Config::get()->getFolder(folderid));
+  for (const QByteArray& folderid : config_->listFolders())
+    initFolder(config_->getFolder(folderid));
 }
 
 void Client::deinitializeAll() {
-  for (const QByteArray& folderid : Config::get()->listFolders()) deinitFolder(folderid);
+  for (const QByteArray& folderid : config_->listFolders()) deinitFolder(folderid);
 
   deinitDiscovery();
 
@@ -106,11 +106,11 @@ void Client::initDiscovery() {
   // Multicast
   mcast_ = new MulticastProvider(this);
   mcast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
-  mcast_->setEnabled(Config::get()->getGlobals()["multicast_enabled"].toBool());
+  mcast_->setEnabled(config_->getGlobals()["multicast_enabled"].toBool());
 
   // DHT
   dht_ = new DHTProvider(this);
-  dht_->setEnabled(Config::get()->getGlobals()["mainline_dht_enabled"].toBool());
+  dht_->setEnabled(config_->getGlobals()["mainline_dht_enabled"].toBool());
   dht_->addRouter("router.utorrent.com", 6881);
   dht_->addRouter("router.bittorrent.com", 6881);
   dht_->addRouter("dht.transmissionbt.com", 6881);
@@ -119,8 +119,8 @@ void Client::initDiscovery() {
 
   // BitTorrent
   bt_ = new BTProvider(this);
-  bt_->setEnabled(Config::get()->getGlobals()["bttracker_enabled"].toBool());
-  bt_->setIDPrefix(Config::get()->getGlobals()["bttracker_azureus_id"].toString().toLatin1());
+  bt_->setEnabled(config_->getGlobals()["bttracker_enabled"].toBool());
+  bt_->setIDPrefix(config_->getGlobals()["bttracker_azureus_id"].toString().toLatin1());
 
   // common
   mcast_->setAnnouncePort(peerserver_->externalPort());
@@ -139,10 +139,10 @@ void Client::deinitDiscovery() {
 }
 
 void Client::initFolder(const models::FolderSettings& params) {
-  auto fgroup = new FolderGroup(params, this);
+  auto fgroup = new FolderGroup(params, config_, this);
   groups_[params.folderid()] = fgroup;
 
-  auto peer_pool = new PeerPool(params, node_key_, bt_, dht_, mcast_, this);
+  auto peer_pool = new PeerPool(params, node_key_, bt_, dht_, mcast_, config_, this);
   fgroup->setPeerPool(peer_pool);
   peerserver_->addPeerPool(params.folderid(), peer_pool);
 

@@ -49,8 +49,8 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "folder");
 
-FolderGroup::FolderGroup(models::FolderSettings params, QObject* parent)
-    : QObject(parent), params_(std::move(params)) {
+FolderGroup::FolderGroup(models::FolderSettings params, Config* config, QObject* parent)
+    : QObject(parent), config_(config), params_(std::move(params)) {
   createServiceDirectory();
 
   qCDebug(log_folder) << "New folder;"
@@ -74,7 +74,7 @@ FolderGroup::FolderGroup(models::FolderSettings params, QObject* parent)
 
   // Initializing P2P transfers
   uploader_ = new Uploader(chunk_storage_, this);
-  downloader_ = new Downloader(params_, index_, this);
+  downloader_ = new Downloader(params_, index_, config_, this);
   meta_uploader_ = new MetaUploader(index_, chunk_storage_, this);
   meta_downloader_ = new MetaDownloader(params_, index_, downloader_, task_scheduler_, this);
 

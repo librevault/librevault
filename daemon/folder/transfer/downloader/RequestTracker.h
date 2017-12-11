@@ -36,6 +36,7 @@
 namespace librevault {
 
 class Peer;
+class Config;
 
 struct BlockRequest {
   QByteArray ct_hash;
@@ -48,6 +49,8 @@ struct BlockRequest {
 
 class RequestTracker {
  public:
+  RequestTracker(Config* config);
+
   int count() const { return requests_.size(); }
   int maxRequests() const;
   int freeSlots() const { return maxRequests() - count(); }
@@ -65,6 +68,8 @@ class RequestTracker {
   QList<BlockRequest> requestsForChunk(const QByteArray& ct_hash);
 
  private:
+  Config* config_;
+
   QLinkedList<BlockRequest> requests_;
   bool removeRequests(std::function<bool(const BlockRequest&)> pred, const QString& reason);
   void removeRequest(QMutableLinkedListIterator<BlockRequest>& it, const QString& reason);

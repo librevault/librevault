@@ -30,7 +30,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
-QJsonValue mergePatch(const QJsonValue& target, const QJsonValue& patch) {
+inline QJsonValue mergePatch(const QJsonValue& target, const QJsonValue& patch) {
   if (!target.isObject() || !patch.isObject()) return patch;
 
   QJsonObject patch_o = patch.toObject();

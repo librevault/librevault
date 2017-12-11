@@ -91,18 +91,6 @@ QList<QByteArray> RemoteConfig::listFolders() {
 	return cached_folders_.keys();
 }
 
-QJsonDocument RemoteConfig::exportGlobals() {
-	return QJsonDocument::fromVariant(cached_globals_);
-}
-
-QJsonDocument RemoteConfig::exportFolders() {
-	QJsonArray folders;
-	foreach(const QVariantMap& folder, cached_folders_.values()) {
-		folders.append(QJsonValue::fromVariant(folder));
-	}
-	return QJsonDocument(folders);
-}
-
 void RemoteConfig::renew() {
 	{
 		QUrl request_url = daemon_->daemonUrl();

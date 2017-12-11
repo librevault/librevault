@@ -41,6 +41,7 @@ namespace librevault {
 class NodeKey;
 class PeerServer;
 class GenericNatService;
+class FolderController;
 
 class FolderGroup;
 
@@ -71,6 +72,8 @@ class Client : public QCoreApplication {
   GenericNatService* portmanager_;
   PeerServer* peerserver_;
 
+  FolderController* folder_controller_;
+
   BTProvider* bt_;
   DHTProvider* dht_;
   MulticastProvider* mcast_;
@@ -83,9 +86,6 @@ class Client : public QCoreApplication {
  private slots:
   void initDiscovery();
   void deinitDiscovery();
-
-  void initFolder(const models::FolderSettings& params);
-  void deinitFolder(const QByteArray& folderid);
 
   void initializeAll();
   void deinitializeAll();

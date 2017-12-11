@@ -28,12 +28,10 @@
  */
 #include "Config.h"
 #include "Paths.h"
-#include "secret/Secret.h"
 #include "util/MergePatch.h"
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QLoggingCategory>
 #include <QSaveFile>
 
@@ -41,7 +39,7 @@ Q_LOGGING_CATEGORY(log_config, "config")
 
 namespace librevault {
 
-Config::Config() {
+Config::Config(QObject* parent) : QObject(parent) {
   globals_defaults_ = readDefault(":/config/globals.json");
   globals_defaults_["client_name"] = QSysInfo::machineHostName();
   folders_defaults_ = readDefault(":/config/folders.json");
@@ -55,8 +53,6 @@ Config::Config() {
 }
 
 Config::~Config() { save(); }
-
-Config* Config::instance_ = nullptr;
 
 void Config::patchGlobals(const QJsonObject& patch) {
   globals_custom_ = mergePatch(globals_custom_, patch).toObject();
@@ -82,12 +78,10 @@ void Config::addFolder(QJsonObject fconfig) {
   QByteArray folderid = Secret(fconfig["secret"].toString()).folderid();
   if (folders_custom_.contains(folderid)) throw samekey_error();
   folders_custom_.insert(folderid, fconfig);
-  emit folderAdded(mergePatch(folders_defaults_, fconfig).toObject());
   save();
 }
 
 void Config::removeFolder(QByteArray folderid) {
-  emit folderRemoved(folderid);
   folders_custom_.remove(folderid);
   save();
 }

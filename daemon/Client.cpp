@@ -28,35 +28,32 @@
  */
 #include "Client.h"
 #include "control/Config.h"
+#include "folder/FolderController.h"
 #include "folder/FolderGroup.h"
 #include "nodekey/NodeKey.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
+#include "webserver/Webserver.h"
 #include <NatPmpService.h>
 #include <discovery/bt/BTProvider.h>
 #include <discovery/dht/DHTProvider.h>
 #include <discovery/multicast/MulticastProvider.h>
-#include "webserver/Webserver.h"
 
 namespace librevault {
 
 Q_LOGGING_CATEGORY(log_client, "client")
 
-Client::Client(Config* config, int argc, char** argv) : QCoreApplication(argc, argv), config_(config) {
+Client::Client(Config* config, int argc, char** argv)
+    : QCoreApplication(argc, argv), config_(config) {
   qRegisterMetaType<SignedMeta>("SignedMeta");
 
   // Initializing components
   node_key_ = new NodeKey(this);
   portmanager_ = new NatPmpService(this);
   peerserver_ = new PeerServer(node_key_, portmanager_, config_, this);
-
+  folder_controller_ = new FolderController(config_, this);
   webserver_ = new Webserver(config_, this);
-
   portmanager_->setEnabled(true);
-
-  /* Connecting signals */
-  connect(config_, &Config::folderAdded, this, &Client::initFolder);
-  connect(config_, &Config::folderRemoved, this, &Client::deinitFolder);
 
   QTimer::singleShot(0, this, &Client::initializeAll);
 }
@@ -70,21 +67,14 @@ Client::~Client() {
 
 void Client::initializeAll() {
   peerserver_->start();
-
   initDiscovery();
-
   webserver_->start();
-
-  // Initialize all existing folders
-  for (const QByteArray& folderid : config_->listFolders())
-    initFolder(config_->getFolder(folderid));
+  folder_controller_->loadAll();
 }
 
 void Client::deinitializeAll() {
-  for (const QByteArray& folderid : config_->listFolders()) deinitFolder(folderid);
-
+  folder_controller_->unloadAll();
   deinitDiscovery();
-
   peerserver_->stop();
 }
 
@@ -136,25 +126,6 @@ void Client::deinitDiscovery() {
   delete bt_;
   delete dht_;
   delete mcast_;
-}
-
-void Client::initFolder(const models::FolderSettings& params) {
-  auto fgroup = new FolderGroup(params, config_, this);
-  groups_[params.folderid()] = fgroup;
-
-  auto peer_pool = new PeerPool(params, node_key_, bt_, dht_, mcast_, config_, this);
-  fgroup->setPeerPool(peer_pool);
-  peerserver_->addPeerPool(params.folderid(), peer_pool);
-
-  qCInfo(log_client) << "Folder initialized:" << params.path << "as" << params.folderid().toHex();
-}
-
-void Client::deinitFolder(const QByteArray& folderid) {
-  auto fgroup = groups_[folderid];
-  groups_.remove(folderid);
-
-  fgroup->deleteLater();
-  qCInfo(log_client) << "Folder deinitialized:" << folderid.toHex();
 }
 
 }  // namespace librevault

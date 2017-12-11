@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "secret/Secret.h"
 #include "SignedMeta.h"
 #include "control/FolderSettings.h"
+#include "secret/Secret.h"
 #include "util/BandwidthCounter.h"
 #include <QLoggingCategory>
 #include <QObject>
@@ -63,9 +63,11 @@ class FolderGroup : public QObject {
   Q_OBJECT
 
  public:
-  FolderGroup(models::FolderSettings params, Config* config, QObject* parent);
-  virtual ~FolderGroup();
+  FolderGroup(const QJsonObject& folder_config, const QJsonObject& defaults, Config* config,
+      QObject* parent);
+  virtual ~FolderGroup() = default;
 
+  const QJsonObject& exportConfig() const { return folder_config_; }
   const models::FolderSettings& params() const { return params_; }
 
   void setPeerPool(PeerPool* pool);
@@ -73,6 +75,7 @@ class FolderGroup : public QObject {
  private:
   Config* config_;
 
+  const QJsonObject folder_config_;
   const models::FolderSettings params_;
 
   // Local storage

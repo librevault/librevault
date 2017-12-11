@@ -131,14 +131,16 @@ int main(int argc, char** argv) {
     log->info(Version::current().name().toStdString() + " " +
         Version::current().versionString().toStdString());
 
+    auto config = std::make_shared<Config>();
+
     // And, run!
-    auto client = std::make_unique<Client>(Config::get(), argc, argv);
+    auto client = std::make_unique<Client>(config.get(), argc, argv);
     int ret = client->exec();
     client.reset();
 
     // Deinitialization
     log->flush();
-    Config::deinit();
+    config.reset();
     Paths::deinit();
 
     if (ret != EXIT_RESTART) return ret;

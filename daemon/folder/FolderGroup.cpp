@@ -40,6 +40,7 @@
 #include "folder/transfer/MetaUploader.h"
 #include "folder/transfer/Uploader.h"
 #include "p2p/PeerPool.h"
+#include "util/MergePatch.h"
 #include <QDir>
 #ifdef Q_OS_WIN
 #  include <windows.h>
@@ -49,8 +50,9 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_folder, "folder");
 
-FolderGroup::FolderGroup(models::FolderSettings params, Config* config, QObject* parent)
-    : QObject(parent), config_(config), params_(std::move(params)) {
+FolderGroup::FolderGroup(
+    const QJsonObject& folder_config, const QJsonObject& defaults, Config* config, QObject* parent)
+    : QObject(parent), config_(config), folder_config_(folder_config), params_(mergePatch(defaults, folder_config).toObject()) {
   createServiceDirectory();
 
   qCDebug(log_folder) << "New folder;"
@@ -89,10 +91,8 @@ FolderGroup::FolderGroup(models::FolderSettings params, Config* config, QObject*
   });
 }
 
-FolderGroup::~FolderGroup() = default;
-
 void FolderGroup::addIndexing(const QString& abspath) {
-  if(!params_.secret.canSign()) {
+  if (!params_.secret.canSign()) {
     qCDebug(log_folder) << "Secret level is insufficient for indexing";
     return;
   }
@@ -102,7 +102,7 @@ void FolderGroup::addIndexing(const QString& abspath) {
 }
 
 void FolderGroup::addAssemble(SignedMeta smeta) {
-  if(!params_.secret.canDecrypt()) {
+  if (!params_.secret.canDecrypt()) {
     qCDebug(log_folder) << "Secret level is insufficient for assembling";
     return;
   }
@@ -127,8 +127,7 @@ void FolderGroup::handleNewChunk(const QByteArray& ct_hash) {
 
   downloader_->notifyLocalChunk(ct_hash);
   meta_uploader_->broadcastChunk(pool_->validPeers(), ct_hash);
-  for(const auto& meta : index_->containingChunk(ct_hash))
-    addAssemble(meta);
+  for (const auto& meta : index_->containingChunk(ct_hash)) addAssemble(meta);
 }
 
 // RemoteFolder actions

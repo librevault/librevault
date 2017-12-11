@@ -28,8 +28,8 @@
  */
 #pragma once
 
-#include "config/AbstractConfig.h"
 #include "FolderSettings.h"
+#include "config/AbstractConfig.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
@@ -37,48 +37,38 @@
 
 namespace librevault {
 
-class Config : public AbstractConfig {
+class Config : public QObject {
   Q_OBJECT
+
  public:
+  Config(QObject* parent = nullptr);
   ~Config();
 
   /* Exceptions */
   DECLARE_EXCEPTION(samekey_error,
       "Multiple directories with the same key (or derived from the same key) are not supported");
 
-  static Config* get() {
-    if (!instance_) instance_ = new Config();
-    return instance_;
-  }
-  static void deinit() {
-    delete instance_;
-    instance_ = nullptr;
-  }
+  Q_SIGNAL void changed();
 
   /* Global configuration */
-  void patchGlobals(const QJsonObject& patch) override;
-  QJsonObject getGlobals() override;
+  void patchGlobals(const QJsonObject& patch);
+  QJsonObject getGlobals();
 
   /* Folder configuration */
-  void addFolder(QJsonObject fconfig) override;
-  void removeFolder(QByteArray folderid) override;
+  void addFolder(QJsonObject fconfig);
+  void removeFolder(QByteArray folderid);
 
-  QJsonObject getFolder(QByteArray folderid) override;
-  QList<QByteArray> listFolders() override;
+  QJsonObject getFolder(QByteArray folderid);
+  QList<QByteArray> listFolders();
 
   /* Export/Import */
   QJsonObject exportUserGlobals();
-  QJsonObject exportGlobals() override;
+  QJsonObject exportGlobals();
   void importGlobals(QJsonDocument globals_conf);
 
   QJsonArray exportUserFolders();
-  QJsonArray exportFolders() override;
+  QJsonArray exportFolders();
   void importFolders(QJsonDocument folders_conf);
-
- protected:
-  Config();
-
-  static Config* instance_;
 
  private:
   QJsonObject globals_custom_, globals_defaults_, folders_defaults_;

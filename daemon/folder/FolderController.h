@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,41 +27,61 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "GenericRemoteDictionary.h"
-#include "config/AbstractConfig.h"
-#include <QJsonValue>
 
-class Daemon;
+#include "control/FolderSettings_fwd.h"
+#include "util/exception.hpp"
+#include <QHash>
+#include <QObject>
 
-class RemoteConfig : public librevault::AbstractConfig {
-	Q_OBJECT
+namespace librevault {
 
-signals:
-	void changed();
+class Config;
 
-public:
-	explicit RemoteConfig(Daemon* daemon);
+class NodeKey;
+class PeerServer;
 
-public slots:
-	/* Global configuration */
-	QJsonObject getGlobals() override;
-	void setGlobal(QString name, QVariant value);
+class FolderGroup;
 
-	/* Folder configuration */
-	void addFolder(QJsonObject fconfig) override;
-	void removeFolder(QByteArray folderid) override;
+class BTProvider;
+class DHTProvider;
+class MulticastProvider;
 
-	QJsonObject getFolder(QByteArray folderid) override;
-	QList<QByteArray> listFolders() override;
+class FolderController : public QObject {
+  Q_OBJECT
 
-private:
-	QJsonObject cached_globals_;
-	QMap<QByteArray, QVariantMap> cached_folders_;
+ public:
+  FolderController(Config* config, QObject* parent);
 
-	Daemon* daemon_;
+  DECLARE_EXCEPTION(samekey_error,
+      "Multiple directories with the same key (or derived from the same key) are not supported");
 
-	void renew();
-	void handleGlobals(QJsonDocument globals);
-	void handleFolders(QJsonDocument folders);
-	void handleEvent(QString name, QJsonObject event);
+  Q_SLOT void loadAll();
+  Q_SLOT void unloadAll();
+
+  void addFolder(const QJsonObject& folder_settings);
+  void removeFolder(const QByteArray& folderid);
+
+  QList<QByteArray> list() const;
+  void importAll(const QJsonArray& folder_configs);
+  QJsonArray exportAll() const;
+  QJsonObject defaults() const;
+
+ private:
+  Config* config_;
+
+  NodeKey* node_key_;
+  PeerServer* peerserver_;
+
+  BTProvider* bt_;
+  DHTProvider* dht_;
+  MulticastProvider* mcast_;
+
+  QHash<QByteArray, FolderGroup*> groups_;
+
+  bool save_allowed_ = false;
+
+  void loadFolder(const QJsonObject& folder_settings);
+  void unloadFolder(const QByteArray& folderid);
 };
+
+} /* namespace librevault */

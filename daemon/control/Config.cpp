@@ -39,8 +39,7 @@ Q_LOGGING_CATEGORY(log_config, "config")
 
 namespace librevault {
 
-Config::Config(QObject* parent) : QObject(parent) {
-  globals_defaults_ = readDefault(":/config/globals.json");
+Config::Config(QObject* parent) : PersistentConfiguration(":/config/globals.json", parent) {
   globals_defaults_["client_name"] = QSysInfo::machineHostName();
   folders_defaults_ = readDefault(":/config/folders.json");
 

@@ -28,60 +28,28 @@
  */
 #pragma once
 
-#include "control/FolderSettings_fwd.h"
-#include "control/PersistentConfiguration.h"
-#include "util/exception.hpp"
-#include <QHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QObject>
+#include <QVariant>
 
 namespace librevault {
 
-class Config;
-
-class NodeKey;
-class PeerServer;
-
-class FolderGroup;
-
-class BTProvider;
-class DHTProvider;
-class MulticastProvider;
-
-class FolderController : public PersistentConfiguration {
+class PersistentConfiguration : public QObject {
   Q_OBJECT
 
  public:
-  FolderController(Config* config, QObject* parent);
+  explicit PersistentConfiguration(const QString& defaults_path, QObject* parent = nullptr);
 
-  DECLARE_EXCEPTION(samekey_error,
-      "Multiple directories with the same key (or derived from the same key) are not supported");
+  virtual const QJsonObject& defaults() const { return defaults_; }
 
-  Q_SLOT void loadAll();
-  Q_SLOT void unloadAll();
-
-  void addFolder(const QJsonObject& folder_settings);
-  void removeFolder(const QByteArray& folderid);
-
-  QList<QByteArray> list() const;
-  void importAll(const QJsonArray& folder_configs);
-  QJsonArray exportAll() const;
+ protected:
+  static QJsonObject readDefault(const QString& path);
+  static QJsonDocument readConfig(const QString& source);
+  static void writeConfig(const QJsonDocument& doc, const QString& target);
 
  private:
-  Config* config_;
-
-  NodeKey* node_key_;
-  PeerServer* peerserver_;
-
-  BTProvider* bt_;
-  DHTProvider* dht_;
-  MulticastProvider* mcast_;
-
-  QHash<QByteArray, FolderGroup*> groups_;
-
-  bool save_allowed_ = false;
-
-  void loadFolder(const QJsonObject& folder_settings);
-  void unloadFolder(const QByteArray& folderid);
+  const QJsonObject defaults_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

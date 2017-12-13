@@ -40,7 +40,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_controller, "folder.controller")
 
 FolderController::FolderController(Config* config, QObject* parent)
-    : QObject(parent), config_(config) {}
+    : PersistentConfiguration(":/config/folders.json", parent), config_(config) {}
 
 void FolderController::loadAll() {
   try {

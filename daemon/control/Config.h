@@ -28,8 +28,9 @@
  */
 #pragma once
 
+#include "PersistentConfiguration.h"
 #include "FolderSettings.h"
-#include "config/AbstractConfig.h"
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
@@ -37,7 +38,7 @@
 
 namespace librevault {
 
-class Config : public QObject {
+class Config : public PersistentConfiguration {
   Q_OBJECT
 
  public:

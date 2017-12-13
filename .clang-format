@@ -47,7 +47,7 @@ DisableFormat:   false
 ExperimentalAutoDetectBinPacking: false
 ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH ]
 IncludeCategories:
-  - Regex:           '^".*\.h"'
+  - Regex:           '^".*\.(h|hpp|hxx)"'
     Priority:        1
   - Regex:           '^<.*\.h>'
     Priority:        2

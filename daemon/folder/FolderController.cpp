@@ -45,52 +45,41 @@ FolderController::FolderController(Config* config, QObject* parent)
 void FolderController::loadAll() {
   try {
     importAll(config_->exportFolders());
-    save_allowed_ = true;
+    config_imported_ = true;
   } catch (const std::exception& e) {
-    save_allowed_ = false;
+    qCWarning(log_controller) << "Could not import configuration. E:" << e.what();
+    config_imported_ = false;
   }
 }
 
 void FolderController::unloadAll() {
-  if(save_allowed_) {
+  if (config_imported_) {
     config_->importFolders(QJsonDocument(exportAll()));
     for (const auto& folderid : list()) unloadFolder(folderid);
-    save_allowed_ = false;
+    config_imported_ = false;
   }
 }
 
-void FolderController::addFolder(const QJsonObject& folder_settings) {}
-
-void FolderController::removeFolder(const QByteArray& folderid) {}
-
-QList<QByteArray> FolderController::list() const { return groups_.keys(); }
-
-void FolderController::importAll(const QJsonArray& folder_configs) {
-  for (const auto& folderid : list()) unloadFolder(folderid);
-  for (const auto& folder_config : folder_configs) loadFolder(folder_config.toObject());
-}
-
-QJsonArray FolderController::exportAll() const {
-  QJsonArray result;
-  for (FolderGroup* group : groups_.values()) result << group->exportConfig();
-  return result;
-}
-
 void FolderController::loadFolder(const QJsonObject& folder_settings) {
-  auto folderid = Secret(folder_settings["secret"].toString()).folderid();
-  if (groups_.contains(folderid)) throw samekey_error();
+  try {
+    auto folderid = Secret(folder_settings["secret"].toString()).folderid();
+    if (groups_.contains(folderid)) throw samekey_error();
 
-  auto fgroup = new FolderGroup(folder_settings, defaults(), config_, this);
-  Q_ASSERT(folderid == fgroup->params().folderid());
+    auto fgroup = new FolderGroup(folder_settings, defaults(), config_, this);
+    Q_ASSERT(folderid == fgroup->params().folderid());
 
-  groups_[fgroup->params().folderid()] = fgroup;
+    groups_[fgroup->params().folderid()] = fgroup;
 
-  auto peer_pool = new PeerPool(fgroup->params(), node_key_, bt_, dht_, mcast_, config_, this);
-  fgroup->setPeerPool(peer_pool);
-  peerserver_->addPeerPool(fgroup->params().folderid(), peer_pool);
+    auto peer_pool = new PeerPool(fgroup->params(), node_key_, bt_, dht_, mcast_, config_, this);
+    fgroup->setPeerPool(peer_pool);
+    peerserver_->addPeerPool(fgroup->params().folderid(), peer_pool);
 
-  qCInfo(log_controller) << "Folder loaded:" << fgroup->params().path << "as"
-                         << fgroup->params().folderid().toHex();
+    qCInfo(log_controller) << "Folder loaded:" << fgroup->params().path << "as"
+                           << fgroup->params().folderid().toHex();
+  } catch (const std::exception& e) {
+    qCInfo(log_controller) << "Folder not loaded. E:" << e.what();
+    throw;
+  }
 }
 
 void FolderController::unloadFolder(const QByteArray& folderid) {
@@ -99,6 +88,20 @@ void FolderController::unloadFolder(const QByteArray& folderid) {
 
   fgroup->deleteLater();
   qCInfo(log_controller) << "Folder unloaded:" << folderid.toHex();
+}
+
+QList<QByteArray> FolderController::list() const { return groups_.keys(); }
+
+void FolderController::importAll(const QJsonArray& folder_configs) {
+  // TODO: implement incremental reload
+  for (const auto& folderid : list()) unloadFolder(folderid);
+  for (const auto& folder_config : folder_configs) loadFolder(folder_config.toObject());
+}
+
+QJsonArray FolderController::exportAll() const {
+  QJsonArray result;
+  for (FolderGroup* group : groups_.values()) result << group->exportConfig();
+  return result;
 }
 
 }  // namespace librevault

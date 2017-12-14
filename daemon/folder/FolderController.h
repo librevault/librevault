@@ -59,8 +59,8 @@ class FolderController : public PersistentConfiguration {
   Q_SLOT void loadAll();
   Q_SLOT void unloadAll();
 
-  void addFolder(const QJsonObject& folder_settings);
-  void removeFolder(const QByteArray& folderid);
+  void loadFolder(const QJsonObject &folder_settings);
+  void unloadFolder(const QByteArray &folderid);
 
   QList<QByteArray> list() const;
   void importAll(const QJsonArray& folder_configs);
@@ -78,10 +78,7 @@ class FolderController : public PersistentConfiguration {
 
   QHash<QByteArray, FolderGroup*> groups_;
 
-  bool save_allowed_ = false;
-
-  void loadFolder(const QJsonObject& folder_settings);
-  void unloadFolder(const QByteArray& folderid);
+  bool config_imported_ = false;
 };
 
 } /* namespace librevault */

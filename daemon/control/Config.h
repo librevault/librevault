@@ -45,39 +45,19 @@ class Config : public PersistentConfiguration {
   Config(QObject* parent = nullptr);
   ~Config();
 
-  /* Exceptions */
-  DECLARE_EXCEPTION(samekey_error,
-      "Multiple directories with the same key (or derived from the same key) are not supported");
-
   Q_SIGNAL void changed();
 
   /* Global configuration */
   void patchGlobals(const QJsonObject& patch);
   QJsonObject getGlobals();
 
-  /* Folder configuration */
-  void addFolder(QJsonObject fconfig);
-  void removeFolder(QByteArray folderid);
-
-  QJsonObject getFolder(QByteArray folderid);
-  QList<QByteArray> listFolders();
-
   /* Export/Import */
   QJsonObject exportUserGlobals();
   QJsonObject exportGlobals();
   void importGlobals(QJsonDocument globals_conf);
 
-  QJsonArray exportUserFolders();
-  QJsonArray exportFolders();
-  void importFolders(QJsonDocument folders_conf);
-
  private:
-  QJsonObject globals_custom_, globals_defaults_, folders_defaults_;
-  QMap<QByteArray, QJsonObject> folders_custom_;
-
-  QJsonObject readDefault(const QString& path);
-  QJsonDocument readConfig(const QString& source);
-  void writeConfig(const QJsonDocument& doc, const QString& target);
+  QJsonObject settings_;
 
   // File config
   void load();

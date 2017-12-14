@@ -40,8 +40,7 @@ Q_LOGGING_CATEGORY(log_config, "config")
 namespace librevault {
 
 Config::Config(QObject* parent) : PersistentConfiguration(":/config/globals.json", parent) {
-  globals_defaults_["client_name"] = QSysInfo::machineHostName();
-  folders_defaults_ = readDefault(":/config/folders.json");
+  //globals_defaults_["client_name"] = QSysInfo::machineHostName();
 
   load();
 
@@ -54,100 +53,31 @@ Config::Config(QObject* parent) : PersistentConfiguration(":/config/globals.json
 Config::~Config() { save(); }
 
 void Config::patchGlobals(const QJsonObject& patch) {
-  globals_custom_ = mergePatch(globals_custom_, patch).toObject();
+  settings_ = mergePatch(settings_, patch).toObject();
   emit changed();
 }
 
 QJsonObject Config::getGlobals() {
-  return mergePatch(globals_defaults_, globals_custom_).toObject();
+  return mergePatch(defaults(), settings_).toObject();
 }
 
-QJsonObject Config::exportUserGlobals() { return globals_custom_; }
+QJsonObject Config::exportUserGlobals() { return settings_; }
 
 QJsonObject Config::exportGlobals() {
-  return mergePatch(globals_defaults_, globals_custom_).toObject();
+  return mergePatch(defaults(), settings_).toObject();
 }
 
 void Config::importGlobals(QJsonDocument globals_conf) {
-  globals_custom_ = globals_conf.object();
+  settings_ = globals_conf.object();
   emit changed();
-}
-
-void Config::addFolder(QJsonObject fconfig) {
-  QByteArray folderid = Secret(fconfig["secret"].toString()).folderid();
-  if (folders_custom_.contains(folderid)) throw samekey_error();
-  folders_custom_.insert(folderid, fconfig);
-  save();
-}
-
-void Config::removeFolder(QByteArray folderid) {
-  folders_custom_.remove(folderid);
-  save();
-}
-
-QJsonObject Config::getFolder(QByteArray folderid) {
-  return mergePatch(folders_defaults_, folders_custom_.value(folderid)).toObject();
-}
-
-QList<QByteArray> Config::listFolders() { return folders_custom_.keys(); }
-
-QJsonArray Config::exportUserFolders() {
-  QJsonArray folders_merged;
-  for (const auto& folder_params : folders_custom_.values()) folders_merged.append(folder_params);
-  return folders_merged;
-}
-
-QJsonArray Config::exportFolders() {
-  QJsonArray folders_merged;
-  for (const auto& folderid : listFolders()) folders_merged.append(getFolder(folderid));
-  return folders_merged;
-}
-
-void Config::importFolders(QJsonDocument folders_conf) {
-  for (const auto& folderid : folders_custom_.keys()) removeFolder(folderid);
-  for (const auto& folder_params_v : folders_conf.array()) addFolder(folder_params_v.toObject());
-}
-
-QJsonObject Config::readDefault(const QString& path) {
-  QFile defaults_f(path);
-  defaults_f.open(QIODevice::ReadOnly);
-
-  QJsonDocument defaults = QJsonDocument::fromJson(defaults_f.readAll());
-  Q_ASSERT(defaults.isObject());
-
-  return defaults.object();
-}
-
-QJsonDocument Config::readConfig(const QString& source) {
-  QFile config_file(source);
-  if (config_file.open(QIODevice::ReadOnly)) {
-    qCDebug(log_config) << "Loading configuration from:" << config_file.fileName();
-    return QJsonDocument::fromJson(config_file.readAll());
-  } else
-    qCWarning(log_config) << "Could not load configuration from:" << config_file.fileName();
-  return {};
-}
-
-void Config::writeConfig(const QJsonDocument& doc, const QString& target) {
-  QSaveFile config_file(target);
-  if (config_file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    qCDebug(log_config) << "Saving configuration to:" << config_file.fileName();
-    config_file.write(doc.toJson(QJsonDocument::Indented));
-  }
-  if (config_file.isOpen() && config_file.commit())
-    qCDebug(log_config) << "Saved configuration to:" << config_file.fileName();
-  else
-    qCWarning(log_config) << "Could not save configuration to:" << config_file.fileName();
 }
 
 void Config::load() {
   importGlobals(readConfig(Paths::get()->client_config_path));
-  importFolders(readConfig(Paths::get()->folders_config_path));
 }
 
 void Config::save() {
   writeConfig(QJsonDocument(exportUserGlobals()), Paths::get()->client_config_path);
-  writeConfig(QJsonDocument(exportUserFolders()), Paths::get()->folders_config_path);
 }
 
 }  // namespace librevault

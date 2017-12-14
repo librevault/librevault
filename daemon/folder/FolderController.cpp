@@ -29,6 +29,7 @@
 #include "FolderController.h"
 
 #include "FolderGroup.h"
+#include "control/Paths.h"
 #include "control/Config.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
@@ -44,7 +45,7 @@ FolderController::FolderController(Config* config, QObject* parent)
 
 void FolderController::loadAll() {
   try {
-    importAll(config_->exportFolders());
+    importAll(readConfig(Paths::get()->folders_config_path).array());
     config_imported_ = true;
   } catch (const std::exception& e) {
     qCWarning(log_controller) << "Could not import configuration. E:" << e.what();
@@ -54,7 +55,7 @@ void FolderController::loadAll() {
 
 void FolderController::unloadAll() {
   if (config_imported_) {
-    config_->importFolders(QJsonDocument(exportAll()));
+    writeConfig(QJsonDocument(exportAll()), Paths::get()->folders_config_path);
     for (const auto& folderid : list()) unloadFolder(folderid);
     config_imported_ = false;
   }

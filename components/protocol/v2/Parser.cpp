@@ -31,9 +31,7 @@
 #include <messages_v2.pb.h>
 #include <QLoggingCategory>
 
-namespace librevault {
-namespace protocol {
-namespace v2 {
+namespace librevault::protocol::v2 {
 
 Q_LOGGING_CATEGORY(log_protocol, "protocol.v2");
 
@@ -186,6 +184,4 @@ Message Parser::parse(const QByteArray& binary) const {
   return result;
 }
 
-} /* namespace v2 */
-} /* namespace protocol */
-} /* namespace librevault */
+}  // namespace librevault::protocol::v2

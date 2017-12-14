@@ -46,7 +46,7 @@ Peer::Peer(const models::FolderSettings& params, NodeKey* node_key, BandwidthCou
   qCDebug(log_peer) << "new peer";
 
   handshake_handler_ = new HandshakeHandler(
-      params, config->getGlobals()["client_name"].toString(), Version().userAgent(), this);
+      params, config->get("client_name").toString(), Version().userAgent(), this);
   connect(handshake_handler_, &HandshakeHandler::handshakeSuccess, this, &Peer::handshakeSuccess);
   connect(handshake_handler_, &HandshakeHandler::messagePrepared, this, &Peer::send);
 

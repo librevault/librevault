@@ -49,7 +49,7 @@ Webserver::Webserver(Config* config, QObject* parent) : QObject(parent), config_
 void Webserver::start() {
   connect(server_, &QTcpServer::newConnection, this, &Webserver::handleConnection);
 
-  server_->listen(QHostAddress::Any, config_->getGlobals()["control_listen"].toInt());
+  server_->listen(QHostAddress::Any, config_->get("control_listen").toInt());
   qCDebug(log_webserver) << "Started listening on port:" << server_->serverPort();
 }
 

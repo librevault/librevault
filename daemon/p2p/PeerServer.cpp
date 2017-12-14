@@ -92,7 +92,7 @@ void PeerServer::stop() {
   main_port_->deleteLater();
 }
 
-quint16 PeerServer::configPort() const { return config_->getGlobals()["p2p_listen"].toInt(); }
+quint16 PeerServer::configPort() const { return config_->get("p2p_listen").toInt(); }
 
 /* Here are where new QWebSocket created */
 void PeerServer::handleConnection() {

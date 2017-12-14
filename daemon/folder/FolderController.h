@@ -29,7 +29,7 @@
 #pragma once
 
 #include "control/FolderSettings_fwd.h"
-#include "control/PersistentConfiguration.h"
+#include "control/SettingsStorage.h"
 #include "util/exception.hpp"
 #include <QHash>
 #include <QObject>
@@ -47,7 +47,7 @@ class BTProvider;
 class DHTProvider;
 class MulticastProvider;
 
-class FolderController : public PersistentConfiguration {
+class FolderController : public QObject {
   Q_OBJECT
 
  public:
@@ -59,15 +59,18 @@ class FolderController : public PersistentConfiguration {
   Q_SLOT void loadAll();
   Q_SLOT void unloadAll();
 
-  void loadFolder(const QJsonObject &folder_settings);
-  void unloadFolder(const QByteArray &folderid);
+  void loadFolder(const QJsonObject& folder_settings);
+  void unloadFolder(const QByteArray& folderid);
 
   QList<QByteArray> list() const;
   void importAll(const QJsonArray& folder_configs);
   QJsonArray exportAll() const;
 
+  QJsonObject defaults() const { return storage_.defaults(); }
+
  private:
   Config* config_;
+  SettingsStorage storage_;
 
   NodeKey* node_key_;
   PeerServer* peerserver_;
@@ -81,4 +84,4 @@ class FolderController : public PersistentConfiguration {
   bool config_imported_ = false;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

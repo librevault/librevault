@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "PersistentConfiguration.h"
+#include "SettingsStorage.h"
 #include "FolderSettings.h"
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -38,7 +38,7 @@
 
 namespace librevault {
 
-class Config : public PersistentConfiguration {
+class Config : public QObject {
   Q_OBJECT
 
  public:
@@ -47,16 +47,16 @@ class Config : public PersistentConfiguration {
 
   Q_SIGNAL void changed();
 
-  /* Global configuration */
-  void patchGlobals(const QJsonObject& patch);
-  QJsonObject getGlobals();
+  void patch(const QJsonObject& patch);
+  QJsonValue get(const QString& key);
 
-  /* Export/Import */
-  QJsonObject exportUserGlobals();
-  QJsonObject exportGlobals();
-  void importGlobals(QJsonDocument globals_conf);
+  QJsonObject exportSettings();
+  void importSettings(QJsonDocument globals_conf);
+
+  QJsonObject defaults() const {return storage_.defaults();}
 
  private:
+  SettingsStorage storage_;
   QJsonObject settings_;
 
   // File config

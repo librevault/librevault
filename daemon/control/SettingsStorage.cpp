@@ -26,7 +26,7 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "PersistentConfiguration.h"
+#include "SettingsStorage.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -38,10 +38,10 @@ Q_LOGGING_CATEGORY(log_persistent, "config.persistent")
 
 namespace librevault {
 
-PersistentConfiguration::PersistentConfiguration(const QString& defaults_path, QObject* parent)
-    : QObject(parent), defaults_(readDefault(defaults_path)) {}
+SettingsStorage::SettingsStorage(const QString& defaults_path)
+    : defaults_(readDefault(defaults_path)) {}
 
-QJsonObject PersistentConfiguration::readDefault(const QString& path) {
+QJsonObject SettingsStorage::readDefault(const QString& path) {
   QFile defaults_f(path);
   defaults_f.open(QIODevice::ReadOnly);
 
@@ -51,7 +51,7 @@ QJsonObject PersistentConfiguration::readDefault(const QString& path) {
   return defaults.object();
 }
 
-QJsonDocument PersistentConfiguration::readConfig(const QString& source) {
+QJsonDocument SettingsStorage::readConfig(const QString& source) {
   QFile config_file(source);
 
   qCDebug(log_persistent) << "Loading configuration from:" << config_file.fileName();
@@ -73,7 +73,7 @@ QJsonDocument PersistentConfiguration::readConfig(const QString& source) {
   return config_doc;
 }
 
-void PersistentConfiguration::writeConfig(const QJsonDocument& doc, const QString& target) {
+void SettingsStorage::writeConfig(const QJsonDocument& doc, const QString& target) {
   QSaveFile config_file(target);
 
   qCDebug(log_persistent) << "Saving configuration to:" << config_file.fileName();

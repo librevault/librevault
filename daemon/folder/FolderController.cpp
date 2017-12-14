@@ -29,11 +29,10 @@
 #include "FolderController.h"
 
 #include "FolderGroup.h"
-#include "control/Paths.h"
 #include "control/Config.h"
+#include "control/Paths.h"
 #include "p2p/PeerPool.h"
 #include "p2p/PeerServer.h"
-#include <QDebug>
 #include <QJsonArray>
 
 namespace librevault {
@@ -41,11 +40,11 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_controller, "folder.controller")
 
 FolderController::FolderController(Config* config, QObject* parent)
-    : PersistentConfiguration(":/config/folders.json", parent), config_(config) {}
+    : QObject(parent), config_(config), storage_(":/config/folders.json") {}
 
 void FolderController::loadAll() {
   try {
-    importAll(readConfig(Paths::get()->folders_config_path).array());
+    importAll(storage_.readConfig(Paths::get()->folders_config_path).array());
     config_imported_ = true;
   } catch (const std::exception& e) {
     qCWarning(log_controller) << "Could not import configuration. E:" << e.what();
@@ -55,7 +54,7 @@ void FolderController::loadAll() {
 
 void FolderController::unloadAll() {
   if (config_imported_) {
-    writeConfig(QJsonDocument(exportAll()), Paths::get()->folders_config_path);
+    storage_.writeConfig(QJsonDocument(exportAll()), Paths::get()->folders_config_path);
     for (const auto& folderid : list()) unloadFolder(folderid);
     config_imported_ = false;
   }

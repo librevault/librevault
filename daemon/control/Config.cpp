@@ -39,7 +39,7 @@ Q_LOGGING_CATEGORY(log_config, "config")
 
 namespace librevault {
 
-Config::Config(QObject* parent) : PersistentConfiguration(":/config/globals.json", parent) {
+Config::Config(QObject* parent) : QObject(parent), storage_(":/config/globals.json") {
   //globals_defaults_["client_name"] = QSysInfo::machineHostName();
 
   load();
@@ -52,32 +52,28 @@ Config::Config(QObject* parent) : PersistentConfiguration(":/config/globals.json
 
 Config::~Config() { save(); }
 
-void Config::patchGlobals(const QJsonObject& patch) {
+void Config::patch(const QJsonObject& patch) {
   settings_ = mergePatch(settings_, patch).toObject();
   emit changed();
 }
 
-QJsonObject Config::getGlobals() {
-  return mergePatch(defaults(), settings_).toObject();
+QJsonValue Config::get(const QString& key) {
+  return mergePatch(defaults().value(key), settings_.value(key));
 }
 
-QJsonObject Config::exportUserGlobals() { return settings_; }
+QJsonObject Config::exportSettings() { return settings_; }
 
-QJsonObject Config::exportGlobals() {
-  return mergePatch(defaults(), settings_).toObject();
-}
-
-void Config::importGlobals(QJsonDocument globals_conf) {
+void Config::importSettings(QJsonDocument globals_conf) {
   settings_ = globals_conf.object();
   emit changed();
 }
 
 void Config::load() {
-  importGlobals(readConfig(Paths::get()->client_config_path));
+  importSettings(storage_.readConfig(Paths::get()->client_config_path));
 }
 
 void Config::save() {
-  writeConfig(QJsonDocument(exportUserGlobals()), Paths::get()->client_config_path);
+  storage_.writeConfig(QJsonDocument(exportSettings()), Paths::get()->client_config_path);
 }
 
 }  // namespace librevault

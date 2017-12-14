@@ -32,8 +32,7 @@
 #include <QDataStream>
 #include <boost/lexical_cast.hpp>
 
-namespace librevault {
-namespace protocol {
+namespace librevault::protocol {
 
 template <class To, class From>
 inline To convert(const From& from) {
@@ -81,5 +80,4 @@ inline QBitArray convert(const std::string& from) {
   return result;
 };
 
-}  // namespace protocol
-}  // namespace librevault
+}  // namespace librevault::protocol

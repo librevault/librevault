@@ -30,25 +30,23 @@
 #include <messages_v2.pb.h>
 #include <QDataStream>
 
-namespace librevault {
-namespace protocol {
-namespace v2 {
+namespace librevault::protocol::v2 {
 
 #pragma mark Debug output
-QDebug operator<<(QDebug debug, const Message::Header::MessageType& obj) {
+QDebug operator<<(QDebug debug, const MessageType& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "MessageType(" << [=] {
     switch (obj) {
-      case Message::Header::MessageType::HANDSHAKE: return "HANDSHAKE";
-      case Message::Header::MessageType::CHOKE: return "CHOKE";
-      case Message::Header::MessageType::UNCHOKE: return "UNCHOKE";
-      case Message::Header::MessageType::INTEREST: return "INTEREST";
-      case Message::Header::MessageType::UNINTEREST: return "UNINTEREST";
-      case Message::Header::MessageType::INDEXUPDATE: return "INDEXUPDATE";
-      case Message::Header::MessageType::METAREQUEST: return "METAREQUEST";
-      case Message::Header::MessageType::METARESPONSE: return "METARESPONSE";
-      case Message::Header::MessageType::BLOCKREQUEST: return "BLOCKREQUEST";
-      case Message::Header::MessageType::BLOCKRESPONSE: return "BLOCKRESPONSE";
+      case MessageType::HANDSHAKE: return "HANDSHAKE";
+      case MessageType::CHOKE: return "CHOKE";
+      case MessageType::UNCHOKE: return "UNCHOKE";
+      case MessageType::INTEREST: return "INTEREST";
+      case MessageType::UNINTEREST: return "UNINTEREST";
+      case MessageType::INDEXUPDATE: return "INDEXUPDATE";
+      case MessageType::METAREQUEST: return "METAREQUEST";
+      case MessageType::METARESPONSE: return "METARESPONSE";
+      case MessageType::BLOCKREQUEST: return "BLOCKREQUEST";
+      case MessageType::BLOCKRESPONSE: return "BLOCKRESPONSE";
       default: return "UNKNOWN";
     }
   }() << ")";
@@ -64,8 +62,9 @@ QDebug operator<<(QDebug debug, const Message::Header& obj) {
 QDebug operator<<(QDebug debug, const Message::Handshake& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "Handshake("
-                  << "auth_token: " << obj.auth_token.toHex() << ", device_name: " << obj.device_name
-                  << ", user_agent: " << obj.user_agent << ", dht_port: " << obj.dht_port << ")";
+                  << "auth_token: " << obj.auth_token.toHex()
+                  << ", device_name: " << obj.device_name << ", user_agent: " << obj.user_agent
+                  << ", dht_port: " << obj.dht_port << ")";
   return debug;
 }
 
@@ -104,7 +103,8 @@ QDebug operator<<(QDebug debug, const Message::BlockRequest& obj) {
 QDebug operator<<(QDebug debug, const Message::BlockResponse& obj) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "BlockResponse("
-                  << "ct_hash: " << obj.ct_hash.toHex() << ", offset: " << obj.offset << ", content: "
+                  << "ct_hash: " << obj.ct_hash.toHex() << ", offset: " << obj.offset
+                  << ", content: "
                   << "(actual content size: " + QString::number(obj.content.size()) + ")"
                   << ")";
   return debug;
@@ -116,26 +116,24 @@ QDebug operator<<(QDebug debug, const Message& obj) {
   debug << "Message(";
   debug << obj.header;
 
-  if (obj.header.type != Message::Header::MessageType::CHOKE &&
-      obj.header.type != Message::Header::MessageType::UNCHOKE &&
-      obj.header.type != Message::Header::MessageType::INTEREST &&
-      obj.header.type != Message::Header::MessageType::UNINTEREST) {
+  if (obj.header.type != MessageType::CHOKE &&
+      obj.header.type != MessageType::UNCHOKE &&
+      obj.header.type != MessageType::INTEREST &&
+      obj.header.type != MessageType::UNINTEREST) {
     debug << ", ";
   }
 
   switch (obj.header.type) {
-    case Message::Header::MessageType::HANDSHAKE: debug << obj.handshake; break;
-    case Message::Header::MessageType::INDEXUPDATE: debug << obj.indexupdate; break;
-    case Message::Header::MessageType::METAREQUEST: debug << obj.metarequest; break;
-    case Message::Header::MessageType::METARESPONSE: debug << obj.metaresponse; break;
-    case Message::Header::MessageType::BLOCKREQUEST: debug << obj.blockrequest; break;
-    case Message::Header::MessageType::BLOCKRESPONSE: debug << obj.blockresponse; break;
+    case MessageType::HANDSHAKE: debug << obj.handshake; break;
+    case MessageType::INDEXUPDATE: debug << obj.indexupdate; break;
+    case MessageType::METAREQUEST: debug << obj.metarequest; break;
+    case MessageType::METARESPONSE: debug << obj.metaresponse; break;
+    case MessageType::BLOCKREQUEST: debug << obj.blockrequest; break;
+    case MessageType::BLOCKRESPONSE: debug << obj.blockresponse; break;
     default:;
   }
   debug << ")";
   return debug;
 }
 
-}  // namespace v2
-}  // namespace protocol
-}  // namespace librevault
+}  // namespace librevault::protocol::v2

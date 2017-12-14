@@ -31,15 +31,11 @@
 #include "messages.h"
 #include <util/exception.hpp>
 
-namespace google {
-namespace protobuf {
+namespace google::protobuf {
 class Message;
-}
-}  // namespace google
+}  // namespace google::protobuf
 
-namespace librevault {
-namespace protocol {
-namespace v2 {
+namespace librevault::protocol::v2 {
 
 class Parser {
  public:
@@ -50,6 +46,4 @@ class Parser {
   Message parse(const QByteArray& binary) const;
 };
 
-} /* namespace v2 */
-} /* namespace protocol */
-} /* namespace librevault */
+}  // namespace librevault::protocol::v2

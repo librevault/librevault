@@ -35,21 +35,19 @@
 
 namespace librevault {
 
-class PersistentConfiguration : public QObject {
-  Q_OBJECT
-
+class SettingsStorage {
  public:
-  explicit PersistentConfiguration(const QString& defaults_path, QObject* parent = nullptr);
+  explicit SettingsStorage(const QString& defaults_path);
 
   virtual const QJsonObject& defaults() const { return defaults_; }
 
- protected:
-  static QJsonObject readDefault(const QString& path);
   static QJsonDocument readConfig(const QString& source);
   static void writeConfig(const QJsonDocument& doc, const QString& target);
 
  private:
   const QJsonObject defaults_;
+
+  static QJsonObject readDefault(const QString& path);
 };
 
 }  // namespace librevault

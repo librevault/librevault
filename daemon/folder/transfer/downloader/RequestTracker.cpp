@@ -39,15 +39,15 @@ Q_DECLARE_LOGGING_CATEGORY(log_downloader)
 RequestTracker::RequestTracker(Config* config) : config_(config) {}
 
 int RequestTracker::maxRequests() const {
-  return config_->getGlobals()["p2p_download_slots"].toInt();
+  return config_->get("p2p_download_slots").toInt();
 }
 
 quint32 RequestTracker::maxBlockSize() const {
-  return config_->getGlobals()["p2p_block_size"].toInt();
+  return config_->get("p2p_block_size").toInt();
 }
 
 std::chrono::seconds RequestTracker::maxRequestTimeout() const {
-  return std::chrono::seconds(config_->getGlobals()["p2p_request_timeout"].toInt());
+  return std::chrono::seconds(config_->get("p2p_request_timeout").toInt());
 }
 
 void RequestTracker::createRequest(

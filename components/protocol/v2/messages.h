@@ -33,9 +33,7 @@
 #include <QDebug>
 #include <QString>
 
-namespace librevault {
-namespace protocol {
-namespace v2 {
+namespace librevault::protocol::v2 {
 
 struct Message {
   struct Header {
@@ -99,6 +97,4 @@ QDebug operator<<(QDebug debug, const Message& obj);
 
 using MessageType = Message::Header::MessageType;
 
-}  // namespace v2
-}  // namespace protocol
-}  // namespace librevault
+}  // namespace librevault::protocol::v2

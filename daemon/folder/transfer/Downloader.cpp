@@ -45,7 +45,7 @@ Downloader::Downloader(const models::FolderSettings& params, Index* index, Confi
     : QObject(parent), params_(params), index_(index), request_tracker_(config) {
   maintain_timer_ = new QTimer(this);
   connect(maintain_timer_, &QTimer::timeout, this, &Downloader::maintainRequests);
-  maintain_timer_->setInterval(config->getGlobals()["p2p_request_timeout"].toInt() * 1000);
+  maintain_timer_->setInterval(config->get("p2p_request_timeout").toInt() * 1000);
   maintain_timer_->setTimerType(Qt::VeryCoarseTimer);
   maintain_timer_->start();
 }

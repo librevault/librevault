@@ -41,6 +41,7 @@ QString Translator::getLocaleSetting() {
 
 QMap<QString, QString> Translator::availableLocales() {
 	return {
+		{"de", "Deutsch"},
 		{"en", "English"},
 		{"ru", QString::fromUtf16(u"\u0420\u0443\u0441\u0441\u043A\u0438\u0439")}
 	};

@@ -29,7 +29,7 @@ mkdir build && cd build
 cmake .. && cmake --build .
 ```
 
-###Installing
+### Installing
 You can perform installation using this command: 
 ```
 sudo make install (or sudo checkinstall)

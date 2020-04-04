@@ -172,9 +172,8 @@ QSslCertificate NodeKey::createCertificate(const QSslKey& key) {
 
   /* Write certificate to DER buffer */
   QByteArray der_buffer(i2d_X509(x509.get(), nullptr), '\0');
-  uint8_t* data_ptr = (uint8_t*)der_buffer.data();
-  uint8_t** data_2ptr = &data_ptr;
-  i2d_X509(x509.get(), data_2ptr);
+  uchar* data_ptr = (uchar*)der_buffer.data();
+  i2d_X509(x509.get(), &data_ptr);
 
   /* Write the certificate to disk. */
   return QSslCertificate(der_buffer, QSsl::Der);

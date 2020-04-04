@@ -129,6 +129,7 @@ int main(int argc, char** argv) {
     std::cout << BANNER << std::endl;  // Print banner string.
     log->info(Version::current().name().toStdString() + " " +
         Version::current().versionString().toStdString());
+    log->info(std::string("Qt version ") + qVersion());
 
     auto config = std::make_shared<Config>();
 

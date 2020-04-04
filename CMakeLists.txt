@@ -167,8 +167,8 @@ if(OS_WIN)
 elseif(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-find_package(Qt5 5.9 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050900")
+find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051400")
 
 ## Protobuf
 find_package(Protobuf 3.9 REQUIRED)

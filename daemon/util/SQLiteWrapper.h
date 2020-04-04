@@ -122,33 +122,24 @@ class SQLiteResult {
   SQLiteResult(sqlite3_stmt* prepared_stmt);
   virtual ~SQLiteResult();
 
-  void finalize();
-
   SQLiteResultIterator begin();
   SQLiteResultIterator end();
 
   int result_code() const { return rescode; };
   bool have_rows() { return result_code() == SQLITE_ROW; }
-  std::vector<std::string> column_names() { return *cols; };
+
+ private:
+  void finalize();
 };
 
 class SQLiteDB {
  public:
   SQLiteDB(){};
   SQLiteDB(const boost::filesystem::path& db_path);
-  SQLiteDB(const char* db_path);
   virtual ~SQLiteDB();
-
-  void open(const boost::filesystem::path& db_path);
-  void open(const char* db_path);
-  void close();
-
-  sqlite3* sqlite3_handle() { return db; };
 
   SQLiteResult exec(const std::string& sql,
       const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
-
-  int64_t last_insert_rowid();
 
  private:
   sqlite3* db = 0;
@@ -157,7 +148,6 @@ class SQLiteDB {
 class SQLiteSavepoint {
  public:
   SQLiteSavepoint(SQLiteDB& db, const std::string savepoint_name);
-  SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name);
   ~SQLiteSavepoint();
 
   void commit();

@@ -13,4 +13,6 @@ class LibrevaultConan(ConanFile):
         "protoc_installer/3.9.1@bincrafters/stable",
     ]
     generators = "cmake"
-    default_options = ""
+    default_options = {
+        "sqlite3:threadsafe": 1
+    }

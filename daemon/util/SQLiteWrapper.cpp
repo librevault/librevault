@@ -133,17 +133,9 @@ SQLiteResultIterator SQLiteResult::begin() {
 SQLiteResultIterator SQLiteResult::end() { return SQLiteResultIterator(SQLITE_DONE); }
 
 // SQLiteDB
-SQLiteDB::SQLiteDB(const boost::filesystem::path& db_path) { open(db_path); }
+SQLiteDB::SQLiteDB(const boost::filesystem::path& db_path) { sqlite3_open(db_path.string().c_str(), &db); }
 
-SQLiteDB::SQLiteDB(const char* db_path) { open(db_path); }
-
-SQLiteDB::~SQLiteDB() { close(); }
-
-void SQLiteDB::open(const boost::filesystem::path& db_path) { open(db_path.string().c_str()); }
-
-void SQLiteDB::open(const char* db_path) { sqlite3_open(db_path, &db); }
-
-void SQLiteDB::close() { sqlite3_close(db); }
+SQLiteDB::~SQLiteDB() { sqlite3_close(db); }
 
 SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, SQLValue>& values) {
   sqlite3_stmt* sqlite_stmt = nullptr;
@@ -182,15 +174,9 @@ SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, 
   return SQLiteResult(sqlite_stmt);
 }
 
-int64_t SQLiteDB::last_insert_rowid() { return sqlite3_last_insert_rowid(db); }
-
 SQLiteSavepoint::SQLiteSavepoint(SQLiteDB& db, const std::string savepoint_name)
     : db(db), name(savepoint_name) {
   db.exec(std::string("SAVEPOINT ") + name);
-}
-SQLiteSavepoint::SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name)
-    : db(*db), name(savepoint_name) {
-  db->exec(std::string("SAVEPOINT ") + name);
 }
 SQLiteSavepoint::~SQLiteSavepoint() { db.exec(std::string("ROLLBACK TO ") + name); }
 void SQLiteSavepoint::commit() { db.exec(std::string("RELEASE ") + name); }

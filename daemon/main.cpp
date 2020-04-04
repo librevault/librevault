@@ -60,29 +60,20 @@ Options:
 )";
 
 void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
-	auto logger = spdlog::get(Version::current().name().toStdString());
-	if(!logger) return;
+  auto logger = spdlog::get(Version::current().name().toStdString());
+  if (!logger) return;
 
-	switch(msg_type) {
-		case QtDebugMsg:
-			logger->debug() << ctx.category << " | " << msg.toStdString();
-			break;
-		case QtWarningMsg:
-			logger->warn() << ctx.category << " | " << msg.toStdString();
-			break;
-		case QtCriticalMsg:
-			logger->critical() << ctx.category << " | " << msg.toStdString();
-			break;
-		case QtFatalMsg:
-			logger->emerg() << ctx.category << " | " << msg.toStdString();
-			logger->flush();
-			abort();
-		case QtInfoMsg:
-			logger->info() << ctx.category << " | " << msg.toStdString();
-			break;
-		default:
-			logger->info() << ctx.category << " | " << msg.toStdString();
-	}
+  switch (msg_type) {
+    case QtDebugMsg: logger->debug(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    case QtWarningMsg: logger->warn(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    case QtCriticalMsg: logger->error(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    case QtFatalMsg:
+      logger->critical(std::string(ctx.category) + " | " + msg.toStdString());
+      logger->flush();
+      abort();
+    case QtInfoMsg: logger->info(std::string(ctx.category) + " | " + msg.toStdString()); break;
+    default: logger->info(std::string(ctx.category) + " | " + msg.toStdString());
+  }
 }
 
 int main(int argc, char** argv) {
@@ -106,20 +97,18 @@ int main(int argc, char** argv) {
 
 		auto log = spdlog::get(Version::current().name().toStdString());
 		if(!log){
-			std::vector<spdlog::sink_ptr> sinks;
-			sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+          std::vector<spdlog::sink_ptr> sinks;
+          sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
-			boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
-			sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-				(log_path.parent_path() / log_path.stem()).native(), // TODO: support filenames with multiple dots
-				log_path.extension().native().substr(1), 10 * 1024 * 1024, 9));
+          boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
+          sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
 
-			log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
-			spdlog::register_logger(log);
+          log = std::make_shared<spdlog::logger>(
+              Version::current().name().toStdString(), sinks.begin(), sinks.end());
+          spdlog::register_logger(log);
 
-			log->set_level(log_level);
-			log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
-			log->flush_on(spdlog::level::warn);
+          log->set_level(log_level);
+          log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
 		}
 
 		// This overrides default Qt behavior, which is fine in many cases;
@@ -135,7 +124,7 @@ int main(int argc, char** argv) {
 			<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
 			<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
 			<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-		log->info() << Version::current().name().toStdString() << " " << Version::current().version_string().toStdString();
+		log->info((Version::current().name() + " " + Version::current().version_string()).toStdString());
 
 		// And, run!
 		auto client = std::make_unique<Client>(argc, argv);

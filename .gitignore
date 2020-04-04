@@ -133,3 +133,15 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+### CMake builds
+cmake-build-*/
+
+### Conan
+__pycache__/
+.venv/
+conan.lock
+conanbuildinfo.cmake
+conanbuildinfo.txt
+conaninfo.txt
+graph_info.json

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.2)
 project(librevault)
 
+if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+	conan_basic_setup(TARGETS)
+endif()
+
 #============================================================================
 # CMake modules
 #============================================================================
@@ -24,7 +29,6 @@ option(BUILD_UPDATER "Add auto-updater support" ON)
 option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
-option(DEBUG_WEBSOCKETPP "Debug websocket++" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
@@ -84,10 +88,6 @@ endif()
 
 if(DEBUG_NORMALIZATION)
 	add_definitions(-DLV_DEBUG_NORMALIZATION)
-endif()
-
-if(DEBUG_WEBSOCKETPP)
-	add_definitions(-DLV_DEBUG_WEBSOCKETPP)
 endif()
 
 if(NOT DEBUG_QT)
@@ -224,14 +224,6 @@ else()
 	endif()
 endif()
 
-## WebSocket++
-find_package(websocketpp QUIET)
-add_library(websocketpp INTERFACE)
-if(NOT websocketpp_FOUND)
-	add_subdirectory("contrib/websocketpp")
-	target_include_directories(websocketpp INTERFACE "contrib/websocketpp")
-endif()
-
 ##### External libraries #####
 
 ## Boost
@@ -265,12 +257,6 @@ find_package(Protobuf REQUIRED)
 add_library(protobuf INTERFACE)
 target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
 target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
-
-## CryptoPP
-find_package(CryptoPP 5.6.2 REQUIRED MODULE)
-add_library(cryptopp INTERFACE)
-target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
-target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
 
 ## OpenSSL
 find_package(OpenSSL REQUIRED)

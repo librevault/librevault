@@ -157,8 +157,8 @@ void NodeKey::gen_certificate() {
 	ASN1_INTEGER_set(X509_get_serialNumber(x509.get()), 1);
 
 	/* This certificate is valid from now until exactly one year from now. */
-	X509_gmtime_adj(X509_get_notBefore(x509), 0);
-	X509_gmtime_adj(X509_get_notAfter(x509), 31536000L);
+	X509_gmtime_adj(X509_get_notBefore(x509.get()), 0);
+	X509_gmtime_adj(X509_get_notAfter(x509.get()), 31536000L);
 
 	/* Set the public key for our certificate. */
 	X509_set_pubkey(x509.get(), openssl_pkey.get());

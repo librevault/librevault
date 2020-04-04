@@ -64,7 +64,6 @@ target_link_libraries(librevault-daemon libminiupnpc)
 target_link_libraries(librevault-daemon rabin)
 target_link_libraries(librevault-daemon dht)
 target_link_libraries(librevault-daemon sqlite3)
-target_link_libraries(librevault-daemon websocketpp)
 
 ##### External libraries #####
 
@@ -84,10 +83,12 @@ target_link_libraries(librevault-protobuf PUBLIC protobuf)
 target_link_libraries(librevault-daemon librevault-protobuf)
 
 ## CryptoPP
-target_link_libraries(librevault-daemon cryptopp)
+target_link_libraries(librevault-daemon CONAN_PKG::cryptopp)
 
 ## OpenSSL
 target_link_libraries(librevault-daemon openssl)
+
+target_link_libraries(librevault-daemon CONAN_PKG::websocketpp)
 
 ##### System libraries #####
 

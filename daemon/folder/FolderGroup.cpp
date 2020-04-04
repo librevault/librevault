@@ -55,6 +55,8 @@ FolderGroup::FolderGroup(
     : QObject(parent), config_(config), folder_config_(folder_config), params_(mergePatch(defaults, folder_config).toObject()) {
   createServiceDirectory();
 
+  qCDebug(log_folder) << mergePatch(defaults, folder_config).toObject();
+  qCDebug(log_folder) << params_.secret;
   qCDebug(log_folder) << "New folder;"
                       << "Level:" << (char)params_.secret.level() << "Path:" << params_.path
                       << "System path:" << params_.effectiveSystemPath();

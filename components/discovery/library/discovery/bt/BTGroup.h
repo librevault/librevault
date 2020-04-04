@@ -46,7 +46,7 @@ class BTGroup : public GenericGroup {
   Q_OBJECT
 
  public:
-  BTGroup(QByteArray discovery_id, BTProvider* provider, QObject* parent);
+  BTGroup(QByteArray discovery_id, BTProvider* provider = nullptr, QObject* parent = nullptr);
 
   Q_SLOT void setTrackerList(QList<QUrl> trackers);
 

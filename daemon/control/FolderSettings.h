@@ -39,7 +39,7 @@
 namespace librevault::models {
 
 struct FolderSettings {
-  FolderSettings(const QJsonObject& doc);
+  FolderSettings(const QJsonObject& j);
 
   QByteArray folderid() const { return secret.folderid(); }
   QString effectiveSystemPath() const {
@@ -58,7 +58,6 @@ struct FolderSettings {
   bool mainline_dht_enabled;
 
   QJsonObject toJson() const;
-  static FolderSettings fromJson(const QJsonObject& j);
 };
 
 }  // namespace librevault::models

@@ -32,28 +32,28 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
-target_link_libraries(librevault-daemon QDocopt)
-target_link_libraries(librevault-daemon meta)
-target_link_libraries(librevault-daemon metakit)
-target_link_libraries(librevault-daemon protocol)
-target_link_libraries(librevault-daemon portmapping)
-target_link_libraries(librevault-daemon discovery)
-target_link_libraries(librevault-daemon librevault-common)
-target_link_libraries(librevault-daemon dir_monitor)
-target_link_libraries(librevault-daemon rabin-cpp)
-target_link_libraries(librevault-daemon Threads::Threads)
+target_link_libraries(librevault-daemon PRIVATE QDocopt)
+target_link_libraries(librevault-daemon PRIVATE meta)
+target_link_libraries(librevault-daemon PRIVATE metakit)
+target_link_libraries(librevault-daemon PRIVATE protocol)
+target_link_libraries(librevault-daemon PRIVATE portmapping)
+target_link_libraries(librevault-daemon PRIVATE discovery)
+target_link_libraries(librevault-daemon PRIVATE librevault-common)
+target_link_libraries(librevault-daemon PRIVATE dir_monitor)
+target_link_libraries(librevault-daemon PRIVATE rabin-cpp)
+target_link_libraries(librevault-daemon PRIVATE Threads::Threads)
 if(TARGET CONAN_PKG::sqlite3)
-	target_link_libraries(librevault-daemon CONAN_PKG::sqlite3)
+	target_link_libraries(librevault-daemon PRIVATE CONAN_PKG::sqlite3)
 endif()
 if(TARGET CONAN_PKG::spdlog)
-	target_link_libraries(librevault-daemon CONAN_PKG::spdlog)
+	target_link_libraries(librevault-daemon PRIVATE CONAN_PKG::spdlog)
 endif()
 
 ##### External libraries #####
 
-target_link_libraries(librevault-daemon Boost::system Boost::filesystem Boost::thread)
-target_link_libraries(librevault-daemon Qt5::Core Qt5::Network Qt5::WebSockets)
-target_link_libraries(librevault-daemon OpenSSL::SSL)
+target_link_libraries(librevault-daemon PRIVATE Boost::system Boost::filesystem Boost::thread)
+target_link_libraries(librevault-daemon PRIVATE Qt5::Core Qt5::Network Qt5::WebSockets)
+target_link_libraries(librevault-daemon PRIVATE OpenSSL::SSL)
 
 ##### System libraries #####
 

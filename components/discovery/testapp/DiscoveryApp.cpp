@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "DiscoveryApp.h"
-#include <docopt.h>
+#include <docopt/docopt.h>
 
 namespace librevault {
 

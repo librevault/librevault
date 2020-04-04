@@ -144,8 +144,8 @@ QSslCertificate NodeKey::createCertificate(const QSslKey& key) {
   ASN1_INTEGER_set(X509_get_serialNumber(x509.get()), 1);
 
   /* This certificate is valid from now until exactly one year from now. */
-  X509_gmtime_adj(X509_get_notBefore(x509), 0);
-  X509_gmtime_adj(X509_get_notAfter(x509), 60l * 60l * 24l * 365l);
+  X509_gmtime_adj(X509_get_notBefore(x509.get()), 0);
+  X509_gmtime_adj(X509_get_notAfter(x509.get()), 60l * 60l * 24l * 365l);
 
   /* Set the public key for our certificate. */
   X509_set_pubkey(x509.get(), openssl_pkey.get());

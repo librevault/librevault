@@ -51,7 +51,7 @@ class FolderController : public PersistentConfiguration {
   Q_OBJECT
 
  public:
-  FolderController(Config* config, QObject* parent);
+  FolderController(Config* config, BTProvider* bt, MulticastProvider* mcast, DHTProvider* dht, PeerServer* peerserver, NodeKey* node_key, QObject* parent);
 
   DECLARE_EXCEPTION(samekey_error,
       "Multiple directories with the same key (or derived from the same key) are not supported");
@@ -67,14 +67,14 @@ class FolderController : public PersistentConfiguration {
   QJsonArray exportAll() const;
 
  private:
-  Config* config_;
+  Config* config_ = nullptr;
 
-  NodeKey* node_key_;
-  PeerServer* peerserver_;
+  NodeKey* node_key_ = nullptr;
+  PeerServer* peerserver_ = nullptr;
 
-  BTProvider* bt_;
-  DHTProvider* dht_;
-  MulticastProvider* mcast_;
+  BTProvider* bt_ = nullptr;
+  DHTProvider* dht_ = nullptr;
+  MulticastProvider* mcast_ = nullptr;
 
   QHash<QByteArray, FolderGroup*> groups_;
 

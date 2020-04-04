@@ -50,8 +50,12 @@ Client::Client(Config* config, int argc, char** argv)
   // Initializing components
   node_key_ = new NodeKey(this);
   portmanager_ = new NatPmpService(this);
+  mcast_ = new MulticastProvider(this);
+  bt_ = new BTProvider(this);
+  dht_ = new DHTProvider(this);
+
   peerserver_ = new PeerServer(node_key_, portmanager_, config_, this);
-  folder_controller_ = new FolderController(config_, this);
+  folder_controller_ = new FolderController(config_, bt_, mcast_, dht_, peerserver_, node_key_,this);
   webserver_ = new Webserver(config_, this);
   portmanager_->setEnabled(true);
 
@@ -94,12 +98,10 @@ void Client::initDiscovery() {
   QByteArray discovery_id = node_key_->digest();
 
   // Multicast
-  mcast_ = new MulticastProvider(this);
   mcast_->setGroupEndpoint({QHostAddress("239.192.152.144"), 28914});
   mcast_->setEnabled(config_->getGlobals()["multicast_enabled"].toBool());
 
   // DHT
-  dht_ = new DHTProvider(this);
   dht_->setEnabled(config_->getGlobals()["mainline_dht_enabled"].toBool());
   dht_->addRouter("router.utorrent.com", 6881);
   dht_->addRouter("router.bittorrent.com", 6881);
@@ -108,7 +110,6 @@ void Client::initDiscovery() {
   dht_->addRouter("dht.libtorrent.org", 25401);
 
   // BitTorrent
-  bt_ = new BTProvider(this);
   bt_->setEnabled(config_->getGlobals()["bttracker_enabled"].toBool());
   bt_->setIDPrefix(config_->getGlobals()["bttracker_azureus_id"].toString().toLatin1());
 

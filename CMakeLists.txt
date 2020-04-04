@@ -125,9 +125,6 @@ find_package(Threads)
 add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE 3rd-party/dir_monitor/include)
 
-## Docopt
-find_package(docopt)
-
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
 add_library(natpmp INTERFACE)
@@ -147,7 +144,7 @@ if(BUILD_GUI)
 endif()
 
 ## SQLite
-find_package(Sqlite3 3.9 QUIET)
+find_package(Sqlite3 3.31 QUIET)
 
 ##### External libraries #####
 
@@ -174,13 +171,7 @@ find_package(Qt5 5.9 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050900")
 
 ## Protobuf
-find_package(Protobuf 3.0 REQUIRED)
-
-## CryptoPP
-find_package(CryptoPP 5.6.4 REQUIRED MODULE)
-add_library(cryptopp INTERFACE)
-target_include_directories(cryptopp INTERFACE ${CRYPTOPP_INCLUDE_DIRS})
-target_link_libraries(cryptopp INTERFACE ${CRYPTOPP_LIBRARIES})
+find_package(Protobuf 3.9 REQUIRED)
 
 ## OpenSSL
 find_package(OpenSSL 1.0.2 REQUIRED)

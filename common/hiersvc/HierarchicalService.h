@@ -57,7 +57,7 @@ class HierarchicalService : public QObject {
   Q_SIGNAL void stopped();
 
  protected:
-  QPointer<HierarchicalService> parent_svc_;
+  HierarchicalService* parent_svc_;
 
   virtual void start() { emit started(); }
   virtual void stop() {}

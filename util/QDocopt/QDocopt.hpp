@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include <docopt.h>
+#include <docopt/docopt.h>
 #include <QtCore/QVariantMap>
 
 QVariantHash qdocopt(const QString& doc, int argc, char** argv, bool help = true, const QString& version = QString(), bool options_first = false) {

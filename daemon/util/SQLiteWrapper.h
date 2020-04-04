@@ -167,14 +167,4 @@ class SQLiteSavepoint {
   const std::string name;
 };
 
-class SQLiteLock {
- public:
-  SQLiteLock(SQLiteDB& db);
-  SQLiteLock(SQLiteDB* db);
-  ~SQLiteLock();
-
- private:
-  SQLiteDB& db;
-};
-
 } /* namespace librevault */

@@ -139,3 +139,8 @@ cmake-build-*/
 
 ### Conan
 __pycache__/
+.venv/
+conanbuildinfo.cmake
+conanbuildinfo.txt
+conaninfo.txt
+graph_info.json

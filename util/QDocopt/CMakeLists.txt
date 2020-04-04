@@ -9,5 +9,4 @@ target_sources(QDocopt INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/QDocopt.hpp)
 find_package(Qt5 5.0 REQUIRED COMPONENTS Core)
 target_link_libraries(QDocopt INTERFACE Qt5::Core)
 
-find_package(docopt)
-target_link_libraries(QDocopt INTERFACE docopt_s)
+target_link_libraries(QDocopt INTERFACE CONAN_PKG::docopt.cpp)

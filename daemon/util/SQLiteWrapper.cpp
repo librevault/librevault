@@ -146,7 +146,7 @@ void SQLiteDB::open(const char* db_path) { sqlite3_open(db_path, &db); }
 void SQLiteDB::close() { sqlite3_close(db); }
 
 SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, SQLValue>& values) {
-  sqlite3_stmt* sqlite_stmt;
+  sqlite3_stmt* sqlite_stmt = nullptr;
   sqlite3_prepare_v2(db, sql.c_str(), (int)sql.size() + 1, &sqlite_stmt, 0);
 
   for (auto value : values) {
@@ -194,13 +194,5 @@ SQLiteSavepoint::SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name)
 }
 SQLiteSavepoint::~SQLiteSavepoint() { db.exec(std::string("ROLLBACK TO ") + name); }
 void SQLiteSavepoint::commit() { db.exec(std::string("RELEASE ") + name); }
-
-SQLiteLock::SQLiteLock(SQLiteDB& db) : db(db) {
-  sqlite3_mutex_enter(sqlite3_db_mutex(db.sqlite3_handle()));
-}
-SQLiteLock::SQLiteLock(SQLiteDB* db) : db(*db) {
-  sqlite3_mutex_enter(sqlite3_db_mutex(db->sqlite3_handle()));
-}
-SQLiteLock::~SQLiteLock() { sqlite3_mutex_leave(sqlite3_db_mutex(db.sqlite3_handle())); }
 
 } /* namespace librevault */

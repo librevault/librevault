@@ -31,7 +31,6 @@
 #include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"
-#include <docopt.h>
 #include <spdlog/spdlog.h>
 #include <QDocopt.hpp>
 #include <boost/filesystem/path.hpp>

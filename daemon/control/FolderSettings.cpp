@@ -29,6 +29,7 @@
 #include "FolderSettings.h"
 #include <QJsonArray>
 #include <QVariant>
+#include <QDebug>
 
 namespace librevault {
 
@@ -74,7 +75,18 @@ void unpackValue(Secret& val, const QJsonValue& j) {
 
 namespace librevault::models {
 
-FolderSettings::FolderSettings(const QJsonObject& doc) { fromJson(doc); }
+FolderSettings::FolderSettings(const QJsonObject& j) {
+  qDebug() << j["secret"];
+  unpackValue(secret, j["secret"]);
+  unpackValue(path, j["path"]);
+  unpackValue(system_path, j["system_path"]);
+  unpackValue(preserve_unix_attrib, j["preserve_unix_attrib"]);
+  unpackValue(preserve_windows_attrib, j["preserve_windows_attrib"]);
+  unpackValue(preserve_symlinks, j["preserve_symlinks"]);
+  unpackValue(full_rescan_interval, j["full_rescan_interval"]);
+  unpackValue(nodes, j["nodes"]);
+  unpackValue(mainline_dht_enabled, j["mainline_dht_enabled"]);
+}
 
 QJsonObject FolderSettings::toJson() const {
   QJsonObject j;
@@ -90,22 +102,6 @@ QJsonObject FolderSettings::toJson() const {
   packValue(j["mainline_dht_enabled"], mainline_dht_enabled);
 
   return j;
-}
-
-FolderSettings FolderSettings::fromJson(const QJsonObject& j) {
-  FolderSettings st{QJsonObject()};
-
-  unpackValue(st.secret, j["secret"]);
-  unpackValue(st.path, j["path"]);
-  unpackValue(st.system_path, j["system_path"]);
-  unpackValue(st.preserve_unix_attrib, j["preserve_unix_attrib"]);
-  unpackValue(st.preserve_windows_attrib, j["preserve_windows_attrib"]);
-  unpackValue(st.preserve_symlinks, j["preserve_symlinks"]);
-  unpackValue(st.full_rescan_interval, j["full_rescan_interval"]);
-  unpackValue(st.nodes, j["nodes"]);
-  unpackValue(st.mainline_dht_enabled, j["mainline_dht_enabled"]);
-
-  return st;
 }
 
 }  // namespace librevault::models

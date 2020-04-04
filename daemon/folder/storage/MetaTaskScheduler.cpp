@@ -47,7 +47,7 @@ MetaTaskScheduler::~MetaTaskScheduler() {
 }
 
 void MetaTaskScheduler::process(const QByteArray& path_keyed_hash) {
-  QTimer::singleShot(0, this, [=]{
+  QTimer::singleShot(0, this, [=, this]{
   QMutexLocker lk(&tq_mtx_);
 
   Q_ASSERT(!path_keyed_hash.isEmpty());
@@ -92,7 +92,7 @@ void MetaTaskScheduler::scheduleTask(QueuedTask* task) {
   auto path_keyed_hash = task->pathKeyedHash();
   Q_ASSERT(!path_keyed_hash.isEmpty());
 
-  connect(task, &QObject::destroyed, this, [=] { handleFinished(path_keyed_hash, task); },
+  connect(task, &QObject::destroyed, this, [=, this] { handleFinished(path_keyed_hash, task); },
       Qt::DirectConnection);
   connect(
       this, &MetaTaskScheduler::aboutToStop, task, &QueuedTask::interrupt, Qt::DirectConnection);

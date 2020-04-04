@@ -57,7 +57,7 @@ void PeerServer::addPeerPool(const QByteArray& folderid, PeerPool* pool) {
   Q_ASSUME(!peer_pools_.contains(folderid));
 
   peer_pools_[folderid] = pool;
-  connect(pool, &QObject::destroyed, this, [=] { peer_pools_.remove(folderid); });
+  connect(pool, &QObject::destroyed, this, [=, this] { peer_pools_.remove(folderid); });
 }
 
 quint16 PeerServer::externalPort() const {

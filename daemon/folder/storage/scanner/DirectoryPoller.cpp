@@ -88,7 +88,7 @@ QList<QString> DirectoryPoller::getReindexList() {
     if (!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);
   }
 
-  return file_list.toList();
+  return file_list.values();
 }
 
 void DirectoryPoller::addPathsToQueue() {

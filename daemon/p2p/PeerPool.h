@@ -63,8 +63,8 @@ class PeerPool : public QObject {
   Q_SLOT void handleIncoming(QWebSocket* socket);
 
   /* Getters */
-  QList<Peer*> peers() const { return peers_.toList(); }
-  QList<Peer*> validPeers() const { return peers_ready_.toList(); }
+  QList<Peer*> peers() const { return peers_.values(); }
+  QList<Peer*> validPeers() const { return peers_ready_.values(); }
 
   BandwidthCounter* getBlockCounterAll() { return &bc_all_; }
   BandwidthCounter* getBlockCounterBlocks() { return &bc_blocks_; }

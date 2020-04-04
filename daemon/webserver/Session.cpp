@@ -41,7 +41,7 @@ Session::Session(const QUuid& sessid, QTcpSocket* sock, const HttpRequest& reque
 
   qCDebug(log_session) << "Started session:" << sessionId() << "this:" << this;
 
-  connect(timer_, &QTimer::timeout, this, [=] { emit timeout(sessionId()); });
+  connect(timer_, &QTimer::timeout, this, [=, this] { emit timeout(sessionId()); });
 }
 
 Session::~Session() {

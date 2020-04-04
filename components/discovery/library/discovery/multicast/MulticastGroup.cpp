@@ -45,7 +45,7 @@ MulticastGroup::MulticastGroup(
   // Connecting signals
   connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticast);
   connect(provider_, &MulticastProvider::discovered, this,
-      [=](const QByteArray& id, const Endpoint& endpoint) {
+      [=, this](const QByteArray& id, const Endpoint& endpoint) {
         if (id == getDiscoveryID()) emit discovered(endpoint);
       });
 }

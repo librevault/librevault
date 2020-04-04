@@ -75,9 +75,9 @@ void PeerPool::handleNewUrl(const QUrl& url) {
   qCDebug(log_peerpool) << "Handling an url:" << url;
 
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, config_, this);
-  connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
-  connect(peer, &Peer::disconnected, this, [=] { handleDisconnected(peer); });
-  connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
+  connect(peer, &Peer::handshakeSuccess, this, [=, this] { handleHandshake(peer); });
+  connect(peer, &Peer::disconnected, this, [=, this] { handleDisconnected(peer); });
+  connect(peer, &Peer::connected, this, [=, this] { handleConnected(peer); });
 
   peer->open(url);
 
@@ -90,9 +90,9 @@ void PeerPool::handleIncoming(QWebSocket* socket) {
                         << Endpoint{socket->peerAddress(), socket->peerPort()};
 
   Peer* peer = new Peer(params_, node_key_, &bc_all_, &bc_blocks_, config_, this);
-  connect(peer, &Peer::handshakeSuccess, this, [=] { handleHandshake(peer); });
-  connect(peer, &Peer::disconnected, this, [=] { handleDisconnected(peer); });
-  connect(peer, &Peer::connected, this, [=] { handleConnected(peer); });
+  connect(peer, &Peer::handshakeSuccess, this, [=, this] { handleHandshake(peer); });
+  connect(peer, &Peer::disconnected, this, [=, this] { handleDisconnected(peer); });
+  connect(peer, &Peer::connected, this, [=, this] { handleConnected(peer); });
 
   peer->setConnectedSocket(socket);
 

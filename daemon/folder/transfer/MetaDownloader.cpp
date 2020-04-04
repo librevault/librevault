@@ -68,7 +68,7 @@ void MetaDownloader::handleMetaReply(Peer* peer, const SignedMeta& smeta, QBitAr
 
     QueuedTask* task = new AddDownloadedTask(smeta, index_, this);
     connect(task, &QObject::destroyed, this,
-        [=] { downloader_->notifyRemoteMeta(peer, id, bitfield); });
+        [=, this] { downloader_->notifyRemoteMeta(peer, id, bitfield); });
     task_scheduler_->scheduleTask(task);
   } catch (const CantDownload& e) {
     qCDebug(log_metadownloader) << e.what();

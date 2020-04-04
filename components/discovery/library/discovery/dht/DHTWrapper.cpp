@@ -121,8 +121,8 @@ DHTWrapper::DHTWrapper(
   connect(periodic_, &QTimer::timeout, this, &DHTWrapper::periodicRequest);
   periodic_->start();
 
-  connect(socket4, &QUdpSocket::readyRead, this, [=] { processDatagram(socket4); });
-  connect(socket6, &QUdpSocket::readyRead, this, [=] { processDatagram(socket6); });
+  connect(socket4, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket4); });
+  connect(socket6, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket6); });
 }
 
 DHTWrapper::~DHTWrapper() {

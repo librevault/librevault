@@ -88,7 +88,7 @@ FolderGroup::FolderGroup(
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::putChunk);
 
   // Go through index
-  QTimer::singleShot(0, this, [=] {
+  QTimer::singleShot(0, this, [=, this] {
     for (auto& smeta : index_->getMeta()) notifyLocalMeta(smeta);
   });
 }
@@ -135,7 +135,7 @@ void FolderGroup::handleNewChunk(const QByteArray& ct_hash) {
 // RemoteFolder actions
 void FolderGroup::handleNewPeer(Peer* peer) {
   // Messages
-  connect(peer, &Peer::received, this, [=](const protocol::v2::Message& msg) {
+  connect(peer, &Peer::received, this, [=, this](const protocol::v2::Message& msg) {
     switch (msg.header.type) {
       case protocol::v2::MessageType::CHOKE: downloader_->handleChoke(peer); break;
       case protocol::v2::MessageType::UNCHOKE: downloader_->handleUnchoke(peer); break;
@@ -164,8 +164,8 @@ void FolderGroup::handleNewPeer(Peer* peer) {
   });
 
   // States
-  connect(peer, &Peer::disconnected, downloader_, [=] { downloader_->untrackPeer(peer); });
-  connect(peer, &Peer::disconnected, uploader_, [=] { uploader_->untrackPeer(peer); });
+  connect(peer, &Peer::disconnected, downloader_, [=, this] { downloader_->untrackPeer(peer); });
+  connect(peer, &Peer::disconnected, uploader_, [=, this] { uploader_->untrackPeer(peer); });
 
   downloader_->trackPeer(peer);
   meta_uploader_->handleHandshake(peer);

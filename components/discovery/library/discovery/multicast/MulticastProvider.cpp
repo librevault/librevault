@@ -50,7 +50,7 @@ QHostAddress makeBindAddress(const QHostAddress& addr) {
 
 MulticastProvider::MulticastProvider(QObject* parent) : GenericProvider(parent) {
   socket_ = new QUdpSocket(this);
-  connect(socket_, &QUdpSocket::readyRead, [=] { processDatagram(socket_); });
+  connect(socket_, &QUdpSocket::readyRead, [=, this] { processDatagram(socket_); });
 }
 
 void MulticastProvider::start() {

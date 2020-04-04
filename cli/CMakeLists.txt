@@ -31,7 +31,7 @@ add_executable(librevault-cli ${SRCS})
 
 target_link_libraries(librevault-cli lvcommon)
 target_link_libraries(librevault-cli openssl)
-target_link_libraries(librevault-cli docopt_s)
+target_link_libraries(librevault-cli CONAN_PKG::docopt.cpp)
 
 # Qt
 target_link_libraries(librevault-cli Qt5::Network)

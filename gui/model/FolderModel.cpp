@@ -31,7 +31,7 @@
 #include "control/Daemon.h"
 #include "control/RemoteConfig.h"
 #include "control/RemoteState.h"
-#include "human_size.h"
+#include "librevault/util/human_size.h"
 #include <librevault/Secret.h>
 #include <QFileIconProvider>
 

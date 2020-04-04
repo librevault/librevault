@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "GenericRemoteDictionary.h"
-#include "AbstractConfig.h"
+#include "librevault/AbstractConfig.h"
 #include <QJsonValue>
 
 class Daemon;

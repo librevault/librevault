@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/log.h"
-#include "blob.h"
+#include "librevault/util/blob.h"
 #include <QObject>
 #include <set>
 

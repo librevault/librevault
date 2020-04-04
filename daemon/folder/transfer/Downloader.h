@@ -31,7 +31,7 @@
 #include "downloader/WeightedChunkQueue.h"
 #include "folder/RemoteFolder.h"
 #include "util/AvailabilityMap.h"
-#include "blob.h"
+#include "librevault/util/blob.h"
 #include "util/log.h"
 #include <QList>
 #include <QTimer>

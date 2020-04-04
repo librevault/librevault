@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "blob.h"
+#include "librevault/util/blob.h"
 #include <librevault/Meta.h>
 #include <librevault/SignedMeta.h>
 #include <librevault/util/conv_bitfield.h>

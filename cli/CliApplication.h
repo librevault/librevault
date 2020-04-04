@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <docopt.h>
+#include <docopt/docopt.h>
 #include <QCoreApplication>
 #include <QNetworkAccessManager>
 #include <QUrl>

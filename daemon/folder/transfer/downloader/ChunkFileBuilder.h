@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "util/AvailabilityMap.h"
-#include "blob.h"
+#include "librevault/util/blob.h"
 #include <QCache>
 #include <QFile>
 

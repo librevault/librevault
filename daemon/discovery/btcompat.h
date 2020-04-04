@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "control/Config.h"
-#include "blob.h"
+#include "librevault/util/blob.h"
 #include <QByteArray>
 #include <QHostAddress>
 #include <QtEndian>

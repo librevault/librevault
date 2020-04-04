@@ -55,7 +55,6 @@ add_executable(librevault-daemon ${SRCS})
 
 ##### Bundled libraries #####
 target_link_libraries(librevault-daemon PUBLIC lvcommon)
-target_link_libraries(librevault-daemon PUBLIC librevault-common)
 target_link_libraries(librevault-daemon PUBLIC dir_monitor)
 target_link_libraries(librevault-daemon PUBLIC natpmp)
 target_link_libraries(librevault-daemon PUBLIC libminiupnpc)

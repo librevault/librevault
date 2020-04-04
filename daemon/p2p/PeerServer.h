@@ -34,7 +34,6 @@
 namespace librevault {
 
 class FolderGroup;
-class FolderService;
 class NodeKey;
 class Peer;
 class PeerPool;

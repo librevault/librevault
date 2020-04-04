@@ -43,12 +43,10 @@ using EndpointSet = QSet<Endpoint>;
 struct Endpoint {
   DECLARE_EXCEPTION(InvalidEndpoint, "Invalid endpoint");
   DECLARE_EXCEPTION(InvalidAddressFamily, "Invalid address family inside sockaddr");
-  DECLARE_EXCEPTION(EndpointNotMatched, "Endpoint has not match the endpoint pattern");
 
   QHostAddress addr;
   quint16 port;
 
-  static Endpoint fromString(const QString& str);
   QString toString() const;
 
   static Endpoint fromPacked4(QByteArray packed);

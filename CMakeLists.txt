@@ -25,7 +25,6 @@ option(BUILD_GUI "Build GUI" ON)
 # Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
-option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 set(SANITIZE "none" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
@@ -35,7 +34,7 @@ option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

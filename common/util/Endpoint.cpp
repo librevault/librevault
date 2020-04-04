@@ -43,17 +43,6 @@ namespace {
 QRegularExpression endpoint_regexp(R"(^\[?([[:xdigit:].:]{2,45})\]?:(\d{1,5})$)");
 }
 
-Endpoint Endpoint::fromString(const QString& str) {
-  Endpoint endpoint;
-
-  auto match = endpoint_regexp.match(str);
-  if (!match.hasMatch()) throw EndpointNotMatched();
-
-  endpoint.addr = QHostAddress(match.captured(1));
-  endpoint.port = (quint16)match.captured(2).toUInt();
-  return endpoint;
-}
-
 QString Endpoint::toString() const {
   QHostAddress addr_converted = addr;
   {

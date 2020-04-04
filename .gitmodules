@@ -6,14 +6,6 @@
 	path = contrib/dir_monitor
 	url = https://github.com/Librevault/dir_monitor.git
 	branch = master
-[submodule "contrib/spdlog"]
-	path = contrib/spdlog
-	url = https://github.com/Librevault/spdlog.git
-	branch = master
-[submodule "contrib/docopt"]
-	path = contrib/docopt
-	url = https://github.com/Librevault/docopt.cpp.git
-	branch = master
 [submodule "contrib/rabin"]
 	path = contrib/rabin
 	url = https://github.com/Librevault/rabin.git

@@ -26,7 +26,6 @@ option(BUILD_CLI "Build CLI" ON)
 # Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
-option(USE_BUNDLED_SQLITE3 "Force using bundled version of SQLite3" OFF)
 option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
@@ -146,12 +145,6 @@ endif()
 add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
-## Docopt
-find_package(docopt QUIET)
-if(NOT docopt_FOUND)
-	add_subdirectory(contrib/docopt)
-endif()
-
 ## libnatpmp
 find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
 if(NOT libnatpmp_LIBRARIES)
@@ -188,40 +181,6 @@ add_subdirectory("contrib/dht")
 ## QtSingleApplication
 if(BUILD_GUI)
 	add_subdirectory("contrib/qtsingleapplication")
-endif()
-
-## Spdlog
-find_package(spdlog QUIET)
-add_definitions(-DSPDLOG_WCHAR_FILENAMES)
-if(spdlog_FOUND)
-	add_library(spdlog INTERFACE)
-	target_link_libraries(spdlog INTERFACE spdlog::spdlog)
-else()
-	add_subdirectory(contrib/spdlog)
-endif()
-
-## SQLite
-if(NOT USE_BUNDLED_SQLITE3)
-	find_package(Sqlite3 3.9 QUIET)
-endif()
-
-if(SQLITE3_FOUND AND NOT USE_BUNDLED_SQLITE3)
-	message(STATUS "Using system SQLite ${SQLITE3_VERSION}")
-	add_library(sqlite3 INTERFACE)
-	target_include_directories(sqlite3 INTERFACE ${SQLITE3_INCLUDE_DIR})
-	target_link_libraries(sqlite3 INTERFACE ${SQLITE3_LIBRARY})
-
-	if(OS_LINUX)
-		target_link_libraries(sqlite3 INTERFACE dl)
-	endif()
-else()
-	message(STATUS "Using bundled SQLite")
-	add_library(sqlite3 STATIC contrib/sqlite3/sqlite3.c)
-	target_include_directories(sqlite3 PUBLIC "contrib/sqlite3")
-
-	if(OS_LINUX)
-		target_link_libraries(sqlite3 PUBLIC dl)
-	endif()
 endif()
 
 ##### External libraries #####

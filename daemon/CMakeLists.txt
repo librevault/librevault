@@ -54,24 +54,21 @@ add_executable(librevault-daemon ${SRCS})
 #============================================================================
 
 ##### Bundled libraries #####
-target_link_libraries(librevault-daemon lvcommon)
-target_link_libraries(librevault-daemon librevault-common)
-target_link_libraries(librevault-daemon dir_monitor)
-target_link_libraries(librevault-daemon spdlog)
-target_link_libraries(librevault-daemon docopt_s)
-target_link_libraries(librevault-daemon natpmp)
-target_link_libraries(librevault-daemon libminiupnpc)
-target_link_libraries(librevault-daemon rabin)
-target_link_libraries(librevault-daemon dht)
-target_link_libraries(librevault-daemon sqlite3)
+target_link_libraries(librevault-daemon PUBLIC lvcommon)
+target_link_libraries(librevault-daemon PUBLIC librevault-common)
+target_link_libraries(librevault-daemon PUBLIC dir_monitor)
+target_link_libraries(librevault-daemon PUBLIC natpmp)
+target_link_libraries(librevault-daemon PUBLIC libminiupnpc)
+target_link_libraries(librevault-daemon PUBLIC rabin)
+target_link_libraries(librevault-daemon PUBLIC dht)
 
 ##### External libraries #####
 
 ## Boost
-target_link_libraries(librevault-daemon boost)
+target_link_libraries(librevault-daemon PUBLIC boost)
 
 ## Qt5
-target_link_libraries(librevault-daemon Qt5::WebSockets)
+target_link_libraries(librevault-daemon PUBLIC Qt5::WebSockets)
 
 ## Protobuf
 file(GLOB_RECURSE PROTO_LIST "*.proto")
@@ -80,30 +77,29 @@ protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 add_library(librevault-protobuf STATIC ${PROTO_SOURCES} ${PROTO_HEADERS})
 target_link_libraries(librevault-protobuf PUBLIC protobuf)
 
-target_link_libraries(librevault-daemon librevault-protobuf)
+target_link_libraries(librevault-daemon PUBLIC librevault-protobuf)
 
-## CryptoPP
-target_link_libraries(librevault-daemon CONAN_PKG::cryptopp)
-
-## OpenSSL
-target_link_libraries(librevault-daemon openssl)
-
-target_link_libraries(librevault-daemon CONAN_PKG::websocketpp)
+target_link_libraries(librevault-daemon PUBLIC openssl)
+target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::spdlog)
+target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::sqlite3)
+target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::websocketpp)
+target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::cryptopp)
+target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::docopt.cpp)
 
 ##### System libraries #####
 
 ## WinSock
 if(OS_WIN)
-	target_link_libraries(librevault-daemon wsock32 ws2_32 Iphlpapi)
+	target_link_libraries(librevault-daemon PUBLIC wsock32 ws2_32 Iphlpapi)
 endif()
 
 ## CoreFoundation
 if(OS_MAC)
-	target_link_libraries(librevault-daemon "-framework Foundation")
-	target_link_libraries(librevault-daemon "-framework CoreFoundation")
-	target_link_libraries(librevault-daemon "-framework CoreServices")
+	target_link_libraries(librevault-daemon PUBLIC "-framework Foundation")
+	target_link_libraries(librevault-daemon PUBLIC "-framework CoreFoundation")
+	target_link_libraries(librevault-daemon PUBLIC "-framework CoreServices")
 endif()
 
 if(BUILD_STATIC AND OS_LINUX)
-	target_link_libraries(librevault-daemon dl)
+	target_link_libraries(librevault-daemon PUBLIC dl)
 endif()

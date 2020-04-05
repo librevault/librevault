@@ -91,24 +91,17 @@
       <string>Peer discovery settings</string>
      </property>
      <layout class="QFormLayout" name="formLayout_2">
-      <item row="2" column="0" colspan="2">
-       <widget class="QCheckBox" name="dht_discovery_box">
-        <property name="text">
-         <string>Enable DHT</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="2">
+      <item row="0" column="0" colspan="2">
        <widget class="QCheckBox" name="local_discovery_box">
         <property name="text">
          <string>Enable local discovery</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QCheckBox" name="global_discovery_box">
+      <item row="1" column="0" colspan="2">
+       <widget class="QCheckBox" name="dht_discovery_box">
         <property name="text">
-         <string>Enable global discovery</string>
+         <string>Enable DHT</string>
         </property>
        </widget>
       </item>
@@ -133,7 +126,6 @@
   <tabstop>box_port_random</tabstop>
   <tabstop>natpmp_box</tabstop>
   <tabstop>upnp_box</tabstop>
-  <tabstop>global_discovery_box</tabstop>
   <tabstop>local_discovery_box</tabstop>
   <tabstop>dht_discovery_box</tabstop>
  </tabstops>

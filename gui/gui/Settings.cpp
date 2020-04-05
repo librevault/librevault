@@ -113,9 +113,6 @@ void Settings::reset_ui_states() {
 	// upnp_enabled
 	ui_pane_network_.upnp_box->setChecked(daemon_->config()->getGlobal("upnp_enabled").toBool());
 
-	// bttracker_enabled
-	ui_pane_network_.global_discovery_box->setChecked(daemon_->config()->getGlobal("bttracker_enabled").toBool());
-
 	// multicast4_enabled || multicast6_enabled
 	ui_pane_network_.local_discovery_box->setChecked(
 		daemon_->config()->getGlobal("multicast4_enabled").toBool() ||
@@ -149,9 +146,6 @@ void Settings::process_ui_states() {
 
 	// upnp_enabled
 	daemon_->config()->setGlobal("upnp_enabled", ui_pane_network_.upnp_box->isChecked());
-
-	// bttracker_enabled
-	daemon_->config()->setGlobal("bttracker_enabled", ui_pane_network_.global_discovery_box->isChecked());
 
 	// multicast4_enabled || multicast6_enabled
 	daemon_->config()->setGlobal("multicast4_enabled", ui_pane_network_.local_discovery_box->isChecked());

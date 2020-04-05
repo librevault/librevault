@@ -69,20 +69,6 @@ inline info_hash getInfoHash(const QByteArray& folderid) {
 	return ih;
 }
 
-inline peer_id get_peer_id(QByteArray digest) {
-	peer_id pid;
-
-	std::string az_id = Config::get()->getGlobal("bttracker_azureus_id").toString().toStdString();
-	az_id.resize(8);
-
-	digest = digest.leftJustified(pid.size() - az_id.size(), 0, true);
-
-	std::copy(az_id.begin(), az_id.end(), pid.begin());
-	std::copy(digest.begin(), digest.end(), pid.begin() + az_id.size());
-
-	return pid;
-}
-
 inline asio_endpoint parse_compact_endpoint(const compact_endpoint4& compact_endpoint) {
 	return asio_endpoint(asio_address_v4(compact_endpoint.ip4), compact_endpoint.port);
 };

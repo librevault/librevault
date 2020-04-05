@@ -11,12 +11,6 @@
 	"predef_repeat_interval": 30,
 	"multicast_enabled": true,
 	"multicast_repeat_interval": 30,
-	"bttracker_enabled": true,
-	"bttracker_num_want": 30,
-	"bttracker_min_interval": 15,
-	"bttracker_azureus_id": "-LV0001-",
-	"bttracker_reconnect_interval": 30,
-	"bttracker_packet_timeout": 10,
 	"mainline_dht_enabled": true,
 	"mainline_dht_port": 42347,
 	"mainline_dht_routers": [

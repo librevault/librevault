@@ -40,16 +40,16 @@ class NATPMPService;
 class UPnPService;
 class PortMappingSubService;
 
+struct MappingDescriptor {
+  uint16_t port;
+  QAbstractSocket::SocketType protocol;
+};
+
 class PortMappingService : public QObject {
   Q_OBJECT
   friend class PortMappingSubService;
 
  public:
-  struct MappingDescriptor {
-    uint16_t port;
-    QAbstractSocket::SocketType protocol;
-  };
-
   PortMappingService(QObject* parent);
   virtual ~PortMappingService();
 

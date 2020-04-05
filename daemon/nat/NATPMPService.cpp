@@ -50,15 +50,10 @@ void NATPMPService::start() {
   int natpmp_ec = initnatpmp(&natpmp, 0, 0);
   qCDebug(log_natpmp) << "initnatpmp() = " << natpmp_ec;
 
-  if (natpmp_ec == 0) {
-    active = true;
-    add_existing_mappings();
-  }
+  if (natpmp_ec == 0) add_existing_mappings();
 }
 
 void NATPMPService::stop() {
-  active = false;
-
   mappings_.clear();
   closenatpmp(&natpmp);
 }
@@ -75,7 +70,7 @@ void NATPMPService::remove_port_mapping(const std::string& id) {
 
 /* NATPMPMapping */
 NATPMPMapping::NATPMPMapping(NATPMPService& parent, std::string id,
-                             PortMappingService::MappingDescriptor descriptor)
+                             MappingDescriptor descriptor)
     : parent_(parent), id_(id), descriptor_(descriptor) {
   timer_ = new QTimer(this);
 

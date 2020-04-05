@@ -57,7 +57,6 @@ class NATPMPService : public PortMappingSubService {
 
  protected:
   bool is_config_enabled();
-  bool active = false;
   natpmp_t natpmp;
 
   std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
@@ -67,13 +66,13 @@ class NATPMPMapping : public QObject {
   Q_OBJECT
  public:
   NATPMPMapping(NATPMPService& parent, std::string id,
-                PortMappingService::MappingDescriptor descriptor);
+                MappingDescriptor descriptor);
   ~NATPMPMapping();
 
  private:
   NATPMPService& parent_;
   std::string id_;
-  PortMappingService::MappingDescriptor descriptor_;
+  MappingDescriptor descriptor_;
 
   QTimer* timer_;
 

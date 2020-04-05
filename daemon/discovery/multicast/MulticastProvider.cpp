@@ -27,83 +27,83 @@
  * files in the program, then also delete it here.
  */
 #include "MulticastProvider.h"
+
+#include <MulticastDiscovery.pb.h>
+
+#include <QLoggingCategory>
+
 #include "MulticastGroup.h"
 #include "nodekey/NodeKey.h"
-#include <MulticastDiscovery.pb.h>
-#include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(log_multicast, "discovery.multicast")
 
 namespace librevault {
 
 MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObject(parent), nodekey_(nodekey) {
-	// Multicast parameters
-	address_v4_ = QHostAddress("239.192.152.144");
-	address_v6_ = QHostAddress("ff08::BD02");
-	port_ = 28914;
-	//
+  // Multicast parameters
+  address_v4_ = QHostAddress("239.192.152.144");
+  address_v6_ = QHostAddress("ff08::BD02");
+  port_ = 28914;
+  //
 
-	socket4_ = new QUdpSocket(this);
-	socket6_ = new QUdpSocket(this);
+  socket4_ = new QUdpSocket(this);
+  socket6_ = new QUdpSocket(this);
 
-	if(! socket4_->bind(QHostAddress::AnyIPv4, port_))
-		qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv4 socket: " << socket4_->errorString();
-	if(! socket6_->bind(QHostAddress::AnyIPv6, port_))
-		qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv6 socket: " << socket6_->errorString();
+  if (!socket4_->bind(QHostAddress::AnyIPv4, port_))
+    qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv4 socket: " << socket4_->errorString();
+  if (!socket6_->bind(QHostAddress::AnyIPv6, port_))
+    qCWarning(log_multicast) << "Could not bind MulticastProvider's IPv6 socket: " << socket6_->errorString();
 
-	if(! socket4_->joinMulticastGroup(address_v4_))
-		qCWarning(log_multicast) << "Could not join IPv4 multicast group: " << socket4_->errorString();
-	if(! socket6_->joinMulticastGroup(address_v6_))
-		qCWarning(log_multicast) << "Could not join IPv6 multicast group: " << socket6_->errorString();
+  if (!socket4_->joinMulticastGroup(address_v4_))
+    qCWarning(log_multicast) << "Could not join IPv4 multicast group: " << socket4_->errorString();
+  if (!socket6_->joinMulticastGroup(address_v6_))
+    qCWarning(log_multicast) << "Could not join IPv6 multicast group: " << socket6_->errorString();
 
-	socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
-	socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+  socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
+  socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 
-	connect(socket4_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
-	connect(socket6_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
+  connect(socket4_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
+  connect(socket6_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
 }
 
 MulticastProvider::~MulticastProvider() {
-	socket4_->leaveMulticastGroup(address_v4_);
-	socket6_->leaveMulticastGroup(address_v6_);
+  socket4_->leaveMulticastGroup(address_v4_);
+  socket6_->leaveMulticastGroup(address_v6_);
 }
 
-QByteArray MulticastProvider::getDigest() const {
-	return nodekey_->digest();
-}
+QByteArray MulticastProvider::getDigest() const { return nodekey_->digest(); }
 
 void MulticastProvider::processDatagram() {
-	// Choose socket to read
-	QUdpSocket* socket;
-	if(socket4_->hasPendingDatagrams())
-		socket = socket4_;
-	else
-		socket = socket6_;
+  // Choose socket to read
+  QUdpSocket* socket;
+  if (socket4_->hasPendingDatagrams())
+    socket = socket4_;
+  else
+    socket = socket6_;
 
-	Q_ASSERT(socket->hasPendingDatagrams());
+  Q_ASSERT(socket->hasPendingDatagrams());
 
-	char datagram_buffer[buffer_size_];
-	QHostAddress address;
-	quint16 port;
-	qint64 datagram_size = socket->readDatagram(datagram_buffer, buffer_size_, &address, &port);
-	Q_ASSERT(datagram_size >= 0);
+  char datagram_buffer[buffer_size_];
+  QHostAddress address;
+  quint16 port;
+  qint64 datagram_size = socket->readDatagram(datagram_buffer, buffer_size_, &address, &port);
+  Q_ASSERT(datagram_size >= 0);
 
-	// Protobuf parsing
-	protocol::MulticastDiscovery message;
-	if(message.ParseFromArray(datagram_buffer, datagram_size)) {
-		DiscoveryResult result;
-		result.source = QStringLiteral("Multicast");
-		result.address = address;
-		result.port = message.port();
-		result.digest = QByteArray(message.digest().data(), message.digest().size());
+  // Protobuf parsing
+  protocol::MulticastDiscovery message;
+  if (message.ParseFromArray(datagram_buffer, datagram_size)) {
+    DiscoveryResult result;
+    result.source = QStringLiteral("Multicast");
+    result.endpoint = Endpoint(address, message.port());
+    result.digest = QByteArray(message.digest().data(), message.digest().size());
 
-		QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
-		qCDebug(log_multicast) << "<=== Multicast message received from: " << address << ":" << port;
+    QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
+    qCDebug(log_multicast) << "<=== Multicast message received from: " << address << ":" << port;
 
-		emit discovered(folderid, result);
-	}else{
-		qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << address << ":" << port;
-	}
+    emit discovered(folderid, result);
+  } else {
+    qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << address << ":" << port;
+  }
 }
 
 } /* namespace librevault */

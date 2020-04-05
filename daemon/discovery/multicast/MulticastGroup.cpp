@@ -27,63 +27,67 @@
  * files in the program, then also delete it here.
  */
 #include "MulticastGroup.h"
+
+#include <MulticastDiscovery.pb.h>
+
+#include <QLoggingCategory>
+
 #include "MulticastProvider.h"
 #include "control/Config.h"
 #include "folder/FolderGroup.h"
-#include <MulticastDiscovery.pb.h>
-#include <QLoggingCategory>
 
 Q_DECLARE_LOGGING_CATEGORY(log_multicast)
 
 namespace librevault {
 
-MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup) :
-	provider_(provider), fgroup_(fgroup) {
-	timer_ = new QTimer(this);
-	timer_->setInterval(Config::get()->getGlobal("multicast_repeat_interval").toInt()*1000);
+MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup)
+    : provider_(provider), fgroup_(fgroup) {
+  timer_ = new QTimer(this);
+  timer_->setInterval(Config::get()->getGlobal("multicast_repeat_interval").toInt() * 1000);
 
-	// Connecting signals
-	connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
+  // Connecting signals
+  connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
 }
 
 void MulticastGroup::setEnabled(bool enabled) {
-	if(!timer_->isActive() && enabled)
-		timer_->start();
-	else if(timer_->isActive() && !enabled)
-		timer_->stop();
+  if (!timer_->isActive() && enabled)
+    timer_->start();
+  else if (timer_->isActive() && !enabled)
+    timer_->stop();
 }
 
 QByteArray MulticastGroup::get_message() {
-	if(message_.isEmpty()) {
-		protocol::MulticastDiscovery message;
+  if (message_.isEmpty()) {
+    protocol::MulticastDiscovery message;
 
-		// Port
-		message.set_port(Config::get()->getGlobal("p2p_listen").toUInt());
+    // Port
+    message.set_port(Config::get()->getGlobal("p2p_listen").toUInt());
 
-		// FolderID
-		QByteArray folderid = fgroup_->folderid();
-		message.set_folderid(folderid.data(), folderid.size());
+    // FolderID
+    QByteArray folderid = fgroup_->folderid();
+    message.set_folderid(folderid.data(), folderid.size());
 
-		// PeerID
-		QByteArray digest = provider_->getDigest();
-		message.set_digest(digest.data(), digest.size());
+    // PeerID
+    QByteArray digest = provider_->getDigest();
+    message.set_digest(digest.data(), digest.size());
 
-		message_.resize(message.ByteSize());
-		message.SerializeToArray(message_.data(), message_.size());
-	}
-	return message_;
+    message_.resize(message.ByteSize());
+    message.SerializeToArray(message_.data(), message_.size());
+  }
+  return message_;
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
-	if(socket->writeDatagram(get_message(), addr, port))
-		qCDebug(log_multicast) << "===> Multicast message sent to: " << addr << ":" << port;
-	else
-		qCDebug(log_multicast) << "=X=> Multicast message not sent to: " << addr << ":" << port << " E:" << socket->errorString();
+  if (socket->writeDatagram(get_message(), addr, port))
+    qCDebug(log_multicast) << "===> Multicast message sent to: " << addr << ":" << port;
+  else
+    qCDebug(log_multicast) << "=X=> Multicast message not sent to: " << addr << ":" << port
+                           << " E:" << socket->errorString();
 }
 
 void MulticastGroup::sendMulticasts() {
-	sendMulticast(provider_->getSocketV4(), provider_->getAddressV4(), provider_->getPort());
-	sendMulticast(provider_->getSocketV6(), provider_->getAddressV6(), provider_->getPort());
+  sendMulticast(provider_->getSocketV4(), provider_->getAddressV4(), provider_->getPort());
+  sendMulticast(provider_->getSocketV6(), provider_->getAddressV6(), provider_->getPort());
 }
 
 } /* namespace librevault */

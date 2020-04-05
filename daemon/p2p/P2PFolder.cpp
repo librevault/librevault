@@ -62,7 +62,7 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
 	connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
 	connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
 	connect(socket_, &QWebSocket::connected, this, &P2PFolder::handleConnected);
-	connect(socket_, &QWebSocket::aboutToClose, this, [=]{fgroup_->detach(this);});
+	connect(socket_, &QWebSocket::aboutToClose, this, [this]{fgroup_->detach(this);});
 	connect(socket_, &QWebSocket::disconnected, this, &P2PFolder::deleteLater);
 	connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::deleteLater);
 

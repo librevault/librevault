@@ -35,27 +35,27 @@ namespace librevault {
 class FolderGroup;
 class MulticastProvider;
 class MulticastGroup : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup);
+ public:
+  MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup);
 
-	void setEnabled(bool enabled);
+  void setEnabled(bool enabled);
 
-private:
-	MulticastProvider* provider_;
-	FolderGroup* fgroup_;
+ private:
+  MulticastProvider* provider_;
+  FolderGroup* fgroup_;
 
-	QTimer* timer_;
-	bool enabled_ = false;
+  QTimer* timer_;
+  bool enabled_ = false;
 
-	QByteArray message_;
+  QByteArray message_;
 
-	QByteArray get_message();
-	void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
+  QByteArray get_message();
+  void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
 
-private slots:
-	void sendMulticasts();
+ private slots:
+  void sendMulticasts();
 };
 
 } /* namespace librevault */

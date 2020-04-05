@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,30 +27,49 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QByteArray>
 #include <QHostAddress>
-#include <QtEndian>
-#include <array>
-#include <boost/asio/ip/address_v4.hpp>
-#include <boost/asio/ip/address_v6.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/endian/arithmetic.hpp>
 
-#include "control/Config.h"
-#include "librevault/util/blob.h"
+#include "exception.hpp"
+
+struct sockaddr;
+struct sockaddr_storage;
 
 namespace librevault {
-namespace btcompat {
 
-using info_hash = std::array<uint8_t, 20>;
-using peer_id = std::array<uint8_t, 20>;
+struct Endpoint;  // forward declaration
 
-// Function declaration
-inline info_hash getInfoHash(const QByteArray& folderid) {
-  info_hash ih;
-  std::copy(folderid.begin(), folderid.begin() + std::min(ih.size(), (size_t)folderid.size()), ih.begin());
-  return ih;
-}
+using EndpointList = QList<Endpoint>;
+using EndpointSet = QSet<Endpoint>;
 
-}  // namespace btcompat
+struct Endpoint {
+  DECLARE_EXCEPTION(InvalidEndpoint, "Invalid endpoint");
+  DECLARE_EXCEPTION(InvalidAddressFamily, "Invalid address family inside sockaddr");
+  DECLARE_EXCEPTION(EndpointNotMatched, "Endpoint has not match the endpoint pattern");
+
+  Endpoint() = default;
+  Endpoint(const QHostAddress& addr, quint16 port);
+  Endpoint(const QString& addr, quint16 port);
+
+  QHostAddress addr;
+  quint16 port;
+
+  static Endpoint fromString(const QString& str);
+  QString toString() const;
+
+  static Endpoint fromPacked4(QByteArray packed);
+  static Endpoint fromPacked6(QByteArray packed);
+  static EndpointList fromPackedList4(const QByteArray& packed);
+  static EndpointList fromPackedList6(const QByteArray& packed);
+
+  static Endpoint fromSockaddr(const sockaddr& sa);
+  [[nodiscard]] std::tuple<sockaddr_storage, size_t> toSockaddr() const;
+
+  [[nodiscard]] inline QPair<QHostAddress, quint16> toPair() const { return {addr, port}; };
+  [[nodiscard]] inline bool operator==(const Endpoint& that) const { return toPair() == that.toPair(); }
+};
+
+inline uint qHash(const Endpoint& key, uint seed = 0) noexcept { return qHash(key.toPair(), seed); }
+
+QDebug operator<<(QDebug debug, const Endpoint& endpoint);
+
 }  // namespace librevault

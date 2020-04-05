@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2017 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,48 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QUdpSocket>
+#include <QString>
+#include <stdexcept>
+#include <string>
 
-#include "discovery/DiscoveryResult.h"
+#define DECLARE_EXCEPTION_DETAIL(exception_name, parent_exception, exception_string)     \
+  struct exception_name : public parent_exception {                                      \
+    exception_name() : parent_exception(exception_string) {}                             \
+    explicit exception_name(const char* what) : parent_exception(what) {}                \
+    explicit exception_name(const std::string& what) : exception_name(what.c_str()) {}   \
+    explicit exception_name(const QString& what) : exception_name(what.toStdString()) {} \
+  }
 
-namespace librevault {
-
-class FolderGroup;
-class MulticastGroup;
-class NodeKey;
-class MulticastProvider : public QObject {
-  Q_OBJECT
-
- signals:
-  void discovered(QByteArray folderid, DiscoveryResult result);
-
- public:
-  explicit MulticastProvider(NodeKey* nodekey, QObject* parent);
-  virtual ~MulticastProvider();
-
-  quint16 getPort() const { return port_; }
-  QHostAddress getAddressV4() const { return address_v4_; }
-  QHostAddress getAddressV6() const { return address_v6_; }
-
-  QUdpSocket* getSocketV4() { return socket4_; }
-  QUdpSocket* getSocketV6() { return socket6_; }
-
-  QByteArray getDigest() const;
-
- private:
-  NodeKey* nodekey_;
-
-  QHostAddress address_v4_;
-  QHostAddress address_v6_;
-  quint16 port_;
-
-  QUdpSocket* socket4_;
-  QUdpSocket* socket6_;
-
-  static constexpr size_t buffer_size_ = 65535;
-
- private slots:
-  void processDatagram();
-};
-
-} /* namespace librevault */
+#define DECLARE_EXCEPTION(exception_name, exception_string) \
+  DECLARE_EXCEPTION_DETAIL(exception_name, std::runtime_error, exception_string)

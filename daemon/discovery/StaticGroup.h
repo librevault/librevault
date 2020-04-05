@@ -27,29 +27,30 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "DiscoveryResult.h"
 #include <QTimer>
+
+#include "DiscoveryResult.h"
 
 namespace librevault {
 
 class FolderGroup;
 class StaticGroup : public QObject {
-	Q_OBJECT
-public:
-	StaticGroup(FolderGroup* fgroup);
-	virtual ~StaticGroup() {}
+  Q_OBJECT
+ public:
+  StaticGroup(FolderGroup* fgroup);
+  virtual ~StaticGroup() {}
 
-	void setEnabled(bool enabled);
+  void setEnabled(bool enabled);
 
-signals:
-	void discovered(DiscoveryResult result);
+ signals:
+  void discovered(DiscoveryResult result);
 
-private:
-	FolderGroup* fgroup_;
-	QTimer* timer_;
+ private:
+  FolderGroup* fgroup_;
+  QTimer* timer_;
 
-private slots:
-	void tick();
+ private slots:
+  void tick();
 };
 
 } /* namespace librevault */

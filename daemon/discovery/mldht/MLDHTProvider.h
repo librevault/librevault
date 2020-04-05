@@ -27,12 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
-#include <QLoggingCategory>
 #include <QHostInfo>
+#include <QLoggingCategory>
 #include <QTimer>
 #include <QUdpSocket>
+
+#include "discovery/DiscoveryResult.h"
+#include "discovery/btcompat.h"
 
 Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
@@ -41,52 +42,52 @@ namespace librevault {
 class PortMappingService;
 class StateCollector;
 class MLDHTProvider : public QObject {
-	Q_OBJECT
-public:
-	MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
-	virtual ~MLDHTProvider();
+  Q_OBJECT
+ public:
+  MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+  virtual ~MLDHTProvider();
 
-	void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
+  void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
 
-	int node_count() const;
+  int node_count() const;
 
-	quint16 getPort();
-	quint16 getExternalPort();
+  quint16 getPort();
+  quint16 getExternalPort();
 
-signals:
-	void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
-	void discovered(QByteArray folderid, DiscoveryResult result);
+ signals:
+  void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
+  void discovered(QByteArray folderid, DiscoveryResult result);
 
-public slots:
-	void addNode(QHostAddress addr, quint16 port);
+ public slots:
+  void addNode(const Endpoint& endpoint);
 
-private:
-	PortMappingService* port_mapping_;
-	StateCollector* state_collector_;
+ private:
+  PortMappingService* port_mapping_;
+  StateCollector* state_collector_;
 
-	using dht_id = btcompat::info_hash;
-	dht_id own_id;
+  using dht_id = btcompat::info_hash;
+  dht_id own_id;
 
-	// Sockets
-	QUdpSocket* socket_;
-	QTimer* periodic_;
+  // Sockets
+  QUdpSocket* socket_;
+  QTimer* periodic_;
 
-	// Initialization
-	void init();
-	void readSessionFile();
+  // Initialization
+  void init();
+  void readSessionFile();
 
-	void deinit();
-	void writeSessionFile();
+  void deinit();
+  void writeSessionFile();
 
-	static constexpr size_t buffer_size_ = 65535;
-	void processDatagram();
+  static constexpr size_t buffer_size_ = 65535;
+  void processDatagram();
 
-	void periodic_request();
+  void periodic_request();
 
-	QMap<int, quint16> resolves_;
+  QMap<int, quint16> resolves_;
 
-private slots:
-	void handle_resolve(const QHostInfo& host);
+ private slots:
+  void handle_resolve(const QHostInfo& host);
 };
 
 } /* namespace librevault */

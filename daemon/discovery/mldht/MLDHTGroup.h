@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/btcompat.h"
-#include "discovery/DiscoveryResult.h"
 #include <QTimer>
+
+#include "discovery/DiscoveryResult.h"
+#include "discovery/btcompat.h"
 
 namespace librevault {
 
@@ -37,27 +38,27 @@ class MLDHTProvider;
 class FolderGroup;
 
 class MLDHTGroup : public QObject {
-	Q_OBJECT
-public:
-	MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
+  Q_OBJECT
+ public:
+  MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
 
-	void setEnabled(bool enable);
-	void start_search(int af);
+  void setEnabled(bool enable);
+  void start_search(int af);
 
-signals:
-	void discovered(DiscoveryResult result);
+ signals:
+  void discovered(DiscoveryResult result);
 
-public slots:
-	void handleEvent(int event, btcompat::info_hash ih, QByteArray values);
+ public slots:
+  void handleEvent(int event, btcompat::info_hash ih, QByteArray values);
 
-private:
-	MLDHTProvider* provider_;
-	QTimer* timer_;
+ private:
+  MLDHTProvider* provider_;
+  QTimer* timer_;
 
-	btcompat::info_hash info_hash_;
-	QByteArray folderid_;
+  btcompat::info_hash info_hash_;
+  QByteArray folderid_;
 
-	bool enabled_ = false;
+  bool enabled_ = false;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

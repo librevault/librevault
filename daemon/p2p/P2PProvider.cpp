@@ -106,8 +106,8 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 	ws_url.setScheme("wss");
 	ws_url.setPath(QString("/")+fgroup->folderid().toHex());
 	if(!ws_url.isValid()) {
-		ws_url.setHost(result.address.toString());
-		ws_url.setPort(result.port);
+		ws_url.setHost(result.endpoint.addr.toString());
+		ws_url.setPort(result.endpoint.port);
 	}
 
 	qCDebug(log_p2p) << "New connection:" << ws_url.toString();

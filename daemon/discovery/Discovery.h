@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "DiscoveryResult.h"
 #include <QObject>
+
+#include "DiscoveryResult.h"
 
 namespace librevault {
 
@@ -43,22 +44,22 @@ class PortMappingService;
 class StateCollector;
 
 class Discovery : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-signals:
-	void discovered(QByteArray folderid, DiscoveryResult result);
+ signals:
+  void discovered(QByteArray folderid, DiscoveryResult result);
 
-public:
-	Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
-	virtual ~Discovery();
+ public:
+  Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+  virtual ~Discovery();
 
-public slots:
-	void addGroup(FolderGroup* fgroup);
+ public slots:
+  void addGroup(FolderGroup* fgroup);
 
-protected:
-	MulticastProvider* multicast_;
-	BTTrackerProvider* bttracker_;
-	MLDHTProvider* mldht_;
+ protected:
+  MulticastProvider* multicast_;
+  BTTrackerProvider* bttracker_;
+  MLDHTProvider* mldht_;
 };
 
 } /* namespace librevault */

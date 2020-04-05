@@ -99,7 +99,7 @@ QList<QString> DirectoryPoller::getReindexList() {
 void DirectoryPoller::addPathsToQueue() {
 	LOGD("Performing full directory rescan");
 
-	foreach(QString denormpath, getReindexList()) {
+	for(QString denormpath : getReindexList()) {
 		emit newPath(denormpath);
 	}
 }

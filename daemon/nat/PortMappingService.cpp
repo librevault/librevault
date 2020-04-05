@@ -68,13 +68,13 @@ void PortMappingService::map(QString id,
   m.port = descriptor.port;
   mappings_[id] = std::move(m);
 
-  natpmp_->map(id.toStdString(), descriptor, description.toStdString());
-  upnp_->map(id.toStdString(), descriptor, description.toStdString());
+  natpmp_->map(id, descriptor, description);
+  upnp_->map(id, descriptor, description);
 }
 
 void PortMappingService::unmap(const QString& id) {
-  upnp_->remove_port_mapping(id.toStdString());
-  natpmp_->remove_port_mapping(id.toStdString());
+  upnp_->unmap(id);
+  natpmp_->unmap(id);
 
   mappings_.erase(id);
 }
@@ -90,8 +90,8 @@ uint16_t PortMappingService::mapped_port(const QString& id) {
 void PortMappingService::add_existing_mappings(
     PortMappingSubService* subservice) {
   for (auto& mapping : mappings_)
-    subservice->map(mapping.first.toStdString(), mapping.second.descriptor,
-                    mapping.second.description.toStdString());
+    subservice->map(mapping.first, mapping.second.descriptor,
+                    mapping.second.description);
 }
 
 } /* namespace librevault */

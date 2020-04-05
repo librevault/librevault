@@ -38,8 +38,8 @@ namespace librevault {
 
 MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObject(parent), nodekey_(nodekey) {
 	// Multicast parameters
-	address_v4_ = "239.192.152.144";
-	address_v6_ = "ff08::BD02";
+	address_v4_ = QHostAddress("239.192.152.144");
+	address_v6_ = QHostAddress("ff08::BD02");
 	port_ = 28914;
 	//
 

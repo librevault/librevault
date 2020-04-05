@@ -48,7 +48,7 @@ FolderService::~FolderService() {
 
 void FolderService::run() {
 	QTimer::singleShot(0, this, [this] {
-		foreach(QByteArray folderid, Config::get()->listFolders()) {
+		for(QByteArray folderid : Config::get()->listFolders()) {
 			initFolder(Config::get()->getFolder(folderid));
 		}
 	});
@@ -58,7 +58,7 @@ void FolderService::run() {
 }
 
 void FolderService::stop() {
-	foreach(const QByteArray hash, groups_.keys())
+	for(const QByteArray hash : groups_.keys())
 		deinitFolder(hash);
 }
 

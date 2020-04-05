@@ -74,7 +74,7 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 	try {
 		QString uri = QString::fromStdString(conn->get_request().get_uri());
 		QRegularExpressionMatch match;
-		foreach(const auto& handler, handlers_) {
+		for(const auto& handler : handlers_) {
 				match = handler.first.match(uri);
 			if(match.hasMatch()) {
 				handler.second(conn, match);

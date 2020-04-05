@@ -116,7 +116,7 @@ QJsonDocument RemoteConfig::exportUserFolders() {
 
 QJsonDocument RemoteConfig::exportFolders() {
 	QJsonArray folders;
-	foreach(const QVariantMap& folder, cached_folders_.values()) {
+	for(const QVariantMap& folder : cached_folders_.values()) {
 		folders.append(QJsonValue::fromVariant(folder));
 	}
 	return QJsonDocument(folders);
@@ -172,13 +172,13 @@ void RemoteConfig::handleGlobals(QJsonDocument globals) {
 	cached_globals_ = globals_new;
 
 	// Notify
-	foreach(const QString& key, all_keys) {
+	for(const QString& key : all_keys) {
 		globalChanged(key, cached_globals_.value(key));
 	}
 }
 
 void RemoteConfig::handleFolders(QJsonDocument folders) {
-	foreach(const QJsonValue& value, folders.array()) {
+	for(const QJsonValue& value : folders.array()) {
 		QJsonObject folder_object = value.toObject();
 		librevault::QSecret secret(folder_object["secret"].toString());
 		cached_folders_[secret.get_Hash()] = folder_object.toVariantMap();

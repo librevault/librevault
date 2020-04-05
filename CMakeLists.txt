@@ -210,6 +210,7 @@ elseif(OS_MAC)
 endif()
 find_package(Qt5 5.6 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
+add_definitions("-DQT_NO_FOREACH=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)

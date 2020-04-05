@@ -51,27 +51,27 @@ class NATPMPService : public PortMappingSubService {
   void start();
   void stop();
 
-  void map(const std::string& id, MappingDescriptor descriptor,
-           std::string description);
-  void remove_port_mapping(const std::string& id);
+  void map(const QString &id, MappingDescriptor descriptor,
+           const QString &description);
+  void unmap(const QString &id);
 
  protected:
   bool is_config_enabled();
   natpmp_t natpmp;
 
-  std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
+  std::map<QString, std::unique_ptr<NATPMPMapping>> mappings_;
 };
 
 class NATPMPMapping : public QObject {
   Q_OBJECT
  public:
-  NATPMPMapping(NATPMPService& parent, std::string id,
+  NATPMPMapping(NATPMPService& parent, QString id,
                 MappingDescriptor descriptor);
   ~NATPMPMapping();
 
  private:
   NATPMPService& parent_;
-  std::string id_;
+  QString id_;
   MappingDescriptor descriptor_;
 
   QTimer* timer_;

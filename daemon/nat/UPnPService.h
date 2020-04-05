@@ -43,7 +43,7 @@ Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
 namespace librevault {
 
-class PortMapping;
+class UPnPMapping;
 
 class UPnPService : public PortMappingSubService {
  public:
@@ -53,13 +53,13 @@ class UPnPService : public PortMappingSubService {
   void start();
   void stop();
 
-  void map(const std::string& id, MappingDescriptor descriptor,
-           std::string description);
-  void remove_port_mapping(const std::string& id);
+  void map(const QString &id, MappingDescriptor descriptor,
+           const QString &description);
+  void unmap(const QString &id);
 
  protected:
-  friend class PortMapping;
-  std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
+  friend class UPnPMapping;
+  std::map<QString, std::shared_ptr<UPnPMapping>> mappings_;
 
   // Config values
   std::unique_ptr<UPNPUrls> upnp_urls;
@@ -69,20 +69,16 @@ class UPnPService : public PortMappingSubService {
   bool is_config_enabled();
 };
 
-class PortMapping {
+class UPnPMapping {
  public:
-  PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor,
-              const std::string description);
-  virtual ~PortMapping();
+  UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor,
+              QString description);
+  virtual ~UPnPMapping();
 
  private:
   UPnPService& parent_;
-  std::string id_;
+  QString id_;
   MappingDescriptor descriptor_;
-
-  const char* get_literal_protocol(int protocol) const {
-    return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";
-  }
 };
 
 } /* namespace librevault */

@@ -40,6 +40,10 @@ Q_LOGGING_CATEGORY(log_upnp, "upnp")
 
 namespace librevault {
 
+const char* get_literal_protocol(int protocol) {
+  return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";
+}
+
 UPnPService::UPnPService(PortMappingService& parent)
     : PortMappingSubService(parent) {}
 UPnPService::~UPnPService() { stop(); }
@@ -68,7 +72,7 @@ void UPnPService::start() {
 
   qCDebug(log_upnp) << "Found IGD: " << upnp_urls->controlURL;
 
-  add_existing_mappings();
+  add_existing();
 }
 
 void UPnPService::stop() {
@@ -79,35 +83,35 @@ void UPnPService::stop() {
   upnp_data.reset();
 }
 
-void UPnPService::map(const std::string& id,
+void UPnPService::map(const QString &id,
                       MappingDescriptor descriptor,
-                      std::string description) {
+                      const QString &description) {
   mappings_.erase(id);
   mappings_[id] =
-      std::make_shared<PortMapping>(*this, id, descriptor, description);
+      std::make_shared<UPnPMapping>(*this, id, descriptor, description);
 }
 
-void UPnPService::remove_port_mapping(const std::string& id) {
+void UPnPService::unmap(const QString &id) {
   mappings_.erase(id);
 }
 
-PortMapping::PortMapping(UPnPService& parent, std::string id,
+UPnPMapping::UPnPMapping(UPnPService& parent, QString id,
                          MappingDescriptor descriptor,
-                         const std::string description)
-    : parent_(parent), id_(id), descriptor_(descriptor) {
+                         QString description)
+    : parent_(parent), id_(std::move(id)), descriptor_(descriptor) {
   int err = UPNP_AddPortMapping(
       parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
       std::to_string(descriptor.port).c_str(),
       std::to_string(descriptor.port).c_str(), parent_.lanaddr.data(),
-      description.data(), get_literal_protocol(descriptor.protocol), nullptr,
+      description.toStdString().data(), get_literal_protocol(descriptor.protocol), nullptr,
       nullptr);
   if (!err)
-    parent_.portMapped(QString::fromStdString(id), descriptor.port);
+    parent_.portMapped(id, descriptor.port);
   else
     qCDebug(log_upnp) << "UPnP port forwarding failed: Error " << err;
 }
 
-PortMapping::~PortMapping() {
+UPnPMapping::~UPnPMapping() {
   auto err = UPNP_DeletePortMapping(
       parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
       std::to_string(descriptor_.port).c_str(),

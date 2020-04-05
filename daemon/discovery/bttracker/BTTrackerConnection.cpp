@@ -197,7 +197,7 @@ void BTTrackerConnection::handle_announce(QByteArray message) {
 			default:;
 		}
 
-		foreach(auto& endpoint, endpoint_list) {
+		for(auto& endpoint : endpoint_list) {
 			DiscoveryResult result;
 			result.address = endpoint.first;
 			result.port = endpoint.second;

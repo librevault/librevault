@@ -79,7 +79,7 @@ void MLDHTProvider::init() {
   port_mapping_->map("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
 
 	// Init routers
-	foreach(const QString& router_value, Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
+	for(const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
 		url router_url(router_value.toStdString());
 		int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
 		resolves_[id] = router_url.port;
@@ -117,7 +117,7 @@ void MLDHTProvider::readSessionFile() {
 
 	QJsonArray nodes = session_json["nodes"].toArray();
 	qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
-	foreach(const QJsonValue& node_v, nodes) {
+	for(const QJsonValue& node_v : nodes) {
 		QJsonObject node = node_v.toObject();
 		addNode(QHostAddress(node["ip"].toString()), node["port"].toInt());
 	}

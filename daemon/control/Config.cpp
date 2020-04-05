@@ -82,7 +82,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
 	QStringList all_keys = globals_custom_.keys() + globals_conf.object().keys();
 	QSet<QString> changed_keys;
 
-	foreach(const QString& key, all_keys) {
+	for(const QString& key : all_keys) {
 		if(globals_custom_.value(key) != globals_conf.object().value(key)) {
 			changed_keys.insert(key);
 		}
@@ -91,7 +91,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
 	globals_custom_ = globals_conf.object();
 
 	// Notify other components
-	foreach(const QString& key, all_keys) {
+	for(const QString& key : all_keys) {
 		emit globalChanged(key, getGlobal(key));
 	}
 }
@@ -122,7 +122,7 @@ QList<QByteArray> Config::listFolders() {
 
 QJsonDocument Config::exportUserFolders() {
 	QJsonArray folders_merged;
-	foreach(const QJsonObject& folder_params, folders_custom_.values()) {
+	for(const QJsonObject& folder_params : folders_custom_.values()) {
 		folders_merged.append(folder_params);
 	}
 	return QJsonDocument(folders_merged);
@@ -130,17 +130,17 @@ QJsonDocument Config::exportUserFolders() {
 
 QJsonDocument Config::exportFolders() {
 	QJsonArray folders_merged;
-	foreach(QByteArray folderid, listFolders()) {
+	for(QByteArray folderid : listFolders()) {
 		folders_merged.append(QJsonValue::fromVariant(getFolder(folderid)));
 	}
 	return QJsonDocument(folders_merged);
 }
 
 void Config::importFolders(QJsonDocument folders_conf) {
-	foreach(QByteArray folderid, folders_custom_.keys()) {
+	for(QByteArray folderid : folders_custom_.keys()) {
 		removeFolder(folderid);
 	}
-	foreach(const QJsonValue& folder_params_v, folders_conf.array()) {
+	for(const QJsonValue& folder_params_v : folders_conf.array()) {
 		addFolder(folder_params_v.toObject().toVariantMap());
 	}
 }
@@ -175,7 +175,7 @@ QJsonObject Config::make_merged(QJsonObject custom_value, QJsonObject default_va
 	all_keys.removeDuplicates();
 
 	QJsonObject merged;
-	foreach(const QString& key, all_keys) {
+	for(const QString& key : all_keys) {
 		merged[key] = custom_value.contains(key) ? custom_value[key] : default_value[key];
 	}
 	return merged;

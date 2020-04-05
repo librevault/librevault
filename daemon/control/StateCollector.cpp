@@ -66,7 +66,7 @@ QJsonObject StateCollector::global_state() {
 
 QJsonArray StateCollector::folder_state() {
 	QJsonArray folder_state_all;
-	foreach(const QJsonObject& state_o, folder_state_buffers.values()) {
+	for(const QJsonObject& state_o : folder_state_buffers.values()) {
 		folder_state_all << state_o;
 	}
 	return folder_state_all;

@@ -34,8 +34,11 @@
 #include <librevault/Secret.h>
 #include <spdlog/spdlog.h>
 #include <boost/filesystem/path.hpp>
+#include <QDebug>
 
 using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
+
+// clang-format off
 
 ///////////////////////////////////////////////////////////////////////80 chars/
 static const char* USAGE =
@@ -59,20 +62,35 @@ Options:
   --version               show version
 )";
 
+static const char* BANNER =
+    R"(   __    __ _                                _ __ )" "\n" \
+    R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" "\n" \
+    R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" "\n" \
+    R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" "\n" \
+    R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" "\n";
+
+// clang-format on
+
 void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
   auto logger = spdlog::get(Version::current().name().toStdString());
   if (!logger) return;
 
+  QString message = QString(ctx.category) + " | " + msg;
+
+  auto spdlog_level = spdlog::level::debug;
+
   switch (msg_type) {
-    case QtDebugMsg: logger->debug(std::string(ctx.category) + " | " + msg.toStdString()); break;
-    case QtWarningMsg: logger->warn(std::string(ctx.category) + " | " + msg.toStdString()); break;
-    case QtCriticalMsg: logger->error(std::string(ctx.category) + " | " + msg.toStdString()); break;
-    case QtFatalMsg:
-      logger->critical(std::string(ctx.category) + " | " + msg.toStdString());
-      logger->flush();
-      abort();
-    case QtInfoMsg: logger->info(std::string(ctx.category) + " | " + msg.toStdString()); break;
-    default: logger->info(std::string(ctx.category) + " | " + msg.toStdString());
+    case QtDebugMsg: spdlog_level = spdlog::level::debug; break;
+    case QtWarningMsg: spdlog_level = spdlog::level::warn; break;
+    case QtCriticalMsg: spdlog_level = spdlog::level::err; break;
+    case QtFatalMsg: spdlog_level = spdlog::level::critical; break;
+    case QtInfoMsg: spdlog_level = spdlog::level::info; break;
+  }
+
+  logger->log(spdlog_level, message.toStdString());
+  if(Q_UNLIKELY(msg_type == QtFatalMsg)) {
+    logger->flush();
+    abort();
   }
 }
 
@@ -89,6 +107,7 @@ int main(int argc, char** argv) {
 
 		// Initializing log
 		spdlog::level::level_enum log_level;
+		qInfo() << args["-v"].asLong();
 		switch(args["-v"].asLong()) {
 			case 2:     log_level = spdlog::level::trace; break;
 			case 1:     log_level = spdlog::level::debug; break;
@@ -118,13 +137,8 @@ int main(int argc, char** argv) {
 		Config::get();
 
 		// Okay, that's a bit of fun, actually.
-		std::cout
-			<< R"(   __    __ _                                _ __ )" << std::endl
-			<< R"(  / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_)" << std::endl
-			<< R"( / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/)" << std::endl
-			<< R"(/ /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___)" << std::endl
-			<< R"(\____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/)" << std::endl;
-		log->info((Version::current().name() + " " + Version::current().version_string()).toStdString());
+		std::cout << BANNER;
+		qInfo() << Version::current().name() << Version::current().version_string();
 
 		// And, run!
 		auto client = std::make_unique<Client>(argc, argv);

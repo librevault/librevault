@@ -105,7 +105,7 @@ public:
 class SQLiteResult {
 	int rescode = SQLITE_OK;
 
-	sqlite3_stmt* prepared_stmt = 0;
+	sqlite3_stmt* prepared_stmt = nullptr;
 	std::shared_ptr<int64_t> shared_idx;
 	std::shared_ptr<std::vector<std::string>> cols;
 public:
@@ -124,43 +124,25 @@ public:
 
 class SQLiteDB {
 public:
-	SQLiteDB(){};
+	SQLiteDB() = default;
 	SQLiteDB(const boost::filesystem::path& db_path);
-	SQLiteDB(const char* db_path);
 	virtual ~SQLiteDB();
-
-	void open(const boost::filesystem::path& db_path);
-	void open(const char* db_path);
-	void close();
-
-	sqlite3* sqlite3_handle(){return db;};
 
 	SQLiteResult exec(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
 
-	int64_t last_insert_rowid();
-private:
-	sqlite3* db = 0;
+ private:
+	sqlite3* db = nullptr;
 };
 
 class SQLiteSavepoint {
 public:
-	SQLiteSavepoint(SQLiteDB& db, const std::string savepoint_name);
-	SQLiteSavepoint(SQLiteDB* db, const std::string savepoint_name);
+	SQLiteSavepoint(SQLiteDB& db, const std::string& savepoint_name);
 	~SQLiteSavepoint();
 
 	void commit();
 private:
 	SQLiteDB& db;
 	const std::string name;
-};
-
-class SQLiteLock {
-public:
-	SQLiteLock(SQLiteDB& db);
-	SQLiteLock(SQLiteDB* db);
-	~SQLiteLock();
-private:
-	SQLiteDB& db;
 };
 
 } /* namespace librevault */

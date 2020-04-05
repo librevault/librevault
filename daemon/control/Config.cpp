@@ -101,7 +101,7 @@ void Config::addFolder(QVariantMap fconfig) {
 	if(folders_custom_.contains(folderid))
 		throw samekey_error();
 	folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));
-	qDebug() << "Hello, world!" << folders_defaults_;
+	qDebug() << folders_defaults_;
 	emit folderAdded(make_merged(QJsonObject::fromVariantMap(fconfig), folders_defaults_).toVariantMap());
 	save();
 }

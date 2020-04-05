@@ -54,6 +54,7 @@ MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, QObject* parent)
   socket_ = new QUdpSocket(this);
   periodic_ = new QTimer(this);
   periodic_->setSingleShot(true);
+  periodic_->setTimerType(Qt::VeryCoarseTimer);
 
   connect(socket_, &QUdpSocket::readyRead, this, &MLDHTProvider::processDatagram);
   connect(periodic_, &QTimer::timeout, this, &MLDHTProvider::periodic_request);

@@ -98,7 +98,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	LOGFUNC();
 	qsrand(time(nullptr));
 	QString transaction_name = QStringLiteral("put_Meta_%1").arg(qrand());
-	SQLiteSavepoint raii_transaction(*db_, transaction_name.toStdString()); // Begin transaction
+	SQLiteSavepoint raii_transaction(*db_, transaction_name); // Begin transaction
 
 	db_->exec("INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", {
 			{":path_id", signed_meta.meta().path_id()},
@@ -140,7 +140,7 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 	notifyState();
 }
 
-QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values){
+QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<QString, SQLValue>& values){
 	QList<SignedMeta> result_list;
 	for(auto row : db_->exec(sql, values))
 		result_list << SignedMeta(row[0], row[1], params_.secret);

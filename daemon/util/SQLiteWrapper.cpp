@@ -8,21 +8,21 @@
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
+#include <librevault/util/blob.h>
 #include "SQLiteWrapper.h"
 
 namespace librevault {
 
 // SQLValue
 SQLValue::SQLValue() : value_type(ValueType::NULL_VALUE) {}
-SQLValue::SQLValue(int64_t int_val) : value_type(ValueType::INT), int_val(int_val) {}
-SQLValue::SQLValue(uint64_t int_val) : value_type(ValueType::INT), int_val((int64_t)int_val) {}
-SQLValue::SQLValue(double double_val) : value_type(ValueType::DOUBLE), double_val(double_val) {}
+SQLValue::SQLValue(int64_t int_val) : value_type(ValueType::INT), value((qlonglong)int_val) {}
+SQLValue::SQLValue(uint64_t int_val) : value_type(ValueType::INT), value((qulonglong)int_val) {}
+SQLValue::SQLValue(double double_val) : value_type(ValueType::DOUBLE), value(double_val) {}
 
-SQLValue::SQLValue(const std::string& text_val) : value_type(ValueType::TEXT), text_val(text_val.data()), size(text_val.size()) {}
-SQLValue::SQLValue(const char* text_ptr, uint64_t text_size) : value_type(ValueType::TEXT), text_val(text_ptr), size(text_size) {}
+SQLValue::SQLValue(const std::string& text_val) : value_type(ValueType::TEXT), value(QString::fromUtf8(text_val.data(), text_val.size())) {}
 
-SQLValue::SQLValue(const std::vector<uint8_t>& blob_val) : value_type(ValueType::BLOB), blob_val(blob_val.data()), size(blob_val.size()){}
-SQLValue::SQLValue(const uint8_t* blob_ptr, uint64_t blob_size) : value_type(ValueType::BLOB), blob_val(blob_ptr), size(blob_size) {}
+SQLValue::SQLValue(const std::vector<uint8_t>& blob_val) : value_type(ValueType::BLOB), value(conv_bytearray(blob_val)){}
+SQLValue::SQLValue(const uint8_t* blob_ptr, uint64_t blob_size) : value_type(ValueType::BLOB), value(QByteArray((const char*)blob_ptr, blob_size)) {}
 
 // SQLiteResultIterator
 SQLiteResultIterator::SQLiteResultIterator(sqlite3_stmt* prepared_stmt,
@@ -44,21 +44,21 @@ void SQLiteResultIterator::fill_result() const {
 	for(unsigned iCol = 0; iCol < cols->size(); iCol++){
 		switch((SQLValue::ValueType)sqlite3_column_type(prepared_stmt, iCol)){
 		case SQLValue::ValueType::INT:
-			result.push_back(SQLValue((int64_t)sqlite3_column_int64(prepared_stmt, iCol)));
+			result.emplace_back(SQLValue((int64_t)sqlite3_column_int64(prepared_stmt, iCol)));
 			break;
 		case SQLValue::ValueType::DOUBLE:
-			result.push_back(SQLValue((double)sqlite3_column_double(prepared_stmt, iCol)));
+			result.emplace_back(SQLValue((double)sqlite3_column_double(prepared_stmt, iCol)));
 			break;
 		case SQLValue::ValueType::TEXT:
-			result.push_back(SQLValue(std::string((const char*)sqlite3_column_text(prepared_stmt, iCol))));
+			result.emplace_back(SQLValue(std::string((const char*)sqlite3_column_text(prepared_stmt, iCol))));
 			break;
 		case SQLValue::ValueType::BLOB: {
 			const uint8_t* blob_ptr = (const uint8_t*)sqlite3_column_blob(prepared_stmt, iCol);
 			auto blob_size = sqlite3_column_bytes(prepared_stmt, iCol);
-			result.push_back(SQLValue(blob_ptr, blob_size));
+			result.emplace_back(SQLValue(blob_ptr, blob_size));
 		} break;
 		case SQLValue::ValueType::NULL_VALUE:
-			result.push_back(SQLValue());
+			result.emplace_back(SQLValue());
 			break;
 		}
 	}
@@ -84,7 +84,7 @@ bool SQLiteResultIterator::operator==(const SQLiteResultIterator& lvalue) {
 }
 
 bool SQLiteResultIterator::operator!=(const SQLiteResultIterator& lvalue) {
-	if((lvalue.result_code() == SQLITE_DONE || lvalue.result_code() == SQLITE_OK) && (result_code() == SQLITE_DONE || result_code() == SQLITE_OK)){
+	if((lvalue.rescode == SQLITE_DONE || lvalue.rescode == SQLITE_OK) && (rescode == SQLITE_DONE || rescode == SQLITE_OK)){
 		return false;
 	}else if(prepared_stmt == lvalue.prepared_stmt && current_idx == lvalue.current_idx){
 		return false;
@@ -147,32 +147,33 @@ SQLiteDB::~SQLiteDB() {
   sqlite3_close(db);
 }
 
-SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, SQLValue>& values){
+SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<QString, SQLValue>& values){
 	sqlite3_stmt* sqlite_stmt;
 	sqlite3_prepare_v2(db, sql.c_str(), (int)sql.size()+1, &sqlite_stmt, 0);
 
 	for(auto value : values){
+	    std::string std_val = value.first.toStdString();
 		switch(value.second.get_type()){
 		case SQLValue::ValueType::INT:
-			sqlite3_bind_int64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, value.first.c_str()), value.second.as_int());
+			sqlite3_bind_int64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, std_val.c_str()), value.second.as_int());
 			break;
 		case SQLValue::ValueType::DOUBLE:
-			sqlite3_bind_double(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, value.first.c_str()), value.second.as_double());
+			sqlite3_bind_double(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, std_val.c_str()), value.second.as_double());
 			break;
 		case SQLValue::ValueType::TEXT: {
 			auto text_data = value.second.as_text();
-			sqlite3_bind_text64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, value.first.c_str()),
+			sqlite3_bind_text64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, std_val.c_str()),
 					text_data.data(), text_data.size(),
 					SQLITE_TRANSIENT, SQLITE_UTF8);
 		} break;
 		case SQLValue::ValueType::BLOB: {
 			auto blob_data = value.second.as_blob();
-			sqlite3_bind_blob64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, value.first.c_str()),
+			sqlite3_bind_blob64(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, std_val.c_str()),
 					blob_data.data(), blob_data.size(),
 					SQLITE_TRANSIENT);
 		} break;
 		case SQLValue::ValueType::NULL_VALUE:
-			sqlite3_bind_null(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, value.first.c_str()));
+			sqlite3_bind_null(sqlite_stmt, sqlite3_bind_parameter_index(sqlite_stmt, std_val.c_str()));
 			break;
 		}
 	}
@@ -180,14 +181,14 @@ SQLiteResult SQLiteDB::exec(const std::string& sql, const std::map<std::string, 
 	return SQLiteResult(sqlite_stmt);
 }
 
-SQLiteSavepoint::SQLiteSavepoint(SQLiteDB& db, const std::string& savepoint_name) : db(db), name(savepoint_name) {
-	db.exec(std::string("SAVEPOINT ")+name);
+SQLiteSavepoint::SQLiteSavepoint(SQLiteDB& db, QString savepoint_name) : db(db), name(std::move(savepoint_name)) {
+	db.exec(std::string("SAVEPOINT ")+name.toStdString());
 }
 SQLiteSavepoint::~SQLiteSavepoint(){
-	db.exec(std::string("ROLLBACK TO ")+name);
+	db.exec(std::string("ROLLBACK TO ")+name.toStdString());
 }
 void SQLiteSavepoint::commit() {
-	db.exec(std::string("RELEASE ")+name);
+	db.exec(std::string("RELEASE ")+name.toStdString());
 }
 
 } /* namespace librevault */

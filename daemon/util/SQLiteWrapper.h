@@ -13,6 +13,7 @@
 #include <boost/filesystem/path.hpp>
 #include <memory>
 #include <map>
+#include <QtCore/QVariant>
 
 namespace librevault {
 
@@ -27,18 +28,7 @@ public:
 	};
 protected:
 	ValueType value_type;
-
-	union {
-		int64_t int_val;
-		double double_val;
-		struct {
-			union {
-				const uint8_t* blob_val;
-				const char* text_val;
-			};
-			uint64_t size;
-		};
-	};
+	QVariant value;
 public:
 	SQLValue();	// Binds NULL value;
 	SQLValue(int64_t int_val);	// Binds INT value;
@@ -46,7 +36,6 @@ public:
 	SQLValue(double double_val);	// Binds DOUBLE value;
 
 	SQLValue(const std::string& text_val);	// Binds TEXT value;
-	SQLValue(const char* text_val, uint64_t blob_size);	// Binds TEXT value;
 
 	SQLValue(const std::vector<uint8_t>& blob_val);	// Binds BLOB value;
 	SQLValue(const uint8_t* blob_ptr, uint64_t blob_size);	// Binds BLOB value;
@@ -55,29 +44,31 @@ public:
 	ValueType get_type(){return value_type;};
 
 	bool is_null() const {return value_type == ValueType::NULL_VALUE;};
-	int64_t as_int() const {return int_val;}
-	uint64_t as_uint() const {return (uint64_t)int_val;}
-	double as_double() const {return double_val;}
-	std::string as_text() const {return std::string(text_val, text_val+size);}
-	std::vector<uint8_t> as_blob() const {return std::vector<uint8_t>(blob_val, blob_val+size);}
+	int64_t as_int() const {return value.toLongLong();}
+	uint64_t as_uint() const {return value.toULongLong();}
+	double as_double() const {return value.toDouble();}
+	std::string as_text() const {return value.toString().toStdString();}
+	std::vector<uint8_t> as_blob() const {return conv_bytearray(value.toByteArray());}
 	template<uint64_t array_size> std::array<uint8_t, array_size> as_blob() const {
-		std::array<uint8_t, array_size> new_array; std::copy(blob_val, blob_val+std::min(size, array_size), new_array.data());
+	    auto blob_val = conv_bytearray(value.toByteArray());
+		std::array<uint8_t, array_size> new_array;
+		std::copy(blob_val.data(), blob_val.data() + std::min((uint64_t)blob_val.size(), array_size), new_array.data());
 		return new_array;
 	}
 
 	operator bool() const {return !is_null();}
-	operator int64_t() const {return int_val;};
-	operator uint64_t() const {return (uint64_t)int_val;};
-	operator double() const {return double_val;}
-	operator std::string() const {return std::string(text_val, text_val+size);}
-	operator std::vector<uint8_t>() const {return std::vector<uint8_t>(blob_val, blob_val+size);}
+	operator int64_t() const {return as_int();};
+	operator uint64_t() const {return as_uint();};
+	operator double() const {return as_double();}
+	operator std::string() const {return as_text();}
+	operator std::vector<uint8_t>() const {return as_blob();}
 	template<uint64_t array_size> operator std::array<uint8_t, array_size>() const {
 		return as_blob<array_size>();
 	}
 };
 
 class SQLiteResultIterator : public std::iterator<std::input_iterator_tag, std::vector<SQLValue>> {
-	sqlite3_stmt* prepared_stmt = 0;
+	sqlite3_stmt* prepared_stmt = nullptr;
 	std::shared_ptr<int64_t> shared_idx;
 	std::shared_ptr<std::vector<std::string>> cols;
 	int64_t current_idx = 0;
@@ -97,9 +88,7 @@ public:
 	const value_type& operator*() const;
 	const value_type* operator->() const;
 
-	SQLValue operator[](size_t pos) const;
-
-	int result_code() const {return rescode;};
+	SQLValue operator[](size_t pos) const;;
 };
 
 class SQLiteResult {
@@ -117,9 +106,7 @@ public:
 	SQLiteResultIterator begin();
 	SQLiteResultIterator end();
 
-	int result_code() const {return rescode;};
-	bool have_rows(){return result_code() == SQLITE_ROW;}
-	std::vector<std::string> column_names(){return *cols;};
+	bool have_rows() const {return rescode == SQLITE_ROW;}
 };
 
 class SQLiteDB {
@@ -128,7 +115,7 @@ public:
 	SQLiteDB(const boost::filesystem::path& db_path);
 	virtual ~SQLiteDB();
 
-	SQLiteResult exec(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
+	SQLiteResult exec(const std::string& sql, const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
 
  private:
 	sqlite3* db = nullptr;
@@ -136,13 +123,13 @@ public:
 
 class SQLiteSavepoint {
 public:
-	SQLiteSavepoint(SQLiteDB& db, const std::string& savepoint_name);
+	SQLiteSavepoint(SQLiteDB& db, QString savepoint_name);
 	~SQLiteSavepoint();
 
 	void commit();
 private:
 	SQLiteDB& db;
-	const std::string name;
+	const QString name;
 };
 
 } /* namespace librevault */

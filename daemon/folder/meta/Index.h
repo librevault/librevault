@@ -72,7 +72,7 @@ private:
 
 	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
 
-	QList<SignedMeta> getMeta(const std::string& sql, const std::map<std::string, SQLValue>& values = std::map<std::string, SQLValue>());
+	QList<SignedMeta> getMeta(const std::string& sql, const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
 	void wipe();
 
 	void notifyState();

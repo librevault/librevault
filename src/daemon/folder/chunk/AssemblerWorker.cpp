@@ -71,7 +71,7 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 
 	try {
 		QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
-		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(), conv_bytearray(size_iv.second));
+		blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, conv_bytearray(params_.secret.get_Encryption_Key()), conv_bytearray(size_iv.second));
 		return conv_bytearray(chunk_pt_v);
 	}catch(std::exception& e){
 		qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";

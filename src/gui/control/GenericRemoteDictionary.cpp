@@ -93,10 +93,8 @@ void GenericRemoteDictionary::renew() {
 			for(auto folder : folders_array) {
 				QJsonObject folder_object = folder.toObject();
 
-				librevault::Secret secret(folder_object["secret"].toString().toStdString());
-				QByteArray folderid((const char*)secret.get_Hash().data(), secret.get_Hash().size());
-
-				folder_cache_[folderid] = folder_object;
+				librevault::Secret secret(folder_object["secret"].toString());
+				folder_cache_[secret.get_Hash()] = folder_object;
 			}
 			qDebug() << "Fetched: " << folders_request_url;
 			emit changed();

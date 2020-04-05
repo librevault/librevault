@@ -66,7 +66,7 @@ void AddFolder::showEvent(QShowEvent* e) {
 
 void AddFolder::generateSecret() {
 	librevault::Secret s;
-	ui.line_Secret->setText(QString::fromStdString(s.string()));
+	ui.line_Secret->setText(s.string());
 }
 
 void AddFolder::browseFolder() {

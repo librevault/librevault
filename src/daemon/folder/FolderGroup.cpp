@@ -64,7 +64,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 		<< "Path=" << params_.path
 		<< "System path=" << params_.system_path);
 
-	state_collector_->folder_state_set(conv_bytearray(params_.secret.get_Hash()), "secret", QString::fromStdString(params_.secret.string()));
+	state_collector_->folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
 	/* Initializing components */
 	path_normalizer_ = std::make_unique<PathNormalizer>(params_);
@@ -103,7 +103,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 FolderGroup::~FolderGroup() {
 	state_pusher_->stop();
 
-	state_collector_->folder_state_purge(conv_bytearray(params_.secret.get_Hash()));
+	state_collector_->folder_state_purge(params_.secret.get_Hash());
 	LOGFUNC();
 }
 

@@ -28,7 +28,7 @@
  */
 #include "RemoteConfig.h"
 #include "Daemon.h"
-#include "QSecret.h"
+#include "Secret.h"
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QNetworkReply>
@@ -67,7 +67,7 @@ void RemoteConfig::removeGlobal(QString name) {
 
 void RemoteConfig::addFolder(QVariantMap fconfig) {
 	if(daemon_->isConnected()) {
-		librevault::QSecret secret(fconfig["secret"].toString());
+		librevault::Secret secret(fconfig["secret"].toString());
 		QByteArray folderid = secret.get_Hash();
 
 		QNetworkRequest request(daemon_->daemonUrl().toString().append("/v1/folders/%1").arg(QString(folderid.toHex())));
@@ -180,7 +180,7 @@ void RemoteConfig::handleGlobals(QJsonDocument globals) {
 void RemoteConfig::handleFolders(QJsonDocument folders) {
 	for(const QJsonValue& value : folders.array()) {
 		QJsonObject folder_object = value.toObject();
-		librevault::QSecret secret(folder_object["secret"].toString());
+		librevault::Secret secret(folder_object["secret"].toString());
 		cached_folders_[secret.get_Hash()] = folder_object.toVariantMap();
 	}
 }

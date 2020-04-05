@@ -79,7 +79,7 @@ public:
 	inline const FolderParams& params() const {return params_;}
 
 	inline const Secret& secret() const {return params().secret;}
-	QByteArray folderid() const {return conv_bytearray(secret().get_Hash());}
+	QByteArray folderid() const {return secret().get_Hash();}
 
 	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
 

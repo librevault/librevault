@@ -97,7 +97,7 @@ void Config::importGlobals(QJsonDocument globals_conf) {
 }
 
 void Config::addFolder(QVariantMap fconfig) {
-	QByteArray folderid = conv_bytearray(Secret(fconfig["secret"].toString().toStdString()).get_Hash());
+	QByteArray folderid = Secret(fconfig["secret"].toString()).get_Hash();
 	if(folders_custom_.contains(folderid))
 		throw samekey_error();
 	folders_custom_.insert(folderid, QJsonObject::fromVariantMap(fconfig));

@@ -267,7 +267,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob,
 	chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
 
 	chunk.size = data.size();
-	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta_.strong_hash_type());
+	chunk.ct_hash = Meta::Chunk::compute_strong_hash(Meta::Chunk::encrypt(data, conv_bytearray(secret_.get_Encryption_Key()), chunk.iv), new_meta_.strong_hash_type());
 	return chunk;
 }
 

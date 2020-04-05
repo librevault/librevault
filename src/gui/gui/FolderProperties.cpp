@@ -76,10 +76,10 @@ FolderProperties::FolderProperties(QByteArray folderid, Daemon* daemon, FolderMo
 FolderProperties::~FolderProperties() {}
 
 void FolderProperties::init_secrets() {
-	librevault::Secret secret = daemon_->config()->getFolderValue(folderid_, "secret").toString().toStdString();
+	librevault::Secret secret = daemon_->config()->getFolderValue(folderid_, "secret").toString();
 
 	if(secret.get_type() <= secret.ReadWrite)
-		ui.secret_rw->setText(QString::fromStdString(secret.string()));
+		ui.secret_rw->setText(secret.string());
 	else {
 		ui.label_rw->setVisible(false);
 		ui.secret_rw->setVisible(false);
@@ -87,14 +87,14 @@ void FolderProperties::init_secrets() {
 	}
 
 	if(secret.get_type() <= secret.ReadOnly)
-		ui.secret_ro->setText(QString::fromStdString(secret.derive(secret.ReadOnly).string()));
+		ui.secret_ro->setText(secret.derive(secret.ReadOnly).string());
 	else {
 		ui.label_ro->setVisible(false);
 		ui.secret_ro->setVisible(false);
 		ui.copy_ro->setVisible(false);
 	}
 
-	ui.secret_do->setText(QString::fromStdString(secret.derive(secret.Download).string()));
+	ui.secret_do->setText(secret.derive(secret.Download).string());
 }
 
 void FolderProperties::refresh() {

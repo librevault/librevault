@@ -27,12 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-//#include <miniupnpc/miniupnpc.h>
+#include <array>
+#include <boost/asio/io_service.hpp>
+#include <boost/noncopyable.hpp>
+#include <mutex>
+
 #include "PortMappingSubService.h"
 #include "util/log.h"
-#include <boost/asio/io_service.hpp>
-#include <array>
-#include <mutex>
 
 struct UPNPUrls;
 struct IGDdatas;
@@ -41,53 +42,52 @@ struct UPNPDev;
 namespace librevault {
 
 class UPnPService : public PortMappingSubService {
-	LOG_SCOPE("UPnPService");
-public:
-	UPnPService(PortMappingService& parent);
-	~UPnPService();
+  LOG_SCOPE("UPnPService");
 
-	void reload_config();
+ public:
+  UPnPService(PortMappingService& parent);
+  ~UPnPService();
 
-	void start();
-	void stop();
+  void reload_config();
 
-	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(const std::string& id);
+  void start();
+  void stop();
 
-protected:
-	std::mutex state_changing_mtx_;
+  void add_port_mapping(const std::string& id, MappingDescriptor descriptor,
+                        std::string description);
+  void remove_port_mapping(const std::string& id);
 
-	// RAII wrappers
-	struct DevListWrapper : boost::noncopyable {
-		DevListWrapper();
-		~DevListWrapper();
+ protected:
+  std::mutex state_changing_mtx_;
 
-		UPNPDev* devlist;
-	};
+  // RAII wrappers
+  class PortMapping {
+    LOG_SCOPE("UPnPService");
 
-	class PortMapping {
-		LOG_SCOPE("UPnPService");
-	public:
-		PortMapping(UPnPService& parent, std::string id, MappingDescriptor descriptor, const std::string description);
-		virtual ~PortMapping();
+   public:
+    PortMapping(UPnPService& parent, std::string id,
+                MappingDescriptor descriptor, const std::string description);
+    virtual ~PortMapping();
 
-	private:
-		UPnPService& parent_;
-		std::string id_;
-		MappingDescriptor descriptor_;
+   private:
+    UPnPService& parent_;
+    std::string id_;
+    MappingDescriptor descriptor_;
 
-		const char* get_literal_protocol(int protocol) const {return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";}
-	};
-	friend class PortMapping;
-	std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
+    const char* get_literal_protocol(int protocol) const {
+      return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";
+    }
+  };
+  friend class PortMapping;
+  std::map<std::string, std::shared_ptr<PortMapping>> mappings_;
 
-	// Config values
-	std::unique_ptr<UPNPUrls> upnp_urls;
-	std::unique_ptr<IGDdatas> upnp_data;
-	std::array<char, 16> lanaddr;
+  // Config values
+  std::unique_ptr<UPNPUrls> upnp_urls;
+  std::unique_ptr<IGDdatas> upnp_data;
+  std::array<char, 16> lanaddr;
 
-	bool active = false;
-	bool is_config_enabled();
+  bool active = false;
+  bool is_config_enabled();
 };
 
 } /* namespace librevault */

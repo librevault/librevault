@@ -27,28 +27,31 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "PortMappingService.h"
-#include <boost/signals2/signal.hpp>
 #include <QObject>
+
+#include "PortMappingService.h"
 
 namespace librevault {
 
 class PortMappingSubService : public QObject {
   Q_OBJECT
-public:
-	explicit PortMappingSubService(PortMappingService& parent) : QObject(&parent), parent_(parent) {}
+ public:
+  explicit PortMappingSubService(PortMappingService& parent)
+      : QObject(&parent), parent_(parent) {}
 
-	using MappingDescriptor = PortMappingService::MappingDescriptor;
+  using MappingDescriptor = PortMappingService::MappingDescriptor;
 
-	Q_SIGNAL void portMapped(std::string, uint16_t);
+  Q_SIGNAL void portMapped(std::string, uint16_t);
 
-	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
-	virtual void remove_port_mapping(const std::string& id) = 0;
+  virtual void add_port_mapping(const std::string& id,
+                                MappingDescriptor descriptor,
+                                std::string description) = 0;
+  virtual void remove_port_mapping(const std::string& id) = 0;
 
-protected:
-	PortMappingService& parent_;
+ protected:
+  PortMappingService& parent_;
 
-	inline void add_existing_mappings() {parent_.add_existing_mappings(this);}
+  inline void add_existing_mappings() { parent_.add_existing_mappings(this); }
 };
 
 } /* namespace librevault */

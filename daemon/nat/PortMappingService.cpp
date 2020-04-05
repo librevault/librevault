@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "PortMappingService.h"
+
 #include "NATPMPService.h"
 #include "UPnPService.h"
 #include "util/log.h"
@@ -34,59 +35,63 @@
 namespace librevault {
 
 PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
-	LOGFUNC();
-	natpmp_service_ = new NATPMPService(*this);
-	upnp_service_ = new UPnPService(*this);
+  LOGFUNC();
+  natpmp_service_ = new NATPMPService(*this);
+  upnp_service_ = new UPnPService(*this);
 
-	auto port_callback = [this](std::string id, uint16_t port) {
-		LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
-		mappings_[id].port = port;
-	};
+  auto port_callback = [this](std::string id, uint16_t port) {
+    LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
+    mappings_[id].port = port;
+  };
 
-	connect(natpmp_service_, &NATPMPService::portMapped, port_callback);
-	connect(upnp_service_, &UPnPService::portMapped, port_callback);
+  connect(natpmp_service_, &NATPMPService::portMapped, port_callback);
+  connect(upnp_service_, &UPnPService::portMapped, port_callback);
 
-	natpmp_service_->start();
-	upnp_service_->start();
+  natpmp_service_->start();
+  upnp_service_->start();
 
-	LOGFUNCEND();
+  LOGFUNCEND();
 }
 
 PortMappingService::~PortMappingService() {
-	LOGFUNC();
-	mappings_.clear();
-	LOGFUNCEND();
+  LOGFUNC();
+  mappings_.clear();
+  LOGFUNCEND();
 }
 
-void PortMappingService::add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description) {
-	Mapping m;
-	m.descriptor = descriptor;
-	m.description = description;
-	m.port = descriptor.port;
-	mappings_[id] = std::move(m);
+void PortMappingService::add_port_mapping(std::string id,
+                                          MappingDescriptor descriptor,
+                                          std::string description) {
+  Mapping m;
+  m.descriptor = descriptor;
+  m.description = description;
+  m.port = descriptor.port;
+  mappings_[id] = std::move(m);
 
-	natpmp_service_->add_port_mapping(id, descriptor, description);
-	upnp_service_->add_port_mapping(id, descriptor, description);
+  natpmp_service_->add_port_mapping(id, descriptor, description);
+  upnp_service_->add_port_mapping(id, descriptor, description);
 }
 
 void PortMappingService::remove_port_mapping(std::string id) {
-	upnp_service_->remove_port_mapping(id);
-	natpmp_service_->remove_port_mapping(id);
+  upnp_service_->remove_port_mapping(id);
+  natpmp_service_->remove_port_mapping(id);
 
-	mappings_.erase(id);
+  mappings_.erase(id);
 }
 
 uint16_t PortMappingService::get_port_mapping(const std::string& id) {
-	auto it = mappings_.find(id);
-	if(it != mappings_.end())
-		return it->second.port;
-	else
-		return 0;
+  auto it = mappings_.find(id);
+  if (it != mappings_.end())
+    return it->second.port;
+  else
+    return 0;
 }
 
-void PortMappingService::add_existing_mappings(PortMappingSubService* subservice) {
-	for(auto& mapping : mappings_)
-		subservice->add_port_mapping(mapping.first, mapping.second.descriptor, mapping.second.description);
+void PortMappingService::add_existing_mappings(
+    PortMappingSubService* subservice) {
+  for (auto& mapping : mappings_)
+    subservice->add_port_mapping(mapping.first, mapping.second.descriptor,
+                                 mapping.second.description);
 }
 
 } /* namespace librevault */

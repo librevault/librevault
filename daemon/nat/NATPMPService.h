@@ -27,55 +27,60 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <natpmp.h>
+
+#include <QTimer>
+
 #include "PortMappingSubService.h"
 #include "util/log.h"
-#include <natpmp.h>
-#include <QTimer>
 
 namespace librevault {
 
 class P2PProvider;
 class NATPMPMapping;
 class NATPMPService : public PortMappingSubService {
-	LOG_SCOPE("NATPMPService");
-	friend class NATPMPMapping;
-public:
-	NATPMPService(PortMappingService& parent);
-	virtual ~NATPMPService();
+  LOG_SCOPE("NATPMPService");
+  friend class NATPMPMapping;
 
-	void reload_config();
+ public:
+  NATPMPService(PortMappingService& parent);
+  virtual ~NATPMPService();
 
-	void start();
-	void stop();
+  void reload_config();
 
-	void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(const std::string& id);
+  void start();
+  void stop();
 
-protected:
-	bool is_config_enabled();
-	bool active = false;
-	natpmp_t natpmp;
+  void add_port_mapping(const std::string& id, MappingDescriptor descriptor,
+                        std::string description);
+  void remove_port_mapping(const std::string& id);
 
-	std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
+ protected:
+  bool is_config_enabled();
+  bool active = false;
+  natpmp_t natpmp;
+
+  std::map<std::string, std::unique_ptr<NATPMPMapping>> mappings_;
 };
 
 class NATPMPMapping : public QObject {
-Q_OBJECT
-	LOG_SCOPE("NATPMPService")
-public:
-	NATPMPMapping(NATPMPService& parent, std::string id, PortMappingService::MappingDescriptor descriptor);
-	~NATPMPMapping();
+  Q_OBJECT
+  LOG_SCOPE("NATPMPService")
+ public:
+  NATPMPMapping(NATPMPService& parent, std::string id,
+                PortMappingService::MappingDescriptor descriptor);
+  ~NATPMPMapping();
 
-private:
-	NATPMPService& parent_;
-	std::string id_;
-	PortMappingService::MappingDescriptor descriptor_;
+ private:
+  NATPMPService& parent_;
+  std::string id_;
+  PortMappingService::MappingDescriptor descriptor_;
 
-	QTimer* timer_;
+  QTimer* timer_;
 
-private slots:
-	void sendPeriodicRequest();
-	void sendZeroRequest();
+ private slots:
+  void sendPeriodicRequest();
+  void sendZeroRequest();
 };
 
 } /* namespace librevault */

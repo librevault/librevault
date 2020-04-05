@@ -27,8 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
 #include <QAbstractSocket>
+
+#include "util/log.h"
 
 namespace librevault {
 
@@ -37,34 +38,36 @@ class UPnPService;
 class PortMappingSubService;
 
 class PortMappingService : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("PortMappingService");
-	friend class PortMappingSubService;
-public:
-	struct MappingDescriptor {
-		uint16_t port;
-		QAbstractSocket::SocketType protocol;
-	};
+  Q_OBJECT
+  LOG_SCOPE("PortMappingService");
+  friend class PortMappingSubService;
 
-	PortMappingService(QObject* parent);
-	virtual ~PortMappingService();
+ public:
+  struct MappingDescriptor {
+    uint16_t port;
+    QAbstractSocket::SocketType protocol;
+  };
 
-	void add_port_mapping(std::string id, MappingDescriptor descriptor, std::string description);
-	void remove_port_mapping(std::string id);
-	uint16_t get_port_mapping(const std::string& id);
+  PortMappingService(QObject* parent);
+  virtual ~PortMappingService();
 
-private:
-	struct Mapping {
-		MappingDescriptor descriptor;
-		std::string description;
-		uint16_t port;
-	};
-	std::map<std::string, Mapping> mappings_;
+  void add_port_mapping(std::string id, MappingDescriptor descriptor,
+                        std::string description);
+  void remove_port_mapping(std::string id);
+  uint16_t get_port_mapping(const std::string& id);
 
-	NATPMPService* natpmp_service_;
-	UPnPService* upnp_service_;
+ private:
+  struct Mapping {
+    MappingDescriptor descriptor;
+    std::string description;
+    uint16_t port;
+  };
+  std::map<std::string, Mapping> mappings_;
 
-	void add_existing_mappings(PortMappingSubService* subservice);
+  NATPMPService* natpmp_service_;
+  UPnPService* upnp_service_;
+
+  void add_existing_mappings(PortMappingSubService* subservice);
 };
 
 } /* namespace librevault */

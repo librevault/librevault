@@ -29,24 +29,24 @@
 #pragma once
 #include <natpmp.h>
 
+#include <QLoggingCategory>
 #include <QTimer>
 
 #include "PortMappingSubService.h"
 #include "util/log.h"
+
+Q_DECLARE_LOGGING_CATEGORY(log_natpmp)
 
 namespace librevault {
 
 class P2PProvider;
 class NATPMPMapping;
 class NATPMPService : public PortMappingSubService {
-  LOG_SCOPE("NATPMPService");
   friend class NATPMPMapping;
 
  public:
   NATPMPService(PortMappingService& parent);
   virtual ~NATPMPService();
-
-  void reload_config();
 
   void start();
   void stop();
@@ -65,7 +65,6 @@ class NATPMPService : public PortMappingSubService {
 
 class NATPMPMapping : public QObject {
   Q_OBJECT
-  LOG_SCOPE("NATPMPService")
  public:
   NATPMPMapping(NATPMPService& parent, std::string id,
                 PortMappingService::MappingDescriptor descriptor);

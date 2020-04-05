@@ -28,8 +28,11 @@
  */
 #pragma once
 #include <QAbstractSocket>
+#include <QLoggingCategory>
 
 #include "util/log.h"
+
+Q_DECLARE_LOGGING_CATEGORY(log_portmapping)
 
 namespace librevault {
 
@@ -39,7 +42,6 @@ class PortMappingSubService;
 
 class PortMappingService : public QObject {
   Q_OBJECT
-  LOG_SCOPE("PortMappingService");
   friend class PortMappingSubService;
 
  public:

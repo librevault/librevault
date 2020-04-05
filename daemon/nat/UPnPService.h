@@ -27,28 +27,26 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QLoggingCategory>
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <boost/noncopyable.hpp>
 #include <mutex>
 
 #include "PortMappingSubService.h"
-#include "util/log.h"
 
 struct UPNPUrls;
 struct IGDdatas;
 struct UPNPDev;
 
+Q_DECLARE_LOGGING_CATEGORY(log_upnp)
+
 namespace librevault {
 
 class UPnPService : public PortMappingSubService {
-  LOG_SCOPE("UPnPService");
-
  public:
   UPnPService(PortMappingService& parent);
   ~UPnPService();
-
-  void reload_config();
 
   void start();
   void stop();
@@ -58,12 +56,8 @@ class UPnPService : public PortMappingSubService {
   void remove_port_mapping(const std::string& id);
 
  protected:
-  std::mutex state_changing_mtx_;
-
   // RAII wrappers
   class PortMapping {
-    LOG_SCOPE("UPnPService");
-
    public:
     PortMapping(UPnPService& parent, std::string id,
                 MappingDescriptor descriptor, const std::string description);

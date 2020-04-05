@@ -36,26 +36,10 @@
 #include "control/Config.h"
 #include "util/log.h"
 
+Q_LOGGING_CATEGORY(log_upnp, "upnp")
+
 namespace librevault {
 
-/* UPnPService::DevListWrapper */
-struct DevListWrapper : boost::noncopyable {
-  DevListWrapper() {
-    int error = UPNPDISCOVER_SUCCESS;
-#if MINIUPNPC_API_VERSION >= 14
-    devlist = upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error);
-#else
-    devlist = upnpDiscover(2000, nullptr, nullptr, 0, 0, &error);
-#endif
-    if (error != UPNPDISCOVER_SUCCESS)
-      throw std::runtime_error(strerror(errno));
-  }
-  ~DevListWrapper() { freeUPNPDevlist(devlist); };
-
-  UPNPDev* devlist;
-};
-
-/* UPnPService::PortMapping */
 UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id,
                                       MappingDescriptor descriptor,
                                       const std::string description)
@@ -69,14 +53,11 @@ UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id,
   if (!err)
     parent_.portMapped(id, descriptor.port);
   else
-    LOGD("UPnP port forwarding failed: Error " << err);
+    qCDebug(log_upnp) << "UPnP port forwarding failed: Error " << err;
 }
 
 UPnPService::UPnPService(PortMappingService& parent)
-    : PortMappingSubService(parent) {
-  // Config::get()->config_changed.connect(std::bind(&UPnPService::reload_config,
-  // this));
-}
+    : PortMappingSubService(parent) {}
 UPnPService::~UPnPService() { stop(); }
 
 bool UPnPService::is_config_enabled() {
@@ -92,15 +73,18 @@ void UPnPService::start() {
   active = true;
 
   /* Discovering IGD */
-  DevListWrapper devlist;
+  int error = UPNPDISCOVER_SUCCESS;
+  std::unique_ptr<UPNPDev, decltype(&freeUPNPDevlist)> devlist(
+      upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error), &freeUPNPDevlist);
+  if (error != UPNPDISCOVER_SUCCESS) throw std::runtime_error(strerror(errno));
 
-  if (!UPNP_GetValidIGD(devlist.devlist, upnp_urls.get(), upnp_data.get(),
+  if (!UPNP_GetValidIGD(devlist.get(), upnp_urls.get(), upnp_data.get(),
                         lanaddr.data(), lanaddr.size())) {
-    LOGD("IGD not found. e: " << strerror(errno));
+    qCDebug(log_upnp) << "IGD not found. e: " << strerror(errno);
     return;
   }
 
-  LOGD("Found IGD: " << upnp_urls->controlURL);
+  qCDebug(log_upnp) << "Found IGD: " << upnp_urls->controlURL;
 
   add_existing_mappings();
 }
@@ -113,15 +97,6 @@ void UPnPService::stop() {
   FreeUPNPUrls(upnp_urls.get());
   upnp_urls.reset();
   upnp_data.reset();
-}
-
-void UPnPService::reload_config() {
-  bool config_enabled = is_config_enabled();
-
-  if (config_enabled && !active)
-    start();
-  else if (!config_enabled && active)
-    stop();
 }
 
 void UPnPService::add_port_mapping(const std::string& id,
@@ -142,9 +117,9 @@ UPnPService::PortMapping::~PortMapping() {
       std::to_string(descriptor_.port).c_str(),
       get_literal_protocol(descriptor_.protocol), nullptr);
   if (err)
-    LOGD(get_literal_protocol(descriptor_.protocol)
-         << " port " << descriptor_.port << " de-forwarding failed: Error "
-         << err);
+    qCDebug(log_upnp) << get_literal_protocol(descriptor_.protocol) << " port "
+                      << descriptor_.port << " de-forwarding failed: Error "
+                      << err;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

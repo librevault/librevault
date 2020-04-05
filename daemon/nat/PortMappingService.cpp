@@ -32,15 +32,18 @@
 #include "UPnPService.h"
 #include "util/log.h"
 
+Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
+
 namespace librevault {
 
 PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
-  LOGFUNC();
+  SCOPELOG(log_portmapping);
   natpmp_service_ = new NATPMPService(*this);
   upnp_service_ = new UPnPService(*this);
 
   auto port_callback = [this](std::string id, uint16_t port) {
-    LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
+    qCDebug(log_portmapping)
+        << "Port mapped: " << mappings_[id].descriptor.port << " -> " << port;
     mappings_[id].port = port;
   };
 
@@ -49,14 +52,11 @@ PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
 
   natpmp_service_->start();
   upnp_service_->start();
-
-  LOGFUNCEND();
 }
 
 PortMappingService::~PortMappingService() {
-  LOGFUNC();
+  SCOPELOG(log_portmapping);
   mappings_.clear();
-  LOGFUNCEND();
 }
 
 void PortMappingService::add_port_mapping(std::string id,

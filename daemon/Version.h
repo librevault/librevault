@@ -32,17 +32,21 @@
 namespace librevault {
 
 class Version {
-public:
-	Version();
+ public:
+  Version();
 
-	QString name() const {return name_;}
-	QString version_string() const {return version_string_;}
-	QString user_agent() const {return name() + "/" + version_string_;}
+  QString name() const { return name_; }
+  QString version_string() const { return version_string_; }
+  QString user_agent() const { return name() + "/" + version_string_; }
 
-	static Version current() {static Version current; return current;}
-protected:
-	const QString name_;
-	const QString version_string_;
+  static Version current() {
+    static Version current;
+    return current;
+  }
+
+ protected:
+  const QString name_;
+  const QString version_string_;
 };
 
 } /* namespace librevault */

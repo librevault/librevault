@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.2)
 project(librevault)
 
+cmake_policy(SET CMP0071 OLD)
+
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 	conan_basic_setup(TARGETS)
@@ -208,9 +210,10 @@ if(OS_WIN)
 elseif(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-find_package(Qt5 5.6 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+find_package(Qt5 5.12 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
 add_definitions("-DQT_NO_FOREACH=1")
+add_definitions("-DQT_NO_FOREVER=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)

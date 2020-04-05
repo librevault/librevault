@@ -26,17 +26,21 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
+#include <docopt/docopt.h>
+#include <librevault/Secret.h>
+#include <spdlog/spdlog.h>
+
+#include <QDebug>
+#include <boost/filesystem/path.hpp>
+
 #include "Client.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"
-#include <docopt/docopt.h>
-#include <librevault/Secret.h>
-#include <spdlog/spdlog.h>
-#include <boost/filesystem/path.hpp>
-#include <QDebug>
 
-using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
+using namespace librevault;  // This is allowed only because this is main.cpp
+                             // file and it is extremely unlikely that this file
+                             // will be included in any other file.
 
 // clang-format off
 
@@ -71,7 +75,8 @@ static const char* BANNER =
 
 // clang-format on
 
-void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
+void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx,
+                          const QString& msg) {
   auto logger = spdlog::get(Version::current().name().toStdString());
   if (!logger) return;
 
@@ -80,78 +85,96 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
   auto spdlog_level = spdlog::level::debug;
 
   switch (msg_type) {
-    case QtDebugMsg: spdlog_level = spdlog::level::debug; break;
-    case QtWarningMsg: spdlog_level = spdlog::level::warn; break;
-    case QtCriticalMsg: spdlog_level = spdlog::level::err; break;
-    case QtFatalMsg: spdlog_level = spdlog::level::critical; break;
-    case QtInfoMsg: spdlog_level = spdlog::level::info; break;
+    case QtDebugMsg:
+      spdlog_level = spdlog::level::debug;
+      break;
+    case QtWarningMsg:
+      spdlog_level = spdlog::level::warn;
+      break;
+    case QtCriticalMsg:
+      spdlog_level = spdlog::level::err;
+      break;
+    case QtFatalMsg:
+      spdlog_level = spdlog::level::critical;
+      break;
+    case QtInfoMsg:
+      spdlog_level = spdlog::level::info;
+      break;
   }
 
   logger->log(spdlog_level, message.toStdString());
-  if(Q_UNLIKELY(msg_type == QtFatalMsg)) {
+  if (Q_UNLIKELY(msg_type == QtFatalMsg)) {
     logger->flush();
     abort();
   }
 }
 
 int main(int argc, char** argv) {
-	do {
-		// Argument parsing
-		auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
+  do {
+    // Argument parsing
+    auto args =
+        docopt::docopt(USAGE, {argv + 1, argv + argc}, true,
+                       librevault::Version().version_string().toStdString());
 
-		// Initializing paths
-		QString appdata_path;
-		if(args["--data"].isString())
-			appdata_path = QString::fromStdString(args["--data"].asString());
-		Paths::get(appdata_path);
+    // Initializing paths
+    QString appdata_path;
+    if (args["--data"].isString())
+      appdata_path = QString::fromStdString(args["--data"].asString());
+    Paths::get(appdata_path);
 
-		// Initializing log
-		spdlog::level::level_enum log_level;
-		qInfo() << args["-v"].asLong();
-		switch(args["-v"].asLong()) {
-			case 2:     log_level = spdlog::level::trace; break;
-			case 1:     log_level = spdlog::level::debug; break;
-			default:    log_level = spdlog::level::info;
-		}
+    // Initializing log
+    spdlog::level::level_enum log_level;
+    qInfo() << args["-v"].asLong();
+    switch (args["-v"].asLong()) {
+      case 2:
+        log_level = spdlog::level::trace;
+        break;
+      case 1:
+        log_level = spdlog::level::debug;
+        break;
+      default:
+        log_level = spdlog::level::info;
+    }
 
-		auto log = spdlog::get(Version::current().name().toStdString());
-		if(!log){
-          std::vector<spdlog::sink_ptr> sinks;
-          sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+    auto log = spdlog::get(Version::current().name().toStdString());
+    if (!log) {
+      std::vector<spdlog::sink_ptr> sinks;
+      sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
-          boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
-          sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
+      boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
+      sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(
+          log_path.native()));
 
-          log = std::make_shared<spdlog::logger>(
-              Version::current().name().toStdString(), sinks.begin(), sinks.end());
-          spdlog::register_logger(log);
+      log = std::make_shared<spdlog::logger>(
+          Version::current().name().toStdString(), sinks.begin(), sinks.end());
+      spdlog::register_logger(log);
 
-          log->set_level(log_level);
-          log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
-		}
+      log->set_level(log_level);
+      log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
+    }
 
-		// This overrides default Qt behavior, which is fine in many cases;
-		qInstallMessageHandler(spdlogMessageHandler);
+    // This overrides default Qt behavior, which is fine in many cases;
+    qInstallMessageHandler(spdlogMessageHandler);
 
-		// Initializing config
-		Config::get();
+    // Initializing config
+    Config::get();
 
-		// Okay, that's a bit of fun, actually.
-		std::cout << BANNER;
-		qInfo() << Version::current().name() << Version::current().version_string();
+    // Okay, that's a bit of fun, actually.
+    std::cout << BANNER;
+    qInfo() << Version::current().name() << Version::current().version_string();
 
-		// And, run!
-		auto client = std::make_unique<Client>(argc, argv);
-		int ret = client->run();
-		client.reset();
+    // And, run!
+    auto client = std::make_unique<Client>(argc, argv);
+    int ret = client->run();
+    client.reset();
 
-		// Deinitialization
-		log->flush();
-		Config::deinit();
-		Paths::deinit();
+    // Deinitialization
+    log->flush();
+    Config::deinit();
+    Paths::deinit();
 
-		if(ret != EXIT_RESTART) return ret;
-	}while(true);
+    if (ret != EXIT_RESTART) return ret;
+  } while (true);
 
-	return 0;
+  return 0;
 }

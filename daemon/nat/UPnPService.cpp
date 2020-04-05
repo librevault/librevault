@@ -122,7 +122,7 @@ UPnPService::PortMapping::PortMapping(UPnPService& parent, std::string id, Mappi
 		nullptr,
 		nullptr);
 	if(!err)
-		parent_.port_signal(id, descriptor.port);
+		parent_.portMapped(id, descriptor.port);
 	else
 		LOGD("UPnP port forwarding failed: Error " << err);
 }

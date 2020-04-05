@@ -29,15 +29,18 @@
 #pragma once
 #include "PortMappingService.h"
 #include <boost/signals2/signal.hpp>
+#include <QObject>
 
 namespace librevault {
 
-class PortMappingSubService {
+class PortMappingSubService : public QObject {
+  Q_OBJECT
 public:
-	PortMappingSubService(PortMappingService& parent) : parent_(parent) {}
+	explicit PortMappingSubService(PortMappingService& parent) : QObject(&parent), parent_(parent) {}
 
 	using MappingDescriptor = PortMappingService::MappingDescriptor;
-	boost::signals2::signal<void(std::string, uint16_t)> port_signal;
+
+	Q_SIGNAL void portMapped(std::string, uint16_t);
 
 	virtual void add_port_mapping(const std::string& id, MappingDescriptor descriptor, std::string description) = 0;
 	virtual void remove_port_mapping(const std::string& id) = 0;

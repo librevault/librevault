@@ -110,7 +110,7 @@ void NATPMPMapping::sendPeriodicRequest() {
 
 	int next_request_sec;
 	if(natpmp_ec >= 0) {
-		parent_.port_signal(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
+		parent_.portMapped(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
 		next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
 	}else{
 		LOGD("Could not set up port mapping");

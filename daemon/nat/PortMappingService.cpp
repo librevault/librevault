@@ -42,8 +42,9 @@ PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
 		LOGD("Port mapped: " << mappings_[id].descriptor.port << " -> " << port);
 		mappings_[id].port = port;
 	};
-	natpmp_service_->port_signal.connect(port_callback);
-	upnp_service_->port_signal.connect(port_callback);
+
+	connect(natpmp_service_, &NATPMPService::portMapped, port_callback);
+	connect(upnp_service_, &UPnPService::portMapped, port_callback);
 
 	natpmp_service_->start();
 	upnp_service_->start();

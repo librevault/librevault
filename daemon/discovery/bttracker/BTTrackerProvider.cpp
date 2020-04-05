@@ -46,7 +46,7 @@ BTTrackerProvider::BTTrackerProvider(NodeKey* node_key, PortMappingService* port
 BTTrackerProvider::~BTTrackerProvider() {}
 
 quint16 BTTrackerProvider::getExternalPort() const {
-	return portmapping_->get_port_mapping("BT");
+	return portmapping_->mapped_port("BT");
 }
 
 btcompat::peer_id BTTrackerProvider::getPeerId() const {

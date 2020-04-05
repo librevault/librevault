@@ -58,9 +58,9 @@ void NATPMPService::stop() {
   closenatpmp(&natpmp);
 }
 
-void NATPMPService::add_port_mapping(const std::string& id,
-                                     MappingDescriptor descriptor,
-                                     std::string description) {
+void NATPMPService::map(const std::string& id,
+                        MappingDescriptor descriptor,
+                        std::string description) {
   mappings_[id] = std::make_unique<NATPMPMapping>(*this, id, descriptor);
 }
 
@@ -96,7 +96,7 @@ void NATPMPMapping::sendPeriodicRequest() {
 
   int next_request_sec;
   if (natpmp_ec >= 0) {
-    parent_.portMapped(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
+    parent_.portMapped(QString::fromStdString(id_), natpmp_resp.pnu.newportmapping.mappedpublicport);
     next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
   } else {
     qCDebug(log_natpmp) << "Could not set up port mapping";

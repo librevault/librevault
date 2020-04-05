@@ -53,8 +53,8 @@ class UPnPService : public PortMappingSubService {
   void start();
   void stop();
 
-  void add_port_mapping(const std::string& id, MappingDescriptor descriptor,
-                        std::string description);
+  void map(const std::string& id, MappingDescriptor descriptor,
+           std::string description);
   void remove_port_mapping(const std::string& id);
 
  protected:

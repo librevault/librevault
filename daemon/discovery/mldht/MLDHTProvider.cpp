@@ -76,7 +76,7 @@ void MLDHTProvider::init() {
 		qCWarning(log_dht) << "Could not initialize DHT: Internal DHT error";
 
 	// Map port
-	port_mapping_->add_port_mapping("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
+  port_mapping_->map("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
 
 	// Init routers
 	foreach(const QString& router_value, Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
@@ -96,7 +96,7 @@ void MLDHTProvider::deinit() {
 
 	socket_->close();
 
-	port_mapping_->remove_port_mapping("mldht");
+  port_mapping_->unmap("mldht");
 }
 
 void MLDHTProvider::readSessionFile() {
@@ -183,7 +183,7 @@ quint16 MLDHTProvider::getPort() {
 }
 
 quint16 MLDHTProvider::getExternalPort() {
-	return port_mapping_->get_port_mapping("main");
+	return port_mapping_->mapped_port("main");
 }
 
 void MLDHTProvider::addNode(QHostAddress addr, quint16 port) {

@@ -53,21 +53,21 @@ class PortMappingService : public QObject {
   PortMappingService(QObject* parent);
   virtual ~PortMappingService();
 
-  void add_port_mapping(std::string id, MappingDescriptor descriptor,
-                        std::string description);
-  void remove_port_mapping(std::string id);
-  uint16_t get_port_mapping(const std::string& id);
+  void map(QString id, MappingDescriptor descriptor,
+           QString description);
+  void unmap(const QString& id);
+  uint16_t mapped_port(const QString& id);
 
  private:
   struct Mapping {
     MappingDescriptor descriptor;
-    std::string description;
+    QString description;
     uint16_t port;
   };
-  std::map<std::string, Mapping> mappings_;
+  std::map<QString, Mapping> mappings_;
 
-  NATPMPService* natpmp_service_;
-  UPnPService* upnp_service_;
+  NATPMPService* natpmp_;
+  UPnPService* upnp_;
 
   void add_existing_mappings(PortMappingSubService* subservice);
 };

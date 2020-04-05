@@ -79,9 +79,9 @@ void UPnPService::stop() {
   upnp_data.reset();
 }
 
-void UPnPService::add_port_mapping(const std::string& id,
-                                   MappingDescriptor descriptor,
-                                   std::string description) {
+void UPnPService::map(const std::string& id,
+                      MappingDescriptor descriptor,
+                      std::string description) {
   mappings_.erase(id);
   mappings_[id] =
       std::make_shared<PortMapping>(*this, id, descriptor, description);
@@ -102,7 +102,7 @@ PortMapping::PortMapping(UPnPService& parent, std::string id,
       description.data(), get_literal_protocol(descriptor.protocol), nullptr,
       nullptr);
   if (!err)
-    parent_.portMapped(id, descriptor.port);
+    parent_.portMapped(QString::fromStdString(id), descriptor.port);
   else
     qCDebug(log_upnp) << "UPnP port forwarding failed: Error " << err;
 }

@@ -236,15 +236,15 @@ endif()
 # Subprojects
 #============================================================================
 
-add_subdirectory("lvproto")
+add_subdirectory("src/common")
 if(BUILD_DAEMON)
-	add_subdirectory("daemon")
+	add_subdirectory("src/daemon")
 endif()
 if(BUILD_GUI)
-	add_subdirectory("gui")
+	add_subdirectory("src/gui")
 endif()
 if(BUILD_CLI)
-	add_subdirectory("cli")
+	add_subdirectory("src/cli")
 endif()
 
 include(Install.cmake)

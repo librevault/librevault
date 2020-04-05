@@ -44,7 +44,7 @@ class StateCollector;
 class MLDHTProvider : public QObject {
   Q_OBJECT
  public:
-  MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+  MLDHTProvider(PortMappingService* port_mapping, QObject* parent);
   virtual ~MLDHTProvider();
 
   void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
@@ -57,13 +57,13 @@ class MLDHTProvider : public QObject {
  signals:
   void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
   void discovered(QByteArray folderid, DiscoveryResult result);
+  void nodeCountChanged(int count);
 
  public slots:
   void addNode(const Endpoint& endpoint);
 
  private:
   PortMappingService* port_mapping_;
-  StateCollector* state_collector_;
 
   using dht_id = btcompat::info_hash;
   dht_id own_id;

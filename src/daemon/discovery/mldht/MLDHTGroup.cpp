@@ -29,12 +29,12 @@
 #include "MLDHTGroup.h"
 
 #include <dht.h>
-#include "crypto/Hex.h"
-#include "util/Endpoint.h"
 
 #include "MLDHTProvider.h"
+#include "crypto/Hex.h"
 #include "dht_glue.h"
 #include "folder/FolderGroup.h"
+#include "util/Endpoint.h"
 
 namespace librevault {
 

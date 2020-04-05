@@ -28,6 +28,7 @@
  */
 #include "Discovery.h"
 
+#include "control/StateCollector.h"
 #include "discovery/StaticGroup.h"
 #include "discovery/mldht/MLDHTGroup.h"
 #include "discovery/mldht/MLDHTProvider.h"
@@ -41,7 +42,10 @@ Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateC
                      QObject* parent)
     : QObject(parent) {
   multicast_ = new MulticastProvider(node_key, this);
-  mldht_ = new MLDHTProvider(port_mapping, state_collector, this);
+  mldht_ = new MLDHTProvider(port_mapping, this);
+
+  connect(mldht_, &MLDHTProvider::nodeCountChanged,
+          [=, this](int count) { state_collector->global_state_set("dht_nodes_count", count); });
 
   connect(multicast_, &MulticastProvider::discovered, this, &Discovery::discovered);
   connect(mldht_, &MLDHTProvider::discovered, this, &Discovery::discovered);

@@ -47,8 +47,8 @@ namespace librevault {
 
 using namespace boost::asio::ip;
 
-MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent)
-    : QObject(parent), port_mapping_(port_mapping), state_collector_(state_collector) {
+MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, QObject* parent)
+    : QObject(parent), port_mapping_(port_mapping) {
   qRegisterMetaType<btcompat::info_hash>("btcompat::info_hash");
 
   socket_ = new QUdpSocket(this);
@@ -213,7 +213,7 @@ void MLDHTProvider::processDatagram() {
 
   time_t tosleep;
   dht_periodic(datagram_buffer, datagram_size, (const sockaddr*)&sa, (int)size, &tosleep, lv_dht_callback_glue, this);
-  state_collector_->global_state_set("dht_nodes_count", node_count());
+  emit nodeCountChanged(node_count());
 
   periodic_->setInterval(tosleep * 1000);
 }
@@ -221,7 +221,7 @@ void MLDHTProvider::processDatagram() {
 void MLDHTProvider::periodic_request() {
   time_t tosleep;
   dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
-  state_collector_->global_state_set("dht_nodes_count", node_count());
+  emit nodeCountChanged(node_count());
 
   periodic_->setInterval(tosleep * 1000);
 }

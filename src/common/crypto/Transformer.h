@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include <QByteArray>
-#include "../util/blob.h"
+#include "util/blob.h"
 
 namespace librevault {
 namespace crypto {

@@ -29,7 +29,7 @@ add_executable(librevault-cli ${SRCS})
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-cli lvcommon)
+target_link_libraries(librevault-cli librevault-common)
 target_link_libraries(librevault-cli openssl)
 target_link_libraries(librevault-cli CONAN_PKG::docopt.cpp)
 

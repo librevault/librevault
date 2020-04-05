@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AES_CBC_DATA.h"
-#include "../crypto/AES_CBC.h"
-#include "../Meta.h"
+#include "crypto/AES_CBC.h"
+#include "Meta.h"
 
 namespace librevault {
 

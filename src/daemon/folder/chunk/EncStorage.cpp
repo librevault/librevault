@@ -30,7 +30,7 @@
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
 #include "util/readable.h"
-#include <librevault/crypto/Base32.h>
+#include "crypto/Base32.h"
 
 namespace librevault {
 

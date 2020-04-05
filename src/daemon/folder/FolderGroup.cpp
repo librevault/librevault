@@ -94,7 +94,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 	state_pusher_->start();
 
 	// Go through index
-	QTimer::singleShot(0, this, [=]{
+	QTimer::singleShot(0, this, [=, this]{
 		for(auto& smeta : meta_storage_->getMeta())
 			handle_indexed_meta(smeta);
 	});

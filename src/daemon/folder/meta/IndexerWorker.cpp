@@ -32,9 +32,9 @@
 #include "control/FolderParams.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "librevault/util/human_size.h"
-#include <librevault/crypto/HMAC-SHA3.h>
-#include <librevault/crypto/AES_CBC.h>
+#include "util/human_size.h"
+#include "crypto/HMAC-SHA3.h"
+#include "crypto/AES_CBC.h"
 #include <rabin.h>
 #include <boost/filesystem.hpp>
 #include <QFile>

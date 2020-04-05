@@ -27,42 +27,47 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QJsonDocument>
-#include <QObject>
-#include <QVariant>
 
-namespace librevault {
+#include <QtCore>
 
-class AbstractConfig : public QObject {
-	Q_OBJECT
+inline QString human_size(uintmax_t size) {
+  qreal num = size;
 
-signals:
-	void globalChanged(QString key, QVariant value);
-	void folderAdded(QVariantMap fconfig);
-	void folderRemoved(QByteArray folderid);
+  if(num < 1024.0)
+    return QCoreApplication::translate("Human Size", "%n bytes", 0, size);
+  num /= 1024.0;
 
-public:
-	/* Global configuration */
-	virtual QVariant getGlobal(QString name) = 0;
-	virtual void setGlobal(QString name, QVariant value) = 0;
-	virtual void removeGlobal(QString name) = 0;
+  if(num < 1024.0)
+    return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
+  num /= 1024.0;
 
-	/* Folder configuration */
-	virtual void addFolder(QVariantMap fconfig) = 0;
-	virtual void removeFolder(QByteArray folderid) = 0;
+  if(num < 1024.0)
+    return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
+  num /= 1024.0;
 
-	virtual QVariantMap getFolder(QByteArray folderid) = 0;
-	virtual QVariant getFolderValue(QByteArray folderid, QString name) {return getFolder(folderid).value(name);}
-	virtual QList<QByteArray> listFolders() = 0;
+  if(num < 1024.0)
+    return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
+  num /= 1024.0;
 
-	/* Export/Import */
-	virtual QJsonDocument exportUserGlobals() = 0;
-	virtual QJsonDocument exportGlobals() = 0;
-	virtual void importGlobals(QJsonDocument globals_conf) = 0;
+  return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
+}
 
-	virtual QJsonDocument exportUserFolders() = 0;
-	virtual QJsonDocument exportFolders() = 0;
-	virtual void importFolders(QJsonDocument folders_conf) = 0;
-};
+inline QString human_bandwidth(qreal bandwidth) {
+  if(bandwidth < 1024.0)
+    return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
+  bandwidth /= 1024.0;
 
-} /* namespace librevault */
+  if(bandwidth < 1024.0)
+    return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
+  bandwidth /= 1024.0;
+
+  if(bandwidth < 1024.0)
+    return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
+  bandwidth /= 1024.0;
+
+  if(bandwidth < 1024.0)
+    return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
+  bandwidth /= 1024.0;
+
+  return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
+}

@@ -29,10 +29,10 @@
 #pragma once
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
-#include "librevault/util/blob.h"
-#include <librevault/Secret.h>
-#include <librevault/SignedMeta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "util/blob.h"
+#include "Secret.h"
+#include "SignedMeta.h"
+#include "util/conv_bitfield.h"
 #include <QObject>
 #include <QTimer>
 #include <QSet>

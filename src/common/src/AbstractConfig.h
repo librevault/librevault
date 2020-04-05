@@ -27,20 +27,42 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <cstdint>
-#include <vector>
-#include <QByteArray>
+#include <QJsonDocument>
+#include <QObject>
+#include <QVariant>
 
 namespace librevault {
 
-using blob = std::vector<uint8_t>;
+class AbstractConfig : public QObject {
+ Q_OBJECT
 
-inline QByteArray conv_bytearray(const blob& bl) {
-	return QByteArray((const char*)bl.data(), bl.size());
-}
+ signals:
+  void globalChanged(QString key, QVariant value);
+  void folderAdded(QVariantMap fconfig);
+  void folderRemoved(QByteArray folderid);
 
-inline blob conv_bytearray(const QByteArray& ba) {
-	return blob(ba.begin(), ba.end());
-}
+ public:
+  /* Global configuration */
+  virtual QVariant getGlobal(QString name) = 0;
+  virtual void setGlobal(QString name, QVariant value) = 0;
+  virtual void removeGlobal(QString name) = 0;
+
+  /* Folder configuration */
+  virtual void addFolder(QVariantMap fconfig) = 0;
+  virtual void removeFolder(QByteArray folderid) = 0;
+
+  virtual QVariantMap getFolder(QByteArray folderid) = 0;
+  virtual QVariant getFolderValue(QByteArray folderid, QString name) {return getFolder(folderid).value(name);}
+  virtual QList<QByteArray> listFolders() = 0;
+
+  /* Export/Import */
+  virtual QJsonDocument exportUserGlobals() = 0;
+  virtual QJsonDocument exportGlobals() = 0;
+  virtual void importGlobals(QJsonDocument globals_conf) = 0;
+
+  virtual QJsonDocument exportUserFolders() = 0;
+  virtual QJsonDocument exportFolders() = 0;
+  virtual void importFolders(QJsonDocument folders_conf) = 0;
+};
 
 } /* namespace librevault */

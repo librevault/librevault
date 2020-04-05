@@ -27,47 +27,21 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <cstdint>
+#include <vector>
+#include <QByteArray>
 
-#include <QtCore>
+namespace librevault {
 
-inline QString human_size(uintmax_t size) {
-	qreal num = size;
+using blob = std::vector<uint8_t>;
 
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%n bytes", 0, size);
-	num /= 1024.0;
-
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 KB").arg(num, 0, 'f', 0);
-	num /= 1024.0;
-
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 MB").arg(num, 0, 'f', 2);
-	num /= 1024.0;
-
-	if(num < 1024.0)
-		return QCoreApplication::translate("Human Size", "%1 GB").arg(num, 0, 'f', 2);
-	num /= 1024.0;
-
-	return QCoreApplication::translate("Human Size", "%1 TB").arg(num, 0, 'f', 2);
+inline QByteArray conv_bytearray(const blob& bl) {
+  Q_ASSERT(bl.size() <= INTMAX_MAX);
+  return QByteArray((const char*)bl.data(), bl.size());
 }
 
-inline QString human_bandwidth(qreal bandwidth) {
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 B/s").arg(bandwidth, 0, 'f', 0);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 KB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 MB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	if(bandwidth < 1024.0)
-		return QCoreApplication::translate("Human Bandwidth", "%1 GB/s").arg(bandwidth, 0, 'f', 1);
-	bandwidth /= 1024.0;
-
-	return QCoreApplication::translate("Human Bandwidth", "%1 TB/s").arg(bandwidth, 0, 'f', 1);
+inline blob conv_bytearray(const QByteArray& ba) {
+  return blob(ba.begin(), ba.end());
 }
+
+} /* namespace librevault */

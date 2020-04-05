@@ -37,7 +37,7 @@
 #include <boost/endian/arithmetic.hpp>
 
 #include "control/Config.h"
-#include "librevault/util/blob.h"
+#include "util/blob.h"
 
 namespace librevault {
 namespace btcompat {

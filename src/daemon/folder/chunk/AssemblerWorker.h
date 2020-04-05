@@ -27,8 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/util/blob.h"
-#include <librevault/SignedMeta.h>
+#include "util/blob.h"
+#include "SignedMeta.h"
 #include <QObject>
 #include <QRunnable>
 

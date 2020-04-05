@@ -14,7 +14,7 @@ set(CMAKE_AUTORCC ON)
 #============================================================================
 
 file(GLOB_RECURSE lvcommon_SOURCES "src/*.cpp")
-file(GLOB_RECURSE lvcommon_HEADERS "include/*.h")
+file(GLOB_RECURSE lvcommon_HEADERS "src/*.h")
 
 #============================================================================
 # Third-party packages
@@ -31,7 +31,7 @@ list(APPEND lvcommon_SOURCES ${PROTO_SOURCES})
 #============================================================================
 
 add_library(lvcommon STATIC ${lvcommon_SOURCES} ${lvcommon_HEADERS} ${PROTO_HEADERS})
-target_include_directories(lvcommon PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_include_directories(lvcommon PUBLIC src)
 
 #============================================================================
 # Third-party libraries

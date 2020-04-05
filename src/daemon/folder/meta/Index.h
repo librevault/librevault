@@ -27,10 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/util/blob.h"
+#include "util/blob.h"
 #include "util/log.h"
 #include "util/SQLiteWrapper.h"
-#include <librevault/SignedMeta.h>
+#include "SignedMeta.h"
 #include <QObject>
 
 namespace librevault {

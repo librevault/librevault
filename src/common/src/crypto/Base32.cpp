@@ -8,7 +8,7 @@
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-#include <librevault/crypto/Base32.h>
+#include "Base32.h"
 #include <cryptopp/base32.h>
 
 namespace librevault {

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "ChunkFileBuilder.h"
-#include <librevault/crypto/Base32.h>
+#include "crypto/Base32.h"
 #include <QLoggingCategory>
 
 namespace librevault {

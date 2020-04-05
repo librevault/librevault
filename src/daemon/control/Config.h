@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/AbstractConfig.h"
+#include "AbstractConfig.h"
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>

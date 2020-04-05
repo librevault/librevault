@@ -28,8 +28,8 @@
  */
 #pragma once
 #include "util/log.h"
-#include <librevault/SignedMeta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "SignedMeta.h"
+#include "util/conv_bitfield.h"
 #include <QObject>
 
 namespace librevault {

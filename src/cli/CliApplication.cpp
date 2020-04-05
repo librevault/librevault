@@ -28,8 +28,8 @@
  */
 #include "CliApplication.h"
 #include "appver.h"
-#include <librevault/Secret.h>
-#include <librevault/crypto/Hex.h>
+#include "Secret.h"
+#include "crypto/Hex.h"
 #include <QDebug>
 #include <QtGlobal>
 #include <QJsonDocument>

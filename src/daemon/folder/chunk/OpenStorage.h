@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/util/blob.h"
+#include "util/blob.h"
 #include "util/log.h"
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QObject>
 #include <memory>
 

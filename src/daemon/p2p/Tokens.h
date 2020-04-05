@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2015 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,17 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "../Secret.h"
+
+#include "Secret.h"
+#include "crypto/HMAC-SHA3.h"
 
 namespace librevault {
 
-struct AES_CBC_DATA {
-	std::vector<uint8_t> ct, iv;
-
-	bool check() const {return !ct.empty() && ct.size() % 16 == 0 && iv.size() == 16;};
-	bool check(const Secret& secret);   // Use this with extreme care. Can cause padding oracle attack, if misused. Meta is (generally) signed and unmalleable
-	void set_plain(const std::vector<uint8_t>& pt, const Secret& secret);
-	std::vector<uint8_t> get_plain(const Secret& secret) const; // Caching, maybe?
-};
-
+inline QByteArray derive_token(const Secret& secret, const QByteArray& cert_digest) {
+	return crypto::HMAC_SHA3_224(secret.get_Public_Key()).compute(cert_digest);
 }
+
+} /* namespace librevault */

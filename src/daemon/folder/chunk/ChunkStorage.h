@@ -27,9 +27,9 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/util/blob.h"
-#include <librevault/Meta.h>
-#include <librevault/util/conv_bitfield.h>
+#include "util/blob.h"
+#include "Meta.h"
+#include "util/conv_bitfield.h"
 #include <QFile>
 
 namespace librevault {

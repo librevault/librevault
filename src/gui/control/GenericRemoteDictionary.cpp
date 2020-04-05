@@ -28,7 +28,7 @@
  */
 #include "GenericRemoteDictionary.h"
 #include "Daemon.h"
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <QNetworkReply>
 #include <QJsonArray>
 #include <QJsonDocument>

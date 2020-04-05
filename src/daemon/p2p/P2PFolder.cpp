@@ -35,8 +35,8 @@
 #include "nodekey/NodeKey.h"
 #include "util/readable.h"
 #include "util/conv_bitarray.h"
-#include <librevault/Tokens.h>
-#include <librevault/protocol/V1Parser.h>
+#include "Tokens.h"
+#include "protocol/V1Parser.h"
 
 namespace librevault {
 
@@ -124,16 +124,12 @@ QJsonObject P2PFolder::collect_state() {
 	return state;
 }
 
-blob P2PFolder::derive_token_digest(const Secret& secret, QByteArray digest) {
-	return derive_token(secret, conv_bytearray(digest));
-}
-
 blob P2PFolder::local_token() {
-	return derive_token_digest(fgroup_->secret(), node_key_->digest());
+	return conv_bytearray(derive_token(fgroup_->secret(), node_key_->digest()));
 }
 
 blob P2PFolder::remote_token() {
-	return derive_token_digest(fgroup_->secret(), digest());
+	return conv_bytearray(derive_token(fgroup_->secret(), digest()));
 }
 
 void P2PFolder::send_message(const blob& message) {

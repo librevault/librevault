@@ -29,7 +29,7 @@
 #pragma once
 #include "util/log.h"
 #include <dir_monitor/dir_monitor.hpp>
-#include <librevault/Meta.h>
+#include "Meta.h"
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 

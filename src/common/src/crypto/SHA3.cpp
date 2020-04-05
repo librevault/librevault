@@ -8,7 +8,7 @@
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-#include <librevault/crypto/SHA3.h>
+#include "SHA3.h"
 #include <cryptopp/sha3.h>
 #include <QCryptographicHash>
 
@@ -18,9 +18,9 @@ namespace crypto {
 blob SHA3::compute(const blob& data) const {
   switch (size_) {
     case 224:
-      return to_blob(QCryptographicHash::hash(from_blob(data), QCryptographicHash::Sha3_224));
+      return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_224));
     case 256:
-      return to_blob(QCryptographicHash::hash(from_blob(data), QCryptographicHash::Sha3_256));
+      return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_256));
     default: throw std::runtime_error("Hashing algorithm not supported");
   }
 }

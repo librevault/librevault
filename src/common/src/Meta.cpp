@@ -13,12 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <librevault/Meta.h>
+#include <Meta.h>
 #include <Meta_s.pb.h>
-#include <librevault/crypto/AES_CBC.h>
-#include <librevault/crypto/SHA3.h>
-#include <librevault/crypto/SHA2.h>
-#include <librevault/crypto/HMAC-SHA3.h>
+#include "crypto/AES_CBC.h"
+#include "crypto/SHA3.h"
+#include "crypto/SHA2.h"
+#include "crypto/HMAC-SHA3.h"
 
 namespace librevault {
 

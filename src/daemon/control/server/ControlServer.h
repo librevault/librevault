@@ -28,7 +28,7 @@
  */
 #pragma once
 #include "control/websocket_config.h"
-#include "librevault/util/blob.h"
+#include "util/blob.h"
 #include "util/log.h"
 #include "control/FolderParams.h"
 #include "util/multi_io_service.h"

@@ -8,21 +8,25 @@
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-#include <librevault/crypto/HMAC-SHA3.h>
+#include "HMAC-SHA3.h"
 #include <cryptopp/sha3.h>
+#include <QCryptographicHash>
 
 namespace librevault {
 namespace crypto {
 
 blob HMAC_SHA3_224::compute(const blob& data) const {
-	CryptoPP::SHA3_224 hasher;
-	blob result(hasher.DigestSize());
+  QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
+  hasher.addData(key_);
+  hasher.addData(conv_bytearray(data));
+  return conv_bytearray(hasher.result());
+}
 
-	hasher.Update(key_.data(), key_.size());
-	hasher.Update(data.data(), data.size());
-	hasher.Final(result.data());
-
-	return result;
+QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
+    QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
+    hasher.addData(key_);
+    hasher.addData(data);
+    return hasher.result();
 }
 
 blob HMAC_SHA3_224::to(const blob& data) const {

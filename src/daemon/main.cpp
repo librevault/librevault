@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include <docopt/docopt.h>
-#include <librevault/Secret.h>
+#include "Secret.h"
 #include <spdlog/spdlog.h>
 
 #include <QDebug>

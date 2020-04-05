@@ -28,8 +28,8 @@
  */
 #include "Config.h"
 #include "Paths.h"
-#include "librevault/util/blob.h"
-#include <librevault/Secret.h>
+#include "util/blob.h"
+#include "Secret.h"
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>

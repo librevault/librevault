@@ -25,13 +25,15 @@ namespace crypto {
  * Okay, this solution is implemented here. Just prepending key to message.
  */
 class HMAC_SHA3_224 : public OneWayTransformer {
-	const blob key_;
-public:
-	HMAC_SHA3_224(blob key) : key_(std::move(key)) {}
-	virtual ~HMAC_SHA3_224() {}
+  const QByteArray key_;
+ public:
+  HMAC_SHA3_224(const blob& key) : key_(conv_bytearray(key)) {}
+  HMAC_SHA3_224(const QByteArray& key) : key_(std::move(key)) {}
+  virtual ~HMAC_SHA3_224() {}
 
-	blob compute(const blob& data) const;
-	blob to(const blob& data) const;
+  blob compute(const blob& data) const;
+  QByteArray compute(const QByteArray& data) const;
+  blob to(const blob& data) const;
 };
 
 } /* namespace crypto */

@@ -27,7 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "librevault/util/blob.h"
+#include "util/blob.h"
 #include <QString>
 
 namespace librevault {

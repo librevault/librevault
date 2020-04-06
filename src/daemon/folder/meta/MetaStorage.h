@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "SignedMeta.h"
 #include <QObject>
+
+#include "SignedMeta.h"
+#include "util/blob.h"
 
 namespace librevault {
 
@@ -43,42 +44,43 @@ class PathNormalizer;
 class StateCollector;
 
 class MetaStorage : public QObject {
-	Q_OBJECT
-signals:
-	void metaAdded(SignedMeta meta);
-	void metaAddedExternal(SignedMeta meta);
+  Q_OBJECT
+ signals:
+  void metaAdded(SignedMeta meta);
+  void metaAddedExternal(SignedMeta meta);
 
-public:
-	struct no_such_meta : public std::runtime_error {
-		no_such_meta() : std::runtime_error("Requested Meta not found"){}
-	};
+ public:
+  struct MetaNotFound : public std::runtime_error {
+    MetaNotFound() : std::runtime_error("Requested Meta not found") {}
+  };
 
-	MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
-	virtual ~MetaStorage();
+  MetaStorage(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer,
+              StateCollector* state_collector, QObject* parent);
+  virtual ~MetaStorage();
 
-	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const Meta::PathRevision& path_revision);
-	SignedMeta getMeta(const blob& path_id);
-	QList<SignedMeta> getMeta();
-	QList<SignedMeta> getExistingMeta();
-	QList<SignedMeta> getIncompleteMeta();
-	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
-	QList<SignedMeta> containingChunk(const blob& ct_hash);
-	QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+  bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
+  SignedMeta getMeta(const Meta::PathRevision& path_revision);
+  SignedMeta getMeta(const blob& path_id);
+  QList<SignedMeta> getMeta();
+  QList<SignedMeta> getExistingMeta();
+  QList<SignedMeta> getIncompleteMeta();
+  void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
+  QList<SignedMeta> containingChunk(const blob& ct_hash);
+  QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
 
-	// Assembled index
-	void markAssembled(blob path_id);
-	bool isChunkAssembled(blob ct_hash);
+  // Assembled index
+  void markAssembled(blob path_id);
+  bool isChunkAssembled(blob ct_hash);
 
-	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+  bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 
-	void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
+  void prepareAssemble(QByteArray normpath, Meta::Type type, bool with_removal = false);
 
-private:
-	Index* index_;
-	IndexerQueue* indexer_;
-	DirectoryPoller* poller_;
-	DirectoryWatcher* watcher_;
+ private:
+  Index* index_;
+  IndexerQueue* indexer_;
+  DirectoryPoller* poller_;
+  DirectoryWatcher* watcher_;
 };
 
 } /* namespace librevault */

@@ -27,22 +27,22 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QHostAddress>
+#include <QObject>
+#include <QSet>
+#include <QTimer>
+#include <set>
+
+#include "Secret.h"
+#include "SignedMeta.h"
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
 #include "util/blob.h"
-#include "Secret.h"
-#include "SignedMeta.h"
 #include "util/conv_bitfield.h"
-#include <QObject>
-#include <QTimer>
-#include <QSet>
-#include <set>
-#include <QHostAddress>
 
 namespace librevault {
 
 class RemoteFolder;
-class FSFolder;
 class P2PFolder;
 
 class PathNormalizer;
@@ -58,64 +58,64 @@ class Uploader;
 class Downloader;
 
 class FolderGroup : public QObject {
-	Q_OBJECT
-	friend class ControlServer;
+  Q_OBJECT
+  friend class ControlServer;
 
-signals:
-	void attached(P2PFolder* remote_ptr);
-	void detached(P2PFolder* remote_ptr);
+ signals:
+  void attached(P2PFolder* remote_ptr);
+  void detached(P2PFolder* remote_ptr);
 
-public:
-	FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
-	virtual ~FolderGroup();
+ public:
+  FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
+  virtual ~FolderGroup();
 
-	/* Membership management */
-	bool attach(P2PFolder* remote);
-	void detach(P2PFolder* remote);
+  /* Membership management */
+  bool attach(P2PFolder* remote);
+  void detach(P2PFolder* remote);
 
-	/* Getters */
-	QList<RemoteFolder*> remotes() const;
+  /* Getters */
+  QList<RemoteFolder*> remotes() const;
 
-	inline const FolderParams& params() const {return params_;}
+  inline const FolderParams& params() const { return params_; }
 
-	inline const Secret& secret() const {return params().secret;}
-	QByteArray folderid() const {return secret().get_Hash();}
+  inline const Secret& secret() const { return params().secret; }
+  QByteArray folderid() const { return secret().get_Hash(); }
 
-	BandwidthCounter& bandwidth_counter() {return bandwidth_counter_;}
+  BandwidthCounter& bandwidth_counter() { return bandwidth_counter_; }
 
-	QString log_tag() const;
+  QString log_tag() const;
 
-private:
-	const FolderParams params_;
-	StateCollector* state_collector_;
+ private:
+  const FolderParams params_;
+  StateCollector* state_collector_;
 
-	std::unique_ptr<PathNormalizer> path_normalizer_;
-	std::unique_ptr<IgnoreList> ignore_list;
+  std::unique_ptr<PathNormalizer> path_normalizer_;
+  std::unique_ptr<IgnoreList> ignore_list;
 
-	ChunkStorage* chunk_storage_;
-	MetaStorage* meta_storage_;
+  ChunkStorage* chunk_storage_;
+  MetaStorage* meta_storage_;
 
-	Uploader* uploader_;
-	Downloader* downloader_;
-	MetaUploader* meta_uploader_;
-	MetaDownloader* meta_downloader_;
+  Uploader* uploader_;
+  Downloader* downloader_;
+  MetaUploader* meta_uploader_;
+  MetaDownloader* meta_downloader_;
 
-	BandwidthCounter bandwidth_counter_;
+  BandwidthCounter bandwidth_counter_;
 
-	QTimer* state_pusher_;
+  QTimer* state_pusher_;
 
-	/* Members */
-	QSet<RemoteFolder*> remotes_;
-	QSet<RemoteFolder*> remotes_ready_;
+  /* Members */
+  QSet<RemoteFolder*> remotes_;
+  QSet<RemoteFolder*> remotes_ready_;
 
-	// Member lookup optimization
-	QSet<QByteArray> p2p_folders_digests_;
-	QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
+  // Member lookup optimization
+  QSet<QByteArray> p2p_folders_digests_;
+  QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
 
-private slots:
-	void push_state();
-	void handle_indexed_meta(const SignedMeta& smeta);
-	void handle_handshake(RemoteFolder* origin);
+ private slots:
+  void push_state();
+  void handle_indexed_meta(const SignedMeta& smeta);
+  void handle_handshake(RemoteFolder* origin);
 };
 
 } /* namespace librevault */

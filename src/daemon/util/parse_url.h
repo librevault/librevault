@@ -35,7 +35,7 @@ namespace librevault {
 
 struct url {
   url() {}
-  url(const std::string& str);
+  url(std::string str);
   url(const QString& str);
   std::string scheme;
   std::string userinfo;

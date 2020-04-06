@@ -26,38 +26,32 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "MemoryCachedStorage.h"
-#include "ChunkStorage.h"
+#include "multi_io_context.h"
+
+#include "log.h"
 
 namespace librevault {
 
-MemoryCachedStorage::MemoryCachedStorage(QObject* parent) : QObject(parent), cache_(50*1024*1024) {}    // 50 MB cache is enough for most purposes
+multi_io_context::multi_io_context(QString name) : name_(std::move(name)) {}
 
-bool MemoryCachedStorage::have_chunk(const blob& ct_hash) const noexcept {
-	return cache_.contains(conv_bytearray(ct_hash));
+multi_io_context::~multi_io_context() { stop(false); }
+
+void multi_io_context::start() {
+  ctx_work_ = std::make_unique<boost::asio::io_context::work>(ctx_);
+  worker_thread_ = std::make_unique<std::thread>([this] { run_thread(); });  // Running io_context in threads
 }
 
-QByteArray MemoryCachedStorage::get_chunk(const blob& ct_hash) const {
-	QMutexLocker lk(&cache_lock_);
+void multi_io_context::stop(bool stop_gently) {
+  ctx_work_.reset();
 
-	QByteArray* cached_chunk = cache_[conv_bytearray(ct_hash)];
-	if(cached_chunk)
-		return *cached_chunk;
-	else
-		throw ChunkStorage::no_such_chunk();
+  if (!stop_gently) ctx_.stop();
+  if (worker_thread_->joinable()) worker_thread_->join();
 }
 
-void MemoryCachedStorage::put_chunk(const blob& ct_hash, QByteArray data) {
-	QMutexLocker lk(&cache_lock_);
-
-	QByteArray* cached_chunk = new QByteArray(data);
-	cache_.insert(conv_bytearray(ct_hash), cached_chunk, cached_chunk->size());
-}
-
-void MemoryCachedStorage::remove_chunk(const blob& ct_hash) noexcept {
-	QMutexLocker lk(&cache_lock_);
-
-	cache_.remove(conv_bytearray(ct_hash));
+void multi_io_context::run_thread() {
+  LOGD("Asio thread started");
+  ctx_.run();
+  LOGD("Asio thread started");
 }
 
 } /* namespace librevault */

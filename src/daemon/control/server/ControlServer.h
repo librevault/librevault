@@ -27,14 +27,17 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QObject>
+#include <QVariantMap>
+#include <unordered_set>
+
+#include "control/FolderParams.h"
 #include "control/websocket_config.h"
 #include "util/blob.h"
 #include "util/log.h"
-#include "control/FolderParams.h"
-#include "util/multi_io_service.h"
-#include <QVariantMap>
-#include <QObject>
-#include <unordered_set>
+#include "util/multi_io_context.h"
+
+Q_DECLARE_LOGGING_CATEGORY(log_control_server)
 
 namespace librevault {
 
@@ -44,37 +47,38 @@ class ControlWebsocketServer;
 class ControlHTTPServer;
 
 class ControlServer : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("ControlServer");
-public:
-	using server = websocketpp::server<asio_notls>;
+  Q_OBJECT
+  LOG_SCOPE("ControlServer");
 
-	ControlServer(StateCollector* state_collector, QObject* parent);
-	virtual ~ControlServer();
+ public:
+  using server = websocketpp::server<asio_notls>;
 
-	void run() {ios_.start(1);}
+  ControlServer(StateCollector* state_collector, QObject* parent);
+  virtual ~ControlServer();
 
-	bool check_origin(const std::string& origin);
+  void run() { ios_.start(); }
 
-signals:
-	void shutdown();
-	void restart();
+  bool check_origin(const std::string& origin);
 
-public slots:
-	void notify_global_config_changed(QString key, QVariant state);
-	void notify_global_state_changed(QString key, QJsonValue state);
-	void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
+ signals:
+  void shutdown();
+  void restart();
 
-	void notify_folder_added(QByteArray folderid, QVariantMap fconfig);
-	void notify_folder_removed(QByteArray folderid);
+ public slots:
+  void notify_global_config_changed(QString key, QVariant state);
+  void notify_global_state_changed(QString key, QJsonValue state);
+  void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
 
-private:
-	multi_io_service ios_;
+  void notify_folder_added(QByteArray folderid, QVariantMap fconfig);
+  void notify_folder_removed(QByteArray folderid);
 
-	server ws_server_;
+ private:
+  multi_io_context ios_;
 
-	std::unique_ptr<ControlWebsocketServer> control_ws_server_;
-	std::unique_ptr<ControlHTTPServer> control_http_server_;
+  server ws_server_;
+
+  std::unique_ptr<ControlWebsocketServer> control_ws_server_;
+  std::unique_ptr<ControlHTTPServer> control_http_server_;
 };
 
 } /* namespace librevault */

@@ -27,57 +27,57 @@
  * files in the program, then also delete it here.
  */
 #include "EncStorage.h"
+
 #include "ChunkStorage.h"
 #include "control/FolderParams.h"
-#include "util/readable.h"
 #include "crypto/Base32.h"
+#include "util/readable.h"
 
 namespace librevault {
 
 EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QString EncStorage::make_chunk_ct_name(QByteArray ct_hash) const noexcept {
-	return "chunk-" + QString::fromStdString(crypto::Base32().to_string(ct_hash));
+  return "chunk-" + QString::fromStdString(crypto::Base32().to_string(ct_hash));
 }
 
 QString EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {
-	return make_chunk_ct_path(conv_bytearray(ct_hash));
+  return make_chunk_ct_path(conv_bytearray(ct_hash));
 }
 
 QString EncStorage::make_chunk_ct_path(QByteArray ct_hash) const noexcept {
-	return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
+  return params_.system_path + "/" + make_chunk_ct_name(ct_hash);
 }
 
 bool EncStorage::have_chunk(const blob& ct_hash) const noexcept {
-	QReadLocker lk(&storage_mtx_);
-	return QFile::exists(make_chunk_ct_path(ct_hash));
+  QReadLocker lk(&storage_mtx_);
+  return QFile::exists(make_chunk_ct_path(ct_hash));
 }
 
 QByteArray EncStorage::get_chunk(const blob& ct_hash) const {
-	QReadLocker lk(&storage_mtx_);
+  QReadLocker lk(&storage_mtx_);
 
-	QFile chunk_file(make_chunk_ct_path(ct_hash));
-	if(!chunk_file.open(QIODevice::ReadOnly))
-		throw ChunkStorage::no_such_chunk();
+  QFile chunk_file(make_chunk_ct_path(ct_hash));
+  if (!chunk_file.open(QIODevice::ReadOnly)) throw ChunkStorage::ChunkNotFound();
 
-	return chunk_file.readAll();
+  return chunk_file.readAll();
 }
 
 void EncStorage::put_chunk(const QByteArray& ct_hash, QFile* chunk_f) {
-	QWriteLocker lk(&storage_mtx_);
+  QWriteLocker lk(&storage_mtx_);
 
-	chunk_f->setParent(this);
-	chunk_f->rename(make_chunk_ct_path(ct_hash));
-	chunk_f->deleteLater();
+  chunk_f->setParent(this);
+  chunk_f->rename(make_chunk_ct_path(ct_hash));
+  chunk_f->deleteLater();
 
-	LOGD("Encrypted block" << ct_hash_readable(ct_hash) << "pushed into EncStorage");
+  LOGD("Encrypted block" << ct_hash_readable(ct_hash) << "pushed into EncStorage");
 }
 
 void EncStorage::remove_chunk(const blob& ct_hash) {
-	QWriteLocker lk(&storage_mtx_);
-	QFile::remove(make_chunk_ct_path(ct_hash));
+  QWriteLocker lk(&storage_mtx_);
+  QFile::remove(make_chunk_ct_path(ct_hash));
 
-	LOGD("Block" << ct_hash_readable(ct_hash) << "removed from EncStorage");
+  LOGD("Block" << ct_hash_readable(ct_hash) << "removed from EncStorage");
 }
 
 } /* namespace librevault */

@@ -90,12 +90,14 @@ Endpoint Endpoint::fromPacked6(QByteArray packed) {
 
 EndpointList Endpoint::fromPackedList4(const QByteArray& packed) {
   EndpointList l;
+  l.reserve(packed.size() / 6);
   for (int i = 0; i < packed.size(); i += 6) l.push_back(fromPacked4(packed.mid(i, 6)));
   return l;
 }
 
 EndpointList Endpoint::fromPackedList6(const QByteArray& packed) {
   EndpointList l;
+  l.reserve(packed.size() / 18);
   for (int i = 0; i < packed.size(); i += 18) l.push_back(fromPacked6(packed.mid(i, 18)));
   return l;
 }

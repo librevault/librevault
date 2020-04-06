@@ -36,7 +36,7 @@
 
 namespace librevault {
 
-url::url(const std::string& url_str) {
+url::url(std::string url_str) {
   boost::algorithm::trim(url_str);
   std::string::const_iterator it_scheme_begin, it_scheme_end, it_userinfo_begin, it_userinfo_end, it_host_begin,
       it_host_end, it_port_begin, it_port_end, it_authority_begin, it_authority_end;

@@ -27,32 +27,29 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QLoggingCategory>
 #include <QtDebug>
 #include <boost/current_function.hpp>
 
 #define LOG_SCOPE(SCOPE) \
-inline QString log_tag() const {return QStringLiteral(SCOPE);}
+  inline QString log_tag() const { return QStringLiteral(SCOPE); }
 
-#define LOGD(ARGS) \
-qDebug() << log_tag().toStdString().c_str() << "|" << ARGS
+#define LOGD(ARGS) qDebug() << log_tag().toStdString().c_str() << "|" << ARGS
 
-#define LOGI(ARGS) \
-qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
+#define LOGI(ARGS) qInfo() << log_tag().toStdString().c_str() << "|" << ARGS
 
-#define LOGW(ARGS) \
-qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
+#define LOGW(ARGS) qWarning() << log_tag().toStdString().c_str() << "|" << ARGS
 
-#define SCOPELOG(category) \
-class ScopeLog { \
-	QString scope_; \
-public: \
-	ScopeLog(const char* scope) : scope_(scope) {qCDebug(category) << scope_;} \
-	~ScopeLog() {qCDebug(category) << (QString("!") + scope_);} \
-}; \
-ScopeLog scopelog(BOOST_CURRENT_FUNCTION)
+#define SCOPELOG(category)                                                                                      \
+  class ScopeLog {                                                                                              \
+    QLatin1String scope_;                                                                                       \
+                                                                                                                \
+   public:                                                                                                      \
+    ScopeLog(QLatin1String scope) : scope_(std::move(scope)) { qCDebug(category).noquote() << "<-" << scope_; } \
+    ~ScopeLog() { qCDebug(category).noquote() << "->" << scope_; }                                              \
+  };                                                                                                            \
+  ScopeLog scopelog(QLatin1String(BOOST_CURRENT_FUNCTION))
 
-#define LOGFUNC() \
-qDebug() << BOOST_CURRENT_FUNCTION
+#define LOGFUNC() qDebug() << BOOST_CURRENT_FUNCTION
 
-#define LOGFUNCEND() \
-qDebug() << "~" << BOOST_CURRENT_FUNCTION
+#define LOGFUNCEND() qDebug() << "~" << BOOST_CURRENT_FUNCTION

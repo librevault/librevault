@@ -16,6 +16,8 @@
 #include <map>
 #include <memory>
 
+#include "util/blob.h"
+
 namespace librevault {
 
 class SQLValue {

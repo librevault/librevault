@@ -26,47 +26,38 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "multi_io_service.h"
-#include "log.h"
+#include "MemoryStorage.h"
+
+#include "ChunkStorage.h"
 
 namespace librevault {
 
-multi_io_service::multi_io_service(std::string name) : name_(std::move(name)) {}
+MemoryStorage::MemoryStorage(QObject* parent)
+    : QObject(parent), cache_(50 * 1024 * 1024) {}  // 50 MB cache is enough for most purposes
 
-multi_io_service::~multi_io_service() {
-	stop(false);
+bool MemoryStorage::have_chunk(const blob& ct_hash) const noexcept { return cache_.contains(conv_bytearray(ct_hash)); }
+
+QByteArray MemoryStorage::get_chunk(const blob& ct_hash) const {
+  QMutexLocker lk(&cache_lock_);
+
+  QByteArray* cached_chunk = cache_[conv_bytearray(ct_hash)];
+  if (cached_chunk)
+    return *cached_chunk;
+  else
+    throw ChunkStorage::ChunkNotFound();
 }
 
-void multi_io_service::start(unsigned thread_count) {
-	ios_work_ = std::make_unique<boost::asio::io_service::work>(ios_);
+void MemoryStorage::put_chunk(const blob& ct_hash, QByteArray data) {
+  QMutexLocker lk(&cache_lock_);
 
-	LOGI("Threads: " << thread_count);
-
-	for(unsigned i = 1; i <= thread_count; i++){
-		worker_threads_.emplace_back([this, i]{run_thread(i);});	// Running io_service in threads
-	}
+  QByteArray* cached_chunk = new QByteArray(data);
+  cache_.insert(conv_bytearray(ct_hash), cached_chunk, cached_chunk->size());
 }
 
-void multi_io_service::stop(bool stop_gently) {
-	ios_work_.reset();
+void MemoryStorage::remove_chunk(const blob& ct_hash) noexcept {
+  QMutexLocker lk(&cache_lock_);
 
-	if(!stop_gently)
-		ios_.stop();
-
-	for(auto& thread : worker_threads_){
-		if(thread.joinable()) thread.join();
-	}
-}
-
-void multi_io_service::run_thread(unsigned worker_number) {
-	LOGD("Thread #" << worker_number << " started");
-	try {
-		ios_.run();
-	}catch(std::exception& e) {
-		//LOGEM("Unhandled exception: " << e.what());
-		throw;
-	}
-	LOGD("Thread #" << worker_number << " stopped");
+  cache_.remove(conv_bytearray(ct_hash));
 }
 
 } /* namespace librevault */

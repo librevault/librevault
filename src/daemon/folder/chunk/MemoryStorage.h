@@ -27,32 +27,28 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <boost/asio/io_service.hpp>
-#include <thread>
-#include <QString>
+#include <QByteArray>
+#include <QCache>
+#include <QMutex>
+#include <QObject>
+
+#include "util/blob.h"
 
 namespace librevault {
 
-class multi_io_service {
-public:
-	multi_io_service(std::string name);
-	~multi_io_service();
+class MemoryStorage : public QObject {
+  Q_OBJECT
+ public:
+  MemoryStorage(QObject* parent);
 
-	void start(unsigned thread_count);
-	void stop(bool stop_gently = false);
+  bool have_chunk(const blob& ct_hash) const noexcept;
+  QByteArray get_chunk(const blob& ct_hash) const;
+  void put_chunk(const blob& ct_hash, QByteArray data);
+  void remove_chunk(const blob& ct_hash) noexcept;
 
-	boost::asio::io_service& ios() {return ios_;}
-
-protected:
-	std::string name_;
-	boost::asio::io_service ios_;
-	std::unique_ptr<boost::asio::io_service::work> ios_work_;
-
-	std::vector<std::thread> worker_threads_;
-
-	void run_thread(unsigned worker_number);
-
-	QString log_tag() const {return "pool:" + QString::fromStdString(name_);}
+ private:
+  mutable QMutex cache_lock_;
+  QCache<QByteArray, QByteArray> cache_;
 };
 
 } /* namespace librevault */

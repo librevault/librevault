@@ -27,31 +27,30 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <string>
+#include <QString>
 #include <cstdint>
+#include <string>
 
 namespace librevault {
 
-struct url;
-
-url parse_url(std::string url_str);
-
 struct url {
-	url() {}
-	url(std::string str) {*this = parse_url(std::move(str));}
-	std::string scheme;
-	std::string userinfo;
-	std::string host;
-	uint16_t port = 0;
-	std::string query;
+  url() {}
+  url(const std::string& str);
+  url(const QString& str);
+  std::string scheme;
+  std::string userinfo;
+  std::string host;
+  uint16_t port = 0;
+  std::string query;
 
-	bool is_ipv6 = false;
+  bool is_ipv6 = false;
 
-	operator std::string() const;
-	bool operator==(const url& u) const {
-		return (scheme == u.scheme) && (userinfo == u.userinfo) && (host == u.host) && (port == u.port) && (query == u.query);
-	}
-	bool empty() const {return *this == url();}   // Not optimal, but simple
+  operator std::string() const;
+  bool operator==(const url& u) const {
+    return (scheme == u.scheme) && (userinfo == u.userinfo) && (host == u.host) && (port == u.port) &&
+           (query == u.query);
+  }
+  bool empty() const { return *this == url(); }  // Not optimal, but simple
 };
 
-} /* namespace librevault */
+}  // namespace librevault

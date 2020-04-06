@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <QHostAddress>
+#include <QJsonObject>
 
 #include "exception.hpp"
 
@@ -66,9 +67,12 @@ struct Endpoint {
 
   [[nodiscard]] inline QPair<QHostAddress, quint16> toPair() const { return {addr, port}; };
   [[nodiscard]] inline bool operator==(const Endpoint& that) const { return toPair() == that.toPair(); }
+
+  static Endpoint fromJson(const QJsonObject& j);
+  [[nodiscard]] QJsonObject toJson() const;
 };
 
-inline uint qHash(const Endpoint& key, uint seed = 0) noexcept { return qHash(key.toPair(), seed); }
+[[maybe_unused]] inline uint qHash(const Endpoint& key, uint seed = 0) noexcept { return qHash(key.toPair(), seed); }
 
 QDebug operator<<(QDebug debug, const Endpoint& endpoint);
 

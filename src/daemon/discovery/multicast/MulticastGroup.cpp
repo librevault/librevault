@@ -78,17 +78,16 @@ QByteArray MulticastGroup::get_message() {
   return message_;
 }
 
-void MulticastGroup::sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port) {
-  if (socket->writeDatagram(get_message(), addr, port))
-    qCDebug(log_multicast) << "===> Multicast message sent to: " << addr << ":" << port;
+void MulticastGroup::sendMulticast(QUdpSocket* socket, const Endpoint& endpoint) {
+  if (socket->writeDatagram(get_message(), endpoint.addr, endpoint.port))
+    qCDebug(log_multicast) << "===> Multicast message sent to:" << endpoint;
   else
-    qCDebug(log_multicast) << "=X=> Multicast message not sent to: " << addr << ":" << port
-                           << " E:" << socket->errorString();
+    qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint << "E:" << socket->errorString();
 }
 
 void MulticastGroup::sendMulticasts() {
-  sendMulticast(provider_->getSocketV4(), provider_->getAddressV4(), provider_->getPort());
-  sendMulticast(provider_->getSocketV6(), provider_->getAddressV6(), provider_->getPort());
+  sendMulticast(provider_->getSocketV4(), Endpoint(provider_->getAddressV4(), provider_->getPort()));
+  sendMulticast(provider_->getSocketV6(), Endpoint(provider_->getAddressV6(), provider_->getPort()));
 }
 
 } /* namespace librevault */

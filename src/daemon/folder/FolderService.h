@@ -27,10 +27,13 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QMap>
+#include <QObject>
+
 #include "util/blob.h"
 #include "util/log.h"
-#include <QObject>
-#include <QMap>
+
+Q_DECLARE_LOGGING_CATEGORY(log_folderservice)
 
 namespace librevault {
 
@@ -40,33 +43,34 @@ class FolderParams;
 class StateCollector;
 
 class FolderService : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("FolderService");
-public:
-	struct invalid_group : std::runtime_error {
-		invalid_group() : std::runtime_error("Folder group not found") {}
-	};
+  Q_OBJECT
+  LOG_SCOPE("FolderService");
 
-	explicit FolderService(StateCollector* state_collector, QObject* parent);
-	virtual ~FolderService();
+ public:
+  struct invalid_group : std::runtime_error {
+    invalid_group() : std::runtime_error("Folder group not found") {}
+  };
 
-	void run();
-	void stop();
+  explicit FolderService(StateCollector* state_collector, QObject* parent);
+  virtual ~FolderService();
 
-	/* FolderGroup nanagenent */
-	void initFolder(const FolderParams& params);
-	void deinitFolder(const QByteArray& folderid);
+  void run();
+  void stop();
 
-	FolderGroup* getGroup(const QByteArray& folderid);
+  /* FolderGroup nanagenent */
+  void initFolder(const FolderParams& params);
+  void deinitFolder(const QByteArray& folderid);
 
-signals:
-	void folderAdded(FolderGroup* fgroup);
-	void folderRemoved(FolderGroup* fgroup);
+  FolderGroup* getGroup(const QByteArray& folderid);
 
-private:
-	StateCollector* state_collector_;
+ signals:
+  void folderAdded(FolderGroup* fgroup);
+  void folderRemoved(FolderGroup* fgroup);
 
-	QMap<QByteArray, FolderGroup*> groups_;
+ private:
+  StateCollector* state_collector_;
+
+  QMap<QByteArray, FolderGroup*> groups_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

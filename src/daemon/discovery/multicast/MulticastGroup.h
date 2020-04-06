@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/Endpoint.h>
+
 #include <QTimer>
 #include <QUdpSocket>
 
@@ -52,7 +54,7 @@ class MulticastGroup : public QObject {
   QByteArray message_;
 
   QByteArray get_message();
-  void sendMulticast(QUdpSocket* socket, QHostAddress addr, quint16 port);
+  void sendMulticast(QUdpSocket* socket, const Endpoint& endpoint);
 
  private slots:
   void sendMulticasts();

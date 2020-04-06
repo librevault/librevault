@@ -42,8 +42,7 @@ PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
   upnp_ = new UPnPService(*this);
 
   auto port_callback = [this](QString id, uint16_t port) {
-    qCDebug(log_portmapping)
-        << "Port mapped: " << mappings_[id].descriptor.port << " -> " << port;
+    qCDebug(log_portmapping) << "Port" << id << "mapped:" << mappings_[id].descriptor.port << "->" << port;
     mappings_[id].port = port;
   };
 
@@ -59,9 +58,7 @@ PortMappingService::~PortMappingService() {
   mappings_.clear();
 }
 
-void PortMappingService::map(QString id,
-                             MappingDescriptor descriptor,
-                             QString description) {
+void PortMappingService::map(QString id, MappingDescriptor descriptor, QString description) {
   Mapping m;
   m.descriptor = descriptor;
   m.description = description;
@@ -87,11 +84,8 @@ uint16_t PortMappingService::mapped_port(const QString& id) {
     return 0;
 }
 
-void PortMappingService::add_existing_mappings(
-    PortMappingSubService* subservice) {
-  for (auto& mapping : mappings_)
-    subservice->map(mapping.first, mapping.second.descriptor,
-                    mapping.second.description);
+void PortMappingService::add_existing_mappings(PortMappingSubService* subservice) {
+  for (auto& mapping : mappings_) subservice->map(mapping.first, mapping.second.descriptor, mapping.second.description);
 }
 
 } /* namespace librevault */

@@ -27,34 +27,38 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include <QObject>
 #include <QFile>
+#include <QObject>
 #include <QSslCertificate>
 #include <QSslKey>
+
+#include "util/log.h"
+
+Q_DECLARE_LOGGING_CATEGORY(log_nodekey)
 
 namespace librevault {
 
 class NodeKey : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("NodeKey");
-public:
-	NodeKey(QObject* parent);
-	virtual ~NodeKey();
+  Q_OBJECT
+  LOG_SCOPE("NodeKey");
 
-	QCryptographicHash::Algorithm digestAlgorithm() const {return QCryptographicHash::Sha256;}
+ public:
+  NodeKey(QObject* parent);
+  virtual ~NodeKey();
 
-	QByteArray digest() const;
-	QSslKey privateKey() const {return private_key_;}
-	QSslCertificate certificate() const {return certificate_;}
+  QCryptographicHash::Algorithm digestAlgorithm() const { return QCryptographicHash::Sha256; }
 
-private:
-	void write_key();
-	void gen_certificate();
+  QByteArray digest() const;
+  QSslKey privateKey() const { return private_key_; }
+  QSslCertificate certificate() const { return certificate_; }
 
-	QFile cert_file_, private_key_file_;
-	QSslKey private_key_;
-	QSslCertificate certificate_;
+ private:
+  void write_key();
+  void gen_certificate();
+
+  QFile cert_file_, private_key_file_;
+  QSslKey private_key_;
+  QSslCertificate certificate_;
 };
 
 } /* namespace librevault */

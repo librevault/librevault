@@ -27,18 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "downloader/ChunkFileBuilder.h"
-#include "downloader/WeightedChunkQueue.h"
-#include "folder/RemoteFolder.h"
-#include "util/AvailabilityMap.h"
-#include "util/blob.h"
-#include "util/log.h"
 #include <QList>
 #include <QTimer>
 #include <boost/bimap.hpp>
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
 #include <chrono>
+
+#include "downloader/ChunkFileBuilder.h"
+#include "downloader/WeightedChunkQueue.h"
+#include "folder/RemoteFolder.h"
+#include "util/AvailabilityMap.h"
+#include "util/blob.h"
+#include "util/log.h"
 
 #define CLUSTERED_COEFFICIENT 10.0f
 #define IMMEDIATE_COEFFICIENT 20.0f
@@ -51,74 +52,74 @@ class MetaStorage;
 class ChunkStorage;
 
 struct DownloadChunk : boost::noncopyable {
-	DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size);
+  DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size);
 
-	ChunkFileBuilder builder;
+  ChunkFileBuilder builder;
 
-	AvailabilityMap<uint32_t> requestMap();
+  AvailabilityMap<uint32_t> requestMap();
 
-	/* Request-oriented functions */
-	struct BlockRequest {
-		uint32_t offset;
-		uint32_t size;
-		std::chrono::steady_clock::time_point started;
-	};
-	QMultiHash<RemoteFolder*, BlockRequest> requests;
-	QHash<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
+  /* Request-oriented functions */
+  struct BlockRequest {
+    uint32_t offset;
+    uint32_t size;
+    std::chrono::steady_clock::time_point started;
+  };
+  QMultiHash<RemoteFolder*, BlockRequest> requests;
+  QHash<RemoteFolder*, std::shared_ptr<RemoteFolder::InterestGuard>> owned_by;
 
-	const QByteArray ct_hash;
+  const QByteArray ct_hash;
 };
 
 using DownloadChunkPtr = std::shared_ptr<DownloadChunk>;
 
 class Downloader : public QObject {
-	Q_OBJECT
-signals:
-	void chunkDownloaded(QByteArray ct_hash, QFile* chunk_f);
+  Q_OBJECT
+ signals:
+  void chunkDownloaded(QByteArray ct_hash, QFile* chunk_f);
 
-public:
-	Downloader(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
-	~Downloader();
+ public:
+  Downloader(const FolderParams& params, MetaStorage* meta_storage, QObject* parent);
+  ~Downloader();
 
-public slots:
-	void notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield);
-	void notifyLocalChunk(const blob& ct_hash);
+ public slots:
+  void notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield);
+  void notifyLocalChunk(const QByteArray& ct_hash);
 
-	void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-	void notifyRemoteChunk(RemoteFolder* remote, const blob& ct_hash);
+  void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
+  void notifyRemoteChunk(RemoteFolder* remote, const blob& ct_hash);
 
-	void handleChoke(RemoteFolder* remote);
-	void handleUnchoke(RemoteFolder* remote);
+  void handleChoke(RemoteFolder* remote);
+  void handleUnchoke(RemoteFolder* remote);
 
-	void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
+  void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
 
-	void trackRemote(RemoteFolder* remote);
-	void untrackRemote(RemoteFolder* remote);
+  void trackRemote(RemoteFolder* remote);
+  void untrackRemote(RemoteFolder* remote);
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
+ private:
+  const FolderParams& params_;
+  MetaStorage* meta_storage_;
 
-	QHash<QByteArray, DownloadChunkPtr> down_chunks_;
-	WeightedChunkQueue download_queue_;
+  QHash<QByteArray, DownloadChunkPtr> down_chunks_;
+  WeightedChunkQueue download_queue_;
 
-	size_t countRequests() const;
+  size_t countRequests() const;
 
-	/* Request process */
-	QTimer* maintain_timer_;
+  /* Request process */
+  QTimer* maintain_timer_;
 
-	void maintainRequests();
-	bool requestOne();
-	RemoteFolder* nodeForRequest(QByteArray ct_hash);
+  void maintainRequests();
+  bool requestOne();
+  RemoteFolder* nodeForRequest(QByteArray ct_hash);
 
-	void addChunk(QByteArray ct_hash, quint32 size);
-	void removeChunk(QByteArray ct_hash);
+  void addChunk(const QByteArray& ct_hash, quint32 size);
+  void removeChunk(const QByteArray& ct_hash);
 
-	/* Node management */
-	QSet<RemoteFolder*> remotes_;
+  /* Node management */
+  QSet<RemoteFolder*> remotes_;
 
-	QSet<QByteArray> getCluster(QByteArray ct_hash);
-	QSet<QByteArray> getMetaCluster(QList<QByteArray> ct_hashes);
+  QSet<QByteArray> getCluster(const QByteArray& ct_hash);
+  QSet<QByteArray> getMetaCluster(const QList<QByteArray>& ct_hashes);
 };
 
 } /* namespace librevault */

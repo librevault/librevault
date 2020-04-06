@@ -141,6 +141,12 @@ std::tuple<sockaddr_storage, size_t> Endpoint::toSockaddr() const {
   }
 }
 
+Endpoint Endpoint::fromJson(const QJsonObject& j) {
+  return Endpoint(QHostAddress(j["ip"].toString()), j["port"].toInt());
+}
+
+QJsonObject Endpoint::toJson() const { return QJsonObject{{"ip", addr.toString()}, {"port", port}}; }
+
 QDebug operator<<(QDebug debug, const Endpoint& endpoint) {
   QDebugStateSaver saver(debug);
   debug.nospace() << "Endpoint(" << endpoint.toString() << ")";

@@ -74,14 +74,12 @@ class MLDHTProvider : public QObject {
 
   // Initialization
   void init();
-  void readSessionFile();
-
   void deinit();
+
+  void readSessionFile();
   void writeSessionFile();
 
-  static constexpr size_t buffer_size_ = 65535;
   void processDatagram();
-
   void periodic_request();
 
   QMap<int, quint16> resolves_;

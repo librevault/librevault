@@ -27,88 +27,86 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
+#include <QObject>
+
 #include "Meta.h"
 #include "SignedMeta.h"
+#include "util/blob.h"
 #include "util/conv_bitfield.h"
-#include <QObject>
 
 namespace librevault {
 
 class RemoteFolder : public QObject {
-	Q_OBJECT
-	friend class FolderGroup;
+  Q_OBJECT
+  friend class FolderGroup;
 
-signals:
-	void handshakeSuccess();
-	void handshakeFailed();
+ signals:
+  void handshakeSuccess();
+  void handshakeFailed();
 
-	/* Message signals */
-	void rcvdChoke();
-	void rcvdUnchoke();
-	void rcvdInterested();
-	void rcvdNotInterested();
+  /* Message signals */
+  void rcvdChoke();
+  void rcvdUnchoke();
+  void rcvdInterested();
+  void rcvdNotInterested();
 
-	void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
-	void rcvdHaveChunk(blob);
+  void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
+  void rcvdHaveChunk(blob);
 
-	void rcvdMetaRequest(Meta::PathRevision);
-	void rcvdMetaReply(SignedMeta, bitfield_type);
-	void rcvdMetaCancel(Meta::PathRevision);
+  void rcvdMetaRequest(Meta::PathRevision);
+  void rcvdMetaReply(SignedMeta, bitfield_type);
 
-	void rcvdBlockRequest(blob, uint32_t, uint32_t);
-	void rcvdBlockReply(blob, uint32_t, blob);
-	void rcvdBlockCancel(blob, uint32_t, uint32_t);
+  void rcvdBlockRequest(blob, uint32_t, uint32_t);
+  void rcvdBlockReply(blob, uint32_t, blob);
 
-public:
-	RemoteFolder(QObject* parent);
-	virtual ~RemoteFolder();
+ public:
+  RemoteFolder(QObject* parent);
+  virtual ~RemoteFolder();
 
-	virtual QString displayName() const = 0;
-	virtual QJsonObject collect_state() = 0;
-	QString log_tag() const;
+  virtual QString displayName() const = 0;
+  virtual QJsonObject collect_state() = 0;
+  QString log_tag() const;
 
-	/* Message senders */
-	virtual void choke() = 0;
-	virtual void unchoke() = 0;
-	virtual void interest() = 0;
-	virtual void uninterest() = 0;
+  /* Message senders */
+  virtual void choke() = 0;
+  virtual void unchoke() = 0;
+  virtual void interest() = 0;
+  virtual void uninterest() = 0;
 
-	virtual void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) = 0;
-	virtual void post_have_chunk(const blob& ct_hash) = 0;
+  virtual void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) = 0;
+  virtual void post_have_chunk(const blob& ct_hash) = 0;
 
-	virtual void request_meta(const Meta::PathRevision& revision) = 0;
-	virtual void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) = 0;
-	virtual void cancel_meta(const Meta::PathRevision& revision) = 0;
+  virtual void request_meta(const Meta::PathRevision& revision) = 0;
+  virtual void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) = 0;
 
-	virtual void request_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
-	virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
-	virtual void cancel_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
+  virtual void request_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
+  virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
 
-	/* High-level RAII wrappers */
-	struct InterestGuard {
-		InterestGuard(RemoteFolder* remote);
-		~InterestGuard();
-	private:
-		RemoteFolder* remote_;
-	};
-	std::shared_ptr<InterestGuard> get_interest_guard();
+  /* High-level RAII wrappers */
+  struct InterestGuard {
+    InterestGuard(RemoteFolder* remote);
+    ~InterestGuard();
 
-	/* Getters */
-	bool am_choking() const {return am_choking_;}
-	bool am_interested() const {return am_interested_;}
-	bool peer_choking() const {return peer_choking_;}
-	bool peer_interested() const {return peer_interested_;}
+   private:
+    RemoteFolder* remote_;
+  };
+  std::shared_ptr<InterestGuard> get_interest_guard();
 
-	virtual bool ready() const = 0;
+  /* Getters */
+  bool am_choking() const { return am_choking_; }
+  bool am_interested() const { return am_interested_; }
+  bool peer_choking() const { return peer_choking_; }
+  bool peer_interested() const { return peer_interested_; }
 
-protected:
-	bool am_choking_ = true;
-	bool am_interested_ = false;
-	bool peer_choking_ = true;
-	bool peer_interested_ = false;
+  virtual bool ready() const = 0;
 
-	std::weak_ptr<InterestGuard> interest_guard_;
+ protected:
+  bool am_choking_ = true;
+  bool am_interested_ = false;
+  bool peer_choking_ = true;
+  bool peer_interested_ = false;
+
+  std::weak_ptr<InterestGuard> interest_guard_;
 };
 
 } /* namespace librevault */

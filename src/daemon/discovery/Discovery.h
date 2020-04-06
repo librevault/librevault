@@ -36,7 +36,6 @@ namespace librevault {
 class FolderGroup;
 
 class MulticastProvider;
-class BTTrackerProvider;
 class MLDHTProvider;
 
 class NodeKey;
@@ -58,7 +57,6 @@ class Discovery : public QObject {
 
  protected:
   MulticastProvider* multicast_;
-  BTTrackerProvider* bttracker_;
   MLDHTProvider* mldht_;
 };
 

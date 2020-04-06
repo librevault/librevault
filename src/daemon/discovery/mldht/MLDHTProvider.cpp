@@ -34,6 +34,7 @@
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
+#include <QtNetwork/QNetworkDatagram>
 
 #include "control/Paths.h"
 #include "control/StateCollector.h"
@@ -44,8 +45,6 @@
 Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
 
 namespace librevault {
-
-using namespace boost::asio::ip;
 
 MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, QObject* parent)
     : QObject(parent), port_mapping_(port_mapping) {
@@ -117,10 +116,7 @@ void MLDHTProvider::readSessionFile() {
 
   QJsonArray nodes = session_json["nodes"].toArray();
   qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
-  for (const QJsonValue& node_v : nodes) {
-    QJsonObject node = node_v.toObject();
-    addNode(Endpoint(node["ip"].toString(), node["port"].toInt()));
-  }
+  for (const QJsonValue& node : nodes) addNode(Endpoint::fromJson(node.toObject()));
 }
 
 void MLDHTProvider::writeSessionFile() {
@@ -139,18 +135,8 @@ void MLDHTProvider::writeSessionFile() {
   QJsonObject json_object;
 
   QJsonArray nodes;
-  for (auto i = 0; i < sa6_count; i++) {
-    QJsonObject node;
-    node["ip"] = QHostAddress((sockaddr*)&sa6[i]).toString();
-    node["port"] = qFromBigEndian(sa6[i].sin6_port);
-    nodes.append(node);
-  }
-  for (auto i = 0; i < sa4_count; i++) {
-    QJsonObject node;
-    node["ip"] = QHostAddress((sockaddr*)&sa4[i]).toString();
-    node["port"] = qFromBigEndian(sa4[i].sin_port);
-    nodes.append(node);
-  }
+  for (auto i = 0; i < sa6_count; i++) nodes += Endpoint::fromSockaddr((sockaddr&)sa6[i]).toJson();
+  for (auto i = 0; i < sa4_count; i++) nodes += Endpoint::fromSockaddr((sockaddr&)sa4[i]).toJson();
 
   json_object["nodes"] = nodes;
   json_object["id"] = QString::fromLatin1(own_id_arr.toBase64());
@@ -203,20 +189,15 @@ void MLDHTProvider::pass_callback(void* closure, int event, const uint8_t* info_
 }
 
 void MLDHTProvider::processDatagram() {
-  char datagram_buffer[buffer_size_ + 1];
-  QHostAddress address;
-  quint16 port;
-  qint64 datagram_size = socket_->readDatagram(datagram_buffer, buffer_size_, &address, &port);
-  datagram_buffer[datagram_size] = '\0';  // Message must be null-terminated
-
-  Endpoint endpoint(address, port);
-  auto [sa, size] = endpoint.toSockaddr();
+  auto datagram = socket_->receiveDatagram();
+  auto data = datagram.data();
+  auto [sa, size] = Endpoint(datagram.senderAddress(), datagram.senderPort()).toSockaddr();
 
   time_t tosleep;
-  dht_periodic(datagram_buffer, datagram_size, (const sockaddr*)&sa, (int)size, &tosleep, lv_dht_callback_glue, this);
+  dht_periodic(data, data.size(), (const sockaddr*)&sa, (int)size, &tosleep, lv_dht_callback_glue, this);
   emit nodeCountChanged(node_count());
 
-  periodic_->setInterval(tosleep * 1000);
+  periodic_->start(tosleep * 1000);
 }
 
 void MLDHTProvider::periodic_request() {
@@ -224,7 +205,7 @@ void MLDHTProvider::periodic_request() {
   dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
   emit nodeCountChanged(node_count());
 
-  periodic_->setInterval(tosleep * 1000);
+  periodic_->start(tosleep * 1000);
 }
 
 void MLDHTProvider::handle_resolve(const QHostInfo& host) {

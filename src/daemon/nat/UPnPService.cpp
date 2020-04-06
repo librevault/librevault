@@ -32,6 +32,7 @@
 #include <miniupnpc/upnpcommands.h>
 
 #include <QTimer>
+#include <utility>
 
 #include "control/Config.h"
 #include "util/log.h"
@@ -40,17 +41,12 @@ Q_LOGGING_CATEGORY(log_upnp, "upnp")
 
 namespace librevault {
 
-const char* get_literal_protocol(int protocol) {
-  return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP";
-}
+const char* get_literal_protocol(int protocol) { return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP"; }
 
-UPnPService::UPnPService(PortMappingService& parent)
-    : PortMappingSubService(parent) {}
+UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) {}
 UPnPService::~UPnPService() { stop(); }
 
-bool UPnPService::is_config_enabled() {
-  return Config::get()->getGlobal("upnp_enabled").toBool();
-}
+bool UPnPService::is_config_enabled() { return Config::get()->getGlobal("upnp_enabled").toBool(); }
 
 void UPnPService::start() {
   upnp_urls = std::make_unique<UPNPUrls>();
@@ -60,12 +56,11 @@ void UPnPService::start() {
 
   /* Discovering IGD */
   int error = UPNPDISCOVER_SUCCESS;
-  std::unique_ptr<UPNPDev, decltype(&freeUPNPDevlist)> devlist(
-      upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error), &freeUPNPDevlist);
+  std::unique_ptr<UPNPDev, decltype(&freeUPNPDevlist)> devlist(upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error),
+                                                               &freeUPNPDevlist);
   if (error != UPNPDISCOVER_SUCCESS) throw std::runtime_error(strerror(errno));
 
-  if (!UPNP_GetValidIGD(devlist.get(), upnp_urls.get(), upnp_data.get(),
-                        lanaddr.data(), lanaddr.size())) {
+  if (!UPNP_GetValidIGD(devlist.get(), upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
     qCDebug(log_upnp) << "IGD not found. e: " << strerror(errno);
     return;
   }
@@ -83,43 +78,32 @@ void UPnPService::stop() {
   upnp_data.reset();
 }
 
-void UPnPService::map(const QString &id,
-                      MappingDescriptor descriptor,
-                      const QString &description) {
+void UPnPService::map(const QString& id, MappingDescriptor descriptor, const QString& description) {
   mappings_.erase(id);
-  mappings_[id] =
-      std::make_shared<UPnPMapping>(*this, id, descriptor, description);
+  mappings_[id] = std::make_shared<UPnPMapping>(*this, id, descriptor, description);
 }
 
-void UPnPService::unmap(const QString &id) {
-  mappings_.erase(id);
-}
+void UPnPService::unmap(const QString& id) { mappings_.erase(id); }
 
-UPnPMapping::UPnPMapping(UPnPService& parent, QString id,
-                         MappingDescriptor descriptor,
-                         QString description)
+UPnPMapping::UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor, const QString& description)
     : parent_(parent), id_(std::move(id)), descriptor_(descriptor) {
-  int err = UPNP_AddPortMapping(
-      parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
-      std::to_string(descriptor.port).c_str(),
-      std::to_string(descriptor.port).c_str(), parent_.lanaddr.data(),
-      description.toStdString().data(), get_literal_protocol(descriptor.protocol), nullptr,
-      nullptr);
+  int err = UPNP_AddPortMapping(parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
+                                std::to_string(descriptor.port).c_str(), std::to_string(descriptor.port).c_str(),
+                                parent_.lanaddr.data(), description.toStdString().data(),
+                                get_literal_protocol(descriptor.protocol), nullptr, nullptr);
   if (!err)
-    parent_.portMapped(id, descriptor.port);
+    parent_.portMapped(id_, descriptor.port);
   else
     qCDebug(log_upnp) << "UPnP port forwarding failed: Error " << err;
 }
 
 UPnPMapping::~UPnPMapping() {
-  auto err = UPNP_DeletePortMapping(
-      parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
-      std::to_string(descriptor_.port).c_str(),
-      get_literal_protocol(descriptor_.protocol), nullptr);
+  auto err = UPNP_DeletePortMapping(parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
+                                    std::to_string(descriptor_.port).c_str(),
+                                    get_literal_protocol(descriptor_.protocol), nullptr);
   if (err)
-    qCDebug(log_upnp) << get_literal_protocol(descriptor_.protocol) << " port "
-                      << descriptor_.port << " de-forwarding failed: Error "
-                      << err;
+    qCDebug(log_upnp) << get_literal_protocol(descriptor_.protocol) << " port " << descriptor_.port
+                      << " de-forwarding failed: Error " << err;
 }
 
 }  // namespace librevault

@@ -65,8 +65,6 @@ class MulticastProvider : public QObject {
   QUdpSocket* socket4_;
   QUdpSocket* socket6_;
 
-  static constexpr size_t buffer_size_ = 65535;
-
  private slots:
   void processDatagram();
 };

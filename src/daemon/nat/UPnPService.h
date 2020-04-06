@@ -53,9 +53,8 @@ class UPnPService : public PortMappingSubService {
   void start();
   void stop();
 
-  void map(const QString &id, MappingDescriptor descriptor,
-           const QString &description);
-  void unmap(const QString &id);
+  void map(const QString& id, MappingDescriptor descriptor, const QString& description);
+  void unmap(const QString& id);
 
  protected:
   friend class UPnPMapping;
@@ -71,8 +70,7 @@ class UPnPService : public PortMappingSubService {
 
 class UPnPMapping {
  public:
-  UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor,
-              QString description);
+  UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor, const QString& description);
   virtual ~UPnPMapping();
 
  private:

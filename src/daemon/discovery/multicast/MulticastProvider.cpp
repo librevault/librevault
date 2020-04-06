@@ -31,6 +31,7 @@
 #include <MulticastDiscovery.pb.h>
 
 #include <QLoggingCategory>
+#include <QtNetwork/QNetworkDatagram>
 
 #include "MulticastGroup.h"
 #include "nodekey/NodeKey.h"
@@ -75,34 +76,33 @@ QByteArray MulticastProvider::getDigest() const { return nodekey_->digest(); }
 
 void MulticastProvider::processDatagram() {
   // Choose socket to read
-  QUdpSocket* socket;
+  QUdpSocket* socket = nullptr;
   if (socket4_->hasPendingDatagrams())
     socket = socket4_;
-  else
+  else if (socket6_->hasPendingDatagrams())
     socket = socket6_;
 
+  Q_ASSERT(socket != nullptr);
   Q_ASSERT(socket->hasPendingDatagrams());
 
-  char datagram_buffer[buffer_size_];
-  QHostAddress address;
-  quint16 port;
-  qint64 datagram_size = socket->readDatagram(datagram_buffer, buffer_size_, &address, &port);
-  Q_ASSERT(datagram_size >= 0);
+  auto datagram = socket->receiveDatagram();
+  Endpoint sender(datagram.senderAddress(), datagram.senderPort());
+  auto data = datagram.data();
 
   // Protobuf parsing
   protocol::MulticastDiscovery message;
-  if (message.ParseFromArray(datagram_buffer, datagram_size)) {
+  if (message.ParseFromArray(data, data.size())) {
     DiscoveryResult result;
     result.source = QStringLiteral("Multicast");
-    result.endpoint = Endpoint(address, message.port());
-    result.digest = QByteArray(message.digest().data(), message.digest().size());
+    result.endpoint = Endpoint(sender.addr, message.port());
+    result.digest = QByteArray::fromStdString(message.digest());
 
     QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
-    qCDebug(log_multicast) << "<=== Multicast message received from: " << address << ":" << port;
+    qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
 
     emit discovered(folderid, result);
   } else {
-    qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << address << ":" << port;
+    qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << sender;
   }
 }
 

@@ -57,4 +57,4 @@ void StaticGroup::tick() {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
+#include <QObject>
+
 #include "SignedMeta.h"
 #include "util/conv_bitfield.h"
-#include <QObject>
+#include "util/log.h"
 
 namespace librevault {
 
@@ -39,18 +40,19 @@ class MetaStorage;
 class Downloader;
 
 class MetaDownloader : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("MetaDownloader");
-public:
-	MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("MetaDownloader");
 
-	/* Message handlers */
-	void handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-	void handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+ public:
+  MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
 
-private:
-	MetaStorage* meta_storage_;
-	Downloader* downloader_;
+  /* Message handlers */
+  void handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
+  void handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+
+ private:
+  MetaStorage* meta_storage_;
+  Downloader* downloader_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -55,4 +55,4 @@ class multi_io_context {
   QString log_tag() const { return QString("pool:%1").arg(name_); }
 };
 
-} /* namespace librevault */
+}  // namespace librevault

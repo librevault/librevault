@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <cryptopp/integer.h>
+
+#include <QByteArray>
 #include <cstdint>
 #include <vector>
-#include <QByteArray>
-#include <cryptopp/integer.h>
 
 namespace librevault {
 
@@ -41,12 +42,10 @@ inline QByteArray conv_bytearray(const blob& bl) {
   return QByteArray((const char*)bl.data(), bl.size());
 }
 
-inline blob conv_bytearray(const QByteArray& ba) {
-  return blob(ba.begin(), ba.end());
-}
+inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
 
-inline CryptoPP::Integer conv_bytearray_to_integer(const QByteArray& ba){
+inline CryptoPP::Integer conv_bytearray_to_integer(const QByteArray& ba) {
   return CryptoPP::Integer((uchar*)ba.data(), ba.size());
 }
 
-} /* namespace librevault */
+}  // namespace librevault

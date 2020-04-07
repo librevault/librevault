@@ -79,4 +79,4 @@ class UPnPMapping {
   MappingDescriptor descriptor_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

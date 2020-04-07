@@ -53,8 +53,7 @@ class PortMappingService : public QObject {
   PortMappingService(QObject* parent);
   virtual ~PortMappingService();
 
-  void map(QString id, MappingDescriptor descriptor,
-           QString description);
+  void map(QString id, MappingDescriptor descriptor, QString description);
   void unmap(const QString& id);
   uint16_t mapped_port(const QString& id);
 
@@ -72,4 +71,4 @@ class PortMappingService : public QObject {
   void add_existing_mappings(PortMappingSubService* subservice);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -90,4 +90,4 @@ void MulticastGroup::sendMulticasts() {
   sendMulticast(provider_->getSocketV6(), Endpoint(provider_->getAddressV6(), provider_->getPort()));
 }
 
-} /* namespace librevault */
+}  // namespace librevault

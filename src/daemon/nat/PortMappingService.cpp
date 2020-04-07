@@ -88,4 +88,4 @@ void PortMappingService::add_existing_mappings(PortMappingSubService* subservice
   for (auto& mapping : mappings_) subservice->map(mapping.first, mapping.second.descriptor, mapping.second.description);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

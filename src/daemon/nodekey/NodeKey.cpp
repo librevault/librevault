@@ -192,4 +192,4 @@ void NodeKey::gen_certificate() {
   cert_file_.close();
 }
 
-} /* namespace librevault */
+}  // namespace librevault

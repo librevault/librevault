@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/log.h"
-#include "util/blob.h"
 #include <QObject>
 #include <set>
+
+#include "util/blob.h"
+#include "util/log.h"
 
 namespace librevault {
 
@@ -38,23 +39,24 @@ class RemoteFolder;
 class ChunkStorage;
 
 class Uploader : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Uploader");
-public:
-	Uploader(ChunkStorage* chunk_storage, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("Uploader");
 
-	void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
+ public:
+  Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-	/* Message handlers */
-	void handle_interested(RemoteFolder* remote);
-	void handle_not_interested(RemoteFolder* remote);
+  void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
 
-	void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
+  /* Message handlers */
+  void handle_interested(RemoteFolder* remote);
+  void handle_not_interested(RemoteFolder* remote);
 
-private:
-	ChunkStorage* chunk_storage_;
+  void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
 
-	blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
+ private:
+  ChunkStorage* chunk_storage_;
+
+  blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

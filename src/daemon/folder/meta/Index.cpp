@@ -229,4 +229,4 @@ void Index::notifyState() {
   state_collector_->folder_state_set(params_.secret.get_Hash(), "index", entries);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

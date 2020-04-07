@@ -283,4 +283,4 @@ Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob,
   return chunk;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -106,4 +106,4 @@ void MulticastProvider::processDatagram() {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

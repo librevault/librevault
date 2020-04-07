@@ -9,7 +9,9 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #include "HMAC-SHA3.h"
+
 #include <cryptopp/sha3.h>
+
 #include <QCryptographicHash>
 
 namespace librevault {
@@ -23,15 +25,13 @@ blob HMAC_SHA3_224::compute(const blob& data) const {
 }
 
 QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
-    QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
-    hasher.addData(key_);
-    hasher.addData(data);
-    return hasher.result();
+  QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
+  hasher.addData(key_);
+  hasher.addData(data);
+  return hasher.result();
 }
 
-blob HMAC_SHA3_224::to(const blob& data) const {
-	return compute(data);
-}
+blob HMAC_SHA3_224::to(const blob& data) const { return compute(data); }
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

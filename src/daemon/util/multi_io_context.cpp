@@ -54,4 +54,4 @@ void multi_io_context::run_thread() {
   LOGD("Asio thread started");
 }
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -27,11 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/log.h"
-#include "Meta.h"
 #include <QObject>
 #include <memory>
+
+#include "Meta.h"
+#include "util/blob.h"
+#include "util/log.h"
 
 namespace librevault {
 
@@ -41,22 +42,23 @@ class MetaStorage;
 class PathNormalizer;
 
 class OpenStorage : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("OpenStorage");
-public:
-	OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("OpenStorage");
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	QByteArray get_chunk(const blob& ct_hash) const;
+ public:
+  OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	PathNormalizer* path_normalizer_;
+  bool have_chunk(const blob& ct_hash) const noexcept;
+  QByteArray get_chunk(const blob& ct_hash) const;
 
-	inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-		return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
-	}
+ private:
+  const FolderParams& params_;
+  MetaStorage* meta_storage_;
+  PathNormalizer* path_normalizer_;
+
+  inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+    return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
+  }
 };
 
-} /* namespace librevault */
+}  // namespace librevault

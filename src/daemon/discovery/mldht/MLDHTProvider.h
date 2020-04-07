@@ -88,4 +88,4 @@ class MLDHTProvider : public QObject {
   void handle_resolve(const QHostInfo& host);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

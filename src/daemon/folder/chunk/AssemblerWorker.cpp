@@ -222,4 +222,4 @@ void AssemblerWorker::apply_attrib() {
 #endif
 }
 
-} /* namespace librevault */
+}  // namespace librevault

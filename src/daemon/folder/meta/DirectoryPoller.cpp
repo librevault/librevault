@@ -105,4 +105,4 @@ void DirectoryPoller::addPathsToQueue() {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

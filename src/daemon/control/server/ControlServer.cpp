@@ -138,4 +138,4 @@ bool ControlServer::check_origin(const std::string& origin) {
   return true;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

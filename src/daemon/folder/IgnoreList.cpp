@@ -119,4 +119,4 @@ void IgnoreList::addIgnorePattern(QString pattern, bool can_be_dir) {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -27,12 +27,11 @@
  * files in the program, then also delete it here.
  */
 #include "NoArchive.h"
+
 #include <QFile>
 
 namespace librevault {
 
-void NoArchive::archive(QString denormpath) {
-	QFile::remove(denormpath);
-}
+void NoArchive::archive(QString denormpath) { QFile::remove(denormpath); }
 
-} /* namespace librevault */
+}  // namespace librevault

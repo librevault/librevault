@@ -9,6 +9,7 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #include "AES_CBC.h"
+
 #include <cryptopp/aes.h>
 #include <cryptopp/ccm.h>
 #include <cryptopp/filters.h>
@@ -20,32 +21,30 @@ namespace crypto {
 AES_CBC::AES_CBC(const blob& key, const blob& iv, bool padding) : key(key), iv(iv), padding(padding) {}
 
 blob AES_CBC::encrypt(const blob& plaintext) const {
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter(key.data(), key.size(), iv.data());
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter(key.data(), key.size(), iv.data());
 
-	std::string ciphertext;
-	CryptoPP::StringSource(plaintext.data(), plaintext.size(), true,
-						   new CryptoPP::StreamTransformationFilter(filter,
-																	new CryptoPP::StringSink(ciphertext),
-																	padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-						   )
-	);
+  std::string ciphertext;
+  CryptoPP::StringSource(
+      plaintext.data(), plaintext.size(), true,
+      new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(ciphertext),
+                                               padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
+                                                       : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-	return blob(std::make_move_iterator(ciphertext.begin()), std::make_move_iterator(ciphertext.end()));
+  return blob(std::make_move_iterator(ciphertext.begin()), std::make_move_iterator(ciphertext.end()));
 }
 
 blob AES_CBC::decrypt(const blob& ciphertext) const {
-	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter(key.data(), key.size(), iv.data());
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter(key.data(), key.size(), iv.data());
 
-	std::string plaintext;
-	CryptoPP::StringSource(ciphertext.data(), ciphertext.size(), true,
-						   new CryptoPP::StreamTransformationFilter(filter,
-																	new CryptoPP::StringSink(plaintext),
-																	padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING : CryptoPP::StreamTransformationFilter::NO_PADDING
-						   )
-	);
+  std::string plaintext;
+  CryptoPP::StringSource(
+      ciphertext.data(), ciphertext.size(), true,
+      new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(plaintext),
+                                               padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
+                                                       : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-	return blob(std::make_move_iterator(plaintext.begin()), std::make_move_iterator(plaintext.end()));
+  return blob(std::make_move_iterator(plaintext.begin()), std::make_move_iterator(plaintext.end()));
 }
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

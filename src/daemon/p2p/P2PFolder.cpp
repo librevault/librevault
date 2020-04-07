@@ -408,4 +408,4 @@ void P2PFolder::handleConnected() {
     socket_->close(QWebSocketProtocol::CloseCodePolicyViolated);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -219,7 +219,7 @@ void MLDHTProvider::handle_resolve(const QHostInfo& host) {
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault
 
 // DHT library overrides
 extern "C" {

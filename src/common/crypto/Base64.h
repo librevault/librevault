@@ -15,10 +15,10 @@ namespace librevault {
 namespace crypto {
 
 class Base64 : public TwoWayTransformer {
-public:
-	blob to(const blob& data) const;
-	blob from(const blob& data) const;
+ public:
+  blob to(const blob& data) const;
+  blob from(const blob& data) const;
 };
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

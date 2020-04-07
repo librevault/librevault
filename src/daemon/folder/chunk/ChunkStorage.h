@@ -76,4 +76,4 @@ class ChunkStorage : public QObject {
   AssemblerQueue* file_assembler;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

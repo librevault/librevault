@@ -9,32 +9,27 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #include "Base32.h"
+
 #include <cryptopp/base32.h>
 
 namespace librevault {
 namespace crypto {
 
 blob Base32::to(const blob& data) const {
-	std::string transformed;
-	CryptoPP::StringSource(data.data(), data.size(), true,
-			new CryptoPP::Base32Encoder(
-					new CryptoPP::StringSink(transformed)
-			)
-	);
+  std::string transformed;
+  CryptoPP::StringSource(data.data(), data.size(), true,
+                         new CryptoPP::Base32Encoder(new CryptoPP::StringSink(transformed)));
 
-	return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
+  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
 }
 
 blob Base32::from(const blob& data) const {
-	std::string transformed;
-	CryptoPP::StringSource(data.data(), data.size(), true,
-			new CryptoPP::Base32Decoder(
-					new CryptoPP::StringSink(transformed)
-			)
-	);
+  std::string transformed;
+  CryptoPP::StringSource(data.data(), data.size(), true,
+                         new CryptoPP::Base32Decoder(new CryptoPP::StringSink(transformed)));
 
-	return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
+  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
 }
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

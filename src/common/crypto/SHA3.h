@@ -15,14 +15,15 @@ namespace librevault {
 namespace crypto {
 
 class SHA3 : public OneWayTransformer {
-	size_t size_;
-public:
-	SHA3(size_t size) : size_(size) {}
-	virtual ~SHA3() {}
+  size_t size_;
 
-	blob compute(const blob& data) const;
-	blob to(const blob& data) const;
+ public:
+  SHA3(size_t size) : size_(size) {}
+  virtual ~SHA3() {}
+
+  blob compute(const blob& data) const;
+  blob to(const blob& data) const;
 };
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

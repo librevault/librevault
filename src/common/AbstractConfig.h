@@ -34,7 +34,7 @@
 namespace librevault {
 
 class AbstractConfig : public QObject {
- Q_OBJECT
+  Q_OBJECT
 
  signals:
   void globalChanged(QString key, QVariant value);
@@ -52,7 +52,7 @@ class AbstractConfig : public QObject {
   virtual void removeFolder(QByteArray folderid) = 0;
 
   virtual QVariantMap getFolder(QByteArray folderid) = 0;
-  virtual QVariant getFolderValue(QByteArray folderid, QString name) {return getFolder(folderid).value(name);}
+  virtual QVariant getFolderValue(QByteArray folderid, const QString& name) { return getFolder(folderid).value(name); }
   virtual QList<QByteArray> listFolders() = 0;
 
   /* Export/Import */
@@ -65,4 +65,4 @@ class AbstractConfig : public QObject {
   virtual void importFolders(QJsonDocument folders_conf) = 0;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

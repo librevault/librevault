@@ -44,4 +44,4 @@ class DiscoveryResult {
   QByteArray digest;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

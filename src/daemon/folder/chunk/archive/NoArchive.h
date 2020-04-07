@@ -32,10 +32,10 @@
 namespace librevault {
 
 class NoArchive : public ArchiveStrategy {
-	Q_OBJECT
-public:
-	NoArchive(Archive* parent) : ArchiveStrategy(parent) {}
-	void archive(QString denormpath);
+  Q_OBJECT
+ public:
+  NoArchive(Archive* parent) : ArchiveStrategy(parent) {}
+  void archive(QString denormpath);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

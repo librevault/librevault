@@ -32,9 +32,9 @@
 class Daemon;
 
 class RemoteState : public GenericRemoteDictionary {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit RemoteState(Daemon* daemon);
-	virtual ~RemoteState() {}
+ public:
+  explicit RemoteState(Daemon* daemon);
+  virtual ~RemoteState() {}
 };

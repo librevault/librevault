@@ -53,4 +53,4 @@ class StaticGroup : public QObject {
   void tick();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

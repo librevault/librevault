@@ -27,13 +27,13 @@
  * files in the program, then also delete it here.
  */
 #include <docopt/docopt.h>
-#include "Secret.h"
 #include <spdlog/spdlog.h>
 
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
 
 #include "Client.h"
+#include "Secret.h"
 #include "Version.h"
 #include "control/Config.h"
 #include "control/Paths.h"
@@ -75,8 +75,7 @@ static const char* BANNER =
 
 // clang-format on
 
-void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx,
-                          const QString& msg) {
+void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
   auto logger = spdlog::get(Version::current().name().toStdString());
   if (!logger) return;
 
@@ -113,13 +112,11 @@ int main(int argc, char** argv) {
   do {
     // Argument parsing
     auto args =
-        docopt::docopt(USAGE, {argv + 1, argv + argc}, true,
-                       librevault::Version().version_string().toStdString());
+        docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
 
     // Initializing paths
     QString appdata_path;
-    if (args["--data"].isString())
-      appdata_path = QString::fromStdString(args["--data"].asString());
+    if (args["--data"].isString()) appdata_path = QString::fromStdString(args["--data"].asString());
     Paths::get(appdata_path);
 
     // Initializing log
@@ -142,11 +139,9 @@ int main(int argc, char** argv) {
       sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
 
       boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
-      sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(
-          log_path.native()));
+      sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
 
-      log = std::make_shared<spdlog::logger>(
-          Version::current().name().toStdString(), sinks.begin(), sinks.end());
+      log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
       spdlog::register_logger(log);
 
       log->set_level(log_level);

@@ -147,8 +147,7 @@ QByteArray Secret::get_Public_Key() const {
 
 QByteArray Secret::get_Hash() const {
   if (!cached_hash.isEmpty()) return cached_hash;
-  return cached_hash =
-             QCryptographicHash::hash(get_Public_Key(), QCryptographicHash::Algorithm::Sha3_256);
+  return cached_hash = QCryptographicHash::hash(get_Public_Key(), QCryptographicHash::Algorithm::Sha3_256);
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.string().toStdString(); }

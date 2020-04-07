@@ -18,16 +18,17 @@ namespace Base58_alphabets {
 static std::string bitcoin_alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 static std::string ripple_alphabet = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
 static std::string flickr_alphabet = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-}
+}  // namespace Base58_alphabets
 
 class Base58 : public TwoWayTransformer {
-private:
-	const std::string& current_alphabet;
-public:
-	Base58(const std::string& alphabet = Base58_alphabets::bitcoin_alphabet);
-	blob to(const blob& data) const;
-	blob from(const blob& data) const;
+ private:
+  const std::string& current_alphabet;
+
+ public:
+  Base58(const std::string& alphabet = Base58_alphabets::bitcoin_alphabet);
+  blob to(const blob& data) const;
+  blob from(const blob& data) const;
 };
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

@@ -9,32 +9,27 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #include "Hex.h"
+
 #include <cryptopp/hex.h>
 
 namespace librevault {
 namespace crypto {
 
 blob Hex::to(const blob& data) const {
-	std::string transformed;
-	CryptoPP::StringSource(data.data(), data.size(), true,
-			new CryptoPP::HexEncoder(
-					new CryptoPP::StringSink(transformed)
-			)
-	);
+  std::string transformed;
+  CryptoPP::StringSource(data.data(), data.size(), true,
+                         new CryptoPP::HexEncoder(new CryptoPP::StringSink(transformed)));
 
-	return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
+  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
 }
 
 blob Hex::from(const blob& data) const {
-	std::string transformed;
-	CryptoPP::StringSource(data.data(), data.size(), true,
-			new CryptoPP::HexDecoder(
-					new CryptoPP::StringSink(transformed)
-			)
-	);
+  std::string transformed;
+  CryptoPP::StringSource(data.data(), data.size(), true,
+                         new CryptoPP::HexDecoder(new CryptoPP::StringSink(transformed)));
 
-	return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
+  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
 }
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

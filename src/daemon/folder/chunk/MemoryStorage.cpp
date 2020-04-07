@@ -60,4 +60,4 @@ void MemoryStorage::remove_chunk(const blob& ct_hash) noexcept {
   cache_.remove(conv_bytearray(ct_hash));
 }
 
-} /* namespace librevault */
+}  // namespace librevault

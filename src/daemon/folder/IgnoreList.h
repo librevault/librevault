@@ -56,4 +56,4 @@ class IgnoreList {
   void addIgnorePattern(QString pattern, bool can_be_dir = true);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

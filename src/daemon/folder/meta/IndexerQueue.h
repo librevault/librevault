@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "SignedMeta.h"
 #include <QMap>
 #include <QString>
 #include <QThreadPool>
+
+#include "SignedMeta.h"
 
 namespace librevault {
 
@@ -41,36 +42,37 @@ class PathNormalizer;
 class StateCollector;
 class IndexerWorker;
 class IndexerQueue : public QObject {
-	Q_OBJECT
-signals:
-	void aboutToStop();
+  Q_OBJECT
+ signals:
+  void aboutToStop();
 
-	void startedIndexing();
-	void finishedIndexing();
+  void startedIndexing();
+  void finishedIndexing();
 
-public:
-	IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent);
-	virtual ~IndexerQueue();
+ public:
+  IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer,
+               StateCollector* state_collector, QObject* parent);
+  virtual ~IndexerQueue();
 
-public slots:
-	void addIndexing(QString abspath);
+ public slots:
+  void addIndexing(QString abspath);
 
-private:
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
-	StateCollector* state_collector_;
+ private:
+  const FolderParams& params_;
+  MetaStorage* meta_storage_;
+  IgnoreList* ignore_list_;
+  PathNormalizer* path_normalizer_;
+  StateCollector* state_collector_;
 
-	QThreadPool* threadpool_;
+  QThreadPool* threadpool_;
 
-	const Secret& secret_;
+  const Secret& secret_;
 
-	QMap<QString, IndexerWorker*> tasks_;
+  QMap<QString, IndexerWorker*> tasks_;
 
-private slots:
-	void metaCreated(SignedMeta smeta);
-	void metaFailed(QString error_string);
+ private slots:
+  void metaCreated(SignedMeta smeta);
+  void metaFailed(QString error_string);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -60,4 +60,4 @@ class MulticastGroup : public QObject {
   void sendMulticasts();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

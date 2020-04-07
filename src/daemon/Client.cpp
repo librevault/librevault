@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include "Client.h"
+
 #include "control/Config.h"
-#include "control/server/ControlServer.h"
 #include "control/StateCollector.h"
+#include "control/server/ControlServer.h"
 #include "discovery/Discovery.h"
 #include "folder/FolderGroup.h"
 #include "folder/FolderService.h"
@@ -40,62 +41,63 @@
 namespace librevault {
 
 Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
-	setApplicationName("Librevault");
-	setOrganizationDomain("librevault.com");
+  setApplicationName("Librevault");
+  setOrganizationDomain("librevault.com");
 
-	// Initializing components
-	state_collector_ = new StateCollector(this);
-	node_key_ = new NodeKey(this);
-	portmanager_ = new PortMappingService(this);
-	discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
-	folder_service_ = new FolderService(state_collector_, this);
-	p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
-	control_server_ = new ControlServer(state_collector_, this);
+  // Initializing components
+  state_collector_ = new StateCollector(this);
+  node_key_ = new NodeKey(this);
+  portmanager_ = new PortMappingService(this);
+  discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
+  folder_service_ = new FolderService(state_collector_, this);
+  p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
+  control_server_ = new ControlServer(state_collector_, this);
 
-	/* Connecting signals */
-	connect(state_collector_, &StateCollector::globalStateChanged, control_server_, &ControlServer::notify_global_state_changed);
-	connect(state_collector_, &StateCollector::folderStateChanged, control_server_, &ControlServer::notify_folder_state_changed);
+  /* Connecting signals */
+  connect(state_collector_, &StateCollector::globalStateChanged, control_server_,
+          &ControlServer::notify_global_state_changed);
+  connect(state_collector_, &StateCollector::folderStateChanged, control_server_,
+          &ControlServer::notify_folder_state_changed);
 
-	connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
+  connect(discovery_, &Discovery::discovered, p2p_provider_, &P2PProvider::handleDiscovered);
 
-	connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
-	});
-	connect(folder_service_, &FolderService::folderRemoved, control_server_, [this](FolderGroup* group){
-		control_server_->notify_folder_removed(group->folderid());
-	});
+  connect(folder_service_, &FolderService::folderAdded, control_server_, [this](FolderGroup* group) {
+    control_server_->notify_folder_added(group->folderid(), Config::get()->getFolder(group->folderid()));
+  });
+  connect(folder_service_, &FolderService::folderRemoved, control_server_,
+          [this](FolderGroup* group) { control_server_->notify_folder_removed(group->folderid()); });
 
-	connect(folder_service_, &FolderService::folderAdded, discovery_, &Discovery::addGroup);
+  connect(folder_service_, &FolderService::folderAdded, discovery_, &Discovery::addGroup);
 
-	connect(control_server_, &ControlServer::restart, this, &Client::restart);
-	connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
+  connect(control_server_, &ControlServer::restart, this, &Client::restart);
+  connect(control_server_, &ControlServer::shutdown, this, &Client::shutdown);
 }
 
 Client::~Client() {
-	delete control_server_;
-	delete p2p_provider_;
-	delete folder_service_;
-	delete discovery_;
-	delete portmanager_;
-	delete node_key_;
-	delete state_collector_;
+  delete control_server_;
+  delete p2p_provider_;
+  delete folder_service_;
+  delete discovery_;
+  delete portmanager_;
+  delete node_key_;
+  delete state_collector_;
 }
 
 int Client::run() {
-	folder_service_->run();
-	control_server_->run();
+  folder_service_->run();
+  control_server_->run();
 
-	return this->exec();
+  return this->exec();
 }
 
 void Client::restart() {
-	qInfo() << "Restarting...";
-	this->exit(EXIT_RESTART);
+  qInfo() << "Restarting...";
+  this->exit(EXIT_RESTART);
 }
 
-void Client::shutdown(){
-	qInfo() << "Exiting...";
-	this->exit();
+void Client::shutdown() {
+  qInfo() << "Exiting...";
+  this->exit();
 }
 
-} /* namespace librevault */
+}  // namespace librevault

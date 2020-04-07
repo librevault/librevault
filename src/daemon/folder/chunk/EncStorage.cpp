@@ -80,4 +80,4 @@ void EncStorage::remove_chunk(const blob& ct_hash) {
   LOGD("Block" << ct_hash_readable(ct_hash) << "removed from EncStorage");
 }
 
-} /* namespace librevault */
+}  // namespace librevault

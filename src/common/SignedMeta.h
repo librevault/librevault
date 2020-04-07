@@ -14,32 +14,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Meta.h"
 #include <memory>
+
+#include "Meta.h"
 
 namespace librevault {
 
 class SignedMeta {
-public:
-	struct signature_error : Meta::error {
-		signature_error() : Meta::error("Meta signature mismatch") {}
-	};
+ public:
+  struct signature_error : Meta::error {
+    signature_error() : Meta::error("Meta signature mismatch") {}
+  };
 
-	SignedMeta() {}
-	SignedMeta(Meta meta, const Secret& secret);
-	SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature = true);
+  SignedMeta() {}
+  SignedMeta(Meta meta, const Secret& secret);
+  SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
+             bool check_signature = true);
 
-	operator bool() const {return meta_ && raw_meta_ && signature_;}
+  operator bool() const { return meta_ && raw_meta_ && signature_; }
 
-	// Getters
-	const Meta& meta() const {return *meta_;}
-	const std::vector<uint8_t>& raw_meta() const {return *raw_meta_;}
-	const std::vector<uint8_t>& signature() const {return *signature_;}
-private:
-	std::shared_ptr<Meta> meta_;
+  // Getters
+  const Meta& meta() const { return *meta_; }
+  const std::vector<uint8_t>& raw_meta() const { return *raw_meta_; }
+  const std::vector<uint8_t>& signature() const { return *signature_; }
 
-	std::shared_ptr<std::vector<uint8_t>> raw_meta_;
-	std::shared_ptr<std::vector<uint8_t>> signature_;
+ private:
+  std::shared_ptr<Meta> meta_;
+
+  std::shared_ptr<std::vector<uint8_t>> raw_meta_;
+  std::shared_ptr<std::vector<uint8_t>> signature_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

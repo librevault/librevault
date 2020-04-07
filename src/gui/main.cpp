@@ -26,10 +26,10 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "gui/MainWindow.h"
 #include "Client.h"
+#include "gui/MainWindow.h"
 
 int main(int argc, char** argv) {
-	Client client(argc, argv);
-	return client.exec();
+  Client client(argc, argv);
+  return client.exec();
 }

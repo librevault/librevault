@@ -28,11 +28,12 @@
  */
 #include "CliApplication.h"
 
-using namespace librevault;	// This is allowed only because this is main.cpp file and it is extremely unlikely that this file will be included in any other file.
+using namespace librevault;  // This is allowed only because this is main.cpp file and it is extremely unlikely that
+                             // this file will be included in any other file.
 
 ///////////////////////////////////////////////////////////////////////80 chars/
 static const char* USAGE =
-R"(Librevault command-line interface.
+    R"(Librevault command-line interface.
 
 Librevault is an open source peer-to-peer file synchronization
 solution with an optional centralized cloud storage, that can be used as a traditional cloud storage.
@@ -77,6 +78,6 @@ Options:
 )";
 
 int main(int argc, char** argv) {
-	CliApplication app(argc, argv, USAGE);
-	return app.exec();
+  CliApplication app(argc, argv, USAGE);
+  return app.exec();
 }

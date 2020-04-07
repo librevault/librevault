@@ -301,4 +301,4 @@ size_t Downloader::countRequests() const {
   return requests;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

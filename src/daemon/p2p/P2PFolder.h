@@ -149,4 +149,4 @@ class P2PFolder : public RemoteFolder {
   void handleConnected();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

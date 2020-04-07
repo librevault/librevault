@@ -69,4 +69,4 @@ class MulticastProvider : public QObject {
   void processDatagram();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

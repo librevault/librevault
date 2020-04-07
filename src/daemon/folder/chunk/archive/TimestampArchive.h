@@ -32,16 +32,16 @@
 namespace librevault {
 
 class TimestampArchive : public ArchiveStrategy {
-	Q_OBJECT
-public:
-	TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
-	void archive(QString denormpath);
+  Q_OBJECT
+ public:
+  TimestampArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
+  void archive(QString denormpath);
 
-private:
-	const FolderParams& params_;
-	PathNormalizer* path_normalizer_;
+ private:
+  const FolderParams& params_;
+  PathNormalizer* path_normalizer_;
 
-	QString archive_path_;
+  QString archive_path_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -9,7 +9,9 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #include "SHA3.h"
+
 #include <cryptopp/sha3.h>
+
 #include <QCryptographicHash>
 
 namespace librevault {
@@ -21,12 +23,11 @@ blob SHA3::compute(const blob& data) const {
       return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_224));
     case 256:
       return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_256));
-    default: throw std::runtime_error("Hashing algorithm not supported");
+    default:
+      throw std::runtime_error("Hashing algorithm not supported");
   }
 }
-blob SHA3::to(const blob& data) const {
-	return compute(data);
-}
+blob SHA3::to(const blob& data) const { return compute(data); }
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

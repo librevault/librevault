@@ -61,4 +61,4 @@ void MetaUploader::handle_meta_request(RemoteFolder* remote, const Meta::PathRev
   }
 }
 
-} /* namespace librevault */
+}  // namespace librevault

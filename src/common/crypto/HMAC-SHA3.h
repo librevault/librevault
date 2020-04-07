@@ -36,5 +36,5 @@ class HMAC_SHA3_224 : public OneWayTransformer {
   blob to(const blob& data) const;
 };
 
-} /* namespace crypto */
-} /* namespace librevault */
+}  // namespace crypto
+}  // namespace librevault

@@ -27,18 +27,19 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "ui_OpenLink.h"
 #include <QDialog>
 
+#include "ui_OpenLink.h"
+
 class OpenLink : public QDialog {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit OpenLink(QWidget* parent = 0);
+ public:
+  explicit OpenLink(QWidget* parent = 0);
 
-public slots:
-	void accept() override;
+ public slots:
+  void accept() override;
 
-protected:
-	Ui::OpenLink ui;
+ protected:
+  Ui::OpenLink ui;
 };

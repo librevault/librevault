@@ -37,40 +37,40 @@ class DaemonProcess;
 class RemoteConfig;
 class RemoteState;
 class Daemon : public QObject {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	Daemon(QString control_url, QObject* parent);
-	~Daemon();
+ public:
+  Daemon(QString control_url, QObject* parent);
+  ~Daemon();
 
-	QNetworkAccessManager* nam() {return nam_;}
-	QUrl daemonUrl() {return daemon_url_;}
+  QNetworkAccessManager* nam() { return nam_; }
+  QUrl daemonUrl() { return daemon_url_; }
 
-	RemoteConfig* config() {return remote_config_;}
-	RemoteState* state() {return remote_state_;}
-	bool isConnected();
+  RemoteConfig* config() { return remote_config_; }
+  RemoteState* state() { return remote_state_; }
+  bool isConnected();
 
-public slots:
-	void start();
+ public slots:
+  void start();
 
-private:
-	DaemonProcess* process_;
-	QWebSocket* event_sock_;
-	QNetworkAccessManager* nam_;
+ private:
+  DaemonProcess* process_;
+  QWebSocket* event_sock_;
+  QNetworkAccessManager* nam_;
 
-	RemoteConfig* remote_config_;
-	RemoteState* remote_state_;
+  RemoteConfig* remote_config_;
+  RemoteState* remote_state_;
 
-	QUrl daemon_url_;
+  QUrl daemon_url_;
 
-signals:
-	void connected();
-	void disconnected(QString message);
+ signals:
+  void connected();
+  void disconnected(QString message);
 
-	void eventReceived(QString name, QJsonObject event);
+  void eventReceived(QString name, QJsonObject event);
 
-private slots:
-	void daemonUrlObtained(QUrl daemon_url);
+ private slots:
+  void daemonUrlObtained(QUrl daemon_url);
 
-	void handleEventMessage(const QString& message);
+  void handleEventMessage(const QString& message);
 };

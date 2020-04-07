@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QJsonObject>
+
 #include "ControlServer.h"
 #include "control/websocket_config.h"
 #include "util/log.h"
-#include <QJsonObject>
 
 namespace librevault {
 
@@ -38,27 +39,28 @@ class Client;
 class ControlServer;
 
 class ControlWebsocketServer {
-	LOG_SCOPE("ControlWebsocketServer");
-public:
-	ControlWebsocketServer(ControlServer& cs, ControlServer::server& server);
-	virtual ~ControlWebsocketServer();
+  LOG_SCOPE("ControlWebsocketServer");
 
-	void stop();
+ public:
+  ControlWebsocketServer(ControlServer& cs, ControlServer::server& server);
+  virtual ~ControlWebsocketServer();
 
-	bool on_validate(websocketpp::connection_hdl hdl);
-	void on_open(websocketpp::connection_hdl hdl);
-	void on_disconnect(websocketpp::connection_hdl hdl);
+  void stop();
 
-	//
-	void send_event(QString type, QJsonObject event);
+  bool on_validate(websocketpp::connection_hdl hdl);
+  void on_open(websocketpp::connection_hdl hdl);
+  void on_disconnect(websocketpp::connection_hdl hdl);
 
-private:
-	ControlServer& cs_;
-	ControlServer::server& server_;
+  //
+  void send_event(QString type, QJsonObject event);
 
-	std::atomic<uint64_t> id_;
+ private:
+  ControlServer& cs_;
+  ControlServer::server& server_;
 
-	std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
+  std::atomic<uint64_t> id_;
+
+  std::unordered_set<ControlServer::server::connection_ptr> ws_sessions_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

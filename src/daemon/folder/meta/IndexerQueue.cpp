@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "IndexerQueue.h"
+
 #include "IndexerWorker.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
@@ -38,67 +39,67 @@ Q_LOGGING_CATEGORY(log_indexer, "folder.meta.indexer")
 
 namespace librevault {
 
-IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer, StateCollector* state_collector, QObject* parent) :
-	QObject(parent),
-	params_(params),
-	meta_storage_(qobject_cast<MetaStorage*>(parent)),
-	ignore_list_(ignore_list),
-	path_normalizer_(path_normalizer),
-	state_collector_(state_collector),
-	secret_(params.secret) {
-	qRegisterMetaType<SignedMeta>("SignedMeta");
-	state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false);
+IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, PathNormalizer* path_normalizer,
+                           StateCollector* state_collector, QObject* parent)
+    : QObject(parent),
+      params_(params),
+      meta_storage_(qobject_cast<MetaStorage*>(parent)),
+      ignore_list_(ignore_list),
+      path_normalizer_(path_normalizer),
+      state_collector_(state_collector),
+      secret_(params.secret) {
+  qRegisterMetaType<SignedMeta>("SignedMeta");
+  state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false);
 
-	connect(this, &IndexerQueue::startedIndexing, this, [this]{state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", true);});
-	connect(this, &IndexerQueue::finishedIndexing, this, [this]{state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false);});
+  connect(this, &IndexerQueue::startedIndexing, this,
+          [this] { state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", true); });
+  connect(this, &IndexerQueue::finishedIndexing, this,
+          [this] { state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false); });
 
-	threadpool_ = new QThreadPool(this);
+  threadpool_ = new QThreadPool(this);
 }
 
 IndexerQueue::~IndexerQueue() {
-	qCDebug(log_indexer) << "~IndexerQueue";
-	emit aboutToStop();
-	threadpool_->waitForDone();
-	qCDebug(log_indexer) << "!~IndexerQueue";
+  qCDebug(log_indexer) << "~IndexerQueue";
+  emit aboutToStop();
+  threadpool_->waitForDone();
+  qCDebug(log_indexer) << "!~IndexerQueue";
 }
 
 void IndexerQueue::addIndexing(QString abspath) {
-	if(tasks_.contains(abspath)) {
-		IndexerWorker* worker = tasks_.value(abspath);
-		threadpool_->cancel(worker);
-		worker->stop();
-	}
-	IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
-	worker->setAutoDelete(false);
-	connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
-	connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);
-	connect(worker, &IndexerWorker::metaFailed, this, &IndexerQueue::metaFailed);
-	tasks_.insert(abspath, worker);
-	if(tasks_.size() == 1)
-		emit startedIndexing();
-	threadpool_->start(worker);
+  if (tasks_.contains(abspath)) {
+    IndexerWorker* worker = tasks_.value(abspath);
+    threadpool_->cancel(worker);
+    worker->stop();
+  }
+  IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
+  worker->setAutoDelete(false);
+  connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
+  connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);
+  connect(worker, &IndexerWorker::metaFailed, this, &IndexerQueue::metaFailed);
+  tasks_.insert(abspath, worker);
+  if (tasks_.size() == 1) emit startedIndexing();
+  threadpool_->start(worker);
 }
 
 void IndexerQueue::metaCreated(SignedMeta smeta) {
-	IndexerWorker* worker = qobject_cast<IndexerWorker*>(sender());
-	tasks_.remove(worker->absolutePath());
-	worker->deleteLater();
+  IndexerWorker* worker = qobject_cast<IndexerWorker*>(sender());
+  tasks_.remove(worker->absolutePath());
+  worker->deleteLater();
 
-	if(tasks_.size() == 0)
-		emit finishedIndexing();
+  if (tasks_.size() == 0) emit finishedIndexing();
 
-	meta_storage_->putMeta(smeta, true);
+  meta_storage_->putMeta(smeta, true);
 }
 
 void IndexerQueue::metaFailed(QString error_string) {
-	IndexerWorker* worker = qobject_cast<IndexerWorker*>(sender());
-	tasks_.remove(worker->absolutePath());
-	worker->deleteLater();
+  IndexerWorker* worker = qobject_cast<IndexerWorker*>(sender());
+  tasks_.remove(worker->absolutePath());
+  worker->deleteLater();
 
-	if(tasks_.size() == 0)
-		emit finishedIndexing();
+  if (tasks_.size() == 0) emit finishedIndexing();
 
-	qCWarning(log_indexer) << "Skipping" << worker->absolutePath() << "Reason:" << error_string;
+  qCWarning(log_indexer) << "Skipping" << worker->absolutePath() << "Reason:" << error_string;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

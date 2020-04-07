@@ -73,4 +73,4 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
   throw ChunkStorage::ChunkNotFound();
 }
 
-} /* namespace librevault */
+}  // namespace librevault

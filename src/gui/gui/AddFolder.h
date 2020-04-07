@@ -27,28 +27,29 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "ui_AddFolder.h"
 #include <QDialog>
+
+#include "ui_AddFolder.h"
 
 class Daemon;
 class AddFolder : public QDialog {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	AddFolder(QString secret, Daemon* daemon, QWidget* parent = 0);
-	~AddFolder();
+ public:
+  AddFolder(QString secret, Daemon* daemon, QWidget* parent = 0);
+  ~AddFolder();
 
-protected:
-	Ui::AddFolder ui;
-	Daemon* daemon_;
+ protected:
+  Ui::AddFolder ui;
+  Daemon* daemon_;
 
-	// Overrides
-	void showEvent(QShowEvent* e) override;
+  // Overrides
+  void showEvent(QShowEvent* e) override;
 
-private slots:
-	void accept() override;
+ private slots:
+  void accept() override;
 
-	void generateSecret();
-	void browseFolder();
-	//void validateSecret();
+  void generateSecret();
+  void browseFolder();
+  // void validateSecret();
 };

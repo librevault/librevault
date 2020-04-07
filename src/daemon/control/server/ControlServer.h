@@ -81,4 +81,4 @@ class ControlServer : public QObject {
   std::unique_ptr<ControlHTTPServer> control_http_server_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

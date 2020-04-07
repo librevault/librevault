@@ -168,4 +168,4 @@ V1Parser::BlockReply V1Parser::parse_BlockReply(const std::vector<uint8_t>& mess
   return message_struct;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

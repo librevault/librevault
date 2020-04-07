@@ -83,4 +83,4 @@ class MetaStorage : public QObject {
   DirectoryWatcher* watcher_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -151,4 +151,4 @@ class V1Parser {
   }
 };
 
-} /* namespace librevault */
+}  // namespace librevault

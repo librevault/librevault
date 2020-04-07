@@ -69,4 +69,4 @@ class P2PProvider : public QObject {
   void handleAcceptError(QAbstractSocket::SocketError socketError);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -120,4 +120,4 @@ class FolderGroup : public QObject {
   void handle_handshake(RemoteFolder* origin);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

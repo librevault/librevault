@@ -51,9 +51,8 @@ class NATPMPService : public PortMappingSubService {
   void start();
   void stop();
 
-  void map(const QString &id, MappingDescriptor descriptor,
-           const QString &description);
-  void unmap(const QString &id);
+  void map(const QString& id, MappingDescriptor descriptor, const QString& description);
+  void unmap(const QString& id);
 
  protected:
   bool is_config_enabled();
@@ -65,8 +64,7 @@ class NATPMPService : public PortMappingSubService {
 class NATPMPMapping : public QObject {
   Q_OBJECT
  public:
-  NATPMPMapping(NATPMPService& parent, QString id,
-                MappingDescriptor descriptor);
+  NATPMPMapping(NATPMPService& parent, QString id, MappingDescriptor descriptor);
   ~NATPMPMapping();
 
  private:
@@ -81,4 +79,4 @@ class NATPMPMapping : public QObject {
   void sendZeroRequest();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -195,4 +195,4 @@ void FolderGroup::push_state() {
   state_collector_->folder_state_set(folderid(), "traffic_stats", bandwidth_counter_.heartbeat_json());
 }
 
-} /* namespace librevault */
+}  // namespace librevault

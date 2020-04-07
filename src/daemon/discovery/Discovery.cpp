@@ -69,4 +69,4 @@ void Discovery::addGroup(FolderGroup* fgroup) {
   static_group->setEnabled(true);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

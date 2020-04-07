@@ -36,20 +36,17 @@ namespace librevault {
 class PortMappingSubService : public QObject {
   Q_OBJECT
  public:
-  explicit PortMappingSubService(PortMappingService& parent)
-      : QObject(&parent), parent_(parent) {}
+  explicit PortMappingSubService(PortMappingService &parent) : QObject(&parent), parent_(parent) {}
 
   Q_SIGNAL void portMapped(QString, uint16_t);
 
-  virtual void map(const QString &id,
-                   MappingDescriptor descriptor,
-                   const QString &description) = 0;
+  virtual void map(const QString &id, MappingDescriptor descriptor, const QString &description) = 0;
   virtual void unmap(const QString &id) = 0;
 
  protected:
-  PortMappingService& parent_;
+  PortMappingService &parent_;
 
   inline void add_existing() { parent_.add_existing_mappings(this); }
 };
 
-} /* namespace librevault */
+}  // namespace librevault

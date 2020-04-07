@@ -27,123 +27,131 @@
  * files in the program, then also delete it here.
  */
 #include "CliApplication.h"
-#include "appver.h"
-#include "Secret.h"
-#include "crypto/Hex.h"
+
 #include <QDebug>
-#include <QtGlobal>
+#include <QIODevice>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QIODevice>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QTimer>
+#include <QtGlobal>
+
+#include "Secret.h"
+#include "appver.h"
+#include "crypto/Hex.h"
 
 namespace librevault {
 
 CliApplication::CliApplication(int argc, char** argv, const char* USAGE) : QCoreApplication(argc, argv) {
-	args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, LV_APPVER);
-	QTimer::singleShot(0, this, [this]{performProcessing();});
+  args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, LV_APPVER);
+  QTimer::singleShot(0, this, [this] { performProcessing(); });
 }
 
 void CliApplication::performProcessing() {
-	// Secret generation
-	if(args["secret"].asBool()) {
-		if(args["generate"].asBool()) {
-			std::cout << Secret() << std::endl;
-		}else if(args["derive"].asBool()) {
-			std::cout << Secret(QString::fromStdString(args["<secret>"].asString())).derive((Secret::Type)args["<type>"].asString().at(0)) << std::endl;
-		}else if(args["folderid"].asBool()) {
-			std::cout << Secret(QString::fromStdString(args["<secret>"].asString())).get_Hash().toHex().toStdString() << std::endl;
-		}
-		quit();
-		return;
-	}
+  // Secret generation
+  if (args["secret"].asBool()) {
+    if (args["generate"].asBool()) {
+      std::cout << Secret() << std::endl;
+    } else if (args["derive"].asBool()) {
+      std::cout << Secret(QString::fromStdString(args["<secret>"].asString()))
+                       .derive((Secret::Type)args["<type>"].asString().at(0))
+                << std::endl;
+    } else if (args["folderid"].asBool()) {
+      std::cout << Secret(QString::fromStdString(args["<secret>"].asString())).get_Hash().toHex().toStdString()
+                << std::endl;
+    }
+    quit();
+    return;
+  }
 
-	// Okay, time to initialize HTTP engine
-	if(args["--daemon"].isString())
-		daemon_control_ = QUrl(QString::fromStdString(args["--daemon"].asString()));
-	else
-		daemon_control_ = QUrl(QStringLiteral("http://[::1]:42346"));
+  // Okay, time to initialize HTTP engine
+  if (args["--daemon"].isString())
+    daemon_control_ = QUrl(QString::fromStdString(args["--daemon"].asString()));
+  else
+    daemon_control_ = QUrl(QStringLiteral("http://[::1]:42346"));
 
-	if(daemon_control_.isEmpty() || !daemon_control_.isValid()) {
-		qFatal("Daemon URL is invalid");
-	}else{
-		//qDebug() << "Daemon URL: " << daemon_control_;
-	}
+  if (daemon_control_.isEmpty() || !daemon_control_.isValid()) {
+    qFatal("Daemon URL is invalid");
+  } else {
+    // qDebug() << "Daemon URL: " << daemon_control_;
+  }
 
-	// Initializing QNAM
-	nam_ = new QNetworkAccessManager(this);
+  // Initializing QNAM
+  nam_ = new QNetworkAccessManager(this);
 
-	if(args["shutdown"].asBool()) {
-		action_shutdown();
-	}else if(args["restart"].asBool()) {
-		action_restart();
-	}else if(args["version"].asBool()) {
-		action_version();
-	}else if(args["globals"].asBool()) {
-		if(args["list"].asBool()) {
-			action_globals_list();
-		}else if(args["get"].asBool()) {
-			action_globals_get();
-		}else if(args["set"].asBool()) {
-			action_globals_set();
-		}else if(args["unset"].asBool()) {
-			action_globals_unset();
-		}
-	}
+  if (args["shutdown"].asBool()) {
+    action_shutdown();
+  } else if (args["restart"].asBool()) {
+    action_restart();
+  } else if (args["version"].asBool()) {
+    action_version();
+  } else if (args["globals"].asBool()) {
+    if (args["list"].asBool()) {
+      action_globals_list();
+    } else if (args["get"].asBool()) {
+      action_globals_get();
+    } else if (args["set"].asBool()) {
+      action_globals_set();
+    } else if (args["unset"].asBool()) {
+      action_globals_unset();
+    }
+  }
 }
 
-void CliApplication::action_shutdown(){
-	QNetworkRequest request(daemon_control_.toString().append("/v1/shutdown"));
-	QNetworkReply* reply = nam_->post(request, QByteArray());
-	connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
+void CliApplication::action_shutdown() {
+  QNetworkRequest request(daemon_control_.toString().append("/v1/shutdown"));
+  QNetworkReply* reply = nam_->post(request, QByteArray());
+  connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
 }
 
-void CliApplication::action_restart(){
-	QNetworkRequest request(daemon_control_.toString().append("/v1/restart"));
-	QNetworkReply* reply = nam_->post(request, QByteArray());
-	connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
+void CliApplication::action_restart() {
+  QNetworkRequest request(daemon_control_.toString().append("/v1/restart"));
+  QNetworkReply* reply = nam_->post(request, QByteArray());
+  connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
 }
 
 void CliApplication::action_version() {
-	QNetworkRequest request(daemon_control_.toString().append("/v1/version"));
-	QNetworkReply* reply = nam_->get(request);
-	connect(reply, &QNetworkReply::finished, [reply] {
-		qStdOut() << tr("Daemon version:\t%1\n").arg(QString::fromLatin1(reply->readAll()));
-		qStdOut() << tr("CLI version:\t%1\n").arg(QStringLiteral(LV_APPVER));
-		quit();
-	});
+  QNetworkRequest request(daemon_control_.toString().append("/v1/version"));
+  QNetworkReply* reply = nam_->get(request);
+  connect(reply, &QNetworkReply::finished, [reply] {
+    qStdOut() << tr("Daemon version:\t%1\n").arg(QString::fromLatin1(reply->readAll()));
+    qStdOut() << tr("CLI version:\t%1\n").arg(QStringLiteral(LV_APPVER));
+    quit();
+  });
 }
 
 void CliApplication::action_globals_list() {
-	QNetworkRequest request(daemon_control_.toString().append("/v1/globals"));
-	QNetworkReply* reply = nam_->get(request);
-	connect(reply, &QNetworkReply::finished, [reply] {
-		qStdOut() << QJsonDocument::fromJson(reply->readAll()).toJson();
-		quit();
-	});
+  QNetworkRequest request(daemon_control_.toString().append("/v1/globals"));
+  QNetworkReply* reply = nam_->get(request);
+  connect(reply, &QNetworkReply::finished, [reply] {
+    qStdOut() << QJsonDocument::fromJson(reply->readAll()).toJson();
+    quit();
+  });
 }
 
 void CliApplication::action_globals_get() {
-	QNetworkRequest request(daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
-	QNetworkReply* reply = nam_->get(request);
-	connect(reply, &QNetworkReply::finished, [reply] {
-		qStdOut() << reply->readAll();
-		quit();
-	});
+  QNetworkRequest request(
+      daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
+  QNetworkReply* reply = nam_->get(request);
+  connect(reply, &QNetworkReply::finished, [reply] {
+    qStdOut() << reply->readAll();
+    quit();
+  });
 }
 
 void CliApplication::action_globals_set() {
-	QNetworkRequest request(daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
-	QNetworkReply* reply = nam_->put(request, QString::fromStdString(args["<value>"].asString()).toUtf8());
-	connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
+  QNetworkRequest request(
+      daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
+  QNetworkReply* reply = nam_->put(request, QString::fromStdString(args["<value>"].asString()).toUtf8());
+  connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
 }
 
 void CliApplication::action_globals_unset() {
-	QNetworkRequest request(daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
-	QNetworkReply* reply = nam_->deleteResource(request);
-	connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
+  QNetworkRequest request(
+      daemon_control_.toString().append("/v1/globals/").append(QString::fromStdString(args["<key>"].asString())));
+  QNetworkReply* reply = nam_->deleteResource(request);
+  connect(reply, &QNetworkReply::finished, this, &QCoreApplication::quit);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

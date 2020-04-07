@@ -57,4 +57,4 @@ class StateCollector : public QObject {
   QMap<QByteArray, QJsonObject> folder_state_buffers;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

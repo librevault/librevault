@@ -42,4 +42,4 @@ QString Paths::default_appdata_path() {
 	return QString::fromNSString(applicationSupportDirectory) + "/Librevault";
 }
 
-} /* namespace librevault */
+}

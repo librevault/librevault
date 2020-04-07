@@ -27,33 +27,35 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "util/log.h"
 #include <QFile>
 #include <QReadWriteLock>
 #include <memory>
+
+#include "util/blob.h"
+#include "util/log.h"
 
 namespace librevault {
 
 class FolderParams;
 class EncStorage : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("EncStorage");
-public:
-	EncStorage(const FolderParams& params, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("EncStorage");
 
-	bool have_chunk(const blob& ct_hash) const noexcept;
-	QByteArray get_chunk(const blob& ct_hash) const;
-	void put_chunk(const QByteArray& ct_hash, QFile* chunk_f);
-	void remove_chunk(const blob& ct_hash);
+ public:
+  EncStorage(const FolderParams& params, QObject* parent);
 
-private:
-	const FolderParams& params_;
-	mutable QReadWriteLock storage_mtx_;
+  bool have_chunk(const blob& ct_hash) const noexcept;
+  QByteArray get_chunk(const blob& ct_hash) const;
+  void put_chunk(const QByteArray& ct_hash, QFile* chunk_f);
+  void remove_chunk(const blob& ct_hash);
 
-	QString make_chunk_ct_name(QByteArray ct_hash) const noexcept;
-	QString make_chunk_ct_path(const blob& ct_hash) const noexcept;
-	QString make_chunk_ct_path(QByteArray ct_hash) const noexcept;
+ private:
+  const FolderParams& params_;
+  mutable QReadWriteLock storage_mtx_;
+
+  QString make_chunk_ct_name(QByteArray ct_hash) const noexcept;
+  QString make_chunk_ct_path(const blob& ct_hash) const noexcept;
+  QString make_chunk_ct_path(QByteArray ct_hash) const noexcept;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

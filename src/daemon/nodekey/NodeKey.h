@@ -61,4 +61,4 @@ class NodeKey : public QObject {
   QSslCertificate certificate_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

@@ -27,31 +27,32 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "ui_FolderProperties.h"
-#include "Secret.h"
 #include <QDialog>
 #include <QJsonObject>
 #include <memory>
+
+#include "Secret.h"
+#include "ui_FolderProperties.h"
 
 class Daemon;
 class FolderModel;
 
 class FolderProperties : public QDialog {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent = 0);
-	~FolderProperties();
+ public:
+  FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent = 0);
+  ~FolderProperties();
 
-protected:
-	Ui::FolderProperties ui;
-	void init_secrets();
+ protected:
+  Ui::FolderProperties ui;
+  void init_secrets();
 
-public slots:
-	void refresh();
+ public slots:
+  void refresh();
 
-private:
-	Daemon* daemon_;
-	FolderModel* folder_model_;
-	QByteArray folderid_;
+ private:
+  Daemon* daemon_;
+  FolderModel* folder_model_;
+  QByteArray folderid_;
 };

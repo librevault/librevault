@@ -37,37 +37,37 @@ class Updater;
 class Translator;
 
 class Settings : public SettingsWindow {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent = 0);
-	~Settings();
+ public:
+  explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent = 0);
+  ~Settings();
 
-signals:
-	void localeChanged(QString code);
+ signals:
+  void localeChanged(QString code);
 
-public slots:
-	void retranslateUi();
+ public slots:
+  void retranslateUi();
 
-protected:
-	Ui::Settings_General ui_pane_general_;
-	Ui::Settings_Network ui_pane_network_;
-	QWidget* pane_general_;
-	QWidget* pane_network_;
+ protected:
+  Ui::Settings_General ui_pane_general_;
+  Ui::Settings_Network ui_pane_network_;
+  QWidget* pane_general_;
+  QWidget* pane_network_;
 
-	void init_ui();
-	void reset_ui_states();
-	void process_ui_states();
+  void init_ui();
+  void reset_ui_states();
+  void process_ui_states();
 
-	Daemon* daemon_;
-	Updater* updater_;
-	Translator* translator_;
-	StartupInterface* startup_interface_;
+  Daemon* daemon_;
+  Updater* updater_;
+  Translator* translator_;
+  StartupInterface* startup_interface_;
 
-private:
-	void showEvent(QShowEvent* e) override;
+ private:
+  void showEvent(QShowEvent* e) override;
 
-private slots:
-	void okayPressed();
-	void cancelPressed();
+ private slots:
+  void okayPressed();
+  void cancelPressed();
 };

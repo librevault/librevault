@@ -14,50 +14,52 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "SignedMeta.h"
-#include <cryptopp/osrng.h>
-#include <cryptopp/ecp.h>
-#include <cryptopp/sha3.h>
-#include <cryptopp/oids.h>
+
 #include <cryptopp/eccrypto.h>
+#include <cryptopp/ecp.h>
+#include <cryptopp/oids.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/sha3.h>
+
 #include "util/blob.h"
 
 namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
-	meta_ = std::make_shared<Meta>(std::move(meta));
-	raw_meta_ = std::make_shared<std::vector<uint8_t>>(meta.serialize());
+  meta_ = std::make_shared<Meta>(std::move(meta));
+  raw_meta_ = std::make_shared<std::vector<uint8_t>>(meta.serialize());
 
-	CryptoPP::AutoSeededRandomPool rng;
-	CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-	signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(secret.get_Private_Key()));
+  CryptoPP::AutoSeededRandomPool rng;
+  CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
+  signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(secret.get_Private_Key()));
 
-	signature_ = std::make_shared<std::vector<uint8_t>>(signer.SignatureLength());
-	signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
+  signature_ = std::make_shared<std::vector<uint8_t>>(signer.SignatureLength());
+  signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
 }
 
-SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret, bool check_signature) :
-	raw_meta_(std::make_shared<std::vector<uint8_t>>(std::move(raw_meta))),
-	signature_(std::make_shared<std::vector<uint8_t>>(std::move(signature))) {
+SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
+                       bool check_signature)
+    : raw_meta_(std::make_shared<std::vector<uint8_t>>(std::move(raw_meta))),
+      signature_(std::make_shared<std::vector<uint8_t>>(std::move(signature))) {
+  if (check_signature) {
+    try {
+      auto public_key = secret.get_Public_Key();
 
-	if(check_signature) {
-		try {
-		    auto public_key = secret.get_Public_Key();
+      CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
+      CryptoPP::ECP::Point p;
 
-			CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-			CryptoPP::ECP::Point p;
+      verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
+      verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
+      verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
+      verifier.AccessKey().SetPublicElement(p);
+      if (!verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
+        throw signature_error();
+    } catch (CryptoPP::Exception& e) {
+      throw signature_error();
+    }
+  }
 
-			verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
-			verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-			verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
-			verifier.AccessKey().SetPublicElement(p);
-			if(! verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
-				throw signature_error();
-		}catch(CryptoPP::Exception& e){
-			throw signature_error();
-		}
-	}
-
-	meta_ = std::make_shared<Meta>(*raw_meta_);
+  meta_ = std::make_shared<Meta>(*raw_meta_);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

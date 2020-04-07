@@ -51,4 +51,4 @@ class MemoryStorage : public QObject {
   QCache<QByteArray, QByteArray> cache_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

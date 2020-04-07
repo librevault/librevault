@@ -32,21 +32,21 @@
 namespace librevault {
 
 inline QString regex_escape(QString escaped) {
-	escaped.replace("\\", "\\\\");
-	escaped.replace("^", "\\^");
-	escaped.replace(".", "\\.");
-	escaped.replace("$", "\\$");
-	escaped.replace("|", "\\|");
-	escaped.replace("(", "\\(");
-	escaped.replace(")", "\\)");
-	escaped.replace("[", "\\[");
-	escaped.replace("]", "\\]");
-	escaped.replace("*", "\\*");
-	escaped.replace("+", "\\+");
-	escaped.replace("?", "\\?");
-	escaped.replace("/", "\\/");
+  escaped.replace("\\", "\\\\");
+  escaped.replace("^", "\\^");
+  escaped.replace(".", "\\.");
+  escaped.replace("$", "\\$");
+  escaped.replace("|", "\\|");
+  escaped.replace("(", "\\(");
+  escaped.replace(")", "\\)");
+  escaped.replace("[", "\\[");
+  escaped.replace("]", "\\]");
+  escaped.replace("*", "\\*");
+  escaped.replace("+", "\\+");
+  escaped.replace("?", "\\?");
+  escaped.replace("/", "\\/");
 
-	return escaped;
+  return escaped;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

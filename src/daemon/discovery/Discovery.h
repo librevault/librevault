@@ -60,4 +60,4 @@ class Discovery : public QObject {
   MLDHTProvider* mldht_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

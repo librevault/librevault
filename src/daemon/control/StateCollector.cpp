@@ -73,4 +73,4 @@ QJsonArray StateCollector::folder_state() {
 
 QJsonObject StateCollector::folder_state(const QByteArray& folderid) { return folder_state_buffers.value(folderid); }
 
-} /* namespace librevault */
+}  // namespace librevault

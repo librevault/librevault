@@ -26,9 +26,8 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  */
-#include "DaemonProcess.h"
 #include <QString>
 
-QString DaemonProcess::get_executable_path() const {
-	return QStringLiteral("librevault-daemon");
-}
+#include "DaemonProcess.h"
+
+QString DaemonProcess::get_executable_path() const { return QStringLiteral("librevault-daemon"); }

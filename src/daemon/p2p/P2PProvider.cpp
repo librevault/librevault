@@ -125,4 +125,4 @@ void P2PProvider::handleAcceptError(QAbstractSocket::SocketError socketError) {
   qCDebug(log_p2p) << "Accept error:" << socketError;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

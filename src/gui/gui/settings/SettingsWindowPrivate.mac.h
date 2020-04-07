@@ -32,22 +32,22 @@
 
 class SettingsWindow;
 class SettingsWindowPrivate {
-public:
-	SettingsWindowPrivate(SettingsWindow* window);
+ public:
+  SettingsWindowPrivate(SettingsWindow* window);
 
-	void add_pane(QWidget* pane);
+  void add_pane(QWidget* pane);
 
-private:
-	// Window
-	SettingsWindow* window_;
-	QVBoxLayout* window_layout_;
-	QVBoxLayout* pane_layout_;
+ private:
+  // Window
+  SettingsWindow* window_;
+  QVBoxLayout* window_layout_;
+  QVBoxLayout* pane_layout_;
 
-	// Pager
-	QMacToolBar *toolbar;
-	QList<QMacToolBarItem*> buttons_;
-	QList<QWidget*> panes_;
+  // Pager
+  QMacToolBar* toolbar;
+  QList<QMacToolBarItem*> buttons_;
+  QList<QWidget*> panes_;
 
-private slots:
-	void showPane(int pane);
+ private slots:
+  void showPane(int pane);
 };

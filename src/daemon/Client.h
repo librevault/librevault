@@ -45,22 +45,23 @@ class PortMappingService;
 class StateCollector;
 
 class Client : public QCoreApplication {
-	Q_OBJECT
-public:
-	Client(int argc, char** argv);
-	virtual ~Client();
+  Q_OBJECT
+ public:
+  Client(int argc, char** argv);
+  virtual ~Client();
 
-	int run();
-	void restart();
-	void shutdown();
-private:
-	StateCollector* state_collector_;
-	NodeKey* node_key_;
-	PortMappingService* portmanager_;
-	Discovery* discovery_;
-	FolderService* folder_service_;
-	P2PProvider* p2p_provider_;
-	ControlServer* control_server_;
+  int run();
+  void restart();
+  void shutdown();
+
+ private:
+  StateCollector* state_collector_;
+  NodeKey* node_key_;
+  PortMappingService* portmanager_;
+  Discovery* discovery_;
+  FolderService* folder_service_;
+  P2PProvider* p2p_provider_;
+  ControlServer* control_server_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

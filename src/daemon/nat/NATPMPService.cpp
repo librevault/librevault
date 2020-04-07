@@ -36,13 +36,10 @@ Q_LOGGING_CATEGORY(log_natpmp, "natpmp")
 
 namespace librevault {
 
-NATPMPService::NATPMPService(PortMappingService& parent)
-    : PortMappingSubService(parent) {}
+NATPMPService::NATPMPService(PortMappingService &parent) : PortMappingSubService(parent) {}
 NATPMPService::~NATPMPService() { stop(); }
 
-bool NATPMPService::is_config_enabled() {
-  return Config::get()->getGlobal("natpmp_enabled").toBool();
-}
+bool NATPMPService::is_config_enabled() { return Config::get()->getGlobal("natpmp_enabled").toBool(); }
 
 void NATPMPService::start() {
   if (!is_config_enabled()) return;
@@ -58,19 +55,14 @@ void NATPMPService::stop() {
   closenatpmp(&natpmp);
 }
 
-void NATPMPService::map(const QString &id,
-                        MappingDescriptor descriptor,
-                        const QString &description) {
+void NATPMPService::map(const QString &id, MappingDescriptor descriptor, const QString &description) {
   mappings_[id] = std::make_unique<NATPMPMapping>(*this, id, descriptor);
 }
 
-void NATPMPService::unmap(const QString &id) {
-  mappings_.erase(id);
-}
+void NATPMPService::unmap(const QString &id) { mappings_.erase(id); }
 
 /* NATPMPMapping */
-NATPMPMapping::NATPMPMapping(NATPMPService& parent, QString id,
-                             MappingDescriptor descriptor)
+NATPMPMapping::NATPMPMapping(NATPMPService &parent, QString id, MappingDescriptor descriptor)
     : parent_(parent), id_(id), descriptor_(descriptor) {
   timer_ = new QTimer(this);
 
@@ -81,11 +73,8 @@ NATPMPMapping::~NATPMPMapping() { sendZeroRequest(); }
 
 void NATPMPMapping::sendPeriodicRequest() {
   int natpmp_ec = sendnewportmappingrequest(
-      &parent_.natpmp,
-      descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP
-                                                         : NATPMP_PROTOCOL_UDP,
-      descriptor_.port, descriptor_.port,
-      Config::get()->getGlobal("natpmp_lifetime").toUInt());
+      &parent_.natpmp, descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+      descriptor_.port, descriptor_.port, Config::get()->getGlobal("natpmp_lifetime").toUInt());
   qCDebug(log_natpmp) << "sendnewportmappingrequest() = " << natpmp_ec;
 
   natpmpresp_t natpmp_resp;
@@ -108,11 +97,9 @@ void NATPMPMapping::sendPeriodicRequest() {
 
 void NATPMPMapping::sendZeroRequest() {
   int natpmp_ec = sendnewportmappingrequest(
-      &parent_.natpmp,
-      descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP
-                                                         : NATPMP_PROTOCOL_UDP,
+      &parent_.natpmp, descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
       descriptor_.port, descriptor_.port, 0);
   qCDebug(log_natpmp) << "sendnewportmappingrequest() = " << natpmp_ec;
 }
 
-} /* namespace librevault */
+}  // namespace librevault

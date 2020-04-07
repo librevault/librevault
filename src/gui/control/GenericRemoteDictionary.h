@@ -27,42 +27,43 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include <QObject>
-#include <QJsonValue>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QNetworkAccessManager>
+#include <QObject>
 
 class Daemon;
 
 class GenericRemoteDictionary : public QObject {
-	Q_OBJECT
+  Q_OBJECT
 
-public:
-	explicit GenericRemoteDictionary(Daemon* daemon, QString globals_request, QString folders_request, QString global_event, QString folder_event);
-	~GenericRemoteDictionary() {}
+ public:
+  explicit GenericRemoteDictionary(Daemon* daemon, QString globals_request, QString folders_request,
+                                   QString global_event, QString folder_event);
+  ~GenericRemoteDictionary() {}
 
-	QVariant getGlobalValue(QString key);
-	QJsonValue getFolderValue(QByteArray folderid, QString key);
-	QList<QByteArray> folderList();
+  QVariant getGlobalValue(QString key);
+  QJsonValue getFolderValue(QByteArray folderid, QString key);
+  QList<QByteArray> folderList();
 
-signals:
-	void changed();
+ signals:
+  void changed();
 
-protected:
-	Daemon* daemon_;
-	QJsonObject global_cache_;
-	QMap<QByteArray, QJsonObject> folder_cache_;
+ protected:
+  Daemon* daemon_;
+  QJsonObject global_cache_;
+  QMap<QByteArray, QJsonObject> folder_cache_;
 
-	QString convertOutValue(QJsonValue value);
+  QString convertOutValue(QJsonValue value);
 
-private:
-	QString globals_request_;
-	QString folders_request_;
+ private:
+  QString globals_request_;
+  QString folders_request_;
 
-	QString global_event_;
-	QString folder_event_;
+  QString global_event_;
+  QString folder_event_;
 
-private slots:
-	void renew();
-	void handleEvent(QString name, QJsonObject event);
+ private slots:
+  void renew();
+  void handleEvent(QString name, QJsonObject event);
 };

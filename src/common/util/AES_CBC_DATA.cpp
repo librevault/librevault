@@ -14,32 +14,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AES_CBC_DATA.h"
-#include "crypto/AES_CBC.h"
+
 #include "Meta.h"
+#include "crypto/AES_CBC.h"
 
 namespace librevault {
 
 bool AES_CBC_DATA::check(const Secret& secret) {
-	if(!check()) return false;
-	try {
-		ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
-	}catch(const CryptoPP::Exception& e){
-		return false;
-	}
-	return true;
+  if (!check()) return false;
+  try {
+    ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
+  } catch (const CryptoPP::Exception& e) {
+    return false;
+  }
+  return true;
 }
 
 std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
-	try {
-		return ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
-	}catch(const CryptoPP::Exception& e){
-		throw Meta::parse_error("Parse error: Decryption failed");
-	}
+  try {
+    return ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
+  } catch (const CryptoPP::Exception& e) {
+    throw Meta::parse_error("Parse error: Decryption failed");
+  }
 }
 
 void AES_CBC_DATA::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
-	iv = crypto::AES_CBC::random_iv();
-	ct = pt | crypto::AES_CBC(conv_bytearray(secret.get_Encryption_Key()), iv);
+  iv = crypto::AES_CBC::random_iv();
+  ct = pt | crypto::AES_CBC(conv_bytearray(secret.get_Encryption_Key()), iv);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

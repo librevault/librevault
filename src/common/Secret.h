@@ -48,10 +48,10 @@ class Secret {
 
   Secret();
   Secret(Type type, const QByteArray &payload);
-  Secret(const QString& str);
+  Secret(const QString &str);
 
   QString string() const { return secret_s; }
-  operator QString() const {return secret_s;}
+  operator QString() const { return secret_s; }
 
   Type get_type() const { return (Type)secret_s.front(); }
   char get_param() const { return secret_s[1]; }

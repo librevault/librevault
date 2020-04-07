@@ -49,4 +49,4 @@ class Version {
   const QString version_string_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

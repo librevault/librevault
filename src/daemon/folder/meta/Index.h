@@ -27,11 +27,12 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <QObject>
+
+#include "SignedMeta.h"
+#include "util/SQLiteWrapper.h"
 #include "util/blob.h"
 #include "util/log.h"
-#include "util/SQLiteWrapper.h"
-#include "SignedMeta.h"
-#include <QObject>
 
 namespace librevault {
 
@@ -39,43 +40,45 @@ class FolderParams;
 class StateCollector;
 
 class Index : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Index");
-signals:
-	void metaAdded(SignedMeta meta);
-	void metaAddedExternal(SignedMeta meta);
+  Q_OBJECT
+  LOG_SCOPE("Index");
+ signals:
+  void metaAdded(SignedMeta meta);
+  void metaAddedExternal(SignedMeta meta);
 
-public:
-	Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
+ public:
+  Index(const FolderParams& params, StateCollector* state_collector, QObject* parent);
 
-	/* Meta manipulators */
-	bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
-	SignedMeta getMeta(const Meta::PathRevision& path_revision);
-	SignedMeta getMeta(const blob& path_id);
-	QList<SignedMeta> getMeta();
-	QList<SignedMeta> getExistingMeta();
-	QList<SignedMeta> getIncompleteMeta();
-	void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
+  /* Meta manipulators */
+  bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
+  SignedMeta getMeta(const Meta::PathRevision& path_revision);
+  SignedMeta getMeta(const blob& path_id);
+  QList<SignedMeta> getMeta();
+  QList<SignedMeta> getExistingMeta();
+  QList<SignedMeta> getIncompleteMeta();
+  void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
 
-	bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
+  bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 
-	void setAssembled(blob path_id);
-	bool isAssembledChunk(blob ct_hash);
-	QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+  void setAssembled(blob path_id);
+  bool isAssembledChunk(blob ct_hash);
+  QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
 
-	/* Properties */
-	QList<SignedMeta> containingChunk(const blob& ct_hash);
+  /* Properties */
+  QList<SignedMeta> containingChunk(const blob& ct_hash);
 
-private:
-	const FolderParams& params_;
-	StateCollector* state_collector_;
+ private:
+  const FolderParams& params_;
+  StateCollector* state_collector_;
 
-	std::unique_ptr<SQLiteDB> db_;	// Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+  // Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
+  std::unique_ptr<SQLiteDB> db_;
 
-	QList<SignedMeta> getMeta(const std::string& sql, const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
-	void wipe();
+  QList<SignedMeta> getMeta(const std::string& sql,
+                            const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
+  void wipe();
 
-	void notifyState();
+  void notifyState();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

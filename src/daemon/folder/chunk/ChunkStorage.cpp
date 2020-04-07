@@ -103,4 +103,4 @@ void ChunkStorage::cleanup(const Meta& meta) {
     if (open_storage->have_chunk(chunk.ct_hash)) enc_storage->remove_chunk(chunk.ct_hash);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

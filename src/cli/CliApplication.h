@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <docopt/docopt.h>
+
 #include <QCoreApplication>
 #include <QNetworkAccessManager>
 #include <QUrl>
@@ -35,28 +36,29 @@
 namespace librevault {
 
 class CliApplication : public QCoreApplication {
-public:
-	CliApplication(int argc, char** argv, const char* USAGE);
-private:
-	std::map<std::string, docopt::value> args;
-	QNetworkAccessManager* nam_;
-	QUrl daemon_control_;
+ public:
+  CliApplication(int argc, char** argv, const char* USAGE);
 
-	void performProcessing();
-	static QTextStream& qStdOut() {
-		static QTextStream ts(stdout);
-		return ts;
-	}
+ private:
+  std::map<std::string, docopt::value> args;
+  QNetworkAccessManager* nam_;
+  QUrl daemon_control_;
 
-	// API Actions
-	void action_shutdown();
-	void action_restart();
-	void action_version();
+  void performProcessing();
+  static QTextStream& qStdOut() {
+    static QTextStream ts(stdout);
+    return ts;
+  }
 
-	void action_globals_list();
-	void action_globals_get();
-	void action_globals_set();
-	void action_globals_unset();
+  // API Actions
+  void action_shutdown();
+  void action_restart();
+  void action_version();
+
+  void action_globals_list();
+  void action_globals_get();
+  void action_globals_set();
+  void action_globals_unset();
 };
 
-} /* namespace librevault */
+}  // namespace librevault

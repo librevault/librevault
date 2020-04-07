@@ -28,9 +28,10 @@
  */
 #pragma once
 //#include "util/fs.h"
-#include "util/log.h"
 #include <QObject>
 #include <boost/filesystem/path.hpp>
+
+#include "util/log.h"
 
 namespace librevault {
 
@@ -39,27 +40,28 @@ class MetaStorage;
 class PathNormalizer;
 
 struct ArchiveStrategy : public QObject {
-	Q_OBJECT
-public:
-	virtual void archive(QString denormpath) = 0;
+  Q_OBJECT
+ public:
+  virtual void archive(QString denormpath) = 0;
 
-protected:
-	ArchiveStrategy(QObject* parent) : QObject(parent) {}
+ protected:
+  ArchiveStrategy(QObject* parent) : QObject(parent) {}
 };
 
 class Archive : public QObject {
-	Q_OBJECT
-	LOG_SCOPE("Archive");
-public:
-	Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
+  Q_OBJECT
+  LOG_SCOPE("Archive");
 
-	bool archive(QString denormpath);
+ public:
+  Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
-private:
-	MetaStorage* meta_storage_;
-	PathNormalizer* path_normalizer_;
+  bool archive(QString denormpath);
 
-	ArchiveStrategy* archive_strategy_;
+ private:
+  MetaStorage* meta_storage_;
+  PathNormalizer* path_normalizer_;
+
+  ArchiveStrategy* archive_strategy_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

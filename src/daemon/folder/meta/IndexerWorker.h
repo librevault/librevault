@@ -27,13 +27,14 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "util/blob.h"
-#include "SignedMeta.h"
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
 #include <QString>
 #include <map>
+
+#include "SignedMeta.h"
+#include "util/blob.h"
 
 namespace librevault {
 
@@ -42,47 +43,48 @@ class MetaStorage;
 class IgnoreList;
 class PathNormalizer;
 class IndexerWorker : public QObject, public QRunnable {
-	Q_OBJECT
-signals:
-	void metaCreated(SignedMeta smeta);
-	void metaFailed(QString errorString);
+  Q_OBJECT
+ signals:
+  void metaCreated(SignedMeta smeta);
+  void metaFailed(QString errorString);
 
-public:
-	struct abort_index : public std::runtime_error {
-		abort_index(QString what) : std::runtime_error(what.toStdString()) {}
-	};
+ public:
+  struct abort_index : public std::runtime_error {
+    abort_index(QString what) : std::runtime_error(what.toStdString()) {}
+  };
 
-	IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent);
-	virtual ~IndexerWorker();
+  IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list,
+                PathNormalizer* path_normalizer, QObject* parent);
+  virtual ~IndexerWorker();
 
-	QString absolutePath() const {return abspath_;}
+  QString absolutePath() const { return abspath_; }
 
-public slots:
-	void run() noexcept override;
-	void stop() {active_ = false;};
+ public slots:
+  void run() noexcept override;
+  void stop() { active_ = false; };
 
-private:
-	QString abspath_;
-	const FolderParams& params_;
-	MetaStorage* meta_storage_;
-	IgnoreList* ignore_list_;
-	PathNormalizer* path_normalizer_;
+ private:
+  QString abspath_;
+  const FolderParams& params_;
+  MetaStorage* meta_storage_;
+  IgnoreList* ignore_list_;
+  PathNormalizer* path_normalizer_;
 
-	const Secret& secret_;
+  const Secret& secret_;
 
-	Meta old_meta_, new_meta_;
-	SignedMeta old_smeta_, new_smeta_;
+  Meta old_meta_, new_meta_;
+  SignedMeta old_smeta_, new_smeta_;
 
-	/* Status */
-	std::atomic<bool> active_;
+  /* Status */
+  std::atomic<bool> active_;
 
-	void make_Meta();
+  void make_Meta();
 
-	/* File analyzers */
-	Meta::Type get_type();
-	void update_fsattrib();
-	void update_chunks();
-	Meta::Chunk populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+  /* File analyzers */
+  Meta::Type get_type();
+  void update_fsattrib();
+  void update_chunks();
+  Meta::Chunk populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

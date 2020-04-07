@@ -21,7 +21,7 @@
 namespace librevault {
 
 inline QByteArray derive_token(const Secret& secret, const QByteArray& cert_digest) {
-	return crypto::HMAC_SHA3_224(secret.get_Public_Key()).compute(cert_digest);
+  return crypto::HMAC_SHA3_224(secret.get_Public_Key()).compute(cert_digest);
 }
 
-} /* namespace librevault */
+}  // namespace librevault

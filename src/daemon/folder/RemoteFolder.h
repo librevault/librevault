@@ -109,4 +109,4 @@ class RemoteFolder : public QObject {
   std::weak_ptr<InterestGuard> interest_guard_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

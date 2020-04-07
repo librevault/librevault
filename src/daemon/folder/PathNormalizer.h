@@ -34,14 +34,14 @@ namespace librevault {
 class FolderParams;
 
 class PathNormalizer {
-public:
-	PathNormalizer(const FolderParams& params);
+ public:
+  PathNormalizer(const FolderParams& params);
 
-	QByteArray normalizePath(QString abspath);
-	QString denormalizePath(QByteArray normpath);
+  QByteArray normalizePath(QString abspath);
+  QString denormalizePath(QByteArray normpath);
 
-private:
-	const FolderParams& params_;
+ private:
+  const FolderParams& params_;
 };
 
-} /* namespace librevault */
+}  // namespace librevault

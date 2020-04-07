@@ -122,4 +122,4 @@ class Downloader : public QObject {
   QSet<QByteArray> getMetaCluster(const QList<QByteArray>& ct_hashes);
 };
 
-} /* namespace librevault */
+}  // namespace librevault

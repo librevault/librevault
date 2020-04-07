@@ -202,6 +202,7 @@ set(Qt_COMPONENTS
 		LinguistTools
 #		Sql
 		Svg
+		Xml
 		Widgets
 		WebSockets
 		)

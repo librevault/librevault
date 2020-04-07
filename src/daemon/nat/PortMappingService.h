@@ -53,7 +53,7 @@ class PortMappingService : public QObject {
   PortMappingService(QObject* parent);
   virtual ~PortMappingService();
 
-  void map(QString id, MappingDescriptor descriptor, QString description);
+  void map(const QString& id, MappingDescriptor descriptor, const QString& description);
   void unmap(const QString& id);
   uint16_t mapped_port(const QString& id);
 

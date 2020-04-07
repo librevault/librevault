@@ -28,16 +28,15 @@
  */
 #pragma once
 #include <QLoggingCategory>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QUdpSocket>
+#include <QtXml/QDomDocument>
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <boost/noncopyable.hpp>
 #include <mutex>
 
 #include "PortMappingSubService.h"
-
-struct UPNPUrls;
-struct IGDdatas;
-struct UPNPDev;
 
 Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
@@ -46,6 +45,7 @@ namespace librevault {
 class UPnPMapping;
 
 class UPnPService : public PortMappingSubService {
+  Q_OBJECT
  public:
   UPnPService(PortMappingService& parent);
   ~UPnPService();
@@ -60,12 +60,18 @@ class UPnPService : public PortMappingSubService {
   friend class UPnPMapping;
   std::map<QString, std::shared_ptr<UPnPMapping>> mappings_;
 
-  // Config values
-  std::unique_ptr<UPNPUrls> upnp_urls;
-  std::unique_ptr<IGDdatas> upnp_data;
-  std::array<char, 16> lanaddr;
+  QUdpSocket* socket_;
+  QNetworkAccessManager* nam_;
+  QHash<QHostAddress, QHash<QString, QList<QUrl>>> igd_;
 
   bool is_config_enabled();
+
+  void sendSearchPacket();
+  void handleDatagram();
+  Q_SIGNAL void foundIgd(const QHostAddress& addr, const QUrl& url);
+  void handleIgd(const QHostAddress& addr, const QUrl& url);
+
+  void sendMapRequest(MappingDescriptor descriptor, const QString& description);
 };
 
 class UPnPMapping {

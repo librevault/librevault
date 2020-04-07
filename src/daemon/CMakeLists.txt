@@ -67,6 +67,7 @@ target_link_libraries(librevault-daemon PUBLIC dht)
 target_link_libraries(librevault-daemon PUBLIC boost)
 
 ## Qt5
+target_link_libraries(librevault-daemon PUBLIC Qt5::Xml)
 target_link_libraries(librevault-daemon PUBLIC Qt5::WebSockets)
 
 ## Protobuf

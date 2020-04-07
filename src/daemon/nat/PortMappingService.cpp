@@ -58,7 +58,7 @@ PortMappingService::~PortMappingService() {
   mappings_.clear();
 }
 
-void PortMappingService::map(QString id, MappingDescriptor descriptor, QString description) {
+void PortMappingService::map(const QString& id, MappingDescriptor descriptor, const QString& description) {
   Mapping m;
   m.descriptor = descriptor;
   m.description = description;

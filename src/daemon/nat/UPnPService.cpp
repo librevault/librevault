@@ -28,10 +28,10 @@
  */
 #include "UPnPService.h"
 
-#include <miniupnpc/miniupnpc.h>
-#include <miniupnpc/upnpcommands.h>
-
 #include <QTimer>
+#include <QUrl>
+#include <QtNetwork/QNetworkDatagram>
+#include <QtNetwork/QNetworkReply>
 #include <utility>
 
 #include "control/Config.h"
@@ -41,69 +41,128 @@ Q_LOGGING_CATEGORY(log_upnp, "upnp")
 
 namespace librevault {
 
-const char* get_literal_protocol(int protocol) { return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP"; }
+// static const QString IGD_IFACE_CIF = QStringLiteral("urn:schemas-upnp-org:service:WANCommonInterfaceConfig:");
+static const QString IGD_IFACE_IP = QStringLiteral("urn:schemas-upnp-org:service:WANIPConnection:");
+// static const QString IGD_IFACE_IPV6 = QStringLiteral("urn:schemas-upnp-org:service:WANIPv6FirewallControl:");
+static const QString IGD_IFACE_PPP = QStringLiteral("urn:schemas-upnp-org:service:WANPPPConnection:");
 
-UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) {}
+// static const QStringList IGD_IFACE_URN = {
+//    IGD_IFACE_IP, IGD_IFACE_PPP
+//};
+
+const char* get_literal_protocol(int protocol) { return protocol == QAbstractSocket::TcpSocket ? "TCP" : "UDP"; }
+QByteArray makeSoapHeader(const QString& service_type, const QString& method = "AddPortMapping") {
+  return QString("\"%1#%2\"").arg(service_type, method).toUtf8();
+}
+
+UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) {
+  socket_ = new QUdpSocket(this);
+  nam_ = new QNetworkAccessManager(this);
+
+  connect(socket_, &QUdpSocket::readyRead, this, &UPnPService::handleDatagram);
+  connect(this, &UPnPService::foundIgd, this, &UPnPService::handleIgd);
+}
 UPnPService::~UPnPService() { stop(); }
 
 bool UPnPService::is_config_enabled() { return Config::get()->getGlobal("upnp_enabled").toBool(); }
 
 void UPnPService::start() {
-  upnp_urls = std::make_unique<UPNPUrls>();
-  upnp_data = std::make_unique<IGDdatas>();
-
   if (!is_config_enabled()) return;
+  socket_->bind();
 
-  /* Discovering IGD */
-  int error = UPNPDISCOVER_SUCCESS;
-  std::unique_ptr<UPNPDev, decltype(&freeUPNPDevlist)> devlist(upnpDiscover(2000, nullptr, nullptr, 0, 0, 2, &error),
-                                                               &freeUPNPDevlist);
-  if (error != UPNPDISCOVER_SUCCESS) throw std::runtime_error(strerror(errno));
-
-  if (!UPNP_GetValidIGD(devlist.get(), upnp_urls.get(), upnp_data.get(), lanaddr.data(), lanaddr.size())) {
-    qCDebug(log_upnp) << "IGD not found. e: " << strerror(errno);
-    return;
-  }
-
-  qCDebug(log_upnp) << "Found IGD: " << upnp_urls->controlURL;
+  sendSearchPacket();
 
   add_existing();
 }
 
-void UPnPService::stop() {
-  mappings_.clear();
-
-  FreeUPNPUrls(upnp_urls.get());
-  upnp_urls.reset();
-  upnp_data.reset();
+void UPnPService::sendSearchPacket() {
+  const auto IGD_SEARCH = QByteArrayLiteral(
+      "M-SEARCH * HTTP/1.1\r\n"
+      "HOST: 239.255.255.250:1900\r\n"
+      "ST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n"
+      "MAN: \"ssdp:discover\"\r\n"
+      "MX: 2\r\n\r\n");
+  socket_->writeDatagram(IGD_SEARCH, QHostAddress("239.255.255.250"), 1900);
 }
+
+void UPnPService::handleDatagram() {
+  while (socket_->hasPendingDatagrams()) {
+    QNetworkDatagram datagram = socket_->receiveDatagram();
+    for (const auto& line : QString::fromUtf8(datagram.data()).split("\r\n")) {
+      auto kv = line.split(": ");
+      if (kv.first().toLower() == "location") emit foundIgd(QHostAddress(datagram.senderAddress()), QUrl(kv.last()));
+    }
+  }
+}
+
+void UPnPService::handleIgd(const QHostAddress& addr, const QUrl& url) {
+  qCDebug(log_upnp) << "Found IGD:" << url;
+  auto reply = nam_->get(QNetworkRequest(url));
+  connect(reply, &QNetworkReply::finished, this, [=, this] {
+    QDomDocument metadata;
+    metadata.setContent(reply->readAll());
+
+    QString url_base = metadata.elementsByTagName("URLBase").at(0).toElement().text();
+
+    auto services = metadata.elementsByTagName("service");
+    for (int i = 0; i < services.size(); i++) {
+      auto service_type = services.at(i).firstChildElement("serviceType").text();
+      auto control_url = services.at(i).firstChildElement("controlURL").text();
+
+      if (service_type.startsWith(IGD_IFACE_IP) || service_type.startsWith(IGD_IFACE_PPP))
+        igd_[addr][service_type].append(QUrl(url_base + control_url));
+    }
+    reply->deleteLater();
+    qCDebug(log_upnp) << "Found IGD services:" << igd_;
+    add_existing();
+  });
+}
+
+void UPnPService::sendMapRequest(MappingDescriptor descriptor, const QString& description) {}
+
+void UPnPService::stop() {}
 
 void UPnPService::map(const QString& id, MappingDescriptor descriptor, const QString& description) {
   mappings_.erase(id);
   mappings_[id] = std::make_shared<UPnPMapping>(*this, id, descriptor, description);
+
+  for (const auto& igd_device : igd_.values()) {
+    for (const auto& igd_servicetype : igd_device.keys()) {
+      QString IGD_SOAP =
+          "<?xml version=\"1.0\"?>\r\n"
+          "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+          "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:AddPortMapping "
+          "xmlns:u=\"" +
+          igd_servicetype +
+          "\"><NewRemoteHost></"
+          "NewRemoteHost><NewExternalPort>" +
+          QString::number(descriptor.port) + "</NewExternalPort><NewProtocol>" +
+          get_literal_protocol(descriptor.protocol) + "</NewProtocol><NewInternalPort>" +
+          QString::number(descriptor.port) +
+          "</"
+          "NewInternalPort><NewInternalClient>172.18.0.100</NewInternalClient><NewEnabled>1</"
+          "NewEnabled><NewPortMappingDescription>" +
+          description +
+          "</NewPortMappingDescription><NewLeaseDuration>0</NewLeaseDuration></u:AddPortMapping></s:Body></"
+          "s:Envelope>\r\n";
+      for (const auto& igd_url : igd_device[igd_servicetype]) {
+        QNetworkRequest request(igd_url);
+        request.setRawHeader("SOAPAction", makeSoapHeader(igd_servicetype, "AddPortMapping"));
+        request.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "text/xml");
+
+        auto reply = nam_->post(request, IGD_SOAP.toUtf8());
+        connect(reply, &QNetworkReply::finished, this,
+                [=, this] { qCDebug(log_upnp) << "Shit happened:" << reply->readAll(); });
+      }
+    }
+  }
 }
 
 void UPnPService::unmap(const QString& id) { mappings_.erase(id); }
 
 UPnPMapping::UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor, const QString& description)
-    : parent_(parent), id_(std::move(id)), descriptor_(descriptor) {
-  int err = UPNP_AddPortMapping(parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
-                                std::to_string(descriptor.port).c_str(), std::to_string(descriptor.port).c_str(),
-                                parent_.lanaddr.data(), description.toStdString().data(),
-                                get_literal_protocol(descriptor.protocol), nullptr, nullptr);
-  if (!err)
-    parent_.portMapped(id_, descriptor.port);
-  else
-    qCDebug(log_upnp) << "UPnP port forwarding failed: Error " << err;
-}
+    : parent_(parent), id_(std::move(id)), descriptor_(descriptor) {}
 
-UPnPMapping::~UPnPMapping() {
-  auto err = UPNP_DeletePortMapping(parent_.upnp_urls->controlURL, parent_.upnp_data->first.servicetype,
-                                    std::to_string(descriptor_.port).c_str(),
-                                    get_literal_protocol(descriptor_.protocol), nullptr);
-  if (err)
-    qCDebug(log_upnp) << get_literal_protocol(descriptor_.protocol) << " port " << descriptor_.port
-                      << " de-forwarding failed: Error " << err;
-}
+UPnPMapping::~UPnPMapping() {}
 
 }  // namespace librevault

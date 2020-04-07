@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "updater/Updater.h"
-#include <QtSingleApplication>
 #include <QApplication>
 #include <QTranslator>
+#include <QtSingleApplication>
+
+#include "updater/Updater.h"
 
 class MainWindow;
 class Settings;
@@ -41,29 +42,29 @@ class RemoteConfig;
 class Translator;
 
 class Client : public QtSingleApplication {
-Q_OBJECT
+  Q_OBJECT
 
-public:
-	Client(int &argc, char **argv, int appflags = ApplicationFlags);
-	~Client();
-	
-	bool event(QEvent* event);
+ public:
+  Client(int& argc, char** argv, int appflags = ApplicationFlags);
+  ~Client();
 
-private:
-	Translator* translator_;
-	Daemon* daemon_;
-	FolderModel* folder_model_;
+  bool event(QEvent* event);
 
-	Updater* updater_;
+ private:
+  Translator* translator_;
+  Daemon* daemon_;
+  FolderModel* folder_model_;
 
-	// GUI
-	MainWindow* main_window_;
+  Updater* updater_;
 
-	QString pending_link_;
+  // GUI
+  MainWindow* main_window_;
 
-	bool allow_multiple;
+  QString pending_link_;
 
-private slots:
-	void started();
-	void singleMessageReceived(const QString &message);
+  bool allow_multiple;
+
+ private slots:
+  void started();
+  void singleMessageReceived(const QString& message);
 };

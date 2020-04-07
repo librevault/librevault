@@ -27,10 +27,11 @@
  * files in the program, then also delete it here.
  */
 #pragma once
-#include "discovery/DiscoveryResult.h"
 #include <QObject>
 #include <QSet>
 #include <QWebSocketServer>
+
+#include "discovery/DiscoveryResult.h"
 
 namespace librevault {
 
@@ -40,35 +41,32 @@ class NodeKey;
 class P2PFolder;
 class PortMappingService;
 class P2PProvider : public QObject {
-	Q_OBJECT
-public:
-	P2PProvider(NodeKey* node_key,
-	            PortMappingService* port_mapping,
-	            FolderService* folder_service,
-	            QObject* parent);
-	virtual ~P2PProvider();
+  Q_OBJECT
+ public:
+  P2PProvider(NodeKey* node_key, PortMappingService* port_mapping, FolderService* folder_service, QObject* parent);
+  virtual ~P2PProvider();
 
-	QSslConfiguration getSslConfiguration() const;
+  QSslConfiguration getSslConfiguration() const;
 
-	/* Loopback detection */
-	bool isLoopback(QByteArray digest);
+  /* Loopback detection */
+  bool isLoopback(QByteArray digest);
 
-public slots:
-	void handleDiscovered(QByteArray folderid, DiscoveryResult result);
+ public slots:
+  void handleDiscovered(QByteArray folderid, DiscoveryResult result);
 
-private:
-	NodeKey* node_key_;
-	PortMappingService* port_mapping_;
-	FolderService* folder_service_;
+ private:
+  NodeKey* node_key_;
+  PortMappingService* port_mapping_;
+  FolderService* folder_service_;
 
-	QWebSocketServer* server_;
+  QWebSocketServer* server_;
 
-private slots:
-	void handleConnection();
-	void handlePeerVerifyError(const QSslError& error);
-	void handleServerError(QWebSocketProtocol::CloseCode closeCode);
-	void handleSslErrors(const QList<QSslError>& errors);
-	void handleAcceptError(QAbstractSocket::SocketError socketError);
+ private slots:
+  void handleConnection();
+  void handlePeerVerifyError(const QSslError& error);
+  void handleServerError(QWebSocketProtocol::CloseCode closeCode);
+  void handleSslErrors(const QList<QSslError>& errors);
+  void handleAcceptError(QAbstractSocket::SocketError socketError);
 };
 
 } /* namespace librevault */

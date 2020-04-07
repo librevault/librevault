@@ -45,7 +45,7 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
     : RemoteFolder(fgroup), role_(role), provider_(provider), node_key_(node_key), socket_(socket), fgroup_(fgroup) {
   LOGFUNC();
 
-  socket->setParent(this);
+  socket_->setParent(this);
   this->setParent(fgroup_);
 
   // Set up timers
@@ -53,7 +53,7 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
   timeout_timer_ = new QTimer(this);
 
   // Connect signals
-  connect(ping_timer_, &QTimer::timeout, this, [this] { socket_->ping(); });
+  connect(ping_timer_, &QTimer::timeout, socket_, [this] { socket_->ping(); });
   connect(timeout_timer_, &QTimer::timeout, this, &P2PFolder::deleteLater);
   connect(socket_, &QWebSocket::pong, this, &P2PFolder::handlePong);
   connect(socket_, &QWebSocket::binaryMessageReceived, this, &P2PFolder::handle_message);
@@ -63,12 +63,10 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
   connect(this, &RemoteFolder::handshakeFailed, this, &P2PFolder::deleteLater);
 
   // Start timers
-  ping_timer_->setInterval(20 * 1000);
-  ping_timer_->start();
+  ping_timer_->start(20 * 1000);
 
   timeout_timer_->setSingleShot(true);
-  bump_timeout();
-  timeout_timer_->start();
+  bumpTimeout();
 }
 
 P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key)
@@ -87,27 +85,18 @@ P2PFolder::~P2PFolder() {
   fgroup_->detach(this);
 }
 
-QString P2PFolder::displayName() const {
-  switch (socket_->peerAddress().protocol()) {
-    case QAbstractSocket::IPv4Protocol:
-      return QString("%1:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
-    case QAbstractSocket::IPv6Protocol:
-      return QString("[%1]:%2").arg(socket_->peerAddress().toString()).arg(socket_->peerPort());
-    default:
-      return "Unknown peer";
-  }
-}
+QString P2PFolder::displayName() const { return endpoint().toString(); }
 
 QByteArray P2PFolder::digest() const {
   return socket_->sslConfiguration().peerCertificate().digest(node_key_->digestAlgorithm());
 }
 
-QPair<QHostAddress, quint16> P2PFolder::endpoint() const { return {socket_->peerAddress(), socket_->peerPort()}; }
+Endpoint P2PFolder::endpoint() const { return Endpoint(socket_->peerAddress(), socket_->peerPort()); }
 
 QJsonObject P2PFolder::collect_state() {
   QJsonObject state;
 
-  state["endpoint"] = displayName();  // FIXME: Must be host:port
+  state["endpoint"] = endpoint().toString();  // FIXME: Must be host:port
   state["client_name"] = client_name();
   state["user_agent"] = user_agent();
   state["traffic_stats"] = counter_.heartbeat_json();
@@ -240,7 +229,7 @@ void P2PFolder::handle_message(const QByteArray& message) {
   counter_.add_down(message_raw.size());
   fgroup_->bandwidth_counter().add_down(message_raw.size());
 
-  bump_timeout();
+  bumpTimeout();
 
   if (ready()) {
     switch (message_type) {
@@ -405,10 +394,10 @@ void P2PFolder::handle_BlockReply(const blob& message_raw) {
   emit rcvdBlockReply(message_struct.ct_hash, message_struct.offset, message_struct.content);
 }
 
-void P2PFolder::bump_timeout() { timeout_timer_->setInterval(120 * 1000); }
+void P2PFolder::bumpTimeout() { timeout_timer_->start(120 * 1000); }
 
 void P2PFolder::handlePong(quint64 rtt) {
-  bump_timeout();
+  bumpTimeout();
   rtt_ = std::chrono::milliseconds(rtt);
 }
 

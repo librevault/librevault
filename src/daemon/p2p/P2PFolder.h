@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/Endpoint.h>
+
 #include <QTimer>
 #include <QWebSocket>
 #include <chrono>
@@ -63,7 +65,7 @@ class P2PFolder : public RemoteFolder {
   /* Getters */
   QString displayName() const;
   QByteArray digest() const;
-  QPair<QHostAddress, quint16> endpoint() const;
+  Endpoint endpoint() const;
   QString client_name() const { return client_name_; }
   QString user_agent() const { return user_agent_; }
   QJsonObject collect_state();
@@ -119,7 +121,7 @@ class P2PFolder : public RemoteFolder {
   blob local_token();
   blob remote_token();
 
-  void bump_timeout();
+  void bumpTimeout();
 
   std::chrono::milliseconds rtt_ = std::chrono::milliseconds(0);
 

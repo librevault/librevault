@@ -26,8 +26,8 @@ namespace crypto {
  */
 class HMAC_SHA3_224 : public OneWayTransformer {
   const QByteArray key_;
+
  public:
-  HMAC_SHA3_224(const blob& key) : key_(conv_bytearray(key)) {}
   HMAC_SHA3_224(const QByteArray& key) : key_(std::move(key)) {}
   virtual ~HMAC_SHA3_224() {}
 

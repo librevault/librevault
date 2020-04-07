@@ -27,6 +27,8 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <util/Endpoint.h>
+
 #include <QHostAddress>
 #include <QObject>
 #include <QSet>
@@ -110,7 +112,7 @@ class FolderGroup : public QObject {
 
   // Member lookup optimization
   QSet<QByteArray> p2p_folders_digests_;
-  QSet<QPair<QHostAddress, quint16>> p2p_folders_endpoints_;
+  QSet<Endpoint> p2p_folders_endpoints_;
 
  private slots:
   void push_state();

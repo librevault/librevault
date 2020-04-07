@@ -120,9 +120,8 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 
   connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=, this] { downloader_->handleChoke(origin); });
   connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=, this] { downloader_->handleUnchoke(origin); });
-  connect(origin, &RemoteFolder::rcvdInterested, downloader_, [=, this] { uploader_->handle_interested(origin); });
-  connect(origin, &RemoteFolder::rcvdNotInterested, downloader_,
-          [=, this] { uploader_->handle_not_interested(origin); });
+  connect(origin, &RemoteFolder::rcvdInterested, uploader_, [=, this] { uploader_->handle_interested(origin); });
+  connect(origin, &RemoteFolder::rcvdNotInterested, uploader_, [=, this] { uploader_->handle_not_interested(origin); });
 
   connect(origin, &RemoteFolder::rcvdHaveMeta, meta_downloader_,
           [=, this](Meta::PathRevision revision, bitfield_type bitfield) {
@@ -150,9 +149,8 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
 
 bool FolderGroup::attach(P2PFolder* remote) {
   if (remotes_.contains(remote) || p2p_folders_digests_.contains(remote->digest()) ||
-      p2p_folders_endpoints_.contains(remote->endpoint())) {
+      p2p_folders_endpoints_.contains(remote->endpoint()))
     return false;
-  }
 
   remotes_.insert(remote);
   p2p_folders_endpoints_.insert(remote->endpoint());

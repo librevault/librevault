@@ -38,9 +38,7 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(paren
 }
 
 void Uploader::broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash) {
-  for (auto& remote : remotes) {
-    remote->post_have_chunk(ct_hash);
-  }
+  for (auto& remote : remotes) remote->post_have_chunk(ct_hash);
 }
 
 void Uploader::handle_interested(RemoteFolder* remote) {

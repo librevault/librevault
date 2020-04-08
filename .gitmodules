@@ -14,7 +14,3 @@
 	path = contrib/dht
 	url = https://github.com/Librevault/dht.git
 	branch = master
-[submodule "contrib/miniupnp"]
-	path = contrib/miniupnp
-	url = https://github.com/Librevault/miniupnp.git
-	branch = master

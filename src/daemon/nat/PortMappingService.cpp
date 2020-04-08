@@ -46,7 +46,7 @@ PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
   connect(natpmp_, &NATPMPService::portMapped, this, &PortMappingService::portCallback);
   connect(upnp_, &UPnPService::portMapped, this, &PortMappingService::portCallback);
 
-  natpmp_->start();
+  if (Config::get()->getGlobal("natpmp_enabled").toBool()) natpmp_->start();
   if (Config::get()->getGlobal("upnp_enabled").toBool()) upnp_->start();
 }
 

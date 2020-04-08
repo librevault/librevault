@@ -28,9 +28,8 @@
  */
 #include "NATPMPService.h"
 
+#include <control/Config.h>
 #include <util/log.h>
-
-#include "control/Config.h"
 
 Q_LOGGING_CATEGORY(log_natpmp, "natpmp")
 
@@ -39,15 +38,13 @@ namespace librevault {
 NATPMPService::NATPMPService(PortMappingService &parent) : PortMappingSubService(parent) {}
 NATPMPService::~NATPMPService() { stop(); }
 
-bool NATPMPService::is_config_enabled() { return Config::get()->getGlobal("natpmp_enabled").toBool(); }
-
 void NATPMPService::start() {
-  if (!is_config_enabled()) return;
-
   int natpmp_ec = initnatpmp(&natpmp, 0, 0);
   qCDebug(log_natpmp) << "initnatpmp() = " << natpmp_ec;
 
-  if (natpmp_ec == 0) add_existing();
+  if (natpmp_ec == 0)
+    for (const auto &request : requests_.values())
+      mappings_[request.id] = std::make_unique<NATPMPMapping>(*this, request);
 }
 
 void NATPMPService::stop() {
@@ -56,14 +53,17 @@ void NATPMPService::stop() {
 }
 
 void NATPMPService::map(const MappingRequest &request) {
-  mappings_[request.id] = std::make_unique<NATPMPMapping>(*this, request.id, request);
+  requests_[request.id] = request;
+  if (active_) mappings_[request.id] = std::make_unique<NATPMPMapping>(*this, request);
 }
 
-void NATPMPService::unmap(const QString &id) { mappings_.erase(id); }
+void NATPMPService::unmap(const QString &id) {
+  mappings_.erase(id);
+  requests_.remove(id);
+}
 
 /* NATPMPMapping */
-NATPMPMapping::NATPMPMapping(NATPMPService &parent, QString id, MappingRequest descriptor)
-    : parent_(parent), id_(id), descriptor_(descriptor) {
+NATPMPMapping::NATPMPMapping(NATPMPService &parent, MappingRequest request) : parent_(parent), request_(request) {
   timer_ = new QTimer(this);
   timer_->setTimerType(Qt::VeryCoarseTimer);
 
@@ -74,8 +74,8 @@ NATPMPMapping::~NATPMPMapping() { sendZeroRequest(); }
 
 void NATPMPMapping::sendPeriodicRequest() {
   int natpmp_ec = sendnewportmappingrequest(
-      &parent_.natpmp, descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
-      descriptor_.port, descriptor_.port, Config::get()->getGlobal("natpmp_lifetime").toUInt());
+      &parent_.natpmp, request_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+      request_.port, request_.port, Config::get()->getGlobal("natpmp_lifetime").toUInt());
   qCDebug(log_natpmp) << "sendnewportmappingrequest() = " << natpmp_ec;
 
   natpmpresp_t natpmp_resp;
@@ -86,7 +86,7 @@ void NATPMPMapping::sendPeriodicRequest() {
 
   int next_request_sec;
   if (natpmp_ec >= 0) {
-    parent_.portMapped({id_, natpmp_resp.pnu.newportmapping.mappedpublicport});
+    parent_.portMapped({request_.id, natpmp_resp.pnu.newportmapping.mappedpublicport});
     next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
   } else {
     qCDebug(log_natpmp) << "Could not set up port mapping";
@@ -98,8 +98,8 @@ void NATPMPMapping::sendPeriodicRequest() {
 
 void NATPMPMapping::sendZeroRequest() {
   int natpmp_ec = sendnewportmappingrequest(
-      &parent_.natpmp, descriptor_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
-      descriptor_.port, descriptor_.port, 0);
+      &parent_.natpmp, request_.protocol == QAbstractSocket::TcpSocket ? NATPMP_PROTOCOL_TCP : NATPMP_PROTOCOL_UDP,
+      request_.port, request_.port, 0);
   qCDebug(log_natpmp) << "sendnewportmappingrequest() = " << natpmp_ec;
 }
 

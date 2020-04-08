@@ -35,7 +35,6 @@
 #include <QtNetwork/QNetworkReply>
 #include <utility>
 
-#include "control/Config.h"
 #include "nat/upnp/Igd.h"
 #include "util/log.h"
 

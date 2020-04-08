@@ -40,9 +40,16 @@ class NATPMPService;
 class UPnPService;
 class PortMappingSubService;
 
-struct MappingDescriptor {
-  uint16_t port;
+struct MappingRequest {
+  QString id;
+  uint16_t port = 0;
   QAbstractSocket::SocketType protocol;
+  QString description;
+};
+
+struct MappingResult {
+  QString id;
+  uint16_t external_port = 0;
 };
 
 class PortMappingService : public QObject {
@@ -53,22 +60,22 @@ class PortMappingService : public QObject {
   PortMappingService(QObject* parent);
   virtual ~PortMappingService();
 
-  void map(const QString& id, MappingDescriptor descriptor, const QString& description);
+  void map(const MappingRequest& request);
   void unmap(const QString& id);
-  uint16_t mapped_port(const QString& id);
+  uint16_t mappedPort(const QString& id);
 
  private:
   struct Mapping {
-    MappingDescriptor descriptor;
-    QString description;
-    uint16_t port;
+    MappingRequest request;
+    MappingResult result;
   };
-  std::map<QString, Mapping> mappings_;
+  QHash<QString, Mapping> mappings_;
 
   NATPMPService* natpmp_;
   UPnPService* upnp_;
 
   void add_existing_mappings(PortMappingSubService* subservice);
+  void portCallback(const MappingResult& result);
 };
 
 }  // namespace librevault

@@ -59,7 +59,7 @@ P2PProvider::P2PProvider(NodeKey* node_key, PortMappingService* port_mapping, Fo
   else
     qCWarning(log_p2p) << "Librevault failed to bind on port:" << server_->serverPort()
                        << "E:" << server_->errorString();
-  port_mapping_->map("main", {server_->serverPort(), QAbstractSocket::TcpSocket}, "Librevault");
+  port_mapping_->map({"main", server_->serverPort(), QAbstractSocket::TcpSocket, "Librevault"});
 }
 
 P2PProvider::~P2PProvider() { port_mapping_->unmap("main"); }

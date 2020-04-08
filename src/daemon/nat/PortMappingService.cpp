@@ -28,6 +28,8 @@
  */
 #include "PortMappingService.h"
 
+#include <control/Config.h>
+
 #include "NATPMPService.h"
 #include "UPnPService.h"
 #include "util/log.h"
@@ -41,16 +43,11 @@ PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
   natpmp_ = new NATPMPService(*this);
   upnp_ = new UPnPService(*this);
 
-  auto port_callback = [this](QString id, uint16_t port) {
-    qCDebug(log_portmapping) << "Port" << id << "mapped:" << mappings_[id].descriptor.port << "->" << port;
-    mappings_[id].port = port;
-  };
-
-  connect(natpmp_, &NATPMPService::portMapped, port_callback);
-  connect(upnp_, &UPnPService::portMapped, port_callback);
+  connect(natpmp_, &NATPMPService::portMapped, this, &PortMappingService::portCallback);
+  connect(upnp_, &UPnPService::portMapped, this, &PortMappingService::portCallback);
 
   natpmp_->start();
-  upnp_->start();
+  if (Config::get()->getGlobal("upnp_enabled").toBool()) upnp_->start();
 }
 
 PortMappingService::~PortMappingService() {
@@ -58,34 +55,35 @@ PortMappingService::~PortMappingService() {
   mappings_.clear();
 }
 
-void PortMappingService::map(const QString& id, MappingDescriptor descriptor, const QString& description) {
+void PortMappingService::map(const MappingRequest& request) {
   Mapping m;
-  m.descriptor = descriptor;
-  m.description = description;
-  m.port = descriptor.port;
-  mappings_[id] = std::move(m);
+  m.request = request;
+  mappings_[request.id] = std::move(m);
 
-  natpmp_->map(id, descriptor, description);
-  upnp_->map(id, descriptor, description);
+  natpmp_->map(request);
+  upnp_->map(request);
 }
 
 void PortMappingService::unmap(const QString& id) {
   upnp_->unmap(id);
   natpmp_->unmap(id);
 
-  mappings_.erase(id);
+  mappings_.remove(id);
 }
 
-uint16_t PortMappingService::mapped_port(const QString& id) {
-  auto it = mappings_.find(id);
-  if (it != mappings_.end())
-    return it->second.port;
-  else
-    return 0;
+uint16_t PortMappingService::mappedPort(const QString& id) {
+  if (mappings_.contains(id)) return mappings_[id].result.external_port;
+  return 0;
 }
 
 void PortMappingService::add_existing_mappings(PortMappingSubService* subservice) {
-  for (auto& mapping : mappings_) subservice->map(mapping.first, mapping.second.descriptor, mapping.second.description);
+  for (auto& mapping : mappings_.values()) subservice->map(mapping.request);
+}
+
+void PortMappingService::portCallback(const MappingResult& result) {
+  mappings_[result.id].result = result;
+  qCDebug(log_portmapping) << "Port" << result.id << "mapped:" << mappings_[result.id].request.port << "->"
+                           << mappings_[result.id].result.external_port;
 }
 
 }  // namespace librevault

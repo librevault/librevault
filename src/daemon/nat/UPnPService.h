@@ -29,6 +29,7 @@
 #pragma once
 #include <QLoggingCategory>
 #include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkInterface>
 #include <QtNetwork/QUdpSocket>
 #include <QtXml/QDomDocument>
 #include <array>
@@ -37,52 +38,34 @@
 #include <mutex>
 
 #include "PortMappingSubService.h"
+#include "nat/upnp/Igd.h"
 
 Q_DECLARE_LOGGING_CATEGORY(log_upnp)
 
 namespace librevault {
 
-class UPnPMapping;
-
 class UPnPService : public PortMappingSubService {
   Q_OBJECT
  public:
-  UPnPService(PortMappingService& parent);
+  explicit UPnPService(PortMappingService& parent);
   ~UPnPService();
 
   void start();
   void stop();
 
-  void map(const QString& id, MappingDescriptor descriptor, const QString& description);
+  void map(const MappingRequest& request);
   void unmap(const QString& id);
 
  protected:
-  friend class UPnPMapping;
-  std::map<QString, std::shared_ptr<UPnPMapping>> mappings_;
+  QHash<QString, MappingRequest> mappings_;
 
   QUdpSocket* socket_;
-  QNetworkAccessManager* nam_;
-  QHash<QHostAddress, QHash<QString, QList<QUrl>>> igd_;
+  QHash<QString, upnp::Igd*> igd_;
 
-  bool is_config_enabled();
-
-  void sendSearchPacket();
+  void sendSsdpSearch();
   void handleDatagram();
-  Q_SIGNAL void foundIgd(const QHostAddress& addr, const QUrl& url);
-  void handleIgd(const QHostAddress& addr, const QUrl& url);
 
-  void sendMapRequest(MappingDescriptor descriptor, const QString& description);
-};
-
-class UPnPMapping {
- public:
-  UPnPMapping(UPnPService& parent, QString id, MappingDescriptor descriptor, const QString& description);
-  virtual ~UPnPMapping();
-
- private:
-  UPnPService& parent_;
-  QString id_;
-  MappingDescriptor descriptor_;
+  [[nodiscard]] QList<upnp::Igd*> activeIgd() const;
 };
 
 }  // namespace librevault

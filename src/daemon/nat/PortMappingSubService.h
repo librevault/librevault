@@ -38,9 +38,9 @@ class PortMappingSubService : public QObject {
  public:
   explicit PortMappingSubService(PortMappingService &parent) : QObject(&parent), parent_(parent) {}
 
-  Q_SIGNAL void portMapped(QString, uint16_t);
+  Q_SIGNAL void portMapped(MappingResult result);
 
-  virtual void map(const QString &id, MappingDescriptor descriptor, const QString &description) = 0;
+  virtual void map(const MappingRequest &descriptor) = 0;
   virtual void unmap(const QString &id) = 0;
 
  protected:

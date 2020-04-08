@@ -74,7 +74,7 @@ void MLDHTProvider::init() {
   if (rc < 0) qCWarning(log_dht) << "Could not initialize DHT: Internal DHT error";
 
   // Map port
-  port_mapping_->map("mldht", {getPort(), QAbstractSocket::UdpSocket}, "Librevault DHT");
+  port_mapping_->map({"mldht", getPort(), QAbstractSocket::UdpSocket, "Librevault DHT"});
 
   // Init routers
   for (const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
@@ -167,7 +167,7 @@ int MLDHTProvider::node_count() const {
 
 quint16 MLDHTProvider::getPort() { return (quint16)Config::get()->getGlobal("mainline_dht_port").toUInt(); }
 
-quint16 MLDHTProvider::getExternalPort() { return port_mapping_->mapped_port("main"); }
+quint16 MLDHTProvider::getExternalPort() { return port_mapping_->mappedPort("main"); }
 
 void MLDHTProvider::addNode(const Endpoint& endpoint) {
   if (endpoint.addr.isNull()) return;

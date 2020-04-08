@@ -55,16 +55,17 @@ void NATPMPService::stop() {
   closenatpmp(&natpmp);
 }
 
-void NATPMPService::map(const QString &id, MappingDescriptor descriptor, const QString &description) {
-  mappings_[id] = std::make_unique<NATPMPMapping>(*this, id, descriptor);
+void NATPMPService::map(const MappingRequest &request) {
+  mappings_[request.id] = std::make_unique<NATPMPMapping>(*this, request.id, request);
 }
 
 void NATPMPService::unmap(const QString &id) { mappings_.erase(id); }
 
 /* NATPMPMapping */
-NATPMPMapping::NATPMPMapping(NATPMPService &parent, QString id, MappingDescriptor descriptor)
+NATPMPMapping::NATPMPMapping(NATPMPService &parent, QString id, MappingRequest descriptor)
     : parent_(parent), id_(id), descriptor_(descriptor) {
   timer_ = new QTimer(this);
+  timer_->setTimerType(Qt::VeryCoarseTimer);
 
   QTimer::singleShot(0, this, &NATPMPMapping::sendPeriodicRequest);
 }
@@ -85,14 +86,14 @@ void NATPMPMapping::sendPeriodicRequest() {
 
   int next_request_sec;
   if (natpmp_ec >= 0) {
-    parent_.portMapped(id_, natpmp_resp.pnu.newportmapping.mappedpublicport);
+    parent_.portMapped({id_, natpmp_resp.pnu.newportmapping.mappedpublicport});
     next_request_sec = natpmp_resp.pnu.newportmapping.lifetime;
   } else {
     qCDebug(log_natpmp) << "Could not set up port mapping";
     next_request_sec = Config::get()->getGlobal("natpmp_lifetime").toUInt();
   }
 
-  timer_->setInterval(next_request_sec * 1000);
+  timer_->start(next_request_sec * 1000);
 }
 
 void NATPMPMapping::sendZeroRequest() {

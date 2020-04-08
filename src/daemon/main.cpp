@@ -31,6 +31,9 @@
 
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
+#ifdef Q_OS_UNIX
+#include <signal.h>
+#endif
 
 #include "Client.h"
 #include "Secret.h"
@@ -108,6 +111,18 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
   }
 }
 
+#ifdef Q_OS_UNIX
+static void setupUnixSignalHandler() {
+  struct sigaction sig;
+
+  sig.sa_handler = Client::unixSignalHandler;
+  sigemptyset(&sig.sa_mask);
+  sig.sa_flags |= SA_RESTART;
+
+  sigaction(SIGTERM, &sig, nullptr);
+}
+#endif
+
 int main(int argc, char** argv) {
   do {
     // Argument parsing
@@ -160,6 +175,9 @@ int main(int argc, char** argv) {
 
     // And, run!
     auto client = std::make_unique<Client>(argc, argv);
+#ifdef Q_OS_UNIX
+    setupUnixSignalHandler();
+#endif
     int ret = client->run();
     client.reset();
 

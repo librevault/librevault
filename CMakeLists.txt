@@ -28,7 +28,6 @@ option(BUILD_CLI "Build CLI" ON)
 # Parameters
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
-option(USE_BUNDLED_MINIUPNP "Force using bundled version of miniupnp" OFF)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
@@ -154,24 +153,6 @@ if(NOT libnatpmp_LIBRARIES)
 else()
 	add_library(natpmp INTERFACE)
 	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
-endif()
-
-## libminiupnpc
-add_library(libminiupnpc INTERFACE)
-
-if(NOT USE_BUNDLED_MINIUPNP)
-	find_library(libminiupnpc_LIBRARIES NAMES libminiupnpc miniupnpc)
-endif()
-
-if(libminiupnpc_LIBRARIES AND NOT USE_BUNDLED_MINIUPNP)
-	message(STATUS "Using system Miniupnp ${SQLITE3_VERSION}")
-	target_link_libraries(libminiupnpc INTERFACE ${libminiupnpc_LIBRARIES})
-else()
-	message(STATUS "Using bundled Miniupnp")
-	set(UPNPC_BUILD_SHARED FALSE)
-	add_subdirectory(contrib/miniupnp/miniupnpc)
-	target_link_libraries(libminiupnpc INTERFACE upnpc-static)
-	target_include_directories(libminiupnpc INTERFACE contrib/miniupnp)
 endif()
 
 ## rabin

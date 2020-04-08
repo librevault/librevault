@@ -69,10 +69,12 @@ IndexerQueue::~IndexerQueue() {
 void IndexerQueue::addIndexing(QString abspath) {
   if (tasks_.contains(abspath)) {
     IndexerWorker* worker = tasks_.value(abspath);
-    threadpool_->cancel(worker);
-    worker->stop();
+    if (threadpool_->tryTake(worker))
+      worker->deleteLater();
+    else
+      worker->stop();
   }
-  IndexerWorker* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
+  auto* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
   worker->setAutoDelete(false);
   connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
   connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);

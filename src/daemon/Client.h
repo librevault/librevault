@@ -31,6 +31,7 @@
 #define EXIT_RESTART 451
 
 #include <QCoreApplication>
+#include <QtCore/QSocketNotifier>
 #include <memory>
 
 namespace librevault {
@@ -54,6 +55,9 @@ class Client : public QCoreApplication {
   void restart();
   void shutdown();
 
+#ifdef Q_OS_UNIX
+  static void unixSignalHandler(int sig);
+#endif
  private:
   StateCollector* state_collector_;
   NodeKey* node_key_;
@@ -62,6 +66,13 @@ class Client : public QCoreApplication {
   FolderService* folder_service_;
   P2PProvider* p2p_provider_;
   ControlServer* control_server_;
+
+#ifdef Q_OS_UNIX
+  static int sigFd[2];
+  QSocketNotifier* snTerm;
+
+  void handleUnixSignal();
+#endif
 };
 
 }  // namespace librevault

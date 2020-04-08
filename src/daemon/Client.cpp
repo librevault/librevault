@@ -44,6 +44,12 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
   setApplicationName("Librevault");
   setOrganizationDomain("librevault.com");
 
+#ifdef Q_OS_UNIX
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigFd)) qFatal("Couldn't create TERM socketpair");
+  snTerm = new QSocketNotifier(sigFd[1], QSocketNotifier::Read, this);
+  connect(snTerm, &QSocketNotifier::activated, this, [this] { handleUnixSignal(); });
+#endif
+
   // Initializing components
   state_collector_ = new StateCollector(this);
   node_key_ = new NodeKey(this);
@@ -99,5 +105,31 @@ void Client::shutdown() {
   qInfo() << "Exiting...";
   this->exit();
 }
+
+#ifdef Q_OS_UNIX
+int Client::sigFd[2] = {};
+
+void Client::unixSignalHandler(int sig) {
+  qDebug() << "Is it handled?" << sig;
+  ::write(sigFd[0], &sig, sizeof(sig));
+}
+
+void Client::handleUnixSignal() {
+  snTerm->setEnabled(false);
+  int sig;
+  ::read(sigFd[1], &sig, sizeof(sig));
+  // qt actions below
+
+  switch (sig) {
+    case SIGTERM:
+      shutdown();
+      break;
+    default:;
+  }
+
+  // qt actions above
+  snTerm->setEnabled(true);
+}
+#endif
 
 }  // namespace librevault

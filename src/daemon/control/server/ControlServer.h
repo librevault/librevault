@@ -58,7 +58,7 @@ class ControlServer : public QObject {
 
   void run() { ios_.start(); }
 
-  bool check_origin(const std::string& origin);
+  bool check_origin(const QString& origin);
 
  signals:
   void shutdown();

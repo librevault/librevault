@@ -73,7 +73,7 @@ url::url(std::string url_str) {
   } else {
     it_host_end = std::find(it_host_begin, it_authority_end, ':');
   }
-  host.assign(it_host_begin, it_host_end);
+  host = QString::fromStdString(std::string(it_host_begin, it_host_end));
 
   // Authority->Port section
   it_port_begin = std::find(it_host_end, it_authority_end, ':');
@@ -83,27 +83,27 @@ url::url(std::string url_str) {
     port = boost::lexical_cast<uint16_t>(&*it_port_begin, std::distance(it_port_begin, it_port_end));
   }
 
-  query.assign(it_authority_end, url_str.cend());
+  query = QString::fromStdString(std::string(it_authority_end, url_str.cend()));
 }
 
 url::url(const QString& url_str) : url(url_str.toStdString()) {}
 
-url::operator std::string() const {
+url::operator QString() const {
   QString result;
   if (!scheme.empty()) result += QString::fromStdString(scheme) + "://";
   result += QString::fromStdString(userinfo);
 
-  QHostAddress addr(QString::fromStdString(host));
+  QHostAddress addr(host);
   if (is_ipv6) {
     result += QStringLiteral("[%1]").arg(addr.toString());
   } else
-    result += QString::fromStdString(host);
+    result += host;
   if (port != 0) {
     result += ":";
     result += QString::number(port);
   }
-  result += QString::fromStdString(query);
-  return result.toStdString();
+  result += query;
+  return result;
 }
 
 }  // namespace librevault

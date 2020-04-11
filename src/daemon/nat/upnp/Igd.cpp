@@ -31,6 +31,7 @@
 
 #include <QTimer>
 #include <QUrl>
+#include <QtCore/QEventLoop>
 #include <QtNetwork/QNetworkDatagram>
 #include <QtNetwork/QNetworkInterface>
 #include <QtNetwork/QNetworkReply>
@@ -147,7 +148,6 @@ QByteArray Igd::constructDeletePortMapping(const UpnpIgdService& service, const 
 </s:Envelope>
 )");
   QString message = IGD_DELETEPORTMAPPING;
-  qCDebug(log_upnp) << QNetworkInterface::allAddresses();
   return message.replace("{urn}", service.urn)
       .replace("{external_port}", QString::number(request.port))
       .replace("{protocol}", getProtocolLiteral(request.protocol))
@@ -158,14 +158,14 @@ void Igd::sendAddPortMapping(const MappingRequest& request) {
   for (const auto& service : (ip + ppp)) {
     auto reply = sendUpnpAction(service, "AddPortMapping", constructAddPortMapping(service, request));
     connect(reply, &QNetworkReply::finished, this, [=, this] { emit portMapped({request.id, request.port}); });
-    connect(reply, &QNetworkReply::finished, this, [=] { reply->deleteLater(); });
+    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
   }
 }
 
 void Igd::sendDeletePortMapping(const MappingRequest& request) {
   for (const auto& service : (ip + ppp)) {
     auto reply = sendUpnpAction(service, "DeletePortMapping", constructDeletePortMapping(service, request));
-    connect(reply, &QNetworkReply::finished, this, [=, this] { reply->deleteLater(); });
+    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
   }
 }
 

@@ -37,6 +37,11 @@
 
 Q_DECLARE_LOGGING_CATEGORY(log_dht)
 
+extern "C" {
+extern void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data,
+                                 size_t data_len);
+}
+
 namespace librevault {
 
 class PortMappingService;
@@ -47,12 +52,12 @@ class MLDHTProvider : public QObject {
   MLDHTProvider(PortMappingService* port_mapping, QObject* parent);
   virtual ~MLDHTProvider();
 
-  void pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data, size_t data_len);
+  void passCallback(void* closure, int event, const uint8_t* info_hash, const QByteArray& data);
 
-  int node_count() const;
+  [[nodiscard]] int nodeCount() const;
 
-  quint16 getPort();
-  quint16 getExternalPort();
+  [[nodiscard]] quint16 getPort();
+  [[nodiscard]] quint16 getExternalPort();
 
  signals:
   void eventReceived(int event, btcompat::info_hash ih, QByteArray values);
@@ -80,12 +85,12 @@ class MLDHTProvider : public QObject {
   void writeSessionFile();
 
   void processDatagram();
-  void periodic_request();
+  void periodicRequest();
 
   QMap<int, quint16> resolves_;
 
  private slots:
-  void handle_resolve(const QHostInfo& host);
+  void handleResolve(const QHostInfo& host);
 };
 
 }  // namespace librevault

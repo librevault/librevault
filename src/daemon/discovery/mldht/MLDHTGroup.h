@@ -43,7 +43,7 @@ class MLDHTGroup : public QObject {
   MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup);
 
   void setEnabled(bool enable);
-  void start_search(int af);
+  void startSearch(int af);
 
  signals:
   void discovered(DiscoveryResult result);

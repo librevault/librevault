@@ -35,10 +35,11 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QtNetwork/QNetworkDatagram>
+#include <boost/asio/ip/address.hpp>
 
+#include "control/Config.h"
 #include "control/Paths.h"
 #include "control/StateCollector.h"
-#include "discovery/mldht/dht_glue.h"
 #include "nat/PortMappingService.h"
 #include "util/parse_url.h"
 
@@ -56,7 +57,7 @@ MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, QObject* parent)
   periodic_->setTimerType(Qt::VeryCoarseTimer);
 
   connect(socket_, &QUdpSocket::readyRead, this, &MLDHTProvider::processDatagram);
-  connect(periodic_, &QTimer::timeout, this, &MLDHTProvider::periodic_request);
+  connect(periodic_, &QTimer::timeout, this, &MLDHTProvider::periodicRequest);
 
   init();
 }
@@ -78,8 +79,8 @@ void MLDHTProvider::init() {
 
   // Init routers
   for (const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
-    url router_url(router_value.toStdString());
-    int id = QHostInfo::lookupHost(QString::fromStdString(router_url.host), this, SLOT(handle_resolve(QHostInfo)));
+    url router_url(router_value);
+    int id = QHostInfo::lookupHost(router_url.host, this, SLOT(handleResolve(QHostInfo)));
     resolves_[id] = router_url.port;
   }
 
@@ -108,11 +109,10 @@ void MLDHTProvider::readSessionFile() {
   // Init id
   QByteArray own_id_arr =
       session_json["id"].isString() ? QByteArray::fromBase64(session_json["id"].toString().toLatin1()) : QByteArray();
-  if (own_id_arr.size() == (int)own_id.size()) {
+  if (own_id_arr.size() == (int)own_id.size())
     std::copy(own_id_arr.begin(), own_id_arr.end(), own_id.begin());
-  } else {  // Invalid data
+  else  // Invalid data
     CryptoPP::AutoSeededRandomPool().GenerateBlock(own_id.data(), own_id.size());
-  }
 
   QJsonArray nodes = session_json["nodes"].toArray();
   qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
@@ -120,7 +120,7 @@ void MLDHTProvider::readSessionFile() {
 }
 
 void MLDHTProvider::writeSessionFile() {
-  QByteArray own_id_arr((char*)own_id.data(), own_id.size());
+  QByteArray own_id_arr((const char*)own_id.data(), own_id.size());
 
   struct sockaddr_in6 sa6[300];
   struct sockaddr_in sa4[300];
@@ -149,7 +149,7 @@ void MLDHTProvider::writeSessionFile() {
     qCWarning(log_dht) << "DHT session not saved";
 }
 
-int MLDHTProvider::node_count() const {
+int MLDHTProvider::nodeCount() const {
   int good6 = 0;
   int dubious6 = 0;
   int cached6 = 0;
@@ -175,17 +175,14 @@ void MLDHTProvider::addNode(const Endpoint& endpoint) {
   dht_ping_node((const sockaddr*)&sa, size);
 }
 
-void MLDHTProvider::pass_callback(void* closure, int event, const uint8_t* info_hash, const uint8_t* data,
-                                  size_t data_len) {
+void MLDHTProvider::passCallback(void* closure, int event, const uint8_t* info_hash, const QByteArray& data) {
   qCDebug(log_dht) << BOOST_CURRENT_FUNCTION << "event:" << event;
 
   btcompat::info_hash ih;
   std::copy(info_hash, info_hash + ih.size(), ih.begin());
 
-  if (event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6)
-    emit eventReceived(event, ih, QByteArray((char*)data, data_len));
-  else if (event == DHT_EVENT_SEARCH_DONE || event == DHT_EVENT_SEARCH_DONE6)
-    emit eventReceived(event, ih, QByteArray());
+  if (event == DHT_EVENT_NONE) return;
+  emit eventReceived(event, ih, data);
 }
 
 void MLDHTProvider::processDatagram() {
@@ -195,20 +192,20 @@ void MLDHTProvider::processDatagram() {
 
   time_t tosleep;
   dht_periodic(data, data.size(), (const sockaddr*)&sa, (int)size, &tosleep, lv_dht_callback_glue, this);
-  emit nodeCountChanged(node_count());
+  emit nodeCountChanged(nodeCount());
 
   periodic_->start(tosleep * 1000);
 }
 
-void MLDHTProvider::periodic_request() {
+void MLDHTProvider::periodicRequest() {
   time_t tosleep;
   dht_periodic(nullptr, 0, nullptr, 0, &tosleep, lv_dht_callback_glue, this);
-  emit nodeCountChanged(node_count());
+  emit nodeCountChanged(nodeCount());
 
   periodic_->start(tosleep * 1000);
 }
 
-void MLDHTProvider::handle_resolve(const QHostInfo& host) {
+void MLDHTProvider::handleResolve(const QHostInfo& host) {
   if (host.error()) {
     qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
     resolves_.remove(host.lookupId());
@@ -247,6 +244,11 @@ void dht_hash(void* hash_return, int hash_size, const void* v1, int len1, const 
 int dht_random_bytes(void* buf, size_t size) {
   CryptoPP::AutoSeededRandomPool().GenerateBlock((uint8_t*)buf, size);
   return size;
+}
+
+void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
+  ((librevault::MLDHTProvider*)closure)
+      ->passCallback(closure, event, info_hash, QByteArray((const char*)data, data_len));
 }
 
 } /* extern "C" */

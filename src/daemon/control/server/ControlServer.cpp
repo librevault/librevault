@@ -129,9 +129,9 @@ void ControlServer::notify_folder_removed(QByteArray folderid) {
   control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);
 }
 
-bool ControlServer::check_origin(const std::string& origin) {
+bool ControlServer::check_origin(const QString& origin) {
   // Restrict access by "Origin" header
-  if (!origin.empty()) {
+  if (!origin.isEmpty()) {
     url origin_url(origin);
     if (origin_url.host != "127.0.0.1" && origin_url.host != "::1" && origin_url.host != "localhost") return false;
   }

@@ -126,7 +126,7 @@ std::tuple<sockaddr_storage, size_t> Endpoint::toSockaddr() const {
       sa4->sin_family = AF_INET;
       sa4->sin_port = qToBigEndian(port);
       sa4->sin_addr.s_addr = addr.toIPv4Address();
-      return std::make_tuple(sa, sizeof(sockaddr_in));
+      return {sa, sizeof(sockaddr_in)};
     }
     case QAbstractSocket::IPv6Protocol: {
       sockaddr_in6* sa6 = (sockaddr_in6*)&sa;
@@ -134,10 +134,10 @@ std::tuple<sockaddr_storage, size_t> Endpoint::toSockaddr() const {
       sa6->sin6_port = qToBigEndian(port);
       Q_IPV6ADDR addr6 = addr.toIPv6Address();
       std::copy((const char*)&addr6, (const char*)&addr6 + 16, (char*)&sa6->sin6_addr);
-      return std::make_tuple(sa, sizeof(sockaddr_in6));
+      return {sa, sizeof(sockaddr_in6)};
     }
     default:
-      return std::make_tuple(sa, sizeof(sockaddr_storage));
+      return {sa, sizeof(sockaddr_storage)};
   }
 }
 

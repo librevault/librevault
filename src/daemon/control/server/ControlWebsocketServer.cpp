@@ -51,7 +51,7 @@ bool ControlWebsocketServer::on_validate(websocketpp::connection_hdl hdl) {
 
   LOGD("Incoming connection from " << connection_ptr->get_remote_endpoint().c_str()
                                    << " Origin: " << connection_ptr->get_origin().c_str());
-  if (!cs_.check_origin(connection_ptr->get_origin())) return false;
+  if (!cs_.check_origin(QString::fromStdString(connection_ptr->get_origin()))) return false;
   // Detect loopback
   if (std::find(subprotocols.begin(), subprotocols.end(), "librevaultctl1.1") != subprotocols.end())
     connection_ptr->select_subprotocol("librevaultctl1.1");

@@ -44,7 +44,7 @@ Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateC
   multicast_ = new MulticastProvider(node_key, this);
   mldht_ = new MLDHTProvider(port_mapping, this);
 
-  connect(mldht_, &MLDHTProvider::nodeCountChanged,
+  connect(mldht_, &MLDHTProvider::nodeCountChanged, state_collector,
           [=, this](int count) { state_collector->global_state_set("dht_nodes_count", count); });
 
   connect(multicast_, &MulticastProvider::discovered, this, &Discovery::discovered);
@@ -62,7 +62,7 @@ void Discovery::addGroup(FolderGroup* fgroup) {
   auto static_group = new StaticGroup(fgroup);
 
   connect(static_group, &StaticGroup::discovered, this,
-          [=, this](DiscoveryResult result) { emit discovered(fgroup->folderid(), result); });
+          [=, this](const DiscoveryResult& result) { emit discovered(fgroup->folderid(), result); });
 
   mldht_group->setEnabled(true);
   multicast_group->setEnabled(true);

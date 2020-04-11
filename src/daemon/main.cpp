@@ -120,6 +120,7 @@ static void setupUnixSignalHandler() {
   sig.sa_flags |= SA_RESTART;
 
   sigaction(SIGTERM, &sig, nullptr);
+  sigaction(SIGINT, &sig, nullptr);
 }
 #endif
 

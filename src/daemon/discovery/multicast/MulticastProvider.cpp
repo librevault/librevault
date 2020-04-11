@@ -63,8 +63,8 @@ MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObjec
   socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
   socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 
-  connect(socket4_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
-  connect(socket6_, &QUdpSocket::readyRead, this, &MulticastProvider::processDatagram);
+  connect(socket4_, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket4_); });
+  connect(socket6_, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket6_); });
 }
 
 MulticastProvider::~MulticastProvider() {
@@ -74,35 +74,27 @@ MulticastProvider::~MulticastProvider() {
 
 QByteArray MulticastProvider::getDigest() const { return nodekey_->digest(); }
 
-void MulticastProvider::processDatagram() {
-  // Choose socket to read
-  QUdpSocket* socket = nullptr;
-  if (socket4_->hasPendingDatagrams())
-    socket = socket4_;
-  else if (socket6_->hasPendingDatagrams())
-    socket = socket6_;
+void MulticastProvider::processDatagram(QUdpSocket* socket) {
+  while (socket->hasPendingDatagrams()) {
+    auto datagram = socket->receiveDatagram();
+    Endpoint sender(datagram.senderAddress(), datagram.senderPort());
+    auto data = datagram.data();
 
-  Q_ASSERT(socket != nullptr);
-  Q_ASSERT(socket->hasPendingDatagrams());
+    // Protobuf parsing
+    protocol::MulticastDiscovery message;
+    if (message.ParseFromArray(data, data.size())) {
+      DiscoveryResult result;
+      result.source = QStringLiteral("Multicast");
+      result.endpoint = Endpoint(sender.addr, message.port());
+      result.digest = QByteArray::fromStdString(message.digest());
 
-  auto datagram = socket->receiveDatagram();
-  Endpoint sender(datagram.senderAddress(), datagram.senderPort());
-  auto data = datagram.data();
+      QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
+      qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
 
-  // Protobuf parsing
-  protocol::MulticastDiscovery message;
-  if (message.ParseFromArray(data, data.size())) {
-    DiscoveryResult result;
-    result.source = QStringLiteral("Multicast");
-    result.endpoint = Endpoint(sender.addr, message.port());
-    result.digest = QByteArray::fromStdString(message.digest());
-
-    QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
-    qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
-
-    emit discovered(folderid, result);
-  } else {
-    qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << sender;
+      emit discovered(folderid, result);
+    } else {
+      qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << sender;
+    }
   }
 }
 

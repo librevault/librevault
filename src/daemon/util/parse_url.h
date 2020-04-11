@@ -39,18 +39,18 @@ struct url {
   url(const QString& str);
   std::string scheme;
   std::string userinfo;
-  std::string host;
+  QString host;
   uint16_t port = 0;
-  std::string query;
+  QString query;
 
   bool is_ipv6 = false;
 
-  operator std::string() const;
+  operator QString() const;
   bool operator==(const url& u) const {
     return (scheme == u.scheme) && (userinfo == u.userinfo) && (host == u.host) && (port == u.port) &&
            (query == u.query);
   }
-  bool empty() const { return *this == url(); }  // Not optimal, but simple
+  [[nodiscard]] bool empty() const { return *this == url(); }  // Not optimal, but simple
 };
 
 }  // namespace librevault

@@ -68,8 +68,8 @@ class Client : public QCoreApplication {
   ControlServer* control_server_;
 
 #ifdef Q_OS_UNIX
-  static int sigFd[2];
-  QSocketNotifier* snTerm;
+  static int sig_fd_[2];
+  QSocketNotifier* signal_notifier_;
 
   void handleUnixSignal();
 #endif

@@ -66,7 +66,7 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
   auto conn = server_.get_con_from_hdl(hdl);
 
   // CORS
-  if (!cs_.check_origin(conn->get_request_header("Origin"))) {
+  if (!cs_.check_origin(QString::fromStdString(conn->get_request_header("Origin")))) {
     conn->set_status(websocketpp::http::status_code::forbidden);
     conn->set_body(make_error_body("BAD_ORIGIN", "Origin not allowed"));
     return;

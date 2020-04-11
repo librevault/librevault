@@ -28,29 +28,17 @@
  */
 #pragma once
 #include <QByteArray>
-#include <QHostAddress>
-#include <QtEndian>
 #include <array>
-#include <boost/asio/ip/address_v4.hpp>
-#include <boost/asio/ip/address_v6.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/endian/arithmetic.hpp>
 
-#include "control/Config.h"
-#include "util/blob.h"
-
-namespace librevault {
-namespace btcompat {
+namespace librevault::btcompat {
 
 using info_hash = std::array<uint8_t, 20>;
 using peer_id = std::array<uint8_t, 20>;
 
-// Function declaration
 inline info_hash getInfoHash(const QByteArray& folderid) {
   info_hash ih;
   std::copy(folderid.begin(), folderid.begin() + std::min(ih.size(), (size_t)folderid.size()), ih.begin());
   return ih;
 }
 
-}  // namespace btcompat
-}  // namespace librevault
+}  // namespace librevault::btcompat

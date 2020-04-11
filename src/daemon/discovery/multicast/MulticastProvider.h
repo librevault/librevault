@@ -66,7 +66,7 @@ class MulticastProvider : public QObject {
   QUdpSocket* socket6_;
 
  private slots:
-  void processDatagram();
+  void processDatagram(QUdpSocket* socket);
 };
 
 }  // namespace librevault

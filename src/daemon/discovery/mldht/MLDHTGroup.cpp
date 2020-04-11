@@ -30,9 +30,10 @@
 
 #include <dht.h>
 
+#include <boost/asio/ip/udp.hpp>
+
 #include "MLDHTProvider.h"
 #include "crypto/Hex.h"
-#include "dht_glue.h"
 #include "folder/FolderGroup.h"
 #include "util/Endpoint.h"
 
@@ -45,8 +46,8 @@ MLDHTGroup::MLDHTGroup(MLDHTProvider* provider, FolderGroup* fgroup)
   timer_->setInterval(30 * 1000);
 
   connect(provider_, &MLDHTProvider::eventReceived, this, &MLDHTGroup::handleEvent, Qt::QueuedConnection);
-  connect(timer_, &QTimer::timeout, this, [this] { start_search(AF_INET); });
-  connect(timer_, &QTimer::timeout, this, [this] { start_search(AF_INET6); });
+  connect(timer_, &QTimer::timeout, this, [this] { startSearch(AF_INET); });
+  connect(timer_, &QTimer::timeout, this, [this] { startSearch(AF_INET6); });
 }
 
 void MLDHTGroup::setEnabled(bool enable) {
@@ -59,7 +60,7 @@ void MLDHTGroup::setEnabled(bool enable) {
   }
 }
 
-void MLDHTGroup::start_search(int af) {
+void MLDHTGroup::startSearch(int af) {
   bool announce = true;
 
   qCDebug(log_dht) << "Starting" << (af == AF_INET6 ? "IPv6" : "IPv4") << (announce ? "announce" : "search")

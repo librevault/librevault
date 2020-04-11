@@ -45,9 +45,9 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
   setOrganizationDomain("librevault.com");
 
 #ifdef Q_OS_UNIX
-  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigFd)) qFatal("Couldn't create TERM socketpair");
-  snTerm = new QSocketNotifier(sigFd[1], QSocketNotifier::Read, this);
-  connect(snTerm, &QSocketNotifier::activated, this, [this] { handleUnixSignal(); });
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd_)) qFatal("Couldn't create TERM socketpair");
+  signal_notifier_ = new QSocketNotifier(sig_fd_[1], QSocketNotifier::Read, this);
+  connect(signal_notifier_, &QSocketNotifier::activated, this, [this] { handleUnixSignal(); });
 #endif
 
   // Initializing components
@@ -107,28 +107,29 @@ void Client::shutdown() {
 }
 
 #ifdef Q_OS_UNIX
-int Client::sigFd[2] = {};
+int Client::sig_fd_[2] = {};
 
 void Client::unixSignalHandler(int sig) {
   qDebug() << "Is it handled?" << sig;
-  ::write(sigFd[0], &sig, sizeof(sig));
+  ::write(sig_fd_[0], &sig, sizeof(sig));
 }
 
 void Client::handleUnixSignal() {
-  snTerm->setEnabled(false);
+  signal_notifier_->setEnabled(false);
   int sig;
-  ::read(sigFd[1], &sig, sizeof(sig));
+  ::read(sig_fd_[1], &sig, sizeof(sig));
   // qt actions below
 
   switch (sig) {
     case SIGTERM:
+    case SIGINT:
       shutdown();
       break;
     default:;
   }
 
   // qt actions above
-  snTerm->setEnabled(true);
+  signal_notifier_->setEnabled(true);
 }
 #endif
 

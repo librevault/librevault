@@ -52,10 +52,10 @@ struct Endpoint {
   Endpoint(const QString& addr, quint16 port);
 
   QHostAddress addr;
-  quint16 port;
+  quint16 port = 0;
 
   static Endpoint fromString(const QString& str);
-  QString toString() const;
+  [[nodiscard]] QString toString() const;
 
   static Endpoint fromPacked4(QByteArray packed);
   static Endpoint fromPacked6(QByteArray packed);

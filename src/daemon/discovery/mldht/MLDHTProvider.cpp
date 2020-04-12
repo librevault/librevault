@@ -80,8 +80,15 @@ void MLDHTProvider::init() {
   // Init routers
   for (const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
     url router_url(router_value);
-    int id = QHostInfo::lookupHost(router_url.host, this, SLOT(handleResolve(QHostInfo)));
-    resolves_[id] = router_url.port;
+    QHostInfo::lookupHost(router_url.host, this, [=, this](const QHostInfo& host) {
+      if (host.error()) qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
+
+      for (const auto& address : host.addresses()) {
+        Endpoint endpoint(address, router_url.port);
+        addNode(endpoint);
+        qCDebug(log_dht) << "Added a DHT router:" << host.hostName() << "Resolved:" << endpoint;
+      }
+    });
   }
 
   periodic_->start();
@@ -167,7 +174,7 @@ int MLDHTProvider::nodeCount() const {
 
 quint16 MLDHTProvider::getPort() { return (quint16)Config::get()->getGlobal("mainline_dht_port").toUInt(); }
 
-quint16 MLDHTProvider::getExternalPort() { return port_mapping_->mappedPort("main"); }
+quint16 MLDHTProvider::getExternalPort() { return port_mapping_->mappedPortOrOriginal("main"); }
 
 void MLDHTProvider::addNode(const Endpoint& endpoint) {
   if (endpoint.addr.isNull()) return;
@@ -203,17 +210,6 @@ void MLDHTProvider::periodicRequest() {
   emit nodeCountChanged(nodeCount());
 
   periodic_->start(tosleep * 1000);
-}
-
-void MLDHTProvider::handleResolve(const QHostInfo& host) {
-  if (host.error()) {
-    qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
-    resolves_.remove(host.lookupId());
-  } else {
-    Endpoint endpoint(host.addresses().first(), resolves_.take(host.lookupId()));
-    addNode(endpoint);
-    qCDebug(log_dht) << "Added a DHT router:" << host.hostName() << "Resolved:" << endpoint;
-  }
 }
 
 }  // namespace librevault

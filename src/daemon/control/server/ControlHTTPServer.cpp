@@ -95,7 +95,7 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
 
 void ControlHTTPServer::handle_version(pconn conn, QRegularExpressionMatch match) {
   QJsonObject o;
-  o["version"] = Version::current().version_string();
+  o["version"] = Version::current().versionString();
 
   sendJson(QJsonDocument(o), http_code::ok, conn);
 }

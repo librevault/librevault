@@ -28,6 +28,7 @@
  */
 #pragma once
 #include <QObject>
+#include <QtNetwork/QNetworkAccessManager>
 
 #include "DiscoveryResult.h"
 
@@ -37,6 +38,7 @@ class FolderGroup;
 
 class MulticastProvider;
 class MLDHTProvider;
+class TrackerProvider;
 
 class NodeKey;
 class PortMappingService;
@@ -49,15 +51,18 @@ class Discovery : public QObject {
   void discovered(QByteArray folderid, DiscoveryResult result);
 
  public:
-  Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector, QObject* parent);
+  Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateCollector* state_collector,
+            QNetworkAccessManager* nam, QObject* parent);
   virtual ~Discovery();
 
  public slots:
   void addGroup(FolderGroup* fgroup);
+  void removeGroup(const QByteArray& groupid);
 
  protected:
   MulticastProvider* multicast_;
   MLDHTProvider* mldht_;
+  TrackerProvider* tracker_;
 };
 
 }  // namespace librevault

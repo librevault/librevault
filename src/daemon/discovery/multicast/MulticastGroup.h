@@ -53,7 +53,7 @@ class MulticastGroup : public QObject {
 
   QByteArray message_;
 
-  QByteArray get_message();
+  QByteArray getMessage();
   void sendMulticast(QUdpSocket* socket, const Endpoint& endpoint);
 
  private slots:

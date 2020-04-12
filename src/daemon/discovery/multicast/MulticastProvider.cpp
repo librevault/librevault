@@ -31,6 +31,8 @@
 #include <MulticastDiscovery.pb.h>
 
 #include <QLoggingCategory>
+#include <QtCore/QCborValue>
+#include <QtCore/QJsonDocument>
 #include <QtNetwork/QNetworkDatagram>
 
 #include "MulticastGroup.h"
@@ -80,21 +82,23 @@ void MulticastProvider::processDatagram(QUdpSocket* socket) {
     Endpoint sender(datagram.senderAddress(), datagram.senderPort());
     auto data = datagram.data();
 
-    // Protobuf parsing
-    protocol::MulticastDiscovery message;
-    if (message.ParseFromArray(data, data.size())) {
-      DiscoveryResult result;
-      result.source = QStringLiteral("Multicast");
-      result.endpoint = Endpoint(sender.addr, message.port());
-      result.digest = QByteArray::fromStdString(message.digest());
+    QCborParserError parse_error{};
+    auto message = QCborValue::fromCbor(datagram.data(), &parse_error);
 
-      QByteArray folderid = QByteArray(message.folderid().data(), message.folderid().size());
-      qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
-
-      emit discovered(folderid, result);
-    } else {
-      qCDebug(log_multicast) << "<=X= Malformed multicast message from: " << sender;
+    if (parse_error.error) {
+      qCDebug(log_multicast) << "<=X= Malformed multicast message from:" << sender << "E:" << parse_error.errorString();
+      return;
     }
+
+    DiscoveryResult result;
+    result.source = QStringLiteral("Multicast");
+    result.endpoint = Endpoint(sender.addr, message[DISCOVERY_PORT].toInteger());
+    result.digest = message[DISCOVERY_PEER_ID].toByteArray();
+
+    QByteArray community_id = message[DISCOVERY_COMMUNITY_ID].toByteArray();
+    qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
+
+    emit discovered(community_id, result);
   }
 }
 

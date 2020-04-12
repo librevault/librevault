@@ -46,7 +46,7 @@ namespace librevault::upnp {
 class Igd : public QObject {
   Q_OBJECT
  public:
-  Igd(QObject* parent);
+  Igd(QNetworkAccessManager* nam, QObject* parent);
 
   struct UpnpIgdService {
     QString urn;
@@ -67,7 +67,7 @@ class Igd : public QObject {
   Q_SIGNAL void portMapped(const MappingResult& result);
 
  private:
-  QNetworkAccessManager* nam_ = nullptr;
+  QNetworkAccessManager* nam_;
 
   QNetworkReply* sendUpnpAction(const UpnpIgdService& service, const QString& action, const QByteArray& message);
 

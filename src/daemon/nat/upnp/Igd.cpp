@@ -67,7 +67,7 @@ QLatin1String getProtocolLiteral(QAbstractSocket::SocketType protocol) {
 
 namespace librevault::upnp {
 
-Igd::Igd(QObject* parent) : QObject(parent) { nam_ = new QNetworkAccessManager(this); }
+Igd::Igd(QNetworkAccessManager* nam, QObject* parent) : QObject(parent), nam_(nam) {}
 
 void Igd::fetchIgdDescription() {
   auto reply = nam_->get(QNetworkRequest(gateway_desc));
@@ -89,7 +89,6 @@ void Igd::fetchIgdDescription() {
       else if (service_type.startsWith(IGD_IFACE_PPP))
         ppp.append({service_type, control_url_abs});
     }
-    reply->deleteLater();
     readiness = true;
     emit ready();
   });
@@ -158,15 +157,12 @@ void Igd::sendAddPortMapping(const MappingRequest& request) {
   for (const auto& service : (ip + ppp)) {
     auto reply = sendUpnpAction(service, "AddPortMapping", constructAddPortMapping(service, request));
     connect(reply, &QNetworkReply::finished, this, [=, this] { emit portMapped({request.id, request.port}); });
-    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
   }
 }
 
 void Igd::sendDeletePortMapping(const MappingRequest& request) {
-  for (const auto& service : (ip + ppp)) {
-    auto reply = sendUpnpAction(service, "DeletePortMapping", constructDeletePortMapping(service, request));
-    connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-  }
+  for (const auto& service : (ip + ppp))
+    sendUpnpAction(service, "DeletePortMapping", constructDeletePortMapping(service, request));
 }
 
 }  // namespace librevault::upnp

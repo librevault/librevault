@@ -86,11 +86,6 @@ class MLDHTProvider : public QObject {
 
   void processDatagram();
   void periodicRequest();
-
-  QMap<int, quint16> resolves_;
-
- private slots:
-  void handleResolve(const QHostInfo& host);
 };
 
 }  // namespace librevault

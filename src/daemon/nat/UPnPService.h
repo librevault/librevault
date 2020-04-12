@@ -47,7 +47,7 @@ namespace librevault {
 class UPnPService : public PortMappingSubService {
   Q_OBJECT
  public:
-  explicit UPnPService(PortMappingService& parent);
+  UPnPService(QNetworkAccessManager* nam, PortMappingService& parent);
   ~UPnPService();
 
   void start();
@@ -58,7 +58,7 @@ class UPnPService : public PortMappingSubService {
 
  protected:
   QHash<QString, MappingRequest> mappings_;
-
+  QNetworkAccessManager* nam_;
   QUdpSocket* socket_;
   QHash<QString, upnp::Igd*> igd_;
 

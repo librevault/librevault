@@ -51,10 +51,15 @@ Client::Client(int argc, char** argv) : QCoreApplication(argc, argv) {
 #endif
 
   // Initializing components
+  nam_ = new QNetworkAccessManager(this);
+  //  nam_->setAutoDeleteReplies(true);
+  //  nam_->setStrictTransportSecurityEnabled(true);
+  //  nam_->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
+
   state_collector_ = new StateCollector(this);
   node_key_ = new NodeKey(this);
-  portmanager_ = new PortMappingService(this);
-  discovery_ = new Discovery(node_key_, portmanager_, state_collector_, this);
+  portmanager_ = new PortMappingService(nam_, this);
+  discovery_ = new Discovery(node_key_, portmanager_, state_collector_, nam_, this);
   folder_service_ = new FolderService(state_collector_, this);
   p2p_provider_ = new P2PProvider(node_key_, portmanager_, folder_service_, this);
   control_server_ = new ControlServer(state_collector_, this);
@@ -87,6 +92,7 @@ Client::~Client() {
   delete portmanager_;
   delete node_key_;
   delete state_collector_;
+  delete nam_;
 }
 
 int Client::run() {

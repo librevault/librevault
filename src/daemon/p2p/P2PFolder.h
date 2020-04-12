@@ -117,7 +117,6 @@ class P2PFolder : public RemoteFolder {
   QTimer* timeout_timer_;
 
   /* Token generators */
-  blob derive_token_digest(const Secret& secret, QByteArray digest);
   blob local_token();
   blob remote_token();
 

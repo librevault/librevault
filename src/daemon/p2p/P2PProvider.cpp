@@ -45,7 +45,7 @@ namespace librevault {
 P2PProvider::P2PProvider(NodeKey* node_key, PortMappingService* port_mapping, FolderService* folder_service,
                          QObject* parent)
     : QObject(parent), node_key_(node_key), port_mapping_(port_mapping), folder_service_(folder_service) {
-  server_ = new QWebSocketServer(Version().version_string(), QWebSocketServer::SecureMode, this);
+  server_ = new QWebSocketServer(Version().versionString(), QWebSocketServer::SecureMode, this);
   server_->setSslConfiguration(getSslConfiguration());
 
   connect(server_, &QWebSocketServer::newConnection, this, &P2PProvider::handleConnection);
@@ -98,7 +98,7 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 
   QUrl ws_url = result.url;
   ws_url.setScheme("wss");
-  ws_url.setPath(QString("/") + fgroup->folderid().toHex());
+  ws_url.setPath(QString("/") + folderid.toHex());
   if (!ws_url.isValid()) {
     ws_url.setHost(result.endpoint.addr.toString());
     ws_url.setPort(result.endpoint.port);
@@ -106,7 +106,7 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 
   qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
-  QWebSocket* socket = new QWebSocket(Version().user_agent(), QWebSocketProtocol::VersionLatest, this);
+  QWebSocket* socket = new QWebSocket(Version().userAgent(), QWebSocketProtocol::VersionLatest, this);
   P2PFolder* folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);
   Q_UNUSED(folder);
 }

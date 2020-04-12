@@ -57,7 +57,7 @@ ControlServer::ControlServer(StateCollector* state_collector, QObject* parent)
   // General parameters
   ws_server_.init_asio(&ios_.ctx());
   ws_server_.set_reuse_addr(true);
-  ws_server_.set_user_agent(Version::current().user_agent().toStdString());
+  ws_server_.set_user_agent(Version::current().userAgent().toStdString());
 
   // Handlers
   ws_server_.set_validate_handler(

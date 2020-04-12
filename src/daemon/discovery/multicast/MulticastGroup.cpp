@@ -28,9 +28,9 @@
  */
 #include "MulticastGroup.h"
 
-#include <MulticastDiscovery.pb.h>
-
 #include <QLoggingCategory>
+#include <QtCore/QCborMap>
+#include <QtCore/QCborValue>
 
 #include "MulticastProvider.h"
 #include "control/Config.h"
@@ -57,29 +57,18 @@ void MulticastGroup::setEnabled(bool enabled) {
     timer_->stop();
 }
 
-QByteArray MulticastGroup::get_message() {
-  if (message_.isEmpty()) {
-    protocol::MulticastDiscovery message;
-
-    // Port
-    message.set_port(Config::get()->getGlobal("p2p_listen").toUInt());
-
-    // FolderID
-    QByteArray folderid = fgroup_->folderid();
-    message.set_folderid(folderid.data(), folderid.size());
-
-    // PeerID
-    QByteArray digest = provider_->getDigest();
-    message.set_digest(digest.data(), digest.size());
-
-    message_.resize(message.ByteSize());
-    message.SerializeToArray(message_.data(), message_.size());
-  }
-  return message_;
+QByteArray MulticastGroup::getMessage() {
+  return !message_.isEmpty()
+             ? message_
+             : message_ = QCborValue{QCborKnownTags::Signature,
+                                     {{{DISCOVERY_PORT, (int)Config::get()->getGlobal("p2p_listen").toUInt()},
+                                       {DISCOVERY_PEER_ID, QString::fromLatin1(provider_->getDigest().toHex())},
+                                       {DISCOVERY_COMMUNITY_ID, QString::fromLatin1(fgroup_->folderid().toHex())}}}}
+                              .toCbor();
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, const Endpoint& endpoint) {
-  if (socket->writeDatagram(get_message(), endpoint.addr, endpoint.port))
+  if (socket->writeDatagram(getMessage(), endpoint.addr, endpoint.port))
     qCDebug(log_multicast) << "===> Multicast message sent to:" << endpoint;
   else
     qCDebug(log_multicast) << "=X=> Multicast message not sent to:" << endpoint << "E:" << socket->errorString();

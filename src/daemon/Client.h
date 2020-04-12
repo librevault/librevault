@@ -32,6 +32,7 @@
 
 #include <QCoreApplication>
 #include <QtCore/QSocketNotifier>
+#include <QtNetwork/QNetworkAccessManager>
 #include <memory>
 
 namespace librevault {
@@ -59,6 +60,7 @@ class Client : public QCoreApplication {
   static void unixSignalHandler(int sig);
 #endif
  private:
+  QNetworkAccessManager* nam_;
   StateCollector* state_collector_;
   NodeKey* node_key_;
   PortMappingService* portmanager_;

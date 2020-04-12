@@ -38,10 +38,10 @@ Q_LOGGING_CATEGORY(log_portmapping, "portmapping")
 
 namespace librevault {
 
-PortMappingService::PortMappingService(QObject* parent) : QObject(parent) {
+PortMappingService::PortMappingService(QNetworkAccessManager* nam, QObject* parent) : QObject(parent) {
   SCOPELOG(log_portmapping);
   natpmp_ = new NATPMPService(*this);
-  upnp_ = new UPnPService(*this);
+  upnp_ = new UPnPService(nam, *this);
 
   connect(natpmp_, &NATPMPService::portMapped, this, &PortMappingService::portCallback);
   connect(upnp_, &UPnPService::portMapped, this, &PortMappingService::portCallback);
@@ -71,8 +71,14 @@ void PortMappingService::unmap(const QString& id) {
   mappings_.remove(id);
 }
 
-uint16_t PortMappingService::mappedPort(const QString& id) {
-  if (mappings_.contains(id)) return mappings_[id].result.external_port;
+uint16_t PortMappingService::mappedPortOrOriginal(const QString& id) {
+  if (mappings_.contains(id)) {
+    auto mapping = mappings_[id];
+    if (mapping.result.external_port)
+      return mapping.result.external_port;
+    else if (mapping.request.port)
+      return mapping.request.port;
+  }
   return 0;
 }
 

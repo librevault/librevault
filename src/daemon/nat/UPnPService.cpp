@@ -42,7 +42,10 @@ Q_LOGGING_CATEGORY(log_upnp, "upnp")
 
 namespace librevault {
 
-UPnPService::UPnPService(PortMappingService& parent) : PortMappingSubService(parent) { socket_ = new QUdpSocket(this); }
+UPnPService::UPnPService(QNetworkAccessManager* nam, PortMappingService& parent)
+    : PortMappingSubService(parent), nam_(nam) {
+  socket_ = new QUdpSocket(this);
+}
 UPnPService::~UPnPService() { stop(); }
 
 void UPnPService::start() {
@@ -74,7 +77,7 @@ void UPnPService::handleDatagram() {
 
     QString usn;
 
-    auto igd = new upnp::Igd(this);
+    auto igd = new upnp::Igd(nam_, this);
     igd->igd_addr = datagram.senderAddress();
     igd->local_addr = datagram.destinationAddress();
 

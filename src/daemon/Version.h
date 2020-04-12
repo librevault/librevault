@@ -36,8 +36,8 @@ class Version {
   Version();
 
   QString name() const { return name_; }
-  QString version_string() const { return version_string_; }
-  QString user_agent() const { return name() + "/" + version_string_; }
+  QString versionString() const { return version_string_; }
+  QString userAgent() const { return name() + "/" + version_string_; }
 
   static Version current() {
     static Version current;

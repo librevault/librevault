@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
   do {
     // Argument parsing
     auto args =
-        docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().version_string().toStdString());
+        docopt::docopt(USAGE, {argv + 1, argv + argc}, true, librevault::Version().versionString().toStdString());
 
     // Initializing paths
     QString appdata_path;
@@ -172,7 +172,7 @@ int main(int argc, char** argv) {
 
     // Okay, that's a bit of fun, actually.
     std::cout << BANNER;
-    qInfo() << Version::current().name() << Version::current().version_string();
+    qInfo() << Version::current().name() << Version::current().versionString();
 
     // And, run!
     auto client = std::make_unique<Client>(argc, argv);

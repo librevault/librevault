@@ -70,14 +70,6 @@ target_link_libraries(librevault-daemon PUBLIC Qt5::Xml)
 target_link_libraries(librevault-daemon PUBLIC Qt5::WebSockets)
 
 ## Protobuf
-file(GLOB_RECURSE PROTO_LIST "*.proto")
-protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
-
-add_library(librevault-protobuf STATIC ${PROTO_SOURCES} ${PROTO_HEADERS})
-target_link_libraries(librevault-protobuf PUBLIC protobuf)
-
-target_link_libraries(librevault-daemon PUBLIC librevault-protobuf)
-
 target_link_libraries(librevault-daemon PUBLIC openssl)
 target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::spdlog)
 target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::sqlite3)

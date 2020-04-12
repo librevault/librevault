@@ -29,6 +29,7 @@
 #pragma once
 #include <QAbstractSocket>
 #include <QLoggingCategory>
+#include <QtNetwork/QNetworkAccessManager>
 
 #include "util/log.h"
 
@@ -57,12 +58,12 @@ class PortMappingService : public QObject {
   friend class PortMappingSubService;
 
  public:
-  PortMappingService(QObject* parent);
+  PortMappingService(QNetworkAccessManager* nam, QObject* parent);
   virtual ~PortMappingService();
 
   void map(const MappingRequest& request);
   void unmap(const QString& id);
-  uint16_t mappedPort(const QString& id);
+  uint16_t mappedPortOrOriginal(const QString& id);
 
  private:
   struct Mapping {

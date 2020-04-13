@@ -141,7 +141,6 @@ cmake-build-*/
 __pycache__/
 .venv/
 conan.lock
-conanbuildinfo.cmake
-conanbuildinfo.txt
+conanbuildinfo.*
 conaninfo.txt
 graph_info.json

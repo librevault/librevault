@@ -1,0 +1,25 @@
+name: librevault
+version: 0.1.0
+summary: Librevault file sharing platform
+description: |
+  Librevault file sharing platform
+confinement: devmode
+base: core18
+parts:
+  librevault:
+    source: .
+    plugin: cmake
+    configflags:
+      - -DCMAKE_BUILD_TYPE=Release
+    build-packages:
+      - build-essential
+      - qtbase5-dev
+      - python3.7-dev
+      - python3-pip
+    override-build: |
+      python3.7 -m pip install pip conan poetry
+      conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      conan profile new --detect --force default
+      conan profile update settings.compiler.libcxx=libstdc++11 default
+      conan install $SNAPCRAFT_PART_SRC --build=missing
+      snapcraftctl build

@@ -28,8 +28,6 @@
  */
 #include "MulticastProvider.h"
 
-#include <MulticastDiscovery.pb.h>
-
 #include <QLoggingCategory>
 #include <QtCore/QCborValue>
 #include <QtCore/QJsonDocument>

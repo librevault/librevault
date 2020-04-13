@@ -1,0 +1,66 @@
+image:
+  - Visual Studio 2019
+  - Ubuntu
+#  - macOS
+
+environment:
+  CONAN_VERSION: 1.24.0
+
+for:
+  - matrix:
+      only:
+        - image: Visual Studio 2019
+    cache:
+      - '%USERPROFILE%\.conan\data'
+      - '%LOCALAPPDATA%\pip\Cache'
+      - 'C:\.conan'
+    install:
+      - git submodule update --init --recursive
+      - SET PATH=C:\Python38-x64;C:\Python38-x64\Scripts;%PATH%
+      - python -m pip install conan==%CONAN_VERSION%
+
+    build_script:
+      - cd %REPO_DIR%
+      - dir %USERPROFILE%\.conan\data
+      - cd build
+      - conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      - conan install .. --build=missing --build=cascade
+    #  - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_STATIC_BOOST=ON ..
+    #  - cmake --build .
+  - matrix:
+      only:
+        - image: Ubuntu
+    cache:
+      - '$HOME/.conan/data'
+      - '$HOME/.cache/pip'
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+    install:
+      - git submodule update --init --recursive
+      - sudo apt-get -yq install python3-pip python3.7-dev
+      - sudo python3 -m pip install conan==$CONAN_VERSION
+
+    build_script:
+      - cd build
+      - conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      - conan install .. --build=missing --build=cascade
+    #  - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_STATIC_BOOST=ON ..
+    #  - cmake --build .
+#  - matrix:
+#      only:
+#        - image: macOS
+#    cache:
+#      - '$HOME/.conan/data'
+#      - '$HOME/Library/Caches/pip'
+#    init:
+#      - brew install p7zip
+#    install:
+#      - git submodule update --init --recursive
+#      - sudo python3 -m pip install conan==$CONAN_VERSION
+#
+#    build_script:
+#      - cd build
+#      - conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+#      - conan install .. --build=missing --build=cascade
+#      - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_STATIC_BOOST=ON ..
+#      - cmake --build .

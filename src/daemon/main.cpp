@@ -28,6 +28,8 @@
  */
 #include <docopt/docopt.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
@@ -152,16 +154,15 @@ int main(int argc, char** argv) {
     auto log = spdlog::get(Version::current().name().toStdString());
     if (!log) {
       std::vector<spdlog::sink_ptr> sinks;
-      sinks.push_back(std::make_shared<spdlog::sinks::stderr_sink_mt>());
+      sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
       boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
-      sinks.push_back(std::make_shared<spdlog::sinks::simple_file_sink_mt>(log_path.native()));
+      sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_path.native()));
 
       log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
       spdlog::register_logger(log);
 
       log->set_level(log_level);
-      log->set_pattern("%Y-%m-%d %T.%f %t %L | %v");
     }
 
     // This overrides default Qt behavior, which is fine in many cases;

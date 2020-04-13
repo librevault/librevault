@@ -29,6 +29,7 @@
 #include "FolderModel.h"
 
 #include <QFileIconProvider>
+#include <QSet>
 
 #include "PeerModel.h"
 #include "Secret.h"
@@ -99,9 +100,10 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
 void FolderModel::refresh() {
   QSet<QByteArray> config_folders, new_folders, cleanup_folders;
 
-  config_folders = daemon_->config()->listFolders().toSet();
-  new_folders = config_folders - folders_all_.toSet();
-  cleanup_folders = folders_all_.toSet() - config_folders;
+  auto config_folders_list = daemon_->config()->listFolders();
+  config_folders = QSet<QByteArray>(config_folders_list.begin(), config_folders_list.end());
+  new_folders = config_folders - QSet<QByteArray>(folders_all_.begin(), folders_all_.end());
+  cleanup_folders = QSet<QByteArray>(folders_all_.begin(), folders_all_.end()) - config_folders;
 
   for (auto folderid : new_folders) {
     PeerModel *new_peer_model = new PeerModel(folderid, daemon_, this);
@@ -114,7 +116,7 @@ void FolderModel::refresh() {
     peer_models_.erase(it);
   }
 
-  folders_all_ = config_folders.toList();
+  folders_all_ = config_folders.values();
 
   for (auto folderid : folders_all_) {
     auto it = peer_models_.find(folderid);

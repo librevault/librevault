@@ -26,6 +26,7 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
+option(USE_STATIC_BOOST "Use stati version of boost" OFF)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
@@ -140,6 +141,56 @@ else()
 	target_link_libraries(threads INTERFACE Threads::Threads)
 endif()
 
+##### External libraries #####
+
+## Boost
+if(BUILD_STATIC OR USE_STATIC_BOOST)
+	set(Boost_USE_STATIC_LIBS ON)
+endif()
+find_package(Boost REQUIRED COMPONENTS system filesystem thread)
+
+add_library(boost INTERFACE)
+target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
+target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
+
+## Qt5
+#if (CONAN_QT_ROOT)
+#	message("${CONAN_QT_ROOT}")
+#	set (Qt5_DIR ${CONAN_QT_ROOT}/lib/cmake/Qt5) # to work in both multi and single build
+#else ()
+#	set (Qt5_DIR ${CONAN_QT_ROOT_RELEASE}/lib/cmake/Qt5) # to work in both multi and single build
+#endif ()
+
+set(Qt_COMPONENTS
+		LinguistTools
+#		Sql
+		Svg
+		Xml
+		Widgets
+		WebSockets
+		)
+find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051200")
+add_definitions("-DQT_NO_FOREACH=1")
+add_definitions("-DQT_NO_FOREVER=1")
+
+## Protobuf
+find_package(Protobuf REQUIRED)
+add_library(protobuf INTERFACE)
+target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
+target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
+
+## OpenSSL
+find_package(OpenSSL REQUIRED)
+add_library(openssl INTERFACE)
+target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
+target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
+if(OS_WIN)
+	target_link_libraries(openssl INTERFACE ws2_32)
+elseif(OS_LINUX)
+	target_link_libraries(openssl INTERFACE dl)
+endif()
+
 ##### Bundled libraries #####
 
 ## Dir_monitor
@@ -164,54 +215,6 @@ add_subdirectory("contrib/dht")
 ## QtSingleApplication
 if(BUILD_GUI)
 	add_subdirectory("contrib/qtsingleapplication")
-endif()
-
-##### External libraries #####
-
-## Boost
-if(BUILD_STATIC)
-	set(Boost_USE_STATIC_LIBS ON)
-endif()
-find_package(Boost REQUIRED COMPONENTS system filesystem thread)
-
-add_library(boost INTERFACE)
-target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
-target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
-
-## Qt5
-set(Qt_COMPONENTS
-		LinguistTools
-#		Sql
-		Svg
-		Xml
-		Widgets
-		WebSockets
-		)
-if(OS_WIN)
-	list(APPEND Qt_COMPONENTS WinExtras)
-elseif(OS_MAC)
-	list(APPEND Qt_COMPONENTS MacExtras)
-endif()
-find_package(Qt5 5.12 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050600")
-add_definitions("-DQT_NO_FOREACH=1")
-add_definitions("-DQT_NO_FOREVER=1")
-
-## Protobuf
-find_package(Protobuf REQUIRED)
-add_library(protobuf INTERFACE)
-target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
-
-## OpenSSL
-find_package(OpenSSL REQUIRED)
-add_library(openssl INTERFACE)
-target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
-if(OS_WIN)
-	target_link_libraries(openssl INTERFACE ws2_32)
-elseif(OS_LINUX)
-	target_link_libraries(openssl INTERFACE dl)
 endif()
 
 #============================================================================

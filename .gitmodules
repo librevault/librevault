@@ -1,16 +1,12 @@
 [submodule "contrib/dir_monitor"]
 	path = contrib/dir_monitor
 	url = https://github.com/Librevault/dir_monitor.git
-	branch = master
 [submodule "contrib/rabin"]
 	path = contrib/rabin
 	url = https://github.com/Librevault/rabin.git
-	branch = master
 [submodule "contrib/libnatpmp"]
 	path = contrib/libnatpmp
 	url = https://github.com/Librevault/libnatpmp.git
-	branch = master
 [submodule "contrib/dht"]
 	path = contrib/dht
 	url = https://github.com/Librevault/dht.git
-	branch = master

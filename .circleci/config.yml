@@ -91,7 +91,7 @@ jobs:
             git submodule update --init --recursive
       - run:
           command: |
-            python -m pip install conan
+            python3 -m pip install conan
       - restore_cache:
           keys:
             - conan-cache-v0-{{ arch }}-{{ checksum "conanfile.py" }}

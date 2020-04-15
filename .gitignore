@@ -136,6 +136,7 @@ $RECYCLE.BIN/
 
 ### CMake builds
 cmake-build-*/
+build/
 
 ### Conan
 __pycache__/

@@ -26,6 +26,8 @@ class LibrevaultConan(ConanFile):
         "qt:qtwebsockets": True,
     }
 
-    # def configure(self):
-    #     if self.settings.os == "Linux":
-    #         self.options["qt"].qtwayland = True
+    def configure(self):
+        if self.settings.os == "Linux":
+            self.options["qt"].qtwayland = True
+        if self.settings.os == "Macos":
+            self.options["qt"].qtmacextras = True

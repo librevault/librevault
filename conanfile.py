@@ -31,3 +31,4 @@ class LibrevaultConan(ConanFile):
             self.options["qt"].qtwayland = True
         if self.settings.os == "Macos":
             self.options["qt"].qtmacextras = True
+            self.options["glib"].shared = False

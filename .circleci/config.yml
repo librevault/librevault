@@ -82,7 +82,8 @@ jobs:
   build-macos:
     macos:
       xcode: 11.4.0
-#    environment:
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
 #      CONAN_CPU_COUNT: "2"
     steps:
       - checkout
@@ -91,6 +92,7 @@ jobs:
             git submodule update --init --recursive
       - run:
           command: |
+            brew install cmake ccache
             python3 -m pip install conan
       - restore_cache:
           keys:

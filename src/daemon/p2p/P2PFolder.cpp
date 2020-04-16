@@ -109,10 +109,10 @@ blob P2PFolder::local_token() { return conv_bytearray(derive_token(fgroup_->secr
 
 blob P2PFolder::remote_token() { return conv_bytearray(derive_token(fgroup_->secret(), digest())); }
 
-void P2PFolder::send_message(const blob& message) {
+void P2PFolder::send_message(const QByteArray& message) {
   counter_.add_up(message.size());
   fgroup_->bandwidth_counter().add_up(message.size());
-  socket_->sendBinaryMessage(QByteArray::fromRawData((char*)message.data(), message.size()));
+  socket_->sendBinaryMessage(message);
 }
 
 void P2PFolder::sendHandshake() {

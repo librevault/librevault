@@ -70,8 +70,7 @@ class P2PFolder : public RemoteFolder {
   QString user_agent() const { return user_agent_; }
   QJsonObject collect_state();
 
-  /* RPC Actions */
-  void send_message(const blob& message);
+  void send_message(const QByteArray& message);
 
   // Handshake
   void sendHandshake();

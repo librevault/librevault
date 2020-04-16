@@ -107,8 +107,8 @@ class Meta {
   virtual ~Meta();
 
   /* Serialization */
-  std::vector<uint8_t> serialize() const;
-  void parse(const std::vector<uint8_t>& serialized_data);
+  QByteArray serialize() const;
+  void parse(const QByteArray& serialized_data);
 
   /* Validation */
   bool validate() const;

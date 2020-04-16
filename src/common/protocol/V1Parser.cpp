@@ -19,7 +19,7 @@
 
 namespace librevault {
 
-std::vector<uint8_t> V1Parser::gen_Handshake(const Handshake& message_struct) {
+QByteArray V1Parser::gen_Handshake(const Handshake& message_struct) {
   protocol::Handshake message_protobuf;
   message_protobuf.set_auth_token(message_struct.auth_token.data(), message_struct.auth_token.size());
   message_protobuf.set_device_name(message_struct.device_name.data(), message_struct.device_name.size());
@@ -44,7 +44,7 @@ V1Parser::Handshake V1Parser::parse_Handshake(const std::vector<uint8_t>& messag
   return message_struct;
 }
 
-std::vector<uint8_t> V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
+QByteArray V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
   protocol::HaveMeta message_protobuf;
 
   message_protobuf.set_path_id(message_struct.revision.path_id_, message_struct.revision.path_id_.size());
@@ -69,7 +69,7 @@ V1Parser::HaveMeta V1Parser::parse_HaveMeta(const std::vector<uint8_t>& message_
   return message_struct;
 }
 
-std::vector<uint8_t> V1Parser::gen_HaveChunk(const HaveChunk& message_struct) {
+QByteArray V1Parser::gen_HaveChunk(const HaveChunk& message_struct) {
   protocol::HaveChunk message_protobuf;
 
   message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
@@ -86,7 +86,7 @@ V1Parser::HaveChunk V1Parser::parse_HaveChunk(const std::vector<uint8_t>& messag
   return message_struct;
 }
 
-std::vector<uint8_t> V1Parser::gen_MetaRequest(const MetaRequest& message_struct) {
+QByteArray V1Parser::gen_MetaRequest(const MetaRequest& message_struct) {
   protocol::MetaRequest message_protobuf;
   message_protobuf.set_path_id(message_struct.revision.path_id_, message_struct.revision.path_id_.size());
   message_protobuf.set_revision(message_struct.revision.revision_);
@@ -104,7 +104,7 @@ V1Parser::MetaRequest V1Parser::parse_MetaRequest(const std::vector<uint8_t>& me
   return message_struct;
 }
 
-std::vector<uint8_t> V1Parser::gen_MetaReply(const MetaReply& message_struct) {
+QByteArray V1Parser::gen_MetaReply(const MetaReply& message_struct) {
   protocol::MetaReply message_protobuf;
   message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
   message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
@@ -128,7 +128,7 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(const std::vector<uint8_t>& messag
                    std::move(converted_bitfield)};
 }
 
-std::vector<uint8_t> V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {
+QByteArray V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {
   protocol::BlockRequest message_protobuf;
   message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
   message_protobuf.set_offset(message_struct.offset);
@@ -148,7 +148,7 @@ V1Parser::BlockRequest V1Parser::parse_BlockRequest(const std::vector<uint8_t>& 
   return message_struct;
 }
 
-std::vector<uint8_t> V1Parser::gen_BlockReply(const BlockReply& message_struct) {
+QByteArray V1Parser::gen_BlockReply(const BlockReply& message_struct) {
   protocol::BlockReply message_protobuf;
   message_protobuf.set_ct_hash(message_struct.ct_hash.data(), message_struct.ct_hash.size());
   message_protobuf.set_offset(message_struct.offset);

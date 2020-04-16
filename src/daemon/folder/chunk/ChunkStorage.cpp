@@ -52,11 +52,9 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
   connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
-ChunkStorage::~ChunkStorage() {}
-
 bool ChunkStorage::have_chunk(const blob& ct_hash) const noexcept {
   return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) ||
-         (open_storage && open_storage->have_chunk(ct_hash));
+         (open_storage && open_storage->have_chunk(conv_bytearray(ct_hash)));
 }
 
 QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
@@ -83,7 +81,7 @@ void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
   enc_storage->put_chunk(ct_hash, chunk_f);
   for (auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash))) file_assembler->addAssemble(smeta);
 
-  emit chunkAdded(conv_bytearray(ct_hash));
+  emit chunkAdded(ct_hash);
 }
 
 bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
@@ -99,8 +97,8 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 }
 
 void ChunkStorage::cleanup(const Meta& meta) {
-  for (auto chunk : meta.chunks())
-    if (open_storage->have_chunk(conv_bytearray(chunk.ct_hash))) enc_storage->remove_chunk(conv_bytearray(chunk.ct_hash));
+  for (const auto& chunk : meta.chunks())
+    if (open_storage->have_chunk(chunk.ct_hash)) enc_storage->remove_chunk(conv_bytearray(chunk.ct_hash));
 }
 
 }  // namespace librevault

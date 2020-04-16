@@ -43,7 +43,7 @@ QByteArray Meta::Chunk::computeStrongHash(const QByteArray& chunk, StrongHashTyp
 }
 
 Meta::Meta() {}
-Meta::Meta(const QByteArray& meta_s) { parse(conv_bytearray(meta_s)); }
+Meta::Meta(const QByteArray& meta_s) { parse(meta_s); }
 Meta::~Meta() {}
 
 bool Meta::validate() const {
@@ -132,7 +132,7 @@ void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params,
   rabin_global_params_.set_plain(serialized, secret);
 }
 
-std::vector<uint8_t> Meta::serialize() const {
+QByteArray Meta::serialize() const {
   serialization::Meta meta_s;
 
   meta_s.set_path_id(path_id_, path_id_.size());
@@ -175,15 +175,15 @@ std::vector<uint8_t> Meta::serialize() const {
     }
   }
 
-  std::vector<uint8_t> serialized_data(meta_s.ByteSize());
+  QByteArray serialized_data(meta_s.ByteSize(), 0);
   meta_s.SerializeToArray(serialized_data.data(), serialized_data.size());
   return serialized_data;
 }
 
-void Meta::parse(const std::vector<uint8_t>& serialized_data) {
+void Meta::parse(const QByteArray& serialized_data) {
   serialization::Meta meta_s;
 
-  bool parsed_well = meta_s.ParseFromArray(serialized_data.data(), serialized_data.size());
+  bool parsed_well = meta_s.ParseFromArray(serialized_data, serialized_data.size());
   if (!parsed_well) throw parse_error("Parse error: Protobuf parsing failed");
 
   path_id_ = QByteArray::fromStdString(meta_s.path_id());

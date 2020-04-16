@@ -53,9 +53,9 @@ class ChunkStorage : public QObject {
   };
 
   ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
-  virtual ~ChunkStorage();
+  ~ChunkStorage() = default;
 
-  bool have_chunk(const blob& ct_hash) const noexcept;
+  [[nodiscard]] bool have_chunk(const blob& ct_hash) const noexcept;
   QByteArray get_chunk(const blob& ct_hash);  // Throws AbstractFolder::ChunkNotFound
   void put_chunk(QByteArray ct_hash, QFile* chunk_f);
 
@@ -64,7 +64,7 @@ class ChunkStorage : public QObject {
   void cleanup(const Meta& meta);
 
  signals:
-  void chunkAdded(blob ct_hash);
+  void chunkAdded(QByteArray ct_hash);
 
  protected:
   MetaStorage* meta_storage_;

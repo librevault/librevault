@@ -78,7 +78,7 @@ QList<SignedMeta> MetaStorage::containingChunk(const blob& ct_hash) { return ind
 
 void MetaStorage::markAssembled(blob path_id) { index_->setAssembled(path_id); }
 
-bool MetaStorage::isChunkAssembled(blob ct_hash) { return index_->isAssembledChunk(ct_hash); }
+bool MetaStorage::isChunkAssembled(const QByteArray& ct_hash) { return index_->isAssembledChunk(conv_bytearray(ct_hash)); }
 
 QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(blob ct_hash) { return index_->getChunkSizeIv(ct_hash); };
 

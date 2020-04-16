@@ -114,36 +114,36 @@ class V1Parser {
       throw parse_error();
   }
 
-  std::vector<uint8_t> gen_Handshake(const Handshake& message_struct);
+  QByteArray gen_Handshake(const Handshake& message_struct);
   Handshake parse_Handshake(const std::vector<uint8_t>& message_raw);
 
-  std::vector<uint8_t> gen_Choke() { return {CHOKE}; }
-  std::vector<uint8_t> gen_Unchoke() { return {UNCHOKE}; }
-  std::vector<uint8_t> gen_Interested() { return {INTERESTED}; }
-  std::vector<uint8_t> gen_NotInterested() { return {NOT_INTERESTED}; }
+  QByteArray gen_Choke() { return QByteArray{1, CHOKE}; }
+  QByteArray gen_Unchoke() { return QByteArray{1, UNCHOKE}; }
+  QByteArray gen_Interested() { return QByteArray{1, INTERESTED}; }
+  QByteArray gen_NotInterested() { return QByteArray{1, NOT_INTERESTED}; }
 
-  std::vector<uint8_t> gen_HaveMeta(const HaveMeta& message_struct);
+  QByteArray gen_HaveMeta(const HaveMeta& message_struct);
   HaveMeta parse_HaveMeta(const std::vector<uint8_t>& message_raw);
 
-  std::vector<uint8_t> gen_HaveChunk(const HaveChunk& message_struct);
+  QByteArray gen_HaveChunk(const HaveChunk& message_struct);
   HaveChunk parse_HaveChunk(const std::vector<uint8_t>& message_raw);
 
-  std::vector<uint8_t> gen_MetaRequest(const MetaRequest& message_struct);
+  QByteArray gen_MetaRequest(const MetaRequest& message_struct);
   MetaRequest parse_MetaRequest(const std::vector<uint8_t>& message_raw);
 
-  std::vector<uint8_t> gen_MetaReply(const MetaReply& message_struct);
+  QByteArray gen_MetaReply(const MetaReply& message_struct);
   MetaReply parse_MetaReply(const std::vector<uint8_t>& message_raw, const Secret& secret_verifier);
 
-  std::vector<uint8_t> gen_BlockRequest(const BlockRequest& message_struct);
+  QByteArray gen_BlockRequest(const BlockRequest& message_struct);
   BlockRequest parse_BlockRequest(const std::vector<uint8_t>& message_raw);
 
-  std::vector<uint8_t> gen_BlockReply(const BlockReply& message_struct);
+  QByteArray gen_BlockReply(const BlockReply& message_struct);
   BlockReply parse_BlockReply(const std::vector<uint8_t>& message_raw);
 
  protected:
   template <class ProtoMessageClass>
-  std::vector<uint8_t> prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
-    std::vector<uint8_t> message_raw(message_protobuf.ByteSize() + 1);
+  QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
+    QByteArray message_raw(message_protobuf.ByteSize() + 1, 0);
     message_raw[0] = type;
     message_protobuf.SerializeToArray(message_raw.data() + 1, message_protobuf.ByteSize());
 

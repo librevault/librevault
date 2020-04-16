@@ -80,9 +80,9 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 
   // Connecting signals and slots
   connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
-  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const blob& ct_hash) {
-    downloader_->notifyLocalChunk(conv_bytearray(ct_hash));
-    uploader_->broadcast_chunk(remotes(), ct_hash);
+  connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const QByteArray& ct_hash) {
+    downloader_->notifyLocalChunk(ct_hash);
+    uploader_->broadcast_chunk(remotes(), conv_bytearray(ct_hash));
   });
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
   connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);

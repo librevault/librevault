@@ -27,7 +27,7 @@ namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   meta_ = std::make_shared<Meta>(std::move(meta));
-  raw_meta_ = conv_bytearray(meta.serialize());
+  raw_meta_ = meta.serialize();
 
   CryptoPP::AutoSeededRandomPool rng;
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;

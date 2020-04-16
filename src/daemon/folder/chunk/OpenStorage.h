@@ -48,7 +48,7 @@ class OpenStorage : public QObject {
  public:
   OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
-  bool have_chunk(const blob& ct_hash) const noexcept;
+  bool have_chunk(const QByteArray& ct_hash) const noexcept;
   QByteArray get_chunk(const blob& ct_hash) const;
 
  private:

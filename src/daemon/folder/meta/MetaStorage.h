@@ -70,7 +70,7 @@ class MetaStorage : public QObject {
 
   // Assembled index
   void markAssembled(blob path_id);
-  bool isChunkAssembled(blob ct_hash);
+  bool isChunkAssembled(const QByteArray& ct_hash);
 
   bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 

@@ -52,7 +52,7 @@ static uint8_t LuhnMod58_lookup[128] = {
 
 template <class InputIterator>
 char LuhnMod58(InputIterator first, InputIterator last) {
-  return LuhnMod<58>(first, last, LuhnMod58_lookup, Base58_alphabets::bitcoin_alphabet);
+  return LuhnMod<58>(first, last, LuhnMod58_lookup, alphabet::bitcoin);
 }
 
 }  // namespace crypto

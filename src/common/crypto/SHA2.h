@@ -50,6 +50,7 @@ class SHA2 : public OneWayTransformer {
     return result;
   }
   blob to(const blob& data) const { return compute(data); }
+  QByteArray to(const QByteArray& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
 };
 
 }  // namespace crypto

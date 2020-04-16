@@ -9,10 +9,6 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #pragma once
-#include <QByteArray>
-#include <cstdint>
-#include <string>
-#include <vector>
 
 #include "util/blob.h"
 
@@ -23,6 +19,7 @@ class OneWayTransformer {
   virtual ~OneWayTransformer() = default;
 
   virtual blob to(const blob& data) const = 0;
+  virtual QByteArray to(const QByteArray& data) const = 0;
 
   template <class InputIterator>
   blob to(InputIterator first, InputIterator last) const {
@@ -40,6 +37,8 @@ class TwoWayTransformer : public OneWayTransformer {
 
   blob to(const blob& data) const override = 0;
   virtual blob from(const blob& data) const = 0;
+  QByteArray to(const QByteArray& data) const override = 0;
+  virtual QByteArray from(const QByteArray& data) const = 0;
 
   template <class InputIterator>
   blob from(InputIterator first, InputIterator last) const {
@@ -60,8 +59,14 @@ class De : public TwoWayTransformer {
   explicit De(Args... trans_args) : nested(trans_args...) {}
 
   blob to(const blob& data) const override { return nested.from(data); };
+  QByteArray to(const QByteArray& data) const override { return nested.from(data); };
   blob from(const blob& data) const override { return nested.to(data); };
+  QByteArray from(const QByteArray& data) const override { return nested.to(data); };
 };
+
+inline QByteArray operator|(const QByteArray& data, OneWayTransformer&& transformer) {
+  return conv_bytearray(transformer.to(data.begin(), data.end()));
+}
 
 template <class Container>
 inline QByteArray operator|(const Container& data, OneWayTransformer&& transformer) {

@@ -17,13 +17,6 @@
 namespace librevault {
 namespace crypto {
 
-blob HMAC_SHA3_224::compute(const blob& data) const {
-  QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
-  hasher.addData(key_);
-  hasher.addData(conv_bytearray(data));
-  return conv_bytearray(hasher.result());
-}
-
 QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
   QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
   hasher.addData(key_);
@@ -31,7 +24,8 @@ QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
   return hasher.result();
 }
 
-blob HMAC_SHA3_224::to(const blob& data) const { return compute(data); }
+blob HMAC_SHA3_224::to(const blob& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
+QByteArray HMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
 
 }  // namespace crypto
 }  // namespace librevault

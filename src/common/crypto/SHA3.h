@@ -23,6 +23,7 @@ class SHA3 : public OneWayTransformer {
 
   QByteArray compute(const QByteArray& data) const;
   blob to(const blob& data) const;
+  QByteArray to(const QByteArray& data) const;
 };
 
 }  // namespace crypto

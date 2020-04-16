@@ -28,6 +28,7 @@ QByteArray SHA3::compute(const QByteArray& data) const {
   }
 }
 blob SHA3::to(const blob& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
+QByteArray SHA3::to(const QByteArray& data) const { return compute(data); }
 
 }  // namespace crypto
 }  // namespace librevault

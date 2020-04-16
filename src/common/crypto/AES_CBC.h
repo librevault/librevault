@@ -10,6 +10,7 @@
  */
 #pragma once
 #include <cryptopp/osrng.h>
+#include <util/random.h>
 
 #include "Transformer.h"
 
@@ -30,9 +31,7 @@ class AES_CBC : public TwoWayTransformer {
   blob decrypt(const blob& ciphertext) const;
 
   static blob random_iv() {
-    blob random_iv(16);
-    CryptoPP::AutoSeededRandomPool().GenerateBlock(random_iv.data(), random_iv.size());
-    return random_iv;
+    return conv_bytearray(randomBytes(16));
   }
 
   blob to(const blob& data) const { return encrypt(data); }

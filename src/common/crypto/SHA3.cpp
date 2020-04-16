@@ -17,17 +17,17 @@
 namespace librevault {
 namespace crypto {
 
-blob SHA3::compute(const blob& data) const {
+QByteArray SHA3::compute(const QByteArray& data) const {
   switch (size_) {
     case 224:
-      return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_224));
+      return QCryptographicHash::hash(data, QCryptographicHash::Sha3_224);
     case 256:
-      return conv_bytearray(QCryptographicHash::hash(conv_bytearray(data), QCryptographicHash::Sha3_256));
+      return QCryptographicHash::hash(data, QCryptographicHash::Sha3_256);
     default:
       throw std::runtime_error("Hashing algorithm not supported");
   }
 }
-blob SHA3::to(const blob& data) const { return compute(data); }
+blob SHA3::to(const blob& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
 
 }  // namespace crypto
 }  // namespace librevault

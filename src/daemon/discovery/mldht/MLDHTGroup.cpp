@@ -33,7 +33,6 @@
 #include <boost/asio/ip/udp.hpp>
 
 #include "MLDHTProvider.h"
-#include "crypto/Hex.h"
 #include "folder/FolderGroup.h"
 #include "util/Endpoint.h"
 
@@ -63,8 +62,10 @@ void MLDHTGroup::setEnabled(bool enable) {
 void MLDHTGroup::startSearch(int af) {
   bool announce = true;
 
+  QByteArray info_hash((const char*)info_hash_.data(), info_hash_.size());
+
   qCDebug(log_dht) << "Starting" << (af == AF_INET6 ? "IPv6" : "IPv4") << (announce ? "announce" : "search")
-                   << "for: " << crypto::Hex().to_string(info_hash_).c_str() << (announce ? "on port:" : "")
+                   << "for:" << info_hash.toHex() << (announce ? "on port:" : "")
                    << (announce ? QString::number(provider_->getExternalPort()) : QString());
 
   dht_search(info_hash_.data(), announce ? provider_->getExternalPort() : 0, af, lv_dht_callback_glue, provider_);

@@ -38,7 +38,7 @@ namespace librevault {
 EncStorage::EncStorage(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QString EncStorage::make_chunk_ct_name(QByteArray ct_hash) const noexcept {
-  return "chunk-" + QString::fromStdString(crypto::Base32().to_string(ct_hash));
+  return "chunk-" + QString::fromLatin1(conv_bytearray(ct_hash | crypto::Base32()));
 }
 
 QString EncStorage::make_chunk_ct_path(const blob& ct_hash) const noexcept {

@@ -21,7 +21,7 @@ class SHA3 : public OneWayTransformer {
   SHA3(size_t size) : size_(size) {}
   virtual ~SHA3() {}
 
-  blob compute(const blob& data) const;
+  QByteArray compute(const QByteArray& data) const;
   blob to(const blob& data) const;
 };
 

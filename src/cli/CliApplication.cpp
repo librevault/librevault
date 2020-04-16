@@ -39,7 +39,6 @@
 
 #include "Secret.h"
 #include "appver.h"
-#include "crypto/Hex.h"
 
 namespace librevault {
 

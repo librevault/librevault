@@ -33,16 +33,6 @@ class OneWayTransformer {
   blob to(const Container& data) const {
     return to(data.begin(), data.end());
   }
-
-  template <class InputIterator>
-  std::string to_string(InputIterator first, InputIterator last) const {
-    blob result = to(first, last);
-    return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
-  }
-  template <class Container>
-  std::string to_string(const Container& data) const {
-    return to_string(data.begin(), data.end());
-  }
 };
 
 class TwoWayTransformer : public OneWayTransformer {

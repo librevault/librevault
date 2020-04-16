@@ -94,7 +94,7 @@ jobs:
             git submodule update --init --recursive
       - run:
           command: |
-            brew install cmake ccache
+            brew install cmake ccache ninja
             python3 -m pip install conan
       - restore_cache:
           keys:
@@ -119,7 +119,7 @@ jobs:
           name: Build application
           command: |
             cd build
-            cmake ..
+            cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             cmake --build .
       - save_cache:
           key: ccache-cache-v1-{{ arch }}-{{ .Revision }}

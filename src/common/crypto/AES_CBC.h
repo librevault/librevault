@@ -19,23 +19,23 @@ namespace crypto {
 
 class AES_CBC : public TwoWayTransformer {
  private:
-  const blob& key;
-  const blob& iv;
+  const QByteArray key;
+  const QByteArray iv;
   bool padding;
 
  public:
-  AES_CBC(const blob& key, const blob& iv, bool padding = true);
+  AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding = true);
   virtual ~AES_CBC(){};
 
-  blob encrypt(const blob& plaintext) const;
-  blob decrypt(const blob& ciphertext) const;
+  QByteArray encrypt(const QByteArray& plaintext) const;
+  QByteArray decrypt(const QByteArray& ciphertext) const;
 
   static blob random_iv() {
     return conv_bytearray(randomBytes(16));
   }
 
-  QByteArray to(const QByteArray& data) const { return conv_bytearray(encrypt(conv_bytearray(data))); }
-  QByteArray from(const QByteArray& data) const { return conv_bytearray(decrypt(conv_bytearray(data))); }
+  QByteArray to(const QByteArray& data) const { return encrypt(data); }
+  QByteArray from(const QByteArray& data) const { return decrypt(data); }
 };
 
 }  // namespace crypto

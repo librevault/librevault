@@ -25,12 +25,12 @@ namespace librevault {
 
 std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key,
                                           const std::vector<uint8_t>& iv) {
-  return conv_bytearray(chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0));
+  return conv_bytearray(chunk | crypto::AES_CBC(conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size,
                                           const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-  return conv_bytearray(chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0));
+  return conv_bytearray(chunk | crypto::De<crypto::AES_CBC>(conv_bytearray(key), conv_bytearray(iv), size % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {

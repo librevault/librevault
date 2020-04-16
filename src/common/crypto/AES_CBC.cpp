@@ -13,37 +13,36 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/ccm.h>
 #include <cryptopp/filters.h>
-#include <cryptopp/osrng.h>
 
 namespace librevault {
 namespace crypto {
 
-AES_CBC::AES_CBC(const blob& key, const blob& iv, bool padding) : key(key), iv(iv), padding(padding) {}
+AES_CBC::AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding) : key(key), iv(iv), padding(padding) {}
 
-blob AES_CBC::encrypt(const blob& plaintext) const {
-  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter(key.data(), key.size(), iv.data());
+QByteArray AES_CBC::encrypt(const QByteArray& plaintext) const {
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.data());
 
   std::string ciphertext;
   CryptoPP::StringSource(
-      plaintext.data(), plaintext.size(), true,
+      (const uchar*)plaintext.data(), plaintext.size(), true,
       new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(ciphertext),
                                                padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
                                                        : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-  return blob(std::make_move_iterator(ciphertext.begin()), std::make_move_iterator(ciphertext.end()));
+  return QByteArray::fromStdString(ciphertext);
 }
 
-blob AES_CBC::decrypt(const blob& ciphertext) const {
-  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter(key.data(), key.size(), iv.data());
+QByteArray AES_CBC::decrypt(const QByteArray& ciphertext) const {
+  CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption filter((const uchar*)key.data(), key.size(), (const uchar*)iv.data());
 
   std::string plaintext;
   CryptoPP::StringSource(
-      ciphertext.data(), ciphertext.size(), true,
+  (const uchar*)ciphertext.data(), ciphertext.size(), true,
       new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(plaintext),
                                                padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
                                                        : CryptoPP::StreamTransformationFilter::NO_PADDING));
 
-  return blob(std::make_move_iterator(plaintext.begin()), std::make_move_iterator(plaintext.end()));
+  return QByteArray::fromStdString(plaintext);
 }
 
 }  // namespace crypto

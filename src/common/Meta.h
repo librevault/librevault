@@ -16,7 +16,7 @@
 #pragma once
 
 #include "Secret.h"
-#include "util/AES_CBC_DATA.h"
+#include "util/AesCbcData.h"
 
 namespace librevault {
 
@@ -52,7 +52,7 @@ class Meta {
 
   /* Required data */
   std::vector<uint8_t> path_id_;
-  AES_CBC_DATA path_;
+  AesCbcData path_;
   Type meta_type_ = FILE;
   int64_t revision_ = 0;  // timestamp of Meta modification
 
@@ -67,7 +67,7 @@ class Meta {
   uint32_t gid_ = 0;
 
   // Symlink metadata
-  AES_CBC_DATA symlink_path_;
+  AesCbcData symlink_path_;
 
   // File metadata
   /// Algorithm selection
@@ -79,7 +79,7 @@ class Meta {
   uint32_t min_chunksize_ = 0;
 
   /// Rabin algorithm parameters
-  AES_CBC_DATA rabin_global_params_;
+  AesCbcData rabin_global_params_;
 
   std::vector<Chunk> chunks_;
 
@@ -124,18 +124,18 @@ class Meta {
   // Encryptors/decryptors
   std::string path(const Secret& secret) const;
   void set_path(std::string path, const Secret& secret);  // Also, computes and sets path_id
-  AES_CBC_DATA& raw_path() { return path_; }
-  const AES_CBC_DATA& raw_path() const { return path_; }
+  AesCbcData& raw_path() { return path_; }
+  const AesCbcData& raw_path() const { return path_; }
 
   std::string symlink_path(const Secret& secret) const;
   void set_symlink_path(std::string path, const Secret& secret);
-  AES_CBC_DATA& raw_symlink_path() { return symlink_path_; }
-  const AES_CBC_DATA& raw_symlink_path() const { return symlink_path_; }
+  AesCbcData& raw_symlink_path() { return symlink_path_; }
+  const AesCbcData& raw_symlink_path() const { return symlink_path_; }
 
   RabinGlobalParams rabin_global_params(const Secret& secret) const;
   void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
-  AES_CBC_DATA& raw_rabin_global_params() { return rabin_global_params_; }
-  const AES_CBC_DATA& raw_rabin_global_params() const { return rabin_global_params_; }
+  AesCbcData& raw_rabin_global_params() { return rabin_global_params_; }
+  const AesCbcData& raw_rabin_global_params() const { return rabin_global_params_; }
 
   // Dumb getters & setters
   const std::vector<uint8_t>& path_id() const { return path_id_; }

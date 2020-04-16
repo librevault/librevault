@@ -13,34 +13,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "AES_CBC_DATA.h"
+#include "AesCbcData.h"
 
 #include "Meta.h"
 #include "crypto/AES_CBC.h"
 
 namespace librevault {
 
-bool AES_CBC_DATA::check(const Secret& secret) {
-  if (!check()) return false;
+std::vector<uint8_t> AesCbcData::get_plain(const Secret& secret) const {
   try {
-    ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
-  } catch (const CryptoPP::Exception& e) {
-    return false;
-  }
-  return true;
-}
-
-std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
-  try {
-    return conv_bytearray(ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv));
+    return conv_bytearray(ct | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), conv_bytearray(iv)));
   } catch (const CryptoPP::Exception& e) {
     throw Meta::parse_error("Parse error: Decryption failed");
   }
 }
 
-void AES_CBC_DATA::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
+void AesCbcData::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
   iv = crypto::AES_CBC::random_iv();
-  ct = conv_bytearray(pt | crypto::AES_CBC(conv_bytearray(secret.get_Encryption_Key()), iv));
+  ct = conv_bytearray(pt | crypto::AES_CBC(secret.get_Encryption_Key(), conv_bytearray(iv)));
 }
 
 }  // namespace librevault

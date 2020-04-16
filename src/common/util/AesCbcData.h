@@ -18,11 +18,11 @@
 
 namespace librevault {
 
-struct AES_CBC_DATA {
+struct AesCbcData {
   std::vector<uint8_t> ct, iv;
 
   bool check() const { return !ct.empty() && ct.size() % 16 == 0 && iv.size() == 16; };
-  bool check(const Secret& secret);  // Use this with extreme care. Can cause padding oracle attack, if misused. Meta is
+  // Use this with extreme care. Can cause padding oracle attack, if misused. Meta is
                                      // (generally) signed and unmalleable
   void set_plain(const std::vector<uint8_t>& pt, const Secret& secret);
   std::vector<uint8_t> get_plain(const Secret& secret) const;  // Caching, maybe?

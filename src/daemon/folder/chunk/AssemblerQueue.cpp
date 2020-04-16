@@ -49,7 +49,7 @@ AssemblerQueue::AssemblerQueue(const FolderParams& params, MetaStorage* meta_sto
 
   assemble_timer_ = new QTimer(this);
   assemble_timer_->setInterval(30 * 1000);
-  connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodic_assemble_operation);
+  connect(assemble_timer_, &QTimer::timeout, this, &AssemblerQueue::periodicAssembleOperation);
   assemble_timer_->start();
 }
 
@@ -67,10 +67,10 @@ void AssemblerQueue::addAssemble(SignedMeta smeta) {
   threadpool_->start(worker);
 }
 
-void AssemblerQueue::periodic_assemble_operation() {
+void AssemblerQueue::periodicAssembleOperation() {
   qCDebug(log_assembler) << "Performing periodic assemble";
 
-  for (auto smeta : meta_storage_->getIncompleteMeta()) addAssemble(smeta);
+  for (const auto& smeta : meta_storage_->getIncompleteMeta()) addAssemble(smeta);
 }
 
 }  // namespace librevault

@@ -49,7 +49,7 @@ TimestampArchive::TimestampArchive(const FolderParams& params, PathNormalizer* p
   QDir().mkpath(archive_path_);
 }
 
-void TimestampArchive::archive(QString denormpath) {
+void TimestampArchive::archive(const QString& denormpath) {
   boost::filesystem::path denormpath_fs = conv_fspath(denormpath);
   // Add a new entry
   QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);

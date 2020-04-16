@@ -55,9 +55,9 @@ class ChunkStorage : public QObject {
   ChunkStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
   ~ChunkStorage() = default;
 
-  [[nodiscard]] bool have_chunk(const blob& ct_hash) const noexcept;
-  QByteArray get_chunk(const blob& ct_hash);  // Throws AbstractFolder::ChunkNotFound
-  void put_chunk(QByteArray ct_hash, QFile* chunk_f);
+  [[nodiscard]] bool have_chunk(const QByteArray& ct_hash) const noexcept;
+  QByteArray get_chunk(const QByteArray& ct_hash);  // Throws AbstractFolder::ChunkNotFound
+  void put_chunk(const QByteArray& ct_hash, QFile* chunk_f);
 
   bitfield_type make_bitfield(const Meta& meta) const noexcept;  // Bulk version of "have_chunk"
 

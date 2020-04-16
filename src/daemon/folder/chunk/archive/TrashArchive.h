@@ -35,7 +35,7 @@ class TrashArchive : public ArchiveStrategy {
   Q_OBJECT
  public:
   TrashArchive(const FolderParams& params, PathNormalizer* path_normalizer, QObject* parent);
-  void archive(QString denormpath);
+  void archive(const QString& denormpath) override;
 
  private:
   const FolderParams& params_;

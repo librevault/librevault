@@ -68,7 +68,7 @@ void TrashArchive::maintain_cleanup() {
   }
 }
 
-void TrashArchive::archive(QString denormpath) {
+void TrashArchive::archive(const QString& denormpath) {
   QString archived_path = archive_path_ + "/" + path_normalizer_->normalizePath(denormpath);
   qDebug() << "Adding an archive item: " << archived_path;
   QFile::rename(denormpath, archived_path);

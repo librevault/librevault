@@ -52,12 +52,12 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
   connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
 };
 
-bool ChunkStorage::have_chunk(const blob& ct_hash) const noexcept {
+bool ChunkStorage::have_chunk(const QByteArray& ct_hash) const noexcept {
   return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) ||
-         (open_storage && open_storage->have_chunk(conv_bytearray(ct_hash)));
+         (open_storage && open_storage->have_chunk(ct_hash));
 }
 
-QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
+QByteArray ChunkStorage::get_chunk(const QByteArray& ct_hash) {
   try {
     // Cache hit
     return mem_storage->get_chunk(ct_hash);
@@ -77,7 +77,7 @@ QByteArray ChunkStorage::get_chunk(const blob& ct_hash) {
   }
 }
 
-void ChunkStorage::put_chunk(QByteArray ct_hash, QFile* chunk_f) {
+void ChunkStorage::put_chunk(const QByteArray& ct_hash, QFile* chunk_f) {
   enc_storage->put_chunk(ct_hash, chunk_f);
   for (auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash))) file_assembler->addAssemble(smeta);
 
@@ -89,7 +89,7 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
     bitfield_type bitfield(meta.chunks().size());
 
     for (int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
-      if (have_chunk(conv_bytearray(meta.chunks().at(bitfield_idx).ct_hash))) bitfield[bitfield_idx] = true;
+      if (have_chunk(meta.chunks().at(bitfield_idx).ct_hash)) bitfield[bitfield_idx] = true;
 
     return bitfield;
   } else
@@ -98,7 +98,7 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 
 void ChunkStorage::cleanup(const Meta& meta) {
   for (const auto& chunk : meta.chunks())
-    if (open_storage->have_chunk(chunk.ct_hash)) enc_storage->remove_chunk(conv_bytearray(chunk.ct_hash));
+    if (open_storage->have_chunk(chunk.ct_hash)) enc_storage->remove_chunk(chunk.ct_hash);
 }
 
 }  // namespace librevault

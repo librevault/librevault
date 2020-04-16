@@ -67,7 +67,7 @@ class AssemblerQueue : public QObject {
 
   QThreadPool* threadpool_;
 
-  void periodic_assemble_operation();
+  void periodicAssembleOperation();
   QTimer* assemble_timer_;
 };
 

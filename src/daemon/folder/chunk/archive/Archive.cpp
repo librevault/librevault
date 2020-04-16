@@ -63,7 +63,7 @@ Archive::Archive(const FolderParams& params, MetaStorage* meta_storage, PathNorm
   }
 }
 
-bool Archive::archive(QString denormpath) {
+bool Archive::archive(const QString& denormpath) {
   boost::filesystem::path denormpath_fs = conv_fspath(denormpath);
   auto file_type = boost::filesystem::symlink_status(denormpath_fs).type();
 

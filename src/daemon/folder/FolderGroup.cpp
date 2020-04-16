@@ -79,7 +79,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
   state_pusher_ = new QTimer(this);
 
   // Connecting signals and slots
-  connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handle_indexed_meta);
+  connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handleIndexedMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const QByteArray& ct_hash) {
     downloader_->notifyLocalChunk(ct_hash);
     uploader_->broadcast_chunk(remotes(), conv_bytearray(ct_hash));
@@ -93,7 +93,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
 
   // Go through index
   QTimer::singleShot(0, this, [=, this] {
-    for (auto& smeta : meta_storage_->getMeta()) handle_indexed_meta(smeta);
+    for (auto& smeta : meta_storage_->getMeta()) handleIndexedMeta(smeta);
   });
 }
 
@@ -105,7 +105,7 @@ FolderGroup::~FolderGroup() {
 }
 
 /* Actions */
-void FolderGroup::handle_indexed_meta(const SignedMeta& smeta) {
+void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {
   Meta::PathRevision revision = smeta.meta().path_revision();
   bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
 

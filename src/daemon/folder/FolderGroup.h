@@ -116,7 +116,7 @@ class FolderGroup : public QObject {
 
  private slots:
   void push_state();
-  void handle_indexed_meta(const SignedMeta& smeta);
+  void handleIndexedMeta(const SignedMeta& smeta);
   void handle_handshake(RemoteFolder* origin);
 };
 

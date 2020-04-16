@@ -42,15 +42,15 @@ OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, 
 
 bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept { return meta_storage_->isChunkAssembled(ct_hash); }
 
-QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
+QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
   LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
-  for (auto& smeta : meta_storage_->containingChunk(ct_hash)) {
+  for (auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash))) {
     // Search for chunk offset and index
     uint64_t offset = 0;
     int chunk_idx = 0;
     for (auto& chunk : smeta.meta().chunks()) {
-      if (conv_bytearray(chunk.ct_hash) == ct_hash) break;
+      if (chunk.ct_hash == ct_hash) break;
       offset += chunk.size;
       chunk_idx++;
     }
@@ -68,7 +68,7 @@ QByteArray OpenStorage::get_chunk(const blob& ct_hash) const {
     auto chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.get_Encryption_Key(), chunk.iv);
 
     // Check
-    if (verifyChunk(conv_bytearray(ct_hash), chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
+    if (verifyChunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
   }
   throw ChunkStorage::ChunkNotFound();
 }

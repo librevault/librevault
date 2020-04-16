@@ -65,7 +65,7 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params, M
 AssemblerWorker::~AssemblerWorker() {}
 
 QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-  auto chunk = chunk_storage_->get_chunk(ct_hash);
+  auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
 
   try {
     QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);

@@ -32,6 +32,6 @@
 
 namespace librevault {
 
-void NoArchive::archive(QString denormpath) { QFile::remove(denormpath); }
+void NoArchive::archive(const QString &denormpath) { QFile::remove(denormpath); }
 
 }  // namespace librevault

@@ -42,7 +42,7 @@ class PathNormalizer;
 struct ArchiveStrategy : public QObject {
   Q_OBJECT
  public:
-  virtual void archive(QString denormpath) = 0;
+  virtual void archive(const QString& denormpath) = 0;
 
  protected:
   ArchiveStrategy(QObject* parent) : QObject(parent) {}
@@ -55,7 +55,7 @@ class Archive : public QObject {
  public:
   Archive(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer, QObject* parent);
 
-  bool archive(QString denormpath);
+  bool archive(const QString& denormpath);
 
  private:
   MetaStorage* meta_storage_;

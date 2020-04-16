@@ -27,20 +27,19 @@ namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   meta_ = std::make_shared<Meta>(std::move(meta));
-  raw_meta_ = std::make_shared<std::vector<uint8_t>>(meta.serialize());
+  raw_meta_ = conv_bytearray(meta.serialize());
 
   CryptoPP::AutoSeededRandomPool rng;
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
   signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(secret.get_Private_Key()));
 
-  signature_ = std::make_shared<std::vector<uint8_t>>(signer.SignatureLength());
-  signer.SignMessage(rng, raw_meta_->data(), raw_meta_->size(), signature_->data());
+  signature_ = QByteArray(signer.SignatureLength(), 0);
+  signer.SignMessage(rng, (const uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());
 }
 
 SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
                        bool check_signature)
-    : raw_meta_(std::make_shared<std::vector<uint8_t>>(std::move(raw_meta))),
-      signature_(std::make_shared<std::vector<uint8_t>>(std::move(signature))) {
+    : raw_meta_(conv_bytearray(raw_meta)), signature_(conv_bytearray(signature)) {
   if (check_signature) {
     try {
       auto public_key = secret.get_Public_Key();
@@ -52,14 +51,15 @@ SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signa
       verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
       verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
       verifier.AccessKey().SetPublicElement(p);
-      if (!verifier.VerifyMessage(raw_meta_->data(), raw_meta_->size(), signature_->data(), signature_->size()))
+      if (!verifier.VerifyMessage((const uchar*)raw_meta_.data(), raw_meta_.size(), (const uchar*)signature_.data(),
+                                  signature_.size()))
         throw signature_error();
     } catch (CryptoPP::Exception& e) {
       throw signature_error();
     }
   }
 
-  meta_ = std::make_shared<Meta>(*raw_meta_);
+  meta_ = std::make_shared<Meta>(raw_meta_);
 }
 
 }  // namespace librevault

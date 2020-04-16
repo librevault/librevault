@@ -82,13 +82,13 @@ QList<QString> DirectoryPoller::getReindexList() {
   // They can still be indexed by monitor, though.
   for (auto& smeta : meta_storage_->getIncompleteMeta()) {
     QString denormpath =
-        path_normalizer_->denormalizePath(QByteArray::fromStdString(smeta.meta().path(params_.secret)));
+        path_normalizer_->denormalizePath(smeta.meta().path(params_.secret));
     file_list.remove(denormpath);
   }
 
   // Files present in index (files added from here will be marked as DELETED)
   for (auto& smeta : meta_storage_->getExistingMeta()) {
-    QByteArray normpath = QByteArray::fromStdString(smeta.meta().path(params_.secret));
+    QByteArray normpath = smeta.meta().path(params_.secret);
     QString denormpath = path_normalizer_->denormalizePath(normpath);
 
     if (!ignore_list_->isIgnored(normpath)) file_list.insert(denormpath);

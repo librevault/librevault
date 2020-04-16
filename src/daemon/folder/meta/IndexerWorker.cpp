@@ -72,7 +72,7 @@ void IndexerWorker::run() noexcept {
     if (ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
 
     try {
-      old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath.toStdString(), secret_));
+      old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath, secret_));
       old_meta_ = old_smeta_.meta();
       if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
         throw abort_index("Modification time is not changed");
@@ -106,7 +106,7 @@ void IndexerWorker::make_Meta() {
 
   // LOGD("make_Meta(" << normpath.toStdString() << ")");
 
-  new_meta_.set_path(normpath.toStdString(), secret_);  // sets path_id, encrypted_path and encrypted_path_iv
+  new_meta_.set_path(normpath, secret_);  // sets path_id, encrypted_path and encrypted_path_iv
 
   new_meta_.set_meta_type(get_type());  // Type
 
@@ -222,10 +222,8 @@ void IndexerWorker::update_chunks() {
   }
 
   // IV reuse
-  std::map<blob, blob> pt_hmac__iv;
-  for (auto& chunk : old_meta_.chunks()) {
-    pt_hmac__iv.insert({chunk.pt_hmac, chunk.iv});
-  }
+  QHash<QByteArray, QByteArray> pt_hmac__iv;
+  for (auto& chunk : old_meta_.chunks()) pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
 
   // Initializing chunker
   rabin_t hasher;
@@ -241,7 +239,7 @@ void IndexerWorker::update_chunks() {
   rabin_init(&hasher);
 
   // Chunking
-  std::vector<Meta::Chunk> chunks;
+  QVector<Meta::Chunk> chunks;
 
   blob buffer;
   buffer.reserve(hasher.maxsize);
@@ -256,30 +254,30 @@ void IndexerWorker::update_chunks() {
     uint8_t* ptr = &buffer.back();
 
     if (rabin_next_chunk(&hasher, ptr, 1) == 1) {  // Found a chunk
-      chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+      chunks.push_back(populate_chunk(conv_bytearray(buffer), pt_hmac__iv));
       buffer.clear();
     }
   }
 
   if (!active_) throw abort_index("Indexing had been interruped");
 
-  if (rabin_finalize(&hasher) != 0) chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+  if (rabin_finalize(&hasher) != 0) chunks.push_back(populate_chunk(conv_bytearray(buffer), pt_hmac__iv));
 
   new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
+Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
   qCDebug(log_indexer) << "New chunk size:" << data.size();
   Meta::Chunk chunk;
-  chunk.pt_hmac = conv_bytearray(data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key()));
+  chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 
   // IV reuse
-  auto it = pt_hmac__iv.find(chunk.pt_hmac);
-  chunk.iv = (it != pt_hmac__iv.end() ? it->second : crypto::AES_CBC::random_iv());
+  chunk.iv = pt_hmac__iv.value(chunk.pt_hmac);
+  if (chunk.iv.isEmpty()) crypto::AES_CBC::random_iv();
 
   chunk.size = data.size();
-  chunk.ct_hash = Meta::Chunk::compute_strong_hash(
-      Meta::Chunk::encrypt(data, conv_bytearray(secret_.get_Encryption_Key()), chunk.iv), new_meta_.strong_hash_type());
+  chunk.ct_hash = Meta::Chunk::computeStrongHash(
+      Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta_.strong_hash_type());
   return chunk;
 }
 

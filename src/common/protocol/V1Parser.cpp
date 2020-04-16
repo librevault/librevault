@@ -47,7 +47,7 @@ V1Parser::Handshake V1Parser::parse_Handshake(const std::vector<uint8_t>& messag
 std::vector<uint8_t> V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
   protocol::HaveMeta message_protobuf;
 
-  message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
+  message_protobuf.set_path_id(message_struct.revision.path_id_, message_struct.revision.path_id_.size());
   message_protobuf.set_revision(message_struct.revision.revision_);
 
   std::vector<uint8_t> converted_bitfield = convert_bitfield(message_struct.bitfield);
@@ -62,7 +62,7 @@ V1Parser::HaveMeta V1Parser::parse_HaveMeta(const std::vector<uint8_t>& message_
   HaveMeta message_struct;
   message_struct.revision.revision_ = message_protobuf.revision();
   message_struct.revision.path_id_ =
-      std::vector<uint8_t>(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
+      QByteArray::fromStdString(message_protobuf.path_id());
   message_struct.bitfield =
       convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
@@ -88,7 +88,7 @@ V1Parser::HaveChunk V1Parser::parse_HaveChunk(const std::vector<uint8_t>& messag
 
 std::vector<uint8_t> V1Parser::gen_MetaRequest(const MetaRequest& message_struct) {
   protocol::MetaRequest message_protobuf;
-  message_protobuf.set_path_id(message_struct.revision.path_id_.data(), message_struct.revision.path_id_.size());
+  message_protobuf.set_path_id(message_struct.revision.path_id_, message_struct.revision.path_id_.size());
   message_protobuf.set_revision(message_struct.revision.revision_);
 
   return prepare_proto_message(message_protobuf, META_REQUEST);
@@ -98,7 +98,7 @@ V1Parser::MetaRequest V1Parser::parse_MetaRequest(const std::vector<uint8_t>& me
   if (!message_protobuf.ParseFromArray(message_raw.data() + 1, message_raw.size() - 1)) throw parse_error();
 
   MetaRequest message_struct;
-  message_struct.revision.path_id_.assign(message_protobuf.path_id().begin(), message_protobuf.path_id().end());
+  message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
   message_struct.revision.revision_ = message_protobuf.revision();
 
   return message_struct;

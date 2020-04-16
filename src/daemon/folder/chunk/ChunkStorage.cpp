@@ -90,8 +90,8 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
   if (meta.meta_type() == meta.FILE) {
     bitfield_type bitfield(meta.chunks().size());
 
-    for (unsigned int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
-      if (have_chunk(meta.chunks().at(bitfield_idx).ct_hash)) bitfield[bitfield_idx] = true;
+    for (int bitfield_idx = 0; bitfield_idx < meta.chunks().size(); bitfield_idx++)
+      if (have_chunk(conv_bytearray(meta.chunks().at(bitfield_idx).ct_hash))) bitfield[bitfield_idx] = true;
 
     return bitfield;
   } else
@@ -100,7 +100,7 @@ bitfield_type ChunkStorage::make_bitfield(const Meta& meta) const noexcept {
 
 void ChunkStorage::cleanup(const Meta& meta) {
   for (auto chunk : meta.chunks())
-    if (open_storage->have_chunk(chunk.ct_hash)) enc_storage->remove_chunk(chunk.ct_hash);
+    if (open_storage->have_chunk(conv_bytearray(chunk.ct_hash))) enc_storage->remove_chunk(conv_bytearray(chunk.ct_hash));
 }
 
 }  // namespace librevault

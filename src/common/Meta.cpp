@@ -23,29 +23,27 @@
 
 namespace librevault {
 
-std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key,
-                                          const std::vector<uint8_t>& iv) {
-  return conv_bytearray(chunk | crypto::AES_CBC(conv_bytearray(key), conv_bytearray(iv), chunk.size() % 16 != 0));
+QByteArray Meta::Chunk::encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv) {
+  return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
 }
 
-std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size,
-                                          const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-  return conv_bytearray(chunk | crypto::De<crypto::AES_CBC>(conv_bytearray(key), conv_bytearray(iv), size % 16 != 0));
+QByteArray Meta::Chunk::decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv) {
+  return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
 }
 
-std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
+QByteArray Meta::Chunk::computeStrongHash(const QByteArray& chunk, StrongHashType type) {
   switch (type) {
     case SHA3_224:
-      return conv_bytearray(chunk | crypto::SHA3(224));
+      return chunk | crypto::SHA3(224);
     case SHA2_224:
-      return conv_bytearray(chunk | crypto::SHA2(224));
+      return chunk | crypto::SHA2(224);
     default:
-      return std::vector<uint8_t>();  // TODO: throw some exception.
+      return QByteArray();  // TODO: throw some exception.
   }
 }
 
 Meta::Meta() {}
-Meta::Meta(const std::vector<uint8_t>& meta_s) { parse(meta_s); }
+Meta::Meta(const QByteArray& meta_s) { parse(conv_bytearray(meta_s)); }
 Meta::~Meta() {}
 
 bool Meta::validate() const {
@@ -91,36 +89,26 @@ encrypted_path and its iv
 
 uint64_t Meta::size() const {
   uint64_t total_size = 0;
-  for (auto& chunk : chunks()) {
-    total_size += chunk.size;
-  }
+  for (auto& chunk : chunks()) total_size += chunk.size;
   return total_size;
 }
 
-std::string Meta::path(const Secret& secret) const {
-  std::vector<uint8_t> result = path_.get_plain(secret);
-  return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
-}
-void Meta::set_path(std::string path, const Secret& secret) {
+QByteArray Meta::path(const Secret& secret) const { return path_.get_plain(secret); }
+void Meta::set_path(const QByteArray& path, const Secret& secret) {
   set_path_id(make_path_id(path, secret));
-  path_.set_plain(std::vector<uint8_t>(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())),
-                  secret);
+  path_.set_plain(path, secret);
 }
 
-std::string Meta::symlink_path(const Secret& secret) const {
-  std::vector<uint8_t> result = symlink_path_.get_plain(secret);
-  return std::string(std::make_move_iterator(result.begin()), std::make_move_iterator(result.end()));
-}
+QByteArray Meta::symlink_path(const Secret& secret) const { return symlink_path_.get_plain(secret); }
 void Meta::set_symlink_path(std::string path, const Secret& secret) {
-  symlink_path_.set_plain(
-      std::vector<uint8_t>(std::make_move_iterator(path.begin()), std::make_move_iterator(path.end())), secret);
+  symlink_path_.set_plain(QByteArray::fromStdString(path), secret);
 }
 
 Meta::RabinGlobalParams Meta::rabin_global_params(const Secret& secret) const {
   auto decrypted = rabin_global_params_.get_plain(secret);
 
   serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
-  bool parsed_well = rabin_global_params_s.ParseFromArray(decrypted.data(), decrypted.size());
+  bool parsed_well = rabin_global_params_s.ParseFromArray(decrypted, decrypted.size());
   if (!parsed_well) throw parse_error("Parse error: Rabin signature parameters parsing failed");
 
   Meta::RabinGlobalParams rabin_global_params;
@@ -138,7 +126,7 @@ void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params,
   rabin_global_params_s.set_polynomial_shift(rabin_global_params.polynomial_shift);
   rabin_global_params_s.set_avg_bits(rabin_global_params.avg_bits);
 
-  std::vector<uint8_t> serialized(rabin_global_params_s.ByteSize());
+  QByteArray serialized(rabin_global_params_s.ByteSize(), 0);
   rabin_global_params_s.SerializeToArray(serialized.data(), serialized.size());
 
   rabin_global_params_.set_plain(serialized, secret);
@@ -147,9 +135,9 @@ void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params,
 std::vector<uint8_t> Meta::serialize() const {
   serialization::Meta meta_s;
 
-  meta_s.set_path_id(path_id_.data(), path_id_.size());
-  meta_s.mutable_path()->set_ct(path_.ct.data(), path_.ct.size());
-  meta_s.mutable_path()->set_iv(path_.iv.data(), path_.iv.size());
+  meta_s.set_path_id(path_id_, path_id_.size());
+  meta_s.mutable_path()->set_ct(path_.ct().toStdString());
+  meta_s.mutable_path()->set_iv(path_.iv().toStdString());
   meta_s.set_meta_type((uint32_t)meta_type_);
   meta_s.set_revision(revision_);
 
@@ -162,29 +150,28 @@ std::vector<uint8_t> Meta::serialize() const {
   }
 
   if (meta_type_ == SYMLINK) {
-    meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_ct(symlink_path_.ct.data(), symlink_path_.ct.size());
-    meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_iv(symlink_path_.iv.data(), symlink_path_.iv.size());
+    meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_ct(symlink_path_.ct().toStdString());
+    meta_s.mutable_symlink_metadata()->mutable_symlink_path()->set_iv(symlink_path_.iv().toStdString());
   }
 
   if (meta_type_ == FILE) {
-    meta_s.mutable_file_metadata()->set_algorithm_type((uint32_t)algorithm_type_);
-    meta_s.mutable_file_metadata()->set_strong_hash_type((uint32_t)strong_hash_type_);
+    auto file_metadata = meta_s.mutable_file_metadata();
+    file_metadata->set_algorithm_type((uint32_t)algorithm_type_);
+    file_metadata->set_strong_hash_type((uint32_t)strong_hash_type_);
 
-    meta_s.mutable_file_metadata()->set_max_chunksize(max_chunksize_);
-    meta_s.mutable_file_metadata()->set_min_chunksize(min_chunksize_);
+    file_metadata->set_max_chunksize(max_chunksize_);
+    file_metadata->set_min_chunksize(min_chunksize_);
 
-    meta_s.mutable_file_metadata()->mutable_rabin_global_params()->set_ct(rabin_global_params_.ct.data(),
-                                                                          rabin_global_params_.ct.size());
-    meta_s.mutable_file_metadata()->mutable_rabin_global_params()->set_iv(rabin_global_params_.iv.data(),
-                                                                          rabin_global_params_.iv.size());
+    file_metadata->mutable_rabin_global_params()->set_ct(rabin_global_params_.ct().toStdString());
+    file_metadata->mutable_rabin_global_params()->set_iv(rabin_global_params_.iv().toStdString());
 
     for (auto& chunk : chunks()) {
-      auto chunk_s = meta_s.mutable_file_metadata()->add_chunks();
-      chunk_s->set_ct_hash(chunk.ct_hash.data(), chunk.ct_hash.size());
+      auto chunk_s = file_metadata->add_chunks();
+      chunk_s->set_ct_hash(chunk.ct_hash, chunk.ct_hash.size());
       chunk_s->set_size(chunk.size);
-      chunk_s->set_iv(chunk.iv.data(), chunk.iv.size());
+      chunk_s->set_iv(chunk.iv, chunk.iv.size());
 
-      chunk_s->set_pt_hmac(chunk.pt_hmac.data(), chunk.pt_hmac.size());
+      chunk_s->set_pt_hmac(chunk.pt_hmac, chunk.pt_hmac.size());
     }
   }
 
@@ -199,9 +186,8 @@ void Meta::parse(const std::vector<uint8_t>& serialized_data) {
   bool parsed_well = meta_s.ParseFromArray(serialized_data.data(), serialized_data.size());
   if (!parsed_well) throw parse_error("Parse error: Protobuf parsing failed");
 
-  path_id_.assign(meta_s.path_id().begin(), meta_s.path_id().end());
-  path_.ct.assign(meta_s.path().ct().begin(), meta_s.path().ct().end());
-  path_.iv.assign(meta_s.path().iv().begin(), meta_s.path().iv().end());
+  path_id_ = QByteArray::fromStdString(meta_s.path_id());
+  path_.setEncrypted(meta_s.path().ct(), meta_s.path().iv());
   meta_type_ = (Type)meta_s.meta_type();
   revision_ = (int64_t)meta_s.revision();
 
@@ -217,10 +203,8 @@ void Meta::parse(const std::vector<uint8_t>& serialized_data) {
   if (meta_type_ == SYMLINK) {
     if (meta_s.type_specific_metadata_case() != meta_s.kSymlinkMetadata)
       throw parse_error("Parse error: Symlink metadata needed");
-    symlink_path_.ct.assign(meta_s.symlink_metadata().symlink_path().ct().begin(),
-                            meta_s.symlink_metadata().symlink_path().ct().end());
-    symlink_path_.iv.assign(meta_s.symlink_metadata().symlink_path().iv().begin(),
-                            meta_s.symlink_metadata().symlink_path().iv().end());
+    symlink_path_.setEncrypted(meta_s.symlink_metadata().symlink_path().ct(),
+                               meta_s.symlink_metadata().symlink_path().iv());
   }
 
   if (meta_type_ == FILE) {
@@ -231,25 +215,23 @@ void Meta::parse(const std::vector<uint8_t>& serialized_data) {
     max_chunksize_ = meta_s.file_metadata().max_chunksize();
     min_chunksize_ = meta_s.file_metadata().min_chunksize();
 
-    rabin_global_params_.ct.assign(meta_s.file_metadata().rabin_global_params().ct().begin(),
-                                   meta_s.file_metadata().rabin_global_params().ct().end());
-    rabin_global_params_.iv.assign(meta_s.file_metadata().rabin_global_params().iv().begin(),
-                                   meta_s.file_metadata().rabin_global_params().iv().end());
+    rabin_global_params_.setEncrypted(meta_s.file_metadata().rabin_global_params().ct(),
+                                      meta_s.file_metadata().rabin_global_params().iv());
 
     for (auto& chunk_s : meta_s.file_metadata().chunks()) {
       Chunk chunk;
-      chunk.ct_hash.assign(chunk_s.ct_hash().begin(), chunk_s.ct_hash().end());
+      chunk.ct_hash = QByteArray::fromStdString(chunk_s.ct_hash());
       chunk.size = chunk_s.size();
-      chunk.iv.assign(chunk_s.iv().begin(), chunk_s.iv().end());
-      chunk.pt_hmac.assign(chunk_s.pt_hmac().begin(), chunk_s.pt_hmac().end());
+      chunk.iv = QByteArray::fromStdString(chunk_s.iv());
+      chunk.pt_hmac = QByteArray::fromStdString(chunk_s.pt_hmac());
 
       chunks_.push_back(chunk);
     }
   }
 }
 
-std::vector<uint8_t> Meta::make_path_id(const std::string& path, const Secret& secret) {
-  return conv_bytearray(path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key()));
+QByteArray Meta::make_path_id(const QByteArray& path, const Secret& secret) {
+  return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
 }
 
 }  // namespace librevault

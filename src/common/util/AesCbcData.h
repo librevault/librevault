@@ -18,14 +18,20 @@
 
 namespace librevault {
 
-struct AesCbcData {
-  std::vector<uint8_t> ct, iv;
+class AesCbcData {
+ public:
+  QByteArray ct() const;
+  QByteArray iv() const;
 
-  bool check() const { return !ct.empty() && ct.size() % 16 == 0 && iv.size() == 16; };
+  void setEncrypted(const std::string& ct, const std::string& iv);
+
+  bool check() const { return !ct_.isEmpty() && ct_.size() % 16 == 0 && iv_.size() == 16; };
   // Use this with extreme care. Can cause padding oracle attack, if misused. Meta is
-                                     // (generally) signed and unmalleable
-  void set_plain(const std::vector<uint8_t>& pt, const Secret& secret);
-  std::vector<uint8_t> get_plain(const Secret& secret) const;  // Caching, maybe?
+  // (generally) signed and unmalleable
+  void set_plain(const QByteArray& pt, const Secret& secret);
+  QByteArray get_plain(const Secret& secret) const;  // Caching, maybe?
+ private:
+  QByteArray ct_, iv_;
 };
 
 }  // namespace librevault

@@ -65,13 +65,12 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params, M
 AssemblerWorker::~AssemblerWorker() {}
 
 QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-  blob chunk = conv_bytearray(chunk_storage_->get_chunk(ct_hash));
+  auto chunk = chunk_storage_->get_chunk(ct_hash);
 
   try {
     QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
-    blob chunk_pt_v = Meta::Chunk::decrypt(chunk, size_iv.first, conv_bytearray(params_.secret.get_Encryption_Key()),
-                                           conv_bytearray(size_iv.second));
-    return conv_bytearray(chunk_pt_v);
+    return Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(),
+                                           size_iv.second);
   } catch (std::exception& e) {
     qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
     throw ChunkStorage::ChunkNotFound();
@@ -81,7 +80,7 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
 void AssemblerWorker::run() noexcept {
   LOGFUNC();
 
-  normpath_ = QByteArray::fromStdString(meta_.path(params_.secret));
+  normpath_ = meta_.path(params_.secret);
   denormpath_ = path_normalizer_->denormalizePath(normpath_);
 
   try {
@@ -106,12 +105,12 @@ void AssemblerWorker::run() noexcept {
     if (assembled) {
       if (meta_.meta_type() != Meta::DELETED) apply_attrib();
 
-      meta_storage_->markAssembled(meta_.path_id());
+      meta_storage_->markAssembled(conv_bytearray(meta_.path_id()));
       chunk_storage_->cleanup(meta_);
     }
   } catch (abort_assembly& e) {  // Already handled
   } catch (std::exception& e) {
-    qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret).c_str()
+    qCWarning(log_assembler) << "Unknown exception while assembling:" << meta_.path(params_.secret)
                              << "E:" << e.what();  // FIXME: #83
   }
 }
@@ -128,7 +127,7 @@ bool AssemblerWorker::assemble_symlink() {
   boost::filesystem::path denormpath_fs(denormpath_.toStdWString());
 
   boost::filesystem::remove_all(denormpath_fs);
-  boost::filesystem::create_symlink(meta_.symlink_path(params_.secret), denormpath_fs);
+  boost::filesystem::create_symlink(conv_fspath(meta_.symlink_path(params_.secret)), denormpath_fs);
 
   return true;  // Maybe, something else?
 }
@@ -168,7 +167,7 @@ bool AssemblerWorker::assemble_file() {
   }
 
   for (auto chunk : meta_.chunks()) {
-    assembly_f.write(get_chunk_pt(chunk.ct_hash));  // Writing to file
+    assembly_f.write(get_chunk_pt(conv_bytearray(chunk.ct_hash)));  // Writing to file
   }
 
   if (!assembly_f.commit()) {

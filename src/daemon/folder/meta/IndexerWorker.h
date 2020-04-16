@@ -84,7 +84,7 @@ class IndexerWorker : public QObject, public QRunnable {
   Meta::Type get_type();
   void update_fsattrib();
   void update_chunks();
-  Meta::Chunk populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv);
+  Meta::Chunk populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv);
 };
 
 }  // namespace librevault

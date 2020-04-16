@@ -72,19 +72,17 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
   bool have_complete = false;
   bool have_incomplete = false;
 
-  for (size_t chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
+  for (int chunk_idx = 0; chunk_idx < smeta.meta().chunks().size(); chunk_idx++) {
     auto& meta_chunk = smeta.meta().chunks().at(chunk_idx);
-
-    QByteArray ct_hash = conv_bytearray(meta_chunk.ct_hash);
 
     if (bitfield[chunk_idx]) {
       have_complete = true;  // We have chunk, remove from missing
       // Do not mark connected chunks as clustered, because they will be marked inside the loop below.
-      removeChunk(ct_hash);
+      removeChunk(meta_chunk.ct_hash);
     } else {
       have_incomplete = true;  // We haven't this chunk, we need to download it
-      addChunk(ct_hash, meta_chunk.size);
-      incomplete_chunks << ct_hash;
+      addChunk(meta_chunk.ct_hash, meta_chunk.size);
+      incomplete_chunks << meta_chunk.ct_hash;
     }
   }
 
@@ -125,7 +123,7 @@ QSet<QByteArray> Downloader::getCluster(const QByteArray& ct_hash) {
   QSet<QByteArray> cluster;
 
   for (const SignedMeta& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash)))
-    for (auto& chunk : smeta.meta().chunks()) cluster << conv_bytearray(chunk.ct_hash);
+    for (auto& chunk : smeta.meta().chunks()) cluster << chunk.ct_hash;
 
   return cluster;
 }
@@ -146,8 +144,8 @@ void Downloader::notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision
     auto chunks = meta_storage_->getMeta(revision).meta().chunks();
     bitfield.resize(chunks.size(),
                     0);  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
-    for (size_t chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
-      if (bitfield[chunk_idx]) notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
+    for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
+      if (bitfield[chunk_idx]) notifyRemoteChunk(remote, conv_bytearray(chunks[chunk_idx].ct_hash));
   } catch (const MetaStorage::MetaNotFound&) {
     qCDebug(log_downloader) << "Expired Meta";
     // Well, remote node notifies us about expired meta. It was not requested by us OR another peer sent us newer meta,

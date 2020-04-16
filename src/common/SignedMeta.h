@@ -26,23 +26,23 @@ class SignedMeta {
     signature_error() : Meta::error("Meta signature mismatch") {}
   };
 
-  SignedMeta() {}
+  SignedMeta() = default;
   SignedMeta(Meta meta, const Secret& secret);
   SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
              bool check_signature = true);
 
-  operator bool() const { return meta_ && raw_meta_ && signature_; }
+  operator bool() const { return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty(); }
 
   // Getters
   const Meta& meta() const { return *meta_; }
-  const std::vector<uint8_t>& raw_meta() const { return *raw_meta_; }
-  const std::vector<uint8_t>& signature() const { return *signature_; }
+  const QByteArray& raw_meta() const { return raw_meta_; }
+  const QByteArray& signature() const { return signature_; }
 
  private:
   std::shared_ptr<Meta> meta_;
 
-  std::shared_ptr<std::vector<uint8_t>> raw_meta_;
-  std::shared_ptr<std::vector<uint8_t>> signature_;
+  QByteArray raw_meta_;
+  QByteArray signature_;
 };
 
 }  // namespace librevault

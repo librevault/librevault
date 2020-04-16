@@ -60,7 +60,7 @@ class MetaStorage : public QObject {
 
   bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
   SignedMeta getMeta(const Meta::PathRevision& path_revision);
-  SignedMeta getMeta(const blob& path_id);
+  SignedMeta getMeta(const QByteArray& path_id);
   QList<SignedMeta> getMeta();
   QList<SignedMeta> getExistingMeta();
   QList<SignedMeta> getIncompleteMeta();

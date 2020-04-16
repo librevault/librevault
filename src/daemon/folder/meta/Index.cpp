@@ -104,7 +104,7 @@ bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 }
 
 SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
-  auto smeta = getMeta(path_revision.path_id_);
+  auto smeta = getMeta(conv_bytearray(path_revision.path_id_));
   if (smeta.meta().revision() == path_revision.revision_)
     return smeta;
   else
@@ -122,22 +122,22 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
   db_->exec(
       "INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, "
       ":type, :assembled);",
-      {{":path_id", signed_meta.meta().path_id()},
-       {":meta", signed_meta.raw_meta()},
-       {":signature", signed_meta.signature()},
+      {{":path_id", conv_bytearray(signed_meta.meta().path_id())},
+       {":meta", conv_bytearray(signed_meta.raw_meta())},
+       {":signature", conv_bytearray(signed_meta.signature())},
        {":type", (uint64_t)signed_meta.meta().meta_type()},
        {":assembled", (uint64_t)fully_assembled}});
 
   uint64_t offset = 0;
   for (auto chunk : signed_meta.meta().chunks()) {
     db_->exec("INSERT OR IGNORE INTO chunk (ct_hash, size, iv) VALUES (:ct_hash, :size, :iv);",
-              {{":ct_hash", chunk.ct_hash}, {":size", (uint64_t)chunk.size}, {":iv", chunk.iv}});
+              {{":ct_hash", conv_bytearray(chunk.ct_hash)}, {":size", (uint64_t)chunk.size}, {":iv", conv_bytearray(chunk.iv)}});
 
     db_->exec(
         "INSERT OR REPLACE INTO openfs (ct_hash, path_id, [offset], assembled) VALUES (:ct_hash, :path_id, :offset, "
         ":assembled);",
-        {{":ct_hash", chunk.ct_hash},
-         {":path_id", signed_meta.meta().path_id()},
+        {{":ct_hash", conv_bytearray(chunk.ct_hash)},
+         {":path_id", conv_bytearray(signed_meta.meta().path_id())},
          {":offset", (uint64_t)offset},
          {":assembled", (uint64_t)fully_assembled}});
 
@@ -181,7 +181,7 @@ QList<SignedMeta> Index::getIncompleteMeta() {
 
 bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
   try {
-    return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
+    return getMeta(conv_bytearray(path_revision.path_id_)).meta().revision() < path_revision.revision_;
   } catch (MetaStorage::MetaNotFound& e) {
     return true;
   }

@@ -56,8 +56,8 @@ class OpenStorage : public QObject {
   MetaStorage* meta_storage_;
   PathNormalizer* path_normalizer_;
 
-  inline bool verify_chunk(const blob& ct_hash, const blob& chunk_pt, Meta::StrongHashType strong_hash_type) const {
-    return ct_hash == Meta::Chunk::compute_strong_hash(chunk_pt, strong_hash_type);
+  inline bool verifyChunk(const QByteArray& ct_hash, const QByteArray& chunk_pt, Meta::StrongHashType strong_hash_type) const {
+    return ct_hash == Meta::Chunk::computeStrongHash(chunk_pt, strong_hash_type);
   }
 };
 

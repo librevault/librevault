@@ -30,9 +30,9 @@ class AES_CBC : public TwoWayTransformer {
   QByteArray encrypt(const QByteArray& plaintext) const;
   QByteArray decrypt(const QByteArray& ciphertext) const;
 
-  static blob random_iv() {
-    return conv_bytearray(randomBytes(16));
-  }
+  static blob random_iv() { return conv_bytearray(randomBytes(16)); }
+
+  static QByteArray randomIv() { return randomBytes(16); }
 
   QByteArray to(const QByteArray& data) const { return encrypt(data); }
   QByteArray from(const QByteArray& data) const { return decrypt(data); }

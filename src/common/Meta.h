@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <util/blob.h>
+#include <QVector>
 #include "Secret.h"
 #include "util/AesCbcData.h"
 
@@ -26,18 +28,16 @@ class Meta {
   enum AlgorithmType : uint8_t { RABIN = 0 /*, RSYNC=1, RSYNC64=2*/ };
   enum StrongHashType : uint8_t { SHA3_224 = 0, SHA2_224 = 1 };
   struct Chunk {
-    std::vector<uint8_t> ct_hash;
+    QByteArray ct_hash;
     uint32_t size;
-    std::vector<uint8_t> iv;
+    QByteArray iv;
 
-    std::vector<uint8_t> pt_hmac;
+    QByteArray pt_hmac;
 
-    static std::vector<uint8_t> encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key,
-                                        const std::vector<uint8_t>& iv);
-    static std::vector<uint8_t> decrypt(const std::vector<uint8_t>& chunk, uint32_t size,
-                                        const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv);
+    static QByteArray encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv);
+    static QByteArray decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv);
 
-    static std::vector<uint8_t> compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type);
+    static QByteArray computeStrongHash(const QByteArray& chunk, StrongHashType type);
   };
 
   struct RabinGlobalParams {
@@ -51,7 +51,7 @@ class Meta {
   /* Meta fields, must be serialized together and then signed */
 
   /* Required data */
-  std::vector<uint8_t> path_id_;
+  QByteArray path_id_;
   AesCbcData path_;
   Type meta_type_ = FILE;
   int64_t revision_ = 0;  // timestamp of Meta modification
@@ -81,7 +81,7 @@ class Meta {
   /// Rabin algorithm parameters
   AesCbcData rabin_global_params_;
 
-  std::vector<Chunk> chunks_;
+  QVector<Chunk> chunks_;
 
  public:
   /* Nested structs & classes */
@@ -97,13 +97,13 @@ class Meta {
 
   /// Used for querying specific version of Meta
   struct PathRevision {
-    std::vector<uint8_t> path_id_;
+    QByteArray path_id_;
     int64_t revision_;
   };
 
   /* Class methods */
   Meta();
-  explicit Meta(const std::vector<uint8_t>& meta_s);
+  explicit Meta(const QByteArray& meta_s);
   virtual ~Meta();
 
   /* Serialization */
@@ -115,19 +115,19 @@ class Meta {
   // bool validate(const Secret& secret) const;
 
   /* Generators */
-  static std::vector<uint8_t> make_path_id(const std::string& path, const Secret& secret);
+  static QByteArray make_path_id(const QByteArray& path, const Secret& secret);
 
   /* Smart getters+setters */
   PathRevision path_revision() const { return PathRevision{path_id(), revision()}; }
   uint64_t size() const;
 
   // Encryptors/decryptors
-  std::string path(const Secret& secret) const;
-  void set_path(std::string path, const Secret& secret);  // Also, computes and sets path_id
+  QByteArray path(const Secret& secret) const;
+  void set_path(const QByteArray& path, const Secret& secret);  // Also, computes and sets path_id
   AesCbcData& raw_path() { return path_; }
   const AesCbcData& raw_path() const { return path_; }
 
-  std::string symlink_path(const Secret& secret) const;
+  QByteArray symlink_path(const Secret& secret) const;
   void set_symlink_path(std::string path, const Secret& secret);
   AesCbcData& raw_symlink_path() { return symlink_path_; }
   const AesCbcData& raw_symlink_path() const { return symlink_path_; }
@@ -138,8 +138,8 @@ class Meta {
   const AesCbcData& raw_rabin_global_params() const { return rabin_global_params_; }
 
   // Dumb getters & setters
-  const std::vector<uint8_t>& path_id() const { return path_id_; }
-  void set_path_id(const std::vector<uint8_t>& path_id) { path_id_ = path_id; }
+  QByteArray path_id() const { return path_id_; }
+  void set_path_id(const QByteArray& path_id) { path_id_ = path_id; }
 
   Type meta_type() const { return meta_type_; }
   void set_meta_type(Type meta_type) { meta_type_ = meta_type; }
@@ -174,8 +174,8 @@ class Meta {
   uint32_t max_chunksize() const { return max_chunksize_; }
   void set_max_chunksize(uint32_t max_chunksize) { max_chunksize_ = max_chunksize; }
 
-  const std::vector<Chunk>& chunks() const { return chunks_; }
-  void set_chunks(const std::vector<Chunk>& chunks) { chunks_ = chunks; }
+  const QVector<Chunk>& chunks() const { return chunks_; }
+  void set_chunks(const QVector<Chunk>& chunks) { chunks_ = chunks; }
 };
 
 }  // namespace librevault

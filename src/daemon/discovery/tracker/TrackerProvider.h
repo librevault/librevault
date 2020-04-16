@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #pragma once
+#include <unordered_map>
 #include <QtCore/QHash>
 #include <QtCore/QTimer>
 #include <QtCore/QUuid>

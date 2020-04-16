@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.11)
 project(librevault)
 
 cmake_policy(SET CMP0071 OLD)
@@ -26,7 +26,7 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
-option(USE_STATIC_BOOST "Use stati version of boost" OFF)
+option(USE_STATIC_BOOST "Use static version of boost" OFF)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
 option(DEBUG_NORMALIZATION "Debug path normalization" OFF)

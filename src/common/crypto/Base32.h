@@ -16,9 +16,7 @@ namespace crypto {
 
 class Base32 : public TwoWayTransformer {
  public:
-  blob to(const blob& data) const;
   QByteArray to(const QByteArray& data) const;
-  blob from(const blob& data) const;
   QByteArray from(const QByteArray& data) const;
 };
 

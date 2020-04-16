@@ -23,22 +23,6 @@ QByteArray Base32::to(const QByteArray& data) const {
   return QByteArray::fromStdString(transformed);
 }
 
-blob Base32::to(const blob& data) const {
-  std::string transformed;
-  CryptoPP::StringSource(data.data(), data.size(), true,
-                         new CryptoPP::Base32Encoder(new CryptoPP::StringSink(transformed)));
-
-  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-}
-
-blob Base32::from(const blob& data) const {
-  std::string transformed;
-  CryptoPP::StringSource(data.data(), data.size(), true,
-                         new CryptoPP::Base32Decoder(new CryptoPP::StringSink(transformed)));
-
-  return blob(std::make_move_iterator(transformed.begin()), std::make_move_iterator(transformed.end()));
-}
-
 QByteArray Base32::from(const QByteArray& data) const {
   std::string transformed;
   CryptoPP::StringSource((const uchar*)data.data(), data.size(), true,

@@ -24,7 +24,6 @@ QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
   return hasher.result();
 }
 
-blob HMAC_SHA3_224::to(const blob& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
 QByteArray HMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
 
 }  // namespace crypto

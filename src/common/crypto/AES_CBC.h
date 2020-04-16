@@ -34,9 +34,7 @@ class AES_CBC : public TwoWayTransformer {
     return conv_bytearray(randomBytes(16));
   }
 
-  blob to(const blob& data) const { return encrypt(data); }
   QByteArray to(const QByteArray& data) const { return conv_bytearray(encrypt(conv_bytearray(data))); }
-  blob from(const blob& data) const { return decrypt(data); }
   QByteArray from(const QByteArray& data) const { return conv_bytearray(decrypt(conv_bytearray(data))); }
 };
 

@@ -18,7 +18,6 @@ class OneWayTransformer {
  public:
   virtual ~OneWayTransformer() = default;
 
-  virtual blob to(const blob& data) const = 0;
   virtual QByteArray to(const QByteArray& data) const = 0;
 
   template <class InputIterator>
@@ -35,8 +34,6 @@ class TwoWayTransformer : public OneWayTransformer {
  public:
   ~TwoWayTransformer() override = default;
 
-  blob to(const blob& data) const override = 0;
-  virtual blob from(const blob& data) const = 0;
   QByteArray to(const QByteArray& data) const override = 0;
   virtual QByteArray from(const QByteArray& data) const = 0;
 
@@ -58,9 +55,7 @@ class De : public TwoWayTransformer {
   template <class... Args>
   explicit De(Args... trans_args) : nested(trans_args...) {}
 
-  blob to(const blob& data) const override { return nested.from(data); };
   QByteArray to(const QByteArray& data) const override { return nested.from(data); };
-  blob from(const blob& data) const override { return nested.to(data); };
   QByteArray from(const QByteArray& data) const override { return nested.to(data); };
 };
 

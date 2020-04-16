@@ -32,7 +32,6 @@ class HMAC_SHA3_224 : public OneWayTransformer {
   virtual ~HMAC_SHA3_224() {}
 
   QByteArray compute(const QByteArray& data) const;
-  blob to(const blob& data) const;
   QByteArray to(const QByteArray& data) const;
 };
 

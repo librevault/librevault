@@ -16,12 +16,11 @@
 
 #include "util/blob.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 class OneWayTransformer {
  public:
-  virtual ~OneWayTransformer() {}
+  virtual ~OneWayTransformer() = default;
 
   virtual blob to(const blob& data) const = 0;
 
@@ -37,9 +36,9 @@ class OneWayTransformer {
 
 class TwoWayTransformer : public OneWayTransformer {
  public:
-  virtual ~TwoWayTransformer() {}
+  ~TwoWayTransformer() override = default;
 
-  virtual blob to(const blob& data) const = 0;
+  blob to(const blob& data) const override = 0;
   virtual blob from(const blob& data) const = 0;
 
   template <class InputIterator>
@@ -58,10 +57,10 @@ class De : public TwoWayTransformer {
 
  public:
   template <class... Args>
-  De(Args... trans_args) : nested(trans_args...) {}
+  explicit De(Args... trans_args) : nested(trans_args...) {}
 
-  blob to(const blob& data) const { return nested.from(data); };
-  blob from(const blob& data) const { return nested.to(data); };
+  blob to(const blob& data) const override { return nested.from(data); };
+  blob from(const blob& data) const override { return nested.to(data); };
 };
 
 template <class Container>
@@ -69,5 +68,4 @@ inline QByteArray operator|(const Container& data, OneWayTransformer&& transform
   return conv_bytearray(transformer.to(data.begin(), data.end()));
 }
 
-}  // namespace crypto
 }  // namespace librevault

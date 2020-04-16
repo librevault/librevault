@@ -9,7 +9,7 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #pragma once
-#include <cryptopp/sha.h>
+#include <QtCore/QCryptographicHash>
 
 #include "Transformer.h"
 
@@ -18,38 +18,24 @@ namespace crypto {
 
 class SHA2 : public OneWayTransformer {
   const size_t size;
-  mutable CryptoPP::SHA224 hasher224;
-  mutable CryptoPP::SHA256 hasher256;
-  mutable CryptoPP::SHA384 hasher384;
-  mutable CryptoPP::SHA512 hasher512;
 
  public:
   SHA2(size_t size) : size(size) {}
   virtual ~SHA2() {}
 
-  blob compute(const blob& data) const {
-    blob result;
+  QByteArray to(const QByteArray& data) const {
     switch (size) {
-      case 224: {
-        result.resize(hasher224.DigestSize());
-        hasher224.CalculateDigest(result.data(), data.data(), data.size());
-      } break;
-      case 256: {
-        result.resize(hasher256.DigestSize());
-        hasher256.CalculateDigest(result.data(), data.data(), data.size());
-      } break;
-      case 384: {
-        result.resize(hasher384.DigestSize());
-        hasher384.CalculateDigest(result.data(), data.data(), data.size());
-      } break;
-      case 512: {
-        result.resize(hasher512.DigestSize());
-        hasher512.CalculateDigest(result.data(), data.data(), data.size());
-      } break;
+      case 224:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha224);
+      case 256:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha256);
+      case 384:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha384);
+      case 512:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha512);
     }
-    return result;
+    return "";
   }
-  QByteArray to(const QByteArray& data) const { return conv_bytearray(compute(conv_bytearray(data))); }
 };
 
 }  // namespace crypto

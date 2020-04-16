@@ -21,11 +21,11 @@ class OneWayTransformer {
   virtual QByteArray to(const QByteArray& data) const = 0;
 
   template <class InputIterator>
-  blob to(InputIterator first, InputIterator last) const {
-    return to(blob(first, last));
+  QByteArray to(InputIterator first, InputIterator last) const {
+    return to(conv_bytearray(blob(first, last)));
   }
   template <class Container>
-  blob to(const Container& data) const {
+  QByteArray to(const Container& data) const {
     return to(data.begin(), data.end());
   }
 };
@@ -38,11 +38,11 @@ class TwoWayTransformer : public OneWayTransformer {
   virtual QByteArray from(const QByteArray& data) const = 0;
 
   template <class InputIterator>
-  blob from(InputIterator first, InputIterator last) const {
-    return from(blob(first, last));
+  QByteArray from(InputIterator first, InputIterator last) const {
+    return from(conv_bytearray(blob(first, last)));
   }
   template <class Container>
-  blob from(const Container& data) const {
+  QByteArray from(const Container& data) const {
     return from(data.begin(), data.end());
   }
 };
@@ -60,12 +60,12 @@ class De : public TwoWayTransformer {
 };
 
 inline QByteArray operator|(const QByteArray& data, OneWayTransformer&& transformer) {
-  return conv_bytearray(transformer.to(data.begin(), data.end()));
+  return transformer.to(data);
 }
 
 template <class Container>
 inline QByteArray operator|(const Container& data, OneWayTransformer&& transformer) {
-  return conv_bytearray(transformer.to(data.begin(), data.end()));
+  return transformer.to(data.begin(), data.end());
 }
 
 }  // namespace librevault

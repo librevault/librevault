@@ -25,20 +25,20 @@ namespace librevault {
 
 std::vector<uint8_t> Meta::Chunk::encrypt(const std::vector<uint8_t>& chunk, const std::vector<uint8_t>& key,
                                           const std::vector<uint8_t>& iv) {
-  return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
+  return conv_bytearray(chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::decrypt(const std::vector<uint8_t>& chunk, uint32_t size,
                                           const std::vector<uint8_t>& key, const std::vector<uint8_t>& iv) {
-  return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
+  return conv_bytearray(chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0));
 }
 
 std::vector<uint8_t> Meta::Chunk::compute_strong_hash(const std::vector<uint8_t>& chunk, StrongHashType type) {
   switch (type) {
     case SHA3_224:
-      return chunk | crypto::SHA3(224);
+      return conv_bytearray(chunk | crypto::SHA3(224));
     case SHA2_224:
-      return chunk | crypto::SHA2(224);
+      return conv_bytearray(chunk | crypto::SHA2(224));
     default:
       return std::vector<uint8_t>();  // TODO: throw some exception.
   }
@@ -249,7 +249,7 @@ void Meta::parse(const std::vector<uint8_t>& serialized_data) {
 }
 
 std::vector<uint8_t> Meta::make_path_id(const std::string& path, const Secret& secret) {
-  return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
+  return conv_bytearray(path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key()));
 }
 
 }  // namespace librevault

@@ -65,8 +65,8 @@ class De : public TwoWayTransformer {
 };
 
 template <class Container>
-inline blob operator|(const Container& data, OneWayTransformer&& transformer) {
-  return transformer.to(data.begin(), data.end());
+inline QByteArray operator|(const Container& data, OneWayTransformer&& transformer) {
+  return conv_bytearray(transformer.to(data.begin(), data.end()));
 }
 
 }  // namespace crypto

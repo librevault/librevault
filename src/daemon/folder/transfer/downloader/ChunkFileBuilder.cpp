@@ -51,7 +51,7 @@ QFile* ChunkFileBuilderFdPool::getFile(QString path, bool release) {
 
 /* ChunkFileBuilder */
 ChunkFileBuilder::ChunkFileBuilder(QString system_path, QByteArray ct_hash, quint32 size) : file_map_(size) {
-  chunk_location_ = system_path + "/incomplete-" + conv_bytearray(ct_hash | crypto::Base32());
+  chunk_location_ = system_path + "/incomplete-" + (ct_hash | crypto::Base32());
 
   QFile f(chunk_location_);
   f.open(QIODevice::WriteOnly | QIODevice::Truncate);

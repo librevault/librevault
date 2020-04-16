@@ -271,7 +271,7 @@ void IndexerWorker::update_chunks() {
 Meta::Chunk IndexerWorker::populate_chunk(const blob& data, const std::map<blob, blob>& pt_hmac__iv) {
   qCDebug(log_indexer) << "New chunk size:" << data.size();
   Meta::Chunk chunk;
-  chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
+  chunk.pt_hmac = conv_bytearray(data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key()));
 
   // IV reuse
   auto it = pt_hmac__iv.find(chunk.pt_hmac);

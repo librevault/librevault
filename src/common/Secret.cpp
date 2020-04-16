@@ -71,7 +71,7 @@ QByteArray Secret::get_encoded_payload() const {  // TODO: Caching
 }
 
 QByteArray Secret::get_payload() const {  // TODO: Caching
-  return conv_bytearray(get_encoded_payload() | crypto::De<crypto::Base58>());
+  return get_encoded_payload() | crypto::De<crypto::Base58>();
 }
 
 Secret Secret::derive(Type key_type) const {

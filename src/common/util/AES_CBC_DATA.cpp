@@ -32,7 +32,7 @@ bool AES_CBC_DATA::check(const Secret& secret) {
 
 std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
   try {
-    return ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv);
+    return conv_bytearray(ct | crypto::De<crypto::AES_CBC>(conv_bytearray(secret.get_Encryption_Key()), iv));
   } catch (const CryptoPP::Exception& e) {
     throw Meta::parse_error("Parse error: Decryption failed");
   }
@@ -40,7 +40,7 @@ std::vector<uint8_t> AES_CBC_DATA::get_plain(const Secret& secret) const {
 
 void AES_CBC_DATA::set_plain(const std::vector<uint8_t>& pt, const Secret& secret) {
   iv = crypto::AES_CBC::random_iv();
-  ct = pt | crypto::AES_CBC(conv_bytearray(secret.get_Encryption_Key()), iv);
+  ct = conv_bytearray(pt | crypto::AES_CBC(conv_bytearray(secret.get_Encryption_Key()), iv));
 }
 
 }  // namespace librevault

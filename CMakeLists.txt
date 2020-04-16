@@ -163,12 +163,15 @@ endif ()
 
 set(Qt_COMPONENTS
 		LinguistTools
-#		Sql
+		Sql
 		Svg
 		Xml
 		Widgets
 		WebSockets
 		)
+if(OS_MAC)
+	list(APPEND Qt_COMPONENTS MacExtras)
+endif()
 find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051200")
 add_definitions("-DQT_NO_FOREACH=1")

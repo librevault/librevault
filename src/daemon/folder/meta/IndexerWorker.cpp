@@ -251,17 +251,17 @@ void IndexerWorker::update_chunks() {
 
   char byte;
   while (f.getChar(&byte) && active_) {
-    buffer.push_back(byte);
+    buffer += byte;
 
     if (Q_UNLIKELY(rabin_next_chunk(&hasher, reinterpret_cast<uint8_t*>(&byte), 1) == 1)) {  // Found a chunk
-      chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+      chunks += populate_chunk(buffer, pt_hmac__iv);
       buffer.truncate(0);
     }
   }
 
   if (!active_) throw abort_index("Indexing had been interruped");
 
-  if (rabin_finalize(&hasher) != 0) chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(buffer, pt_hmac__iv);
 
   chunks.shrink_to_fit();
 
@@ -274,8 +274,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QB
   chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 
   // IV reuse
-  chunk.iv = pt_hmac__iv.value(chunk.pt_hmac);
-  if (chunk.iv.isEmpty()) chunk.iv = crypto::AES_CBC::randomIv();
+  chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, crypto::AES_CBC::randomIv());
 
   chunk.size = data.size();
   chunk.ct_hash = Meta::Chunk::computeStrongHash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv),

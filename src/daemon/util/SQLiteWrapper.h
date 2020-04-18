@@ -42,10 +42,8 @@ class SQLValue {
 
   SQLValue(const std::string& text_val);  // Binds TEXT value;
 
+  SQLValue(const QByteArray& blob_val);                   // Binds BLOB value;
   SQLValue(const std::vector<uint8_t>& blob_val);         // Binds BLOB value;
-  SQLValue(const uint8_t* blob_ptr, uint64_t blob_size);  // Binds BLOB value;
-  template <uint64_t array_size>
-  SQLValue(std::array<uint8_t, array_size> blob_array) : SQLValue(blob_array.data(), blob_array.size()) {}
 
   ValueType get_type() { return value_type; };
 
@@ -55,13 +53,6 @@ class SQLValue {
   double as_double() const { return value.toDouble(); }
   std::string as_text() const { return value.toString().toStdString(); }
   std::vector<uint8_t> as_blob() const { return conv_bytearray(value.toByteArray()); }
-  template <uint64_t array_size>
-  std::array<uint8_t, array_size> as_blob() const {
-    auto blob_val = conv_bytearray(value.toByteArray());
-    std::array<uint8_t, array_size> new_array;
-    std::copy(blob_val.data(), blob_val.data() + std::min((uint64_t)blob_val.size(), array_size), new_array.data());
-    return new_array;
-  }
 
   operator bool() const { return !is_null(); }
   operator int64_t() const { return as_int(); };
@@ -69,16 +60,12 @@ class SQLValue {
   operator double() const { return as_double(); }
   operator std::string() const { return as_text(); }
   operator std::vector<uint8_t>() const { return as_blob(); }
-  template <uint64_t array_size>
-  operator std::array<uint8_t, array_size>() const {
-    return as_blob<array_size>();
-  }
 };
 
 class SQLiteResultIterator : public std::iterator<std::input_iterator_tag, std::vector<SQLValue>> {
   sqlite3_stmt* prepared_stmt = nullptr;
   std::shared_ptr<int64_t> shared_idx;
-  std::shared_ptr<std::vector<std::string>> cols;
+  QVector<QString> cols;
   int64_t current_idx = 0;
   int rescode = SQLITE_OK;
 
@@ -88,11 +75,10 @@ class SQLiteResultIterator : public std::iterator<std::input_iterator_tag, std::
 
  public:
   SQLiteResultIterator(sqlite3_stmt* prepared_stmt, std::shared_ptr<int64_t> shared_idx,
-                       std::shared_ptr<std::vector<std::string>> cols, int rescode);
+                       QVector<QString> cols, int rescode);
   SQLiteResultIterator(int rescode);
 
   SQLiteResultIterator& operator++();
-  SQLiteResultIterator operator++(int);
   bool operator==(const SQLiteResultIterator& lvalue);
   bool operator!=(const SQLiteResultIterator& lvalue);
   const value_type& operator*() const;
@@ -107,10 +93,10 @@ class SQLiteResult {
 
   sqlite3_stmt* prepared_stmt = nullptr;
   std::shared_ptr<int64_t> shared_idx;
-  std::shared_ptr<std::vector<std::string>> cols;
+  QVector<QString> cols;
 
  public:
-  SQLiteResult(sqlite3_stmt* prepared_stmt);
+  explicit SQLiteResult(sqlite3_stmt* prepared_stmt);
   virtual ~SQLiteResult();
 
   void finalize();
@@ -123,7 +109,6 @@ class SQLiteResult {
 
 class SQLiteDB {
  public:
-  SQLiteDB() = default;
   SQLiteDB(const boost::filesystem::path& db_path);
   virtual ~SQLiteDB();
 

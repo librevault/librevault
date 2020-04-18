@@ -49,11 +49,7 @@ FolderService::~FolderService() {
 }
 
 void FolderService::run() {
-  QTimer::singleShot(0, this, [this] {
-    for (const QByteArray& folderid : Config::get()->listFolders()) {
-      initFolder(Config::get()->getFolder(folderid));
-    }
-  });
+  for (const QByteArray& folderid : Config::get()->listFolders()) initFolder(Config::get()->getFolder(folderid));
 
   connect(Config::get(), &Config::folderAdded, this, &FolderService::initFolder);
   connect(Config::get(), &Config::folderRemoved, this, &FolderService::deinitFolder);

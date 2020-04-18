@@ -42,6 +42,7 @@
 #include "util/human_size.h"
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
+#include <util/conv_fspath.h>
 #endif
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -136,21 +137,19 @@ void IndexerWorker::make_Meta() {
 }
 
 Meta::Type IndexerWorker::get_type() {
-  QString abspath = abspath_;
-  boost::filesystem::path babspath(abspath.toStdWString());
-
-  boost::filesystem::file_status file_status =
-      params_.preserve_symlinks ? boost::filesystem::symlink_status(babspath)
-                                : boost::filesystem::status(babspath);  // Preserves symlinks if such option is set.
+  namespace fs = boost::filesystem;
+  fs::file_status file_status = params_.preserve_symlinks
+                                    ? fs::symlink_status(conv_fspath(abspath_))
+                                    : fs::status(conv_fspath(abspath_));  // Preserves symlinks if such option is set.
 
   switch (file_status.type()) {
-    case boost::filesystem::regular_file:
+    case fs::regular_file:
       return Meta::FILE;
-    case boost::filesystem::directory_file:
+    case fs::directory_file:
       return Meta::DIRECTORY;
-    case boost::filesystem::symlink_file:
+    case fs::symlink_file:
       return Meta::SYMLINK;
-    case boost::filesystem::file_not_found:
+    case fs::file_not_found:
       return Meta::DELETED;
     default:
       throw abort_index(
@@ -241,27 +240,30 @@ void IndexerWorker::update_chunks() {
   // Chunking
   QVector<Meta::Chunk> chunks;
 
-  blob buffer;
+  QByteArray buffer;
   buffer.reserve(hasher.maxsize);
 
   QFile f(abspath_);
+
   if (!f.open(QIODevice::ReadOnly)) throw abort_index("I/O error: " + f.errorString());
+
+  chunks.reserve(f.size() / hasher.minsize);
 
   char byte;
   while (f.getChar(&byte) && active_) {
     buffer.push_back(byte);
-    // size_t len = fread(buf, 1, sizeof(buf), stdin);
-    uint8_t* ptr = &buffer.back();
 
-    if (rabin_next_chunk(&hasher, ptr, 1) == 1) {  // Found a chunk
-      chunks.push_back(populate_chunk(conv_bytearray(buffer), pt_hmac__iv));
-      buffer.clear();
+    if (Q_UNLIKELY(rabin_next_chunk(&hasher, reinterpret_cast<uint8_t*>(&byte), 1) == 1)) {  // Found a chunk
+      chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+      buffer.truncate(0);
     }
   }
 
   if (!active_) throw abort_index("Indexing had been interruped");
 
-  if (rabin_finalize(&hasher) != 0) chunks.push_back(populate_chunk(conv_bytearray(buffer), pt_hmac__iv));
+  if (rabin_finalize(&hasher) != 0) chunks.push_back(populate_chunk(buffer, pt_hmac__iv));
+
+  chunks.shrink_to_fit();
 
   new_meta_.set_chunks(chunks);
 }
@@ -273,11 +275,11 @@ Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QB
 
   // IV reuse
   chunk.iv = pt_hmac__iv.value(chunk.pt_hmac);
-  if (chunk.iv.isEmpty()) crypto::AES_CBC::random_iv();
+  if (chunk.iv.isEmpty()) chunk.iv = crypto::AES_CBC::randomIv();
 
   chunk.size = data.size();
-  chunk.ct_hash = Meta::Chunk::computeStrongHash(
-      Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv), new_meta_.strong_hash_type());
+  chunk.ct_hash = Meta::Chunk::computeStrongHash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv),
+                                                 new_meta_.strong_hash_type());
   return chunk;
 }
 

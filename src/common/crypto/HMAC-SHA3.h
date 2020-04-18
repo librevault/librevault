@@ -11,8 +11,7 @@
 #pragma once
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 /**
  * This transformation is not really HMAC, as HMAC(Keccak) is not supported by CryptoPP.
@@ -28,12 +27,11 @@ class HMAC_SHA3_224 : public OneWayTransformer {
   const QByteArray key_;
 
  public:
-  HMAC_SHA3_224(const QByteArray& key) : key_(std::move(key)) {}
-  virtual ~HMAC_SHA3_224() {}
+  explicit HMAC_SHA3_224(QByteArray  key) : key_(std::move(key)) {}
+  ~HMAC_SHA3_224() override = default;
 
-  QByteArray compute(const QByteArray& data) const;
-  QByteArray to(const QByteArray& data) const;
+  [[nodiscard]] QByteArray compute(const QByteArray& data) const;
+  [[nodiscard]] QByteArray to(const QByteArray& data) const;
 };
 
-}  // namespace crypto
 }  // namespace librevault

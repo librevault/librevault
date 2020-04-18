@@ -240,9 +240,8 @@ void Downloader::maintainRequests() {
     auto request_timeout = std::chrono::seconds(Config::get()->getGlobal("p2p_request_timeout").toUInt());
     for (const DownloadChunkPtr& missing_chunk : down_chunks_.values()) {
       QMutableHashIterator<RemoteFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
-      while (request_it.hasNext()) {
+      while (request_it.hasNext())
         if (request_it.next().value().started + request_timeout < std::chrono::steady_clock::now()) request_it.remove();
-      }
     }
   }
 

@@ -37,8 +37,8 @@ class PathNormalizer {
  public:
   PathNormalizer(const FolderParams& params);
 
-  QByteArray normalizePath(QString abspath);
-  QString denormalizePath(QByteArray normpath);
+  QByteArray normalizePath(const QString& abspath);
+  QString denormalizePath(const QByteArray& normpath);
 
  private:
   const FolderParams& params_;

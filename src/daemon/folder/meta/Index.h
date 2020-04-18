@@ -60,12 +60,12 @@ class Index : public QObject {
 
   bool putAllowed(const Meta::PathRevision& path_revision) noexcept;
 
-  void setAssembled(blob path_id);
-  bool isAssembledChunk(blob ct_hash);
-  QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+  void setAssembled(const QByteArray& path_id);
+  bool isAssembledChunk(const QByteArray& ct_hash);
+  QPair<quint32, QByteArray> getChunkSizeIv(const QByteArray& ct_hash);
 
   /* Properties */
-  QList<SignedMeta> containingChunk(const blob& ct_hash);
+  QList<SignedMeta> containingChunk(const QByteArray& ct_hash);
 
  private:
   const FolderParams& params_;

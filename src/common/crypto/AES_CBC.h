@@ -25,12 +25,10 @@ class AES_CBC : public TwoWayTransformer {
 
  public:
   AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding = true);
-  virtual ~AES_CBC(){};
+  ~AES_CBC() override = default;
 
   QByteArray encrypt(const QByteArray& plaintext) const;
   QByteArray decrypt(const QByteArray& ciphertext) const;
-
-  static blob random_iv() { return conv_bytearray(randomBytes(16)); }
 
   static QByteArray randomIv() { return randomBytes(16); }
 

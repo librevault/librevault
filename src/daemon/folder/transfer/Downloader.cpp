@@ -40,7 +40,7 @@ namespace librevault {
 
 Q_LOGGING_CATEGORY(log_downloader, "folder.downloader")
 
-DownloadChunk::DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size)
+DownloadChunk::DownloadChunk(const FolderParams& params, const QByteArray& ct_hash, quint32 size)
     : builder(params.system_path, ct_hash, size), ct_hash(ct_hash) {}
 
 AvailabilityMap<uint32_t> DownloadChunk::requestMap() {
@@ -59,14 +59,14 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
   maintain_timer_->start();
 }
 
-Downloader::~Downloader() {}
+Downloader::~Downloader() = default;
 
 void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield) {
   SCOPELOG(log_downloader);
 
-  Q_ASSERT(bitfield.size() == smeta.meta().chunks().size());
+  Q_ASSERT((size_t)bitfield.size() == (size_t)smeta.meta().chunks().size());
 
-  QList<QByteArray> incomplete_chunks;
+  QVector<QByteArray> incomplete_chunks;
   incomplete_chunks.reserve(smeta.meta().chunks().size());
 
   bool have_complete = false;
@@ -82,7 +82,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
     } else {
       have_incomplete = true;  // We haven't this chunk, we need to download it
       addChunk(meta_chunk.ct_hash, meta_chunk.size);
-      incomplete_chunks << meta_chunk.ct_hash;
+      incomplete_chunks += meta_chunk.ct_hash;
     }
   }
 
@@ -122,19 +122,15 @@ void Downloader::notifyLocalChunk(const QByteArray& ct_hash) {
 QSet<QByteArray> Downloader::getCluster(const QByteArray& ct_hash) {
   QSet<QByteArray> cluster;
 
-  for (const SignedMeta& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash)))
-    for (auto& chunk : smeta.meta().chunks()) cluster << chunk.ct_hash;
+  for (const SignedMeta& smeta : meta_storage_->containingChunk(ct_hash))
+    for (auto& chunk : smeta.meta().chunks()) cluster += chunk.ct_hash;
 
   return cluster;
 }
 
-QSet<QByteArray> Downloader::getMetaCluster(const QList<QByteArray>& ct_hashes) {
+QSet<QByteArray> Downloader::getMetaCluster(const QVector<QByteArray>& ct_hashes) {
   QSet<QByteArray> cluster;
-
-  for (const QByteArray& ct_hash : ct_hashes) {
-    cluster += getCluster(ct_hash);
-  }
-
+  for (const QByteArray& ct_hash : ct_hashes) cluster += getCluster(ct_hash);
   return cluster;
 }
 
@@ -190,25 +186,23 @@ void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data
   while (request_it.hasNext()) {
     request_it.next();
 
-    if (request_it.value().offset == offset        // Chunk position incorrect
-        && request_it.value().size == data.size()  // Chunk size incorrect
-        && request_it.key() ==
-               from) {  // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
-      request_it.remove();
+    if (request_it.value().offset != offset) continue;     // Chunk position incorrect
+    if (request_it.value().size != data.size()) continue;  // Chunk size incorrect
+    if (request_it.key() == from)
+      continue;  // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
 
-      missing_chunk->builder.put_block(offset, QByteArray::fromRawData((const char*)data.data(), data.size()));
-      if (missing_chunk->builder.complete()) {
-        QFile* chunk_f = missing_chunk->builder.release_chunk();
-        chunk_f->setParent(this);
+    request_it.remove();
 
-        downloaded_chunks << qMakePair(conv_bytearray(ct_hash), chunk_f);
-      }  // TODO: catch "invalid hash" exception here
-    }
+    missing_chunk->builder.put_block(offset, QByteArray::fromRawData((const char*)data.data(), data.size()));
+    if (missing_chunk->builder.complete()) {
+      QFile* chunk_f = missing_chunk->builder.release_chunk();
+      chunk_f->setParent(this);
+
+      downloaded_chunks += qMakePair(conv_bytearray(ct_hash), chunk_f);
+    }  // TODO: catch "invalid hash" exception here
   }
 
-  for (QPair<QByteArray, QFile*> chunk : downloaded_chunks) {
-    emit chunkDownloaded(chunk.first, chunk.second);
-  }
+  for (const QPair<QByteArray, QFile*>& chunk : downloaded_chunks) emit chunkDownloaded(chunk.first, chunk.second);
 
   QTimer::singleShot(0, this, &Downloader::maintainRequests);
 }
@@ -281,7 +275,7 @@ bool Downloader::requestOne() {
   return false;
 }
 
-RemoteFolder* Downloader::nodeForRequest(QByteArray ct_hash) {
+RemoteFolder* Downloader::nodeForRequest(const QByteArray& ct_hash) {
   DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
   if (!chunk) return nullptr;
 

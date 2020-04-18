@@ -124,7 +124,7 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(const std::vector<uint8_t>& messag
   bitfield_type converted_bitfield =
       convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 
-  return MetaReply{SignedMeta(std::move(raw_meta), std::move(signature), secret_verifier),
+  return MetaReply{SignedMeta(conv_bytearray(raw_meta), conv_bytearray(signature), secret_verifier),
                    std::move(converted_bitfield)};
 }
 

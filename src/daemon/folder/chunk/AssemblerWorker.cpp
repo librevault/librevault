@@ -68,7 +68,7 @@ QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
   auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
 
   try {
-    QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
+    QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(conv_bytearray(ct_hash));
     return Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(),
                                            size_iv.second);
   } catch (std::exception& e) {
@@ -105,7 +105,7 @@ void AssemblerWorker::run() noexcept {
     if (assembled) {
       if (meta_.meta_type() != Meta::DELETED) apply_attrib();
 
-      meta_storage_->markAssembled(conv_bytearray(meta_.path_id()));
+      meta_storage_->markAssembled(meta_.path_id());
       chunk_storage_->cleanup(meta_);
     }
   } catch (abort_assembly& e) {  // Already handled

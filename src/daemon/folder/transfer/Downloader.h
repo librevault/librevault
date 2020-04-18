@@ -52,7 +52,7 @@ class MetaStorage;
 class ChunkStorage;
 
 struct DownloadChunk : boost::noncopyable {
-  DownloadChunk(const FolderParams& params, QByteArray ct_hash, quint32 size);
+  DownloadChunk(const FolderParams& params, const QByteArray& ct_hash, quint32 size);
 
   ChunkFileBuilder builder;
 
@@ -60,8 +60,8 @@ struct DownloadChunk : boost::noncopyable {
 
   /* Request-oriented functions */
   struct BlockRequest {
-    uint32_t offset;
-    uint32_t size;
+    uint32_t offset = 0;
+    uint32_t size = 0;
     std::chrono::steady_clock::time_point started;
   };
   QMultiHash<RemoteFolder*, BlockRequest> requests;
@@ -110,7 +110,7 @@ class Downloader : public QObject {
 
   void maintainRequests();
   bool requestOne();
-  RemoteFolder* nodeForRequest(QByteArray ct_hash);
+  RemoteFolder* nodeForRequest(const QByteArray& ct_hash);
 
   void addChunk(const QByteArray& ct_hash, quint32 size);
   void removeChunk(const QByteArray& ct_hash);
@@ -119,7 +119,7 @@ class Downloader : public QObject {
   QSet<RemoteFolder*> remotes_;
 
   QSet<QByteArray> getCluster(const QByteArray& ct_hash);
-  QSet<QByteArray> getMetaCluster(const QList<QByteArray>& ct_hashes);
+  QSet<QByteArray> getMetaCluster(const QVector<QByteArray>& ct_hashes);
 };
 
 }  // namespace librevault

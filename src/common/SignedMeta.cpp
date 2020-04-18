@@ -21,13 +21,15 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/sha3.h>
 
+#include <utility>
+
 #include "util/blob.h"
 
 namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   meta_ = std::make_shared<Meta>(std::move(meta));
-  raw_meta_ = meta.serialize();
+  raw_meta_ = meta_->serialize();
 
   CryptoPP::AutoSeededRandomPool rng;
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
@@ -37,9 +39,9 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   signer.SignMessage(rng, (const uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());
 }
 
-SignedMeta::SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
+SignedMeta::SignedMeta(QByteArray  raw_meta, QByteArray  signature, const Secret& secret,
                        bool check_signature)
-    : raw_meta_(conv_bytearray(raw_meta)), signature_(conv_bytearray(signature)) {
+    : raw_meta_(std::move(raw_meta)), signature_(std::move(signature)) {
   if (check_signature) {
     try {
       auto public_key = secret.get_Public_Key();

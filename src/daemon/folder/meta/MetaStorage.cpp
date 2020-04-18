@@ -74,13 +74,13 @@ void MetaStorage::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
   return index_->putMeta(signed_meta, fully_assembled);
 }
 
-QList<SignedMeta> MetaStorage::containingChunk(const blob& ct_hash) { return index_->containingChunk(ct_hash); }
+QList<SignedMeta> MetaStorage::containingChunk(const QByteArray& ct_hash) { return index_->containingChunk(ct_hash); }
 
-void MetaStorage::markAssembled(blob path_id) { index_->setAssembled(path_id); }
+void MetaStorage::markAssembled(const QByteArray& path_id) { index_->setAssembled(path_id); }
 
-bool MetaStorage::isChunkAssembled(const QByteArray& ct_hash) { return index_->isAssembledChunk(conv_bytearray(ct_hash)); }
+bool MetaStorage::isChunkAssembled(const QByteArray& ct_hash) { return index_->isAssembledChunk(ct_hash); }
 
-QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(blob ct_hash) { return index_->getChunkSizeIv(ct_hash); };
+QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(const QByteArray& ct_hash) { return index_->getChunkSizeIv(ct_hash); };
 
 bool MetaStorage::putAllowed(const Meta::PathRevision& path_revision) noexcept {
   return index_->putAllowed(path_revision);

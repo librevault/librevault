@@ -65,11 +65,11 @@ class MetaStorage : public QObject {
   QList<SignedMeta> getExistingMeta();
   QList<SignedMeta> getIncompleteMeta();
   void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
-  QList<SignedMeta> containingChunk(const blob& ct_hash);
-  QPair<quint32, QByteArray> getChunkSizeIv(blob ct_hash);
+  QList<SignedMeta> containingChunk(const QByteArray& ct_hash);
+  QPair<quint32, QByteArray> getChunkSizeIv(const QByteArray& ct_hash);
 
   // Assembled index
-  void markAssembled(blob path_id);
+  void markAssembled(const QByteArray& path_id);
   bool isChunkAssembled(const QByteArray& ct_hash);
 
   bool putAllowed(const Meta::PathRevision& path_revision) noexcept;

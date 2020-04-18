@@ -79,7 +79,7 @@ QByteArray ChunkStorage::get_chunk(const QByteArray& ct_hash) {
 
 void ChunkStorage::put_chunk(const QByteArray& ct_hash, QFile* chunk_f) {
   enc_storage->put_chunk(ct_hash, chunk_f);
-  for (auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash))) file_assembler->addAssemble(smeta);
+  for (auto& smeta : meta_storage_->containingChunk(ct_hash)) file_assembler->addAssemble(smeta);
 
   emit chunkAdded(ct_hash);
 }

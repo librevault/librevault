@@ -28,7 +28,7 @@ class SignedMeta {
 
   SignedMeta() = default;
   SignedMeta(Meta meta, const Secret& secret);
-  SignedMeta(std::vector<uint8_t> raw_meta, std::vector<uint8_t> signature, const Secret& secret,
+  SignedMeta(QByteArray  raw_meta, QByteArray  signature, const Secret& secret,
              bool check_signature = true);
 
   operator bool() const { return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty(); }

@@ -36,7 +36,7 @@ namespace librevault {
 
 PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
 
-QByteArray PathNormalizer::normalizePath(QString abspath) {
+QByteArray PathNormalizer::normalizePath(const QString& abspath) {
   QDir root_dir(params_.path);
 
   // Make it relative to root
@@ -56,7 +56,7 @@ QByteArray PathNormalizer::normalizePath(QString abspath) {
   return normpath.toUtf8();
 }
 
-QString PathNormalizer::denormalizePath(QByteArray normpath) {
+QString PathNormalizer::denormalizePath(const QByteArray& normpath) {
   QDir root_dir(params_.path);
 
   // Convert from UTF-8

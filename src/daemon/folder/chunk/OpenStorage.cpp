@@ -45,7 +45,7 @@ bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept { return 
 QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
   LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
 
-  for (auto& smeta : meta_storage_->containingChunk(conv_bytearray(ct_hash))) {
+  for (auto& smeta : meta_storage_->containingChunk(ct_hash)) {
     // Search for chunk offset and index
     uint64_t offset = 0;
     int chunk_idx = 0;

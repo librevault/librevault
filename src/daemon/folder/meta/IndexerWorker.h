@@ -30,6 +30,7 @@
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
+#include <QThreadPool>
 #include <QString>
 #include <map>
 
@@ -42,6 +43,13 @@ class FolderParams;
 class MetaStorage;
 class IgnoreList;
 class PathNormalizer;
+
+struct MemoryView {
+  const char* ptr = nullptr;
+  size_t size = 0;
+  [[nodiscard]] QByteArray array() const { return QByteArray(ptr, size); }
+};
+
 class IndexerWorker : public QObject, public QRunnable {
   Q_OBJECT
  signals:
@@ -49,15 +57,15 @@ class IndexerWorker : public QObject, public QRunnable {
   void metaFailed(QString errorString);
 
  public:
-  struct abort_index : public std::runtime_error {
-    abort_index(QString what) : std::runtime_error(what.toStdString()) {}
+  struct AbortIndex : public std::runtime_error {
+    explicit AbortIndex(const QString& what) : std::runtime_error(what.toStdString()) {}
   };
 
   IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage, IgnoreList* ignore_list,
                 PathNormalizer* path_normalizer, QObject* parent);
-  virtual ~IndexerWorker();
+  ~IndexerWorker() override;
 
-  QString absolutePath() const { return abspath_; }
+  [[nodiscard]] QString absolutePath() const { return abspath_; }
 
  public slots:
   void run() noexcept override;
@@ -84,7 +92,7 @@ class IndexerWorker : public QObject, public QRunnable {
   Meta::Type get_type();
   void update_fsattrib();
   void update_chunks();
-  Meta::Chunk populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv);
+  Meta::Chunk populate_chunk(const MemoryView& mem, const QHash<QByteArray, QByteArray>& pt_hmac__iv);
 };
 
 }  // namespace librevault

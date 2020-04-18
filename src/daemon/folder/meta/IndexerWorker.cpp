@@ -70,14 +70,13 @@ void IndexerWorker::run() noexcept {
   qCDebug(log_indexer) << "Started indexing:" << normpath;
 
   try {
-    if (ignore_list_->isIgnored(normpath)) throw abort_index("File is ignored");
+    if (ignore_list_->isIgnored(normpath)) throw AbortIndex("File is ignored");
 
     try {
       old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath, secret_));
       old_meta_ = old_smeta_.meta();
-      if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime()) {
-        throw abort_index("Modification time is not changed");
-      }
+      if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime())
+        throw AbortIndex("Modification time is not changed");
     } catch (boost::filesystem::filesystem_error& e) {
     } catch (MetaStorage::MetaNotFound& e) {
     } catch (Meta::error& e) {
@@ -112,13 +111,13 @@ void IndexerWorker::make_Meta() {
   new_meta_.set_meta_type(get_type());  // Type
 
   if (!old_smeta_ && new_meta_.meta_type() == Meta::DELETED)
-    throw abort_index("Old Meta is not in the index, new Meta is DELETED");
+    throw AbortIndex("Old Meta is not in the index, new Meta is DELETED");
 
   if (old_meta_.meta_type() == Meta::DIRECTORY && new_meta_.meta_type() == Meta::DIRECTORY)
-    throw abort_index("Old Meta is DIRECTORY, new Meta is DIRECTORY");
+    throw AbortIndex("Old Meta is DIRECTORY, new Meta is DIRECTORY");
 
   if (old_meta_.meta_type() == Meta::DELETED && new_meta_.meta_type() == Meta::DELETED)
-    throw abort_index("Old Meta is DELETED, new Meta is DELETED");
+    throw AbortIndex("Old Meta is DELETED, new Meta is DELETED");
 
   if (new_meta_.meta_type() == Meta::FILE) update_chunks();
 
@@ -152,7 +151,7 @@ Meta::Type IndexerWorker::get_type() {
     case fs::file_not_found:
       return Meta::DELETED;
     default:
-      throw abort_index(
+      throw AbortIndex(
           "File type is unsuitable for indexing. Only Files, Directories and Symbolic links are supported");
   }
 }
@@ -240,43 +239,45 @@ void IndexerWorker::update_chunks() {
   // Chunking
   QVector<Meta::Chunk> chunks;
 
-  QByteArray buffer;
-  buffer.reserve(hasher.maxsize);
-
   QFile f(abspath_);
 
-  if (!f.open(QIODevice::ReadOnly)) throw abort_index("I/O error: " + f.errorString());
+  if (!f.open(QIODevice::ReadOnly)) throw AbortIndex("I/O error: " + f.errorString());
 
-  chunks.reserve(f.size() / hasher.minsize);
+  auto file_size = f.size();
 
-  char byte;
-  while (f.getChar(&byte) && active_) {
-    buffer += byte;
+  chunks.reserve(file_size / hasher.minsize);
 
-    if (Q_UNLIKELY(rabin_next_chunk(&hasher, reinterpret_cast<uint8_t*>(&byte), 1) == 1)) {  // Found a chunk
-      chunks += populate_chunk(buffer, pt_hmac__iv);
-      buffer.truncate(0);
+  char* ptr = reinterpret_cast<char*>(f.map(0, f.size(), QFileDevice::MapPrivateOption));
+
+  size_t chunk_size = 1;
+  for (uint i = 0; i < file_size && active_; i++) {
+    if (Q_UNLIKELY(rabin_next_chunk(&hasher, reinterpret_cast<uint8_t*>(ptr + i), 1) == 1)) {  // Found a chunk
+      chunks += populate_chunk({ptr, chunk_size}, pt_hmac__iv);
+      chunk_size = 0;
     }
+    chunk_size += 1;
   }
 
-  if (!active_) throw abort_index("Indexing had been interruped");
+  if (!active_) throw AbortIndex("Indexing had been interruped");
 
-  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(buffer, pt_hmac__iv);
+  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk({ptr, chunk_size}, pt_hmac__iv);
 
   chunks.shrink_to_fit();
 
   new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
-  qCDebug(log_indexer) << "New chunk size:" << data.size();
+Meta::Chunk IndexerWorker::populate_chunk(const MemoryView& mem, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
+  qCDebug(log_indexer) << "New chunk size:" << mem.size;
   Meta::Chunk chunk;
+
+  auto data = mem.array();
   chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
 
   // IV reuse
   chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, crypto::AES_CBC::randomIv());
 
-  chunk.size = data.size();
+  chunk.size = mem.size;
   chunk.ct_hash = Meta::Chunk::computeStrongHash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv),
                                                  new_meta_.strong_hash_type());
   return chunk;

@@ -30,7 +30,8 @@ add_executable(librevault-cli ${SRCS})
 #============================================================================
 
 target_link_libraries(librevault-cli librevault-common)
-target_link_libraries(librevault-cli openssl)
+target_link_libraries(librevault-cli OpenSSL::SSL)
+target_link_libraries(librevault-cli OpenSSL::Crypto)
 target_link_libraries(librevault-cli CONAN_PKG::docopt.cpp)
 
 # Qt

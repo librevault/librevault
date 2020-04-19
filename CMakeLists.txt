@@ -130,16 +130,7 @@ endif()
 ##### System libraries #####
 
 ## Threads
-add_library(threads INTERFACE)
-if(OS_LINUX AND BUILD_STATIC)
-	target_link_libraries(threads INTERFACE pthread)
-	#target_compile_definitions(threads INTERFACE "-D_REENTRANT")
-else()
-	set(THREADS_PREFER_PTHREAD_FLAG ON)
-	find_package(Threads)
-
-	target_link_libraries(threads INTERFACE Threads::Threads)
-endif()
+find_package(Threads)
 
 ##### External libraries #####
 
@@ -179,19 +170,13 @@ add_definitions("-DQT_NO_FOREVER=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)
-add_library(protobuf INTERFACE)
-target_include_directories(protobuf INTERFACE ${PROTOBUF_INCLUDE_DIRS})
-target_link_libraries(protobuf INTERFACE ${PROTOBUF_LIBRARIES})
 
 ## OpenSSL
 find_package(OpenSSL REQUIRED)
-add_library(openssl INTERFACE)
-target_include_directories(openssl INTERFACE ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(openssl INTERFACE ${OPENSSL_LIBRARIES})
 if(OS_WIN)
-	target_link_libraries(openssl INTERFACE ws2_32)
+	target_link_libraries(OpenSSL::Crypto INTERFACE ws2_32)
 elseif(OS_LINUX)
-	target_link_libraries(openssl INTERFACE dl)
+	target_link_libraries(OpenSSL::Crypto INTERFACE dl)
 endif()
 
 ##### Bundled libraries #####
@@ -209,10 +194,7 @@ else()
 	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
 endif()
 
-## rabin
 add_subdirectory("contrib/rabin")
-
-## dht
 add_subdirectory("contrib/dht")
 
 ## QtSingleApplication

@@ -70,7 +70,8 @@ target_link_libraries(librevault-daemon PUBLIC Qt5::Xml)
 target_link_libraries(librevault-daemon PUBLIC Qt5::WebSockets)
 
 ## Protobuf
-target_link_libraries(librevault-daemon PUBLIC openssl)
+target_link_libraries(librevault-daemon PUBLIC OpenSSL::SSL)
+target_link_libraries(librevault-daemon PUBLIC OpenSSL::Crypto)
 target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::spdlog)
 target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::sqlite3)
 target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::websocketpp)

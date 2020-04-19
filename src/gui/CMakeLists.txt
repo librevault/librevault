@@ -4,11 +4,6 @@
 
 include(FetchContent)
 
-if(WIN32)
-	set(CMAKE_EXE_LINKER_FLAGS "-mwindows ${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_MODULE_LINKER_FLAGS "-mwindows ${CMAKE_MODULE_LINKER_FLAGS}")
-endif()
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -75,7 +70,7 @@ list(APPEND SRCS ${librevault-gui_QM_RC})
 # Compile targets
 #============================================================================
 
-add_executable(librevault-gui ${SRCS})
+add_executable(librevault-gui WIN32 ${SRCS})
 set_target_properties(librevault-gui PROPERTIES CXX_STANDARD 17)
 
 #============================================================================
@@ -94,20 +89,21 @@ endif()
 # Third-party libraries
 #============================================================================
 
-target_link_libraries(librevault-gui librevault-common)
-target_link_libraries(librevault-gui openssl)
+target_link_libraries(librevault-gui PRIVATE librevault-common)
+target_link_libraries(librevault-gui PRIVATE OpenSSL::SSL)
+target_link_libraries(librevault-gui PRIVATE OpenSSL::Crypto)
 
 # Qt
-target_link_libraries(librevault-gui Qt5::Svg Qt5::Widgets Qt5::WebSockets)
+target_link_libraries(librevault-gui PRIVATE Qt5::Svg Qt5::Widgets Qt5::WebSockets)
 if(OS_WIN)
-	target_link_libraries(librevault-gui Qt5::WinExtras)
+	target_link_libraries(librevault-gui PRIVATE Qt5::WinExtras)
 endif()
 if(OS_MAC)
-	target_link_libraries(librevault-gui Qt5::MacExtras)
+	target_link_libraries(librevault-gui PRIVATE Qt5::MacExtras)
 endif()
 
 # QtSingleApplication
-target_link_libraries(librevault-gui QtSingleApplication)
+target_link_libraries(librevault-gui PRIVATE QtSingleApplication)
 
 # WinSparkle
 if(OS_WIN)
@@ -116,7 +112,7 @@ if(OS_WIN)
 	find_library(winsparkle_LIBRARIES winsparkle)
 	message(STATUS "WinSparkle library: ${winsparkle_LIBRARIES}")
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ${SAVED_CMAKE_FIND_LIBRARY_SUFFIXES})
-	target_link_libraries(librevault-gui ${winsparkle_LIBRARIES})
+	target_link_libraries(librevault-gui PRIVATE ${winsparkle_LIBRARIES})
 endif()
 
 # Sparkle (for Macs)
@@ -124,11 +120,11 @@ if(OS_MAC)
 	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
 	FetchContent_Populate(sparkle)
 	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})
-	target_link_libraries(librevault-gui ${SPARKLE_LIBRARIES})
+	target_link_libraries(librevault-gui PRIVATE ${SPARKLE_LIBRARIES})
 endif()
 
 ## CoreFoundation
 if(OS_MAC)
-	target_link_libraries(librevault-gui "-framework CoreFoundation")
-	target_link_libraries(librevault-gui "-framework AppKit")
+	target_link_libraries(librevault-gui PRIVATE "-framework CoreFoundation")
+	target_link_libraries(librevault-gui PRIVATE "-framework AppKit")
 endif()

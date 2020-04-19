@@ -8,23 +8,21 @@
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-#include "HMAC-SHA3.h"
+#include "KMAC-SHA3.h"
 
 #include <cryptopp/sha3.h>
 
 #include <QCryptographicHash>
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
-QByteArray HMAC_SHA3_224::compute(const QByteArray& data) const {
+QByteArray KMAC_SHA3_224::compute(const QByteArray& data) const {
   QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
   hasher.addData(key_);
   hasher.addData(data);
   return hasher.result();
 }
 
-QByteArray HMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
+QByteArray KMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
 
-}  // namespace crypto
 }  // namespace librevault

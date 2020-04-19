@@ -23,15 +23,15 @@ namespace librevault::crypto {
  *
  * Okay, this solution is implemented here. Just prepending key to message.
  */
-class HMAC_SHA3_224 : public OneWayTransformer {
+class KMAC_SHA3_224 : public OneWayTransformer {
   const QByteArray key_;
 
  public:
-  explicit HMAC_SHA3_224(QByteArray  key) : key_(std::move(key)) {}
-  ~HMAC_SHA3_224() override = default;
+  explicit KMAC_SHA3_224(QByteArray key) : key_(std::move(key)) {}
+  ~KMAC_SHA3_224() override = default;
 
   [[nodiscard]] QByteArray compute(const QByteArray& data) const;
   [[nodiscard]] QByteArray to(const QByteArray& data) const;
 };
 
-}  // namespace librevault
+}  // namespace librevault::crypto

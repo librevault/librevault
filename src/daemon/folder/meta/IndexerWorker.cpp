@@ -36,7 +36,7 @@
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
 #include "crypto/AES_CBC.h"
-#include "crypto/HMAC-SHA3.h"
+#include "crypto/KMAC-SHA3.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
@@ -272,7 +272,7 @@ Meta::Chunk IndexerWorker::populate_chunk(const MemoryView& mem, const QHash<QBy
   Meta::Chunk chunk;
 
   auto data = mem.array();
-  chunk.pt_hmac = data | crypto::HMAC_SHA3_224(secret_.get_Encryption_Key());
+  chunk.pt_hmac = data | crypto::KMAC_SHA3_224(secret_.get_Encryption_Key());
 
   // IV reuse
   chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, crypto::AES_CBC::randomIv());

@@ -22,14 +22,13 @@ namespace librevault {
 
 class SignedMeta {
  public:
-  struct signature_error : Meta::error {
-    signature_error() : Meta::error("Meta signature mismatch") {}
+  struct SignatureError : Meta::error {
+    SignatureError() : Meta::error("Meta signature mismatch") {}
   };
 
   SignedMeta() = default;
   SignedMeta(Meta meta, const Secret& secret);
-  SignedMeta(QByteArray  raw_meta, QByteArray  signature, const Secret& secret,
-             bool check_signature = true);
+  SignedMeta(QByteArray raw_meta, QByteArray signature, const Secret& secret, bool check_signature = true);
 
   operator bool() const { return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty(); }
 

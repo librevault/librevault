@@ -39,8 +39,7 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   signer.SignMessage(rng, (const uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());
 }
 
-SignedMeta::SignedMeta(QByteArray  raw_meta, QByteArray  signature, const Secret& secret,
-                       bool check_signature)
+SignedMeta::SignedMeta(QByteArray raw_meta, QByteArray signature, const Secret& secret, bool check_signature)
     : raw_meta_(std::move(raw_meta)), signature_(std::move(signature)) {
   if (check_signature) {
     try {
@@ -55,9 +54,9 @@ SignedMeta::SignedMeta(QByteArray  raw_meta, QByteArray  signature, const Secret
       verifier.AccessKey().SetPublicElement(p);
       if (!verifier.VerifyMessage((const uchar*)raw_meta_.data(), raw_meta_.size(), (const uchar*)signature_.data(),
                                   signature_.size()))
-        throw signature_error();
+        throw SignatureError();
     } catch (CryptoPP::Exception& e) {
-      throw signature_error();
+      throw SignatureError();
     }
   }
 

@@ -17,9 +17,8 @@
 #include <Meta_s.pb.h>
 
 #include "crypto/AES_CBC.h"
-#include "crypto/HMAC-SHA3.h"
-#include "crypto/SHA2.h"
-#include "crypto/SHA3.h"
+#include "crypto/KMAC-SHA3.h"
+#include "crypto/SHA.h"
 
 namespace librevault {
 
@@ -42,9 +41,9 @@ QByteArray Meta::Chunk::computeStrongHash(const QByteArray& chunk, StrongHashTyp
   }
 }
 
-Meta::Meta() {}
+Meta::Meta() = default;
 Meta::Meta(const QByteArray& meta_s) { parse(meta_s); }
-Meta::~Meta() {}
+Meta::~Meta() = default;
 
 bool Meta::validate() const {
   if (path_id_.size() != 28) return false;  // Hash size mismatch
@@ -231,7 +230,7 @@ void Meta::parse(const QByteArray& serialized_data) {
 }
 
 QByteArray Meta::make_path_id(const QByteArray& path, const Secret& secret) {
-  return path | crypto::HMAC_SHA3_224(secret.get_Encryption_Key());
+  return path | crypto::KMAC_SHA3_224(secret.get_Encryption_Key());
 }
 
 }  // namespace librevault

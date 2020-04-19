@@ -55,7 +55,7 @@ Secret::Secret(Type type, const QByteArray& binary_part) {
 
 Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
   try {
-    auto base58_payload = get_encoded_payload();
+    auto base58_payload = getEncodedPayload();
 
     if (base58_payload.isEmpty()) throw format_error();
     if (crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
@@ -66,12 +66,12 @@ Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
   // TODO: It would be good to check private/public key for validity and throw crypto_error() here
 }
 
-QByteArray Secret::get_encoded_payload() const {  // TODO: Caching
+QByteArray Secret::getEncodedPayload() const {  // TODO: Caching
   return secret_s.mid(2, this->secret_s.size() - 3);
 }
 
-QByteArray Secret::get_payload() const {  // TODO: Caching
-  return get_encoded_payload() | crypto::De<crypto::Base58>();
+QByteArray Secret::getPayload() const {  // TODO: Caching
+  return getEncodedPayload() | crypto::De<crypto::Base58>();
 }
 
 Secret Secret::derive(Type key_type) const {
@@ -96,7 +96,7 @@ QByteArray Secret::get_Private_Key() const {
   switch (get_type()) {
     case Owner:
     case ReadWrite:
-      return cached_private_key = get_payload();
+      return cached_private_key = getPayload();
     default:
       throw level_error();
   }
@@ -111,7 +111,7 @@ QByteArray Secret::get_Encryption_Key() const {
       return cached_encryption_key =
                  QCryptographicHash::hash(get_Private_Key(), QCryptographicHash::Algorithm::Sha3_256);
     case ReadOnly:
-      return cached_encryption_key = get_payload().mid(public_key_size, encryption_key_size);
+      return cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
     default:
       throw level_error();
   }
@@ -139,7 +139,7 @@ QByteArray Secret::get_Public_Key() const {
     }
     case ReadOnly:
     case Download:
-      return cached_public_key = get_payload().left(public_key_size);
+      return cached_public_key = getPayload().left(public_key_size);
     default:
       throw level_error();
   }

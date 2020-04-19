@@ -13,15 +13,14 @@
 
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 class SHA2 : public OneWayTransformer {
   const size_t size;
 
  public:
-  SHA2(size_t size) : size(size) {}
-  virtual ~SHA2() {}
+  explicit SHA2(size_t size) : size(size) {}
+  virtual ~SHA2() = default;
 
   QByteArray to(const QByteArray& data) const {
     switch (size) {
@@ -33,10 +32,33 @@ class SHA2 : public OneWayTransformer {
         return QCryptographicHash::hash(data, QCryptographicHash::Sha384);
       case 512:
         return QCryptographicHash::hash(data, QCryptographicHash::Sha512);
+      default:
+        throw std::runtime_error("Hashing algorithm not supported");
     }
-    return "";
   }
 };
 
-}  // namespace crypto
+class SHA3 : public OneWayTransformer {
+  const size_t size_;
+
+ public:
+  explicit SHA3(size_t size) : size_(size) {}
+  virtual ~SHA3() = default;
+
+  QByteArray to(const QByteArray& data) const {
+    switch (size_) {
+      case 224:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha3_224);
+      case 256:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha3_256);
+      case 384:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha3_384);
+      case 512:
+        return QCryptographicHash::hash(data, QCryptographicHash::Sha3_512);
+      default:
+        throw std::runtime_error("Hashing algorithm not supported");
+    }
+  }
+};
+
 }  // namespace librevault

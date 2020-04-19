@@ -87,8 +87,8 @@ class Secret {
   // Completely public, no need to hide it.
   mutable QByteArray cached_hash;
 
-  QByteArray get_encoded_payload() const;
-  QByteArray get_payload() const;
+  QByteArray getEncodedPayload() const;
+  QByteArray getPayload() const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Secret &k);

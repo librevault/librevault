@@ -65,10 +65,8 @@ jobs:
             python -m pip install conan
       - restore_cache:
           keys:
-#            - conan-cache-v1-{{ arch }}-{{ checksum "conanfile.py" }}
-#            - conan-cache-v1-{{ arch }}
-            - conan-cache-v0-{{ arch }}-{{ checksum "conanfile.py" }}
-            - conan-cache-v0-{{ arch }}
+            - conan-cache-v1-{{ arch }}-{{ checksum "conanfile.py" }}
+            - conan-cache-v1-{{ arch }}
       - run:
           name: Install Conan dependencies
           command: |

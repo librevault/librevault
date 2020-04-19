@@ -26,6 +26,10 @@ class LibrevaultConan(ConanFile):
         "qt:qtwebsockets": True,
     }
 
+    def requirements(self):
+        if CMake.get_version() < "3.16":
+            self.requires("cmake_installer/3.16.3@conan/stable")
+
     def configure(self):
         if self.settings.os == "Linux":
             self.options["qt"].qtwayland = True

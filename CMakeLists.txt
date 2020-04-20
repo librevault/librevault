@@ -48,11 +48,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Error management
 if(MSVC)
 	# Force to always compile with W4
-	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-	endif()
+#	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+#		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+#	else()
+#		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+#	endif()
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 	# Update if necessary
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long")
@@ -138,6 +138,7 @@ find_package(Threads)
 if(BUILD_STATIC OR USE_STATIC_BOOST)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
+add_definitions("-DBOOST_ASIO_DISABLE_CONCEPTS")
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 
 add_library(boost INTERFACE)
@@ -146,7 +147,6 @@ target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 
 # Qt5
 if (CONAN_QT_ROOT)
-	message("${CONAN_QT_ROOT}")
 	set (Qt5_DIR ${CONAN_QT_ROOT}/lib/cmake/Qt5) # to work in both multi and single build
 else ()
 	set (Qt5_DIR ${CONAN_QT_ROOT_RELEASE}/lib/cmake/Qt5) # to work in both multi and single build
@@ -162,6 +162,9 @@ set(Qt_COMPONENTS
 		)
 if(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
+endif()
+if(OS_WIN)
+	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
 find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051200")
@@ -186,13 +189,7 @@ add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
 ## libnatpmp
-find_library(libnatpmp_LIBRARIES NAMES libnatpmp natpmp)
-if(NOT libnatpmp_LIBRARIES)
-	add_subdirectory(contrib/libnatpmp)
-else()
-	add_library(natpmp INTERFACE)
-	target_link_libraries(natpmp INTERFACE ${libnatpmp_LIBRARIES})
-endif()
+add_subdirectory("contrib/libnatpmp")
 
 add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")

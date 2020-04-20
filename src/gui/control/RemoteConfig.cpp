@@ -94,13 +94,13 @@ QVariantMap RemoteConfig::getFolder(QByteArray folderid) { return cached_folders
 
 QList<QByteArray> RemoteConfig::listFolders() { return cached_folders_.keys(); }
 
-QJsonDocument RemoteConfig::exportUserGlobals() { qFatal("User values are not supported on client side"); }
+QJsonDocument RemoteConfig::exportUserGlobals() { qFatal("User values are not supported on client side"); return {}; }
 
 QJsonDocument RemoteConfig::exportGlobals() { return QJsonDocument::fromVariant(cached_globals_); }
 
 void RemoteConfig::importGlobals(QJsonDocument globals_conf) { Q_ASSERT(!"Not implemented yet"); }
 
-QJsonDocument RemoteConfig::exportUserFolders() { qFatal("User values are not supported on client side"); }
+QJsonDocument RemoteConfig::exportUserFolders() { qFatal("User values are not supported on client side"); return {}; }
 
 QJsonDocument RemoteConfig::exportFolders() {
   QJsonArray folders;

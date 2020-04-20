@@ -27,9 +27,10 @@
  * files in the program, then also delete it here.
  */
 #include <docopt/docopt.h>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+#include <util/conv_fspath.h>
 
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
@@ -156,7 +157,7 @@ int main(int argc, char** argv) {
       std::vector<spdlog::sink_ptr> sinks;
       sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
 
-      boost::filesystem::path log_path = Paths::get()->log_path.toStdWString();
+      boost::filesystem::path log_path = conv_fspath(Paths::get()->log_path);
       sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_path.native()));
 
       log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());

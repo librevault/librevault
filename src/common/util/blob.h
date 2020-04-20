@@ -39,7 +39,7 @@ using blob = std::vector<uint8_t>;
 
 inline QByteArray conv_bytearray(const blob& bl) {
   Q_ASSERT(bl.size() <= INTMAX_MAX);
-  return QByteArray((const char*)bl.data(), bl.size());
+  return QByteArray((const char*)bl.data(), (int)bl.size());
 }
 
 inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }

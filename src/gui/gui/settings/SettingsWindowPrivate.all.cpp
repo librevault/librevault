@@ -67,7 +67,7 @@ void SettingsWindowPrivate::add_pane(QWidget* pane) {
   toolButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
   button_layout_->addWidget(toolButton);
-  QObject::connect(toolButton, &QToolButton::clicked, [=, this] { buttonClicked(page_num); });
+  QObject::connect(toolButton, &QToolButton::clicked, [=] { buttonClicked(page_num); });
 }
 
 void SettingsWindowPrivate::buttonClicked(int pane) {

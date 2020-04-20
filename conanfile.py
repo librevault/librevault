@@ -14,6 +14,7 @@ class LibrevaultConan(ConanFile):
         "websocketpp/0.8.1",
         "openssl/1.1.1f",
         "qt/5.14.2@bincrafters/stable",
+        "libjpeg/9d",  # override
     ]
     generators = "cmake"
     default_options = {
@@ -26,9 +27,11 @@ class LibrevaultConan(ConanFile):
         "qt:qtwebsockets": True,
     }
 
-    # def requirements(self):
-    #     if CMake.get_version() < "3.16":
-    #         self.requires("cmake_installer/3.16.3@conan/stable")
+    def requirements(self):
+        if CMake.get_version() < "3.16":
+            self.requires("cmake_installer/3.16.3@conan/stable")
+        if self.settings.os == "Windows":
+            self.requires("winsparkle/0.6.0@gamepad64/stable")
 
     def configure(self):
         if self.settings.os == "Linux":
@@ -36,3 +39,5 @@ class LibrevaultConan(ConanFile):
         if self.settings.os == "Macos":
             self.options["qt"].qtmacextras = True
             self.options["glib"].shared = False
+        if self.settings.os == "Windows":
+            self.options["qt"].qtwinextras = True

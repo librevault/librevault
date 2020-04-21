@@ -30,6 +30,8 @@
 #include <QMap>
 #include <QString>
 #include <QThreadPool>
+#include <QtCore/QLinkedList>
+#include <QtCore/QTimer>
 
 #include "SignedMeta.h"
 
@@ -55,7 +57,7 @@ class IndexerQueue : public QObject {
   virtual ~IndexerQueue();
 
  public slots:
-  void addIndexing(QString abspath);
+  void addIndexing(const QString& abspath);
 
  private:
   const FolderParams& params_;
@@ -65,14 +67,19 @@ class IndexerQueue : public QObject {
   StateCollector* state_collector_;
 
   QThreadPool* threadpool_;
+  QTimer* scan_timer_;
 
-  const Secret& secret_;
+  Secret secret_;
 
   QMap<QString, IndexerWorker*> tasks_;
+
+  QLinkedList<QSet<QString>> scan_queue_;
 
  private slots:
   void metaCreated(SignedMeta smeta);
   void metaFailed(QString error_string);
+
+  void actualizeQueue();
 };
 
 }  // namespace librevault

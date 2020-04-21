@@ -35,6 +35,7 @@
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
 #ifdef Q_OS_UNIX
+#include <openssl/ssl.h>
 #include <signal.h>
 #endif
 
@@ -45,14 +46,14 @@
 #include "control/Paths.h"
 
 using namespace librevault;  // This is allowed only because this is main.cpp
-                             // file and it is extremely unlikely that this file
-                             // will be included in any other file.
+// file and it is extremely unlikely that this file
+// will be included in any other file.
 
 // clang-format off
 
 ///////////////////////////////////////////////////////////////////////80 chars/
 static const char* USAGE =
-R"(Librevault synchronization daemon.
+    R"(Librevault synchronization daemon.
 
 Librevault is an open source peer-to-peer file synchronization solution with
 an optional centralized cloud storage, that can be used as a traditional cloud
@@ -128,6 +129,7 @@ static void setupUnixSignalHandler() {
 #endif
 
 int main(int argc, char** argv) {
+  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   do {
     // Argument parsing
     auto args =
@@ -183,6 +185,8 @@ int main(int argc, char** argv) {
 #endif
     int ret = client->run();
     client.reset();
+
+    qInfo() << "Clean shutdown";
 
     // Deinitialization
     log->flush();

@@ -31,6 +31,7 @@
 #include <rabin.h>
 
 #include <QFile>
+#include <QtConcurrent/QtConcurrentRun>
 #include <boost/filesystem.hpp>
 
 #include "MetaStorage.h"
@@ -40,6 +41,7 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
+
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
 #include <util/conv_fspath.h>
@@ -157,7 +159,7 @@ Meta::Type IndexerWorker::get_type() {
 }
 
 void IndexerWorker::update_fsattrib() {
-  boost::filesystem::path babspath(abspath_.toStdWString());
+  boost::filesystem::path babspath = conv_fspath(abspath_);
 
   // First, preserve old values of attributes
   new_meta_.set_windows_attrib(old_meta_.windows_attrib());
@@ -237,47 +239,42 @@ void IndexerWorker::update_chunks() {
   rabin_init(&hasher);
 
   // Chunking
-  QVector<Meta::Chunk> chunks;
-
   QFile f(abspath_);
-
   if (!f.open(QIODevice::ReadOnly)) throw AbortIndex("I/O error: " + f.errorString());
 
-  auto file_size = f.size();
+  QVector<Meta::Chunk> chunks;
+  chunks.reserve(f.size() / hasher.minsize);
 
-  chunks.reserve(file_size / hasher.minsize);
+  QByteArray data;
+  data.reserve(hasher.maxsize);
 
-  char* ptr = reinterpret_cast<char*>(f.map(0, f.size(), QFileDevice::MapPrivateOption));
-
-  size_t chunk_size = 1;
-  for (uint i = 0; i < file_size && active_; i++) {
-    if (Q_UNLIKELY(rabin_next_chunk(&hasher, reinterpret_cast<uint8_t*>(ptr + i), 1) == 1)) {  // Found a chunk
-      chunks += populate_chunk({ptr, chunk_size}, pt_hmac__iv);
-      chunk_size = 0;
+  for (char c; f.getChar(&c) && active_;) {
+    data += c;
+    if (rabin_next_chunk(&hasher, (uint8_t*)&c, 1) == 1) {
+      // Found a chunk
+      chunks += populate_chunk(data, pt_hmac__iv);
+      data.truncate(0);
     }
-    chunk_size += 1;
   }
 
   if (!active_) throw AbortIndex("Indexing had been interruped");
-
-  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk({ptr, chunk_size}, pt_hmac__iv);
+  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(data, pt_hmac__iv);
 
   chunks.shrink_to_fit();
 
   new_meta_.set_chunks(chunks);
 }
 
-Meta::Chunk IndexerWorker::populate_chunk(const MemoryView& mem, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
-  qCDebug(log_indexer) << "New chunk size:" << mem.size;
+Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
+  qCDebug(log_indexer) << "New chunk size:" << data.size();
   Meta::Chunk chunk;
 
-  auto data = mem.array();
   chunk.pt_hmac = data | crypto::KMAC_SHA3_224(secret_.get_Encryption_Key());
 
   // IV reuse
   chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, crypto::AES_CBC::randomIv());
 
-  chunk.size = mem.size;
+  chunk.size = data.size();
   chunk.ct_hash = Meta::Chunk::computeStrongHash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv),
                                                  new_meta_.strong_hash_type());
   return chunk;

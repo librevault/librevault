@@ -187,9 +187,8 @@ QString FolderGroup::log_tag() const { return !params_.path.isEmpty() ? params_.
 void FolderGroup::push_state() {
   // peers
   QJsonArray peers_array;
-  for (auto& p2p_folder : remotes_) {
-    peers_array.append(p2p_folder->collect_state());
-  }
+  for (auto& p2p_folder : remotes_) peers_array += p2p_folder->collect_state();
+
   state_collector_->folder_state_set(folderid(), "peers", peers_array);
   // bandwidth
   state_collector_->folder_state_set(folderid(), "traffic_stats", bandwidth_counter_.heartbeat_json());

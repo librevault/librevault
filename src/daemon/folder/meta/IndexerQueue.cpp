@@ -28,6 +28,8 @@
  */
 #include "IndexerQueue.h"
 
+#include <util/log.h>
+
 #include "IndexerWorker.h"
 #include "MetaStorage.h"
 #include "control/FolderParams.h"
@@ -47,7 +49,8 @@ IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, 
       ignore_list_(ignore_list),
       path_normalizer_(path_normalizer),
       state_collector_(state_collector),
-      secret_(params.secret) {
+      secret_(params.secret),
+      scan_queue_({{}, {}, {}}) {
   qRegisterMetaType<SignedMeta>("SignedMeta");
   state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false);
 
@@ -57,31 +60,23 @@ IndexerQueue::IndexerQueue(const FolderParams& params, IgnoreList* ignore_list, 
           [this] { state_collector_->folder_state_set(secret_.get_Hash(), "is_indexing", false); });
 
   threadpool_ = new QThreadPool(this);
+
+  scan_timer_ = new QTimer(this);
+  scan_timer_->setTimerType(Qt::VeryCoarseTimer);
+  scan_timer_->setInterval(1000);
+  scan_timer_->start();
+  connect(scan_timer_, &QTimer::timeout, this, &IndexerQueue::actualizeQueue);
 }
 
 IndexerQueue::~IndexerQueue() {
-  qCDebug(log_indexer) << "~IndexerQueue";
+  SCOPELOG(log_indexer);
   emit aboutToStop();
   threadpool_->waitForDone();
-  qCDebug(log_indexer) << "!~IndexerQueue";
 }
 
-void IndexerQueue::addIndexing(QString abspath) {
-  if (tasks_.contains(abspath)) {
-    IndexerWorker* worker = tasks_.value(abspath);
-    if (threadpool_->tryTake(worker))
-      worker->deleteLater();
-    else
-      worker->stop();
-  }
-  auto* worker = new IndexerWorker(abspath, params_, meta_storage_, ignore_list_, path_normalizer_, this);
-  worker->setAutoDelete(false);
-  connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
-  connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated);
-  connect(worker, &IndexerWorker::metaFailed, this, &IndexerQueue::metaFailed);
-  tasks_.insert(abspath, worker);
-  if (tasks_.size() == 1) emit startedIndexing();
-  threadpool_->start(worker);
+void IndexerQueue::addIndexing(const QString& abspath) {
+  for (auto& time_set : scan_queue_) time_set.remove(abspath);
+  scan_queue_.last() += abspath;
 }
 
 void IndexerQueue::metaCreated(SignedMeta smeta) {
@@ -102,6 +97,32 @@ void IndexerQueue::metaFailed(QString error_string) {
   if (tasks_.size() == 0) emit finishedIndexing();
 
   qCWarning(log_indexer) << "Skipping" << worker->absolutePath() << "Reason:" << error_string;
+}
+
+void IndexerQueue::actualizeQueue() {
+  for (const auto& path : scan_queue_.takeFirst()) {
+    qCDebug(log_indexer) << "Adding to indexerqueue:" << path;
+    if (tasks_.contains(path)) {
+      IndexerWorker* worker = tasks_.value(path);
+      if (threadpool_->tryTake(worker))
+        worker->deleteLater();
+      else
+        worker->stop();
+    }
+
+    auto* worker = new IndexerWorker(path, params_, meta_storage_, ignore_list_, path_normalizer_, this);
+    worker->setAutoDelete(false);
+
+    connect(this, &IndexerQueue::aboutToStop, worker, &IndexerWorker::stop, Qt::DirectConnection);
+    connect(worker, &IndexerWorker::metaCreated, this, &IndexerQueue::metaCreated, Qt::QueuedConnection);
+    connect(worker, &IndexerWorker::metaFailed, this, &IndexerQueue::metaFailed, Qt::QueuedConnection);
+
+    tasks_.insert(path, worker);
+    if (tasks_.size() == 1) emit startedIndexing();
+
+    threadpool_->start(worker);
+  }
+  scan_queue_.append({});
 }
 
 }  // namespace librevault

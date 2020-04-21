@@ -184,10 +184,6 @@ endif()
 
 ##### Bundled libraries #####
 
-## Dir_monitor
-add_library(dir_monitor INTERFACE)
-target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
-
 ## libnatpmp
 add_subdirectory("contrib/libnatpmp")
 

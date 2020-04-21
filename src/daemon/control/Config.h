@@ -36,7 +36,7 @@
 namespace librevault {
 
 class Config : public AbstractConfig {
-  Q_OBJECT
+ Q_OBJECT
  public:
   ~Config();
 
@@ -44,7 +44,7 @@ class Config : public AbstractConfig {
   struct samekey_error : std::runtime_error {
     samekey_error()
         : std::runtime_error(
-              "Multiple directories with the same key (or derived from the same key) are not supported") {}
+        "Multiple directories with the same key (or derived from the same key) are not supported") {}
   };
 
   static Config* get() {

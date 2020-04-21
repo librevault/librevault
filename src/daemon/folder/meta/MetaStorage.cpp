@@ -29,11 +29,11 @@
 #include "MetaStorage.h"
 
 #include "DirectoryPoller.h"
-#include "DirectoryWatcher.h"
 #include "Index.h"
 #include "IndexerQueue.h"
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
+#include "folder/watcher/DirectoryWatcher.h"
 
 namespace librevault {
 

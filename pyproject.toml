@@ -1,3 +1,25 @@
+[tool.black]
+line-length = 120
+target-version = ['py37']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+
 [tool.poetry]
 name = "librevault"
 version = "0.1.0"
@@ -8,6 +30,9 @@ authors = ["Alexander Shishenko <alex@shishenko.com>"]
 python = "^3.8"
 conan = "^1.24.0"
 pre-commit = "^2.2.0"
+click = "^7.1.1"
+isort = "^4.3.21"
+black = "^19.10b0"
 
 [tool.poetry.dev-dependencies]
 

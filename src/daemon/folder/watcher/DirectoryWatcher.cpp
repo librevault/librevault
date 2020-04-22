@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
+/* Copyright (C) 2020 Alexander Shishenko <alex@shishenko.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ void DirectoryWatcher::handlePathEvent(const QString& path) {
 void DirectoryWatcher::addDirectory(const QString& path, bool recursive) {
   QStringList paths;
 
-  QDirIterator it(path, QDir::AllEntries, recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+  QDirIterator it(path, QDir::AllEntries | QDir::NoDotAndDotDot, recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
   while (it.hasNext()) {
     QString new_path = it.next();
     if (!ignore_list_->isIgnored(path_normalizer_->normalizePath(new_path))) paths += new_path;

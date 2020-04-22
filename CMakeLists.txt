@@ -97,19 +97,10 @@ endif()
 
 ## Calculating version
 include(GetGitRevisionDescription)
-git_describe(LV_APPVER)
+file(READ "VERSION" LV_APPVER)
+get_git_head_revision(LV_GIT_REF LV_GIT_HASH)
 
-if(LV_APPVER)
-	set(LV_SOURCE "Git")
-else()
-	set(LV_SOURCE "Tar")
-	file(READ "VERSION" LV_APPVER)
-endif()
-
-# Strip "v" before tag
-string(SUBSTRING "${LV_APPVER}" 1 -1 LV_APPVER)
-
-message(STATUS "Building Librevault ${LV_APPVER} from ${LV_SOURCE}")
+message(STATUS "Building Librevault ${LV_APPVER}")
 configure_file("appver.in.h" "appver.h")
 
 string(REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+-?[0-9]*-?.*" "\\1" librevault_VERSION_MAJOR "${LV_APPVER}")

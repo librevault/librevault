@@ -62,7 +62,6 @@ qt5_add_translation(librevault-gui_QM
 		"lang/librevault_en.ts"
 		"lang/librevault_ru.ts"
 		)
-message(${librevault-gui_QM})
 qt5_add_resources(librevault-gui_QM_RC ${CMAKE_CURRENT_BINARY_DIR}/lang.qrc)
 list(APPEND SRCS ${librevault-gui_QM_RC})
 

@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.16)
 project(librevault)
-
-cmake_policy(SET CMP0071 OLD)
 
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
@@ -46,17 +44,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Error management
-if(MSVC)
-	# Force to always compile with W4
-#	if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-#		string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-#	else()
-#		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-#	endif()
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-	# Update if necessary
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long")
-endif()
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W4>)  # Maximum warnings
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)  # Multiprocess build
+add_compile_options($<$<CXX_COMPILER_ID:GNU>:"-Wall -Wno-long-long">)
 
 # Sanitizer builds
 if(NOT SANITIZE STREQUAL "false")
@@ -75,24 +65,19 @@ if(BUILD_STATIC)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES .a .dll .so)
 endif()
 
-if(OS_WIN)
-	add_definitions(-D_WIN32_WINNT=0x600)
-	add_definitions(-DUNICODE)
-	add_definitions(-DWIN32_LEAN_AND_MEAN)
-endif()
-
-if(OS_MAC)
-	add_definitions(-D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
-	set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fobjc-arc")
-	set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fobjc-arc")
-endif()
+add_compile_definitions($<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0x600>)
+add_compile_definitions($<$<PLATFORM_ID:Windows>:UNICODE>)
+add_compile_definitions($<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>)
+add_compile_definitions($<$<PLATFORM_ID:Darwin>:__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0>)
+add_compile_options($<$<PLATFORM_ID:Darwin>:-fobjc-arc>)
+add_link_options($<$<PLATFORM_ID:Darwin>:-fobjc-arc>)
 
 if(DEBUG_NORMALIZATION)
-	add_definitions(-DLV_DEBUG_NORMALIZATION)
+	add_compile_definitions(LV_DEBUG_NORMALIZATION)
 endif()
 
 if(NOT DEBUG_QT)
-	add_definitions(-DQT_NO_DEBUG_OUTPUT)
+	add_compile_definitions(QT_NO_DEBUG_OUTPUT)
 endif()
 
 ## Calculating version
@@ -129,7 +114,7 @@ find_package(Threads)
 if(BUILD_STATIC OR USE_STATIC_BOOST)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
-add_definitions("-DBOOST_ASIO_DISABLE_CONCEPTS")
+add_compile_definitions("BOOST_ASIO_DISABLE_CONCEPTS")
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 
 add_library(boost INTERFACE)
@@ -158,9 +143,9 @@ if(OS_WIN)
 	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
 find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051200")
-add_definitions("-DQT_NO_FOREACH=1")
-add_definitions("-DQT_NO_FOREVER=1")
+add_compile_definitions("QT_DISABLE_DEPRECATED_BEFORE=0x051400")
+add_compile_definitions("QT_NO_FOREACH=1")
+add_compile_definitions("QT_NO_FOREVER=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)

@@ -1,3 +1,5 @@
+cmake_policy(VERSION 3.16)
+
 #============================================================================
 # Internal compiler options
 #============================================================================
@@ -16,10 +18,10 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 # Universal sources
-file(GLOB_RECURSE MAIN_SRCS "*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "*.h")
-file(GLOB_RECURSE MAIN_UIS "*.ui")
-file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
+file(GLOB_RECURSE MAIN_SRCS CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE MAIN_HEADERS CONFIGURE_DEPENDS "*.h")
+file(GLOB_RECURSE MAIN_UIS CONFIGURE_DEPENDS "*.ui")
+file(GLOB_RECURSE MAIN_QRCS CONFIGURE_DEPENDS "resources/*.qrc")
 
 # Windows sources
 if(OS_WIN)
@@ -28,22 +30,22 @@ if(OS_WIN)
 	configure_file(resources/librevault.manifest librevault.manifest COPYONLY)
 	list(APPEND SRCS ${CMAKE_CURRENT_BINARY_DIR}/librevault.rc)
 else()
-	file(GLOB_RECURSE WIN_SRCS "*.win.cpp")
+	file(GLOB_RECURSE WIN_SRCS CONFIGURE_DEPENDS "*.win.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${WIN_SRCS})
 endif()
 
 # Linux sources
 if(NOT OS_LINUX)
-	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
+	file(GLOB_RECURSE LINUX_SRCS CONFIGURE_DEPENDS "*.linux.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
 if(OS_MAC)
-	file(GLOB_RECURSE MAIN_MMS "*.mm")
+	file(GLOB_RECURSE MAIN_MMS CONFIGURE_DEPENDS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
-	file(GLOB_RECURSE MAC_SRCS "*.mac.cpp")
+	file(GLOB_RECURSE MAC_SRCS CONFIGURE_DEPENDS "*.mac.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${MAC_SRCS})
 endif()
 

@@ -1,3 +1,5 @@
+cmake_policy(VERSION 3.16)
+
 #============================================================================
 # Internal compiler options
 #============================================================================
@@ -12,8 +14,8 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 # Universal sources
-file(GLOB_RECURSE MAIN_SRCS "*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "*.h")
+file(GLOB_RECURSE MAIN_SRCS CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE MAIN_HEADERS CONFIGURE_DEPENDS "*.h")
 
 
 list(APPEND SRCS ${MAIN_SRCS})

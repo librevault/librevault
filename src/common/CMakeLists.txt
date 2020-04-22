@@ -1,3 +1,5 @@
+cmake_policy(VERSION 3.16)
+
 #============================================================================
 # Internal compiler options
 #============================================================================
@@ -13,8 +15,8 @@ set(CMAKE_AUTORCC ON)
 # Sources & headers
 #============================================================================
 
-file(GLOB_RECURSE MAIN_SRCS "*.cpp")
-file(GLOB_RECURSE MAIN_HEADERS "*.h")
+file(GLOB_RECURSE MAIN_SRCS CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE MAIN_HEADERS CONFIGURE_DEPENDS "*.h")
 
 #============================================================================
 # Third-party packages
@@ -22,7 +24,7 @@ file(GLOB_RECURSE MAIN_HEADERS "*.h")
 if(NOT PROTOBUF_FOUND)
 	find_package(Protobuf REQUIRED)
 endif()
-file(GLOB_RECURSE PROTO_LIST "*.proto")
+file(GLOB_RECURSE PROTO_LIST CONFIGURE_DEPENDS "*.proto")
 protobuf_generate_cpp(PROTO_SOURCES PROTO_HEADERS ${PROTO_LIST})
 list(APPEND MAIN_SRCS ${PROTO_SOURCES})
 list(APPEND MAIN_HEADERS ${PROTO_HEADERS})

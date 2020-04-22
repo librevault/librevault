@@ -1,12 +1,16 @@
 install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
+include(InstallQt5Plugin)
+
+set(LIBRARY_SEARCH_PATHS "${CMAKE_LIBRARY_PATH};${CONAN_BIN_DIRS}")
+
 macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
 	install(CODE "
 		include(GetPrerequisites)
 		foreach(INSTALLED_BINARY ${INDEPENDENT_BINARIES})
-			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"\")
+			get_prerequisites(\"\${INSTALLED_BINARY}\" dependencies 1 1 \"\" \"${LIBRARY_SEARCH_PATHS}\")
 			foreach(dependency \${dependencies})
-				gp_resolve_item(\"\${INSTALLED_BINARY}\" \"\${dependency}\" \"\" \"\" resolved_file)
+				gp_resolve_item(\"\${INSTALLED_BINARY}\" \"\${dependency}\" \"\" \"${LIBRARY_SEARCH_PATHS}\" resolved_file)
 				get_filename_component(resolved_file \${resolved_file} ABSOLUTE)
 				gp_append_unique(PREREQUISITE_LIBS \${resolved_file})
 				get_filename_component(file_canonical \${resolved_file} REALPATH)
@@ -32,7 +36,6 @@ if(OS_WINDOWS)
 	endif()
 
 	# Prerequisites
-	include(InstallQt5Plugin)
 
 	# Install Qt5 plugins
 	set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_PREFIX}/plugins)
@@ -40,7 +43,8 @@ if(OS_WINDOWS)
 	install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-#	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	install_qt5_plugin("Qt5::QWindowsVistaStylePlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 
 	list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
@@ -69,8 +73,6 @@ elseif(OS_LINUX)
 	endif()
 
 	if(INSTALL_BUNDLE AND BUILD_DAEMON AND BUILD_GUI AND BUILD_CLI)
-		include(InstallQt5Plugin)
-
 		# Install Qt5 plugins
 		set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_LIBDIR}/qt5/plugins)
 		install_qt5_plugin("Qt5::QMinimalIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
@@ -136,7 +138,6 @@ elseif(OS_MAC)
 	set(BUNDLE_PLUGINS_PATH "../PlugIns")
 
 	# Qt5 plugins
-	include(InstallQt5Plugin)
 	install_qt5_plugin("Qt5::QMinimalIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")

@@ -38,7 +38,8 @@
 
 namespace librevault {
 
-struct FolderParams {
+class FolderParams {
+ public:
   enum class ArchiveType : unsigned { NO_ARCHIVE = 0, TRASH_ARCHIVE, TIMESTAMP_ARCHIVE, BLOCK_ARCHIVE };
 
   FolderParams(QVariantMap fconfig);

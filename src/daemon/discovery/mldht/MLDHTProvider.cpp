@@ -242,6 +242,16 @@ int dht_random_bytes(void* buf, size_t size) {
   return size;
 }
 
+int dht_gettimeofday(struct timeval *tv, struct timezone* /*tz*/) {
+  QDateTime now = QDateTime::currentDateTimeUtc();
+  if(!tv)
+    return -1;
+
+  tv->tv_sec = now.toSecsSinceEpoch();
+  tv->tv_usec = now.toMSecsSinceEpoch();
+  return 0;
+}
+
 void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {
   ((librevault::MLDHTProvider*)closure)
       ->passCallback(closure, event, info_hash, QByteArray((const char*)data, data_len));

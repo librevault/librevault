@@ -34,8 +34,8 @@
 
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
-#ifdef Q_OS_UNIX
 #include <openssl/ssl.h>
+#ifdef Q_OS_UNIX
 #include <signal.h>
 #endif
 
@@ -156,11 +156,10 @@ int main(int argc, char** argv) {
 
     auto log = spdlog::get(Version::current().name().toStdString());
     if (!log) {
-      std::vector<spdlog::sink_ptr> sinks;
-      sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-
-      boost::filesystem::path log_path = conv_fspath(Paths::get()->log_path);
-      sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_path.native()));
+      std::vector<spdlog::sink_ptr> sinks{
+          std::make_shared<spdlog::sinks::stdout_color_sink_mt>(),
+          std::make_shared<spdlog::sinks::basic_file_sink_mt>(Paths::get()->log_path.toStdString())
+      };
 
       log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
       spdlog::register_logger(log);

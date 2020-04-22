@@ -59,7 +59,7 @@ class SQLValue {
   operator QByteArray() const { return toByteArray(); }
 };
 
-class SQLiteResultIterator : public std::iterator<std::input_iterator_tag, std::vector<SQLValue>> {
+class SQLiteResultIterator {
   sqlite3_stmt* prepared_stmt = nullptr;
   std::shared_ptr<int64_t> shared_idx;
   QVector<QString> cols;
@@ -71,6 +71,9 @@ class SQLiteResultIterator : public std::iterator<std::input_iterator_tag, std::
   void fillResult() const;
 
  public:
+  using iterator_category = std::input_iterator_tag;
+  using value_type = std::vector<SQLValue>;
+
   SQLiteResultIterator(sqlite3_stmt* prepared_stmt, std::shared_ptr<int64_t> shared_idx, QVector<QString> cols,
                        int rescode);
   explicit SQLiteResultIterator(int rescode);

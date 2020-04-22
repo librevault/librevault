@@ -69,7 +69,7 @@ class FolderGroup : public QObject {
 
  public:
   FolderGroup(FolderParams params, StateCollector* state_collector, QObject* parent);
-  virtual ~FolderGroup();
+  ~FolderGroup() override;
 
   /* Membership management */
   bool attach(P2PFolder* remote);

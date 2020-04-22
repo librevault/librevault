@@ -49,10 +49,6 @@ list(APPEND SRCS ${MAIN_QRCS})
 
 add_executable(librevault-daemon ${SRCS})
 
-if(OS_WIN)
-	target_compile_definitions(librevault-daemon PRIVATE "SPDLOG_WCHAR_FILENAMES")
-endif()
-
 #============================================================================
 # Third-party libraries
 #============================================================================

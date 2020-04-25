@@ -148,11 +148,12 @@ jobs:
       - name: Install Conan packages
         run: |
           source .venv/bin/activate
-          pushd build
+          mkdir -p build/cmake build/packaging
+          pushd build/cmake
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan install .. --build=missing --build=cascade
+          conan install ../.. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
         uses: actions/cache@v1

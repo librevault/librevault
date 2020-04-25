@@ -4,8 +4,6 @@ cmake_policy(VERSION 3.16)
 # Internal compiler options
 #============================================================================
 
-include(FetchContent)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -113,9 +111,6 @@ endif()
 
 # Sparkle (for Macs)
 if(OS_MAC)
-	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
-	FetchContent_Populate(sparkle)
-	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})
 	target_link_libraries(librevault-gui PRIVATE ${SPARKLE_LIBRARIES})
 endif()
 

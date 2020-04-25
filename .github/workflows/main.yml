@@ -148,7 +148,7 @@ jobs:
       - name: Install Conan packages
         run: |
           source .venv/bin/activate
-          cd build
+          pushd build
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
@@ -165,6 +165,8 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}
       - name: Build application
         run: |
-          cd build
-          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          mkdir -p build/cmake build/packaging
+          pushd build/cmake
+          cmake ../.. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
           cmake --build .
+          cmake --install .

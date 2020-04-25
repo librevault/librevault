@@ -2,7 +2,7 @@ install(CODE "set(CMAKE_INSTALL_LOCAL_ONLY ON)")
 
 include(InstallQt5Plugin)
 
-set(LIBRARY_SEARCH_PATHS "${CMAKE_LIBRARY_PATH};${CONAN_BIN_DIRS}")
+set(LIBRARY_SEARCH_PATHS "${CMAKE_LIBRARY_PATH};${CONAN_BIN_DIRS};$<$<PLATFORM_ID:Darwin>:${sparkle_SOURCE_DIR}>")
 
 macro(lv_collect_libs INDEPENDENT_BINARIES INSTALL_LOCATION)
 	install(CODE "
@@ -109,33 +109,34 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		install(PROGRAMS "packaging/linux-standalone/shim_cli.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-cli")
 	endif()
 elseif(OS_MAC)
-	set(CPACK_GENERATOR "Bundle")
-	set(CPACK_PACKAGE_FILE_NAME "Librevault")
+#	set(CPACK_GENERATOR "Bundle")
+#	set(CPACK_PACKAGE_FILE_NAME "Librevault")
 	# DragNDrop
-	set(CPACK_DMG_FORMAT "ULFO")
-	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
-	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
+#	set(CPACK_DMG_FORMAT "ULFO")
+#	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
+#	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
 	# Bundle
-	set(CPACK_BUNDLE_NAME "Librevault")
-	set(CPACK_BUNDLE_PLIST_SOURCE "${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist")
-	set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
-	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
+#	set(CPACK_BUNDLE_NAME "Librevault")
+#	set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/packaging/osx/Librevault.icns")
 
-	configure_file("${CPACK_BUNDLE_PLIST_SOURCE}" "${CPACK_BUNDLE_PLIST}" @ONLY)
+	set(APP_ROOT "${CMAKE_INSTALL_PREFIX}/Librevault.app")
+	install(DIRECTORY DESTINATION ${APP_ROOT})
+	configure_file("${CMAKE_SOURCE_DIR}/packaging/osx/Info.plist" "${CMAKE_BINARY_DIR}/Info.plist" @ONLY)
 
 	if(BUILD_DAEMON)
-		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${APP_ROOT}/Contents/MacOS)
 	endif()
 	if(BUILD_GUI)
-		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS)
+		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${APP_ROOT}/Contents/MacOS)
 	endif()
-	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../)
+	install(FILES "${CMAKE_BINARY_DIR}/Info.plist" DESTINATION "${APP_ROOT}/Contents")
 
-	install(FILES "packaging/osx/qt.conf" DESTINATION ../Resources)
-	install(FILES "packaging/osx/dsa_pub.pem" DESTINATION ../Resources)
+	install(FILES "packaging/osx/qt.conf" DESTINATION ${APP_ROOT}/Contents/Resources)
+	install(FILES "packaging/osx/dsa_pub.pem" DESTINATION ${APP_ROOT}/Contents/Resources)
+	install(FILES "packaging/osx/Librevault.icns" DESTINATION ${APP_ROOT}/Contents/Resources)
 
 	# Bundle plugin path
-	set(BUNDLE_PLUGINS_PATH "../PlugIns")
+	set(BUNDLE_PLUGINS_PATH "${APP_ROOT}/Contents/PlugIns")
 
 	# Qt5 plugins
 	install_qt5_plugin("Qt5::QMinimalIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
@@ -143,18 +144,11 @@ elseif(OS_MAC)
 	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+	install_qt5_plugin("Qt5::QMacStylePlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 
 	install(CODE "
 	include(BundleUtilities)
 	set(BU_CHMOD_BUNDLE_ITEMS ON)
-	set(QT_PLUGIN_IN_BUNDLE \"\")
-	foreach(f ${QT_PLUGIN})
-		get_filename_component(QT_PLUGIN_ABSOLUTE \"\${CMAKE_INSTALL_PREFIX}/\${f}\" ABSOLUTE)
-		list(APPEND QT_PLUGIN_IN_BUNDLE \"\${QT_PLUGIN_ABSOLUTE}\")
-	endforeach(f)
-	get_filename_component(BUNDLE_PATH \"\${CMAKE_INSTALL_PREFIX}/../..\" ABSOLUTE)
-	fixup_bundle(\"\${BUNDLE_PATH}\" \"\${QT_PLUGIN_IN_BUNDLE}\" \"\")
+	fixup_bundle(\"${APP_ROOT}\" \"${QT_PLUGIN}\" \"${LIBRARY_SEARCH_PATHS}\")
 	")
-
-	include(CPack)
 endif()

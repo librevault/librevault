@@ -13,6 +13,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
 include(OSDetection)
+include(FetchContent)
 
 #============================================================================
 # Settable options
@@ -170,6 +171,13 @@ add_subdirectory("contrib/dht")
 ## QtSingleApplication
 if(BUILD_GUI)
 	add_subdirectory("contrib/qtsingleapplication")
+endif()
+
+# Sparkle (for Macs)
+if(OS_MAC)
+	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
+	FetchContent_Populate(sparkle)
+	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})
 endif()
 
 #============================================================================

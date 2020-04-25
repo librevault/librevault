@@ -25,9 +25,9 @@ class Base58 : public TwoWayTransformer {
   const std::string& current_alphabet;
 
  public:
-  Base58(const std::string& alphabet = alphabet::bitcoin);
-  QByteArray to(const QByteArray& data) const;
-  QByteArray from(const QByteArray& data) const;
+  explicit Base58(const std::string& alphabet = alphabet::bitcoin);
+  QByteArray to(const QByteArray& data) const override;
+  QByteArray from(const QByteArray& data) const override;
 };
 
 }  // namespace crypto

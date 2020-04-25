@@ -202,7 +202,7 @@ QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
     return qMakePair(row[0].toUInt(), row[1].toByteArray());
   }
   throw MetaStorage::MetaNotFound();
-};
+}
 
 QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {
   return getMeta(

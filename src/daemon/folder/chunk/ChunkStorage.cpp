@@ -50,7 +50,7 @@ ChunkStorage::ChunkStorage(const FolderParams& params, MetaStorage* meta_storage
   }
 
   connect(meta_storage_, &MetaStorage::metaAddedExternal, file_assembler, &AssemblerQueue::addAssemble);
-};
+}
 
 bool ChunkStorage::have_chunk(const QByteArray& ct_hash) const noexcept {
   return mem_storage->have_chunk(ct_hash) || enc_storage->have_chunk(ct_hash) ||

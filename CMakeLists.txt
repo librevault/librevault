@@ -46,7 +46,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Error management
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W4>)  # Maximum warnings
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)  # Multiprocess build
-add_compile_options($<$<CXX_COMPILER_ID:GNU>:"-Wall -Wno-long-long">)
+add_compile_options($<$<CXX_COMPILER_ID:GNU>:-Wall>)
+add_compile_options($<$<CXX_COMPILER_ID:GNU>:-Wpedantic>)
 
 # Sanitizer builds
 if(NOT SANITIZE STREQUAL "false")

@@ -31,7 +31,7 @@ class KMAC_SHA3_224 : public OneWayTransformer {
   ~KMAC_SHA3_224() override = default;
 
   [[nodiscard]] QByteArray compute(const QByteArray& data) const;
-  [[nodiscard]] QByteArray to(const QByteArray& data) const;
+  [[nodiscard]] QByteArray to(const QByteArray& data) const override;
 };
 
 }  // namespace librevault::crypto

@@ -13,11 +13,14 @@ parts:
       - -DCMAKE_BUILD_TYPE=Release
     build-packages:
       - build-essential
-      - qtbase5-dev
       - python3.7-dev
+      - python3.7-venv
       - python3-pip
     override-build: |
-      python3.7 -m pip install pip conan
+      python3.7 -m pip install poetry setuptools wheel
+      python3.7 -m venv .venv
+      poetry install
+      source .venv/bin/activate
       conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       conan profile new --detect --force default
       conan profile update settings.compiler.libcxx=libstdc++11 default

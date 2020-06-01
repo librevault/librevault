@@ -28,8 +28,8 @@ authors = ["Alexander Shishenko <alex@shishenko.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-conan = "^1.25.0"
-pre-commit = "^2.2.0"
+conan = "^1.25.2"
+pre-commit = "^2.4.0"
 click = "^7.1.2"
 isort = "^4.3.21"
 black = "^19.10b0"

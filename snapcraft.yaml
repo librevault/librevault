@@ -16,13 +16,16 @@ parts:
       - python3.7-dev
       - python3.7-venv
       - python3-pip
+      - python3-setuptools
+      - python3-wheel
+      - bash
     override-build: |
       python3.7 -m pip install poetry setuptools wheel
       python3.7 -m venv .venv
+      cp $SNAPCRAFT_PART_SRC/pyproject.toml .
       poetry install
-      source .venv/bin/activate
-      conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-      conan profile new --detect --force default
-      conan profile update settings.compiler.libcxx=libstdc++11 default
-      conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
+      .venv/bin/conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      .venv/bin/conan profile new --detect --force default
+      .venv/bin/conan profile update settings.compiler.libcxx=libstdc++11 default
+      .venv/bin/conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
       snapcraftctl build

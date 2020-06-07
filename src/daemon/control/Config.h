@@ -30,6 +30,7 @@
 #include <QJsonObject>
 #include <QObject>
 #include <QVariant>
+#include <stdexcept>
 
 #include "AbstractConfig.h"
 

@@ -73,7 +73,7 @@ void DirectoryWatcher::prepareAssemble(const QByteArray& normpath, Meta::Type ty
 }
 
 void DirectoryWatcher::handlePathEvent(const QString& path) {
-//  qCDebug(log_watcher) << "path:" << path;
+  //  qCDebug(log_watcher) << "path:" << path;
 
   QByteArray normpath = path_normalizer_->normalizePath(path);
 
@@ -89,7 +89,8 @@ void DirectoryWatcher::handlePathEvent(const QString& path) {
 void DirectoryWatcher::addDirectory(const QString& path, bool recursive) {
   QStringList paths;
 
-  QDirIterator it(path, QDir::AllEntries | QDir::NoDotAndDotDot, recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
+  QDirIterator it(path, QDir::AllEntries | QDir::NoDotAndDotDot,
+                  recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags);
   while (it.hasNext()) {
     QString new_path = it.next();
     if (!ignore_list_->isIgnored(path_normalizer_->normalizePath(new_path))) paths += new_path;

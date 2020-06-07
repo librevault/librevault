@@ -80,7 +80,9 @@ void MetaStorage::markAssembled(const QByteArray& path_id) { index_->setAssemble
 
 bool MetaStorage::isChunkAssembled(const QByteArray& ct_hash) { return index_->isAssembledChunk(ct_hash); }
 
-QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(const QByteArray& ct_hash) { return index_->getChunkSizeIv(ct_hash); }
+QPair<quint32, QByteArray> MetaStorage::getChunkSizeIv(const QByteArray& ct_hash) {
+  return index_->getChunkSizeIv(ct_hash);
+}
 
 bool MetaStorage::putAllowed(const Meta::PathRevision& path_revision) noexcept {
   return index_->putAllowed(path_revision);

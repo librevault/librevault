@@ -40,8 +40,8 @@
 #include "crypto/KMAC-SHA3.h"
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
-#include "util/human_size.h"
 #include "util/conv_fspath.h"
+#include "util/human_size.h"
 
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>

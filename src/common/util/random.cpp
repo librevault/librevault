@@ -27,6 +27,7 @@
  * files in the program, then also delete it here.
  */
 #include "random.h"
+
 #include <cryptopp/osrng.h>
 
 QByteArray randomBytes(int size) {

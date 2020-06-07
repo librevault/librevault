@@ -61,8 +61,7 @@ V1Parser::HaveMeta V1Parser::parse_HaveMeta(const std::vector<uint8_t>& message_
 
   HaveMeta message_struct;
   message_struct.revision.revision_ = message_protobuf.revision();
-  message_struct.revision.path_id_ =
-      QByteArray::fromStdString(message_protobuf.path_id());
+  message_struct.revision.path_id_ = QByteArray::fromStdString(message_protobuf.path_id());
   message_struct.bitfield =
       convert_bitfield(std::vector<uint8_t>(message_protobuf.bitfield().begin(), message_protobuf.bitfield().end()));
 

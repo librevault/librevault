@@ -31,7 +31,7 @@ QByteArray Base58::to(const QByteArray& data) const {
     big_data = div;
   }
 
-  for (const char * orig_str = data.data(); orig_str < data.data() + data.size() && *orig_str == 0; orig_str++) {
+  for (const char* orig_str = data.data(); orig_str < data.data() + data.size() && *orig_str == 0; orig_str++) {
     result += current_alphabet[0];
   }
 
@@ -55,7 +55,7 @@ QByteArray Base58::from(const QByteArray& data) const {
   }
 
   QByteArray decoded(leading_zeros + big_data.MinEncodedSize(), 0);
-  big_data.Encode(leading_zeros + (uchar *)decoded.data(), decoded.size());
+  big_data.Encode(leading_zeros + (uchar*)decoded.data(), decoded.size());
   return decoded;
 }
 

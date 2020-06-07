@@ -38,9 +38,7 @@ namespace librevault {
 Q_LOGGING_CATEGORY(log_state, "state")
 
 StateCollector::StateCollector(QObject* parent) : QObject(parent) {}
-StateCollector::~StateCollector() {
-  SCOPELOG(log_state);
-}
+StateCollector::~StateCollector() { SCOPELOG(log_state); }
 
 void StateCollector::global_state_set(QString key, QJsonValue value) {
   if (global_state_buffer[key] != value) {

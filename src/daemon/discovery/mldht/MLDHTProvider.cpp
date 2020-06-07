@@ -242,10 +242,9 @@ int dht_random_bytes(void* buf, size_t size) {
   return size;
 }
 
-int dht_gettimeofday(struct timeval *tv, struct timezone* /*tz*/) {
+int dht_gettimeofday(struct timeval* tv, struct timezone* /*tz*/) {
   QDateTime now = QDateTime::currentDateTimeUtc();
-  if(!tv)
-    return -1;
+  if (!tv) return -1;
 
   tv->tv_sec = now.toSecsSinceEpoch();
   tv->tv_usec = now.toMSecsSinceEpoch();

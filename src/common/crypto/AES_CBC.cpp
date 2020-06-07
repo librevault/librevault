@@ -37,7 +37,7 @@ QByteArray AES_CBC::decrypt(const QByteArray& ciphertext) const {
 
   std::string plaintext;
   CryptoPP::StringSource(
-  (const uchar*)ciphertext.data(), ciphertext.size(), true,
+      (const uchar*)ciphertext.data(), ciphertext.size(), true,
       new CryptoPP::StreamTransformationFilter(filter, new CryptoPP::StringSink(plaintext),
                                                padding ? CryptoPP::StreamTransformationFilter::PKCS_PADDING
                                                        : CryptoPP::StreamTransformationFilter::NO_PADDING));

@@ -25,4 +25,4 @@ QByteArray KMAC_SHA3_224::compute(const QByteArray& data) const {
 
 QByteArray KMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
 
-}  // namespace librevault
+}  // namespace librevault::crypto

@@ -158,11 +158,13 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
 
 QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<QString, SQLValue>& values) {
   QList<SignedMeta> result_list;
-  for (auto row : db_->exec(QString::fromStdString(sql), values)) result_list << SignedMeta(row[0], row[1], params_.secret);
+  for (auto row : db_->exec(QString::fromStdString(sql), values))
+    result_list << SignedMeta(row[0], row[1], params_.secret);
   return result_list;
 }
 SignedMeta Index::getMeta(const blob& path_id) {
-  auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {{":path_id", conv_bytearray(path_id)}});
+  auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1",
+                           {{":path_id", conv_bytearray(path_id)}});
 
   if (meta_list.empty()) throw MetaStorage::MetaNotFound();
   return *meta_list.begin();
@@ -197,8 +199,7 @@ bool Index::isAssembledChunk(const QByteArray& ct_hash) {
 }
 
 QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
-  for (auto row :
-       db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
+  for (auto row : db_->exec("SELECT size, iv FROM chunk WHERE ct_hash=:ct_hash", {{":ct_hash", ct_hash}})) {
     return qMakePair(row[0].toUInt(), row[1].toByteArray());
   }
   throw MetaStorage::MetaNotFound();

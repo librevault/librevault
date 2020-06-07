@@ -40,7 +40,9 @@ OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, 
                          QObject* parent)
     : QObject(parent), params_(params), meta_storage_(meta_storage), path_normalizer_(path_normalizer) {}
 
-bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept { return meta_storage_->isChunkAssembled(ct_hash); }
+bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept {
+  return meta_storage_->isChunkAssembled(ct_hash);
+}
 
 QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
   LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");

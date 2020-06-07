@@ -72,7 +72,7 @@ jobs:
       - name: Install system-wide dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bash git python3-pip python3.8-dev python3.8-venv build-essential cmake libwayland-dev libxcomposite-dev libglib2.0-dev ninja-build ccache
+          sudo apt-get install -y bash git python3-pip python3.8-dev python3.8-venv build-essential cmake libwayland-dev libxcomposite-dev libglib2.0-dev mesa-common-dev ninja-build ccache
           sudo python3.8 -m pip install poetry
       - uses: actions/checkout@v2
         with:

@@ -27,7 +27,7 @@ description = ""
 authors = ["Alexander Shishenko <alex@shishenko.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 conan = "^1.25.2"
 pre-commit = "^2.4.0"
 click = "^7.1.2"

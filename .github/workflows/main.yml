@@ -62,9 +62,7 @@ jobs:
           path: build/pack/result.exe
 
   build-linux-docker:
-    runs-on: ubuntu-18.04
-    container:
-      image: ubuntu:20.04
+    runs-on: ubuntu-20.04
     defaults:
       run:
         shell: bash

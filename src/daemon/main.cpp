@@ -36,7 +36,7 @@
 #include <boost/filesystem/path.hpp>
 #include <openssl/ssl.h>
 #ifdef Q_OS_UNIX
-#include <signal.h>
+#include <csignal>
 #endif
 
 #include "Client.h"

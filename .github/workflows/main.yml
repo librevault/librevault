@@ -41,25 +41,25 @@ jobs:
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
-      - name: Build application
-        run: |
-          cd build
-          cmake -DUSE_STATIC_BOOST=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
-          cmake --build . --config Release
-      - name: Package application
-        run: |
-          .venv\scripts\activate.ps1
-          cd build
-          cmake --install .
-          python ../scripts/configure_innosetup.py --packaging_dir pack --install_dir built_binaries
-          pushd pack
-          iscc librevault.iss
-          popd
-      - name: Upload artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: librevault-innosetup-windows-x64
-          path: build/pack/result.exe
+#      - name: Build application
+#        run: |
+#          cd build
+#          cmake -DUSE_STATIC_BOOST=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
+#          cmake --build . --config Release
+#      - name: Package application
+#        run: |
+#          .venv\scripts\activate.ps1
+#          cd build
+#          cmake --install .
+#          python ../scripts/configure_innosetup.py --packaging_dir pack --install_dir built_binaries
+#          pushd pack
+#          iscc librevault.iss
+#          popd
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v1
+#        with:
+#          name: librevault-innosetup-windows-x64
+#          path: build/pack/result.exe
 
   build-linux:
     runs-on: ubuntu-20.04
@@ -114,6 +114,7 @@ jobs:
         run: |
           cd build
           cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build .
 
   build-macos:
     runs-on: macos-10.15

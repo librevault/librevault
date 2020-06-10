@@ -146,5 +146,10 @@ conanbuildinfo.*
 conaninfo.txt
 graph_info.json
 
-# Flatpak builder
+### Flatpak builder
 .flatpak-builder/
+
+### Snap builder
+parts/
+stage/
+prime/

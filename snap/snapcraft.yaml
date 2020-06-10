@@ -1,0 +1,51 @@
+name: librevault
+version: git
+summary: Librevault file sharing platform
+description: |
+  Librevault file sharing platform
+
+confinement: devmode
+base: core20
+grade: devel
+
+parts:
+  librevault:
+    source: .
+    plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON
+    build-packages:
+      - build-essential
+    stage-packages:
+      - libgl1
+    build-environment:
+      - CONAN_USER_HOME: $SNAPCRAFT_STAGE
+    override-build: |
+      conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
+      snapcraftctl build
+    after:
+      - conan-libs
+    prime: ["-.conan/*"]
+  conan-libs:
+    source: .
+    plugin: nil
+    build-packages:
+      - build-essential
+    build-environment:
+      - CONAN_USER_HOME: $SNAPCRAFT_STAGE
+    override-build: |
+      conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      conan profile new --detect --force default
+      conan profile update settings.compiler.libcxx=libstdc++11 default
+      conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
+    after:
+      - conan
+    prime: ["-./*"]
+  conan:
+    source: []
+    plugin: python
+    python-packages:
+      - conan
+    stage:
+      - "-lib64"
+    prime: ["-./*"]

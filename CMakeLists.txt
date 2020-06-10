@@ -3,7 +3,7 @@ project(librevault)
 
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-	conan_basic_setup(TARGETS)
+	conan_basic_setup(TARGETS KEEP_RPATHS)
 endif()
 
 #============================================================================
@@ -32,6 +32,7 @@ option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
+option(INSTALL_RUNTIME "Install ld-linux.so" OFF)
 
 #============================================================================
 # Internal compiler options

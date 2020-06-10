@@ -126,13 +126,16 @@ jobs:
       - name: Install system-wide dependencies
         run: |
           sudo snap install snapcraft --classic
-          sudo snap install multipass
+          sudo snap install lxd
+          sudo lxd init
+          sudo usermod -a -G lxd ${USER}
+          newgrp lxd
       - uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Build application
         run: |
-          snapcraft
+          snapcraft --use-lxd
 
   build-macos:
     runs-on: macos-10.15

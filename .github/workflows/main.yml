@@ -117,21 +117,15 @@ jobs:
           cmake --build .
   build-linux-snap:
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-    env:
-      DEBIAN_FRONTEND: noninteractive
     steps:
-      - name: Install system-wide dependencies
-        run: |
-          sudo snap install snapcraft --classic
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: Build application
-        run: |
-          snapcraft --destructive-mode
+      - uses: snapcore/action-build@v1
+      - uses: actions/upload-artifact@v2
+        with:
+          name: snap
+          path: ${{ steps.snapcraft.outputs.snap }}
 
   build-macos:
     runs-on: macos-10.15

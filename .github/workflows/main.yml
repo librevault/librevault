@@ -115,6 +115,24 @@ jobs:
           cd build
           cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build .
+  build-linux-snap:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          sudo snap install snapcraft --classic
+          sudo snap install multipass
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build application
+        run: |
+          snapcraft
 
   build-macos:
     runs-on: macos-10.15

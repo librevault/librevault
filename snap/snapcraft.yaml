@@ -13,7 +13,7 @@ parts:
     source: .
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON
+      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON -DINSTALL_BUNDLE=ON
     build-packages:
       - build-essential
     stage-packages:

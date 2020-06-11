@@ -18,6 +18,7 @@ parts:
       - build-essential
     stage-packages:
       - libgl1
+      - libglib2.0-0
     build-environment:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
     override-build: |

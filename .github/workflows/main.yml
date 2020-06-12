@@ -5,6 +5,31 @@ on:
   pull_request:
     branches: [ master, develop, "feature/githubactions" ]
 jobs:
+  build-conan-dependencies:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install conan
+      - name: Install Conan packages
+        run: |
+          pushd build
+          conan profile new --detect --force default
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
+          conan install --build=missing --build=cascade --update --generator json ..
+          conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
+          conan upload "*" -r librevault-builddeps --all --confirm --parallel
+
   build-windows:
     runs-on: windows-2019
     env:
@@ -38,6 +63,7 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
@@ -98,6 +124,7 @@ jobs:
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
@@ -115,6 +142,7 @@ jobs:
           cd build
           cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build .
+
   build-linux-snap:
     runs-on: ubuntu-18.04
     steps:
@@ -122,6 +150,7 @@ jobs:
         with:
           submodules: recursive
       - uses: snapcore/action-build@v1
+        id: snapcraft
       - uses: actions/upload-artifact@v2
         with:
           name: snap
@@ -161,6 +190,7 @@ jobs:
           pushd build/cmake
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan install ../.. --build=missing --build=cascade
           conan remove "*" --src --builds --force

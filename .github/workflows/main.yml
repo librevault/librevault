@@ -18,11 +18,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install conan
-      - name: Install Conan packages
+      - name: Create Conan profile
         run: |
           pushd build
           conan profile new --detect --force default
-          conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Set C++ standard library
+        if: matrix.os == 'ubuntu-latest'
+        run: conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Build and publish
+        run: |
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps

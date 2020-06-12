@@ -13,6 +13,8 @@ jobs:
         python-version: [3.8]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
         with:
@@ -27,6 +29,7 @@ jobs:
         run: conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Build and publish
         run: |
+          pushd build
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps

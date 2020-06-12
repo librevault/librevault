@@ -11,6 +11,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.8]
+    env:
+      CONAN_SKIP_BROKEN_SYMLINKS_CHECK: 1
     steps:
       - uses: actions/checkout@v2
         with:

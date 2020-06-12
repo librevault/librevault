@@ -35,6 +35,7 @@ jobs:
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
+          conan install --build=missing --build=cascade --update --generator json --remote librevault-builddeps ..
           conan install --build=missing --build=cascade --update --generator json ..
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
           conan upload "*" -r librevault-builddeps --all --confirm --parallel

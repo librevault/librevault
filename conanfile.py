@@ -7,12 +7,12 @@ class LibrevaultConan(ConanFile):
         "docopt.cpp/0.6.2",
         "spdlog/1.5.0",
         "cryptopp/8.2.0@bincrafters/stable",
-        "sqlite3/3.31.1",
-        "boost/1.72.0",
+        "sqlite3/3.32.1",
+        "boost/1.73.0",
         "protobuf/3.9.1",
         "protoc_installer/3.9.1@bincrafters/stable",
-        "websocketpp/0.8.1",
-        "openssl/1.1.1f",
+        "websocketpp/0.8.2",
+        "openssl/1.1.1g",
         "qt/5.14.2@bincrafters/stable",
         "libjpeg/9d",  # override
     ]

@@ -7,13 +7,31 @@ description: |
 confinement: devmode
 base: core20
 grade: devel
+icon: src/gui/resources/librevault_icon.svg
+
+apps:
+  librevault-desktop:
+    command: usr/bin/librevault-gui
+    desktop: usr/share/applications/Librevault.desktop
+    common-id: com.librevault.librevault-desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - home
+      - network
+      - network-bind
+      - network-manager
+      - pulseaudio
+      - removable-media
+      - unity7
 
 parts:
   librevault:
     source: .
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON -DINSTALL_BUNDLE=ON
+      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON -DINSTALL_BUNDLE=ON -DCMAKE_INSTALL_PREFIX=/
     build-packages:
       - build-essential
       - libglib2.0-0

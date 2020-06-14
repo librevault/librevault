@@ -83,10 +83,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
 		# Dependencies of targets and plugins
-		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+		lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_FULL_LIBDIR}")
 
 		# qt.conf
-		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
+#		install(FILES "packaging/appimage/qt.conf" DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 		# Install ld-linux.so runtime
 #		install(CODE "

@@ -14,6 +14,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
 include(OSDetection)
 include(FetchContent)
+include(CheckIPOSupported)
 
 #============================================================================
 # Settable options
@@ -22,13 +23,11 @@ include(FetchContent)
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
 option(BUILD_GUI "Build GUI" ON)
-option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
 option(USE_STATIC_BOOST "Use static version of boost" OFF)
 option(BUILD_STATIC "Build static version of executable" OFF)
 option(BUILD_UPDATER "Add auto-updater support" ON)
-option(DEBUG_NORMALIZATION "Debug path normalization" OFF)
 option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
@@ -44,6 +43,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+check_ipo_supported(RESULT CMAKE_INTERPROCEDURAL_OPTIMIZATION_SUPPORTED)
+if(CMAKE_INTERPROCEDURAL_OPTIMIZATION_SUPPORTED AND NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
 
 # Error management
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W4>)  # Maximum warnings
@@ -74,10 +78,6 @@ add_compile_definitions($<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>)
 add_compile_definitions($<$<PLATFORM_ID:Darwin>:__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0>)
 add_compile_options($<$<PLATFORM_ID:Darwin>:-fobjc-arc>)
 add_link_options($<$<PLATFORM_ID:Darwin>:-fobjc-arc>)
-
-if(DEBUG_NORMALIZATION)
-	add_compile_definitions(LV_DEBUG_NORMALIZATION)
-endif()
 
 if(NOT DEBUG_QT)
 	add_compile_definitions(QT_NO_DEBUG_OUTPUT)
@@ -191,9 +191,6 @@ if(BUILD_DAEMON)
 endif()
 if(BUILD_GUI)
 	add_subdirectory("src/gui")
-endif()
-if(BUILD_CLI)
-	add_subdirectory("src/cli")
 endif()
 
 include(Install.cmake)

@@ -4,28 +4,85 @@ summary: Librevault file sharing platform
 description: |
   Librevault file sharing platform
 
-confinement: devmode
+confinement: strict
 base: core20
 grade: devel
+icon: src/gui/resources/librevault_icon.svg
+
+apps:
+  librevault-desktop:
+    command: usr/bin/librevault-gui
+    command-chain:
+      - bin/desktop-launch
+    environment:
+      QT_PLUGIN_PATH: $SNAP/usr/lib/qt5/plugins
+    desktop: usr/share/applications/com.librevault.Librevault.desktop
+    common-id: com.librevault.Librevault
+    plugs:
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - home
+      - network
+      - network-bind
+      - network-manager
+      - pulseaudio
+      - removable-media
+      - unity7
 
 parts:
   librevault:
     source: .
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_SKIP_BUILD_RPATH=ON
+      - -DINSTALL_BUNDLE=ON
+      - -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      - -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      - -DCMAKE_INSTALL_PREFIX=/
     build-packages:
       - build-essential
+      - ccache
     stage-packages:
       - libgl1
     build-environment:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
+      - CCACHE_DIR: $SNAPCRAFT_STAGE/.ccache
     override-build: |
       conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
       snapcraftctl build
+      sed -i -e 's@^Icon=\(.\+\)$@Icon=/usr/share/icons/hicolor/scalable/apps/\1.svg@' ${SNAPCRAFT_PART_INSTALL}/usr/share/applications/com.librevault.Librevault.desktop
     after:
       - conan-libs
-    prime: ["-.conan/*"]
+      - desktop-essentials
+      - desktop-glib-only
+    prime: ["-.conan/*", "-.ccache"]
+
+  desktop-essentials:
+    plugin: nil
+    stage-packages:
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - locales-all
+      - xdg-user-dirs
+      - libgtk2.0-0
+    after:
+      - desktop-glib-only
+
+  desktop-glib-only:
+    build-packages:
+      - libglib2.0-dev
+    plugin: make
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: glib-only
+    stage-packages:
+      - libglib2.0-bin
+
   conan-libs:
     source: .
     plugin: nil
@@ -41,6 +98,7 @@ parts:
     after:
       - conan
     prime: ["-./*"]
+
   conan:
     source: []
     plugin: python

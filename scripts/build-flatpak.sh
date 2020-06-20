@@ -1,15 +1,13 @@
 #!/bin/bash
+set -xe
 
 cd "$(dirname $0)/.."
 
 ROOT_DIR="$(mktemp -d /tmp/flatpak-builder-XXXXXXX)"
 
-FLATPAK_PIP_GENERATOR="${ROOT_DIR}/flatpak-pip-generator"
+FLATPAK_POETRY_GENERATOR="${ROOT_DIR}/flatpak-poetry-generator"
 
-curl -LO https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/master/pip/flatpak-pip-generator > ${FLATPAK_PIP_GENERATOR}
-chmod +x ${FLATPAK_PIP_GENERATOR}
+curl -L -o "${FLATPAK_POETRY_GENERATOR}" https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/master/poetry/flatpak-poetry-generator.py
+chmod +x "${FLATPAK_POETRY_GENERATOR}"
 
-REQUIREMENTS="${ROOT_DIR}/requirements.txt"
-poetry export -f requirements.txt --without-hashes > ${REQUIREMENTS}
-
-${FLATPAK_PIP_GENERATOR} --requirements-file="${REQUIREMENTS}" --output pypi-dependencies
+${FLATPAK_POETRY_GENERATOR} "poetry.lock" -o flatpak/python3-conan.json

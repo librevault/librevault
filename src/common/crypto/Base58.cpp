@@ -12,8 +12,7 @@
 
 #include <cryptopp/integer.h>
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 Base58::Base58(const std::string& alphabet) : current_alphabet(alphabet) {}
 
@@ -59,5 +58,4 @@ QByteArray Base58::from(const QByteArray& data) const {
   return decoded;
 }
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

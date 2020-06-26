@@ -11,8 +11,7 @@
 #pragma once
 #include "Base58.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 template <uint8_t N, class InputIterator, class CodePointFromCharLookupTable, class CharFromCodePointLookupTable>
 char LuhnMod(InputIterator first, InputIterator last, CodePointFromCharLookupTable cp_from_char_table,
@@ -55,5 +54,4 @@ char LuhnMod58(InputIterator first, InputIterator last) {
   return LuhnMod<58>(first, last, LuhnMod58_lookup, alphabet::bitcoin);
 }
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

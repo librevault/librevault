@@ -14,6 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <magic_enum.hpp>
+
 #include "SignedMeta.h"
 #include "util/conv_bitfield.h"
 
@@ -21,7 +23,7 @@ namespace librevault {
 
 class V1Parser {
  public:
-  enum message_type : uint8_t {
+  enum MessageType : uint8_t {
     HANDSHAKE = 0,
 
     CHOKE = 1,
@@ -38,35 +40,6 @@ class V1Parser {
     BLOCK_REQUEST = 10,
     BLOCK_REPLY = 11,
   };
-
-  const char* type_text(message_type type) {
-    switch (type) {
-      case HANDSHAKE:
-        return "HANDSHAKE";
-      case CHOKE:
-        return "CHOKE";
-      case UNCHOKE:
-        return "UNCHOKE";
-      case INTERESTED:
-        return "INTERESTED";
-      case NOT_INTERESTED:
-        return "NOT_INTERESTED";
-      case HAVE_META:
-        return "HAVE_META";
-      case HAVE_CHUNK:
-        return "HAVE_CHUNK";
-      case META_REQUEST:
-        return "META_REQUEST";
-      case META_REPLY:
-        return "META_REPLY";
-      case BLOCK_REQUEST:
-        return "BLOCK_REQUEST";
-      case BLOCK_REPLY:
-        return "BLOCK_REPLY";
-      default:
-        return "UNKNOWN";
-    }
-  }
 
   struct Handshake {
     std::vector<uint8_t> auth_token;
@@ -107,9 +80,9 @@ class V1Parser {
   // gen_* messages return messages in format <type=byte><payload>
   // parse_* messages take argument in format <type=byte><payload>
 
-  message_type parse_MessageType(const std::vector<uint8_t>& message_raw) {
+  MessageType parse_MessageType(const std::vector<uint8_t>& message_raw) {
     if (!message_raw.empty())
-      return (message_type)message_raw[0];
+      return (MessageType)message_raw[0];
     else
       throw parse_error();
   }
@@ -142,7 +115,7 @@ class V1Parser {
 
  protected:
   template <class ProtoMessageClass>
-  QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, message_type type) {
+  QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, MessageType type) {
     QByteArray message_raw(message_protobuf.ByteSize() + 1, 0);
     message_raw[0] = type;
     message_protobuf.SerializeToArray(message_raw.data() + 1, message_protobuf.ByteSize());

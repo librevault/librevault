@@ -30,8 +30,8 @@
 #include <QLoggingCategory>
 #include <QObject>
 #include <QRunnable>
-#include <QThreadPool>
 #include <QString>
+#include <QThreadPool>
 #include <map>
 
 #include "SignedMeta.h"

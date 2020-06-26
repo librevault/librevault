@@ -12,8 +12,7 @@
 
 #include <cryptopp/base32.h>
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 QByteArray Base32::to(const QByteArray& data) const {
   std::string transformed;
@@ -31,5 +30,4 @@ QByteArray Base32::from(const QByteArray& data) const {
   return QByteArray::fromStdString(transformed);
 }
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

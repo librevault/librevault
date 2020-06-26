@@ -61,4 +61,4 @@ class SHA3 : public OneWayTransformer {
   }
 };
 
-}  // namespace librevault
+}  // namespace librevault::crypto

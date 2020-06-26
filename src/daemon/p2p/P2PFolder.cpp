@@ -224,7 +224,7 @@ void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& blo
 
 void P2PFolder::handle_message(const QByteArray& message) {
   blob message_raw(message.begin(), message.end());
-  V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
+  V1Parser::MessageType message_type = V1Parser().parse_MessageType(message_raw);
 
   counter_.add_down(message_raw.size());
   fgroup_->bandwidth_counter().add_down(message_raw.size());

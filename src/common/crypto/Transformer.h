@@ -59,13 +59,11 @@ class De : public TwoWayTransformer {
   QByteArray from(const QByteArray& data) const override { return nested.to(data); };
 };
 
-inline QByteArray operator|(const QByteArray& data, OneWayTransformer&& transformer) {
-  return transformer.to(data);
-}
+inline QByteArray operator|(const QByteArray& data, OneWayTransformer&& transformer) { return transformer.to(data); }
 
 template <class Container>
 inline QByteArray operator|(const Container& data, OneWayTransformer&& transformer) {
   return transformer.to(data.begin(), data.end());
 }
 
-}  // namespace librevault
+}  // namespace librevault::crypto

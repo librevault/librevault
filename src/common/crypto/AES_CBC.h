@@ -14,8 +14,7 @@
 
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 class AES_CBC : public TwoWayTransformer {
  private:
@@ -36,5 +35,4 @@ class AES_CBC : public TwoWayTransformer {
   QByteArray from(const QByteArray& data) const { return decrypt(data); }
 };
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

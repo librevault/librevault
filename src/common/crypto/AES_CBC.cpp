@@ -14,8 +14,7 @@
 #include <cryptopp/ccm.h>
 #include <cryptopp/filters.h>
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 AES_CBC::AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding) : key(key), iv(iv), padding(padding) {}
 
@@ -45,5 +44,4 @@ QByteArray AES_CBC::decrypt(const QByteArray& ciphertext) const {
   return QByteArray::fromStdString(plaintext);
 }
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

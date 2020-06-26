@@ -11,13 +11,10 @@
 #pragma once
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 namespace alphabet {
 static std::string bitcoin = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-static std::string ripple = "rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz";
-static std::string flickr = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 }  // namespace alphabet
 
 class Base58 : public TwoWayTransformer {
@@ -30,5 +27,4 @@ class Base58 : public TwoWayTransformer {
   QByteArray from(const QByteArray& data) const override;
 };
 
-}  // namespace crypto
-}  // namespace librevault
+}  // namespace librevault::crypto

@@ -99,7 +99,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 #		install(PROGRAMS "packaging/linux-standalone/shim_gui.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-gui")
 #		install(PROGRAMS "packaging/linux-standalone/shim_cli.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-cli")
 	endif()
-elseif(OS_MAC)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")
 	# DragNDrop

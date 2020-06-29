@@ -115,7 +115,7 @@ description = "Conan C/C++ package manager"
 name = "conan"
 optional = false
 python-versions = "*"
-version = "1.26.0"
+version = "1.26.1"
 
 [package.dependencies]
 Jinja2 = ">=2.3,<3"
@@ -558,7 +558,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "0016347c226970585be960f31f4c400f623f004482153d76eda2b1f808b9eb5b"
+content-hash = "f67624695ae75601ebe7eadab9c5eb6231798bd9891e891e34c4aae4bd11254b"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -633,7 +633,7 @@ colorama = [
     {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
 ]
 conan = [
-    {file = "conan-1.26.0.tar.gz", hash = "sha256:e78c7d1d25a41db8d4c57b1eee9bcfe6a08d7362375e75c69e7c8e899a672d1f"},
+    {file = "conan-1.26.1.tar.gz", hash = "sha256:dd0ef51769377a5d202de1a331e5b7dd19690faae3efe1e665245dc6075ddf94"},
 ]
 cryptography = [
     {file = "cryptography-2.3.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:17db09db9d7c5de130023657be42689d1a5f60502a14f6f745f6f65a6b8195c0"},
@@ -823,6 +823,7 @@ regex = [
     {file = "regex-2020.6.7.tar.gz", hash = "sha256:ffd4f80602490a309064cf2b203e220d581c51660e01055c64bf5da450485ee6"},
 ]
 requests = [
+    {file = "requests-2.23.0-py2.7.egg", hash = "sha256:5d2d0ffbb515f39417009a46c14256291061ac01ba8f875b90cad137de83beb4"},
     {file = "requests-2.23.0-py2.py3-none-any.whl", hash = "sha256:43999036bfa82904b6af1d99e4882b560e5e2c68e5c4b0aa03b655f3d7d73fee"},
     {file = "requests-2.23.0.tar.gz", hash = "sha256:b3f43d496c6daba4493e7c431722aeb7dbc6288f52a6e04e7b6023b0247817e6"},
 ]

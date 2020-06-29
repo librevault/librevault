@@ -24,7 +24,6 @@ macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var _qt_new_plugins_root)
     install(FILES "${_qt_plugin_path}" DESTINATION "${_qt_plugin_dest}")
 
     list(APPEND ${_qt_plugins_var} "${_qt_plugin_dest}/${_qt_plugin_file}")
-    message(STATUS "${${_qt_plugins_var}}")
   else()
     message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
   endif()

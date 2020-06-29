@@ -103,7 +103,7 @@ elseif(OS_MAC)
 	set(CPACK_GENERATOR "Bundle")
 	set(CPACK_PACKAGE_FILE_NAME "Librevault")
 	# DragNDrop
-	set(CPACK_DMG_FORMAT "ULFO")
+	set(CPACK_DMG_FORMAT "ULMO")
 	set(CPACK_DMG_DS_STORE "${CMAKE_SOURCE_DIR}/packaging/osx/DS_Store.in")
 	set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_SOURCE_DIR}/packaging/osx/background.tiff")
 	# Bundle
@@ -114,19 +114,18 @@ elseif(OS_MAC)
 
 	configure_file("${CPACK_BUNDLE_PLIST_SOURCE}" "${CPACK_BUNDLE_PLIST}" @ONLY)
 
+	set(APP_ROOT "../..")
+
 	if(BUILD_DAEMON)
-		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ../MacOS)
+		install(PROGRAMS $<TARGET_FILE:librevault-daemon> DESTINATION ${APP_ROOT}/Contents/MacOS)
 	endif()
 	if(BUILD_GUI)
-		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ../MacOS)
+		install(PROGRAMS $<TARGET_FILE:librevault-gui> DESTINATION ${APP_ROOT}/Contents/MacOS)
 	endif()
-	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ../)
+	install(FILES ${CPACK_BUNDLE_PLIST} DESTINATION ${APP_ROOT}/Contents)
 
-	install(FILES "packaging/osx/qt.conf" DESTINATION ../Resources)
-	install(FILES "packaging/osx/dsa_pub.pem" DESTINATION ../Resources)
-
-	# Bundle plugin path
-	set(BUNDLE_PLUGINS_PATH "../PlugIns")
+	install(FILES "packaging/osx/qt.conf" DESTINATION ${APP_ROOT}/Contents/Resources)
+	install(FILES "packaging/osx/dsa_pub.pem" DESTINATION ${APP_ROOT}/Contents/Resources)
 
 	# Qt5 plugins
 	set(BUNDLE_PLUGINS_PATH "${APP_ROOT}/Contents/PlugIns")
@@ -140,7 +139,14 @@ elseif(OS_MAC)
 	install(CODE "
 	include(BundleUtilities)
 	set(BU_CHMOD_BUNDLE_ITEMS ON)
+
+	get_filename_component(ABS_INSTALL_PREFIX \"\${CMAKE_INSTALL_PREFIX}/\" ABSOLUTE)
+	set(QT_PLUGIN \"${QT_PLUGIN}\")
+	list(TRANSFORM QT_PLUGIN PREPEND \"\${ABS_INSTALL_PREFIX}/\")
+
 	get_filename_component(BUNDLE_PATH \"\${CMAKE_INSTALL_PREFIX}/../..\" ABSOLUTE)
-	fixup_bundle(\"${BUNDLE_PATH}\" \"${QT_PLUGIN}\" \"${LIBRARY_SEARCH_PATHS}\")
+	fixup_bundle(\"\${BUNDLE_PATH}\" \"\${QT_PLUGIN}\" \"${LIBRARY_SEARCH_PATHS}\")
 	")
+
+	include(CPack)
 endif()

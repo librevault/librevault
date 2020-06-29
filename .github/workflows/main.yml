@@ -169,12 +169,12 @@ jobs:
       - name: Install Conan packages
         run: |
           source .venv/bin/activate
-          mkdir -p build/cmake build/packaging
-          pushd build/cmake
+          mkdir -p build
+          pushd build
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan install ../.. --build=missing --build=cascade
+          conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
         uses: actions/cache@v1
@@ -187,8 +187,13 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}
       - name: Build application
         run: |
-          mkdir -p build/cmake build/packaging
-          pushd build/cmake
-          cmake ../.. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
+          mkdir -p build
+          pushd build
+          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
           cmake --build .
-          cmake --install .
+          cpack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: librevault-dmg-macos-x64
+          path: build/Librevault.dmg

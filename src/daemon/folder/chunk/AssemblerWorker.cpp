@@ -149,10 +149,8 @@ bool AssemblerWorker::assemble_file() {
   LOGFUNC();
 
   // Check if we have all needed chunks
-  for (auto b : chunk_storage_->make_bitfield(meta_))
-    if (!b) return false;  // retreat!
+  if (chunk_storage_->make_bitfield(meta_) != QBitArray(meta_.chunks().size(), true)) return false;  // retreat!
 
-  //
   QString assembly_path =
       params_.system_path + "/" + conv_fspath(boost::filesystem::unique_path("assemble-%%%%-%%%%-%%%%-%%%%"));
 

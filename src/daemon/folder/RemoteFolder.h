@@ -50,11 +50,11 @@ class RemoteFolder : public QObject {
   void rcvdInterested();
   void rcvdNotInterested();
 
-  void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
+  void rcvdHaveMeta(Meta::PathRevision, QBitArray);
   void rcvdHaveChunk(QByteArray);
 
   void rcvdMetaRequest(Meta::PathRevision);
-  void rcvdMetaReply(SignedMeta, bitfield_type);
+  void rcvdMetaReply(SignedMeta, QBitArray);
 
   void rcvdBlockRequest(QByteArray, uint32_t, uint32_t);
   void rcvdBlockReply(QByteArray, uint32_t, QByteArray);
@@ -73,11 +73,11 @@ class RemoteFolder : public QObject {
   virtual void interest() = 0;
   virtual void uninterest() = 0;
 
-  virtual void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) = 0;
+  virtual void post_have_meta(const Meta::PathRevision& revision, const QBitArray& bitfield) = 0;
   virtual void post_have_chunk(const QByteArray& ct_hash) = 0;
 
   virtual void request_meta(const Meta::PathRevision& revision) = 0;
-  virtual void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) = 0;
+  virtual void post_meta(const SignedMeta& smeta, const QBitArray& bitfield) = 0;
 
   virtual void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size) = 0;
   virtual void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& chunk) = 0;

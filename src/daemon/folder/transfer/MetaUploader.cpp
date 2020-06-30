@@ -40,7 +40,7 @@ MetaUploader::MetaUploader(MetaStorage* meta_storage, ChunkStorage* chunk_storag
 }
 
 void MetaUploader::broadcast_meta(QList<RemoteFolder*> remotes, const Meta::PathRevision& revision,
-                                  const bitfield_type& bitfield) {
+                                  const QBitArray& bitfield) {
   for (auto remote : remotes) remote->post_have_meta(revision, bitfield);
 }
 

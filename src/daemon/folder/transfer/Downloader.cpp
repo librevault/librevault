@@ -60,7 +60,7 @@ Downloader::Downloader(const FolderParams& params, MetaStorage* meta_storage, QO
 
 Downloader::~Downloader() = default;
 
-void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield) {
+void Downloader::notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield) {
   SCOPELOG(log_downloader);
 
   Q_ASSERT((size_t)bitfield.size() == (size_t)smeta.meta().chunks().size());
@@ -133,12 +133,12 @@ QSet<QByteArray> Downloader::getMetaCluster(const QVector<QByteArray>& ct_hashes
   return cluster;
 }
 
-void Downloader::notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield) {
+void Downloader::notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, QBitArray bitfield) {
   SCOPELOG(log_downloader);
   try {
     auto chunks = meta_storage_->getMeta(revision).meta().chunks();
-    bitfield.resize(chunks.size(),
-                    0);  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
+    bitfield.resize(
+        chunks.size());  // Because, incoming bitfield size is packed into octets, so it's size != chunk list size;
     for (int chunk_idx = 0; chunk_idx < chunks.size(); chunk_idx++)
       if (bitfield[chunk_idx]) notifyRemoteChunk(remote, chunks[chunk_idx].ct_hash);
   } catch (const MetaStorage::MetaNotFound&) {

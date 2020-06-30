@@ -106,8 +106,8 @@ FolderGroup::~FolderGroup() {
 
 /* Actions */
 void FolderGroup::handleIndexedMeta(const SignedMeta& smeta) {
-  Meta::PathRevision revision = smeta.meta().path_revision();
-  bitfield_type bitfield = chunk_storage_->make_bitfield(smeta.meta());
+  auto revision = smeta.meta().path_revision();
+  auto bitfield = chunk_storage_->make_bitfield(smeta.meta());
 
   downloader_->notifyLocalMeta(smeta, bitfield);
   meta_uploader_->broadcast_meta(remotes(), revision, bitfield);
@@ -124,7 +124,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
   connect(origin, &RemoteFolder::rcvdNotInterested, uploader_, [=, this] { uploader_->handle_not_interested(origin); });
 
   connect(origin, &RemoteFolder::rcvdHaveMeta, meta_downloader_,
-          [=, this](Meta::PathRevision revision, bitfield_type bitfield) {
+          [=, this](Meta::PathRevision revision, QBitArray bitfield) {
             meta_downloader_->handle_have_meta(origin, revision, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_,
@@ -132,7 +132,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
   connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_,
           [=, this](Meta::PathRevision path_revision) { meta_uploader_->handle_meta_request(origin, path_revision); });
   connect(origin, &RemoteFolder::rcvdMetaReply, meta_downloader_,
-          [=, this](const SignedMeta& smeta, const bitfield_type& bitfield) {
+          [=, this](const SignedMeta& smeta, const QBitArray& bitfield) {
             meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdBlockRequest, uploader_,

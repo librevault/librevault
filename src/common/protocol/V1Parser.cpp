@@ -60,8 +60,8 @@ QByteArray V1Parser::gen_HaveMeta(const HaveMeta& message_struct) {
   message_protobuf.set_path_id(message_struct.revision.path_id_, message_struct.revision.path_id_.size());
   message_protobuf.set_revision(message_struct.revision.revision_);
 
-  std::vector<uint8_t> converted_bitfield = convert_bitfield(message_struct.bitfield);
-  message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
+  QByteArray converted_bitfield = convert_bitfield(message_struct.bitfield);
+  message_protobuf.set_bitfield(converted_bitfield.toStdString());
 
   return prepare_proto_message(message_protobuf, HAVE_META);
 }
@@ -117,8 +117,8 @@ QByteArray V1Parser::gen_MetaReply(const MetaReply& message_struct) {
   message_protobuf.set_meta(message_struct.smeta.raw_meta().data(), message_struct.smeta.raw_meta().size());
   message_protobuf.set_signature(message_struct.smeta.signature().data(), message_struct.smeta.signature().size());
 
-  std::vector<uint8_t> converted_bitfield = convert_bitfield(message_struct.bitfield);
-  message_protobuf.set_bitfield(converted_bitfield.data(), converted_bitfield.size());
+  QByteArray converted_bitfield = convert_bitfield(message_struct.bitfield);
+  message_protobuf.set_bitfield(converted_bitfield.toStdString());
 
   return prepare_proto_message(message_protobuf, META_REPLY);
 }
@@ -129,9 +129,9 @@ V1Parser::MetaReply V1Parser::parse_MetaReply(const QByteArray& message_raw, con
   auto raw_meta = QByteArray::fromStdString(message_protobuf.meta());
   auto signature = QByteArray::fromStdString(message_protobuf.signature());
 
-  bitfield_type converted_bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
+  QBitArray converted_bitfield = convert_bitfield(QByteArray::fromStdString(message_protobuf.bitfield()));
 
-  return MetaReply{SignedMeta(raw_meta, signature, secret_verifier), std::move(converted_bitfield)};
+  return MetaReply{SignedMeta(raw_meta, signature, secret_verifier), converted_bitfield};
 }
 
 QByteArray V1Parser::gen_BlockRequest(const BlockRequest& message_struct) {

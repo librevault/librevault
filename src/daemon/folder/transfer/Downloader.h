@@ -82,10 +82,10 @@ class Downloader : public QObject {
   ~Downloader();
 
  public slots:
-  void notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& bitfield);
+  void notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield);
   void notifyLocalChunk(const QByteArray& ct_hash);
 
-  void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
+  void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, QBitArray bitfield);
   void notifyRemoteChunk(RemoteFolder* remote, const QByteArray& ct_hash);
 
   void handleChoke(RemoteFolder* remote);

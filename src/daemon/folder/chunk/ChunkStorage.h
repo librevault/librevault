@@ -59,7 +59,7 @@ class ChunkStorage : public QObject {
   QByteArray get_chunk(const QByteArray& ct_hash);  // Throws AbstractFolder::ChunkNotFound
   void put_chunk(const QByteArray& ct_hash, QFile* chunk_f);
 
-  bitfield_type make_bitfield(const Meta& meta) const noexcept;  // Bulk version of "have_chunk"
+  QBitArray make_bitfield(const Meta& meta) const noexcept;  // Bulk version of "have_chunk"
 
   void cleanup(const Meta& meta);
 

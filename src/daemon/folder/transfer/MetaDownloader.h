@@ -47,8 +47,8 @@ class MetaDownloader : public QObject {
   MetaDownloader(MetaStorage* meta_storage, Downloader* downloader, QObject* parent);
 
   /* Message handlers */
-  void handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const bitfield_type& bitfield);
-  void handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield);
+  void handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision, const QBitArray& bitfield);
+  void handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const QBitArray& bitfield);
 
  private:
   MetaStorage* meta_storage_;

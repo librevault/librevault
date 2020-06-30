@@ -50,7 +50,7 @@ class V1Parser {
   };
   struct HaveMeta {
     Meta::PathRevision revision;
-    bitfield_type bitfield;
+    QBitArray bitfield;
   };
   struct HaveChunk {
     QByteArray ct_hash;
@@ -60,7 +60,7 @@ class V1Parser {
   };
   struct MetaReply {
     SignedMeta smeta;
-    bitfield_type bitfield;
+    QBitArray bitfield;
   };
   struct BlockRequest {
     QByteArray ct_hash;

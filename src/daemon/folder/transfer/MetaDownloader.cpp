@@ -41,7 +41,7 @@ MetaDownloader::MetaDownloader(MetaStorage* meta_storage, Downloader* downloader
 }
 
 void MetaDownloader::handle_have_meta(RemoteFolder* origin, const Meta::PathRevision& revision,
-                                      const bitfield_type& bitfield) {
+                                      const QBitArray& bitfield) {
   if (meta_storage_->haveMeta(revision))
     downloader_->notifyRemoteMeta(origin, revision, bitfield);
   else if (meta_storage_->putAllowed(revision))
@@ -50,7 +50,7 @@ void MetaDownloader::handle_have_meta(RemoteFolder* origin, const Meta::PathRevi
     LOGD("Remote node notified us about an expired Meta");
 }
 
-void MetaDownloader::handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const bitfield_type& bitfield) {
+void MetaDownloader::handle_meta_reply(RemoteFolder* origin, const SignedMeta& smeta, const QBitArray& bitfield) {
   if (meta_storage_->putAllowed(smeta.meta().path_revision())) {
     meta_storage_->putMeta(smeta);
     downloader_->notifyRemoteMeta(origin, smeta.meta().path_revision(), bitfield);

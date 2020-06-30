@@ -162,7 +162,7 @@ void P2PFolder::uninterest() {
   }
 }
 
-void P2PFolder::post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) {
+void P2PFolder::post_have_meta(const Meta::PathRevision& revision, const QBitArray& bitfield) {
   V1Parser::HaveMeta message;
   message.revision = revision;
   message.bitfield = bitfield;
@@ -170,7 +170,7 @@ void P2PFolder::post_have_meta(const Meta::PathRevision& revision, const bitfiel
 
   LOGD("==> HAVE_META:"
        << " path_id=" << message.revision.path_id_.toHex() << " revision=" << message.revision.revision_
-       << " bits=" << conv_bitarray(message.bitfield));
+       << " bits=" << message.bitfield);
 }
 void P2PFolder::post_have_chunk(const QByteArray& ct_hash) {
   V1Parser::HaveChunk message;
@@ -189,7 +189,7 @@ void P2PFolder::request_meta(const Meta::PathRevision& revision) {
   LOGD("==> META_REQUEST:"
        << " path_id=" << revision.path_id_.toHex() << " revision=" << revision.revision_);
 }
-void P2PFolder::post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) {
+void P2PFolder::post_meta(const SignedMeta& smeta, const QBitArray& bitfield) {
   V1Parser::MetaReply message;
   message.smeta = smeta;
   message.bitfield = bitfield;
@@ -197,7 +197,7 @@ void P2PFolder::post_meta(const SignedMeta& smeta, const bitfield_type& bitfield
 
   LOGD("==> META_REPLY:"
        << " path_id=" << smeta.meta().path_id().toHex() << " revision=" << smeta.meta().revision()
-       << " bits=" << conv_bitarray(bitfield));
+       << " bits=" << bitfield);
 }
 
 void P2PFolder::request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t length) {
@@ -338,7 +338,7 @@ void P2PFolder::handle_HaveMeta(const QByteArray& message_raw) {
   auto message_struct = V1Parser().parse_HaveMeta(message_raw);
   LOGD("<== HAVE_META:"
        << " path_id=" << message_struct.revision.path_id_.toHex() << " revision=" << message_struct.revision.revision_
-       << " bits=" << conv_bitarray(message_struct.bitfield));
+       << " bits=" << message_struct.bitfield);
 
   emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
 }
@@ -366,7 +366,7 @@ void P2PFolder::handle_MetaReply(const QByteArray& message_raw) {
   auto message_struct = V1Parser().parse_MetaReply(message_raw, fgroup_->secret());
   LOGD("<== META_REPLY:"
        << " path_id=" << message_struct.smeta.meta().path_id().toHex()
-       << " revision=" << message_struct.smeta.meta().revision() << " bits=" << conv_bitarray(message_struct.bitfield));
+       << " revision=" << message_struct.smeta.meta().revision() << " bits=" << message_struct.bitfield);
 
   emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
 }

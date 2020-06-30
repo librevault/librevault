@@ -84,11 +84,11 @@ class P2PFolder : public RemoteFolder {
   void interest();
   void uninterest();
 
-  void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
+  void post_have_meta(const Meta::PathRevision& revision, const QBitArray& bitfield);
   void post_have_chunk(const QByteArray& ct_hash);
 
   void request_meta(const Meta::PathRevision& revision);
-  void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
+  void post_meta(const SignedMeta& smeta, const QBitArray& bitfield);
 
   void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
   void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& block);

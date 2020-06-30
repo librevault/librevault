@@ -22,7 +22,7 @@ class OneWayTransformer {
 
   template <class InputIterator>
   QByteArray to(InputIterator first, InputIterator last) const {
-    return to(conv_bytearray(blob(first, last)));
+    return to(QByteArray::fromStdString({first, last}));
   }
   template <class Container>
   QByteArray to(const Container& data) const {
@@ -39,7 +39,7 @@ class TwoWayTransformer : public OneWayTransformer {
 
   template <class InputIterator>
   QByteArray from(InputIterator first, InputIterator last) const {
-    return from(conv_bytearray(blob(first, last)));
+    return from(QByteArray::fromStdString({first, last}));
   }
   template <class Container>
   QByteArray from(const Container& data) const {

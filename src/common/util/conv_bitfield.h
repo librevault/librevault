@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <QBitArray>
 #include <cstdint>
 #include <vector>
 
@@ -30,11 +31,23 @@ inline std::vector<uint8_t> convert_bitfield(const bitfield_type& bits) {
   return bytes;
 }
 
-inline bitfield_type convert_bitfield(const std::vector<uint8_t>& bytes) {
+inline bitfield_type convert_bitfield(const QByteArray& bytes) {
   bitfield_type bits(bytes.size() * 8);
-  for (size_t byten = 0; byten < bytes.size(); byten++)
-    for (size_t bitn = 0; bitn < 8; bitn++) bits[byten * 8 + bitn] = (bytes[byten] & (1u << (7 - bitn)));
+  for (int byten = 0; byten < bytes.size(); byten++)
+    for (size_t bitn = 0; bitn < 8; bitn++) bits[byten * 8 + bitn] = (uchar(bytes[byten]) & (1u << (7 - bitn)));
   return bits;
+}
+
+inline QBitArray conv_bitarray(const bitfield_type& bitfield) {
+  QBitArray bitarray(bitfield.size());
+  for (size_t i = 0; i < bitfield.size(); i++) bitarray.setBit(i, bitfield[i]);
+  return bitarray;
+}
+
+inline bitfield_type conv_bitarray(const QBitArray& bitarray) {
+  bitfield_type bitfield(bitarray.size());
+  for (int i = 0; i < bitarray.size(); i++) bitfield[i] = bitarray[i];
+  return bitfield;
 }
 
 }  // namespace librevault

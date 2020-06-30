@@ -82,7 +82,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
   connect(meta_storage_, &MetaStorage::metaAdded, this, &FolderGroup::handleIndexedMeta);
   connect(chunk_storage_, &ChunkStorage::chunkAdded, this, [this](const QByteArray& ct_hash) {
     downloader_->notifyLocalChunk(ct_hash);
-    uploader_->broadcast_chunk(remotes(), conv_bytearray(ct_hash));
+    uploader_->broadcast_chunk(remotes(), ct_hash);
   });
   connect(downloader_, &Downloader::chunkDownloaded, chunk_storage_, &ChunkStorage::put_chunk);
   connect(state_pusher_, &QTimer::timeout, this, &FolderGroup::push_state);
@@ -128,7 +128,7 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
             meta_downloader_->handle_have_meta(origin, revision, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_,
-          [=, this](const blob& ct_hash) { downloader_->notifyRemoteChunk(origin, ct_hash); });
+          [=, this](const QByteArray& ct_hash) { downloader_->notifyRemoteChunk(origin, ct_hash); });
   connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_,
           [=, this](Meta::PathRevision path_revision) { meta_uploader_->handle_meta_request(origin, path_revision); });
   connect(origin, &RemoteFolder::rcvdMetaReply, meta_downloader_,
@@ -136,11 +136,11 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
             meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdBlockRequest, uploader_,
-          [=, this](const blob& ct_hash, uint32_t offset, uint32_t size) {
+          [=, this](const QByteArray& ct_hash, uint32_t offset, uint32_t size) {
             uploader_->handle_block_request(origin, ct_hash, offset, size);
           });
   connect(origin, &RemoteFolder::rcvdBlockReply, downloader_,
-          [=, this](const blob& ct_hash, uint32_t offset, const blob& block) {
+          [=, this](const QByteArray& ct_hash, uint32_t offset, const QByteArray& block) {
             downloader_->putBlock(ct_hash, offset, block, origin);
           });
 

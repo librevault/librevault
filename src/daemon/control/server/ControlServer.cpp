@@ -35,7 +35,6 @@
 #include "ControlWebsocketServer.h"
 #include "Version.h"
 #include "control/Config.h"
-#include "util/parse_url.h"
 
 Q_LOGGING_CATEGORY(log_control_server, "control.server")
 
@@ -132,8 +131,9 @@ void ControlServer::notify_folder_removed(QByteArray folderid) {
 bool ControlServer::check_origin(const QString& origin) {
   // Restrict access by "Origin" header
   if (!origin.isEmpty()) {
-    url origin_url(origin);
-    if (origin_url.host != "127.0.0.1" && origin_url.host != "::1" && origin_url.host != "localhost") return false;
+    QUrl origin_url(origin);
+    if (origin_url.host() != "127.0.0.1" && origin_url.host() != "::1" && origin_url.host() != "localhost")
+      return false;
   }
   return true;
 }

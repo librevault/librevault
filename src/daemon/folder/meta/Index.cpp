@@ -35,7 +35,6 @@
 #include "control/FolderParams.h"
 #include "control/StateCollector.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/readable.h"
 
 namespace librevault {
 
@@ -104,7 +103,7 @@ bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 }
 
 SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
-  auto smeta = getMeta(conv_bytearray(path_revision.path_id_));
+  auto smeta = getMetaByPathId(path_revision.path_id_);
   if (smeta.meta().revision() == path_revision.revision_)
     return smeta;
   else
@@ -145,10 +144,10 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
   raii_transaction.commit();  // End transaction
 
   if (fully_assembled)
-    LOGD("Added fully assembled Meta of " << path_id_readable(signed_meta.meta().path_id())
+    LOGD("Added fully assembled Meta of " << signed_meta.meta().path_id().toHex()
                                           << " t:" << signed_meta.meta().meta_type());
   else
-    LOGD("Added Meta of " << path_id_readable(signed_meta.meta().path_id()) << " t:" << signed_meta.meta().meta_type());
+    LOGD("Added Meta of " << signed_meta.meta().path_id().toHex() << " t:" << signed_meta.meta().meta_type());
 
   emit metaAdded(signed_meta);
   if (!fully_assembled) emit metaAddedExternal(signed_meta);
@@ -156,32 +155,32 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
   notifyState();
 }
 
-QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<QString, SQLValue>& values) {
+QList<SignedMeta> Index::queryMeta(const std::string& sql, const std::map<QString, SQLValue>& values) {
   QList<SignedMeta> result_list;
   for (auto row : db_->exec(QString::fromStdString(sql), values))
     result_list << SignedMeta(row[0], row[1], params_.secret);
   return result_list;
 }
-SignedMeta Index::getMeta(const blob& path_id) {
-  auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1",
-                           {{":path_id", conv_bytearray(path_id)}});
+SignedMeta Index::getMetaByPathId(const QByteArray& path_id) {
+  auto meta_list =
+      queryMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {{":path_id", path_id}});
 
   if (meta_list.empty()) throw MetaStorage::MetaNotFound();
   return *meta_list.begin();
 }
-QList<SignedMeta> Index::getMeta() { return getMeta("SELECT meta, signature FROM meta"); }
+QList<SignedMeta> Index::getAllMeta() { return queryMeta("SELECT meta, signature FROM meta"); }
 
 QList<SignedMeta> Index::getExistingMeta() {
-  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
+  return queryMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
 }
 
 QList<SignedMeta> Index::getIncompleteMeta() {
-  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
+  return queryMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
 }
 
 bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
   try {
-    return getMeta(conv_bytearray(path_revision.path_id_)).meta().revision() < path_revision.revision_;
+    return getMetaByPathId(path_revision.path_id_).meta().revision() < path_revision.revision_;
   } catch (MetaStorage::MetaNotFound& e) {
     return true;
   }
@@ -206,7 +205,7 @@ QPair<quint32, QByteArray> Index::getChunkSizeIv(const QByteArray& ct_hash) {
 }
 
 QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {
-  return getMeta(
+  return queryMeta(
       "SELECT meta.meta, meta.signature FROM meta JOIN openfs ON meta.path_id=openfs.path_id WHERE "
       "openfs.ct_hash=:ct_hash",
       {{":ct_hash", ct_hash}});

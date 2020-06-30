@@ -32,7 +32,6 @@
 #include "folder/PathNormalizer.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/readable.h"
 
 namespace librevault {
 
@@ -45,7 +44,7 @@ bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept {
 }
 
 QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
-  LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
+  LOGD("get_chunk(" << ct_hash.toHex() << ")");
 
   for (auto& smeta : meta_storage_->containingChunk(ct_hash)) {
     // Search for chunk offset and index
@@ -60,14 +59,16 @@ QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
 
     // Found chunk & offset
     auto chunk = smeta.meta().chunks().at(chunk_idx);
-    blob chunk_pt = blob(chunk.size);
 
     QFile f(path_normalizer_->denormalizePath(smeta.meta().path(params_.secret)));
     if (!f.open(QIODevice::ReadOnly)) continue;
     if (!f.seek(offset)) continue;
-    if (f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
 
-    auto chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.get_Encryption_Key(), chunk.iv);
+    QByteArray chunk_pt = f.read(chunk.size);
+
+    if (chunk_pt.size() != int(chunk.size)) continue;
+
+    auto chunk_ct = Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv);
 
     // Check
     if (verifyChunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;

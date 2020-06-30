@@ -33,6 +33,8 @@
 #include <QWebSocket>
 #include <chrono>
 
+#include "Secret.h"
+#include "crypto/KMAC-SHA3.h"
 #include "folder/RemoteFolder.h"
 #include "p2p/BandwidthCounter.h"
 
@@ -83,13 +85,13 @@ class P2PFolder : public RemoteFolder {
   void uninterest();
 
   void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield);
-  void post_have_chunk(const blob& ct_hash);
+  void post_have_chunk(const QByteArray& ct_hash);
 
   void request_meta(const Meta::PathRevision& revision);
   void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield);
 
-  void request_block(const blob& ct_hash, uint32_t offset, uint32_t size);
-  void post_block(const blob& ct_hash, uint32_t offset, const blob& block);
+  void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
+  void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& block);
 
  private:
   enum Role { SERVER, CLIENT } role_;
@@ -116,8 +118,8 @@ class P2PFolder : public RemoteFolder {
   QTimer* timeout_timer_;
 
   /* Token generators */
-  blob local_token();
-  blob remote_token();
+  QByteArray local_token();
+  QByteArray remote_token();
 
   void bumpTimeout();
 
@@ -126,21 +128,21 @@ class P2PFolder : public RemoteFolder {
   /* Message handlers */
   void handle_message(const QByteArray& message);
 
-  void handle_Handshake(const blob& message_raw);
+  void handle_Handshake(const QByteArray& message_raw);
 
-  void handle_Choke(const blob& message_raw);
-  void handle_Unchoke(const blob& message_raw);
-  void handle_Interested(const blob& message_raw);
-  void handle_NotInterested(const blob& message_raw);
+  void handle_Choke(const QByteArray& message_raw);
+  void handle_Unchoke(const QByteArray& message_raw);
+  void handle_Interested(const QByteArray& message_raw);
+  void handle_NotInterested(const QByteArray& message_raw);
 
-  void handle_HaveMeta(const blob& message_raw);
-  void handle_HaveChunk(const blob& message_raw);
+  void handle_HaveMeta(const QByteArray& message_raw);
+  void handle_HaveChunk(const QByteArray& message_raw);
 
-  void handle_MetaRequest(const blob& message_raw);
-  void handle_MetaReply(const blob& message_raw);
+  void handle_MetaRequest(const QByteArray& message_raw);
+  void handle_MetaReply(const QByteArray& message_raw);
 
-  void handle_BlockRequest(const blob& message_raw);
-  void handle_BlockReply(const blob& message_raw);
+  void handle_BlockRequest(const QByteArray& message_raw);
+  void handle_BlockReply(const QByteArray& message_raw);
 
  private slots:
   void handlePong(quint64 rtt);

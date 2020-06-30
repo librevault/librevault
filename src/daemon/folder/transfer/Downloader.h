@@ -86,12 +86,12 @@ class Downloader : public QObject {
   void notifyLocalChunk(const QByteArray& ct_hash);
 
   void notifyRemoteMeta(RemoteFolder* remote, const Meta::PathRevision& revision, bitfield_type bitfield);
-  void notifyRemoteChunk(RemoteFolder* remote, const blob& ct_hash);
+  void notifyRemoteChunk(RemoteFolder* remote, const QByteArray& ct_hash);
 
   void handleChoke(RemoteFolder* remote);
   void handleUnchoke(RemoteFolder* remote);
 
-  void putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from);
+  void putBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& data, RemoteFolder* from);
 
   void trackRemote(RemoteFolder* remote);
   void untrackRemote(RemoteFolder* remote);

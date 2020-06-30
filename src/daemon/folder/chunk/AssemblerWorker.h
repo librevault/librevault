@@ -75,7 +75,7 @@ class AssemblerWorker : public QObject, public QRunnable {
 
   void apply_attrib();
 
-  QByteArray get_chunk_pt(const blob& ct_hash) const;
+  QByteArray get_chunk_pt(const QByteArray& ct_hash) const;
 };
 
 }  // namespace librevault

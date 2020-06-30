@@ -40,7 +40,6 @@
 #include "folder/chunk/archive/Archive.h"
 #include "folder/meta/MetaStorage.h"
 #include "util/conv_fspath.h"
-#include "util/readable.h"
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
 #endif
@@ -64,11 +63,11 @@ AssemblerWorker::AssemblerWorker(SignedMeta smeta, const FolderParams& params, M
 
 AssemblerWorker::~AssemblerWorker() {}
 
-QByteArray AssemblerWorker::get_chunk_pt(const blob& ct_hash) const {
-  auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
+QByteArray AssemblerWorker::get_chunk_pt(const QByteArray& ct_hash) const {
+  auto chunk = chunk_storage_->get_chunk(ct_hash);
 
   try {
-    QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(conv_bytearray(ct_hash));
+    QPair<quint32, QByteArray> size_iv = meta_storage_->getChunkSizeIv(ct_hash);
     return Meta::Chunk::decrypt(chunk, size_iv.first, params_.secret.get_Encryption_Key(), size_iv.second);
   } catch (std::exception& e) {
     qCWarning(log_assembler) << "Could not get plaintext chunk (which is marked as existing in index), DB collision";
@@ -166,7 +165,7 @@ bool AssemblerWorker::assemble_file() {
   }
 
   for (auto chunk : meta_.chunks()) {
-    assembly_f.write(get_chunk_pt(conv_bytearray(chunk.ct_hash)));  // Writing to file
+    assembly_f.write(get_chunk_pt(chunk.ct_hash));  // Writing to file
   }
 
   if (!assembly_f.commit()) {

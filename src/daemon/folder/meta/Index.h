@@ -52,8 +52,8 @@ class Index : public QObject {
   /* Meta manipulators */
   bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
   SignedMeta getMeta(const Meta::PathRevision& path_revision);
-  SignedMeta getMeta(const blob& path_id);
-  QList<SignedMeta> getMeta();
+  SignedMeta getMetaByPathId(const QByteArray& path_id);
+  QList<SignedMeta> getAllMeta();
   QList<SignedMeta> getExistingMeta();
   QList<SignedMeta> getIncompleteMeta();
   void putMeta(const SignedMeta& signed_meta, bool fully_assembled = false);
@@ -74,8 +74,8 @@ class Index : public QObject {
   // Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
   std::unique_ptr<SQLiteDB> db_;
 
-  QList<SignedMeta> getMeta(const std::string& sql,
-                            const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
+  QList<SignedMeta> queryMeta(const std::string& sql,
+                              const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
   void wipe();
 
   void notifyState();

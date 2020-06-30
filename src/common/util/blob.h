@@ -30,19 +30,8 @@
 #include <cryptopp/integer.h>
 
 #include <QByteArray>
-#include <cstdint>
-#include <vector>
 
 namespace librevault {
-
-using blob = std::vector<uint8_t>;
-
-inline QByteArray conv_bytearray(const blob& bl) {
-  Q_ASSERT(bl.size() <= INTMAX_MAX);
-  return QByteArray((const char*)bl.data(), (int)bl.size());
-}
-
-inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
 
 inline CryptoPP::Integer conv_bytearray_to_integer(const QByteArray& ba) {
   return CryptoPP::Integer((uchar*)ba.data(), ba.size());

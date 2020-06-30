@@ -62,9 +62,9 @@ bool MetaStorage::haveMeta(const Meta::PathRevision& path_revision) noexcept { r
 
 SignedMeta MetaStorage::getMeta(const Meta::PathRevision& path_revision) { return index_->getMeta(path_revision); }
 
-SignedMeta MetaStorage::getMeta(const QByteArray& path_id) { return index_->getMeta(conv_bytearray(path_id)); }
+SignedMeta MetaStorage::getMeta(const QByteArray& path_id) { return index_->getMetaByPathId(path_id); }
 
-QList<SignedMeta> MetaStorage::getMeta() { return index_->getMeta(); }
+QList<SignedMeta> MetaStorage::getMeta() { return index_->getAllMeta(); }
 
 QList<SignedMeta> MetaStorage::getExistingMeta() { return index_->getExistingMeta(); }
 

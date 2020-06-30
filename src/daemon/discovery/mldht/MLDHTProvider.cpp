@@ -34,6 +34,7 @@
 #include <QCryptographicHash>
 #include <QFile>
 #include <QJsonArray>
+#include <QtCore/QRegularExpression>
 #include <QtNetwork/QNetworkDatagram>
 #include <boost/asio/ip/address.hpp>
 
@@ -41,7 +42,6 @@
 #include "control/Paths.h"
 #include "control/StateCollector.h"
 #include "nat/PortMappingService.h"
-#include "util/parse_url.h"
 
 Q_LOGGING_CATEGORY(log_dht, "discovery.dht")
 
@@ -64,6 +64,8 @@ MLDHTProvider::MLDHTProvider(PortMappingService* port_mapping, QObject* parent)
 
 MLDHTProvider::~MLDHTProvider() { deinit(); }
 
+auto url_regexp = QRegularExpression(R"(^(\S+):(\d{1,5})$)");
+
 void MLDHTProvider::init() {
   // We will restore our session from here
   readSessionFile();
@@ -79,12 +81,12 @@ void MLDHTProvider::init() {
 
   // Init routers
   for (const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
-    url router_url(router_value);
-    QHostInfo::lookupHost(router_url.host, this, [=, this](const QHostInfo& host) {
+    auto match = url_regexp.match(router_value);
+    QHostInfo::lookupHost(match.captured(1), this, [=, this](const QHostInfo& host) {
       if (host.error()) qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
 
       for (const auto& address : host.addresses()) {
-        Endpoint endpoint(address, router_url.port);
+        Endpoint endpoint(address, match.captured(2).toInt());
         addNode(endpoint);
         qCDebug(log_dht) << "Added a DHT router:" << host.hostName() << "Resolved:" << endpoint;
       }

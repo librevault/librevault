@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <QList>
 #include <magic_enum.hpp>
 
 #include "SignedMeta.h"
@@ -42,17 +43,17 @@ class V1Parser {
   };
 
   struct Handshake {
-    std::vector<uint8_t> auth_token;
-    std::string device_name;
-    std::string user_agent;
-    std::vector<std::string> extensions;
+    QByteArray auth_token;
+    QString device_name;
+    QString user_agent;
+    QList<QByteArray> extensions;
   };
   struct HaveMeta {
     Meta::PathRevision revision;
     bitfield_type bitfield;
   };
   struct HaveChunk {
-    std::vector<uint8_t> ct_hash;
+    QByteArray ct_hash;
   };
   struct MetaRequest {
     Meta::PathRevision revision;
@@ -62,14 +63,14 @@ class V1Parser {
     bitfield_type bitfield;
   };
   struct BlockRequest {
-    std::vector<uint8_t> ct_hash;
+    QByteArray ct_hash;
     uint32_t offset;
     uint32_t length;
   };
   struct BlockReply {
-    std::vector<uint8_t> ct_hash;
+    QByteArray ct_hash;
     uint32_t offset;
-    std::vector<uint8_t> content;
+    QByteArray content;
   };
 
   /* Errors */
@@ -80,15 +81,15 @@ class V1Parser {
   // gen_* messages return messages in format <type=byte><payload>
   // parse_* messages take argument in format <type=byte><payload>
 
-  MessageType parse_MessageType(const std::vector<uint8_t>& message_raw) {
-    if (!message_raw.empty())
+  MessageType parse_MessageType(const QByteArray& message_raw) {
+    if (!message_raw.isEmpty())
       return (MessageType)message_raw[0];
     else
       throw parse_error();
   }
 
   QByteArray gen_Handshake(const Handshake& message_struct);
-  Handshake parse_Handshake(const std::vector<uint8_t>& message_raw);
+  Handshake parse_Handshake(const QByteArray& message_raw);
 
   QByteArray gen_Choke() { return QByteArray{1, CHOKE}; }
   QByteArray gen_Unchoke() { return QByteArray{1, UNCHOKE}; }
@@ -96,32 +97,22 @@ class V1Parser {
   QByteArray gen_NotInterested() { return QByteArray{1, NOT_INTERESTED}; }
 
   QByteArray gen_HaveMeta(const HaveMeta& message_struct);
-  HaveMeta parse_HaveMeta(const std::vector<uint8_t>& message_raw);
+  HaveMeta parse_HaveMeta(const QByteArray& message_raw);
 
   QByteArray gen_HaveChunk(const HaveChunk& message_struct);
-  HaveChunk parse_HaveChunk(const std::vector<uint8_t>& message_raw);
+  HaveChunk parse_HaveChunk(const QByteArray& message_raw);
 
   QByteArray gen_MetaRequest(const MetaRequest& message_struct);
-  MetaRequest parse_MetaRequest(const std::vector<uint8_t>& message_raw);
+  MetaRequest parse_MetaRequest(const QByteArray& message_raw);
 
   QByteArray gen_MetaReply(const MetaReply& message_struct);
-  MetaReply parse_MetaReply(const std::vector<uint8_t>& message_raw, const Secret& secret_verifier);
+  MetaReply parse_MetaReply(const QByteArray& message_raw, const Secret& secret_verifier);
 
   QByteArray gen_BlockRequest(const BlockRequest& message_struct);
-  BlockRequest parse_BlockRequest(const std::vector<uint8_t>& message_raw);
+  BlockRequest parse_BlockRequest(const QByteArray& message_raw);
 
   QByteArray gen_BlockReply(const BlockReply& message_struct);
-  BlockReply parse_BlockReply(const std::vector<uint8_t>& message_raw);
-
- protected:
-  template <class ProtoMessageClass>
-  QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, MessageType type) {
-    QByteArray message_raw(message_protobuf.ByteSize() + 1, 0);
-    message_raw[0] = type;
-    message_protobuf.SerializeToArray(message_raw.data() + 1, message_protobuf.ByteSize());
-
-    return message_raw;
-  }
+  BlockReply parse_BlockReply(const QByteArray& message_raw);
 };
 
 }  // namespace librevault

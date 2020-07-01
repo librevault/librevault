@@ -97,7 +97,7 @@ target_link_libraries(librevault-gui PRIVATE Qt5::Svg Qt5::Widgets Qt5::WebSocke
 if(OS_WIN)
 	target_link_libraries(librevault-gui PRIVATE Qt5::WinExtras)
 endif()
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-gui PRIVATE Qt5::MacExtras)
 endif()
 
@@ -110,12 +110,12 @@ if(OS_WIN)
 endif()
 
 # Sparkle (for Macs)
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-gui PRIVATE ${SPARKLE_LIBRARIES})
 endif()
 
 ## CoreFoundation
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-gui PRIVATE "-framework CoreFoundation")
 	target_link_libraries(librevault-gui PRIVATE "-framework AppKit")
 endif()

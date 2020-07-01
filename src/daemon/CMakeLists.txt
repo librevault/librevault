@@ -33,7 +33,7 @@ if(NOT OS_LINUX)
 endif()
 
 # OS X sources
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	file(GLOB_RECURSE MAIN_MMS CONFIGURE_DEPENDS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
@@ -87,7 +87,7 @@ if(OS_WIN)
 endif()
 
 ## CoreFoundation
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-daemon PUBLIC "-framework Foundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreServices")

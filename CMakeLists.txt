@@ -139,10 +139,9 @@ set(Qt_COMPONENTS
 		Widgets
 		WebSockets
 		)
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	list(APPEND Qt_COMPONENTS MacExtras)
-endif()
-if(OS_WIN)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
 find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
@@ -175,7 +174,7 @@ if(BUILD_GUI)
 endif()
 
 # Sparkle (for Macs)
-if(OS_MAC)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
 	FetchContent_Populate(sparkle)
 	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})

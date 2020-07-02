@@ -48,6 +48,8 @@ parts:
       - ccache
     stage-packages:
       - libgl1
+    build-snaps:
+      - go
     build-environment:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
       - CCACHE_DIR: $SNAPCRAFT_STAGE/.ccache
@@ -93,6 +95,7 @@ parts:
     build-environment:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
     override-build: |
+      conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
       conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
       conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
       conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan

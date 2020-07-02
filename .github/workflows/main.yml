@@ -225,6 +225,7 @@ jobs:
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
           conan upload "qt/*" -r librevault-builddeps --all --confirm
+          conan upload "sqlite3/*" -r librevault-builddeps --all --confirm
 
   build-deps-linux:
     runs-on: ubuntu-20.04
@@ -251,6 +252,7 @@ jobs:
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
           conan upload "qt/*" -r librevault-builddeps --all --confirm
+          conan upload "sqlite3/*" -r librevault-builddeps --all --confirm
 
   build-deps-macos:
     runs-on: macos-10.15
@@ -273,3 +275,4 @@ jobs:
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
           conan upload "qt/*" -r librevault-builddeps --all --confirm
+          conan upload "sqlite3/*" -r librevault-builddeps --all --confirm

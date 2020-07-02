@@ -49,6 +49,8 @@ if(CMAKE_INTERPROCEDURAL_OPTIMIZATION_SUPPORTED AND NOT (CMAKE_BUILD_TYPE STREQU
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Error management
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W4>)  # Maximum warnings
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)  # Multiprocess build
@@ -151,6 +153,7 @@ add_compile_definitions("QT_NO_FOREVER=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)
+find_package(QtProtobuf CONFIG REQUIRED COMPONENTS QtProtobuf QtGrpc)
 
 ## OpenSSL
 find_package(OpenSSL REQUIRED)
@@ -174,7 +177,7 @@ if(BUILD_GUI)
 endif()
 
 # Sparkle (for Macs)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
 	FetchContent_Populate(sparkle)
 	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})

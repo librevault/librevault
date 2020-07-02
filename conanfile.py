@@ -15,6 +15,7 @@ class LibrevaultConan(ConanFile):
         "openssl/1.1.1g",
         "qt/5.14.2@bincrafters/stable",
         "magic_enum/0.6.6",
+        "qtprotobuf/0.4.0",
         "libjpeg/9d",  # override
     ]
     generators = "cmake"

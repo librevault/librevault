@@ -40,6 +40,7 @@ jobs:
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Build application
@@ -101,6 +102,7 @@ jobs:
           conan profile update settings.compiler.libcxx=libstdc++11 default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
@@ -174,6 +176,7 @@ jobs:
           conan profile new --detect --force default
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache

@@ -94,6 +94,8 @@ parts:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
     override-build: |
       conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+      conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+      conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
       conan profile new --detect --force default
       conan profile update settings.compiler.libcxx=libstdc++11 default
       conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade

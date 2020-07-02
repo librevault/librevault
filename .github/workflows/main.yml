@@ -38,6 +38,7 @@ jobs:
           .venv\scripts\activate.ps1
           cd build
           conan profile new --detect --force default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
@@ -100,6 +101,7 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
@@ -174,6 +176,7 @@ jobs:
           mkdir -p build
           pushd build
           conan profile new --detect --force default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
           conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
           conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
           conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
@@ -200,3 +203,73 @@ jobs:
         with:
           name: librevault-dmg-macos-x64
           path: build/Librevault.dmg
+
+  build-deps-windows:
+    runs-on: windows-2019
+    env:
+      CONAN_USER_HOME_SHORT: None
+    steps:
+      - name: Install system-wide dependencies
+        run: python -m pip install conan
+      - uses: actions/checkout@v2
+      - name: Install Conan packages
+        run: |
+          pushd build
+          conan profile new --detect --force default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
+          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan install .. --build=missing --build=cascade
+      - name: Upload Conan packages
+        run: |
+          conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
+          conan upload "qt/*" -r librevault-builddeps --all --confirm
+
+  build-deps-linux:
+    runs-on: ubuntu-20.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3-pip build-essential cmake libwayland-dev libxcomposite-dev libglib2.0-dev mesa-common-dev
+          sudo python3 -m pip install conan
+      - uses: actions/checkout@v2
+      - name: Install Conan packages
+        run: |
+          pushd build
+          conan profile new --detect --force default
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
+          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan install .. --build=missing --build=cascade
+      - name: Upload Conan packages
+        run: |
+          conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
+          conan upload "qt/*" -r librevault-builddeps --all --confirm
+
+  build-deps-macos:
+    runs-on: macos-10.15
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - name: Install system-wide dependencies
+        run: python3 -m pip install conan
+      - uses: actions/checkout@v2
+      - name: Install Conan packages
+        run: |
+          pushd build
+          conan profile new --detect --force default
+          conan remote add -f --insert librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
+          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
+          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan install .. --build=missing --build=cascade
+      - name: Upload Conan packages
+        run: |
+          conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
+          conan upload "qt/*" -r librevault-builddeps --all --confirm

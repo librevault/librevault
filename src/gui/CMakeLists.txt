@@ -94,10 +94,10 @@ target_link_libraries(librevault-gui PRIVATE OpenSSL::Crypto)
 
 # Qt
 target_link_libraries(librevault-gui PRIVATE Qt5::Svg Qt5::Widgets Qt5::WebSockets)
-if(OS_WIN)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-gui PRIVATE Qt5::WinExtras)
 endif()
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-gui PRIVATE Qt5::MacExtras)
 endif()
 
@@ -105,17 +105,17 @@ endif()
 target_link_libraries(librevault-gui PRIVATE QtSingleApplication)
 
 # WinSparkle
-if(OS_WIN)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-gui PRIVATE CONAN_PKG::winsparkle)
 endif()
 
 # Sparkle (for Macs)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-gui PRIVATE ${SPARKLE_LIBRARIES})
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-gui PRIVATE "-framework CoreFoundation")
 	target_link_libraries(librevault-gui PRIVATE "-framework AppKit")
 endif()

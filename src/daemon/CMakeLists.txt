@@ -33,7 +33,7 @@ if(NOT OS_LINUX)
 endif()
 
 # OS X sources
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	file(GLOB_RECURSE MAIN_MMS CONFIGURE_DEPENDS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
@@ -82,12 +82,12 @@ target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::docopt.cpp)
 ##### System libraries #####
 
 ## WinSock
-if(OS_WIN)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(librevault-daemon PUBLIC wsock32 ws2_32 Iphlpapi)
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	target_link_libraries(librevault-daemon PUBLIC "-framework Foundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreServices")

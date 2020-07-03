@@ -38,10 +38,7 @@ jobs:
           .venv\scripts\activate.ps1
           cd build
           conan profile new --detect --force default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Build application
@@ -101,10 +98,7 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
@@ -176,10 +170,7 @@ jobs:
           mkdir -p build
           pushd build
           conan profile new --detect --force default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
@@ -216,10 +207,7 @@ jobs:
         run: |
           pushd build
           conan profile new --detect --force default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
       - name: Upload Conan packages
         run: |
@@ -243,10 +231,7 @@ jobs:
           pushd build
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
       - name: Upload Conan packages
         run: |
@@ -266,10 +251,7 @@ jobs:
         run: |
           pushd build
           conan profile new --detect --force default
-          conan remote add -f --insert=0 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps
-          conan remote add -f bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-          conan remote add -f gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan
-          conan remote add -f inexorgame https://api.bintray.com/conan/inexorgame/inexor-conan
+          conan config install ../conan/config
           conan install .. --build=missing --build=cascade
       - name: Upload Conan packages
         run: |

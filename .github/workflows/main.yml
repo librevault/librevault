@@ -39,7 +39,7 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --force
       - name: Build application
         run: |
@@ -99,7 +99,7 @@ jobs:
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
         uses: actions/cache@v1
@@ -171,7 +171,7 @@ jobs:
           pushd build
           conan profile new --detect --force default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --force
       - name: Restore ccache cache
         uses: actions/cache@v1
@@ -208,7 +208,7 @@ jobs:
           pushd build
           conan profile new --detect --force default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
       - name: Upload Conan packages
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
@@ -232,7 +232,7 @@ jobs:
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
       - name: Upload Conan packages
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64
@@ -252,7 +252,7 @@ jobs:
           pushd build
           conan profile new --detect --force default
           conan config install ../conan/config
-          conan install .. --build=missing --build=cascade
+          conan install .. --build=outdated --build=cascade
       - name: Upload Conan packages
         run: |
           conan user -p ${{ secrets.BINTRAY_API_KEY }} -r librevault-builddeps gamepad64

@@ -26,6 +26,9 @@ class LibrevaultConan(ConanFile):
         "qt:qttools": True,
         "qt:qtwayland": False,
         "qt:qtwebsockets": True,
+        "qt:with_mysql": False,
+        "qt:with_pq": False,
+        "qt:with_odbc": False,
     }
 
     def requirements(self):

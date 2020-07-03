@@ -54,7 +54,7 @@ parts:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
       - CCACHE_DIR: $SNAPCRAFT_STAGE/.ccache
     override-build: |
-      conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
+      conan install $SNAPCRAFT_PART_SRC --build=outdated --build=cascade
       snapcraftctl build
       sed -i -e 's@^Icon=\(.\+\)$@Icon=/usr/share/icons/hicolor/scalable/apps/\1.svg@' ${SNAPCRAFT_PART_INSTALL}/usr/share/applications/com.librevault.Librevault.desktop
     after:
@@ -99,7 +99,7 @@ parts:
       conan profile new --detect --force default
       conan config install $SNAPCRAFT_PART_SRC/conan/config
       conan profile update settings.compiler.libcxx=libstdc++11 default
-      conan install $SNAPCRAFT_PART_SRC --build=missing --build=cascade
+      conan install $SNAPCRAFT_PART_SRC --build=outdated --build=cascade
     after:
       - conan
     prime: ["-./*"]

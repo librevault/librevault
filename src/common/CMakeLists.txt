@@ -40,10 +40,6 @@ target_include_directories(librevault-common PUBLIC .)
 # Third-party libraries
 #============================================================================
 
-qtprotobuf_generate(TARGET librevault-common
-		OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated
-		PROTO_FILES ${PROTO_LIST})
-
 ### WinSock
 if(WIN32)
 	target_link_libraries(librevault-common PUBLIC ws2_32)

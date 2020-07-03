@@ -153,7 +153,6 @@ add_compile_definitions("QT_NO_FOREVER=1")
 
 ## Protobuf
 find_package(Protobuf REQUIRED)
-find_package(QtProtobuf CONFIG REQUIRED COMPONENTS QtProtobuf QtGrpc)
 
 ## OpenSSL
 find_package(OpenSSL REQUIRED)

@@ -75,6 +75,7 @@ parts:
       - locales-all
       - xdg-user-dirs
       - libgtk2.0-0
+      - x11-session-utils
     after:
       - desktop-glib-only
 

@@ -76,6 +76,8 @@ parts:
       - xdg-user-dirs
       - libgtk2.0-0
       - x11-session-utils
+    build-packages:
+      - x11-session-utils
     after:
       - desktop-glib-only
 

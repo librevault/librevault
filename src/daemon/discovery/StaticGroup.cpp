@@ -20,7 +20,7 @@ void StaticGroup::setEnabled(bool enabled) {
 }
 
 void StaticGroup::tick() {
-  QString source = QStringLiteral("Static");
+  auto source = QStringLiteral("Static");
   for (const QUrl& node : fgroup_->params().nodes) {
     DiscoveryResult result;
     result.source = source;

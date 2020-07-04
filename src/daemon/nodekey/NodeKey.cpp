@@ -21,8 +21,8 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
   cert_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->cert_path));
   private_key_file_.setFileName(QDir::fromNativeSeparators(Paths::get()->key_path));
 
-  write_key();
-  gen_certificate();
+  writeKey();
+  genCertificate();
 
   private_key_file_.open(QIODevice::ReadOnly);
   cert_file_.open(QIODevice::ReadOnly);
@@ -40,7 +40,7 @@ NodeKey::~NodeKey() { SCOPELOG(log_nodekey); }
 
 QByteArray NodeKey::digest() const { return certificate().digest(digestAlgorithm()); }
 
-void NodeKey::write_key() {
+void NodeKey::writeKey() {
   /* Generate key */
   CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
 
@@ -108,7 +108,7 @@ void NodeKey::write_key() {
   private_key_file_.close();
 }
 
-void NodeKey::gen_certificate() {
+void NodeKey::genCertificate() {
   std::unique_ptr<X509, decltype(&X509_free)> x509(X509_new(), &X509_free);
   std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> openssl_pkey(EVP_PKEY_new(), &EVP_PKEY_free);
 

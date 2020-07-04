@@ -236,7 +236,7 @@ bool Downloader::requestOne() {
           std::min(request_map.begin()->second, uint32_t(Config::get()->getGlobal("p2p_block_size").toUInt()));
       request.started = std::chrono::steady_clock::now();
 
-      remote->request_block(ct_hash, request.offset, request.size);
+      remote->requestBlock(ct_hash, request.offset, request.size);
       chunk->requests.insert(remote, request);
       return true;
     }

@@ -1,18 +1,14 @@
 #include "KMAC-SHA3.h"
 
-#include <cryptopp/sha3.h>
-
 #include <QCryptographicHash>
 
 namespace librevault::crypto {
 
-QByteArray KMAC_SHA3_224::compute(const QByteArray& data) const {
+QByteArray KMAC_SHA3_224::to(const QByteArray& data) const {
   QCryptographicHash hasher(QCryptographicHash::Algorithm::Sha3_224);
   hasher.addData(key_);
   hasher.addData(data);
   return hasher.result();
 }
-
-QByteArray KMAC_SHA3_224::to(const QByteArray& data) const { return compute(data); }
 
 }  // namespace librevault::crypto

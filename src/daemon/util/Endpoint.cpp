@@ -25,7 +25,7 @@ Endpoint Endpoint::fromString(const QString& str) {
   auto match = endpoint_regexp.match(str);
   if (!match.hasMatch()) throw EndpointNotMatched();
 
-  return Endpoint(QHostAddress(match.captured(1)), (quint16)match.captured(2).toUInt());
+  return {QHostAddress(match.captured(1)), (quint16)match.captured(2).toUInt()};
 }
 
 QString Endpoint::toString() const {
@@ -36,10 +36,14 @@ QString Endpoint::toString() const {
     if (ok) addr_converted = QHostAddress(addr4);
   }
 
-  QString endpoint_template = QStringLiteral("%1:%2");
-  if (addr_converted.protocol() == QAbstractSocket::IPv6Protocol) endpoint_template = QStringLiteral("[%1]:%2");
-
-  return endpoint_template.arg(addr_converted.toString()).arg(port);
+  switch (addr_converted.protocol()) {
+    case QAbstractSocket::IPv4Protocol:
+      return addr_converted.toString() + ":" + QString::number(port);
+    case QAbstractSocket::IPv6Protocol:
+      return QString("[%1]").arg(addr_converted.toString()) + ":" + QString::number(port);
+    default:
+      return {};
+  }
 }
 
 Endpoint Endpoint::fromPacked4(QByteArray packed) {
@@ -63,14 +67,14 @@ Endpoint Endpoint::fromPacked6(QByteArray packed) {
 EndpointList Endpoint::fromPackedList4(const QByteArray& packed) {
   EndpointList l;
   l.reserve(packed.size() / 6);
-  for (int i = 0; i < packed.size(); i += 6) l.push_back(fromPacked4(packed.mid(i, 6)));
+  for (int i = 0; i < packed.size(); i += 6) l += fromPacked4(packed.mid(i, 6));
   return l;
 }
 
 EndpointList Endpoint::fromPackedList6(const QByteArray& packed) {
   EndpointList l;
   l.reserve(packed.size() / 18);
-  for (int i = 0; i < packed.size(); i += 18) l.push_back(fromPacked6(packed.mid(i, 18)));
+  for (int i = 0; i < packed.size(); i += 18) l += fromPacked6(packed.mid(i, 18));
   return l;
 }
 
@@ -113,11 +117,9 @@ std::tuple<sockaddr_storage, size_t> Endpoint::toSockaddr() const {
   }
 }
 
-Endpoint Endpoint::fromJson(const QJsonObject& j) {
-  return Endpoint(QHostAddress(j["ip"].toString()), j["port"].toInt());
-}
+Endpoint Endpoint::fromJson(const QJsonObject& j) { return {j["ip"].toString(), quint16(j["port"].toInt())}; }
 
-QJsonObject Endpoint::toJson() const { return QJsonObject{{"ip", addr.toString()}, {"port", port}}; }
+QJsonObject Endpoint::toJson() const { return {{"ip", addr.toString()}, {"port", port}}; }
 
 QDebug operator<<(QDebug debug, const Endpoint& endpoint) {
   QDebugStateSaver saver(debug);

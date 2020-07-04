@@ -6,10 +6,10 @@
 namespace librevault {
 
 float WeightedChunkQueue::Weight::value() const {
-  float weight_value = 0;
+  float weight_value = 0.0f;
 
-  weight_value += CLUSTERED_COEFFICIENT * (clustered ? 1 : 0);
-  weight_value += IMMEDIATE_COEFFICIENT * (immediate ? 1 : 0);
+  weight_value += CLUSTERED_COEFFICIENT * (clustered ? 1.0f : 0.0f);
+  weight_value += IMMEDIATE_COEFFICIENT * (immediate ? 1.0f : 0.0f);
   float rarity = (float)(remotes_count - owned_by) / (float)remotes_count;
   weight_value += rarity * RARITY_COEFFICIENT;
 

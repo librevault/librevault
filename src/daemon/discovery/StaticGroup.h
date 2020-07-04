@@ -10,7 +10,7 @@ class StaticGroup : public QObject {
   Q_OBJECT
  public:
   StaticGroup(FolderGroup* fgroup);
-  virtual ~StaticGroup() {}
+  virtual ~StaticGroup() = default;
 
   void setEnabled(bool enabled);
 

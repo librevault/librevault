@@ -12,7 +12,7 @@ class SHA2 : public OneWayTransformer {
   explicit SHA2(size_t size) : size(size) {}
   ~SHA2() override = default;
 
-  QByteArray to(const QByteArray& data) const override {
+  [[nodiscard]] QByteArray to(const QByteArray& data) const override {
     switch (size) {
       case 224:
         return QCryptographicHash::hash(data, QCryptographicHash::Sha224);
@@ -35,7 +35,7 @@ class SHA3 : public OneWayTransformer {
   explicit SHA3(size_t size) : size_(size) {}
   ~SHA3() override = default;
 
-  QByteArray to(const QByteArray& data) const override {
+  [[nodiscard]] QByteArray to(const QByteArray& data) const override {
     switch (size_) {
       case 224:
         return QCryptographicHash::hash(data, QCryptographicHash::Sha3_224);

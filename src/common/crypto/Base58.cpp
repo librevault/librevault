@@ -2,50 +2,47 @@
 
 #include <cryptopp/integer.h>
 
+#include <boost/range/adaptor/reversed.hpp>
+#include <utility>
+
 namespace librevault::crypto {
 
-Base58::Base58(const std::string& alphabet) : current_alphabet(alphabet) {}
+Base58::Base58(QByteArray alphabet) : current_alphabet(std::move(alphabet)) {}
 
 QByteArray Base58::to(const QByteArray& data) const {
-  CryptoPP::Integer big_data = conv_bytearray_to_integer(data);
+  CryptoPP::Integer int_data = conv_integer(data);
 
   QByteArray result;
   result.reserve(data.size() * 138 / 100 + 1);
 
-  CryptoPP::word mod;
-  CryptoPP::Integer div;
-  while (big_data > 0) {
-    CryptoPP::Integer::Divide(mod, div, big_data, 58);
-    result += current_alphabet[mod];
-    big_data = div;
+  while (int_data > 0) {
+    CryptoPP::word mod;
+    CryptoPP::Integer div;
+
+    CryptoPP::Integer::Divide(mod, div, int_data, 58);
+    result += current_alphabet[int(mod)];
+    int_data = div;
   }
 
-  for (const char* orig_str = data.data(); orig_str < data.data() + data.size() && *orig_str == 0; orig_str++) {
-    result += current_alphabet[0];
-  }
+  for (auto it = data.begin(); it != data.end() && *it == 0; it++) result += current_alphabet[0];
 
   std::reverse(result.begin(), result.end());
   return result;
 }
 
 QByteArray Base58::from(const QByteArray& data) const {
-  CryptoPP::Integer big_data = 0;
-  CryptoPP::Integer multi = 1;
+  CryptoPP::Integer int_data = 0;
+  CryptoPP::Integer multiplier = 1;
 
-  for (int i = data.size() - 1; i >= 0; i--) {
-    big_data += multi * current_alphabet.find((char)data.data()[i]);
-    multi *= 58;
+  for (auto c : boost::adaptors::reverse(data)) {
+    int_data += multiplier * current_alphabet.indexOf(c);
+    multiplier *= 58;
   }
 
-  int leading_zeros = 0;
-  for (const char* orig_str = data.data(); orig_str < data.data() + data.size() && *orig_str == current_alphabet[0];
-       orig_str++) {
-    leading_zeros++;
-  }
+  int zeroes = 0;
+  for (auto it = data.begin(); it != data.end() && *it == current_alphabet[0]; it++) zeroes += 1;
 
-  QByteArray decoded(leading_zeros + big_data.MinEncodedSize(), 0);
-  big_data.Encode(leading_zeros + (uchar*)decoded.data(), decoded.size());
-  return decoded;
+  return conv_integer(int_data).prepend(zeroes, '\0');
 }
 
 }  // namespace librevault::crypto

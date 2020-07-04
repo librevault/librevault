@@ -20,7 +20,6 @@ class KMAC_SHA3_224 : public OneWayTransformer {
   explicit KMAC_SHA3_224(QByteArray key) : key_(std::move(key)) {}
   ~KMAC_SHA3_224() override = default;
 
-  [[nodiscard]] QByteArray compute(const QByteArray& data) const;
   [[nodiscard]] QByteArray to(const QByteArray& data) const override;
 };
 

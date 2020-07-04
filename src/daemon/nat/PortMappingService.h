@@ -31,7 +31,7 @@ class PortMappingService : public QObject {
 
  public:
   PortMappingService(QNetworkAccessManager* nam, QObject* parent);
-  virtual ~PortMappingService();
+  ~PortMappingService() override;
 
   void map(const MappingRequest& request);
   void unmap(const QString& id);

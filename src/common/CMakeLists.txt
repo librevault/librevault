@@ -50,6 +50,7 @@ target_link_libraries(librevault-common PUBLIC Threads::Threads)
 
 ### Protobuf
 target_link_libraries(librevault-common PUBLIC Qt5::Core)
+target_link_libraries(librevault-common PUBLIC Boost::system Boost::filesystem)
 target_link_libraries(librevault-common PUBLIC CONAN_PKG::protobuf)
 target_link_libraries(librevault-common PUBLIC CONAN_PKG::cryptopp)
 target_link_libraries(librevault-common PUBLIC CONAN_PKG::magic_enum)

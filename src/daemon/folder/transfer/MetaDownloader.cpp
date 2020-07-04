@@ -17,7 +17,7 @@ void MetaDownloader::handle_have_meta(RemoteFolder* origin, const Meta::PathRevi
   if (meta_storage_->haveMeta(revision))
     downloader_->notifyRemoteMeta(origin, revision, bitfield);
   else if (meta_storage_->putAllowed(revision))
-    origin->request_meta(revision);
+    origin->requestMeta(revision);
   else
     LOGD("Remote node notified us about an expired Meta");
 }

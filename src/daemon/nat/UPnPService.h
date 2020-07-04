@@ -20,7 +20,7 @@ class UPnPService : public PortMappingSubService {
   Q_OBJECT
  public:
   UPnPService(QNetworkAccessManager* nam, PortMappingService& parent);
-  ~UPnPService();
+  ~UPnPService() override;
 
   void start();
   void stop();

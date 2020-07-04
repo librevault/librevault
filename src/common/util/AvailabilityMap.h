@@ -16,7 +16,7 @@ class AvailabilityMap {
   using block_type = std::pair<offset_type, offset_type>;
   using const_iterator = typename underlying_container::const_iterator;
 
-  AvailabilityMap(offset_type size) : size_original_(size), size_left_(size) {
+  explicit AvailabilityMap(offset_type size) : size_original_(size), size_left_(size) {
     available_map_.insert({0, size_original_});
   }
 
@@ -76,8 +76,8 @@ class AvailabilityMap {
   offset_type size_left() const { return size_left_; }
   offset_type size_original() const { return size_original_; }
 
-  bool full() const { return size_left() == 0; }
-  bool empty() const { return size_left() == size_original(); }
+  [[nodiscard]] bool full() const { return size_left() == 0; }
+  [[nodiscard]] bool empty() const { return size_left() == size_original(); }
 
  private:
   offset_type size_original_, size_left_;

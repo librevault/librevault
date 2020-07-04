@@ -16,7 +16,7 @@ class NodeKey : public QObject {
 
  public:
   NodeKey(QObject* parent);
-  virtual ~NodeKey();
+  ~NodeKey() override;
 
   QCryptographicHash::Algorithm digestAlgorithm() const { return QCryptographicHash::Sha256; }
 
@@ -25,8 +25,8 @@ class NodeKey : public QObject {
   QSslCertificate certificate() const { return certificate_; }
 
  private:
-  void write_key();
-  void gen_certificate();
+  void writeKey();
+  void genCertificate();
 
   QFile cert_file_, private_key_file_;
   QSslKey private_key_;

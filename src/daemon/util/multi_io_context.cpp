@@ -5,7 +5,6 @@
 namespace librevault {
 
 multi_io_context::multi_io_context(QString name) : name_(std::move(name)) {}
-
 multi_io_context::~multi_io_context() { stop(false); }
 
 void multi_io_context::start() {

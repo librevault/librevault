@@ -18,7 +18,7 @@ class NATPMPService : public PortMappingSubService {
 
  public:
   NATPMPService(PortMappingService& parent);
-  virtual ~NATPMPService();
+  ~NATPMPService() override;
 
   void start();
   void stop();

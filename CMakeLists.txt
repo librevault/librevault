@@ -32,6 +32,7 @@ option(DEBUG_QT "Enable qDebug" OFF)
 set(SANITIZE "false" CACHE STRING "What sanitizer to use. false for nothing")
 option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 option(INSTALL_RUNTIME "Install ld-linux.so" OFF)
+option(WITH_TESTS "Build unit tests" OFF)
 
 #============================================================================
 # Internal compiler options
@@ -137,6 +138,7 @@ set(Qt_COMPONENTS
 		LinguistTools
 		Sql
 		Svg
+		Test
 		Xml
 		Widgets
 		WebSockets
@@ -192,6 +194,10 @@ if(BUILD_DAEMON)
 endif()
 if(BUILD_GUI)
 	add_subdirectory("src/gui")
+endif()
+if(WITH_TESTS)
+	enable_testing()
+	add_subdirectory("src/tests")
 endif()
 
 include(Install.cmake)

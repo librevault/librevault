@@ -22,7 +22,7 @@ class Client : public QCoreApplication {
   Q_OBJECT
  public:
   Client(int argc, char** argv);
-  virtual ~Client();
+  ~Client() override;
 
   int run();
   void restart();

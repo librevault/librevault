@@ -16,7 +16,7 @@ class P2PProvider : public QObject {
   Q_OBJECT
  public:
   P2PProvider(NodeKey* node_key, PortMappingService* port_mapping, FolderService* folder_service, QObject* parent);
-  virtual ~P2PProvider();
+  ~P2PProvider() override;
 
   QSslConfiguration getSslConfiguration() const;
 

@@ -9,18 +9,18 @@ class BandwidthCounter {
  public:
   struct Stats {
     // Download
-    quint64 down_bytes_;
-    quint64 down_bytes_blocks_;
+    quint64 down_bytes;
+    quint64 down_bytes_blocks;
 
-    qreal down_bandwidth_;
-    qreal down_bandwidth_blocks_;
+    qreal down_bandwidth;
+    qreal down_bandwidth_blocks;
 
     // Upload
-    quint64 up_bytes_;
-    quint64 up_bytes_blocks_;
+    quint64 up_bytes;
+    quint64 up_bytes_blocks;
 
-    qreal up_bandwidth_;
-    qreal up_bandwidth_blocks_;
+    qreal up_bandwidth;
+    qreal up_bandwidth_blocks;
   };
 
   BandwidthCounter();
@@ -37,18 +37,18 @@ class BandwidthCounter {
   QElapsedTimer last_heartbeat_;
 
   // Download
-  std::atomic<quint64> down_bytes_;
-  std::atomic<quint64> down_bytes_blocks_;
+  std::atomic<quint64> down_bytes_ = 0;
+  std::atomic<quint64> down_bytes_blocks_ = 0;
 
-  std::atomic<quint64> down_bytes_last_;
-  std::atomic<quint64> down_bytes_blocks_last_;
+  std::atomic<quint64> down_bytes_last_ = 0;
+  std::atomic<quint64> down_bytes_blocks_last_ = 0;
 
   // Upload
-  std::atomic<quint64> up_bytes_;
-  std::atomic<quint64> up_bytes_blocks_;
+  std::atomic<quint64> up_bytes_ = 0;
+  std::atomic<quint64> up_bytes_blocks_ = 0;
 
-  std::atomic<quint64> up_bytes_last_;
-  std::atomic<quint64> up_bytes_blocks_last_;
+  std::atomic<quint64> up_bytes_last_ = 0;
+  std::atomic<quint64> up_bytes_blocks_last_ = 0;
 };
 
 }  // namespace librevault

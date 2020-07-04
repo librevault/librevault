@@ -3,7 +3,6 @@
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
-#include <cryptopp/sha3.h>
 
 #include <QCryptographicHash>
 
@@ -112,7 +111,7 @@ QByteArray Secret::get_Public_Key() const {
       CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
       CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
       private_key.Initialize(rng, secp256r1());
-      private_key.SetPrivateExponent(conv_bytearray_to_integer(get_Private_Key()));
+      private_key.SetPrivateExponent(conv_integer(get_Private_Key()));
       private_key.MakePublicKey(public_key);
 
       public_key.AccessGroupParameters().SetPointCompression(true);

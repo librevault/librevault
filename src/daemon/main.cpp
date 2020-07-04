@@ -58,8 +58,6 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
   auto logger = spdlog::get(Version::current().name().toStdString());
   if (!logger) return;
 
-  QString message = QString(ctx.category) + " | " + msg;
-
   auto spdlog_level = spdlog::level::debug;
 
   switch (msg_type) {
@@ -80,7 +78,7 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
       break;
   }
 
-  logger->log(spdlog_level, message.toStdString());
+  logger->log(spdlog_level, qFormatLogMessage(msg_type, ctx, msg).toStdString());
   if (Q_UNLIKELY(msg_type == QtFatalMsg)) {
     logger->flush();
     abort();
@@ -114,7 +112,6 @@ int main(int argc, char** argv) {
 
     // Initializing log
     spdlog::level::level_enum log_level;
-    qInfo() << args["-v"].asLong();
     switch (args["-v"].asLong()) {
       case 2:
         log_level = spdlog::level::trace;

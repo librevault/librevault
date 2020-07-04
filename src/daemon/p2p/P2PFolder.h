@@ -34,7 +34,7 @@ class P2PFolder : public RemoteFolder {
 
   P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
   P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
-  ~P2PFolder();
+  ~P2PFolder() override;
 
   /* Getters */
   QString displayName() const;
@@ -56,14 +56,14 @@ class P2PFolder : public RemoteFolder {
   void interest();
   void uninterest();
 
-  void post_have_meta(const Meta::PathRevision& revision, const QBitArray& bitfield);
-  void post_have_chunk(const QByteArray& ct_hash);
+  void postHaveMeta(const Meta::PathRevision& revision, const QBitArray& bitfield);
+  void postHaveChunk(const QByteArray& ct_hash);
 
-  void request_meta(const Meta::PathRevision& revision);
-  void post_meta(const SignedMeta& smeta, const QBitArray& bitfield);
+  void requestMeta(const Meta::PathRevision& revision);
+  void postMeta(const SignedMeta& smeta, const QBitArray& bitfield);
 
-  void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
-  void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& block);
+  void requestBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
+  void postBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& block);
 
  private:
   enum Role { SERVER, CLIENT } role_;
@@ -117,7 +117,7 @@ class P2PFolder : public RemoteFolder {
   void handle_BlockReply(const QByteArray& message_raw);
 
  private slots:
-  void handlePong(quint64 rtt);
+  void handlePong(qint64 rtt);
   void handleConnected();
 };
 

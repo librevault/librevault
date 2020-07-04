@@ -45,14 +45,14 @@ class RemoteFolder : public QObject {
   virtual void interest() = 0;
   virtual void uninterest() = 0;
 
-  virtual void post_have_meta(const Meta::PathRevision& revision, const QBitArray& bitfield) = 0;
-  virtual void post_have_chunk(const QByteArray& ct_hash) = 0;
+  virtual void postHaveMeta(const Meta::PathRevision& revision, const QBitArray& bitfield) = 0;
+  virtual void postHaveChunk(const QByteArray& ct_hash) = 0;
 
-  virtual void request_meta(const Meta::PathRevision& revision) = 0;
-  virtual void post_meta(const SignedMeta& smeta, const QBitArray& bitfield) = 0;
+  virtual void requestMeta(const Meta::PathRevision& revision) = 0;
+  virtual void postMeta(const SignedMeta& smeta, const QBitArray& bitfield) = 0;
 
-  virtual void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size) = 0;
-  virtual void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& chunk) = 0;
+  virtual void requestBlock(const QByteArray& ct_hash, uint32_t offset, uint32_t size) = 0;
+  virtual void postBlock(const QByteArray& ct_hash, uint32_t offset, const QByteArray& chunk) = 0;
 
   /* High-level RAII wrappers */
   struct InterestGuard {

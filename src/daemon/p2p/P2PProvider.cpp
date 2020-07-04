@@ -50,14 +50,14 @@ bool P2PProvider::isLoopback(QByteArray digest) { return node_key_->digest() == 
 /* Here are where new QWebSocket created */
 void P2PProvider::handleConnection() {
   while (server_->hasPendingConnections()) {
-    QWebSocket* socket = server_->nextPendingConnection();
-    QUrl ws_url = socket->requestUrl();
-    QByteArray folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
-    FolderGroup* fgroup = folder_service_->getGroup(folderid);
+    auto socket = server_->nextPendingConnection();
+    auto ws_url = socket->requestUrl();
+    auto folderid = QByteArray::fromHex(ws_url.path().mid(1).toUtf8());
+    auto fgroup = folder_service_->getGroup(folderid);
 
     qCDebug(log_p2p) << "New incoming connection:" << socket->requestUrl().toString();
 
-    P2PFolder* folder = new P2PFolder(socket, fgroup, this, node_key_);
+    auto folder = new P2PFolder(socket, fgroup, this, node_key_);
     Q_UNUSED(folder);
   }
 }
@@ -78,8 +78,8 @@ void P2PProvider::handleDiscovered(QByteArray folderid, DiscoveryResult result) 
 
   qCDebug(log_p2p) << "New connection:" << ws_url.toString();
 
-  QWebSocket* socket = new QWebSocket(Version().userAgent(), QWebSocketProtocol::VersionLatest, this);
-  P2PFolder* folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);
+  auto socket = new QWebSocket(Version().userAgent(), QWebSocketProtocol::VersionLatest, this);
+  auto folder = new P2PFolder(ws_url, socket, fgroup, this, node_key_);
   Q_UNUSED(folder);
 }
 

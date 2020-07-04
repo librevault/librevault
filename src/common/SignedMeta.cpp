@@ -18,7 +18,7 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
 
   CryptoPP::AutoSeededRandomPool rng;
   CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-  signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(secret.get_Private_Key()));
+  signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_integer(secret.get_Private_Key()));
 
   signature_ = QByteArray(signer.SignatureLength(), 0);
   signer.SignMessage(rng, (const uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());

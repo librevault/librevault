@@ -1,4 +1,4 @@
 librevault-builddeps https://api.bintray.com/conan/librevault/conan-builddeps True
 conan-center https://conan.bintray.com True
 bincrafters https://api.bintray.com/conan/bincrafters/public-conan True
-gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan  True
+gamepad64-public https://api.bintray.com/conan/gamepad64/public-conan True

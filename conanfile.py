@@ -26,9 +26,6 @@ class LibrevaultConan(ConanFile):
         "qt:qttools": True,
         "qt:qtwayland": False,
         "qt:qtwebsockets": True,
-        "qt:with_mysql": False,
-        "qt:with_pq": False,
-        "qt:with_odbc": False,
     }
 
     def requirements(self):
@@ -40,6 +37,8 @@ class LibrevaultConan(ConanFile):
     def configure(self):
         if self.settings.os == "Linux":
             self.options["qt"].qtwayland = True
+            if self.settings.build_type == "Debug":
+                self.options["qt"].with_vulkan = True
         if self.settings.os == "Macos":
             self.options["qt"].qtmacextras = True
             self.options["glib"].shared = False

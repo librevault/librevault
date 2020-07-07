@@ -61,7 +61,7 @@ void ControlHTTPServer::on_http(websocketpp::connection_hdl hdl) {
     }
   } catch (std::exception& e) {
     conn->set_status(websocketpp::http::status_code::internal_server_error);
-    conn->set_body(make_error_body("", e.what()));
+    conn->set_body(make_error_body("", QString::fromStdString(e.what())));
   }
 }
 
@@ -142,10 +142,10 @@ void ControlHTTPServer::handle_folders_state_one(pconn conn, QRegularExpressionM
   sendJson(QJsonDocument(state_collector_.folder_state(folderid)), http_code::ok, conn);
 }
 
-std::string ControlHTTPServer::make_error_body(const std::string& code, const std::string& description) {
+std::string ControlHTTPServer::make_error_body(const QString& code, const QString& description) {
   QJsonObject error_json;
-  error_json["error_code"] = code.empty() ? "UNKNOWN" : QString::fromStdString(code);
-  error_json["description"] = QString::fromStdString(description);
+  error_json["error_code"] = code.isEmpty() ? "UNKNOWN" : code;
+  error_json["description"] = description;
   return QJsonDocument(error_json).toJson().toStdString();
 }
 

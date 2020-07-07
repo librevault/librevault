@@ -12,8 +12,8 @@ class Settings : public SettingsWindow {
   Q_OBJECT
 
  public:
-  explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent = 0);
-  ~Settings();
+  explicit Settings(Daemon* daemon, Updater* updater, Translator* translator, QWidget* parent);
+  ~Settings() override = default;
 
  signals:
   void localeChanged(QString code);

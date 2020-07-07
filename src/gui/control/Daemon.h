@@ -13,7 +13,7 @@ class Daemon : public QObject {
 
  public:
   Daemon(QString control_url, QObject* parent);
-  ~Daemon();
+  ~Daemon() override = default;
 
   QNetworkAccessManager* nam() { return nam_; }
   QUrl daemonUrl() { return daemon_url_; }

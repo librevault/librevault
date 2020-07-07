@@ -8,8 +8,8 @@ class AddFolder : public QDialog {
   Q_OBJECT
 
  public:
-  AddFolder(QString secret, Daemon* daemon, QWidget* parent = 0);
-  ~AddFolder();
+  AddFolder(QString secret, Daemon* daemon, QWidget* parent);
+  ~AddFolder() override;
 
  protected:
   Ui::AddFolder ui;

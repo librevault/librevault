@@ -13,8 +13,8 @@ class FolderProperties : public QDialog {
   Q_OBJECT
 
  public:
-  FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent = 0);
-  ~FolderProperties();
+  FolderProperties(QByteArray folderid, Daemon* daemon, FolderModel* folder_model, QWidget* parent);
+  ~FolderProperties() override;
 
  protected:
   Ui::FolderProperties ui;

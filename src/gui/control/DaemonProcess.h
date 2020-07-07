@@ -6,7 +6,7 @@ class DaemonProcess : public QProcess {
 
  public:
   DaemonProcess(QObject* parent);
-  ~DaemonProcess();
+  ~DaemonProcess() override;
 
   void launch();
 

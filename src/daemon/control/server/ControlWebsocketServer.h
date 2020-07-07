@@ -7,7 +7,7 @@
 
 namespace librevault {
 
-class Client;
+class ClientDaemon;
 class ControlServer;
 
 class ControlWebsocketServer {

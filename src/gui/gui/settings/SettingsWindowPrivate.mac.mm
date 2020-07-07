@@ -21,13 +21,13 @@ SettingsWindowPrivate::SettingsWindowPrivate(SettingsWindow* window) : window_(w
 void SettingsWindowPrivate::add_pane(QWidget* pane) {
 	auto toolButton = toolbar->addItem(pane->windowIcon(), pane->windowTitle());
 	int page_num = (int)buttons_.size();
-	buttons_.push_back(toolButton);
+	buttons_ += toolButton;
 	QObject::connect(toolButton, &QMacToolBarItem::activated, [=]{
 		emit showPane(page_num);
 	});
 	toolButton->setSelectable(true);
 
-	panes_.push_back(pane);
+	panes_ += pane;
 	pane_layout_->addWidget(pane);
 
 	if(page_num == 0)

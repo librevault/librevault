@@ -12,7 +12,7 @@ class GenericRemoteDictionary : public QObject {
  public:
   explicit GenericRemoteDictionary(Daemon* daemon, QString globals_request, QString folders_request,
                                    QString global_event, QString folder_event);
-  ~GenericRemoteDictionary() {}
+  ~GenericRemoteDictionary() override = default;
 
   QVariant getGlobalValue(QString key);
   QJsonValue getFolderValue(QByteArray folderid, QString key);

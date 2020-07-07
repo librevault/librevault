@@ -14,7 +14,7 @@ class RemoteConfig : public librevault::AbstractConfig {
 
  public:
   explicit RemoteConfig(Daemon* daemon);
-  virtual ~RemoteConfig() {}
+  ~RemoteConfig() override = default;
 
  public slots:
   /* Global configuration */

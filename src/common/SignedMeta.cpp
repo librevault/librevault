@@ -12,8 +12,7 @@
 
 namespace librevault {
 
-SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
-  meta_ = std::make_shared<Meta>(std::move(meta));
+SignedMeta::SignedMeta(Meta meta, const Secret& secret) : meta_(meta) {
   raw_meta_ = meta_->serialize();
 
   CryptoPP::AutoSeededRandomPool rng;
@@ -24,28 +23,26 @@ SignedMeta::SignedMeta(Meta meta, const Secret& secret) {
   signer.SignMessage(rng, (const uchar*)raw_meta_.data(), raw_meta_.size(), (uchar*)signature_.data());
 }
 
-SignedMeta::SignedMeta(QByteArray raw_meta, QByteArray signature, const Secret& secret, bool check_signature)
-    : raw_meta_(std::move(raw_meta)), signature_(std::move(signature)) {
-  if (check_signature) {
-    try {
-      auto public_key = secret.get_Public_Key();
+SignedMeta::SignedMeta(const QByteArray& raw_meta, QByteArray signature, const Secret& secret, bool check_signature)
+    : meta_(raw_meta), raw_meta_(raw_meta), signature_(std::move(signature)) {
+  if (!check_signature) return;
 
-      CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-      CryptoPP::ECP::Point p;
+  try {
+    auto public_key = secret.get_Public_Key();
 
-      verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
-      verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-      verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
-      verifier.AccessKey().SetPublicElement(p);
-      if (!verifier.VerifyMessage((const uchar*)raw_meta_.data(), raw_meta_.size(), (const uchar*)signature_.data(),
-                                  signature_.size()))
-        throw SignatureError();
-    } catch (CryptoPP::Exception& e) {
+    CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
+    CryptoPP::ECP::Point p;
+
+    verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
+    verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
+    verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
+    verifier.AccessKey().SetPublicElement(p);
+    if (!verifier.VerifyMessage((const uchar*)raw_meta_.data(), raw_meta_.size(), (const uchar*)signature_.data(),
+                                signature_.size()))
       throw SignatureError();
-    }
+  } catch (CryptoPP::Exception& e) {
+    throw SignatureError();
   }
-
-  meta_ = std::make_shared<Meta>(raw_meta_);
 }
 
 }  // namespace librevault

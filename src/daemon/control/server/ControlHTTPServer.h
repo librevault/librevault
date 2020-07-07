@@ -8,7 +8,7 @@
 
 namespace librevault {
 
-class Client;
+class ClientDaemon;
 class ControlServer;
 
 class ControlHTTPServer {
@@ -46,7 +46,7 @@ class ControlHTTPServer {
   void handle_version(pconn conn, QRegularExpressionMatch match);
 
   /* Error handling */
-  std::string make_error_body(const std::string& code, const std::string& description);
+  std::string make_error_body(const QString& code, const QString& description);
 
   // wrappers
   void sendJson(QJsonDocument json, http_code code, pconn conn);

@@ -20,7 +20,7 @@ class GUIIconProvider {
     REVEAL_FOLDER
   };
 
-  QIcon icon(ICON_ID id) const;
+  [[nodiscard]] QIcon icon(ICON_ID id) const;
 
 #ifdef Q_OS_MAC
   class MacIcon : public QIconEngine {

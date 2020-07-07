@@ -1,4 +1,5 @@
 #pragma once
+#include <QJsonValue>
 #include <QObject>
 #include <QVariantMap>
 #include <unordered_set>
@@ -13,7 +14,7 @@ Q_DECLARE_LOGGING_CATEGORY(log_control_server)
 
 namespace librevault {
 
-class Client;
+class ClientDaemon;
 class StateCollector;
 class ControlWebsocketServer;
 class ControlHTTPServer;
@@ -25,7 +26,7 @@ class ControlServer : public QObject {
  public:
   using server = websocketpp::server<asio_notls>;
 
-  ControlServer(StateCollector* state_collector, QObject* parent);
+  ControlServer(StateCollector& state_collector, QObject* parent);
   virtual ~ControlServer();
 
   void run() { ios_.start(); }
@@ -38,11 +39,11 @@ class ControlServer : public QObject {
 
  public slots:
   void notify_global_config_changed(QString key, QVariant state);
-  void notify_global_state_changed(QString key, QJsonValue state);
-  void notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state);
+  void notifyGlobalStateChanged(QString key, QJsonValue state);
+  void notifyFolderStateChanged(QByteArray folderid, QString key, QJsonValue state);
 
-  void notify_folder_added(QByteArray folderid, QVariantMap fconfig);
-  void notify_folder_removed(QByteArray folderid);
+  void notifyFolderAdded(QByteArray folderid, QVariantMap fconfig);
+  void notifyFolderRemoved(QByteArray folderid);
 
  private:
   multi_io_context ios_;

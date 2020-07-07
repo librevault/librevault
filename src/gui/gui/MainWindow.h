@@ -19,15 +19,15 @@ class MainWindow : public QMainWindow {
 
  public:
   MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updater, Translator* translator);
-  ~MainWindow();
+  ~MainWindow() override = default;
 
  public slots:
   void showWindow();
   void retranslateUi();
   void openWebsite();
-  bool handleLink(QString link);
+  bool handleLink(const QString& link);
 
-  void handle_disconnected(QString message);
+  void handle_disconnected(const QString& message);
   void handle_connected();
 
  protected slots:

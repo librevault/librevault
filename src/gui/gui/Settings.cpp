@@ -19,8 +19,6 @@ Settings::Settings(Daemon* daemon, Updater* updater, Translator* translator, QWi
   reset_ui_states();
 }
 
-Settings::~Settings() {}
-
 void Settings::retranslateUi() {
   ui_pane_general_.retranslateUi(pane_general_);
   ui_pane_network_.retranslateUi(pane_network_);

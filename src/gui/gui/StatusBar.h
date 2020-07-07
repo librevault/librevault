@@ -11,7 +11,7 @@ class StatusBar : public QObject {
 
  public:
   StatusBar(QStatusBar* bar, Daemon* daemon);
-  ~StatusBar();
+  ~StatusBar() override;
 
  public slots:
   void refresh();

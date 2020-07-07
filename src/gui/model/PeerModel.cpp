@@ -10,8 +10,6 @@
 PeerModel::PeerModel(QByteArray folderid, Daemon *daemon, FolderModel *parent)
     : QAbstractListModel(parent), daemon_(daemon), folderid_(folderid) {}
 
-PeerModel::~PeerModel() {}
-
 int PeerModel::rowCount(const QModelIndex &parent) const {
   return daemon_->state()->getFolderValue(folderid_, "peers").toArray().size();
 }
@@ -44,7 +42,7 @@ QVariant PeerModel::data(const QModelIndex &index, int role) const {
     }
   }
 
-  return QVariant();
+  return {};
 }
 
 QVariant PeerModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -70,7 +68,7 @@ QVariant PeerModel::headerData(int section, Qt::Orientation orientation, int rol
       }
     }
   }
-  return QVariant();
+  return {};
 }
 
 void PeerModel::refresh() {

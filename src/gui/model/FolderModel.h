@@ -9,16 +9,16 @@ class FolderModel : public QAbstractListModel {
   Q_OBJECT
 
  public:
-  FolderModel(Daemon* daemon);
-  ~FolderModel();
+  FolderModel(Daemon* daemon, QObject* parent);
+  ~FolderModel() override = default;
 
   static const int HashRole = Qt::UserRole;
 
-  int rowCount(const QModelIndex& parent = QModelIndex()) const;
-  int columnCount(const QModelIndex& parent = QModelIndex()) const;
+  int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+  QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
   PeerModel* getPeerModel(const QByteArray& hash) { return peer_models_[hash]; }
 

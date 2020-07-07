@@ -6,8 +6,8 @@ class StartupInterface : public QObject {
   Q_OBJECT
 
  public:
-  StartupInterface(QObject* parent = 0);
-  ~StartupInterface();
+  explicit StartupInterface(QObject* parent = nullptr);
+  ~StartupInterface() override;
 
   bool isSupported();
   bool isEnabled() const;

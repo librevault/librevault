@@ -22,7 +22,7 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
   ui.treeView->header()->setStretchLastSection(false);
   ui.treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 
-  QShortcut* shortcut = new QShortcut(this);
+  auto shortcut = new QShortcut(this);
   shortcut->setKey(QKeySequence(QKeySequence::Cancel));
   connect(shortcut, &QShortcut::activated, ui.treeView, &QTreeView::clearSelection);
 
@@ -39,8 +39,6 @@ MainWindow::MainWindow(Daemon* daemon, FolderModel* folder_model, Updater* updat
 
   retranslateUi();
 }
-
-MainWindow::~MainWindow() {}
 
 /* public slots */
 void MainWindow::showWindow() {
@@ -84,15 +82,13 @@ void MainWindow::retranslateUi() {
 
 void MainWindow::openWebsite() { QDesktopServices::openUrl(QUrl("https://librevault.com")); }
 
-void MainWindow::handle_disconnected(QString message) {
+void MainWindow::handle_disconnected(const QString& message) {
   QMessageBox msg(QMessageBox::Critical, tr("Problem running Librevault application"),
                   tr("Problem running Librevault service: %1").arg(message));
   msg.exec();
 }
 
-void MainWindow::handle_connected() {
-  //
-}
+void MainWindow::handle_connected() {}
 
 /* protected slots */
 void MainWindow::showFolderContextMenu(const QPoint& point) {
@@ -108,7 +104,7 @@ void MainWindow::showFolderContextMenu(const QPoint& point) {
   folders_menu.exec(QCursor::pos());
 }
 
-bool MainWindow::handleLink(QString link) {
+bool MainWindow::handleLink(const QString& link) {
   QUrl url(link);
   if (!url.isValid() || url.scheme() != "lvlt") {
     QMessageBox confirmation_box(
@@ -133,12 +129,12 @@ void MainWindow::tray_icon_activated(QSystemTrayIcon::ActivationReason reason) {
 }
 
 void MainWindow::showAddFolderDialog(QJsonObject folder_config) {
-  AddFolder* add_folder = new AddFolder(folder_config["secret"].toString(), daemon_, this);
+  auto add_folder = new AddFolder(folder_config["secret"].toString(), daemon_, this);
   add_folder->open();
 }
 
 void MainWindow::showOpenLinkDialog() {
-  OpenLink* open_link = new OpenLink(this);
+  auto open_link = new OpenLink(this);
   open_link->open();
 }
 

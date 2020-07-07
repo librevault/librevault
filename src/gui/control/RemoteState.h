@@ -8,5 +8,5 @@ class RemoteState : public GenericRemoteDictionary {
 
  public:
   explicit RemoteState(Daemon* daemon);
-  virtual ~RemoteState() {}
+  ~RemoteState() override = default;
 };

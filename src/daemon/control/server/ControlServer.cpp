@@ -12,10 +12,10 @@ Q_LOGGING_CATEGORY(log_control_server, "control.server")
 
 namespace librevault {
 
-ControlServer::ControlServer(StateCollector* state_collector, QObject* parent)
+ControlServer::ControlServer(StateCollector& state_collector, QObject* parent)
     : QObject(parent), ios_("ControlServer") {
   control_ws_server_ = std::make_unique<ControlWebsocketServer>(*this, ws_server_);
-  control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, *state_collector);
+  control_http_server_ = std::make_unique<ControlHTTPServer>(*this, ws_server_, state_collector);
 
   QUrl bind_url;
   bind_url.setScheme("http");
@@ -72,14 +72,14 @@ void ControlServer::notify_global_config_changed(QString key, QVariant value) {
   control_ws_server_->send_event("EVENT_GLOBAL_CONFIG_CHANGED", event);
 }
 
-void ControlServer::notify_global_state_changed(QString key, QJsonValue state) {
+void ControlServer::notifyGlobalStateChanged(QString key, QJsonValue state) {
   QJsonObject event;
   event["key"] = key;
   event["value"] = state;
   control_ws_server_->send_event("EVENT_GLOBAL_STATE_CHANGED", event);
 }
 
-void ControlServer::notify_folder_state_changed(QByteArray folderid, QString key, QJsonValue state) {
+void ControlServer::notifyFolderStateChanged(QByteArray folderid, QString key, QJsonValue state) {
   QJsonObject event;
   event["folderid"] = QString(folderid.toHex());
   event["key"] = key;
@@ -87,14 +87,14 @@ void ControlServer::notify_folder_state_changed(QByteArray folderid, QString key
   control_ws_server_->send_event("EVENT_FOLDER_STATE_CHANGED", event);
 }
 
-void ControlServer::notify_folder_added(QByteArray folderid, QVariantMap fconfig) {
+void ControlServer::notifyFolderAdded(QByteArray folderid, QVariantMap fconfig) {
   QJsonObject event;
   event["folderid"] = QString(folderid.toHex());
   event["folder_params"] = QJsonObject::fromVariantMap(fconfig);
   control_ws_server_->send_event("EVENT_FOLDER_ADDED", event);
 }
 
-void ControlServer::notify_folder_removed(QByteArray folderid) {
+void ControlServer::notifyFolderRemoved(QByteArray folderid) {
   QJsonObject event;
   event["folderid"] = QString(folderid.toHex());
   control_ws_server_->send_event("EVENT_FOLDER_REMOVED", event);

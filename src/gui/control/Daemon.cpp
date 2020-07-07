@@ -29,8 +29,6 @@ Daemon::Daemon(QString control_url, QObject* parent) : QObject(parent) {
   connect(this, &Daemon::disconnected, [](QString message) { qDebug() << "Daemon connection closed: " << message; });
 }
 
-Daemon::~Daemon() {}
-
 bool Daemon::isConnected() { return event_sock_->isValid(); }
 
 void Daemon::start() {

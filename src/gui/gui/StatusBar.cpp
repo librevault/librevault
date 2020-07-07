@@ -66,7 +66,7 @@ void StatusBar::refresh() {
 }
 
 QFrame* StatusBar::create_separator() const {
-  QFrame* separator = new QFrame(container_);
+  auto separator = new QFrame(container_);
   separator->setFrameStyle(QFrame::VLine);
   return separator;
 }

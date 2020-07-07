@@ -3,15 +3,8 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-#include <util/conv_fspath.h>
 
-#include <QDebug>
-#include <boost/filesystem/path.hpp>
-#ifdef Q_OS_UNIX
-#include <csignal>
-#endif
-
-#include "Client.h"
+#include "ClientDaemon.h"
 #include "Secret.h"
 #include "Version.h"
 #include "control/Config.h"
@@ -85,21 +78,9 @@ void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, con
   }
 }
 
-#ifdef Q_OS_UNIX
-static void setupUnixSignalHandler() {
-  struct sigaction sig;
-
-  sig.sa_handler = Client::unixSignalHandler;
-  sigemptyset(&sig.sa_mask);
-  sig.sa_flags |= SA_RESTART;
-
-  sigaction(SIGTERM, &sig, nullptr);
-  sigaction(SIGINT, &sig, nullptr);
-}
-#endif
-
 int main(int argc, char** argv) {
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
+  Q_INIT_RESOURCE(config);
   do {
     // Argument parsing
     auto args =
@@ -146,10 +127,8 @@ int main(int argc, char** argv) {
     qInfo() << Version::current().name() << Version::current().versionString();
 
     // And, run!
-    auto client = std::make_unique<Client>(argc, argv);
-#ifdef Q_OS_UNIX
-    setupUnixSignalHandler();
-#endif
+    auto client = std::make_unique<ClientDaemon>(argc, argv);
+
     int ret = client->run();
     client.reset();
 

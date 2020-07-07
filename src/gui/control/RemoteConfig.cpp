@@ -12,9 +12,9 @@ RemoteConfig::RemoteConfig(Daemon* daemon) : daemon_(daemon) {
   connect(daemon_, &Daemon::connected, this, &RemoteConfig::renew);
   connect(daemon_, &Daemon::eventReceived, this, &RemoteConfig::handleEvent);
 
-  connect(this, &librevault::AbstractConfig::globalChanged, this, &RemoteConfig::changed);
-  connect(this, &librevault::AbstractConfig::folderAdded, this, &RemoteConfig::changed);
-  connect(this, &librevault::AbstractConfig::folderRemoved, this, &RemoteConfig::changed);
+  connect(this, &AbstractConfig::globalChanged, this, &RemoteConfig::changed);
+  connect(this, &AbstractConfig::folderAdded, this, &RemoteConfig::changed);
+  connect(this, &AbstractConfig::folderRemoved, this, &RemoteConfig::changed);
 }
 
 QVariant RemoteConfig::getGlobal(QString name) { return cached_globals_[name]; }

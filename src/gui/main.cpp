@@ -1,7 +1,8 @@
-#include "Client.h"
+#include "ClientGui.h"
 #include "gui/MainWindow.h"
 
 int main(int argc, char** argv) {
-  Client client(argc, argv);
+  Q_INIT_RESOURCE(config);
+  ClientGui client(argc, argv);
   return client.exec();
 }

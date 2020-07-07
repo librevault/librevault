@@ -13,7 +13,7 @@ class SignedMeta {
 
   SignedMeta() = default;
   SignedMeta(Meta meta, const Secret& secret);
-  SignedMeta(QByteArray raw_meta, QByteArray signature, const Secret& secret, bool check_signature = true);
+  SignedMeta(const QByteArray& raw_meta, QByteArray signature, const Secret& secret, bool check_signature = true);
 
   operator bool() const { return meta_ && !raw_meta_.isEmpty() && !signature_.isEmpty(); }
 
@@ -23,7 +23,7 @@ class SignedMeta {
   const QByteArray& signature() const { return signature_; }
 
  private:
-  std::shared_ptr<Meta> meta_;
+  std::optional<Meta> meta_;
 
   QByteArray raw_meta_;
   QByteArray signature_;

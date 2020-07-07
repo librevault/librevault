@@ -7,7 +7,7 @@ class OpenLink : public QDialog {
   Q_OBJECT
 
  public:
-  explicit OpenLink(QWidget* parent = 0);
+  explicit OpenLink(QWidget* parent);
 
  public slots:
   void accept() override;

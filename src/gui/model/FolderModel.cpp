@@ -10,9 +10,7 @@
 #include "control/RemoteState.h"
 #include "util/human_size.h"
 
-FolderModel::FolderModel(Daemon *daemon) : QAbstractListModel(daemon), daemon_(daemon) {}
-
-FolderModel::~FolderModel() {}
+FolderModel::FolderModel(Daemon *daemon, QObject *parent) : QAbstractListModel(parent), daemon_(daemon) {}
 
 int FolderModel::rowCount(const QModelIndex &parent) const { return folders_all_.size(); }
 int FolderModel::columnCount(const QModelIndex &parent) const { return (int)Column::COLUMN_COUNT; }
@@ -38,7 +36,7 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
       }
 
       default:
-        return QVariant();
+        return {};
     }
   }
   if (role == Qt::DecorationRole && column == Column::NAME) return QFileIconProvider().icon(QFileIconProvider::Folder);
@@ -46,7 +44,7 @@ QVariant FolderModel::data(const QModelIndex &index, int role) const {
     return folderid;
   }
 
-  return QVariant();
+  return {};
 }
 
 QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -62,36 +60,39 @@ QVariant FolderModel::headerData(int section, Qt::Orientation orientation, int r
         case Column::SIZE:
           return tr("Size");
         default:
-          return QVariant();
+          return {};
       }
     }
   }
-  return QVariant();
+  return {};
 }
 
 void FolderModel::refresh() {
-  QSet<QByteArray> config_folders, new_folders, cleanup_folders;
+  QSet<QByteArray> config_folders, new_folders, cleanup_folders, old_folders;
 
   auto config_folders_list = daemon_->config()->listFolders();
-  config_folders = QSet<QByteArray>(config_folders_list.begin(), config_folders_list.end());
-  new_folders = config_folders - QSet<QByteArray>(folders_all_.begin(), folders_all_.end());
-  cleanup_folders = QSet<QByteArray>(folders_all_.begin(), folders_all_.end()) - config_folders;
 
-  for (auto folderid : new_folders) {
-    PeerModel *new_peer_model = new PeerModel(folderid, daemon_, this);
+  old_folders = {folders_all_.begin(), folders_all_.end()};
+  config_folders = {config_folders_list.begin(), config_folders_list.end()};
+
+  new_folders = config_folders - old_folders;
+  cleanup_folders = old_folders - config_folders;
+
+  for (const auto &folderid : new_folders) {
+    auto new_peer_model = new PeerModel(folderid, daemon_, this);
     peer_models_.insert(folderid, new_peer_model);
   }
 
-  for (auto folderid : cleanup_folders) {
+  for (const auto &folderid : cleanup_folders) {
     auto it = peer_models_.find(folderid);
-    delete it.value();
+    it.value()->deleteLater();
     peer_models_.erase(it);
   }
 
   folders_all_ = config_folders.values();
 
-  for (auto folderid : folders_all_) {
-    auto it = peer_models_.find(folderid);
+  for (const auto &groupid : folders_all_) {
+    auto it = peer_models_.find(groupid);
     it.value()->refresh();
   }
 

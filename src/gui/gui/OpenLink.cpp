@@ -8,5 +8,5 @@ OpenLink::OpenLink(QWidget* parent) : QDialog(parent) {
 }
 
 void OpenLink::accept() {
-  if (static_cast<MainWindow*>(parent())->handleLink(ui.line_url->text()) && isVisible()) QDialog::accept();
+  if (qobject_cast<MainWindow*>(parent())->handleLink(ui.line_url->text()) && isVisible()) QDialog::accept();
 }

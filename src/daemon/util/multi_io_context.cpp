@@ -1,6 +1,6 @@
 #include "multi_io_context.h"
 
-#include "log.h"
+#include "util/log.h"
 
 namespace librevault {
 

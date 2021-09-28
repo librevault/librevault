@@ -3,6 +3,7 @@ project(librevault)
 
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
 	conan_basic_setup(TARGETS KEEP_RPATHS)
 endif()
 
@@ -40,7 +41,7 @@ option(WITH_TESTS "Build unit tests" OFF)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -121,7 +122,7 @@ if(BUILD_STATIC OR USE_STATIC_BOOST)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
 add_compile_definitions("BOOST_ASIO_DISABLE_CONCEPTS")
-find_package(Boost REQUIRED COMPONENTS system filesystem thread)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 
 add_library(boost INTERFACE)
 target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
@@ -148,6 +149,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
+
 find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
 add_compile_definitions("QT_DISABLE_DEPRECATED_BEFORE=0x051400")
 add_compile_definitions("QT_NO_FOREACH=1")

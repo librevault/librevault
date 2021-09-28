@@ -95,11 +95,12 @@ parts:
     plugin: nil
     build-packages:
       - build-essential
+      - libgl-dev
+      - xorg-dev
     build-environment:
       - CONAN_USER_HOME: $SNAPCRAFT_STAGE
     override-build: |
       conan profile new --detect --force default
-      conan config install $SNAPCRAFT_PART_SRC/conan/config
       conan profile update settings.compiler.libcxx=libstdc++11 default
       conan install $SNAPCRAFT_PART_SRC --build=outdated --build=cascade
     after:

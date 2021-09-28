@@ -32,7 +32,7 @@ class P2PFolder : public RemoteFolder {
     auth_error() : error("Remote node couldn't verify its authenticity") {}
   };
 
-  P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
+  P2PFolder(const QUrl& url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
   P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key);
   ~P2PFolder() override;
 

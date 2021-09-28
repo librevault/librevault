@@ -6,9 +6,9 @@ namespace librevault {
 
 template <class ProtoMessageClass>
 inline QByteArray prepare_proto_message(const ProtoMessageClass& message_protobuf, V1Parser::MessageType type) {
-  QByteArray message_raw(message_protobuf.ByteSize() + 1, 0);
+  QByteArray message_raw(message_protobuf.ByteSizeLong() + 1, 0);
   message_raw[0] = type;
-  message_protobuf.SerializeToArray(message_raw.data() + 1, message_protobuf.ByteSize());
+  message_protobuf.SerializeToArray(message_raw.data() + 1, message_protobuf.ByteSizeLong());
 
   return message_raw;
 }

@@ -58,6 +58,7 @@ list(APPEND MAIN_HEADERS ${PROTO_HEADERS})
 
 add_library(librevault-common STATIC ${MAIN_SRCS} ${MAIN_HEADERS} ${MAIN_QRCS})
 target_include_directories(librevault-common PUBLIC .)
+target_include_directories(librevault-common PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/protobuf)
 
 #============================================================================
 # Third-party libraries

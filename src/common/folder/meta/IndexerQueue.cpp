@@ -94,7 +94,7 @@ void IndexerQueue::actualizeQueue() {
 
     threadpool_->start(worker);
   }
-  scan_queue_.append({});
+  scan_queue_.append(QSet<QString>());
 }
 
 }  // namespace librevault

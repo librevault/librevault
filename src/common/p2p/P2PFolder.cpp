@@ -43,7 +43,7 @@ P2PFolder::P2PFolder(QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provi
   bumpTimeout();
 }
 
-P2PFolder::P2PFolder(QUrl url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key)
+P2PFolder::P2PFolder(const QUrl& url, QWebSocket* socket, FolderGroup* fgroup, P2PProvider* provider, NodeKey* node_key)
     : P2PFolder(socket, fgroup, provider, node_key, CLIENT) {
   socket_->setSslConfiguration(provider_->getSslConfiguration());
   socket_->open(url);
@@ -187,6 +187,8 @@ void P2PFolder::handle_message(const QByteArray& message) {
 
   bumpTimeout();
 
+  LOGD("<== " << QString::fromStdString(std::string(magic_enum::enum_name(message_type))));
+
   if (ready()) {
     switch (message_type) {
       case V1Parser::CHOKE:
@@ -231,7 +233,6 @@ void P2PFolder::handle_Handshake(const QByteArray& message_raw) {
   LOGFUNC();
   try {
     auto message_struct = V1Parser().parse_Handshake(message_raw);
-    LOGD("<== HANDSHAKE");
 
     // Checking authentication using token
     if (message_struct.auth_token != remote_token()) throw auth_error();
@@ -252,7 +253,6 @@ void P2PFolder::handle_Handshake(const QByteArray& message_raw) {
 
 void P2PFolder::handle_Choke(const QByteArray& message_raw) {
   LOGFUNC();
-  LOGD("<== CHOKE");
 
   if (!peer_choking_) {
     peer_choking_ = true;
@@ -261,7 +261,6 @@ void P2PFolder::handle_Choke(const QByteArray& message_raw) {
 }
 void P2PFolder::handle_Unchoke(const QByteArray& message_raw) {
   LOGFUNC();
-  LOGD("<== UNCHOKE");
 
   if (peer_choking_) {
     peer_choking_ = false;
@@ -270,7 +269,6 @@ void P2PFolder::handle_Unchoke(const QByteArray& message_raw) {
 }
 void P2PFolder::handle_Interested(const QByteArray& message_raw) {
   LOGFUNC();
-  LOGD("<== INTERESTED");
 
   if (!peer_interested_) {
     peer_interested_ = true;
@@ -279,7 +277,6 @@ void P2PFolder::handle_Interested(const QByteArray& message_raw) {
 }
 void P2PFolder::handle_NotInterested(const QByteArray& message_raw) {
   LOGFUNC();
-  LOGD("<== NOT_INTERESTED");
 
   if (peer_interested_) {
     peer_interested_ = false;
@@ -291,8 +288,7 @@ void P2PFolder::handle_HaveMeta(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_HaveMeta(message_raw);
-  LOGD("<== HAVE_META:"
-       << " path_id=" << message_struct.revision.path_id_.toHex() << " revision=" << message_struct.revision.revision_
+  LOGD("path_id=" << message_struct.revision.path_id_.toHex() << " revision=" << message_struct.revision.revision_
        << " bits=" << message_struct.bitfield);
 
   emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
@@ -301,8 +297,7 @@ void P2PFolder::handle_HaveChunk(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_HaveChunk(message_raw);
-  LOGD("<== HAVE_BLOCK:"
-       << " ct_hash=" << message_struct.ct_hash.toHex());
+  LOGD("ct_hash=" << message_struct.ct_hash.toHex());
   emit rcvdHaveChunk(message_struct.ct_hash);
 }
 
@@ -310,8 +305,7 @@ void P2PFolder::handle_MetaRequest(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_MetaRequest(message_raw);
-  LOGD("<== META_REQUEST:"
-       << " path_id=" << message_struct.revision.path_id_.toHex() << " revision=" << message_struct.revision.revision_);
+  LOGD("path_id=" << message_struct.revision.path_id_.toHex() << " revision=" << message_struct.revision.revision_);
 
   emit rcvdMetaRequest(message_struct.revision);
 }
@@ -319,8 +313,7 @@ void P2PFolder::handle_MetaReply(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_MetaReply(message_raw, fgroup_->secret());
-  LOGD("<== META_REPLY:"
-       << " path_id=" << message_struct.smeta.meta().path_id().toHex()
+  LOGD("path_id=" << message_struct.smeta.meta().path_id().toHex()
        << " revision=" << message_struct.smeta.meta().revision() << " bits=" << message_struct.bitfield);
 
   emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
@@ -330,8 +323,7 @@ void P2PFolder::handle_BlockRequest(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_BlockRequest(message_raw);
-  LOGD("<== BLOCK_REQUEST:"
-       << " ct_hash=" << message_struct.ct_hash.toHex() << " length=" << message_struct.length
+  LOGD("ct_hash=" << message_struct.ct_hash.toHex() << " length=" << message_struct.length
        << " offset=" << message_struct.offset);
 
   emit rcvdBlockRequest(message_struct.ct_hash, message_struct.offset, message_struct.length);
@@ -340,8 +332,7 @@ void P2PFolder::handle_BlockReply(const QByteArray& message_raw) {
   LOGFUNC();
 
   auto message_struct = V1Parser().parse_BlockReply(message_raw);
-  LOGD("<== BLOCK_REPLY:"
-       << " ct_hash=" << message_struct.ct_hash.toHex() << " offset=" << message_struct.offset);
+  LOGD("ct_hash=" << message_struct.ct_hash.toHex() << " offset=" << message_struct.offset);
 
   counter_.add_down_blocks(message_struct.content.size());
   fgroup_->bandwidth_counter().add_down_blocks(message_struct.content.size());

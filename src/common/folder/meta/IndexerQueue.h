@@ -2,7 +2,7 @@
 #include <QMap>
 #include <QString>
 #include <QThreadPool>
-#include <QtCore/QLinkedList>
+#include <QList>
 #include <QtCore/QTimer>
 
 #include "SignedMeta.h"
@@ -45,7 +45,7 @@ class IndexerQueue : public QObject {
 
   QMap<QString, IndexerWorker*> tasks_;
 
-  QLinkedList<QSet<QString>> scan_queue_;
+  QList<QSet<QString>> scan_queue_;
 
  private slots:
   void metaCreated(SignedMeta smeta);

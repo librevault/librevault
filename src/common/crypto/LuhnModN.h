@@ -3,13 +3,13 @@
 
 namespace librevault::crypto {
 
-template <uint8_t N, class InputIterator, class CodePointFromCharLookupTable, class CharFromCodePointLookupTable>
-char LuhnMod(InputIterator first, InputIterator last, CodePointFromCharLookupTable cp_from_char_table,
+template <uint8_t N, class CodePointFromCharLookupTable, class CharFromCodePointLookupTable>
+char LuhnMod(const QByteArray& data, CodePointFromCharLookupTable cp_from_char_table,
              CharFromCodePointLookupTable char_from_cp_table) {
   int factor = 2;
   int sum = 0;
 
-  for (auto it = --last; it != first; it--) {
+  for (auto it = data.rbegin(); it != data.rend(); it++) {
     int code_point = cp_from_char_table[uint8_t(*it)];
     int addend = factor * code_point;
 
@@ -27,7 +27,7 @@ char LuhnMod(InputIterator first, InputIterator last, CodePointFromCharLookupTab
 
 // clang-format off
 static uint8_t LuhnMod58_lookup[128] = {
-//		  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  A,  B,  C,  D,  E,  F
+//	0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  A,  B,  C,  D,  E,  F
 /*0*/	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
 /*1*/	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
 /*2*/	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
@@ -39,9 +39,8 @@ static uint8_t LuhnMod58_lookup[128] = {
 };	// Lookup table for Bitcoin Base58 alphabet. 255 = Undefined
 // clang-format on
 
-template <class InputIterator>
-char LuhnMod58(InputIterator first, InputIterator last) {
-  return LuhnMod<58>(first, last, LuhnMod58_lookup, alphabet::bitcoin);
+char LuhnMod58(const QByteArray& data) {
+  return LuhnMod<58>(data, LuhnMod58_lookup, alphabet::bitcoin);
 }
 
 }  // namespace librevault::crypto

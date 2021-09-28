@@ -25,16 +25,16 @@ Secret::Secret() {
   secret_s += cached_private_key | crypto::Base58();
 
   auto payload = secret_s.mid(2);
-  secret_s += crypto::LuhnMod58(payload.begin(), payload.end());
+  secret_s += crypto::LuhnMod58(payload);
 }
 
 Secret::Secret(Type type, const QByteArray& binary_part) {
   secret_s += type;
   secret_s += '1';
-  secret_s += cached_private_key | crypto::Base58();
+  secret_s += binary_part | crypto::Base58();
 
   auto payload = secret_s.mid(2);
-  secret_s += crypto::LuhnMod58(payload.begin(), payload.end());
+  secret_s += crypto::LuhnMod58(payload);
 }
 
 Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
@@ -42,7 +42,7 @@ Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
     auto base58_payload = getEncodedPayload();
 
     if (base58_payload.isEmpty()) throw format_error();
-    if (crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
+    if (crypto::LuhnMod58(base58_payload) != get_check_char()) throw format_error();
   } catch (std::exception& e) {
     throw format_error();
   }
@@ -64,11 +64,11 @@ Secret Secret::derive(Type key_type) const {
   switch (key_type) {
     case Owner:
     case ReadWrite:
-      return Secret(key_type, get_Private_Key());
+      return {key_type, get_Private_Key()};
     case ReadOnly:
-      return Secret(key_type, get_Public_Key() + get_Encryption_Key());
+      return {key_type, get_Public_Key() + get_Encryption_Key()};
     case Download:
-      return Secret(key_type, get_Encryption_Key());
+      return {key_type, get_Encryption_Key()};
     default:
       throw level_error();
   }

@@ -19,6 +19,7 @@ class LibrevaultConan(ConanFile):
     generators = ["cmake_find_package", "cmake"]
     default_options = {
         "sqlite3:threadsafe": 1,
+        "qt:shared": True,
         "qt:qtsvg": True,
         "qt:qttranslations": True,
         "qt:qttools": True,

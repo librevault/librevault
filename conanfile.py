@@ -30,11 +30,11 @@ class LibrevaultConan(ConanFile):
         "qt:with_pq": False,
     }
 
-    def requirements(self):
+    # def requirements(self):
         # if CMake.get_version() < "3.16":
         #     self.requires("cmake/3.16.3")
-        if self.settings.os == "Windows":
-            self.requires("winsparkle/0.6.0@gamepad64/stable")
+        # if self.settings.os == "Windows":
+        #     self.requires("winsparkle/0.6.0@gamepad64/stable")
 
     def configure(self):
         # if self.settings.os == "Linux":

@@ -35,6 +35,8 @@ Downloader::~Downloader() = default;
 void Downloader::notifyLocalMeta(const SignedMeta& smeta, const QBitArray& bitfield) {
   SCOPELOG(log_downloader);
 
+  qCDebug(log_downloader) << "smeta: " << smeta << " bf: " << bitfield;
+
   Q_ASSERT((size_t)bitfield.size() == (size_t)smeta.meta().chunks().size());
 
   QVector<QByteArray> incomplete_chunks;

@@ -4,7 +4,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace librevault {
 
@@ -20,9 +19,10 @@ class Secret {
 
   struct error : public std::runtime_error {
     error(const char *what) : std::runtime_error(what) {}
+    error(const std::string& what) : std::runtime_error(what) {}
   };
   struct format_error : public error {
-    format_error() : error("Secret format mismatch") {}
+    format_error(const std::string& secret_str) : error(std::string("Secret format mismatch: ") + secret_str) {}
   };
   struct level_error : public error {
     level_error() : error("Secret has insufficient privileges for this action") {}

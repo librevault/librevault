@@ -2,7 +2,6 @@
 #include <QObject>
 #include <set>
 
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {

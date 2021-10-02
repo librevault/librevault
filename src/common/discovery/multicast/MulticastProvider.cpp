@@ -5,6 +5,7 @@
 #include <QtCore/QJsonDocument>
 #include <QtNetwork/QNetworkDatagram>
 #include <utility>
+#include <QJsonDocument>
 
 #include "MulticastGroup.h"
 
@@ -49,21 +50,24 @@ void MulticastProvider::processDatagram(QUdpSocket* socket) {
     auto datagram = socket->receiveDatagram();
     Endpoint sender(datagram.senderAddress(), datagram.senderPort());
 
-    QCborParserError parse_error{};
-    auto message = QCborValue::fromCbor(datagram.data(), &parse_error);
+    QJsonParseError parse_error{};
+    auto message = QJsonDocument::fromJson(datagram.data(), &parse_error);
 
-    if (parse_error.error) {
-      qCDebug(log_multicast) << "<=X= Malformed multicast message from:" << sender << "E:" << parse_error.errorString();
+	  qCDebug(log_multicast) << "<=== Multicast received from: " << sender.addr << " msg: " << datagram.data();
+
+	  if (parse_error.error) {
+      qCDebug(log_multicast) << "<=X= Malformed multicast from:" << sender << "E:" << parse_error.errorString();
       return;
     }
 
     DiscoveryResult result;
     result.source = QStringLiteral("Multicast");
-    result.endpoint = Endpoint(sender.addr, message[DISCOVERY_PORT].toInteger());
-    result.digest = message[DISCOVERY_PEER_ID].toByteArray();
+    result.endpoint = Endpoint(sender.addr, message[DISCOVERY_PORT].toInt());
+    result.digest = QByteArray::fromHex(message[DISCOVERY_PEER_ID].toString().toUtf8());
+	result.url = "wss://" + result.endpoint.toString() + "/" + result.digest.toHex();
 
-    QByteArray community_id = message[DISCOVERY_COMMUNITY_ID].toByteArray();
-    qCDebug(log_multicast) << "<=== Multicast message received from: " << result.endpoint;
+    QByteArray community_id = QByteArray::fromHex(message[DISCOVERY_COMMUNITY_ID].toString().toUtf8());
+    qCDebug(log_multicast) << "<=== Multicast acquired from: " << result.endpoint;
 
     emit discovered(community_id, result);
   }

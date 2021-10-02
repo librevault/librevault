@@ -11,7 +11,6 @@
 #include "SignedMeta.h"
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
-#include "util/blob.h"
 #include "util/conv_bitfield.h"
 
 namespace librevault {

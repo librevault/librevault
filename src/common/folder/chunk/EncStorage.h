@@ -3,7 +3,6 @@
 #include <QReadWriteLock>
 #include <memory>
 
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {

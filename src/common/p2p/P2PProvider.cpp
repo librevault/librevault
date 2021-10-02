@@ -66,7 +66,10 @@ void P2PProvider::handleDiscovered(const QByteArray& folderid, const DiscoveryRe
   qCDebug(log_p2p) << "Discovery event from:" << result.source;
 
   FolderGroup* fgroup = folder_service_->getGroup(folderid);
-  if (!fgroup) return;  // Maybe, we have received a multicast not for us?
+  if (!fgroup) {
+	  // Maybe, we have received a multicast not for us?
+	  qCDebug(log_p2p) << "Discovery event for NOT FOUND folderid: " << folderid.toHex();
+  }
 
   QUrl ws_url = result.url;
   ws_url.setScheme("wss");

@@ -5,7 +5,7 @@ class LibrevaultConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = [
         "docopt.cpp/0.6.2",
-        "spdlog/1.5.0",
+        "spdlog/1.9.2",
         "cryptopp/8.5.0",
         "sqlite3/3.36.0",
         "boost/1.76.0",
@@ -15,6 +15,7 @@ class LibrevaultConan(ConanFile):
         "qt/5.15.2",
         "magic_enum/0.6.6",
         "libjpeg/9d",  # override
+        "fmt/8.0.1",
     ]
     generators = ["cmake_find_package", "cmake"]
     default_options = {
@@ -26,6 +27,7 @@ class LibrevaultConan(ConanFile):
         # "qt:qtwayland": False,
         "qt:qtwebsockets": True,
         "qt:with_odbc": False,
+        "qt:with_sqlite3": False,
         "qt:with_mysql": False,
         "qt:with_pq": False,
     }

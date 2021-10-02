@@ -3,7 +3,6 @@
 
 #include "Meta.h"
 #include "SignedMeta.h"
-#include "util/blob.h"
 #include "util/conv_bitfield.h"
 
 namespace librevault {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/blob.h"
+#include <QByteArray>
 
 namespace librevault::crypto {
 

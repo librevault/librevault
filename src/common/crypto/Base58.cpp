@@ -4,6 +4,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <utility>
+#include "util/blob.h"
 
 namespace librevault::crypto {
 

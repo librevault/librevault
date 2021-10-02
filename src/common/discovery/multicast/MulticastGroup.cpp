@@ -19,6 +19,7 @@ MulticastGroup::MulticastGroup(MulticastProvider* provider, QByteArray groupid, 
   timer_->setTimerType(Qt::VeryCoarseTimer);
 
   // Connecting signals
+  QTimer::singleShot(0, this, &MulticastGroup::sendMulticasts);
   connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
 }
 
@@ -32,11 +33,9 @@ void MulticastGroup::setEnabled(bool enabled) {
 QByteArray MulticastGroup::getMessage() {
   return !message_.isEmpty()
              ? message_
-             : message_ = QCborValue{QCborKnownTags::Signature,
-                                     {{{DISCOVERY_PORT, (int)Config::get()->getGlobal("p2p_listen").toUInt()},
+             : message_ = QJsonDocument(QJsonObject{{DISCOVERY_PORT, (int)Config::get()->getGlobal("p2p_listen").toUInt()},
                                        {DISCOVERY_PEER_ID, QString::fromLatin1(provider_->getNodeId().toHex())},
-                                       {DISCOVERY_COMMUNITY_ID, QString::fromLatin1(groupid_.toHex())}}}}
-                              .toCbor();
+                                       {DISCOVERY_COMMUNITY_ID, QString::fromLatin1(groupid_.toHex())}}).toJson();
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, const Endpoint& endpoint) {

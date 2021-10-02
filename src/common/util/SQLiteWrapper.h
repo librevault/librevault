@@ -2,11 +2,8 @@
 #include <sqlite3.h>
 
 #include <QtCore/QVariant>
-#include <boost/filesystem/path.hpp>
 #include <map>
 #include <memory>
-
-#include "util/blob.h"
 
 namespace librevault {
 
@@ -98,7 +95,7 @@ class SQLiteResult {
 
 class SQLiteDB {
  public:
-  explicit SQLiteDB(const boost::filesystem::path& db_path);
+  explicit SQLiteDB(const QString& db_path);
   virtual ~SQLiteDB();
 
   SQLiteResult exec(const QString& sql, const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());

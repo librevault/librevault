@@ -1,7 +1,5 @@
 #include "Index.h"
 
-#include <util/conv_fspath.h>
-
 #include <QFile>
 
 #include "control/FolderParams.h"
@@ -18,7 +16,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
     LOGD("Opening SQLite3 DB:" << db_filepath);
   else
     LOGD("Creating new SQLite3 DB:" << db_filepath);
-  db_ = std::make_unique<SQLiteDB>(conv_fspath(db_filepath));
+  db_ = std::make_unique<SQLiteDB>(db_filepath);
   db_->exec("PRAGMA foreign_keys = ON;");
 
   /* TABLE meta */
@@ -55,7 +53,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
   QByteArray hexhash_conf = params_.secret.get_Hash();
   if (hash_file.exists()) {
     hash_file.open(QIODevice::ReadOnly);
-    if (hash_file.readAll().toLower() != hexhash_conf.toLower()) wipe();
+    if (hash_file.readAll() != hexhash_conf) wipe();
     hash_file.close();
   }
   hash_file.open(QIODevice::WriteOnly | QIODevice::Truncate);
@@ -184,6 +182,8 @@ QList<SignedMeta> Index::containingChunk(const QByteArray& ct_hash) {
 }
 
 void Index::wipe() {
+  LOGD("Deleting all database items");
+
   SQLiteSavepoint savepoint(*db_);
   db_->exec("DELETE FROM meta");
   db_->exec("DELETE FROM chunk");

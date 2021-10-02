@@ -21,9 +21,9 @@
                                                                               \
    public:                                                                    \
     explicit SCOPELOG_CLASS(QLatin1String scope) : scope_(std::move(scope)) { \
-      qCDebug(category).noquote() << "➡️" << scope_;                      \
+      qCDebug(category).noquote() << "->" << scope_;                      \
     }                                                                         \
-    ~SCOPELOG_CLASS() { qCDebug(category).noquote() << "⬅️" << scope_; }  \
+    ~SCOPELOG_CLASS() { qCDebug(category).noquote() << "<-" << scope_; }  \
   };                                                                          \
   SCOPELOG_CLASS scopelog(QLatin1String(BOOST_CURRENT_FUNCTION))
 

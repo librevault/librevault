@@ -9,7 +9,7 @@ char LuhnMod(const QByteArray& data, CodePointFromCharLookupTable cp_from_char_t
   int factor = 2;
   int sum = 0;
 
-  for (auto it = data.rbegin(); it != data.rend(); it++) {
+  for (auto it = data.rbegin(); it != --data.rend(); it++) {
     int code_point = cp_from_char_table[uint8_t(*it)];
     int addend = factor * code_point;
 

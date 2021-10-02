@@ -7,7 +7,6 @@
 #include <map>
 
 #include "SignedMeta.h"
-#include "util/blob.h"
 
 namespace librevault {
 

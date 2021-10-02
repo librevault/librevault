@@ -2,7 +2,6 @@
 #include <QMap>
 #include <QObject>
 
-#include "util/blob.h"
 #include "util/log.h"
 
 Q_DECLARE_LOGGING_CATEGORY(log_folderservice)

@@ -10,7 +10,6 @@
 #include "folder/transfer/downloader/ChunkFileBuilder.h"
 #include "folder/transfer/downloader/WeightedChunkQueue.h"
 #include "util/AvailabilityMap.h"
-#include "util/blob.h"
 #include "util/log.h"
 
 #define CLUSTERED_COEFFICIENT 10.0f

@@ -3,7 +3,6 @@
 #include <QFile>
 
 #include "util/AvailabilityMap.h"
-#include "util/blob.h"
 
 namespace librevault {
 

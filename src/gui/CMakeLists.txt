@@ -105,9 +105,9 @@ endif()
 target_link_libraries(librevault-gui PRIVATE QtSingleApplication)
 
 # WinSparkle
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(librevault-gui PRIVATE CONAN_PKG::winsparkle)
-endif()
+#if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+#	target_link_libraries(librevault-gui PRIVATE CONAN_PKG::winsparkle)
+#endif()
 
 # Sparkle (for Macs)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

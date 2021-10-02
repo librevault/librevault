@@ -46,13 +46,23 @@ void IndexerWorker::run() noexcept {
   try {
     if (ignore_list_->isIgnored(normpath)) throw AbortIndex("File is ignored");
 
-    try {
-      old_smeta_ = meta_storage_->getMeta(Meta::make_path_id(normpath, secret_));
+	  auto path_id = Meta::make_path_id(normpath, secret_);
+
+	  try {
+      old_smeta_ = meta_storage_->getMeta(path_id);
       old_meta_ = old_smeta_.meta();
-      if (boost::filesystem::last_write_time(abspath_.toStdString()) == old_meta_.mtime())
-        throw AbortIndex("Modification time is not changed");
+
+	  auto new_mtime = boost::filesystem::last_write_time(conv_fspath(abspath_));
+
+      if (new_mtime == old_meta_.mtime()) {
+	      throw AbortIndex("Modification time is not changed");
+      }else {
+		qCDebug(log_indexer) << "Old mtime: " << old_meta_.mtime() << " New mtime: " << new_mtime;
+      }
     } catch (boost::filesystem::filesystem_error& e) {
-    } catch (MetaStorage::MetaNotFound& e) {
+		  qCDebug(log_indexer) << "Filesystem Error";
+	  } catch (MetaStorage::MetaNotFound& e) {
+	    qCDebug(log_indexer) << "Meta for path_id: " << path_id << " not found";
     } catch (Meta::error& e) {
       qCDebug(log_indexer) << "Meta in DB is inconsistent, trying to reindex:" << e.what();
     }

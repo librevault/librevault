@@ -41,7 +41,7 @@ option(WITH_TESTS "Build unit tests" OFF)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -56,6 +56,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Error management
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/W4>)  # Maximum warnings
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)  # Multiprocess build
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/UTF-8>)  # Souce and execution encoding
+#add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/showIncludes>)  # Useful for debug
 add_compile_options($<$<CXX_COMPILER_ID:GNU>:-Wall>)
 add_compile_options($<$<CXX_COMPILER_ID:GNU>:-Wpedantic>)
 
@@ -165,6 +167,9 @@ if(OS_WIN)
 elseif(OS_LINUX)
 	target_link_libraries(OpenSSL::Crypto INTERFACE dl)
 endif()
+
+## fmt
+find_package(fmt REQUIRED)
 
 ##### Bundled libraries #####
 

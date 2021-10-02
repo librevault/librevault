@@ -7,6 +7,8 @@
 #include <QCryptographicHash>
 
 #include "crypto/LuhnModN.h"
+#include "util/blob.h"
+#include <fmt/core.h>
 
 using CryptoPP::ASN1::secp256r1;
 
@@ -38,16 +40,20 @@ Secret::Secret(Type type, const QByteArray& binary_part) {
 }
 
 Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
-  try {
-    auto base58_payload = getEncodedPayload();
+	try{
+  auto base58_payload = getEncodedPayload();
 
-    if (base58_payload.isEmpty()) throw format_error();
-    if (crypto::LuhnMod58(base58_payload) != get_check_char()) throw format_error();
-  } catch (std::exception& e) {
-    throw format_error();
-  }
+  if (base58_payload.isEmpty()) throw format_error("Empty payload");
+
+  auto luhn_new = crypto::LuhnMod58(base58_payload);
+  auto luhn_old = get_check_char();
+
+  if (luhn_new != luhn_old) throw format_error(fmt::format("Secret: {}, luhn_old: {}, luhn_new: {}", str.toStdString(), luhn_old, luhn_new));
 
   // TODO: It would be good to check private/public key for validity and throw crypto_error() here
+} catch (std::exception& e) {
+	throw;
+}
 }
 
 QByteArray Secret::getEncodedPayload() const {  // TODO: Caching

@@ -3,7 +3,6 @@
 
 #include "SignedMeta.h"
 #include "util/SQLiteWrapper.h"
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {

@@ -6,7 +6,6 @@
 
 #include "control/FolderParams.h"
 #include "control/websocket_config.h"
-#include "util/blob.h"
 #include "util/log.h"
 #include "util/multi_io_context.h"
 

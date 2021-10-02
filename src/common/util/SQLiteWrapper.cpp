@@ -1,9 +1,7 @@
 #include "SQLiteWrapper.h"
 
 #include <QUuid>
-#include <utility>
-
-#include "util/blob.h"
+#include <QDebug>
 
 namespace librevault {
 
@@ -108,7 +106,10 @@ SQLiteResultIterator SQLiteResult::begin() { return SQLiteResultIterator(prepare
 SQLiteResultIterator SQLiteResult::end() { return SQLiteResultIterator(SQLITE_DONE); }
 
 // SQLiteDB
-SQLiteDB::SQLiteDB(const boost::filesystem::path& db_path) { sqlite3_open(db_path.string().c_str(), &db); }
+SQLiteDB::SQLiteDB(const QString& db_path) {
+	auto result = sqlite3_open(db_path.toUtf8().data(), &db);
+	qDebug() << "SQLiteDB open: " << result;
+}
 
 SQLiteDB::~SQLiteDB() { sqlite3_close(db); }
 

@@ -41,11 +41,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 	# Install Qt5 plugins
 	set(BUNDLE_PLUGINS_PATH ${CMAKE_INSTALL_PREFIX}/plugins)
-	install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
-	install_qt5_plugin("Qt5::QWindowsVistaStylePlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+#	install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+#	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+#	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+#	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
+#	install_qt5_plugin("Qt5::QWindowsVistaStylePlugin" QT_PLUGIN "${BUNDLE_PLUGINS_PATH}")
 	list(APPEND INSTALLED_BINARIES ${QT_PLUGIN})
 
 	lv_collect_libs("${INSTALLED_BINARIES}" "${CMAKE_INSTALL_PREFIX}")

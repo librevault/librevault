@@ -25,7 +25,9 @@ jobs:
         env:
           cache-name: cache-conan-packages
         with:
-          path: ~/.conan/data
+          path: |
+            ~/.conan/data
+            C:\.conan
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
@@ -68,7 +70,7 @@ jobs:
       - name: Install system-wide dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bash git python3-pip python3.8-dev python3.8-venv build-essential libwayland-dev libglib2.0-dev libgl-dev libx11-xcb-dev libxcb-xkb-dev xorg-dev ninja-build ccache
+          sudo apt-get install -y bash git python3-pip python3.8-dev python3.8-venv build-essential libwayland-dev libglib2.0-dev libgl-dev ninja-build ccache
           sudo python3.8 -m pip install poetry
       - uses: actions/checkout@v2
         with:
@@ -90,6 +92,7 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
       - name: Install Conan packages
         run: |
+          rm -rf ~/.conan
           source .venv/bin/activate
           cd build
           conan profile new --detect --force default

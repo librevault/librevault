@@ -103,8 +103,6 @@ TrackerAnnouncer::TrackerAnnouncer(const QUrl& baseurl, QNetworkAccessManager* n
 
   QNetworkRequest request(trackerinfo_url_);
   request.setHeader(QNetworkRequest::KnownHeaders::UserAgentHeader, Version::current().userAgent());
-  request.setAttribute(QNetworkRequest::SpdyAllowedAttribute, true);
-  request.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
   request.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, true);
   nam_->get(request);
@@ -118,8 +116,6 @@ void TrackerAnnouncer::sendAnnounceOne() {
   QNetworkRequest request(announce_url_);
   request.setHeader(QNetworkRequest::KnownHeaders::UserAgentHeader, Version::current().userAgent());
   request.setHeader(QNetworkRequest::KnownHeaders::ContentTypeHeader, "application/json");
-  request.setAttribute(QNetworkRequest::SpdyAllowedAttribute, true);
-  request.setAttribute(QNetworkRequest::HTTP2AllowedAttribute, true);
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
   request.setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute, true);
 

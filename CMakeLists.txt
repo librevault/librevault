@@ -6,6 +6,7 @@ cmake_policy(SET CMP0071 OLD)
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 	conan_basic_setup(TARGETS)
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
 endif()
 
 #============================================================================
@@ -40,7 +41,7 @@ option(INSTALL_BUNDLE "Prepare a bundle with all dependencies" OFF)
 
 # Setting compiler properties
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

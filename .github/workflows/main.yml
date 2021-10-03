@@ -1,0 +1,190 @@
+name: CI
+on:
+  push:
+    branches: [ master, develop, "feature/githubactions" ]
+  pull_request:
+    branches: [ master, develop, "feature/githubactions" ]
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          choco install innosetup
+          python -m pip install poetry
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Prepare virtualenv for tools
+        run: |
+          python -m venv .venv
+          poetry install
+      - name: Restore Conan cache
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-conan-packages
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+      - name: Install Conan packages
+        run: |
+          .venv\scripts\activate.ps1
+          cd build
+          conan profile new --detect --force default
+          conan install .. --build=outdated --build=cascade
+          conan remove "*" --src --builds --force
+#      - name: Build application
+#        run: |
+#          cd build
+#          cmake -DUSE_STATIC_BOOST=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
+#          cmake --build . --config Release
+#      - name: Package application
+#        run: |
+#          .venv\scripts\activate.ps1
+#          cd build
+#          cmake --install .
+#          python ../scripts/configure_innosetup.py --packaging_dir pack --install_dir built_binaries
+#          pushd pack
+#          iscc librevault.iss
+#          popd
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v1
+#        with:
+#          name: librevault-innosetup-windows-x64
+#          path: build/pack/result.exe
+
+  build-linux:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bash git python3-pip python3.8-dev python3.8-venv build-essential cmake libwayland-dev libxcomposite-dev libglib2.0-dev mesa-common-dev libx11-xcb-dev ninja-build ccache
+          sudo python3.8 -m pip install poetry
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Prepare virtualenv for tools
+        run: |
+          python3.8 -m venv .venv
+          poetry install
+      - name: Restore Conan cache
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-conan-packages
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+      - name: Install Conan packages
+        run: |
+          source .venv/bin/activate
+          cd build
+          conan profile new --detect --force default
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan install .. --build=outdated --build=cascade
+          conan remove "*" --src --builds --force
+      - name: Restore ccache cache
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-ccache
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}
+      - name: Build application
+        run: |
+          cd build
+          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build .
+
+#  build-linux-snap:
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0
+#          submodules: recursive
+#      - uses: snapcore/action-build@v1
+#        id: snapcraft
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: librevault-snap-linux-x64
+#          path: ${{ steps.snapcraft.outputs.snap }}
+#      - uses: snapcore/action-publish@v1
+#        if: github.event_name == 'push'
+#        with:
+#          store_login: ${{ secrets.SNAPCRAFT_STORE_LOGIN }}
+#          snap: ${{ steps.snapcraft.outputs.snap }}
+#          release: edge
+
+  build-macos:
+    runs-on: macos-11
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          brew install cmake ccache ninja
+          python3 -m pip install poetry
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Prepare virtualenv for tools
+        run: |
+          python3 -m venv .venv
+          poetry install
+          source .venv/bin/activate
+      - name: Restore Conan cache
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-conan-packages
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+      - name: Install Conan packages
+        run: |
+          source .venv/bin/activate
+          mkdir -p build
+          pushd build
+          conan profile new --detect --force default
+          conan install .. --build=outdated --build=cascade
+          conan remove "*" --src --builds --force
+#      - name: Restore ccache cache
+#        uses: actions/cache@v1
+#        env:
+#          cache-name: cache-ccache
+#        with:
+#          path: ~/.ccache
+#          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
+#          restore-keys: |
+#            ${{ runner.os }}-build-${{ env.cache-name }}
+#      - name: Build application
+#        run: |
+#          mkdir -p build
+#          pushd build
+#          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
+#          cmake --build .
+#          cpack
+#      - name: Upload artifact
+#        uses: actions/upload-artifact@v1
+#        with:
+#          name: librevault-dmg-macos-x64
+#          path: build/Librevault.dmg

@@ -27,7 +27,7 @@ jobs:
         with:
           path: |
             ~/.conan/data
-            C:\.conan
+            C:/.conan
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-

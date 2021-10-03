@@ -38,7 +38,7 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan install .. --build=outdated --build=cascade
-          conan remove "*" --src --builds --force
+          conan remove "*" --src --builds --system-reqs --force
 #      - name: Build application
 #        run: |
 #          cd build
@@ -96,8 +96,9 @@ jobs:
           cd build
           conan profile new --detect --force default
           conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan remove "*" --src --builds --system-reqs --force
           conan install .. --build=outdated --build=cascade
-          conan remove "*" --src --builds --force
+          conan remove "*" --src --builds --system-reqs --force
       - name: Restore ccache cache
         uses: actions/cache@v2
         env:
@@ -168,7 +169,7 @@ jobs:
 #          pushd build
 #          conan profile new --detect --force default
 #          conan install .. --build=outdated --build=cascade
-#          conan remove "*" --src --builds --force
+#          conan remove "*" --src --builds --system-reqs --force
 #      - name: Restore ccache cache
 #        uses: actions/cache@v2
 #        env:

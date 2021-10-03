@@ -12,19 +12,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * In addition, as a special exception, the copyright holders give
- * permission to link the code of portions of this program with the
- * OpenSSL library under certain conditions as described in each
- * individual source file, and distribute linked combinations
- * including the two.
- * You must obey the GNU General Public License in all respects
- * for all of the code used other than OpenSSL.  If you modify
- * file(s) with this exception, you may extend this exception to your
- * version of the file(s), but you are not obligated to do so.  If you
- * do not wish to do so, delete this exception statement from your
- * version.  If you delete this exception statement from all source
- * files in the program, then also delete it here.
  */
 #include "NodeKey.h"
 
@@ -148,16 +135,17 @@ void NodeKey::gen_certificate() {
   {  // Read private key from buffer
     std::unique_ptr<BIO, decltype(&BIO_free)> private_key_bio(
         BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size()), &BIO_free);
-    EVP_PKEY* evp_pkey = openssl_pkey.get();
-    PEM_read_bio_PrivateKey(private_key_bio.get(), &evp_pkey, 0, 0);
+    EVP_PKEY* evp_pkey = nullptr;
+    PEM_read_bio_PrivateKey(private_key_bio.get(), &evp_pkey, nullptr, nullptr);
+    openssl_pkey.reset(evp_pkey);
   }
 
   /* Set the serial number. */
   ASN1_INTEGER_set(X509_get_serialNumber(x509.get()), 1);
 
-  /* This certificate is valid from now until exactly one year from now. */
+  /* This certificate is valid from now until exactly ten years from now. */
   X509_gmtime_adj(X509_get_notBefore(x509.get()), 0);
-  X509_gmtime_adj(X509_get_notAfter(x509.get()), 31536000L);
+  X509_gmtime_adj(X509_get_notAfter(x509.get()), 60L*60L*24L*365L*10L);
 
   /* Set the public key for our certificate. */
   X509_set_pubkey(x509.get(), openssl_pkey.get());

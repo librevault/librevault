@@ -35,7 +35,7 @@
 #include <QDebug>
 #include <boost/filesystem/path.hpp>
 #ifdef Q_OS_UNIX
-#include <signal.h>
+#include <csignal>
 #endif
 
 #include "Client.h"

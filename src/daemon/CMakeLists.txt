@@ -67,20 +67,14 @@ target_link_libraries(librevault-daemon PUBLIC dht)
 ##### External libraries #####
 
 ## Boost
-target_link_libraries(librevault-daemon PUBLIC boost)
-
-## Qt5
-target_link_libraries(librevault-daemon PUBLIC Qt5::Xml)
-target_link_libraries(librevault-daemon PUBLIC Qt5::WebSockets)
-
-## Protobuf
-target_link_libraries(librevault-daemon PUBLIC OpenSSL::SSL)
-target_link_libraries(librevault-daemon PUBLIC OpenSSL::Crypto)
-target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::spdlog)
-target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::sqlite3)
-target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::websocketpp)
-target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::cryptopp)
-target_link_libraries(librevault-daemon PUBLIC CONAN_PKG::docopt.cpp)
+target_link_libraries(librevault-daemon PUBLIC Boost::system Boost::filesystem Boost::thread)
+target_link_libraries(librevault-daemon PUBLIC Qt5::Xml Qt5::WebSockets)
+target_link_libraries(librevault-daemon PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(librevault-daemon PUBLIC spdlog::libspdlog)
+target_link_libraries(librevault-daemon PUBLIC SQLite::SQLite3)
+target_link_libraries(librevault-daemon PUBLIC websocketpp::websocketpp)
+target_link_libraries(librevault-daemon PUBLIC cryptopp::cryptopp)
+target_link_libraries(librevault-daemon PUBLIC docopt::docopt)
 
 ##### System libraries #####
 
@@ -94,8 +88,4 @@ if(OS_MAC)
 	target_link_libraries(librevault-daemon PUBLIC "-framework Foundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreServices")
-endif()
-
-if(BUILD_STATIC AND OS_LINUX)
-	target_link_libraries(librevault-daemon PUBLIC dl)
 endif()

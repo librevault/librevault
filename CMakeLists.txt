@@ -130,21 +130,11 @@ endif()
 
 ##### System libraries #####
 
-## Threads
-find_package(Threads)
-
 ##### External libraries #####
 
 ## Boost
-if(BUILD_STATIC OR USE_STATIC_BOOST)
-	set(Boost_USE_STATIC_LIBS ON)
-endif()
 add_definitions("-DBOOST_ASIO_DISABLE_CONCEPTS")
 find_package(Boost REQUIRED COMPONENTS system filesystem thread)
-
-add_library(boost INTERFACE)
-target_include_directories(boost INTERFACE ${Boost_INCLUDE_DIRS})
-target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 
 # Qt5
 if (CONAN_QT_ROOT)
@@ -167,21 +157,19 @@ endif()
 if(OS_WIN)
 	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
-find_package(Qt5 5.14 REQUIRED COMPONENTS ${Qt_COMPONENTS})
-add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x051200")
+find_package(Qt5 5.15 REQUIRED COMPONENTS ${Qt_COMPONENTS})
+add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050F00")
 add_definitions("-DQT_NO_FOREACH=1")
 add_definitions("-DQT_NO_FOREVER=1")
 
-## Protobuf
-find_package(Protobuf REQUIRED)
-
-## OpenSSL
+find_package(cryptopp REQUIRED)
+find_package(docopt REQUIRED)
 find_package(OpenSSL REQUIRED)
-if(OS_WIN)
-	target_link_libraries(OpenSSL::Crypto INTERFACE ws2_32)
-elseif(OS_LINUX)
-	target_link_libraries(OpenSSL::Crypto INTERFACE dl)
-endif()
+find_package(Protobuf REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(Threads REQUIRED)
+find_package(websocketpp REQUIRED)
 
 ##### Bundled libraries #####
 
@@ -189,9 +177,7 @@ endif()
 add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
-## libnatpmp
 add_subdirectory("contrib/libnatpmp")
-
 add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 

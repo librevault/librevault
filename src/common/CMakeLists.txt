@@ -38,15 +38,8 @@ target_include_directories(librevault-common PUBLIC .)
 # Third-party libraries
 #============================================================================
 
-### WinSock
-if(WIN32)
-	target_link_libraries(librevault-common PUBLIC ws2_32)
-endif()
-
-### Threads
-target_link_libraries(librevault-common PUBLIC Threads::Threads)
-
-### Protobuf
+target_link_libraries(librevault-common PUBLIC $<$<PLATFORM_ID:Windows>:ws2_32>)
+target_link_libraries(librevault-common PUBLIC cryptopp::cryptopp)
+target_link_libraries(librevault-common PUBLIC protobuf::libprotobuf)
 target_link_libraries(librevault-common PUBLIC Qt5::Core)
-target_link_libraries(librevault-common PUBLIC CONAN_PKG::protobuf)
-target_link_libraries(librevault-common PUBLIC CONAN_PKG::cryptopp)
+target_link_libraries(librevault-common PUBLIC Threads::Threads)

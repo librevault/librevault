@@ -6,7 +6,7 @@ on:
     branches: [ master, develop, "feature/githubactions" ]
 jobs:
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-2019
     steps:
       - name: Install system-wide dependencies
         run: |

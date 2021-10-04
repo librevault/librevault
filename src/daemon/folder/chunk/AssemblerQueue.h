@@ -25,7 +25,7 @@ class PathNormalizer;
 
 class Archive;
 class MetaStorage;
-class FolderParams;
+struct FolderParams;
 class ChunkStorage;
 class Secret;
 

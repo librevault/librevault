@@ -17,7 +17,6 @@
 
 #include <QTimer>
 #include <boost/filesystem.hpp>
-#include <regex>
 
 #include "NoArchive.h"
 #include "TimestampArchive.h"

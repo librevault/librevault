@@ -22,7 +22,7 @@
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class MetaStorage;
 class PathNormalizer;
 
@@ -36,7 +36,7 @@ struct ArchiveStrategy : public QObject {
 };
 
 class Archive : public QObject {
-  Q_OBJECT
+  Q_OBJECT;
   LOG_SCOPE("Archive");
 
  public:

@@ -58,7 +58,7 @@ Igd::Igd(QNetworkAccessManager* nam, QObject* parent) : QObject(parent), nam_(na
 
 void Igd::fetchIgdDescription() {
   auto reply = nam_->get(QNetworkRequest(gateway_desc));
-  connect(reply, &QNetworkReply::finished, this, [=, this] {
+  connect(reply, &QNetworkReply::finished, this, [=] {
     QDomDocument metadata;
     metadata.setContent(reply->readAll());
 
@@ -143,7 +143,7 @@ QByteArray Igd::constructDeletePortMapping(const UpnpIgdService& service, const 
 void Igd::sendAddPortMapping(const MappingRequest& request) {
   for (const auto& service : (ip + ppp)) {
     auto reply = sendUpnpAction(service, "AddPortMapping", constructAddPortMapping(service, request));
-    connect(reply, &QNetworkReply::finished, this, [=, this] { emit portMapped({request.id, request.port}); });
+    connect(reply, &QNetworkReply::finished, this, [=] { emit portMapped({request.id, request.port}); });
   }
 }
 

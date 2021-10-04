@@ -34,13 +34,13 @@ Discovery::Discovery(NodeKey* node_key, PortMappingService* port_mapping, StateC
   tracker_ = new TrackerProvider(node_key, port_mapping, nam, this);
 
   connect(mldht_, &MLDHTProvider::nodeCountChanged, state_collector,
-          [=, this](int count) { state_collector->global_state_set("dht_nodes_count", count); });
+          [=](int count) { state_collector->global_state_set("dht_nodes_count", count); });
 
   connect(multicast_, &MulticastProvider::discovered, this, &Discovery::discovered);
   connect(mldht_, &MLDHTProvider::discovered, this, &Discovery::discovered);
 
   connect(this, &Discovery::discovered, mldht_,
-          [=, this](QByteArray, DiscoveryResult result) { mldht_->addNode(result.endpoint); });
+          [=](QByteArray, DiscoveryResult result) { mldht_->addNode(result.endpoint); });
 }
 
 Discovery::~Discovery() {}
@@ -52,7 +52,7 @@ void Discovery::addGroup(FolderGroup* fgroup) {
   tracker_->addGroup(fgroup->folderid());
 
   connect(static_group, &StaticGroup::discovered, this,
-          [=, this](const DiscoveryResult& result) { emit discovered(fgroup->folderid(), result); });
+          [=](const DiscoveryResult& result) { emit discovered(fgroup->folderid(), result); });
 
   mldht_group->setEnabled(true);
   multicast_group->setEnabled(true);

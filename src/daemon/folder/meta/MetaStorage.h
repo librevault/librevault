@@ -23,7 +23,7 @@ namespace librevault {
 
 class DirectoryPoller;
 class DirectoryWatcher;
-class FolderParams;
+struct FolderParams;
 class IgnoreList;
 class Index;
 class IndexerQueue;

@@ -23,7 +23,7 @@
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class StateCollector;
 
 class Index : public QObject {

@@ -52,11 +52,11 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
   state_collector_->folder_state_set(params_.secret.get_Hash(), "secret", params_.secret.string());
 
   /* Initializing components */
-  path_normalizer_ = std::make_unique<PathNormalizer>(params_);
-  ignore_list = std::make_unique<IgnoreList>(params_, *path_normalizer_);
+  path_normalizer_ = new PathNormalizer(params_, this);
+  ignore_list = new IgnoreList(params_, *path_normalizer_, this);
 
-  meta_storage_ = new MetaStorage(params_, ignore_list.get(), path_normalizer_.get(), state_collector_, this);
-  chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_.get(), this);
+  meta_storage_ = new MetaStorage(params_, ignore_list, path_normalizer_, state_collector_, this);
+  chunk_storage_ = new ChunkStorage(params_, meta_storage_, path_normalizer_, this);
 
   uploader_ = new Uploader(chunk_storage_, this);
   downloader_ = new Downloader(params_, meta_storage_, this);
@@ -79,7 +79,7 @@ FolderGroup::FolderGroup(FolderParams params, StateCollector* state_collector, Q
   state_pusher_->start();
 
   // Go through index
-  QTimer::singleShot(0, this, [=, this] {
+  QTimer::singleShot(0, this, [=] {
     for (auto& smeta : meta_storage_->getMeta()) handleIndexedMeta(smeta);
   });
 }
@@ -105,33 +105,33 @@ void FolderGroup::handle_handshake(RemoteFolder* origin) {
   remotes_ready_.insert(origin);
   downloader_->trackRemote(origin);
 
-  connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=, this] { downloader_->handleChoke(origin); });
-  connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=, this] { downloader_->handleUnchoke(origin); });
-  connect(origin, &RemoteFolder::rcvdInterested, uploader_, [=, this] { uploader_->handle_interested(origin); });
-  connect(origin, &RemoteFolder::rcvdNotInterested, uploader_, [=, this] { uploader_->handle_not_interested(origin); });
+  connect(origin, &RemoteFolder::rcvdChoke, downloader_, [=] { downloader_->handleChoke(origin); });
+  connect(origin, &RemoteFolder::rcvdUnchoke, downloader_, [=] { downloader_->handleUnchoke(origin); });
+  connect(origin, &RemoteFolder::rcvdInterested, uploader_, [=] { uploader_->handle_interested(origin); });
+  connect(origin, &RemoteFolder::rcvdNotInterested, uploader_, [=] { uploader_->handle_not_interested(origin); });
 
   connect(origin, &RemoteFolder::rcvdHaveMeta, meta_downloader_,
-          [=, this](Meta::PathRevision revision, bitfield_type bitfield) {
+          [=](Meta::PathRevision revision, bitfield_type bitfield) {
             meta_downloader_->handle_have_meta(origin, revision, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdHaveChunk, downloader_,
-          [=, this](const blob& ct_hash) { downloader_->notifyRemoteChunk(origin, ct_hash); });
+          [=](const blob& ct_hash) { downloader_->notifyRemoteChunk(origin, ct_hash); });
   connect(origin, &RemoteFolder::rcvdMetaRequest, meta_uploader_,
-          [=, this](Meta::PathRevision path_revision) { meta_uploader_->handle_meta_request(origin, path_revision); });
+          [=](Meta::PathRevision path_revision) { meta_uploader_->handle_meta_request(origin, path_revision); });
   connect(origin, &RemoteFolder::rcvdMetaReply, meta_downloader_,
-          [=, this](const SignedMeta& smeta, const bitfield_type& bitfield) {
+          [=](const SignedMeta& smeta, const bitfield_type& bitfield) {
             meta_downloader_->handle_meta_reply(origin, smeta, bitfield);
           });
   connect(origin, &RemoteFolder::rcvdBlockRequest, uploader_,
-          [=, this](const blob& ct_hash, uint32_t offset, uint32_t size) {
+          [=](const blob& ct_hash, uint32_t offset, uint32_t size) {
             uploader_->handle_block_request(origin, ct_hash, offset, size);
           });
   connect(origin, &RemoteFolder::rcvdBlockReply, downloader_,
-          [=, this](const blob& ct_hash, uint32_t offset, const blob& block) {
+          [=](const blob& ct_hash, uint32_t offset, const blob& block) {
             downloader_->putBlock(ct_hash, offset, block, origin);
           });
 
-  QTimer::singleShot(0, meta_uploader_, [=, this] { meta_uploader_->handle_handshake(origin); });
+  QTimer::singleShot(0, meta_uploader_, [=] { meta_uploader_->handle_handshake(origin); });
 }
 
 bool FolderGroup::attach(P2PFolder* remote) {
@@ -145,7 +145,7 @@ bool FolderGroup::attach(P2PFolder* remote) {
 
   LOGD("Attached remote " << remote->displayName());
 
-  connect(remote, &RemoteFolder::handshakeSuccess, this, [=, this] { handle_handshake(remote); });
+  connect(remote, &RemoteFolder::handshakeSuccess, this, [=] { handle_handshake(remote); });
 
   emit attached(remote);
 

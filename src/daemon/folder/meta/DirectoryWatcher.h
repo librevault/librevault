@@ -17,13 +17,14 @@
 #include <QThread>
 #include <boost/asio/io_service.hpp>
 #include <dir_monitor/dir_monitor.hpp>
+#include <set>
 
 #include "Meta.h"
 #include "util/log.h"
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class IgnoreList;
 class PathNormalizer;
 

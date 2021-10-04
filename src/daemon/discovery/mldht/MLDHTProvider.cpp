@@ -67,7 +67,7 @@ void MLDHTProvider::init() {
   // Init routers
   for (const QString& router_value : Config::get()->getGlobal("mainline_dht_routers").toStringList()) {
     url router_url(router_value);
-    QHostInfo::lookupHost(router_url.host, this, [=, this](const QHostInfo& host) {
+    QHostInfo::lookupHost(router_url.host, this, [=](const QHostInfo& host) {
       if (host.error()) qCWarning(log_dht) << "Error resolving:" << host.hostName() << "E:" << host.errorString();
 
       for (const auto& address : host.addresses()) {
@@ -227,6 +227,15 @@ void dht_hash(void* hash_return, int hash_size, const void* v1, int len1, const 
 int dht_random_bytes(void* buf, size_t size) {
   CryptoPP::AutoSeededRandomPool().GenerateBlock((uint8_t*)buf, size);
   return size;
+}
+
+int dht_gettimeofday(struct timeval* tv, struct timezone* /*tz*/) {
+	QDateTime now = QDateTime::currentDateTimeUtc();
+	if (!tv) return -1;
+
+	tv->tv_sec = now.toSecsSinceEpoch();
+	tv->tv_usec = now.toMSecsSinceEpoch();
+	return 0;
 }
 
 void lv_dht_callback_glue(void* closure, int event, const unsigned char* info_hash, const void* data, size_t data_len) {

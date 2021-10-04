@@ -21,7 +21,7 @@
 
 namespace librevault {
 
-PathNormalizer::PathNormalizer(const FolderParams& params) : params_(params) {}
+PathNormalizer::PathNormalizer(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QByteArray PathNormalizer::normalizePath(const QString& abspath) {
   QDir root_dir(params_.path);

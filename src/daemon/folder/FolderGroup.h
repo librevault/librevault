@@ -27,7 +27,6 @@
 #include "control/FolderParams.h"
 #include "p2p/BandwidthCounter.h"
 #include "util/blob.h"
-#include "util/conv_bitfield.h"
 
 namespace librevault {
 
@@ -78,8 +77,8 @@ class FolderGroup : public QObject {
   const FolderParams params_;
   StateCollector* state_collector_;
 
-  std::unique_ptr<PathNormalizer> path_normalizer_;
-  std::unique_ptr<IgnoreList> ignore_list;
+  PathNormalizer* path_normalizer_;
+  IgnoreList* ignore_list;
 
   ChunkStorage* chunk_storage_;
   MetaStorage* meta_storage_;

@@ -50,8 +50,8 @@ MulticastProvider::MulticastProvider(NodeKey* nodekey, QObject* parent) : QObjec
   socket4_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
   socket6_->setSocketOption(QAbstractSocket::MulticastLoopbackOption, 0);
 
-  connect(socket4_, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket4_); });
-  connect(socket6_, &QUdpSocket::readyRead, this, [=, this] { processDatagram(socket6_); });
+  connect(socket4_, &QUdpSocket::readyRead, this, [=] { processDatagram(socket4_); });
+  connect(socket6_, &QUdpSocket::readyRead, this, [=] { processDatagram(socket6_); });
 }
 
 MulticastProvider::~MulticastProvider() {
@@ -65,7 +65,6 @@ void MulticastProvider::processDatagram(QUdpSocket* socket) {
   while (socket->hasPendingDatagrams()) {
     auto datagram = socket->receiveDatagram();
     Endpoint sender(datagram.senderAddress(), datagram.senderPort());
-    auto data = datagram.data();
 
     QCborParserError parse_error{};
     auto message = QCborValue::fromCbor(datagram.data(), &parse_error);

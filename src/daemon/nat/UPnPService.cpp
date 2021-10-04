@@ -68,7 +68,7 @@ void UPnPService::handleDatagram() {
     igd->igd_addr = datagram.senderAddress();
     igd->local_addr = datagram.destinationAddress();
 
-    connect(igd, &upnp::Igd::ready, this, [=, this] {
+    connect(igd, &upnp::Igd::ready, this, [=] {
       for (const auto& mapping : mappings_.values()) {
         igd->sendAddPortMapping(mapping);
       }

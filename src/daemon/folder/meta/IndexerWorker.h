@@ -26,7 +26,7 @@
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class MetaStorage;
 class IgnoreList;
 class PathNormalizer;

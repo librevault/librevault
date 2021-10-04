@@ -17,15 +17,17 @@
 #include <QDateTime>
 #include <QReadWriteLock>
 #include <QStringList>
+#include <QObject>
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class PathNormalizer;
 
-class IgnoreList {
+class IgnoreList : public QObject {
+	Q_OBJECT
  public:
-  IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer);
+  IgnoreList(const FolderParams& params, PathNormalizer& path_normalizer, QObject* parent);
 
   bool isIgnored(QByteArray normpath);
 

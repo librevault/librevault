@@ -61,7 +61,7 @@ TrackerGroup::TrackerGroup(QByteArray groupid, QByteArray peerid, quint16 port, 
 void TrackerGroup::addAnnouncer(const QUrl& baseurl) {
   auto announcer = new TrackerAnnouncer(baseurl, nam_, this);
   connect(announcer, &TrackerAnnouncer::discovered, this,
-          [=, this](DiscoveryResult result) { emit discovered(groupid_, result); });
+          [=](DiscoveryResult result) { emit discovered(groupid_, result); });
   announcers_[QUuid::createUuid().toString()] = std::unique_ptr<TrackerAnnouncer>(announcer);
 }
 
@@ -109,7 +109,7 @@ void TrackerAnnouncer::sendAnnounceOne() {
   qCDebug(log_tracker) << "Sending announce to:" << announce_url_;
 
   auto reply = nam_->post(request, group_->getRequestMessage());
-  connect(reply, &QNetworkReply::finished, this, [=, this] { handleAnnounceReply(reply->readAll()); });
+  connect(reply, &QNetworkReply::finished, this, [=] { handleAnnounceReply(reply->readAll()); });
 }
 
 void TrackerAnnouncer::handleAnnounceReply(const QByteArray& reply) {

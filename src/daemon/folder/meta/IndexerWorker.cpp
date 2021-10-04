@@ -27,9 +27,9 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
+#include "util/conv_fspath.h"
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
-#include <util/conv_fspath.h>
 #endif
 #ifdef Q_OS_WIN
 #include <windows.h>

@@ -26,7 +26,7 @@ namespace librevault {
 
 /* Folder info */
 class FolderGroup;
-class FolderParams;
+struct FolderParams;
 class StateCollector;
 
 class FolderService : public QObject {

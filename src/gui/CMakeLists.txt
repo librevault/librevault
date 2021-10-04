@@ -106,8 +106,9 @@ endif()
 target_link_libraries(librevault-gui PRIVATE QtSingleApplication)
 
 # WinSparkle
-if(OS_WIN)
+if(OS_WIN AND BUILD_UPDATER)
 	target_link_libraries(librevault-gui PRIVATE CONAN_PKG::winsparkle)
+	target_compile_definitions(-DBUILD_UPDATER=1)
 endif()
 
 # Sparkle (for Macs)

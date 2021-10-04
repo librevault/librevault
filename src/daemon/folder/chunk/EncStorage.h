@@ -23,7 +23,7 @@
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 class EncStorage : public QObject {
   Q_OBJECT
   LOG_SCOPE("EncStorage");

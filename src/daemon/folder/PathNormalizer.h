@@ -15,14 +15,16 @@
  */
 #pragma once
 #include <QString>
+#include <QObject>
 
 namespace librevault {
 
-class FolderParams;
+struct FolderParams;
 
-class PathNormalizer {
+class PathNormalizer : public QObject {
+	Q_OBJECT
  public:
-  PathNormalizer(const FolderParams& params);
+  PathNormalizer(const FolderParams& params, QObject* parent);
 
   QByteArray normalizePath(const QString& abspath);
   QString denormalizePath(const QByteArray& normpath);

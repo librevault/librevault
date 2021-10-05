@@ -16,8 +16,6 @@
 #include "MulticastGroup.h"
 
 #include <QLoggingCategory>
-#include <QtCore/QCborMap>
-#include <QtCore/QCborValue>
 
 #include "MulticastProvider.h"
 #include "control/Config.h"
@@ -35,6 +33,7 @@ MulticastGroup::MulticastGroup(MulticastProvider* provider, FolderGroup* fgroup)
 
   // Connecting signals
   connect(timer_, &QTimer::timeout, this, &MulticastGroup::sendMulticasts);
+  QTimer::singleShot(0, this, &MulticastGroup::sendMulticasts);
 }
 
 void MulticastGroup::setEnabled(bool enabled) {
@@ -47,11 +46,10 @@ void MulticastGroup::setEnabled(bool enabled) {
 QByteArray MulticastGroup::getMessage() {
   return !message_.isEmpty()
              ? message_
-             : message_ = QCborValue{QCborKnownTags::Signature,
-                                     {{{DISCOVERY_PORT, (int)Config::get()->getGlobal("p2p_listen").toUInt()},
+             : message_ = QJsonDocument(QJsonObject
+                                     {{DISCOVERY_PORT, (int)Config::get()->getGlobal("p2p_listen").toUInt()},
                                        {DISCOVERY_PEER_ID, QString::fromLatin1(provider_->getDigest().toHex())},
-                                       {DISCOVERY_COMMUNITY_ID, QString::fromLatin1(fgroup_->folderid().toHex())}}}}
-                              .toCbor();
+                                       {DISCOVERY_COMMUNITY_ID, QString::fromLatin1(fgroup_->folderid().toHex())}}).toJson();
 }
 
 void MulticastGroup::sendMulticast(QUdpSocket* socket, const Endpoint& endpoint) {

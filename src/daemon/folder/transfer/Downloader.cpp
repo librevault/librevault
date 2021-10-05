@@ -78,7 +78,7 @@ void Downloader::notifyLocalMeta(const SignedMeta& smeta, const bitfield_type& b
 }
 
 void Downloader::addChunk(const QByteArray& ct_hash, quint32 size) {
-  qCDebug(log_downloader) << "Added" << ct_hash_readable(ct_hash) << "to download queue";
+  qCDebug(log_downloader) << "Added" << ct_hash.toHex() << "to download queue";
 
   uint32_t padded_size = size % 16 == 0 ? size : ((size / 16) + 1) * 16;
 
@@ -93,7 +93,7 @@ void Downloader::removeChunk(const QByteArray& ct_hash) {
     download_queue_.removeChunk(ct_hash);
     down_chunks_.remove(ct_hash);
 
-    qCDebug(log_downloader) << "Removed" << ct_hash_readable(ct_hash) << "from download queue";
+    qCDebug(log_downloader) << "Removed" << ct_hash.toHex() << "from download queue";
   }
 }
 
@@ -165,7 +165,10 @@ void Downloader::handleUnchoke(RemoteFolder* remote) {
 void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data, RemoteFolder* from) {
   SCOPELOG(log_downloader);
   auto missing_chunk = down_chunks_.value(conv_bytearray(ct_hash));
-  if (!missing_chunk) return;
+  if (!missing_chunk) {
+    qCDebug(log_downloader) << "Chunk not found:" << conv_bytearray(ct_hash).toHex() << "offset: " << offset;
+    return;
+  }
 
   QList<QPair<QByteArray, QFile*>> downloaded_chunks;
 
@@ -175,7 +178,7 @@ void Downloader::putBlock(const blob& ct_hash, uint32_t offset, const blob& data
 
     if (request_it.value().offset != offset) continue;     // Chunk position incorrect
     if (request_it.value().size != data.size()) continue;  // Chunk size incorrect
-    if (request_it.key() == from)
+    if (request_it.key() != from)
       continue;  // Requested node != replied. Well, it isn't critical, but will be useful to ban "fake" peers
 
     request_it.remove();
@@ -222,7 +225,10 @@ void Downloader::maintainRequests() {
     for (const DownloadChunkPtr& missing_chunk : down_chunks_.values()) {
       QMutableHashIterator<RemoteFolder*, DownloadChunk::BlockRequest> request_it(missing_chunk->requests);
       while (request_it.hasNext())
-        if (request_it.next().value().started + request_timeout < std::chrono::steady_clock::now()) request_it.remove();
+        if (request_it.next().value().started + request_timeout < std::chrono::steady_clock::now()) {
+          qCDebug(log_downloader) << "Request timed out: offset=" << request_it.value().offset << "size=" << request_it.value().size;
+          request_it.remove();
+        }
     }
   }
 
@@ -239,7 +245,10 @@ bool Downloader::requestOne() {
   for (const QByteArray& ct_hash : download_queue_.chunks()) {
     // Try to choose a remote to request this block from
     auto remote = nodeForRequest(ct_hash);
-    if (!remote) continue;
+    if (!remote){
+      qCDebug(log_downloader) << "Node not found for request";
+      continue;
+    }
 
     DownloadChunkPtr chunk = down_chunks_.value(ct_hash);
 
@@ -257,6 +266,8 @@ bool Downloader::requestOne() {
       remote->request_block(conv_bytearray(ct_hash), request.offset, request.size);
       chunk->requests.insert(remote, request);
       return true;
+    }else{
+      qCDebug(log_downloader) << "Request map if full!";
     }
   }
   return false;

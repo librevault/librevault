@@ -45,18 +45,20 @@ void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, u
                                     uint32_t size) noexcept {
   try {
     if (!remote->am_choking() && remote->peer_interested())
-      remote->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
+      remote->post_block(ct_hash, offset, conv_bytearray(get_block(ct_hash, offset, size)));
   } catch (ChunkStorage::ChunkNotFound& e) {
-    LOGW("Requested nonexistent block");
+    LOGW(e.what());
+  } catch (Uploader::ChunkOutOfBounds& e) {
+    LOGW(e.what());
   }
 }
 
-blob Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
+QByteArray Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
   auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
-  if ((int)offset < chunk.size() && (int)size <= chunk.size() - (int)offset)
-    return conv_bytearray(chunk.mid(offset, size));
+  if (((int)offset < chunk.size()) && ((int)size <= (chunk.size() - (int)offset)))
+    return chunk.mid(offset, size);
   else
-    throw ChunkStorage::ChunkNotFound();
+    throw Uploader::ChunkOutOfBounds();
 }
 
 }  // namespace librevault

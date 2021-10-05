@@ -34,7 +34,7 @@ Index::Index(const FolderParams& params, StateCollector* state_collector, QObjec
     LOGD("Opening SQLite3 DB:" << db_filepath);
   else
     LOGD("Creating new SQLite3 DB:" << db_filepath);
-  db_ = std::make_unique<SQLiteDB>(conv_fspath(db_filepath));
+  db_ = std::make_unique<SQLiteDB>(db_filepath);
   db_->exec("PRAGMA foreign_keys = ON;");
 
   /* TABLE meta */

@@ -1,36 +1,22 @@
-/* Copyright (C) 2016 Alexander Shishenko <alex@shishenko.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 #include "OpenStorage.h"
 
 #include "control/FolderParams.h"
 #include "folder/PathNormalizer.h"
 #include "folder/chunk/ChunkStorage.h"
 #include "folder/meta/MetaStorage.h"
-#include "util/readable.h"
 
 namespace librevault {
 
 OpenStorage::OpenStorage(const FolderParams& params, MetaStorage* meta_storage, PathNormalizer* path_normalizer,
                          QObject* parent)
-    : QObject(parent), params_(params), meta_storage_(meta_storage), path_normalizer_(path_normalizer) {}
+  : QObject(parent), params_(params), meta_storage_(meta_storage), path_normalizer_(path_normalizer) {}
 
-bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept { return meta_storage_->isChunkAssembled(ct_hash); }
+bool OpenStorage::have_chunk(const QByteArray& ct_hash) const noexcept {
+  return meta_storage_->isChunkAssembled(ct_hash);
+}
 
 QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
-  LOGD("get_chunk(" << ct_hash_readable(ct_hash) << ")");
+  LOGD("get_chunk(" << ct_hash.toHex() << ")");
 
   for (auto& smeta : meta_storage_->containingChunk(ct_hash)) {
     // Search for chunk offset and index
@@ -41,21 +27,39 @@ QByteArray OpenStorage::get_chunk(const QByteArray& ct_hash) const {
       offset += chunk.size;
       chunk_idx++;
     }
-    if (chunk_idx > smeta.meta().chunks().size()) continue;
+    if (chunk_idx > smeta.meta().chunks().size()) {
+      LOGW("Chunk not found in meta (index is inconsistent)!");
+      continue;
+    }
 
     // Found chunk & offset
     auto chunk = smeta.meta().chunks().at(chunk_idx);
-    blob chunk_pt = blob(chunk.size);
 
     QFile f(path_normalizer_->denormalizePath(smeta.meta().path(params_.secret)));
-    if (!f.open(QIODevice::ReadOnly)) continue;
-    if (!f.seek(offset)) continue;
-    if (f.read(reinterpret_cast<char*>(chunk_pt.data()), chunk.size) != chunk.size) continue;
+    if (!f.open(QIODevice::ReadOnly)) {
+      LOGW("Opening file failed!");
+      continue;
+    }
+    if (!f.seek(offset)) {
+      LOGW("Seek failed!");
+      continue;
+    }
 
-    auto chunk_ct = Meta::Chunk::encrypt(conv_bytearray(chunk_pt), params_.secret.get_Encryption_Key(), chunk.iv);
+    QByteArray chunk_pt = f.read(chunk.size);
+
+    if (chunk_pt.size() != int(chunk.size)) {
+      LOGW("File read failed! got=" << chunk_pt.size() << "needed=" << chunk.size);
+      continue;
+    }
+
+    auto chunk_ct = Meta::Chunk::encrypt(chunk_pt, params_.secret.get_Encryption_Key(), chunk.iv);
 
     // Check
-    if (verifyChunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) return chunk_ct;
+    if (verifyChunk(ct_hash, chunk_ct, smeta.meta().strong_hash_type())) {
+      return chunk_ct;
+    } else {
+      LOGW("Chunk verification failed!");
+    }
   }
   throw ChunkStorage::ChunkNotFound();
 }

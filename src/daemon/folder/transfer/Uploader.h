@@ -30,6 +30,10 @@ class Uploader : public QObject {
   LOG_SCOPE("Uploader");
 
  public:
+  struct ChunkOutOfBounds : public std::runtime_error {
+    ChunkOutOfBounds() : std::runtime_error("Requested block is out of chunk bounds") {}
+  };
+
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
   void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
@@ -43,7 +47,7 @@ class Uploader : public QObject {
  private:
   ChunkStorage* chunk_storage_;
 
-  blob get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
+  QByteArray get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
 };
 
 }  // namespace librevault

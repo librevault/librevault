@@ -105,7 +105,7 @@ class SQLiteResult {
 
 class SQLiteDB {
  public:
-  explicit SQLiteDB(const boost::filesystem::path& db_path);
+  explicit SQLiteDB(const QString& db_path);
   virtual ~SQLiteDB();
 
   SQLiteResult exec(const QString& sql, const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());

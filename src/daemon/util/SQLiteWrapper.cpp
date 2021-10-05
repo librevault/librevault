@@ -118,7 +118,7 @@ SQLiteResultIterator SQLiteResult::begin() { return SQLiteResultIterator(prepare
 SQLiteResultIterator SQLiteResult::end() { return SQLiteResultIterator(SQLITE_DONE); }
 
 // SQLiteDB
-SQLiteDB::SQLiteDB(const boost::filesystem::path& db_path) { sqlite3_open(db_path.string().c_str(), &db); }
+SQLiteDB::SQLiteDB(const QString& db_path) { sqlite3_open(db_path.toUtf8(), &db); }
 
 SQLiteDB::~SQLiteDB() { sqlite3_close(db); }
 

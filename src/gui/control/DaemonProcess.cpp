@@ -77,6 +77,8 @@ void DaemonProcess::handleStandardOutput() {
       qDebug() << "Connecting to: " << daemon_url;
 
       emit daemonReady(daemon_url);
+    }else{
+      qDebug() << "DAEMON" << stdout_line;
     }
   }
 }

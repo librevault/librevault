@@ -17,8 +17,6 @@ class LibrevaultConan(ConanFile):
     generators = ["cmake_find_package", "cmake"]
     default_options = {
         "sqlite3:threadsafe": 1,
-        "spdlog:wchar_support": True,
-        "spdlog:wchar_filenames": True,
         "qt:shared": True,
         "qt:qtsvg": True,
         "qt:qttranslations": True,
@@ -47,3 +45,5 @@ class LibrevaultConan(ConanFile):
             self.options["glib"].shared = False
         if self.settings.os == "Windows":
             self.options["qt"].qtwinextras = True
+            self.options["spdlog"].wchar_support = True
+            self.options["spdlog"].wchar_filenames = True

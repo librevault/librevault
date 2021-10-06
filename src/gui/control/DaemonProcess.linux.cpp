@@ -13,8 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <QString>
-
 #include "DaemonProcess.h"
 
-QString DaemonProcess::get_executable_path() const { return QStringLiteral("librevault-daemon"); }
+#include <QCoreApplication>
+#include <QString>
+
+QString DaemonProcess::get_executable_path() const { return QCoreApplication::applicationDirPath() +
+                                                         QStringLiteral("/librevault-daemon"); }

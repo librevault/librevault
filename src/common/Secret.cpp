@@ -47,7 +47,7 @@ Secret::Secret() {
 Secret::Secret(Type type, const QByteArray& binary_part) {
   secret_s += type;
   secret_s += '1';
-  secret_s += cached_private_key | crypto::Base58();
+  secret_s += binary_part | crypto::Base58();
 
   auto payload = secret_s.mid(2);
   secret_s += crypto::LuhnMod58(payload.begin(), payload.end());

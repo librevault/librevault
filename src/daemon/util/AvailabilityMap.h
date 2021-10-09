@@ -35,30 +35,6 @@ class AvailabilityMap {
     available_map_.insert({0, size_original_});
   }
 
-  static bool slice_superset(block_type subset, block_type superset, block_type& block_left, block_type& block_right) {
-    // Initializing with 'invalid' values
-    block_left = block_type(0, 0);
-    block_right = block_type(0, 0);
-
-    if (subset.second == 0 || superset.second == 0) return false;
-
-    auto subset_last_byte_offset = subset.first + subset.second - 1;
-    auto superset_last_byte_offset = superset.first + superset.second - 1;
-
-    if (subset.first < superset.first || subset_last_byte_offset > superset_last_byte_offset) return false;
-
-    if (subset.first != superset.first) {
-      block_left.first = superset.first;
-      block_left.second = subset.first - superset.first;
-    }
-
-    if (subset_last_byte_offset != superset_last_byte_offset) {
-      block_right.first = subset_last_byte_offset + 1;
-      block_right.second = superset_last_byte_offset - subset_last_byte_offset;
-    }
-    return true;
-  }
-
   std::pair<const_iterator, bool> insert(block_type block) {
     if (block.first >= size_original_ || block.first + block.second > size_original_ || available_map_.empty())
       return {end(), false};
@@ -97,6 +73,30 @@ class AvailabilityMap {
  private:
   offset_type size_original_, size_left_;
   underlying_container available_map_;
+
+  inline bool slice_superset(block_type subset, block_type superset, block_type& block_left, block_type& block_right) {
+    // Initializing with 'invalid' values
+    block_left = block_type(0, 0);
+    block_right = block_type(0, 0);
+
+    if (subset.second == 0 || superset.second == 0) return false;
+
+    auto subset_last_byte_offset = subset.first + subset.second - 1;
+    auto superset_last_byte_offset = superset.first + superset.second - 1;
+
+    if (subset.first < superset.first || subset_last_byte_offset > superset_last_byte_offset) return false;
+
+    if (subset.first != superset.first) {
+      block_left.first = superset.first;
+      block_left.second = subset.first - superset.first;
+    }
+
+    if (subset_last_byte_offset != superset_last_byte_offset) {
+      block_right.first = subset_last_byte_offset + 1;
+      block_right.second = superset_last_byte_offset - subset_last_byte_offset;
+    }
+    return true;
+  }
 };
 
 }  // namespace librevault

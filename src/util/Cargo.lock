@@ -120,6 +120,7 @@ version = "1.0.0-alpha.1"
 dependencies = [
  "hex",
  "log",
+ "luhn-rs",
  "openssl",
  "rand",
  "simple_logger",
@@ -133,6 +134,12 @@ checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "luhn-rs"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6947f235ac161b1db484c51e222003b8eb4e9190b5c46651f508c353ad9176fe"
 
 [[package]]
 name = "num-integer"

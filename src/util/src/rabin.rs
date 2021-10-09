@@ -70,7 +70,7 @@ fn calc_tables(h: &mut Rabin) {
         let mut hash = 0;
 
         hash = append_byte(hash, b, h.polynomial);
-        for _i in 0..WINSIZE-1 {
+        for _i in 0..WINSIZE - 1 {
             hash = append_byte(hash, 0, h.polynomial);
         }
         h.out_table[b as usize] = hash;
@@ -92,7 +92,7 @@ fn calc_tables(h: &mut Rabin) {
 
 #[no_mangle]
 pub extern "C" fn rabin_append(h: &mut Rabin, b: u8) {
-    let index : u8 = (h.digest >> h.polynomial_shift) as u8;
+    let index: u8 = (h.digest >> h.polynomial_shift) as u8;
     h.digest <<= 8;
     h.digest |= b as u64;
     h.digest ^= h.mod_table[index as usize];
@@ -103,13 +103,13 @@ pub extern "C" fn rabin_slide(h: &mut Rabin, b: u8) {
     let out: u8 = h.window[h.wpos];
     h.window[h.wpos] = b;
     h.digest = h.digest ^ h.out_table[out as usize];
-    h.wpos = (h.wpos+1) % WINSIZE;
+    h.wpos = (h.wpos + 1) % WINSIZE;
     rabin_append(h, b);
 }
 
 #[no_mangle]
 pub extern "C" fn rabin_reset(h: &mut Rabin) {
-    for i in 0..WINSIZE-1 {
+    for i in 0..WINSIZE - 1 {
         h.window[i] = 0
     }
     h.digest = 0;

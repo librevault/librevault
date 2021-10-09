@@ -1,8 +1,11 @@
 mod ffi;
 mod logger;
-mod rabin;
 mod nodekey;
+mod rabin;
 
+use std::os::raw::c_char;
+use crate::ffi::FfiConstBuffer;
+use luhn::Luhn;
 use rand::prelude::*;
 use rand::Fill;
 
@@ -12,4 +15,12 @@ pub extern "C" fn fill_random(array: *mut u8, len: usize) {
 
     let mut rng = thread_rng();
     slice.try_fill(&mut rng).unwrap();
+}
+
+#[no_mangle]
+pub extern "C" fn calc_luhnmod58(buf: FfiConstBuffer) -> c_char {
+    Luhn::new("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+        .unwrap()
+        .generate(buf.to_str())
+        .unwrap() as c_char
 }

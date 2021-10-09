@@ -10,6 +10,7 @@ log = "0.4.14"
 simple_logger = "1.13.0"
 openssl = "0.10.36"
 hex = "0.4.3"
+luhn-rs = "0.0.1"
 
 [lib]
 crate-type=["staticlib"]

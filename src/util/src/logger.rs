@@ -1,5 +1,4 @@
-use crate::convert_str;
-use crate::ffi::FfiString;
+use crate::ffi::FfiConstBuffer;
 use log::log;
 
 #[repr(C)]
@@ -13,7 +12,7 @@ pub enum Level {
 }
 
 #[no_mangle]
-pub extern "C" fn log_message(level: Level, msg: FfiString, target: FfiString) {
+pub extern "C" fn log_message(level: Level, msg: FfiConstBuffer, target: FfiConstBuffer) {
     let log_level = match level {
         Level::Error => log::Level::Error,
         Level::Warn => log::Level::Warn,

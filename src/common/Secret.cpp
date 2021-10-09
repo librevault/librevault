@@ -21,12 +21,17 @@
 #include <cryptopp/sha3.h>
 
 #include <QCryptographicHash>
+#include <librevaultrs.hpp>
 
-#include "crypto/LuhnModN.h"
+#include <crypto/Base58.h>
 
 using CryptoPP::ASN1::secp256r1;
 
 namespace librevault {
+
+char LuhnMod58(const QByteArray& message) {
+  return calc_luhnmod58({reinterpret_cast<const uint8_t*>(message.data()), static_cast<uintptr_t>(message.size())});
+}
 
 Secret::Secret() {
   CryptoPP::AutoSeededRandomPool rng;
@@ -41,7 +46,7 @@ Secret::Secret() {
   secret_s += cached_private_key | crypto::Base58();
 
   auto payload = secret_s.mid(2);
-  secret_s += crypto::LuhnMod58(payload.begin(), payload.end());
+  secret_s += LuhnMod58(payload);
 }
 
 Secret::Secret(Type type, const QByteArray& binary_part) {
@@ -50,7 +55,7 @@ Secret::Secret(Type type, const QByteArray& binary_part) {
   secret_s += binary_part | crypto::Base58();
 
   auto payload = secret_s.mid(2);
-  secret_s += crypto::LuhnMod58(payload.begin(), payload.end());
+  secret_s += LuhnMod58(payload);
 }
 
 Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
@@ -58,7 +63,7 @@ Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
     auto base58_payload = getEncodedPayload();
 
     if (base58_payload.isEmpty()) throw format_error();
-    if (crypto::LuhnMod58(base58_payload.begin(), base58_payload.end()) != get_check_char()) throw format_error();
+    if (LuhnMod58(base58_payload) != get_check_char()) throw format_error();
   } catch (std::exception& e) {
     throw format_error();
   }
@@ -177,6 +182,7 @@ QByteArray Secret::sign(const QByteArray& message) const {
 
   auto signature = QByteArray(signer.SignatureLength(), 0);
   signer.SignMessage(rng, (const uchar*)message.data(), message.size(), (uchar*)signature.data());
+  return signature;
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.string().toStdString(); }

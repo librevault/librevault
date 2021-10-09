@@ -14,7 +14,7 @@ enum class Level {
   Trace = 4,
 };
 
-struct FfiString {
+struct FfiConstBuffer {
   const uint8_t *str_p;
   uintptr_t str_len;
 };
@@ -44,9 +44,15 @@ extern "C" {
 
 void fill_random(uint8_t *array, uintptr_t len);
 
-void log_message(Level level, FfiString msg, FfiString target);
+char calc_luhnmod58(FfiConstBuffer buf);
+
+void log_message(Level level, FfiConstBuffer msg, FfiConstBuffer target);
 
 void log_init();
+
+void nodekey_write_new(const char *key_path);
+
+void nodekey_write_new_cert(const char *key_path, const char *cert_path);
 
 void rabin_append(Rabin *h, uint8_t b);
 
@@ -59,9 +65,5 @@ bool rabin_next_chunk(Rabin *h, uint8_t b);
 void rabin_init(Rabin *h);
 
 bool rabin_finalize(Rabin *h);
-
-void nodekey_write_new(const char *key_path);
-
-void nodekey_write_new_cert(const char *key_path, const char *cert_path);
 
 } // extern "C"

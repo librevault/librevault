@@ -13,9 +13,6 @@ function launch_daemon {
 function launch_gui {
 	exec "${HERE}"/opt/librevault/bin/librevault-gui "$@"
 }
-function launch_cli {
-	exec "${HERE}"/opt/librevault/bin/librevault-cli "$@"
-}
 
 # If no arguments, then launch GUI (and it will launch daemon by itself)
 if [[ $# -eq 0 ]]; then
@@ -31,9 +28,6 @@ case "$LAUNCH_APP" in
 	;;
 	"gui")
 		launch_gui $@
-	;;
-	"cli")
-		launch_cli $@
 	;;
 	*)
 		show_usage

@@ -24,7 +24,6 @@ include(OSDetection)
 # Components
 option(BUILD_DAEMON "Build sync daemon" ON)
 option(BUILD_GUI "Build GUI" ON)
-option(BUILD_CLI "Build CLI" ON)
 
 # Parameters
 option(USE_STATIC_BOOST "Use static version of boost" OFF)
@@ -193,9 +192,6 @@ if(BUILD_DAEMON)
 endif()
 if(BUILD_GUI)
 	add_subdirectory("src/gui")
-endif()
-if(BUILD_CLI)
-	add_subdirectory("src/cli")
 endif()
 
 include(Install.cmake)

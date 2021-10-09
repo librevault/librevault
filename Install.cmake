@@ -63,12 +63,8 @@ elseif(OS_LINUX)
 		install(FILES "gui/resources/librevault_icon.svg" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps RENAME "librevault.svg")
 		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_BINDIR}/librevault-gui)
 	endif()
-	if(BUILD_CLI)
-		install(PROGRAMS $<TARGET_FILE:librevault-cli> DESTINATION ${CMAKE_INSTALL_BINDIR})
-		list(APPEND INSTALLED_BINARIES ${CMAKE_INSTALL_BINDIR}/librevault-cli)
-	endif()
 
-	if(INSTALL_BUNDLE AND BUILD_DAEMON AND BUILD_GUI AND BUILD_CLI)
+	if(INSTALL_BUNDLE AND BUILD_DAEMON AND BUILD_GUI)
 		include(InstallQt5Plugin)
 
 		# Install Qt5 plugins
@@ -104,7 +100,6 @@ elseif(OS_LINUX)
 		# Install ld-linux shims
 		install(PROGRAMS "packaging/linux-standalone/shim_daemon.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-daemon")
 		install(PROGRAMS "packaging/linux-standalone/shim_gui.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-gui")
-		install(PROGRAMS "packaging/linux-standalone/shim_cli.sh" DESTINATION ${CMAKE_INSTALL_SHIMDIR} RENAME "librevault-cli")
 	endif()
 elseif(OS_MAC)
 	set(CPACK_GENERATOR "Bundle")

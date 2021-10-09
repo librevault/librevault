@@ -15,7 +15,6 @@
  */
 #include "MLDHTProvider.h"
 
-#include <cryptopp/osrng.h>
 #include <dht.h>
 
 #include <QCryptographicHash>
@@ -23,6 +22,7 @@
 #include <QJsonArray>
 #include <QtNetwork/QNetworkDatagram>
 #include <boost/asio/ip/address.hpp>
+#include <librevaultrs.hpp>
 
 #include "control/Config.h"
 #include "control/Paths.h"
@@ -106,7 +106,7 @@ void MLDHTProvider::readSessionFile() {
   if (own_id_arr.size() == (int)own_id.size())
     std::copy(own_id_arr.begin(), own_id_arr.end(), own_id.begin());
   else  // Invalid data
-    CryptoPP::AutoSeededRandomPool().GenerateBlock(own_id.data(), own_id.size());
+    fill_random(own_id.data(), own_id.size());
 
   QJsonArray nodes = session_json["nodes"].toArray();
   qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
@@ -225,7 +225,7 @@ void dht_hash(void* hash_return, int hash_size, const void* v1, int len1, const 
 }
 
 int dht_random_bytes(void* buf, size_t size) {
-  CryptoPP::AutoSeededRandomPool().GenerateBlock((uint8_t*)buf, size);
+  fill_random((uint8_t*)buf, size);
   return size;
 }
 

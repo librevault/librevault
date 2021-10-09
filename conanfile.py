@@ -5,7 +5,6 @@ class LibrevaultConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = [
         "docopt.cpp/0.6.2",
-        "spdlog/1.9.2",
         "cryptopp/8.5.0",
         "sqlite3/3.36.0",
         "boost/1.76.0",
@@ -45,5 +44,3 @@ class LibrevaultConan(ConanFile):
             self.options["glib"].shared = False
         if self.settings.os == "Windows":
             self.options["qt"].qtwinextras = True
-            self.options["spdlog"].wchar_support = True
-            self.options["spdlog"].wchar_filenames = True

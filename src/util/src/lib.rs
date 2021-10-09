@@ -1,3 +1,6 @@
+mod ffi;
+mod logger;
+
 use rand::prelude::*;
 use rand::Fill;
 

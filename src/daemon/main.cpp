@@ -14,17 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <docopt/docopt.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-#include <util/conv_fspath.h>
-
-#include <QDebug>
-#include <boost/filesystem/path.hpp>
+#include <QtGlobal>
 #ifdef Q_OS_UNIX
 #include <csignal>
 #endif
 
+#include <librevaultrs.hpp>
 #include "Client.h"
 #include "Secret.h"
 #include "Version.h"
@@ -68,35 +63,32 @@ static const char* BANNER =
 
 // clang-format on
 
-void spdlogMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
-  auto logger = spdlog::get(Version::current().name().toStdString());
-  if (!logger) return;
+void rustMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
+  auto category = QString(ctx.category).toUtf8();
+  auto msg_utf8 = msg.toUtf8();
 
-  QString message = QString(ctx.category) + " | " + msg;
-
-  auto spdlog_level = spdlog::level::debug;
-
+  auto level = Level::Debug;
   switch (msg_type) {
     case QtDebugMsg:
-      spdlog_level = spdlog::level::debug;
+      level = Level::Debug;
       break;
     case QtWarningMsg:
-      spdlog_level = spdlog::level::warn;
+      level = Level::Warn;
       break;
     case QtCriticalMsg:
-      spdlog_level = spdlog::level::err;
-      break;
     case QtFatalMsg:
-      spdlog_level = spdlog::level::critical;
+      level = Level::Error;
       break;
     case QtInfoMsg:
-      spdlog_level = spdlog::level::info;
+      level = Level::Info;
       break;
   }
 
-  logger->log(spdlog_level, message.toStdString());
+  log_message(level, {reinterpret_cast<const uint8_t*>(msg_utf8.data()), static_cast<uintptr_t>(msg_utf8.size())},
+              {reinterpret_cast<const uint8_t*>(category.data()), static_cast<uintptr_t>(category.size())});
+
   if (Q_UNLIKELY(msg_type == QtFatalMsg)) {
-    logger->flush();
+    // flush logger
     abort();
   }
 }
@@ -125,36 +117,9 @@ int main(int argc, char** argv) {
     if (args["--data"].isString()) appdata_path = QString::fromStdString(args["--data"].asString());
     Paths::get(appdata_path);
 
-    // Initializing log
-    spdlog::level::level_enum log_level;
-    qInfo() << args["-v"].asLong();
-    switch (args["-v"].asLong()) {
-      case 2:
-        log_level = spdlog::level::trace;
-        break;
-      case 1:
-        log_level = spdlog::level::debug;
-        break;
-      default:
-        log_level = spdlog::level::info;
-    }
-
-    auto log = spdlog::get(Version::current().name().toStdString());
-    if (!log) {
-      std::vector<spdlog::sink_ptr> sinks;
-      sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-
-      boost::filesystem::path log_path = conv_fspath(Paths::get()->log_path);
-      sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_path.native()));
-
-      log = std::make_shared<spdlog::logger>(Version::current().name().toStdString(), sinks.begin(), sinks.end());
-      spdlog::register_logger(log);
-
-      log->set_level(log_level);
-    }
-
+    log_init();
     // This overrides default Qt behavior, which is fine in many cases;
-    qInstallMessageHandler(spdlogMessageHandler);
+    qInstallMessageHandler(rustMessageHandler);
 
     // Initializing config
     Config::get();
@@ -172,7 +137,6 @@ int main(int argc, char** argv) {
     client.reset();
 
     // Deinitialization
-    log->flush();
     Config::deinit();
     Paths::deinit();
 

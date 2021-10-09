@@ -173,9 +173,14 @@ add_subdirectory("contrib/libnatpmp")
 add_subdirectory("contrib/dht")
 
 # Corrosion
+list(APPEND CORROSION_ENVIRONMENT_VARIABLES "OPENSSL_LIB_DIR=${OpenSSL_LIB_DIRS}")
+list(APPEND CORROSION_ENVIRONMENT_VARIABLES "OPENSSL_INCLUDE_DIR=${OpenSSL_INCLUDE_DIR}")
 add_subdirectory("contrib/corrosion")
 corrosion_import_crate(MANIFEST_PATH src/util/Cargo.toml)
 target_include_directories(librevault-rs INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src/util")
+set_target_properties(librevault-rs PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
+target_link_libraries(librevault-rs INTERFACE OpenSSL::SSL OpenSSL::Crypto)
+
 
 ## QtSingleApplication
 if(BUILD_GUI)

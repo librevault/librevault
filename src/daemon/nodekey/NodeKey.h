@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <QFile>
 #include <QObject>
 #include <QSslCertificate>
 #include <QSslKey>
@@ -30,20 +29,16 @@ class NodeKey : public QObject {
   LOG_SCOPE("NodeKey");
 
  public:
-  NodeKey(QObject* parent);
-  virtual ~NodeKey();
+  explicit NodeKey(QObject* parent);
+  ~NodeKey() override;
 
-  QCryptographicHash::Algorithm digestAlgorithm() const { return QCryptographicHash::Sha256; }
+  [[nodiscard]] QCryptographicHash::Algorithm digestAlgorithm() const { return QCryptographicHash::Sha256; }
 
-  QByteArray digest() const;
-  QSslKey privateKey() const { return private_key_; }
-  QSslCertificate certificate() const { return certificate_; }
+  [[nodiscard]] QByteArray digest() const;
+  [[nodiscard]] QSslKey privateKey() const { return private_key_; }
+  [[nodiscard]] QSslCertificate certificate() const { return certificate_; }
 
  private:
-  void write_key();
-  void gen_certificate();
-
-  QFile cert_file_, private_key_file_;
   QSslKey private_key_;
   QSslCertificate certificate_;
 };

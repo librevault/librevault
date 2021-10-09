@@ -60,4 +60,8 @@ void rabin_init(Rabin *h);
 
 bool rabin_finalize(Rabin *h);
 
+void nodekey_write_new(const char *key_path);
+
+void nodekey_write_new_cert(const char *key_path, const char *cert_path);
+
 } // extern "C"

@@ -1,5 +1,6 @@
 mod ffi;
 mod logger;
+mod rabin;
 
 use rand::prelude::*;
 use rand::Fill;

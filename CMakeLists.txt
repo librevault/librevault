@@ -171,7 +171,6 @@ add_library(dir_monitor INTERFACE)
 target_include_directories(dir_monitor INTERFACE contrib/dir_monitor/include)
 
 add_subdirectory("contrib/libnatpmp")
-add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 
 # Corrosion

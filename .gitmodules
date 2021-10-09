@@ -1,6 +1,3 @@
-[submodule "contrib/rabin"]
-	path = contrib/rabin
-	url = https://github.com/Librevault/rabin.git
 [submodule "contrib/libnatpmp"]
 	path = contrib/libnatpmp
 	url = https://github.com/Librevault/libnatpmp.git

@@ -15,8 +15,6 @@
  */
 #include "IndexerWorker.h"
 
-#include <rabin.h>
-
 #include <QFile>
 #include <boost/filesystem.hpp>
 
@@ -30,6 +28,8 @@
 #include "util/conv_fspath.h"
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>
+
+#include <librevaultrs.hpp>
 #endif
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -221,7 +221,7 @@ void IndexerWorker::update_chunks() {
   for (auto& chunk : old_meta_.chunks()) pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
 
   // Initializing chunker
-  rabin_t hasher;
+  Rabin hasher{};
   hasher.average_bits = rabin_global_params.avg_bits;
   hasher.minsize = new_meta_.min_chunksize();
   hasher.maxsize = new_meta_.max_chunksize();
@@ -245,7 +245,7 @@ void IndexerWorker::update_chunks() {
 
   for (char c; f.getChar(&c) && active_;) {
     data += c;
-    if (rabin_next_chunk(&hasher, (uint8_t*)&c, 1) == 1) {
+    if (rabin_next_chunk(&hasher, c)) {
       // Found a chunk
       chunks += populate_chunk(data, pt_hmac__iv);
       data.truncate(0);

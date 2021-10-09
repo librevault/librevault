@@ -1,3 +1,7 @@
+#pragma once
+
+/* Generated with cbindgen:0.20.0 */
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
@@ -46,6 +50,8 @@ void fill_random(uint8_t *array, uintptr_t len);
 
 char calc_luhnmod58(FfiConstBuffer buf);
 
+void drop_ffi(FfiConstBuffer buf);
+
 void log_message(Level level, FfiConstBuffer msg, FfiConstBuffer target);
 
 void log_init();
@@ -65,5 +71,13 @@ bool rabin_next_chunk(Rabin *h, uint8_t b);
 void rabin_init(Rabin *h);
 
 bool rabin_finalize(Rabin *h);
+
+FfiConstBuffer b58_encode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b58_decode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b32_encode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b32_decode(FfiConstBuffer in_buf);
 
 } // extern "C"

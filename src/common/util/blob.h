@@ -18,6 +18,7 @@
 
 #include <QByteArray>
 #include <cstdint>
+#include <librevaultrs.hpp>
 #include <vector>
 
 namespace librevault {
@@ -33,6 +34,16 @@ inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.en
 
 inline CryptoPP::Integer conv_bytearray_to_integer(const QByteArray& ba) {
   return CryptoPP::Integer((uchar*)ba.data(), ba.size());
+}
+
+inline FfiConstBuffer from_cpp(const QByteArray& ba) {
+  return {reinterpret_cast<const uint8_t*>(ba.data()), static_cast<uintptr_t>(ba.size())};
+}
+
+inline QByteArray from_rust(FfiConstBuffer buf) {
+  auto buf_copy = QByteArray{reinterpret_cast<const char*>(buf.str_p), static_cast<int>(buf.str_len)};
+  drop_ffi(buf);
+  return buf_copy;
 }
 
 }  // namespace librevault

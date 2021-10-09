@@ -11,8 +11,7 @@
 #pragma once
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 class Base32 : public TwoWayTransformer {
  public:
@@ -20,5 +19,4 @@ class Base32 : public TwoWayTransformer {
   QByteArray from(const QByteArray& data) const;
 };
 
-}  // namespace crypto
 }  // namespace librevault

@@ -2,6 +2,7 @@ mod ffi;
 mod logger;
 mod nodekey;
 mod rabin;
+mod b58;
 
 use std::os::raw::c_char;
 use crate::ffi::FfiConstBuffer;

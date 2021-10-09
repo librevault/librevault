@@ -21,4 +21,16 @@ impl FfiConstBuffer {
     pub fn as_slice(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.str_p, self.str_len) }
     }
+
+    pub fn from_slice(s: &[u8]) -> Self {
+        FfiConstBuffer {
+            str_len: s.len(),
+            str_p: Box::into_raw(Box::<[u8]>::from(s)) as *const u8,
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn drop_ffi(buf: FfiConstBuffer) {
+    unsafe { Box::from_raw(buf.str_p as *mut u8) };
 }

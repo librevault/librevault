@@ -14,10 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "random.h"
-#include <cryptopp/osrng.h>
+
+#include <librevaultrs.hpp>
 
 QByteArray randomBytes(int size) {
   QByteArray data(size, '\0');
-  CryptoPP::AutoSeededRandomPool().GenerateBlock(reinterpret_cast<CryptoPP::byte*>(data.data()), data.size());
+  fill_random(reinterpret_cast<uint8_t*>(data.data()), data.size());
   return data;
 }

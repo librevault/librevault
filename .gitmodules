@@ -7,3 +7,6 @@
 [submodule "contrib/dht"]
 	path = contrib/dht
 	url = https://github.com/Librevault/dht.git
+[submodule "contrib/corrosion"]
+	path = contrib/corrosion
+	url = https://github.com/AndrewGaspar/corrosion.git

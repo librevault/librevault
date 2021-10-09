@@ -175,6 +175,11 @@ add_subdirectory("contrib/libnatpmp")
 add_subdirectory("contrib/rabin")
 add_subdirectory("contrib/dht")
 
+# Corrosion
+add_subdirectory("contrib/corrosion")
+corrosion_import_crate(MANIFEST_PATH src/util/Cargo.toml)
+target_include_directories(librevault-rs INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src/util")
+
 ## QtSingleApplication
 if(BUILD_GUI)
 	add_subdirectory("contrib/qtsingleapplication")

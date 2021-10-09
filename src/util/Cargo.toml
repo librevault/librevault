@@ -1,0 +1,11 @@
+[package]
+name = "librevault-rs"
+version = "1.0.0-alpha.1"
+authors = ["Alexander Shishenko <alex@shishenko.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.8.4"
+
+[lib]
+crate-type=["staticlib"]

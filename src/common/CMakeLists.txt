@@ -43,3 +43,5 @@ target_link_libraries(librevault-common PUBLIC cryptopp::cryptopp)
 target_link_libraries(librevault-common PUBLIC protobuf::libprotobuf)
 target_link_libraries(librevault-common PUBLIC Qt5::Core)
 target_link_libraries(librevault-common PUBLIC Threads::Threads)
+
+target_link_libraries(librevault-common PUBLIC librevault-rs)

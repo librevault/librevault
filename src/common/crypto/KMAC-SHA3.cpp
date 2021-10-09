@@ -10,8 +10,6 @@
  */
 #include "KMAC-SHA3.h"
 
-#include <cryptopp/sha3.h>
-
 #include <QCryptographicHash>
 
 namespace librevault::crypto {

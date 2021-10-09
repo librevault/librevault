@@ -67,6 +67,10 @@ class Secret {
 
   QByteArray get_Hash() const;
 
+  // Signature
+  QByteArray sign(const QByteArray& message) const;
+  bool verify(const QByteArray& message, const QByteArray& signature) const;
+
   bool operator==(const Secret &key) const { return secret_s == key.secret_s; }
   bool operator<(const Secret &key) const { return secret_s < key.secret_s; }
 

@@ -42,7 +42,7 @@ jobs:
       - name: Build application
         run: |
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries -DBUILD_UPDATER=OFF ..
           cmake --build .
 #      - name: Package application
 #        run: |

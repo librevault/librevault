@@ -39,11 +39,11 @@ jobs:
           conan profile new --detect --force default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-#      - name: Build application
-#        run: |
-#          cd build
-#          cmake -DUSE_STATIC_BOOST=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
-#          cmake --build . --config Release
+      - name: Build application
+        run: |
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries ..
+          cmake --build .
 #      - name: Package application
 #        run: |
 #          .venv\scripts\activate.ps1

@@ -4,6 +4,11 @@ updates:
     directory: "/"
     schedule:
       interval: daily
-      time: '02:00'
+    open-pull-requests-limit: 10
+    target-branch: develop
+  - package-ecosystem: cargo
+    directory: "/src/util/"
+    schedule:
+      interval: daily
     open-pull-requests-limit: 10
     target-branch: develop

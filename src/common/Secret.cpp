@@ -155,6 +155,34 @@ QByteArray Secret::get_Hash() const {
   return cached_hash = QCryptographicHash::hash(get_Public_Key(), QCryptographicHash::Algorithm::Sha3_256);
 }
 
+QByteArray Secret::sign(const QByteArray& message) const {
+  CryptoPP::AutoSeededRandomPool rng;
+  CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
+  signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(get_Private_Key()));
+
+  auto signature = QByteArray(signer.SignatureLength(), 0);
+  signer.SignMessage(rng, (const uchar*)message.data(), message.size(), (uchar*)signature.data());
+  return signature;
+}
+
+bool Secret::verify(const QByteArray& message, const QByteArray& signature) const {
+  try {
+    auto public_key = get_Public_Key();
+
+    CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
+    CryptoPP::ECP::Point p;
+
+    verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
+    verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
+    verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
+    verifier.AccessKey().SetPublicElement(p);
+    return verifier.VerifyMessage((const uchar*)message.data(), message.size(), (const uchar*)signature.data(),
+                                  signature.size());
+  } catch (CryptoPP::Exception& e) {
+    return false;
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.string().toStdString(); }
 
 }  // namespace librevault

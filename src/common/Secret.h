@@ -70,6 +70,9 @@ class Secret {
   bool operator==(const Secret &key) const { return secret_s == key.secret_s; }
   bool operator<(const Secret &key) const { return secret_s < key.secret_s; }
 
+  QByteArray sign(const QByteArray& message) const;
+  bool verify(const QByteArray& message, const QByteArray& signature) const;
+
  private:
   static constexpr size_t private_key_size = 32;
   static constexpr size_t encryption_key_size = 32;

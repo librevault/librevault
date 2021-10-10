@@ -9,19 +9,16 @@
  * along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 #pragma once
-#include <cryptopp/osrng.h>
 #include <util/random.h>
 
 #include "Transformer.h"
 
-namespace librevault {
-namespace crypto {
+namespace librevault::crypto {
 
 class AES_CBC : public TwoWayTransformer {
  private:
   const QByteArray key;
   const QByteArray iv;
-  bool padding;
 
  public:
   AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding = true);
@@ -36,5 +33,4 @@ class AES_CBC : public TwoWayTransformer {
   QByteArray from(const QByteArray& data) const { return decrypt(data); }
 };
 
-}  // namespace crypto
 }  // namespace librevault

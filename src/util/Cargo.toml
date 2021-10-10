@@ -13,6 +13,8 @@ hex = "0.4.3"
 luhn-rs = "0.0.1"
 bs58 = "0.4.0"
 base32 = "0.4.0"
+block-modes = "0.8.1"
+aes = "0.7.5"
 
 [lib]
 crate-type=["staticlib"]

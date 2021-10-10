@@ -28,6 +28,10 @@ impl FfiConstBuffer {
             str_p: Box::into_raw(Box::<[u8]>::from(s)) as *const u8,
         }
     }
+
+    pub fn from_vec(s: &Vec<u8>) -> Self {
+        Self::from_slice(s.as_slice())
+    }
 }
 
 #[no_mangle]

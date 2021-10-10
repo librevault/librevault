@@ -29,11 +29,7 @@ void AesCbcData::setEncrypted(const std::string& ct, const std::string& iv) {
 }
 
 QByteArray AesCbcData::get_plain(const Secret& secret) const {
-  try {
-    return ct_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), iv_);
-  } catch (const CryptoPP::Exception& e) {
-    throw Meta::parse_error("Parse error: Decryption failed");
-  }
+  return ct_ | crypto::De<crypto::AES_CBC>(secret.get_Encryption_Key(), iv_);
 }
 
 void AesCbcData::set_plain(const QByteArray& pt, const Secret& secret) {

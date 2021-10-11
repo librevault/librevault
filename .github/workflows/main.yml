@@ -210,3 +210,14 @@ jobs:
         uses: Swatinem/rust-cache@v1.3.0
       - name: Run tests
         run: cargo test
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
+      - name: Run lint
+        run: cargo fmt -- --check

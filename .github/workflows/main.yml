@@ -44,7 +44,7 @@ jobs:
         run: |
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries -DBUILD_UPDATER=OFF ..
-          cmake --build .
+          cmake --build . --config Release
 #      - name: Package application
 #        run: |
 #          .venv\scripts\activate.ps1

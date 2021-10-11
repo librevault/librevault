@@ -135,42 +135,42 @@ jobs:
 #          snap: ${{ steps.snapcraft.outputs.snap }}
 #          release: edge
 #
-#  build-macos:
-#    runs-on: macos-11
-#    env:
-#      HOMEBREW_NO_AUTO_UPDATE: 1
-#    steps:
-#      - name: Install system-wide dependencies
-#        run: |
-#          brew install cmake ccache ninja
-#          python3 -m pip install poetry
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0
-#          submodules: recursive
-#      - name: Prepare virtualenv for tools
-#        run: |
-#          python3 -m venv .venv
-#          poetry install
-#          source .venv/bin/activate
-#      - name: Restore Conan cache
-#        uses: actions/cache@v2
-#        env:
-#          cache-name: cache-conan-packages
-#        with:
-#          path: ~/.conan/data
-#          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
-#          restore-keys: |
-#            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
-#            ${{ runner.os }}-build-${{ env.cache-name }}-
-#      - name: Install Conan packages
-#        run: |
-#          source .venv/bin/activate
-#          mkdir -p build
-#          pushd build
-#          conan profile new --detect --force default
-#          conan install .. --build=outdated --build=cascade
-#          conan remove "*" --src --builds --system-reqs --force
+  build-macos:
+    runs-on: macos-11
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - name: Install system-wide dependencies
+        run: |
+          brew install cmake ccache ninja
+          python3 -m pip install poetry
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Prepare virtualenv for tools
+        run: |
+          python3 -m venv .venv
+          poetry install
+          source .venv/bin/activate
+      - name: Restore Conan cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-conan-packages
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.py') }}-
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+      - name: Install Conan packages
+        run: |
+          source .venv/bin/activate
+          mkdir -p build
+          pushd build
+          conan profile new --detect --force default
+          conan install .. --build=outdated --build=cascade
+          conan remove "*" --src --builds --system-reqs --force
 #      - name: Restore ccache cache
 #        uses: actions/cache@v2
 #        env:

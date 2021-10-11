@@ -1,5 +1,3 @@
-use std::ffi::CStr;
-use std::os::raw::c_char;
 use std::str::FromStr;
 
 use ed25519::signature::Signature;
@@ -14,84 +12,6 @@ use crate::ffi::FfiConstBuffer;
 lazy_static! {
     static ref LUHNGENERATOR: Luhn =
         Luhn::new("123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz").unwrap();
-}
-
-mod ffi {
-    use super::*;
-
-    #[no_mangle]
-    pub extern "C" fn secret_new() -> *mut OpaqueSecret {
-        Box::into_raw(Box::new(OpaqueSecret::new()))
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_destroy(secret: *mut OpaqueSecret) {
-        unsafe {
-            Box::from_raw(secret);
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_clone(secret: *const OpaqueSecret) -> *mut OpaqueSecret {
-        unsafe { Box::into_raw(Box::new((*secret).clone())) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_from_string(secret: *const c_char) -> *mut OpaqueSecret {
-        unsafe {
-            Box::into_raw(Box::new(
-                OpaqueSecret::from_str(CStr::from_ptr(secret).to_str().unwrap()).unwrap(),
-            ))
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_derive(secret: *const OpaqueSecret, ty: c_char) -> *mut OpaqueSecret {
-        unsafe { Box::into_raw(Box::new((*secret).derive(ty as u8 as char).unwrap())) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_get_private(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice(&(*secret).get_private_key().unwrap().to_bytes()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_get_symmetric(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice((*secret).get_symmetric_key().unwrap()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_get_public(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice(&(*secret).get_public_key().unwrap().to_bytes()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_sign(
-        secret: *const OpaqueSecret,
-        message: FfiConstBuffer,
-    ) -> FfiConstBuffer {
-        unsafe {
-            FfiConstBuffer::from_slice(&(*secret).sign(message.as_slice()).unwrap().as_slice())
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_verify(
-        secret: *const OpaqueSecret,
-        message: FfiConstBuffer,
-        signature: FfiConstBuffer,
-    ) -> bool {
-        unsafe {
-            (*secret)
-                .verify(message.as_slice(), signature.as_slice())
-                .unwrap()
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_as_string(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice((*secret).to_string().as_bytes()) }
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
@@ -346,5 +266,85 @@ mod tests {
             secret.verify(message, &*signature),
             Err(SecretError::InvalidSignatureFormat)
         );
+    }
+}
+
+mod ffi {
+    use std::ffi::CStr;
+    use std::os::raw::c_char;
+    use super::*;
+
+    #[no_mangle]
+    pub extern "C" fn secret_new() -> *mut OpaqueSecret {
+        Box::into_raw(Box::new(OpaqueSecret::new()))
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_destroy(secret: *mut OpaqueSecret) {
+        unsafe {
+            Box::from_raw(secret);
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_clone(secret: *const OpaqueSecret) -> *mut OpaqueSecret {
+        unsafe { Box::into_raw(Box::new((*secret).clone())) }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_from_string(secret: *const c_char) -> *mut OpaqueSecret {
+        unsafe {
+            Box::into_raw(Box::new(
+                OpaqueSecret::from_str(CStr::from_ptr(secret).to_str().unwrap()).unwrap(),
+            ))
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_derive(secret: *const OpaqueSecret, ty: c_char) -> *mut OpaqueSecret {
+        unsafe { Box::into_raw(Box::new((*secret).derive(ty as u8 as char).unwrap())) }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_get_private(secret: *const OpaqueSecret) -> FfiConstBuffer {
+        unsafe { FfiConstBuffer::from_slice(&(*secret).get_private_key().unwrap().to_bytes()) }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_get_symmetric(secret: *const OpaqueSecret) -> FfiConstBuffer {
+        unsafe { FfiConstBuffer::from_slice((*secret).get_symmetric_key().unwrap()) }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_get_public(secret: *const OpaqueSecret) -> FfiConstBuffer {
+        unsafe { FfiConstBuffer::from_slice(&(*secret).get_public_key().unwrap().to_bytes()) }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_sign(
+        secret: *const OpaqueSecret,
+        message: FfiConstBuffer,
+    ) -> FfiConstBuffer {
+        unsafe {
+            FfiConstBuffer::from_slice(&(*secret).sign(message.as_slice()).unwrap().as_slice())
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_verify(
+        secret: *const OpaqueSecret,
+        message: FfiConstBuffer,
+        signature: FfiConstBuffer,
+    ) -> bool {
+        unsafe {
+            (*secret)
+                .verify(message.as_slice(), signature.as_slice())
+                .unwrap()
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn secret_as_string(secret: *const OpaqueSecret) -> FfiConstBuffer {
+        unsafe { FfiConstBuffer::from_slice((*secret).to_string().as_bytes()) }
     }
 }

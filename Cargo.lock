@@ -307,10 +307,12 @@ dependencies = [
  "log",
  "luhn-rs",
  "openssl",
+ "path-slash",
  "rand",
  "sha3",
  "signature",
  "simple_logger",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -391,6 +393,12 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
+
+[[package]]
+name = "path-slash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cacbb3c4ff353b534a67fb8d7524d00229da4cb1dc8c79f4db96e375ab5b619"
 
 [[package]]
 name = "percent-encoding"

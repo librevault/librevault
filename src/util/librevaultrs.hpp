@@ -102,4 +102,8 @@ bool secret_verify(const OpaqueSecret *secret, FfiConstBuffer message, FfiConstB
 
 FfiConstBuffer secret_as_string(const OpaqueSecret *secret);
 
+FfiConstBuffer path_normalize(const char *path, const char *root, bool normalize_unicode);
+
+FfiConstBuffer path_denormalize(const char *path, const char *root);
+
 } // extern "C"

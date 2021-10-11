@@ -3,9 +3,9 @@ mod b58;
 mod ffi;
 mod logger;
 mod nodekey;
+mod path_normalize;
 mod rabin;
 mod secret;
-mod path_normalize;
 
 use rand::prelude::*;
 use rand::Fill;

@@ -1,10 +1,10 @@
-use std::path::{Path, PathBuf};
 use path_slash::{PathBufExt, PathExt};
+use std::path::{Path, PathBuf};
 use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub enum NormalizationError {
-    UnicodeError
+    UnicodeError,
 }
 
 fn normalize(path: &Path, root: &Path, normalize_unicode: bool) -> Vec<u8> {
@@ -24,7 +24,9 @@ fn normalize(path: &Path, root: &Path, normalize_unicode: bool) -> Vec<u8> {
 }
 
 fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationError> {
-    let denormalized = String::from_utf8(path).ok().ok_or(NormalizationError::UnicodeError)?;
+    let denormalized = String::from_utf8(path)
+        .ok()
+        .ok_or(NormalizationError::UnicodeError)?;
     let denormalized = PathBuf::from_slash(denormalized);
     let denormalized = root.join(denormalized);
 
@@ -33,23 +35,46 @@ fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationError
     Ok(denormalized)
 }
 
-
 mod ffi {
+    use super::*;
+    use crate::ffi::FfiConstBuffer;
     use std::ffi::CStr;
     use std::os::raw::c_char;
-    use crate::ffi::FfiConstBuffer;
-    use super::*;
 
     #[no_mangle]
-    pub extern "C" fn path_normalize(path: *const c_char, root: *const c_char, normalize_unicode: bool) -> FfiConstBuffer {
-        let (path, root) = unsafe { (CStr::from_ptr(path).to_str().unwrap(), CStr::from_ptr(root).to_str().unwrap()) };
-        FfiConstBuffer::from_vec(&normalize(&PathBuf::from(path), &PathBuf::from(root), normalize_unicode))
+    pub extern "C" fn path_normalize(
+        path: *const c_char,
+        root: *const c_char,
+        normalize_unicode: bool,
+    ) -> FfiConstBuffer {
+        let (path, root) = unsafe {
+            (
+                CStr::from_ptr(path).to_str().unwrap(),
+                CStr::from_ptr(root).to_str().unwrap(),
+            )
+        };
+        FfiConstBuffer::from_vec(&normalize(
+            &PathBuf::from(path),
+            &PathBuf::from(root),
+            normalize_unicode,
+        ))
     }
 
     #[no_mangle]
     pub extern "C" fn path_denormalize(path: *const c_char, root: *const c_char) -> FfiConstBuffer {
-        let (path, root) = unsafe { (CStr::from_ptr(path).to_str().unwrap(), CStr::from_ptr(root).to_str().unwrap()) };
-        FfiConstBuffer::from_slice(&denormalize(path.to_string().into_bytes(), &PathBuf::from(root)).unwrap().to_str().unwrap().as_bytes())
+        let (path, root) = unsafe {
+            (
+                CStr::from_ptr(path).to_str().unwrap(),
+                CStr::from_ptr(root).to_str().unwrap(),
+            )
+        };
+        FfiConstBuffer::from_slice(
+            &denormalize(path.to_string().into_bytes(), &PathBuf::from(root))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .as_bytes(),
+        )
     }
 }
 
@@ -59,12 +84,22 @@ mod tests {
 
     #[test]
     fn test_no_simple() {
-        assert_eq!(normalize(Path::new("/home/123/123.txt"), Path::new("/home/123"), true), b"123.txt".to_vec());
+        assert_eq!(
+            normalize(Path::new("/home/123/123.txt"), Path::new("/home/123"), true),
+            b"123.txt".to_vec()
+        );
     }
 
     #[test]
     fn test_no_trailing_slash() {
-        assert_eq!(normalize(Path::new("/home/123/123.txt/"), Path::new("/home/123"), true), b"123.txt".to_vec());
+        assert_eq!(
+            normalize(
+                Path::new("/home/123/123.txt/"),
+                Path::new("/home/123"),
+                true
+            ),
+            b"123.txt".to_vec()
+        );
     }
 
     #[test]
@@ -77,6 +112,9 @@ mod tests {
 
     #[test]
     fn test_de_simple() {
-        assert_eq!(denormalize(b"123.txt".to_vec(), Path::new("/home/123") ).unwrap(), PathBuf::from("/home/123/123.txt"));
+        assert_eq!(
+            denormalize(b"123.txt".to_vec(), Path::new("/home/123")).unwrap(),
+            PathBuf::from("/home/123/123.txt")
+        );
     }
 }

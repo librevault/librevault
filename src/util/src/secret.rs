@@ -270,9 +270,9 @@ mod tests {
 }
 
 mod ffi {
+    use super::*;
     use std::ffi::CStr;
     use std::os::raw::c_char;
-    use super::*;
 
     #[no_mangle]
     pub extern "C" fn secret_new() -> *mut OpaqueSecret {

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(librevault)
 
-cmake_policy(SET CMP0071 OLD)
+cmake_policy(SET CMP0071 NEW)
 
 if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 	include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)

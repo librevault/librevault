@@ -196,7 +196,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019, windows-2022, ubuntu-20.04, macos-11]
+        os:
+#        - windows-2019
+#        - windows-2022
+        - ubuntu-20.04
+        - macos-11
     steps:
       - uses: actions/checkout@v2
         with:

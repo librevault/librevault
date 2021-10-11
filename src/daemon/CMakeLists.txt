@@ -65,7 +65,6 @@ target_link_libraries(librevault-daemon PUBLIC Boost::system Boost::filesystem B
 target_link_libraries(librevault-daemon PUBLIC Qt5::Xml Qt5::WebSockets)
 target_link_libraries(librevault-daemon PUBLIC SQLite::SQLite3)
 target_link_libraries(librevault-daemon PUBLIC websocketpp::websocketpp)
-target_link_libraries(librevault-daemon PUBLIC cryptopp::cryptopp)
 target_link_libraries(librevault-daemon PUBLIC docopt::docopt)
 
 ##### System libraries #####

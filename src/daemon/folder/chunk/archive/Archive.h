@@ -36,7 +36,7 @@ struct ArchiveStrategy : public QObject {
 };
 
 class Archive : public QObject {
-  Q_OBJECT;
+  Q_OBJECT
   LOG_SCOPE("Archive");
 
  public:

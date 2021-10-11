@@ -18,6 +18,8 @@ enum class Level {
   Trace = 4,
 };
 
+struct OpaqueSecret;
+
 struct FfiConstBuffer {
   const uint8_t *str_p;
   uintptr_t str_len;
@@ -48,7 +50,17 @@ extern "C" {
 
 void fill_random(uint8_t *array, uintptr_t len);
 
-char calc_luhnmod58(FfiConstBuffer buf);
+FfiConstBuffer encrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiConstBuffer iv);
+
+FfiConstBuffer decrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiConstBuffer iv);
+
+FfiConstBuffer b58_encode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b58_decode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b32_encode(FfiConstBuffer in_buf);
+
+FfiConstBuffer b32_decode(FfiConstBuffer in_buf);
 
 void drop_ffi(FfiConstBuffer buf);
 
@@ -72,16 +84,26 @@ void rabin_init(Rabin *h);
 
 bool rabin_finalize(Rabin *h);
 
-FfiConstBuffer b58_encode(FfiConstBuffer in_buf);
+OpaqueSecret *secret_new();
 
-FfiConstBuffer b58_decode(FfiConstBuffer in_buf);
+void secret_destroy(OpaqueSecret *secret);
 
-FfiConstBuffer b32_encode(FfiConstBuffer in_buf);
+OpaqueSecret *secret_clone(const OpaqueSecret *secret);
 
-FfiConstBuffer b32_decode(FfiConstBuffer in_buf);
+OpaqueSecret *secret_from_string(const char *secret);
 
-FfiConstBuffer encrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiConstBuffer iv);
+OpaqueSecret *secret_derive(const OpaqueSecret *secret, char ty);
 
-FfiConstBuffer decrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiConstBuffer iv);
+FfiConstBuffer secret_get_private(const OpaqueSecret *secret);
+
+FfiConstBuffer secret_get_symmetric(const OpaqueSecret *secret);
+
+FfiConstBuffer secret_get_public(const OpaqueSecret *secret);
+
+FfiConstBuffer secret_sign(const OpaqueSecret *secret, FfiConstBuffer message);
+
+bool secret_verify(const OpaqueSecret *secret, FfiConstBuffer message, FfiConstBuffer signature);
+
+FfiConstBuffer secret_as_string(const OpaqueSecret *secret);
 
 } // extern "C"

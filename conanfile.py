@@ -5,7 +5,6 @@ class LibrevaultConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = [
         "docopt.cpp/0.6.2",
-        "cryptopp/8.5.0",
         "sqlite3/3.36.0",
         "boost/1.76.0",
         "protobuf/3.17.1",

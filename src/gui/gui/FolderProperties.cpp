@@ -69,7 +69,7 @@ FolderProperties::~FolderProperties() {}
 void FolderProperties::init_secrets() {
   librevault::Secret secret = daemon_->config()->getFolderValue(folderid_, "secret").toString();
 
-  if (secret.get_type() <= secret.ReadWrite)
+  if (secret.get_type() <= secret.Owner)
     ui.secret_rw->setText(secret.string());
   else {
     ui.label_rw->setVisible(false);

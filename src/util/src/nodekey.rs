@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 use std::ffi::CStr;
-use std::fs::{File, read};
+use std::fs::{read, File};
 use std::io::Write;
 use std::os::raw::c_char;
 
@@ -11,8 +11,8 @@ use openssl::ec::{EcGroup, EcKey};
 use openssl::error::ErrorStack;
 use openssl::hash::MessageDigest;
 use openssl::nid::Nid;
-use openssl::pkey::{PKey};
-use openssl::x509::{X509, X509Builder, X509Name};
+use openssl::pkey::PKey;
+use openssl::x509::{X509Builder, X509Name, X509};
 
 #[no_mangle]
 pub extern "C" fn nodekey_write_new(key_path: *const c_char) {

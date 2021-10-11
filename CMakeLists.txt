@@ -155,7 +155,6 @@ add_definitions("-DQT_DISABLE_DEPRECATED_BEFORE=0x050F00")
 add_definitions("-DQT_NO_FOREACH=1")
 add_definitions("-DQT_NO_FOREVER=1")
 
-find_package(cryptopp REQUIRED)
 find_package(docopt REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Protobuf REQUIRED)

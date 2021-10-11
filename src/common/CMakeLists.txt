@@ -39,7 +39,6 @@ target_include_directories(librevault-common PUBLIC .)
 #============================================================================
 
 target_link_libraries(librevault-common PUBLIC $<$<PLATFORM_ID:Windows>:ws2_32>)
-target_link_libraries(librevault-common PUBLIC cryptopp::cryptopp)
 target_link_libraries(librevault-common PUBLIC protobuf::libprotobuf)
 target_link_libraries(librevault-common PUBLIC Qt5::Core)
 target_link_libraries(librevault-common PUBLIC Threads::Threads)

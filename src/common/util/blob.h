@@ -14,7 +14,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <cryptopp/integer.h>
 
 #include <QByteArray>
 #include <cstdint>
@@ -31,10 +30,6 @@ inline QByteArray conv_bytearray(const blob& bl) {
 }
 
 inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
-
-inline CryptoPP::Integer conv_bytearray_to_integer(const QByteArray& ba) {
-  return CryptoPP::Integer((uchar*)ba.data(), ba.size());
-}
 
 inline FfiConstBuffer from_cpp(const QByteArray& ba) {
   return {reinterpret_cast<const uint8_t*>(ba.data()), static_cast<uintptr_t>(ba.size())};

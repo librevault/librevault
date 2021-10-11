@@ -15,140 +15,44 @@
  */
 #include "Secret.h"
 
-#include <cryptopp/eccrypto.h>
-#include <cryptopp/oids.h>
-#include <cryptopp/osrng.h>
-#include <cryptopp/sha3.h>
-
 #include <QCryptographicHash>
-#include <librevaultrs.hpp>
-
 #include <crypto/Base58.h>
 
-using CryptoPP::ASN1::secp256r1;
 
 namespace librevault {
 
-char LuhnMod58(const QByteArray& message) {
-  return calc_luhnmod58({reinterpret_cast<const uint8_t*>(message.data()), static_cast<uintptr_t>(message.size())});
-}
+Secret::Secret() : opaque_secret_(secret_new(), secret_destroy) {}
 
-Secret::Secret() {
-  CryptoPP::AutoSeededRandomPool rng;
-  CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-  private_key.Initialize(rng, secp256r1());
+Secret::Secret(OpaqueSecret* opaque_secret) : opaque_secret_(opaque_secret, secret_destroy) {}
 
-  cached_private_key.resize(private_key_size);
-  private_key.GetPrivateExponent().Encode((uchar*)cached_private_key.data(), private_key_size);
+Secret::Secret(const QString& str) : Secret(secret_from_string(str.toLatin1().data())) {}
 
-  secret_s += (char)Owner;
-  secret_s += '1';
-  secret_s += cached_private_key | crypto::Base58();
+Secret::~Secret() = default;
 
-  auto payload = secret_s.mid(2);
-  secret_s += LuhnMod58(payload);
-}
+Secret::Secret(const Secret& secret): Secret(secret_clone(secret.opaque_secret_.get())) {}
 
-Secret::Secret(Type type, const QByteArray& binary_part) {
-  secret_s += type;
-  secret_s += '1';
-  secret_s += binary_part | crypto::Base58();
-
-  auto payload = secret_s.mid(2);
-  secret_s += LuhnMod58(payload);
-}
-
-Secret::Secret(const QString& str) : secret_s(str.toLatin1()) {
-  try {
-    auto base58_payload = getEncodedPayload();
-
-    if (base58_payload.isEmpty()) throw format_error();
-    if (LuhnMod58(base58_payload) != get_check_char()) throw format_error();
-  } catch (std::exception& e) {
-    throw format_error();
-  }
-
-  // TODO: It would be good to check private/public key for validity and throw crypto_error() here
-}
-
-QByteArray Secret::getEncodedPayload() const {  // TODO: Caching
-  return secret_s.mid(2, this->secret_s.size() - 3);
-}
-
-QByteArray Secret::getPayload() const {  // TODO: Caching
-  return getEncodedPayload() | crypto::De<crypto::Base58>();
+Secret& Secret::operator=(const Secret &secret) {
+  opaque_secret_.reset(secret_clone(secret.opaque_secret_.get()));
+  return *this;
 }
 
 Secret Secret::derive(Type key_type) const {
-  if (key_type == get_type()) return *this;
-
-  switch (key_type) {
-    case Owner:
-    case ReadWrite:
-      return Secret(key_type, get_Private_Key());
-    case ReadOnly:
-      return Secret(key_type, get_Public_Key() + get_Encryption_Key());
-    case Download:
-      return Secret(key_type, get_Encryption_Key());
-    default:
-      throw level_error();
-  }
+  return {secret_derive(opaque_secret_.get(), key_type)};
 }
 
 QByteArray Secret::get_Private_Key() const {
-  if (!cached_private_key.isEmpty()) return cached_private_key;
-
-  switch (get_type()) {
-    case Owner:
-    case ReadWrite:
-      return cached_private_key = getPayload();
-    default:
-      throw level_error();
-  }
+  return from_rust(secret_get_private(opaque_secret_.get()));
 }
 
 QByteArray Secret::get_Encryption_Key() const {
-  if (!cached_encryption_key.isEmpty()) return cached_encryption_key;
-
-  switch (get_type()) {
-    case Owner:
-    case ReadWrite:
-      return cached_encryption_key =
-                 QCryptographicHash::hash(get_Private_Key(), QCryptographicHash::Algorithm::Sha3_256);
-    case ReadOnly:
-      return cached_encryption_key = getPayload().mid(public_key_size, encryption_key_size);
-    default:
-      throw level_error();
-  }
+  return from_rust(secret_get_symmetric(opaque_secret_.get()));
 }
 
 QByteArray Secret::get_Public_Key() const {
-  if (!cached_public_key.isEmpty()) return cached_public_key;
-
-  switch (get_type()) {
-    case Owner:
-    case ReadWrite: {
-      CryptoPP::AutoSeededRandomPool rng;
-      CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-      CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
-      private_key.Initialize(rng, secp256r1());
-      private_key.SetPrivateExponent(conv_bytearray_to_integer(get_Private_Key()));
-      private_key.MakePublicKey(public_key);
-
-      public_key.AccessGroupParameters().SetPointCompression(true);
-      cached_public_key.resize(public_key_size);
-      public_key.GetGroupParameters().EncodeElement(true, public_key.GetPublicElement(),
-                                                    (uchar*)cached_public_key.data());
-
-      return cached_public_key;
-    }
-    case ReadOnly:
-    case Download:
-      return cached_public_key = getPayload().left(public_key_size);
-    default:
-      throw level_error();
-  }
+  return from_rust(secret_get_public(opaque_secret_.get()));
 }
+
+QString Secret::string() const { return QString::fromLatin1(from_rust(secret_as_string(opaque_secret_.get()))); }
 
 QByteArray Secret::get_Hash() const {
   if (!cached_hash.isEmpty()) return cached_hash;
@@ -156,31 +60,11 @@ QByteArray Secret::get_Hash() const {
 }
 
 QByteArray Secret::sign(const QByteArray& message) const {
-  CryptoPP::AutoSeededRandomPool rng;
-  CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Signer signer;
-  signer.AccessKey().Initialize(CryptoPP::ASN1::secp256r1(), conv_bytearray_to_integer(get_Private_Key()));
-
-  auto signature = QByteArray(signer.SignatureLength(), 0);
-  signer.SignMessage(rng, (const uchar*)message.data(), message.size(), (uchar*)signature.data());
-  return signature;
+  return from_rust(secret_sign(opaque_secret_.get(), from_cpp(message)));
 }
 
 bool Secret::verify(const QByteArray& message, const QByteArray& signature) const {
-  try {
-    auto public_key = get_Public_Key();
-
-    CryptoPP::ECDSA<CryptoPP::ECP, CryptoPP::SHA3_256>::Verifier verifier;
-    CryptoPP::ECP::Point p;
-
-    verifier.AccessKey().AccessGroupParameters().Initialize(CryptoPP::ASN1::secp256r1());
-    verifier.AccessKey().AccessGroupParameters().SetPointCompression(true);
-    verifier.AccessKey().GetGroupParameters().GetCurve().DecodePoint(p, (uchar*)public_key.data(), public_key.size());
-    verifier.AccessKey().SetPublicElement(p);
-    return verifier.VerifyMessage((const uchar*)message.data(), message.size(), (const uchar*)signature.data(),
-                                  signature.size());
-  } catch (CryptoPP::Exception& e) {
-    return false;
-  }
+  return secret_verify(opaque_secret_.get(), from_cpp(message), from_cpp(signature));
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.string().toStdString(); }

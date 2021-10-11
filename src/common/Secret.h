@@ -20,17 +20,17 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <librevaultrs.hpp>
+#include <memory>
 
 namespace librevault {
 
 class Secret {
  public:
   enum Type : char {
-    Owner = 'A',  /// Not used now. Will be useful for 'managed' shares for security-related actions. Now equal to
-    /// ReadWrite.
-    ReadWrite = 'B',  /// Signature key, used to sign modified files.
-    ReadOnly = 'C',   /// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
-    Download = 'D',   /// Public key, used to verify signed modified files
+    Owner = 'A',  /// Signature key, used to sign modified files.
+    ReadOnly = 'B',   /// Encryption key (AES-256), used to encrypt blocks/filepaths and used in filepath HMAC
+    Download = 'C',   /// Public key, used to verify signed modified files
   };
 
   struct error : public std::runtime_error {
@@ -47,15 +47,14 @@ class Secret {
   };
 
   Secret();
-  Secret(Type type, const QByteArray &payload);
   Secret(const QString &str);
+  Secret(const Secret& secret);
+  ~Secret();
 
-  QString string() const { return secret_s; }
-  operator QString() const { return secret_s; }
+  QString string() const;
+  operator QString() const { return string(); }
 
-  Type get_type() const { return (Type)secret_s.front(); }
-  char get_param() const { return secret_s[1]; }
-  char get_check_char() const { return secret_s.back(); }
+  Type get_type() const { return (Type)string().front().toLatin1(); }
 
   // Secret derivers
   Secret derive(Type key_type) const;
@@ -67,31 +66,23 @@ class Secret {
 
   QByteArray get_Hash() const;
 
-  bool operator==(const Secret &key) const { return secret_s == key.secret_s; }
-  bool operator<(const Secret &key) const { return secret_s < key.secret_s; }
+  bool operator==(const Secret &key) const { return string() == key.string(); }
+  bool operator<(const Secret &key) const { return string() < key.string(); }
 
   QByteArray sign(const QByteArray& message) const;
   bool verify(const QByteArray& message, const QByteArray& signature) const;
 
+  Secret& operator=(const Secret &secret);
+
  private:
-  static constexpr size_t private_key_size = 32;
-  static constexpr size_t encryption_key_size = 32;
-  static constexpr size_t public_key_size = 33;
-
-  static constexpr size_t hash_size = 32;
-
   QByteArray secret_s;
-
-  mutable QByteArray cached_private_key;     // ReadWrite
-  mutable QByteArray cached_encryption_key;  // ReadOnly
-  mutable QByteArray cached_public_key;      // Download
 
   // It is a hash of Download key, used for searching for new nodes (e.g. in DHT) without leaking Download key.
   // Completely public, no need to hide it.
   mutable QByteArray cached_hash;
 
-  QByteArray getEncodedPayload() const;
-  QByteArray getPayload() const;
+  Secret(OpaqueSecret* opaque_secret);
+  std::unique_ptr<OpaqueSecret, decltype(&secret_destroy)> opaque_secret_;
 };
 
 std::ostream &operator<<(std::ostream &os, const Secret &k);

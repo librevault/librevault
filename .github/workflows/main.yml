@@ -171,21 +171,21 @@ jobs:
           conan profile new --detect --force default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-#      - name: Restore ccache cache
-#        uses: actions/cache@v2
-#        env:
-#          cache-name: cache-ccache
-#        with:
-#          path: ~/.ccache
-#          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
-#          restore-keys: |
-#            ${{ runner.os }}-build-${{ env.cache-name }}
-#      - name: Build application
-#        run: |
-#          mkdir -p build
-#          pushd build
-#          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
-#          cmake --build .
+      - name: Restore ccache cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-ccache
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}
+      - name: Build application
+        run: |
+          mkdir -p build
+          pushd build
+          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
+          cmake --build .
 #          cpack
 #      - name: Upload artifact
 #        uses: actions/upload-artifact@v1

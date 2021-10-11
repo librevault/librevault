@@ -2,12 +2,12 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::str::FromStr;
 
+use ed25519::signature::Signature;
 use ed25519_dalek_fiat::{Keypair, PublicKey, SecretKey, Signer, Verifier, PUBLIC_KEY_LENGTH};
 use lazy_static::lazy_static;
 use luhn::Luhn;
 use rand::rngs::OsRng;
 use sha3::{Digest, Sha3_256};
-use ed25519::signature::Signature;
 
 use crate::ffi::FfiConstBuffer;
 
@@ -66,13 +66,26 @@ mod ffi {
     }
 
     #[no_mangle]
-    pub extern "C" fn secret_sign(secret: *const OpaqueSecret, message: FfiConstBuffer) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice(&(*secret).sign(message.as_slice()).unwrap().as_slice()) }
+    pub extern "C" fn secret_sign(
+        secret: *const OpaqueSecret,
+        message: FfiConstBuffer,
+    ) -> FfiConstBuffer {
+        unsafe {
+            FfiConstBuffer::from_slice(&(*secret).sign(message.as_slice()).unwrap().as_slice())
+        }
     }
 
     #[no_mangle]
-    pub extern "C" fn secret_verify(secret: *const OpaqueSecret, message: FfiConstBuffer, signature: FfiConstBuffer) -> bool {
-        unsafe { (*secret).verify(message.as_slice(), signature.as_slice()).unwrap() }
+    pub extern "C" fn secret_verify(
+        secret: *const OpaqueSecret,
+        message: FfiConstBuffer,
+        signature: FfiConstBuffer,
+    ) -> bool {
+        unsafe {
+            (*secret)
+                .verify(message.as_slice(), signature.as_slice())
+                .unwrap()
+        }
     }
 
     #[no_mangle]
@@ -175,14 +188,16 @@ impl OpaqueSecret {
                 self.get_private_key()?.to_bytes(),
                 self.get_public_key()?.to_bytes(),
             ]
-                .concat()),
+            .concat()),
         )
-            .unwrap();
+        .unwrap();
         Ok(keypair.sign(message).to_bytes().to_vec())
     }
 
     fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, SecretError> {
-        let signature = ed25519::Signature::from_bytes(signature).ok().ok_or(SecretError::InvalidSignatureFormat)?;
+        let signature = ed25519::Signature::from_bytes(signature)
+            .ok()
+            .ok_or(SecretError::InvalidSignatureFormat)?;
         Ok(self.get_public_key()?.verify(message, &signature).is_ok())
     }
 }
@@ -327,6 +342,9 @@ mod tests {
         let secret = OpaqueSecret::new();
         let message = b"123123121";
         let signature = b"aojdasjod";
-        assert_eq!(secret.verify(message, &*signature), Err(SecretError::InvalidSignatureFormat));
+        assert_eq!(
+            secret.verify(message, &*signature),
+            Err(SecretError::InvalidSignatureFormat)
+        );
     }
 }

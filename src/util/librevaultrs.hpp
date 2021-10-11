@@ -54,10 +54,6 @@ FfiConstBuffer encrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiCon
 
 FfiConstBuffer decrypt_aes256(FfiConstBuffer message, FfiConstBuffer key, FfiConstBuffer iv);
 
-FfiConstBuffer b58_encode(FfiConstBuffer in_buf);
-
-FfiConstBuffer b58_decode(FfiConstBuffer in_buf);
-
 FfiConstBuffer b32_encode(FfiConstBuffer in_buf);
 
 FfiConstBuffer b32_decode(FfiConstBuffer in_buf);

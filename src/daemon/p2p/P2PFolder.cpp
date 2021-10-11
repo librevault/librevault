@@ -92,9 +92,9 @@ QJsonObject P2PFolder::collect_state() {
   return state;
 }
 
-blob P2PFolder::local_token() { return conv_bytearray(derive_token(fgroup_->secret(), node_key_->digest())); }
+QByteArray P2PFolder::local_token() { return derive_token(fgroup_->secret(), node_key_->digest()); }
 
-blob P2PFolder::remote_token() { return conv_bytearray(derive_token(fgroup_->secret(), digest())); }
+QByteArray P2PFolder::remote_token() { return derive_token(fgroup_->secret(), digest()); }
 
 void P2PFolder::send_message(const QByteArray& message) {
   counter_.add_up(message.size());
@@ -105,8 +105,8 @@ void P2PFolder::send_message(const QByteArray& message) {
 void P2PFolder::sendHandshake() {
   V1Parser::Handshake message_struct;
   message_struct.auth_token = local_token();
-  message_struct.device_name = Config::get()->getGlobal("client_name").toString().toStdString();
-  message_struct.user_agent = Version::current().userAgent().toStdString();
+  message_struct.device_name = Config::get()->getGlobal("client_name").toString();
+  message_struct.user_agent = Version::current().userAgent();
 
   send_message(V1Parser().gen_Handshake(message_struct));
   handshake_sent_ = true;
@@ -157,7 +157,7 @@ void P2PFolder::post_have_meta(const Meta::PathRevision& revision, const bitfiel
        << " path_id=" << path_id_readable(message.revision.path_id_) << " revision=" << message.revision.revision_
        << " bits=" << conv_bitarray(message.bitfield));
 }
-void P2PFolder::post_have_chunk(const blob& ct_hash) {
+void P2PFolder::post_have_chunk(const QByteArray& ct_hash) {
   V1Parser::HaveChunk message;
   message.ct_hash = ct_hash;
   send_message(V1Parser().gen_HaveChunk(message));
@@ -185,17 +185,17 @@ void P2PFolder::post_meta(const SignedMeta& smeta, const bitfield_type& bitfield
        << " bits=" << conv_bitarray(bitfield));
 }
 
-void P2PFolder::request_block(const blob& ct_hash, uint32_t offset, uint32_t length) {
+void P2PFolder::request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size) {
   V1Parser::BlockRequest message;
   message.ct_hash = ct_hash;
   message.offset = offset;
-  message.length = length;
+  message.length = size;
   send_message(V1Parser().gen_BlockRequest(message));
 
   LOGD("==> BLOCK_REQUEST:"
-       << " ct_hash=" << ct_hash_readable(ct_hash) << " offset=" << offset << " length=" << length);
+       << " ct_hash=" << ct_hash_readable(ct_hash) << " offset=" << offset << " length=" << size);
 }
-void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& block) {
+void P2PFolder::post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& block) {
   V1Parser::BlockReply message;
   message.ct_hash = ct_hash;
   message.offset = offset;
@@ -210,58 +210,57 @@ void P2PFolder::post_block(const blob& ct_hash, uint32_t offset, const blob& blo
 }
 
 void P2PFolder::handle_message(const QByteArray& message) {
-  blob message_raw(message.begin(), message.end());
-  V1Parser::message_type message_type = V1Parser().parse_MessageType(message_raw);
+  V1Parser::message_type message_type = V1Parser().parse_MessageType(message);
 
-  counter_.add_down(message_raw.size());
-  fgroup_->bandwidth_counter().add_down(message_raw.size());
+  counter_.add_down(message.size());
+  fgroup_->bandwidth_counter().add_down(message.size());
 
   bumpTimeout();
 
   if (ready()) {
     switch (message_type) {
       case V1Parser::CHOKE:
-        handle_Choke(message_raw);
+        handle_Choke(message);
         break;
       case V1Parser::UNCHOKE:
-        handle_Unchoke(message_raw);
+        handle_Unchoke(message);
         break;
       case V1Parser::INTERESTED:
-        handle_Interested(message_raw);
+        handle_Interested(message);
         break;
       case V1Parser::NOT_INTERESTED:
-        handle_NotInterested(message_raw);
+        handle_NotInterested(message);
         break;
       case V1Parser::HAVE_META:
-        handle_HaveMeta(message_raw);
+        handle_HaveMeta(message);
         break;
       case V1Parser::HAVE_CHUNK:
-        handle_HaveChunk(message_raw);
+        handle_HaveChunk(message);
         break;
       case V1Parser::META_REQUEST:
-        handle_MetaRequest(message_raw);
+        handle_MetaRequest(message);
         break;
       case V1Parser::META_REPLY:
-        handle_MetaReply(message_raw);
+        handle_MetaReply(message);
         break;
       case V1Parser::BLOCK_REQUEST:
-        handle_BlockRequest(message_raw);
+        handle_BlockRequest(message);
         break;
       case V1Parser::BLOCK_REPLY:
-        handle_BlockReply(message_raw);
+        handle_BlockReply(message);
         break;
       default:
         socket_->close(QWebSocketProtocol::CloseCodeProtocolError);
     }
   } else {
-    handle_Handshake(message_raw);
+    handle_Handshake(message);
   }
 }
 
-void P2PFolder::handle_Handshake(const blob& message_raw) {
+void P2PFolder::handle_Handshake(const QByteArray& message) {
   LOGFUNC();
   try {
-    auto message_struct = V1Parser().parse_Handshake(message_raw);
+    auto message_struct = V1Parser().parse_Handshake(message);
     LOGD("<== HANDSHAKE");
 
     // Checking authentication using token
@@ -269,8 +268,8 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
 
     if (role_ == SERVER) sendHandshake();
 
-    client_name_ = QString::fromStdString(message_struct.device_name);
-    user_agent_ = QString::fromStdString(message_struct.user_agent);
+    client_name_ = message_struct.device_name;
+    user_agent_ = message_struct.user_agent;
 
     LOGD("LV Handshake successful");
     handshake_received_ = true;
@@ -281,7 +280,7 @@ void P2PFolder::handle_Handshake(const blob& message_raw) {
   }
 }
 
-void P2PFolder::handle_Choke(const blob& message_raw) {
+void P2PFolder::handle_Choke(const QByteArray& message) {
   LOGFUNC();
   LOGD("<== CHOKE");
 
@@ -290,7 +289,7 @@ void P2PFolder::handle_Choke(const blob& message_raw) {
     emit rcvdChoke();
   }
 }
-void P2PFolder::handle_Unchoke(const blob& message_raw) {
+void P2PFolder::handle_Unchoke(const QByteArray& message) {
   LOGFUNC();
   LOGD("<== UNCHOKE");
 
@@ -299,7 +298,7 @@ void P2PFolder::handle_Unchoke(const blob& message_raw) {
     emit rcvdUnchoke();
   }
 }
-void P2PFolder::handle_Interested(const blob& message_raw) {
+void P2PFolder::handle_Interested(const QByteArray& message) {
   LOGFUNC();
   LOGD("<== INTERESTED");
 
@@ -308,7 +307,7 @@ void P2PFolder::handle_Interested(const blob& message_raw) {
     emit rcvdInterested();
   }
 }
-void P2PFolder::handle_NotInterested(const blob& message_raw) {
+void P2PFolder::handle_NotInterested(const QByteArray& message) {
   LOGFUNC();
   LOGD("<== NOT_INTERESTED");
 
@@ -318,39 +317,39 @@ void P2PFolder::handle_NotInterested(const blob& message_raw) {
   }
 }
 
-void P2PFolder::handle_HaveMeta(const blob& message_raw) {
+void P2PFolder::handle_HaveMeta(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_HaveMeta(message_raw);
+  auto message_struct = V1Parser().parse_HaveMeta(message);
   LOGD("<== HAVE_META:"
        << " path_id=" << path_id_readable(message_struct.revision.path_id_)
        << " revision=" << message_struct.revision.revision_ << " bits=" << conv_bitarray(message_struct.bitfield));
 
   emit rcvdHaveMeta(message_struct.revision, message_struct.bitfield);
 }
-void P2PFolder::handle_HaveChunk(const blob& message_raw) {
+void P2PFolder::handle_HaveChunk(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_HaveChunk(message_raw);
+  auto message_struct = V1Parser().parse_HaveChunk(message);
   LOGD("<== HAVE_BLOCK:"
        << " ct_hash=" << ct_hash_readable(message_struct.ct_hash));
   emit rcvdHaveChunk(message_struct.ct_hash);
 }
 
-void P2PFolder::handle_MetaRequest(const blob& message_raw) {
+void P2PFolder::handle_MetaRequest(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_MetaRequest(message_raw);
+  auto message_struct = V1Parser().parse_MetaRequest(message);
   LOGD("<== META_REQUEST:"
        << " path_id=" << path_id_readable(message_struct.revision.path_id_)
        << " revision=" << message_struct.revision.revision_);
 
   emit rcvdMetaRequest(message_struct.revision);
 }
-void P2PFolder::handle_MetaReply(const blob& message_raw) {
+void P2PFolder::handle_MetaReply(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_MetaReply(message_raw, fgroup_->secret());
+  auto message_struct = V1Parser().parse_MetaReply(message, fgroup_->secret());
   LOGD("<== META_REPLY:"
        << " path_id=" << path_id_readable(message_struct.smeta.meta().path_id())
        << " revision=" << message_struct.smeta.meta().revision() << " bits=" << conv_bitarray(message_struct.bitfield));
@@ -358,20 +357,20 @@ void P2PFolder::handle_MetaReply(const blob& message_raw) {
   emit rcvdMetaReply(message_struct.smeta, message_struct.bitfield);
 }
 
-void P2PFolder::handle_BlockRequest(const blob& message_raw) {
+void P2PFolder::handle_BlockRequest(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_BlockRequest(message_raw);
+  auto message_struct = V1Parser().parse_BlockRequest(message);
   LOGD("<== BLOCK_REQUEST:"
        << " ct_hash=" << ct_hash_readable(message_struct.ct_hash) << " length=" << message_struct.length
        << " offset=" << message_struct.offset);
 
   emit rcvdBlockRequest(message_struct.ct_hash, message_struct.offset, message_struct.length);
 }
-void P2PFolder::handle_BlockReply(const blob& message_raw) {
+void P2PFolder::handle_BlockReply(const QByteArray& message) {
   LOGFUNC();
 
-  auto message_struct = V1Parser().parse_BlockReply(message_raw);
+  auto message_struct = V1Parser().parse_BlockReply(message);
   LOGD("<== BLOCK_REPLY:"
        << " ct_hash=" << ct_hash_readable(message_struct.ct_hash) << " offset=" << message_struct.offset);
 

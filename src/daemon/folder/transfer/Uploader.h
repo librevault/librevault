@@ -16,8 +16,8 @@
 #pragma once
 #include <QObject>
 #include <set>
+#include <stdexcept>
 
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {
@@ -36,18 +36,18 @@ class Uploader : public QObject {
 
   Uploader(ChunkStorage* chunk_storage, QObject* parent);
 
-  void broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash);
+  void broadcast_chunk(QList<RemoteFolder*> remotes, const QByteArray& ct_hash);
 
   /* Message handlers */
   void handle_interested(RemoteFolder* remote);
   void handle_not_interested(RemoteFolder* remote);
 
-  void handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset, uint32_t size) noexcept;
+  void handle_block_request(RemoteFolder* remote, const QByteArray& ct_hash, uint32_t offset, uint32_t size) noexcept;
 
  private:
   ChunkStorage* chunk_storage_;
 
-  QByteArray get_block(const blob& ct_hash, uint32_t offset, uint32_t size);
+  QByteArray get_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size);
 };
 
 }  // namespace librevault

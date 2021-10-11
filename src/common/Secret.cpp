@@ -16,8 +16,8 @@
 #include "Secret.h"
 
 #include <QCryptographicHash>
-#include "util/blob.h"
 
+#include "util/ffi.h"
 
 namespace librevault {
 

@@ -10,6 +10,8 @@
  */
 #include "Base32.h"
 
+#include <util/ffi.h>
+
 namespace librevault::crypto {
 
 QByteArray Base32::to(const QByteArray& data) const {

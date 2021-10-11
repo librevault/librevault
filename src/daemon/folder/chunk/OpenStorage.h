@@ -18,7 +18,6 @@
 #include <memory>
 
 #include "Meta.h"
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {

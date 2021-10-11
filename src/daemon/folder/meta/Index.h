@@ -18,7 +18,6 @@
 
 #include "SignedMeta.h"
 #include "util/SQLiteWrapper.h"
-#include "util/blob.h"
 #include "util/log.h"
 
 namespace librevault {
@@ -39,7 +38,7 @@ class Index : public QObject {
   /* Meta manipulators */
   bool haveMeta(const Meta::PathRevision& path_revision) noexcept;
   SignedMeta getMeta(const Meta::PathRevision& path_revision);
-  SignedMeta getMeta(const blob& path_id);
+  SignedMeta getMeta(const QByteArray& path_id);
   QList<SignedMeta> getMeta();
   QList<SignedMeta> getExistingMeta();
   QList<SignedMeta> getIncompleteMeta();
@@ -61,8 +60,8 @@ class Index : public QObject {
   // Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
   std::unique_ptr<SQLiteDB> db_;
 
-  QList<SignedMeta> getMeta(const std::string& sql,
-                            const std::map<QString, SQLValue>& values = std::map<QString, SQLValue>());
+  QList<SignedMeta> getMeta(const QString& sql,
+                            const std::map<QString, SQLValue>& values);
   void wipe();
 
   void notifyState();

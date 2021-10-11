@@ -18,8 +18,6 @@
 #include <QString>
 #include <iostream>
 #include <stdexcept>
-#include <string>
-#include <vector>
 #include <librevaultrs.hpp>
 #include <memory>
 

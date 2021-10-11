@@ -18,7 +18,6 @@
 
 #include "Meta.h"
 #include "SignedMeta.h"
-#include "util/blob.h"
 #include "util/conv_bitfield.h"
 
 namespace librevault {
@@ -38,13 +37,13 @@ class RemoteFolder : public QObject {
   void rcvdNotInterested();
 
   void rcvdHaveMeta(Meta::PathRevision, bitfield_type);
-  void rcvdHaveChunk(blob);
+  void rcvdHaveChunk(QByteArray);
 
   void rcvdMetaRequest(Meta::PathRevision);
   void rcvdMetaReply(SignedMeta, bitfield_type);
 
-  void rcvdBlockRequest(blob, uint32_t, uint32_t);
-  void rcvdBlockReply(blob, uint32_t, blob);
+  void rcvdBlockRequest(QByteArray, uint32_t, uint32_t);
+  void rcvdBlockReply(QByteArray, uint32_t, QByteArray);
 
  public:
   RemoteFolder(QObject* parent);
@@ -61,13 +60,13 @@ class RemoteFolder : public QObject {
   virtual void uninterest() = 0;
 
   virtual void post_have_meta(const Meta::PathRevision& revision, const bitfield_type& bitfield) = 0;
-  virtual void post_have_chunk(const blob& ct_hash) = 0;
+  virtual void post_have_chunk(const QByteArray& ct_hash) = 0;
 
   virtual void request_meta(const Meta::PathRevision& revision) = 0;
   virtual void post_meta(const SignedMeta& smeta, const bitfield_type& bitfield) = 0;
 
-  virtual void request_block(const blob& ct_hash, uint32_t offset, uint32_t size) = 0;
-  virtual void post_block(const blob& ct_hash, uint32_t offset, const blob& chunk) = 0;
+  virtual void request_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size) = 0;
+  virtual void post_block(const QByteArray& ct_hash, uint32_t offset, const QByteArray& chunk) = 0;
 
   /* High-level RAII wrappers */
   struct InterestGuard {

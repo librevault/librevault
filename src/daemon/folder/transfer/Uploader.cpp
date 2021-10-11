@@ -24,7 +24,7 @@ Uploader::Uploader(ChunkStorage* chunk_storage, QObject* parent) : QObject(paren
   LOGFUNC();
 }
 
-void Uploader::broadcast_chunk(QList<RemoteFolder*> remotes, const blob& ct_hash) {
+void Uploader::broadcast_chunk(QList<RemoteFolder*> remotes, const QByteArray& ct_hash) {
   for (auto& remote : remotes) remote->post_have_chunk(ct_hash);
 }
 
@@ -41,11 +41,11 @@ void Uploader::handle_not_interested(RemoteFolder* remote) {
   remote->choke();
 }
 
-void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, uint32_t offset,
+void Uploader::handle_block_request(RemoteFolder* remote, const QByteArray& ct_hash, uint32_t offset,
                                     uint32_t size) noexcept {
   try {
     if (!remote->am_choking() && remote->peer_interested())
-      remote->post_block(ct_hash, offset, conv_bytearray(get_block(ct_hash, offset, size)));
+      remote->post_block(ct_hash, offset, get_block(ct_hash, offset, size));
   } catch (ChunkStorage::ChunkNotFound& e) {
     LOGW(e.what());
   } catch (Uploader::ChunkOutOfBounds& e) {
@@ -53,8 +53,8 @@ void Uploader::handle_block_request(RemoteFolder* remote, const blob& ct_hash, u
   }
 }
 
-QByteArray Uploader::get_block(const blob& ct_hash, uint32_t offset, uint32_t size) {
-  auto chunk = chunk_storage_->get_chunk(conv_bytearray(ct_hash));
+QByteArray Uploader::get_block(const QByteArray& ct_hash, uint32_t offset, uint32_t size) {
+  auto chunk = chunk_storage_->get_chunk(ct_hash);
   if (((int)offset < chunk.size()) && ((int)size <= (chunk.size() - (int)offset)))
     return chunk.mid(offset, size);
   else

@@ -23,11 +23,11 @@
 namespace librevault {
 
 QByteArray Meta::Chunk::encrypt(const QByteArray& chunk, const QByteArray& key, const QByteArray& iv) {
-  return chunk | crypto::AES_CBC(key, iv, chunk.size() % 16 != 0);
+  return chunk | crypto::AES_CBC(key, iv);
 }
 
 QByteArray Meta::Chunk::decrypt(const QByteArray& chunk, uint32_t size, const QByteArray& key, const QByteArray& iv) {
-  return chunk | crypto::De<crypto::AES_CBC>(key, iv, size % 16 != 0);
+  return chunk | crypto::De<crypto::AES_CBC>(key, iv);
 }
 
 QByteArray Meta::Chunk::computeStrongHash(const QByteArray& chunk, StrongHashType type) {
@@ -125,7 +125,7 @@ void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params,
   rabin_global_params_s.set_polynomial_shift(rabin_global_params.polynomial_shift);
   rabin_global_params_s.set_avg_bits(rabin_global_params.avg_bits);
 
-  QByteArray serialized(rabin_global_params_s.ByteSize(), 0);
+  QByteArray serialized(rabin_global_params_s.ByteSizeLong(), 0);
   rabin_global_params_s.SerializeToArray(serialized.data(), serialized.size());
 
   rabin_global_params_.set_plain(serialized, secret);
@@ -174,7 +174,7 @@ QByteArray Meta::serialize() const {
     }
   }
 
-  QByteArray serialized_data(meta_s.ByteSize(), 0);
+  QByteArray serialized_data(meta_s.ByteSizeLong(), 0);
   meta_s.SerializeToArray(serialized_data.data(), serialized_data.size());
   return serialized_data;
 }

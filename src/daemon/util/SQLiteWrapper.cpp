@@ -13,8 +13,6 @@
 #include <QUuid>
 #include <utility>
 
-#include "util/blob.h"
-
 namespace librevault {
 
 // SQLValue

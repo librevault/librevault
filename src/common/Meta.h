@@ -15,7 +15,6 @@
  */
 #pragma once
 
-#include <util/blob.h>
 #include <QVector>
 #include "Secret.h"
 #include "util/AesCbcData.h"

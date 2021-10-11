@@ -19,8 +19,6 @@
 #include <QMutex>
 #include <QObject>
 
-#include "util/blob.h"
-
 namespace librevault {
 
 class MemoryStorage : public QObject {

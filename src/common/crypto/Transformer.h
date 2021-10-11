@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include "util/blob.h"
+#include <QByteArray>
 
 namespace librevault::crypto {
 
@@ -19,15 +19,6 @@ class OneWayTransformer {
   virtual ~OneWayTransformer() = default;
 
   virtual QByteArray to(const QByteArray& data) const = 0;
-
-  template <class InputIterator>
-  QByteArray to(InputIterator first, InputIterator last) const {
-    return to(conv_bytearray(blob(first, last)));
-  }
-  template <class Container>
-  QByteArray to(const Container& data) const {
-    return to(data.begin(), data.end());
-  }
 };
 
 class TwoWayTransformer : public OneWayTransformer {
@@ -36,15 +27,6 @@ class TwoWayTransformer : public OneWayTransformer {
 
   QByteArray to(const QByteArray& data) const override = 0;
   virtual QByteArray from(const QByteArray& data) const = 0;
-
-  template <class InputIterator>
-  QByteArray from(InputIterator first, InputIterator last) const {
-    return from(conv_bytearray(blob(first, last)));
-  }
-  template <class Container>
-  QByteArray from(const Container& data) const {
-    return from(data.begin(), data.end());
-  }
 };
 
 template <class Trans>

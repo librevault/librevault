@@ -21,7 +21,7 @@ class AES_CBC : public TwoWayTransformer {
   const QByteArray iv;
 
  public:
-  AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding = true);
+  AES_CBC(QByteArray key, QByteArray iv);
   ~AES_CBC() override = default;
 
   QByteArray encrypt(const QByteArray& plaintext) const;

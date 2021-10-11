@@ -16,20 +16,9 @@
 #pragma once
 
 #include <QByteArray>
-#include <cstdint>
 #include <librevaultrs.hpp>
-#include <vector>
 
 namespace librevault {
-
-using blob = std::vector<uint8_t>;
-
-inline QByteArray conv_bytearray(const blob& bl) {
-  Q_ASSERT(bl.size() <= INTMAX_MAX);
-  return QByteArray((const char*)bl.data(), (int)bl.size());
-}
-
-inline blob conv_bytearray(const QByteArray& ba) { return blob(ba.begin(), ba.end()); }
 
 inline FfiConstBuffer from_cpp(const QByteArray& ba) {
   return {reinterpret_cast<const uint8_t*>(ba.data()), static_cast<uintptr_t>(ba.size())};

@@ -17,7 +17,6 @@
 #include <QObject>
 
 #include "SignedMeta.h"
-#include "util/blob.h"
 
 namespace librevault {
 

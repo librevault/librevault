@@ -23,7 +23,6 @@
 
 #include "Paths.h"
 #include "Secret.h"
-#include "util/blob.h"
 
 Q_LOGGING_CATEGORY(log_config, "config")
 

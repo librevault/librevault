@@ -10,9 +10,13 @@
  */
 #include "AES_CBC.h"
 
+#include <util/ffi.h>
+
+#include <utility>
+
 namespace librevault::crypto {
 
-AES_CBC::AES_CBC(const QByteArray& key, const QByteArray& iv, bool padding) : key(key), iv(iv) {}
+AES_CBC::AES_CBC(QByteArray  key, QByteArray iv) : key(std::move(key)), iv(std::move(iv)) {}
 
 QByteArray AES_CBC::encrypt(const QByteArray& plaintext) const {
   return from_rust(encrypt_aes256(from_cpp(plaintext), from_cpp(key), from_cpp(iv)));

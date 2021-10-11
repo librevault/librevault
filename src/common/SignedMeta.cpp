@@ -17,8 +17,6 @@
 
 #include <utility>
 
-#include "util/blob.h"
-
 namespace librevault {
 
 SignedMeta::SignedMeta(Meta meta, const Secret& secret) {

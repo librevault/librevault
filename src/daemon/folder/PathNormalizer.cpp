@@ -15,6 +15,8 @@
  */
 #include "PathNormalizer.h"
 
+#include <util/ffi.h>
+
 #include "control/FolderParams.h"
 
 namespace librevault {

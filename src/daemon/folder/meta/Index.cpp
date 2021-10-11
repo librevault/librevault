@@ -91,7 +91,7 @@ bool Index::haveMeta(const Meta::PathRevision& path_revision) noexcept {
 }
 
 SignedMeta Index::getMeta(const Meta::PathRevision& path_revision) {
-  auto smeta = getMeta(conv_bytearray(path_revision.path_id_));
+  auto smeta = getMeta(path_revision.path_id_);
   if (smeta.meta().revision() == path_revision.revision_)
     return smeta;
   else
@@ -143,30 +143,30 @@ void Index::putMeta(const SignedMeta& signed_meta, bool fully_assembled) {
   notifyState();
 }
 
-QList<SignedMeta> Index::getMeta(const std::string& sql, const std::map<QString, SQLValue>& values) {
+QList<SignedMeta> Index::getMeta(const QString& sql, const std::map<QString, SQLValue>& values) {
   QList<SignedMeta> result_list;
-  for (auto row : db_->exec(QString::fromStdString(sql), values)) result_list << SignedMeta(row[0], row[1], params_.secret);
+  for (auto row : db_->exec(sql, values)) result_list << SignedMeta(row[0], row[1], params_.secret);
   return result_list;
 }
-SignedMeta Index::getMeta(const blob& path_id) {
-  auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {{":path_id", conv_bytearray(path_id)}});
+SignedMeta Index::getMeta(const QByteArray& path_id) {
+  auto meta_list = getMeta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", {{":path_id", path_id}});
 
   if (meta_list.empty()) throw MetaStorage::MetaNotFound();
   return *meta_list.begin();
 }
-QList<SignedMeta> Index::getMeta() { return getMeta("SELECT meta, signature FROM meta"); }
+QList<SignedMeta> Index::getMeta() { return getMeta("SELECT meta, signature FROM meta", {}); }
 
 QList<SignedMeta> Index::getExistingMeta() {
-  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;");
+  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=1;", {});
 }
 
 QList<SignedMeta> Index::getIncompleteMeta() {
-  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;");
+  return getMeta("SELECT meta, signature FROM meta WHERE (type<>255)=1 AND assembled=0;", {});
 }
 
 bool Index::putAllowed(const Meta::PathRevision& path_revision) noexcept {
   try {
-    return getMeta(conv_bytearray(path_revision.path_id_)).meta().revision() < path_revision.revision_;
+    return getMeta(path_revision.path_id_).meta().revision() < path_revision.revision_;
   } catch (MetaStorage::MetaNotFound& e) {
     return true;
   }

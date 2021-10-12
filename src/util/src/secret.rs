@@ -68,7 +68,7 @@ impl OpaqueSecret {
         }
     }
 
-    fn get_symmetric_key(&self) -> Result<&[u8], SecretError> {
+    pub fn get_symmetric_key(&self) -> Result<&[u8], SecretError> {
         match self {
             OpaqueSecret::Signer { symmetric_key, .. }
             | OpaqueSecret::Decryptor { symmetric_key, .. } => Ok(&symmetric_key),

@@ -4,11 +4,21 @@ use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub enum NormalizationError {
+    PrefixError,
     UnicodeError,
 }
 
-fn normalize(path: &Path, root: &Path, normalize_unicode: bool) -> Vec<u8> {
-    let mut normalized = path.strip_prefix(root).unwrap().to_slash().unwrap();
+pub fn normalize(
+    path: &Path,
+    root: &Path,
+    normalize_unicode: bool,
+) -> Result<Vec<u8>, NormalizationError> {
+    let mut normalized = path
+        .strip_prefix(root)
+        .ok()
+        .ok_or(NormalizationError::PrefixError)?
+        .to_slash()
+        .ok_or(NormalizationError::PrefixError)?;
 
     if normalize_unicode {
         normalized = normalized.nfc().collect::<String>();
@@ -20,10 +30,10 @@ fn normalize(path: &Path, root: &Path, normalize_unicode: bool) -> Vec<u8> {
 
     log::trace!("path: \"{:?}\" normalized: \"{:?}\"", path, normalized);
 
-    normalized.into_bytes()
+    Ok(normalized.into_bytes())
 }
 
-fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationError> {
+pub fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationError> {
     let denormalized = String::from_utf8(path)
         .ok()
         .ok_or(NormalizationError::UnicodeError)?;
@@ -53,11 +63,14 @@ mod ffi {
                 CStr::from_ptr(root).to_str().unwrap(),
             )
         };
-        FfiConstBuffer::from_vec(&normalize(
-            &PathBuf::from(path),
-            &PathBuf::from(root),
-            normalize_unicode,
-        ))
+        FfiConstBuffer::from(
+            normalize(
+                &PathBuf::from(path),
+                &PathBuf::from(root),
+                normalize_unicode,
+            )
+            .unwrap(),
+        )
     }
 
     #[no_mangle]
@@ -85,7 +98,7 @@ mod tests {
     #[test]
     fn test_no_simple() {
         assert_eq!(
-            normalize(Path::new("/home/123/123.txt"), Path::new("/home/123"), true),
+            normalize(Path::new("/home/123/123.txt"), Path::new("/home/123"), true).unwrap(),
             b"123.txt".to_vec()
         );
     }
@@ -97,7 +110,8 @@ mod tests {
                 Path::new("/home/123/123.txt/"),
                 Path::new("/home/123"),
                 true
-            ),
+            )
+            .unwrap(),
             b"123.txt".to_vec()
         );
     }
@@ -106,8 +120,14 @@ mod tests {
     fn test_no_normalization() {
         let path_nfd = Path::new("/home/123/é.txt");
         let path_nfc = "é.txt".to_string().into_bytes();
-        assert_ne!(normalize(path_nfd, Path::new("/home/123"), false), path_nfc);
-        assert_eq!(normalize(path_nfd, Path::new("/home/123"), true), path_nfc);
+        assert_ne!(
+            normalize(path_nfd, Path::new("/home/123"), false).unwrap(),
+            path_nfc
+        );
+        assert_eq!(
+            normalize(path_nfd, Path::new("/home/123"), true).unwrap(),
+            path_nfc
+        );
     }
 
     #[test]

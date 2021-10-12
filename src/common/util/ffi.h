@@ -25,9 +25,12 @@ inline FfiConstBuffer from_cpp(const QByteArray& ba) {
 }
 
 inline QByteArray from_rust(FfiConstBuffer buf) {
-  auto buf_copy = QByteArray{reinterpret_cast<const char*>(buf.str_p), static_cast<int>(buf.str_len)};
-  drop_ffi(buf);
-  return buf_copy;
+  if(buf.str_p != nullptr) {
+    auto buf_copy = QByteArray{reinterpret_cast<const char*>(buf.str_p), static_cast<int>(buf.str_len)};
+    drop_ffi(buf);
+    return buf_copy;
+  }
+  return {};
 }
 
 }  // namespace librevault

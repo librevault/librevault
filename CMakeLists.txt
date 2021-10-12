@@ -180,6 +180,15 @@ target_include_directories(librevault-rs INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sr
 set_target_properties(librevault-rs PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
 target_link_libraries(librevault-rs INTERFACE OpenSSL::SSL OpenSSL::Crypto)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/contrib/corrosion/cmake")
+find_package(Rust REQUIRED)
+
+file(GLOB_RECURSE CXXBRIDGE_SRCS "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge/librevault-rs/*.cpp")
+file(GLOB_RECURSE CXXBRIDGE_HEADERS "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge/librevault-rs/*.h")
+add_library(cxxbridge STATIC ${CXXBRIDGE_SRCS} ${CXXBRIDGE_HEADERS})
+set_target_properties(cxxbridge PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(cxxbridge PUBLIC "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge")
+target_link_libraries(librevault-rs INTERFACE cxxbridge)
 
 ## QtSingleApplication
 if(BUILD_GUI)

@@ -14,7 +14,7 @@ pub extern "C" fn encrypt_aes256(
 ) -> FfiConstBuffer {
     let (message, key, iv) = (message.as_slice(), key.as_slice(), iv.as_slice());
     let cipher = Aes256Cbc::new_from_slices(key, iv).unwrap();
-    FfiConstBuffer::from_vec(&cipher.encrypt_vec(message))
+    FfiConstBuffer::from(cipher.encrypt_vec(message))
 }
 
 #[no_mangle]
@@ -25,5 +25,11 @@ pub extern "C" fn decrypt_aes256(
 ) -> FfiConstBuffer {
     let (message, key, iv) = (message.as_slice(), key.as_slice(), iv.as_slice());
     let cipher = Aes256Cbc::new_from_slices(key, iv).unwrap();
-    FfiConstBuffer::from_vec(&cipher.decrypt_vec(message).unwrap())
+    FfiConstBuffer::from(cipher.decrypt_vec(message).unwrap())
+}
+
+pub fn encrypt_chunk(message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+    Aes256Cbc::new_from_slices(key, iv)
+        .unwrap()
+        .encrypt_vec(message)
 }

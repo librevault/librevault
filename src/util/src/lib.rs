@@ -17,3 +17,11 @@ pub extern "C" fn fill_random(array: *mut u8, len: usize) {
     let mut rng = thread_rng();
     slice.try_fill(&mut rng).unwrap();
 }
+
+#[cxx::bridge]
+mod ff {
+    extern "Rust" {
+
+    }
+}
+

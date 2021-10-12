@@ -18,7 +18,12 @@ enum class Level {
   Trace = 4,
 };
 
+struct IndexError;
+
 struct OpaqueSecret;
+
+template<typename T = void, typename E = void>
+struct Result;
 
 struct FfiConstBuffer {
   const uint8_t *str_p;
@@ -60,6 +65,10 @@ FfiConstBuffer b32_decode(FfiConstBuffer in_buf);
 
 void drop_ffi(FfiConstBuffer buf);
 
+Result<FfiConstBuffer, IndexError> make_meta_from_cpp(FfiConstBuffer secret,
+                                                      FfiConstBuffer path,
+                                                      FfiConstBuffer root);
+
 void log_message(Level level, FfiConstBuffer msg, FfiConstBuffer target);
 
 void log_init();
@@ -67,6 +76,10 @@ void log_init();
 void nodekey_write_new(const char *key_path);
 
 void nodekey_write_new_cert(const char *key_path, const char *cert_path);
+
+FfiConstBuffer path_normalize(const char *path, const char *root, bool normalize_unicode);
+
+FfiConstBuffer path_denormalize(const char *path, const char *root);
 
 void rabin_append(Rabin *h, uint8_t b);
 
@@ -101,9 +114,5 @@ FfiConstBuffer secret_sign(const OpaqueSecret *secret, FfiConstBuffer message);
 bool secret_verify(const OpaqueSecret *secret, FfiConstBuffer message, FfiConstBuffer signature);
 
 FfiConstBuffer secret_as_string(const OpaqueSecret *secret);
-
-FfiConstBuffer path_normalize(const char *path, const char *root, bool normalize_unicode);
-
-FfiConstBuffer path_denormalize(const char *path, const char *root);
 
 } // extern "C"

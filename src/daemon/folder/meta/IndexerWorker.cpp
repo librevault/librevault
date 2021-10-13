@@ -42,12 +42,9 @@ Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
 
-Meta::Chunk populate_chunk(const QByteArray& data, const Secret& secret) {
-  auto chunk = c_populate_chunk(to_slice(data), secret.string().toStdString());
+Meta::Chunk convert_chunk(const QByteArray& chunk) {
   auto chunk_s = serialization::Meta_FileMetadata_Chunk();
-
   chunk_s.ParseFromArray(chunk.data(), chunk.size());
-
   return {QByteArray::fromStdString(chunk_s.ct_hash()), chunk_s.size(), QByteArray::fromStdString(chunk_s.iv()), QByteArray::fromStdString(chunk_s.pt_hmac())};
 }
 
@@ -206,59 +203,13 @@ void IndexerWorker::update_fsattrib() {
 }
 
 void IndexerWorker::update_chunks() {
-  if (old_meta_.meta_type() == Meta::FILE && old_meta_.validate()) {
-    new_meta_.set_algorithm_type(old_meta_.algorithm_type());
-    new_meta_.set_strong_hash_type(old_meta_.strong_hash_type());
-
-    new_meta_.set_max_chunksize(old_meta_.max_chunksize());
-    new_meta_.set_min_chunksize(old_meta_.min_chunksize());
-  } else {
-    new_meta_.set_algorithm_type(Meta::RABIN);
-    new_meta_.set_strong_hash_type(params_.chunk_strong_hash_type);
-
-    new_meta_.set_max_chunksize(8 * 1024 * 1024);
-    new_meta_.set_min_chunksize(1 * 1024 * 1024);
-
-    // TODO: Generate a new polynomial for rabin_global_params here to prevent a possible fingerprinting attack.
-  }
-
-  // Initializing chunker
-  Rabin hasher{};
-  hasher.minsize = new_meta_.min_chunksize();
-  hasher.maxsize = new_meta_.max_chunksize();
-
-  hasher.average_bits = 20;
-  hasher.polynomial = 0x3DA3358B4DC173LL;
-  hasher.polynomial_degree = 53;
-  hasher.polynomial_shift = 53 - 8;
-
-  hasher.mask = uint64_t((1 << uint64_t(hasher.average_bits)) - 1);
-
-  rabin_init(&hasher);
-
-  // Chunking
-  QFile f(abspath_);
-  if (!f.open(QIODevice::ReadOnly)) throw AbortIndex("I/O error: " + f.errorString());
+  auto d = QJsonDocument::fromJson(from_vec(c_make_chunks(abspath_.toStdString(), secret_.string().toStdString())));
 
   QVector<Meta::Chunk> chunks;
-  chunks.reserve(f.size() / hasher.minsize);
-
-  QByteArray data;
-  data.reserve(hasher.maxsize);
-
-  for (char c; f.getChar(&c) && active_;) {
-    data += c;
-    if (rabin_next_chunk(&hasher, c)) {
-      // Found a chunk
-      chunks += populate_chunk(data, secret_);
-      data.truncate(0);
-    }
+  for(auto chunk_b64 : d.array()) {
+    auto chunk_s = QByteArray::fromBase64(chunk_b64.toString().toLatin1());
+    chunks += convert_chunk(chunk_s);
   }
-
-  if (!active_) throw AbortIndex("Indexing had been interruped");
-  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(data, secret_);
-
-  chunks.shrink_to_fit();
 
   new_meta_.set_chunks(chunks);
 }

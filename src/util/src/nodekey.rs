@@ -1,10 +1,7 @@
 use std::convert::TryFrom;
-use std::ffi::CStr;
 use std::fs::{read, File};
 use std::io::Write;
-use std::os::raw::c_char;
 
-use hex;
 use log::trace;
 use openssl::asn1::Asn1Time;
 use openssl::ec::{EcGroup, EcKey};

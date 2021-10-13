@@ -183,11 +183,19 @@ target_link_libraries(librevault-rs INTERFACE OpenSSL::SSL OpenSSL::Crypto)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/contrib/corrosion/cmake")
 find_package(Rust REQUIRED)
 
-file(GLOB_RECURSE CXXBRIDGE_SRCS "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge/librevault-rs/*.cc")
-file(GLOB_RECURSE CXXBRIDGE_HEADERS "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge/librevault-rs/*.h")
-add_library(cxxbridge STATIC ${CXXBRIDGE_SRCS} ${CXXBRIDGE_HEADERS})
+# cxxbridge
+set(CXXBRIDGE_ROOT "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge")
+
+file(STRINGS "src/util/cxx_bridges.txt" CXX_BRIDGES)
+foreach(module ${CXX_BRIDGES})
+	list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/librevault-rs/${module}.cc" "${CXXBRIDGE_ROOT}/librevault-rs/${module}.h")
+endforeach()
+list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/rust/cxx.h")
+set_source_files_properties(${CXXBRIDGE_SRCS} PROPERTIES GENERATED 1)
+
+add_library(cxxbridge STATIC ${CXXBRIDGE_SRCS})
 set_target_properties(cxxbridge PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(cxxbridge PUBLIC "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge")
+target_include_directories(cxxbridge INTERFACE "${CXXBRIDGE_ROOT}")
 target_link_libraries(librevault-rs INTERFACE cxxbridge)
 target_link_libraries(cxxbridge PUBLIC librevault-rs)
 

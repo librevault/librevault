@@ -10,16 +10,18 @@
  */
 #include "Base32.h"
 
+#include <librevault-rs/src/lib.rs.h>
 #include <util/ffi.h>
 
 namespace librevault::crypto {
 
 QByteArray Base32::to(const QByteArray& data) const {
-  return from_rust(b32_encode(from_cpp(data)));
+  return QByteArray::fromStdString(std::string(b32_encode(to_slice(data))));
 }
 
 QByteArray Base32::from(const QByteArray& data) const {
-  return from_rust(b32_decode(from_cpp(data)));
+  auto slice = b32_decode(rust::Str(data, data.size()));
+  return {reinterpret_cast<const char*>(slice.data()), static_cast<int>(slice.size())};
 }
 
 }  // namespace librevault

@@ -17,6 +17,7 @@
 
 #include <QByteArray>
 #include <librevaultrs.hpp>
+#include <librevault-rs/src/lib.rs.h>
 
 namespace librevault {
 
@@ -31,6 +32,14 @@ inline QByteArray from_rust(FfiConstBuffer buf) {
     return buf_copy;
   }
   return {};
+}
+
+inline rust::Slice<const uint8_t> to_slice(const QByteArray& data) {
+  return { reinterpret_cast<const uint8_t*>(data.data()), static_cast<size_t>(data.size())};
+}
+
+inline QByteArray from_vec(const rust::Vec<uint8_t>& data) {
+  return {reinterpret_cast<const char*>(data.data()), static_cast<int>(data.size()) };
 }
 
 }  // namespace librevault

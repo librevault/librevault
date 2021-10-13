@@ -1,29 +1,25 @@
-use crate::ffi::FfiConstBuffer;
 use log::log;
 
-#[repr(C)]
-#[allow(dead_code)]
-pub enum Level {
-    Error = 0,
-    Warn = 1,
-    Info = 2,
-    Debug = 3,
-    Trace = 4,
-}
-
-#[no_mangle]
-pub extern "C" fn log_message(level: Level, msg: FfiConstBuffer, target: FfiConstBuffer) {
+fn log_message(level: &str, msg: &str, target: &str) {
     let log_level = match level {
-        Level::Error => log::Level::Error,
-        Level::Warn => log::Level::Warn,
-        Level::Info => log::Level::Info,
-        Level::Debug => log::Level::Debug,
-        Level::Trace => log::Level::Trace,
+        "error" => log::Level::Error,
+        "warn" => log::Level::Warn,
+        "info" => log::Level::Info,
+        "debug" => log::Level::Debug,
+        "trace" => log::Level::Trace,
+        _ => unimplemented!(),
     };
-    log!(target: target.to_str(), log_level, "{}", msg.to_str());
+    log!(target: target, log_level, "{}", msg);
 }
 
-#[no_mangle]
-pub extern "C" fn log_init() {
+fn log_init() {
     simple_logger::SimpleLogger::new().env().init().unwrap();
+}
+
+#[cxx::bridge]
+mod ffi {
+    extern "Rust" {
+        fn log_init();
+        fn log_message(level: &str, msg: &str, target: &str);
+    }
 }

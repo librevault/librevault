@@ -15,10 +15,10 @@
  */
 #include "random.h"
 
-#include <librevaultrs.hpp>
+#include <librevault-rs/src/lib.rs.h>
 
 QByteArray randomBytes(int size) {
   QByteArray data(size, '\0');
-  fill_random(reinterpret_cast<uint8_t*>(data.data()), data.size());
+  fill_random(rust::Slice((uint8_t*)data.data(), data.size()));
   return data;
 }

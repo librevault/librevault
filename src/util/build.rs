@@ -6,6 +6,11 @@ fn main() {
     .unwrap();
     built::write_built_file().expect("Failed to acquire build-time information");
 
-    cxx_build::bridge("src/lib.rs");
-    println!("cargo:rerun-if-changed=src/lib.rs");
+    let _build = cxx_build::bridges([
+        "src/lib.rs",
+        "src/logger.rs",
+        "src/nodekey.rs",
+        "src/path_normalize.rs",
+        "src/aescbc.rs",
+    ]);
 }

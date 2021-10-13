@@ -19,6 +19,7 @@
 #include <csignal>
 #endif
 
+#include <librevault-rs/src/logger.rs.h>
 #include <librevaultrs.hpp>
 #include "Client.h"
 #include "Secret.h"
@@ -64,28 +65,26 @@ static const char* BANNER =
 // clang-format on
 
 void rustMessageHandler(QtMsgType msg_type, const QMessageLogContext& ctx, const QString& msg) {
-  auto category = QString(ctx.category).toUtf8();
   auto msg_utf8 = msg.toUtf8();
 
-  auto level = Level::Debug;
+  auto level = "debug";
   switch (msg_type) {
     case QtDebugMsg:
-      level = Level::Debug;
+      level = "debug";
       break;
     case QtWarningMsg:
-      level = Level::Warn;
+      level = "warn";
       break;
     case QtCriticalMsg:
     case QtFatalMsg:
-      level = Level::Error;
+      level = "error";
       break;
     case QtInfoMsg:
-      level = Level::Info;
+      level = "info";
       break;
   }
 
-  log_message(level, {reinterpret_cast<const uint8_t*>(msg_utf8.data()), static_cast<uintptr_t>(msg_utf8.size())},
-              {reinterpret_cast<const uint8_t*>(category.data()), static_cast<uintptr_t>(category.size())});
+  log_message(rust::Str(level), rust::Str(msg_utf8, msg_utf8.size()), rust::Str(ctx.category));
 
   if (Q_UNLIKELY(msg_type == QtFatalMsg)) {
     // flush logger

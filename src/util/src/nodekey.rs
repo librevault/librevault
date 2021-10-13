@@ -14,14 +14,12 @@ use openssl::nid::Nid;
 use openssl::pkey::PKey;
 use openssl::x509::{X509Builder, X509Name, X509};
 
-#[no_mangle]
-pub extern "C" fn nodekey_write_new(key_path: *const c_char) {
-    let key_path = unsafe { CStr::from_ptr(key_path) };
+fn nodekey_write_new(key_path: &str) {
     let curve = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
     let keypair = EcKey::generate(curve.as_ref()).unwrap();
     let pem = keypair.private_key_to_pem().unwrap();
 
-    let mut key_file = File::create(key_path.to_str().unwrap()).unwrap();
+    let mut key_file = File::create(key_path).unwrap();
     key_file.write_all(pem.as_slice()).unwrap();
 }
 
@@ -47,12 +45,8 @@ fn build_certificate(private_key_pem: &[u8]) -> Result<X509, ErrorStack> {
     Ok(cert_builder.build())
 }
 
-#[no_mangle]
-pub extern "C" fn nodekey_write_new_cert(key_path: *const c_char, cert_path: *const c_char) {
-    let key_path = unsafe { CStr::from_ptr(key_path) };
-    let cert_path = unsafe { CStr::from_ptr(cert_path) };
-
-    let key = read(key_path.to_str().unwrap()).unwrap();
+fn nodekey_write_new_cert(key_path: &str, cert_path: &str) {
+    let key = read(key_path).unwrap();
     let certificate = build_certificate(key.as_slice()).unwrap();
 
     let pem = certificate.to_pem().unwrap();
@@ -65,6 +59,14 @@ pub extern "C" fn nodekey_write_new_cert(key_path: *const c_char, cert_path: *co
         hex::encode(certificate.digest(MessageDigest::sha256()).unwrap())
     );
 
-    let mut key_file = File::create(cert_path.to_str().unwrap()).unwrap();
+    let mut key_file = File::create(cert_path).unwrap();
     key_file.write_all(pem.as_slice()).unwrap();
+}
+
+#[cxx::bridge]
+mod ffi {
+    extern "Rust" {
+        fn nodekey_write_new(key_path: &str);
+        fn nodekey_write_new_cert(key_path: &str, cert_path: &str);
+    }
 }

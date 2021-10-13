@@ -11,6 +11,7 @@
 #include "AES_CBC.h"
 
 #include <util/ffi.h>
+#include <librevault-rs/src/aescbc.rs.h>
 
 #include <utility>
 
@@ -19,11 +20,11 @@ namespace librevault::crypto {
 AES_CBC::AES_CBC(QByteArray  key, QByteArray iv) : key(std::move(key)), iv(std::move(iv)) {}
 
 QByteArray AES_CBC::encrypt(const QByteArray& plaintext) const {
-  return from_rust(encrypt_aes256(from_cpp(plaintext), from_cpp(key), from_cpp(iv)));
+  return from_vec(encrypt_aes256(to_slice(plaintext), to_slice(key), to_slice(iv)));
 }
 
 QByteArray AES_CBC::decrypt(const QByteArray& ciphertext) const {
-  return from_rust(decrypt_aes256(from_cpp(ciphertext), from_cpp(key), from_cpp(iv)));
+  return from_vec(decrypt_aes256(to_slice(ciphertext), to_slice(key), to_slice(iv)));
 }
 
 }  // namespace librevault

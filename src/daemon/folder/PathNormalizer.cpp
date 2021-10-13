@@ -16,6 +16,7 @@
 #include "PathNormalizer.h"
 
 #include <util/ffi.h>
+#include <librevault-rs/src/path_normalize.rs.h>
 
 #include "control/FolderParams.h"
 
@@ -24,11 +25,11 @@ namespace librevault {
 PathNormalizer::PathNormalizer(const FolderParams& params, QObject* parent) : QObject(parent), params_(params) {}
 
 QByteArray PathNormalizer::normalizePath(const QString& abspath) {
-  return from_rust(path_normalize(abspath.toUtf8(), params_.path.toUtf8(), params_.normalize_unicode));
+  return from_vec(normalize_cxx(rust::Str(abspath.toStdString()), rust::Str(params_.path.toStdString()), params_.normalize_unicode));
 }
 
 QString PathNormalizer::denormalizePath(const QByteArray& normpath) {
-  return from_rust(path_denormalize(normpath, params_.path.toUtf8()));
+  return QString::fromStdString(std::string(denormalize_cxx(to_slice(normpath), params_.path.toStdString())));
 }
 
 }  // namespace librevault

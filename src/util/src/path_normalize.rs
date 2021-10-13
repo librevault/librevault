@@ -1,4 +1,5 @@
 use path_slash::{PathBufExt, PathExt};
+use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
 use unicode_normalization::UnicodeNormalization;
 
@@ -6,6 +7,12 @@ use unicode_normalization::UnicodeNormalization;
 pub enum NormalizationError {
     PrefixError,
     UnicodeError,
+}
+
+impl Display for NormalizationError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub fn normalize(
@@ -33,8 +40,8 @@ pub fn normalize(
     Ok(normalized.into_bytes())
 }
 
-pub fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationError> {
-    let denormalized = String::from_utf8(path)
+pub fn denormalize(path: &[u8], root: &Path) -> Result<PathBuf, NormalizationError> {
+    let denormalized = String::from_utf8(path.to_vec())
         .ok()
         .ok_or(NormalizationError::UnicodeError)?;
     let denormalized = PathBuf::from_slash(denormalized);
@@ -45,49 +52,25 @@ pub fn denormalize(path: Vec<u8>, root: &Path) -> Result<PathBuf, NormalizationE
     Ok(denormalized)
 }
 
+fn normalize_cxx(
+    path: &str,
+    root: &str,
+    normalize_unicode: bool,
+) -> Result<Vec<u8>, NormalizationError> {
+    normalize(Path::new(path), Path::new(root), normalize_unicode)
+}
+
+fn denormalize_cxx(path: &[u8], root: &str) -> Result<String, NormalizationError> {
+    Ok(String::from(
+        denormalize(path, Path::new(root))?.to_str().unwrap(),
+    ))
+}
+
+#[cxx::bridge]
 mod ffi {
-    use super::*;
-    use crate::ffi::FfiConstBuffer;
-    use std::ffi::CStr;
-    use std::os::raw::c_char;
-
-    #[no_mangle]
-    pub extern "C" fn path_normalize(
-        path: *const c_char,
-        root: *const c_char,
-        normalize_unicode: bool,
-    ) -> FfiConstBuffer {
-        let (path, root) = unsafe {
-            (
-                CStr::from_ptr(path).to_str().unwrap(),
-                CStr::from_ptr(root).to_str().unwrap(),
-            )
-        };
-        FfiConstBuffer::from(
-            normalize(
-                &PathBuf::from(path),
-                &PathBuf::from(root),
-                normalize_unicode,
-            )
-            .unwrap(),
-        )
-    }
-
-    #[no_mangle]
-    pub extern "C" fn path_denormalize(path: *const c_char, root: *const c_char) -> FfiConstBuffer {
-        let (path, root) = unsafe {
-            (
-                CStr::from_ptr(path).to_str().unwrap(),
-                CStr::from_ptr(root).to_str().unwrap(),
-            )
-        };
-        FfiConstBuffer::from_slice(
-            &denormalize(path.to_string().into_bytes(), &PathBuf::from(root))
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .as_bytes(),
-        )
+    extern "Rust" {
+        fn normalize_cxx(path: &str, root: &str, normalize_unicode: bool) -> Result<Vec<u8>>;
+        fn denormalize_cxx(path: &[u8], root: &str) -> Result<String>;
     }
 }
 
@@ -133,7 +116,7 @@ mod tests {
     #[test]
     fn test_de_simple() {
         assert_eq!(
-            denormalize(b"123.txt".to_vec(), Path::new("/home/123")).unwrap(),
+            denormalize(b"123.txt", Path::new("/home/123")).unwrap(),
             PathBuf::from("/home/123/123.txt")
         );
     }

@@ -16,6 +16,7 @@
 #include "MLDHTProvider.h"
 
 #include <dht.h>
+#include <librevault-rs/src/lib.rs.h>
 
 #include <QCryptographicHash>
 #include <QFile>
@@ -106,7 +107,7 @@ void MLDHTProvider::readSessionFile() {
   if (own_id_arr.size() == (int)own_id.size())
     std::copy(own_id_arr.begin(), own_id_arr.end(), own_id.begin());
   else  // Invalid data
-    fill_random(own_id.data(), own_id.size());
+    fill_random(rust::Slice<uint8_t>(own_id.data(), own_id.size()));
 
   QJsonArray nodes = session_json["nodes"].toArray();
   qCInfo(log_dht) << "Loading" << nodes.size() << "nodes from session file";
@@ -225,7 +226,7 @@ void dht_hash(void* hash_return, int hash_size, const void* v1, int len1, const 
 }
 
 int dht_random_bytes(void* buf, size_t size) {
-  fill_random((uint8_t*)buf, size);
+  fill_random(rust::Slice<uint8_t>((uint8_t*)buf, size));
   return size;
 }
 

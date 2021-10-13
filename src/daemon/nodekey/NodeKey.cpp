@@ -16,7 +16,7 @@
 #include "NodeKey.h"
 
 #include <QDir>
-#include <librevaultrs.hpp>
+#include <librevault-rs/src/nodekey.rs.h>
 
 #include "control/Paths.h"
 #include "util/log.h"
@@ -31,8 +31,8 @@ NodeKey::NodeKey(QObject* parent) : QObject(parent) {
   QFile cert_file_(QDir::fromNativeSeparators(Paths::get()->cert_path));
   QFile private_key_file_(QDir::fromNativeSeparators(Paths::get()->key_path));
 
-  nodekey_write_new(private_key_file_.fileName().toUtf8());
-  nodekey_write_new_cert(private_key_file_.fileName().toUtf8(), cert_file_.fileName().toUtf8());
+  nodekey_write_new(rust::Str(private_key_file_.fileName().toStdString()));
+  nodekey_write_new_cert(rust::Str(private_key_file_.fileName().toStdString()), rust::Str(cert_file_.fileName().toStdString()));
 
   private_key_file_.open(QIODevice::ReadOnly);
   cert_file_.open(QIODevice::ReadOnly);

@@ -22,7 +22,7 @@ file(GLOB_RECURSE MAIN_UIS "*.ui")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
 # Windows sources
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_WIN)
 	configure_file(resources/librevault.rc librevault.rc @ONLY)
 	configure_file(resources/librevault.ico librevault.ico COPYONLY)
 	configure_file(resources/librevault.manifest librevault.manifest COPYONLY)
@@ -33,13 +33,13 @@ else()
 endif()
 
 # Linux sources
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(NOT OS_LINUX)
 	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	file(GLOB_RECURSE MAIN_MMS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
@@ -77,7 +77,7 @@ set_target_properties(librevault-gui PROPERTIES CXX_STANDARD 17)
 # Target properties
 #============================================================================
 
-if(BUILD_UPDATER AND (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin"))
+if(BUILD_UPDATER AND (OS_WIN OR OS_MAC))
 	set(WILL_BUILD_UPDATER ON)
 endif()
 
@@ -95,10 +95,10 @@ target_link_libraries(librevault-gui PRIVATE OpenSSL::Crypto)
 
 # Qt
 target_link_libraries(librevault-gui PRIVATE Qt5::Svg Qt5::Widgets Qt5::WebSockets)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_WIN)
 	target_link_libraries(librevault-gui PRIVATE Qt5::WinExtras)
 endif()
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-gui PRIVATE Qt5::MacExtras)
 endif()
 
@@ -106,12 +106,12 @@ endif()
 target_link_libraries(librevault-gui PRIVATE QtSingleApplication)
 
 # WinSparkle
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND BUILD_UPDATER)
+if(OS_WIN AND BUILD_UPDATER)
 	target_link_libraries(librevault-gui PRIVATE CONAN_PKG::winsparkle)
 endif()
 
 # Sparkle (for Macs)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	FetchContent_Declare(sparkle URL https://github.com/sparkle-project/Sparkle/releases/download/1.23.0/Sparkle-1.23.0.tar.xz)
 	FetchContent_Populate(sparkle)
 	find_library(SPARKLE_LIBRARIES Sparkle HINTS ${sparkle_SOURCE_DIR})
@@ -119,7 +119,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-gui PRIVATE "-framework CoreFoundation")
 	target_link_libraries(librevault-gui PRIVATE "-framework AppKit")
 endif()

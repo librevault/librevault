@@ -15,6 +15,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
+include(OSDetection)
 
 #============================================================================
 # Settable options
@@ -143,10 +144,10 @@ set(Qt_COMPONENTS
 		Widgets
 		WebSockets
 		)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	list(APPEND Qt_COMPONENTS MacExtras)
 endif()
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_WIN)
 	list(APPEND Qt_COMPONENTS WinExtras)
 endif()
 find_package(Qt5 5.15 REQUIRED COMPONENTS ${Qt_COMPONENTS})

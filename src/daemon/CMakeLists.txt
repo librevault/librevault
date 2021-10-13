@@ -19,19 +19,19 @@ file(GLOB_RECURSE MAIN_HEADERS "*.h")
 file(GLOB_RECURSE MAIN_QRCS "resources/*.qrc")
 
 # Platform-dependent sources
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(NOT OS_WIN)
 	file(GLOB_RECURSE WIN_SRCS "*.win.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${WIN_SRCS})
 endif()
 
 # Linux sources
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if(NOT OS_LINUX)
 	file(GLOB_RECURSE LINUX_SRCS "*.linux.cpp")
 	list(REMOVE_ITEM MAIN_SRCS ${LINUX_SRCS})
 endif()
 
 # OS X sources
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	file(GLOB_RECURSE MAIN_MMS "*.mm")
 	list(APPEND SRCS ${MAIN_MMS})
 else()
@@ -70,12 +70,12 @@ target_link_libraries(librevault-daemon PUBLIC docopt::docopt)
 ##### System libraries #####
 
 ## WinSock
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_WIN)
 	target_link_libraries(librevault-daemon PUBLIC wsock32 ws2_32 Iphlpapi)
 endif()
 
 ## CoreFoundation
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(OS_MAC)
 	target_link_libraries(librevault-daemon PUBLIC "-framework Foundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreFoundation")
 	target_link_libraries(librevault-daemon PUBLIC "-framework CoreServices")

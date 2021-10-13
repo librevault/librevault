@@ -109,6 +109,8 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
       - name: Build application
         run: |
           cd build

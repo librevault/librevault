@@ -100,7 +100,7 @@ jobs:
           conan profile update settings.build_type=Release default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-      - name: Restore sccache cache
+      - name: Compiler caches
         uses: actions/cache@v2
         env:
           cache-name: cache-sccache
@@ -109,13 +109,22 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}
-      - uses: Swatinem/rust-cache@v1
-      - run: cargo install sccache
+      - run: |
+          SCCACHE_FILE=sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl
+          mkdir -p $HOME/.local/bin
+          curl -L "$LINK/$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
+          mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          LINK: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: 0.2.13
       - name: Build application
         run: |
           cd build
-          RUSTC_WRAPPER=sccache cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-          RUSTC_WRAPPER=sccache cmake --build .
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          cmake --build .
+        env:
+          RUSTC_WRAPPER: sccache
 
 #  build-linux-snap:
 #    runs-on: ubuntu-20.04
@@ -144,7 +153,7 @@ jobs:
     steps:
       - name: Install system-wide dependencies
         run: |
-          brew install cmake ccache ninja
+          brew install cmake ccache ninja sccache
           python3 -m pip install poetry
       - uses: actions/checkout@v2
         with:
@@ -173,12 +182,14 @@ jobs:
           conan profile new --detect --force default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-      - name: Restore ccache cache
+      - name: Compiler caches
         uses: actions/cache@v2
         env:
-          cache-name: cache-ccache
+          cache-name: cache-sccache
         with:
-          path: ~/.ccache
+          path: |
+            ~/.ccache
+            ~/Library/Caches/Mozilla.sccache
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}
@@ -186,8 +197,10 @@ jobs:
         run: |
           mkdir -p build
           pushd build
-          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
+          cmake .. -GNinja -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_INSTALL_PREFIX=../packaging
           cmake --build .
+        env:
+          RUSTC_WRAPPER: sccache
 #          cpack
 #      - name: Upload artifact
 #        uses: actions/upload-artifact@v1

@@ -109,10 +109,8 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}
-      - uses: actions-rs/install@v0.1
-        with:
-          crate: sccache
-          use-tool-cache: true
+      - uses: Swatinem/rust-cache@v1
+      - run: cargo install sccache
       - name: Build application
         run: |
           cd build

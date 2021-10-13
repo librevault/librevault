@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+use std::os::raw::c_char;
 use std::str::FromStr;
 
 use ed25519::signature::Signature;
@@ -6,8 +8,6 @@ use lazy_static::lazy_static;
 use luhn::Luhn;
 use rand::rngs::OsRng;
 use sha3::{Digest, Sha3_256};
-
-use crate::ffi::FfiConstBuffer;
 
 lazy_static! {
     static ref LUHNGENERATOR: Luhn =
@@ -29,6 +29,12 @@ pub enum SecretError {
     InvalidType,
     DeriveError,
     InvalidSignatureFormat,
+}
+
+impl Display for SecretError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Secret(\"{}\")", self.to_string())
+    }
 }
 
 #[derive(Debug)]
@@ -269,82 +275,49 @@ mod tests {
     }
 }
 
-mod ffi {
-    use super::*;
-    use std::ffi::CStr;
-    use std::os::raw::c_char;
+fn secret_new() -> Box<OpaqueSecret> {
+    Box::new(OpaqueSecret::new())
+}
 
-    #[no_mangle]
-    pub extern "C" fn secret_new() -> *mut OpaqueSecret {
-        Box::into_raw(Box::new(OpaqueSecret::new()))
+fn secret_from_str(s: &str) -> Result<Box<OpaqueSecret>, SecretError> {
+    Ok(Box::new(OpaqueSecret::from_str(s)?))
+}
+
+impl OpaqueSecret {
+    fn c_derive(&self, ty: c_char) -> Result<Box<Self>, SecretError> {
+        Ok(Box::new(self.derive(ty as u8 as char)?))
     }
 
-    #[no_mangle]
-    pub extern "C" fn secret_destroy(secret: *mut OpaqueSecret) {
-        unsafe {
-            Box::from_raw(secret);
-        }
+    fn c_clone(&self) -> Box<Self> {
+        Box::new(self.clone())
     }
 
-    #[no_mangle]
-    pub extern "C" fn secret_clone(secret: *const OpaqueSecret) -> *mut OpaqueSecret {
-        unsafe { Box::into_raw(Box::new((*secret).clone())) }
+    fn c_get_private(&self) -> Result<Vec<u8>, SecretError> {
+        Ok(self.get_private_key()?.to_bytes().to_vec())
     }
 
-    #[no_mangle]
-    pub extern "C" fn secret_from_string(secret: *const c_char) -> *mut OpaqueSecret {
-        unsafe {
-            Box::into_raw(Box::new(
-                OpaqueSecret::from_str(CStr::from_ptr(secret).to_str().unwrap()).unwrap(),
-            ))
-        }
+    fn c_get_symmetric(&self) -> Result<Vec<u8>, SecretError> {
+        Ok(self.get_symmetric_key()?.to_vec())
     }
 
-    #[no_mangle]
-    pub extern "C" fn secret_derive(secret: *const OpaqueSecret, ty: c_char) -> *mut OpaqueSecret {
-        unsafe { Box::into_raw(Box::new((*secret).derive(ty as u8 as char).unwrap())) }
+    fn c_get_public(&self) -> Result<Vec<u8>, SecretError> {
+        Ok(self.get_public_key()?.to_bytes().to_vec())
     }
+}
 
-    #[no_mangle]
-    pub extern "C" fn secret_get_private(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice(&(*secret).get_private_key().unwrap().to_bytes()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_get_symmetric(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice((*secret).get_symmetric_key().unwrap()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_get_public(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice(&(*secret).get_public_key().unwrap().to_bytes()) }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_sign(
-        secret: *const OpaqueSecret,
-        message: FfiConstBuffer,
-    ) -> FfiConstBuffer {
-        unsafe {
-            FfiConstBuffer::from_slice(&(*secret).sign(message.as_slice()).unwrap().as_slice())
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_verify(
-        secret: *const OpaqueSecret,
-        message: FfiConstBuffer,
-        signature: FfiConstBuffer,
-    ) -> bool {
-        unsafe {
-            (*secret)
-                .verify(message.as_slice(), signature.as_slice())
-                .unwrap()
-        }
-    }
-
-    #[no_mangle]
-    pub extern "C" fn secret_as_string(secret: *const OpaqueSecret) -> FfiConstBuffer {
-        unsafe { FfiConstBuffer::from_slice((*secret).to_string().as_bytes()) }
+#[cxx::bridge]
+mod ffx {
+    extern "Rust" {
+        type OpaqueSecret;
+        fn to_string(self: &OpaqueSecret) -> String;
+        fn secret_new() -> Box<OpaqueSecret>;
+        fn secret_from_str(s: &str) -> Result<Box<OpaqueSecret>>;
+        fn c_derive(self: &OpaqueSecret, ty: c_char) -> Result<Box<OpaqueSecret>>;
+        fn c_clone(&self) -> Box<OpaqueSecret>;
+        fn sign(&self, message: &[u8]) -> Result<Vec<u8>>;
+        fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool>;
+        fn c_get_private(&self) -> Result<Vec<u8>>;
+        fn c_get_symmetric(&self) -> Result<Vec<u8>>;
+        fn c_get_public(&self) -> Result<Vec<u8>>;
     }
 }

@@ -21,19 +21,6 @@
 
 namespace librevault {
 
-inline FfiConstBuffer from_cpp(const QByteArray& ba) {
-  return {reinterpret_cast<const uint8_t*>(ba.data()), static_cast<uintptr_t>(ba.size())};
-}
-
-inline QByteArray from_rust(FfiConstBuffer buf) {
-  if(buf.str_p != nullptr) {
-    auto buf_copy = QByteArray{reinterpret_cast<const char*>(buf.str_p), static_cast<int>(buf.str_len)};
-    drop_ffi(buf);
-    return buf_copy;
-  }
-  return {};
-}
-
 inline rust::Slice<const uint8_t> to_slice(const QByteArray& data) {
   return { reinterpret_cast<const uint8_t*>(data.data()), static_cast<size_t>(data.size())};
 }

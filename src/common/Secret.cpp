@@ -21,38 +21,38 @@
 
 namespace librevault {
 
-Secret::Secret() : opaque_secret_(secret_new(), secret_destroy) {}
+Secret::Secret() : opaque_secret_(secret_new()) {}
 
-Secret::Secret(OpaqueSecret* opaque_secret) : opaque_secret_(opaque_secret, secret_destroy) {}
-
-Secret::Secret(const QString& str) : Secret(secret_from_string(str.toLatin1().data())) {}
+Secret::Secret(const QString& str) : opaque_secret_(secret_from_str(rust::Str(str.toStdString()))) {}
 
 Secret::~Secret() = default;
 
-Secret::Secret(const Secret& secret): Secret(secret_clone(secret.opaque_secret_.get())) {}
+Secret::Secret(const Secret& secret) : opaque_secret_(secret.opaque_secret_->c_clone()) {}
+
+Secret::Secret(rust::Box<OpaqueSecret>&& opaque_secret) : opaque_secret_(std::move(opaque_secret)) {}
 
 Secret& Secret::operator=(const Secret &secret) {
-  opaque_secret_.reset(secret_clone(secret.opaque_secret_.get()));
+  opaque_secret_ = secret.opaque_secret_->c_clone();
   return *this;
 }
 
 Secret Secret::derive(Type key_type) const {
-  return {secret_derive(opaque_secret_.get(), key_type)};
+  return {opaque_secret_->c_derive(key_type)};
 }
 
 QByteArray Secret::get_Private_Key() const {
-  return from_rust(secret_get_private(opaque_secret_.get()));
+  return from_vec(opaque_secret_->c_get_private());
 }
 
 QByteArray Secret::get_Encryption_Key() const {
-  return from_rust(secret_get_symmetric(opaque_secret_.get()));
+  return from_vec(opaque_secret_->c_get_symmetric());
 }
 
 QByteArray Secret::get_Public_Key() const {
-  return from_rust(secret_get_public(opaque_secret_.get()));
+  return from_vec(opaque_secret_->c_get_public());
 }
 
-QString Secret::string() const { return QString::fromLatin1(from_rust(secret_as_string(opaque_secret_.get()))); }
+QString Secret::string() const { return QString::fromStdString(std::string(opaque_secret_->to_string())); }
 
 QByteArray Secret::get_Hash() const {
   if (!cached_hash.isEmpty()) return cached_hash;
@@ -60,11 +60,11 @@ QByteArray Secret::get_Hash() const {
 }
 
 QByteArray Secret::sign(const QByteArray& message) const {
-  return from_rust(secret_sign(opaque_secret_.get(), from_cpp(message)));
+  return from_vec(opaque_secret_->sign(to_slice(message)));
 }
 
 bool Secret::verify(const QByteArray& message, const QByteArray& signature) const {
-  return secret_verify(opaque_secret_.get(), from_cpp(message), from_cpp(signature));
+  return opaque_secret_->verify(to_slice(message), to_slice(signature));
 }
 
 std::ostream& operator<<(std::ostream& os, const Secret& k) { return os << k.string().toStdString(); }

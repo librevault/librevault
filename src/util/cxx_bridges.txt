@@ -1,5 +1,6 @@
 src/lib.rs
+src/aescbc.rs
 src/logger.rs
 src/nodekey.rs
 src/path_normalize.rs
-src/aescbc.rs
+src/secret.rs

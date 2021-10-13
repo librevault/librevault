@@ -1,5 +1,4 @@
 mod aescbc;
-mod ffi;
 mod logger;
 mod nodekey;
 mod path_normalize;

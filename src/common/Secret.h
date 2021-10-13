@@ -14,12 +14,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <librevault-rs/src/secret.rs.h>
+
 #include <QByteArray>
 #include <QString>
 #include <iostream>
-#include <stdexcept>
 #include <librevaultrs.hpp>
 #include <memory>
+#include <stdexcept>
 
 namespace librevault {
 
@@ -79,8 +81,9 @@ class Secret {
   // Completely public, no need to hide it.
   mutable QByteArray cached_hash;
 
-  Secret(OpaqueSecret* opaque_secret);
-  std::unique_ptr<OpaqueSecret, decltype(&secret_destroy)> opaque_secret_;
+  Secret(rust::Box<OpaqueSecret>&& opaque_secret);
+
+  rust::Box<OpaqueSecret> opaque_secret_;
 };
 
 std::ostream &operator<<(std::ostream &os, const Secret &k);

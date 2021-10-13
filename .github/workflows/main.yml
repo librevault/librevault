@@ -100,22 +100,24 @@ jobs:
           conan profile update settings.build_type=Release default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-      - name: Restore ccache cache
+      - name: Restore sccache cache
         uses: actions/cache@v2
         env:
-          cache-name: cache-ccache
+          cache-name: cache-sccache
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v1.3.0
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: sccache
+          use-tool-cache: true
       - name: Build application
         run: |
           cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          cmake --build .
+          RUSTC_WRAPPER=sccache cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          RUSTC_WRAPPER=sccache cmake --build .
 
 #  build-linux-snap:
 #    runs-on: ubuntu-20.04

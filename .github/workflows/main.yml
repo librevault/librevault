@@ -105,7 +105,7 @@ jobs:
         env:
           cache-name: cache-sccache
         with:
-          path: ~/.ccache
+          path: ~/.cache/sccache
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}

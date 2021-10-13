@@ -56,8 +56,6 @@ bool Meta::validate() const {
         || max_chunksize_ == 0 || min_chunksize_ == 0 || max_chunksize_ > min_chunksize_)
       return false;  // Invalid chunk constraints
 
-    if (algorithm_type_ == RABIN && !rabin_global_params_.check()) return false;
-
     for (auto& chunk : chunks()) {
       if (chunk.size > max_chunksize_ || chunk.size == 0)  // Broken chunk constraint
         if (chunk.ct_hash.size() != 28) return false;
@@ -103,34 +101,6 @@ void Meta::set_symlink_path(std::string path, const Secret& secret) {
   symlink_path_.set_plain(QByteArray::fromStdString(path), secret);
 }
 
-Meta::RabinGlobalParams Meta::rabin_global_params(const Secret& secret) const {
-  auto decrypted = rabin_global_params_.get_plain(secret);
-
-  serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
-  bool parsed_well = rabin_global_params_s.ParseFromArray(decrypted, decrypted.size());
-  if (!parsed_well) throw parse_error("Parse error: Rabin signature parameters parsing failed");
-
-  Meta::RabinGlobalParams rabin_global_params;
-  rabin_global_params.polynomial = rabin_global_params_s.polynomial();
-  rabin_global_params.polynomial_degree = rabin_global_params_s.polynomial_degree();
-  rabin_global_params.polynomial_shift = rabin_global_params_s.polynomial_shift();
-  rabin_global_params.avg_bits = rabin_global_params_s.avg_bits();
-
-  return rabin_global_params;
-}
-void Meta::set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret) {
-  serialization::Meta::FileMetadata::RabinGlobalParams rabin_global_params_s;
-  rabin_global_params_s.set_polynomial(rabin_global_params.polynomial);
-  rabin_global_params_s.set_polynomial_degree(rabin_global_params.polynomial_degree);
-  rabin_global_params_s.set_polynomial_shift(rabin_global_params.polynomial_shift);
-  rabin_global_params_s.set_avg_bits(rabin_global_params.avg_bits);
-
-  QByteArray serialized(rabin_global_params_s.ByteSizeLong(), 0);
-  rabin_global_params_s.SerializeToArray(serialized.data(), serialized.size());
-
-  rabin_global_params_.set_plain(serialized, secret);
-}
-
 QByteArray Meta::serialize() const {
   serialization::Meta meta_s;
 
@@ -160,9 +130,6 @@ QByteArray Meta::serialize() const {
 
     file_metadata->set_max_chunksize(max_chunksize_);
     file_metadata->set_min_chunksize(min_chunksize_);
-
-    file_metadata->mutable_rabin_global_params()->set_ct(rabin_global_params_.ct().toStdString());
-    file_metadata->mutable_rabin_global_params()->set_iv(rabin_global_params_.iv().toStdString());
 
     for (auto& chunk : chunks()) {
       auto chunk_s = file_metadata->add_chunks();
@@ -213,9 +180,6 @@ void Meta::parse(const QByteArray& serialized_data) {
     strong_hash_type_ = (StrongHashType)meta_s.file_metadata().strong_hash_type();
     max_chunksize_ = meta_s.file_metadata().max_chunksize();
     min_chunksize_ = meta_s.file_metadata().min_chunksize();
-
-    rabin_global_params_.setEncrypted(meta_s.file_metadata().rabin_global_params().ct(),
-                                      meta_s.file_metadata().rabin_global_params().iv());
 
     for (auto& chunk_s : meta_s.file_metadata().chunks()) {
       Chunk chunk;

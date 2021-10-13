@@ -39,13 +39,6 @@ class Meta {
     static QByteArray computeStrongHash(const QByteArray& chunk, StrongHashType type);
   };
 
-  struct RabinGlobalParams {
-    uint64_t polynomial = 0x3DA3358B4DC173LL;
-    uint32_t polynomial_degree = 53;
-    uint32_t polynomial_shift = 53 - 8;
-    uint32_t avg_bits = 20;
-  };
-
  private:
   /* Meta fields, must be serialized together and then signed */
 
@@ -76,9 +69,6 @@ class Meta {
   /// Uni-algorithm parameters
   uint32_t max_chunksize_ = 0;
   uint32_t min_chunksize_ = 0;
-
-  /// Rabin algorithm parameters
-  AesCbcData rabin_global_params_;
 
   QVector<Chunk> chunks_;
 
@@ -130,11 +120,6 @@ class Meta {
   void set_symlink_path(std::string path, const Secret& secret);
   AesCbcData& raw_symlink_path() { return symlink_path_; }
   const AesCbcData& raw_symlink_path() const { return symlink_path_; }
-
-  RabinGlobalParams rabin_global_params(const Secret& secret) const;
-  void set_rabin_global_params(const RabinGlobalParams& rabin_global_params, const Secret& secret);
-  AesCbcData& raw_rabin_global_params() { return rabin_global_params_; }
-  const AesCbcData& raw_rabin_global_params() const { return rabin_global_params_; }
 
   // Dumb getters & setters
   QByteArray path_id() const { return path_id_; }

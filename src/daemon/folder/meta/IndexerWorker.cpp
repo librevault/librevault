@@ -206,18 +206,12 @@ void IndexerWorker::update_fsattrib() {
 }
 
 void IndexerWorker::update_chunks() {
-  Meta::RabinGlobalParams rabin_global_params;
-
   if (old_meta_.meta_type() == Meta::FILE && old_meta_.validate()) {
     new_meta_.set_algorithm_type(old_meta_.algorithm_type());
     new_meta_.set_strong_hash_type(old_meta_.strong_hash_type());
 
     new_meta_.set_max_chunksize(old_meta_.max_chunksize());
     new_meta_.set_min_chunksize(old_meta_.min_chunksize());
-
-    new_meta_.raw_rabin_global_params() = old_meta_.raw_rabin_global_params();
-
-    rabin_global_params = old_meta_.rabin_global_params(secret_);
   } else {
     new_meta_.set_algorithm_type(Meta::RABIN);
     new_meta_.set_strong_hash_type(params_.chunk_strong_hash_type);
@@ -230,12 +224,13 @@ void IndexerWorker::update_chunks() {
 
   // Initializing chunker
   Rabin hasher{};
-  hasher.average_bits = rabin_global_params.avg_bits;
   hasher.minsize = new_meta_.min_chunksize();
   hasher.maxsize = new_meta_.max_chunksize();
-  hasher.polynomial = rabin_global_params.polynomial;
-  hasher.polynomial_degree = rabin_global_params.polynomial_degree;
-  hasher.polynomial_shift = rabin_global_params.polynomial_shift;
+
+  hasher.average_bits = 20;
+  hasher.polynomial = 0x3DA3358B4DC173LL;
+  hasher.polynomial_degree = 53;
+  hasher.polynomial_shift = 53 - 8;
 
   hasher.mask = uint64_t((1 << uint64_t(hasher.average_bits)) - 1);
 

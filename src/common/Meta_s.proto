@@ -51,15 +51,6 @@ message Meta {
 		uint32 max_chunksize = 3;
 		uint32 min_chunksize = 4;
 
-		// Rabin algorithm parameters
-		message RabinGlobalParams {
-			uint64 polynomial = 1;
-			uint32 polynomial_degree = 2;
-			uint32 polynomial_shift = 3;
-			uint32 avg_bits = 4;
-		}
-		AES_CBC rabin_global_params = 5;
-
 		message Chunk {
 			bytes ct_hash = 1;
 			uint32 size = 2;

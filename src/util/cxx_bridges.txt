@@ -4,3 +4,4 @@ src/logger.rs
 src/nodekey.rs
 src/path_normalize.rs
 src/secret.rs
+src/indexer.rs

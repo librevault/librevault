@@ -17,4 +17,5 @@ fn main() {
     built::write_built_file().expect("Failed to acquire build-time information");
 
     let _build = cxx_build::bridges(read_lines("cxx_bridges.txt"));
+    println!("cargo:rerun-if-changed=cxx_bridges.txt");
 }

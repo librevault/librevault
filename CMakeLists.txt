@@ -192,6 +192,7 @@ foreach(module ${CXX_BRIDGES})
 endforeach()
 list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/rust/cxx.h")
 set_source_files_properties(${CXXBRIDGE_SRCS} PROPERTIES GENERATED 1)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "src/util/cxx_bridges.txt")
 
 add_library(cxxbridge STATIC ${CXXBRIDGE_SRCS})
 set_target_properties(cxxbridge PROPERTIES LINKER_LANGUAGE CXX)

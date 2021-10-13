@@ -4,6 +4,7 @@ mod nodekey;
 mod path_normalize;
 mod rabin;
 mod secret;
+mod indexer;
 
 use rand::prelude::*;
 use rand::Fill;

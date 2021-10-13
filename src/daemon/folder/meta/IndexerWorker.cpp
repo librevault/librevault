@@ -26,8 +26,11 @@
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
 #include "util/conv_fspath.h"
+#include <librevault-rs/src/indexer.rs.h>
 #ifdef Q_OS_UNIX
+#include <src/common/Meta_s.pb.h>
 #include <sys/stat.h>
+#include <util/ffi.h>
 
 #include <librevaultrs.hpp>
 #endif
@@ -38,6 +41,15 @@
 Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 
 namespace librevault {
+
+Meta::Chunk populate_chunk(const QByteArray& data, const Secret& secret) {
+  auto chunk = c_populate_chunk(to_slice(data), secret.string().toStdString());
+  auto chunk_s = serialization::Meta_FileMetadata_Chunk();
+
+  chunk_s.ParseFromArray(chunk.data(), chunk.size());
+
+  return {QByteArray::fromStdString(chunk_s.ct_hash()), chunk_s.size(), QByteArray::fromStdString(chunk_s.iv()), QByteArray::fromStdString(chunk_s.pt_hmac())};
+}
 
 IndexerWorker::IndexerWorker(QString abspath, const FolderParams& params, MetaStorage* meta_storage,
                              IgnoreList* ignore_list, PathNormalizer* path_normalizer, QObject* parent)
@@ -216,10 +228,6 @@ void IndexerWorker::update_chunks() {
     // TODO: Generate a new polynomial for rabin_global_params here to prevent a possible fingerprinting attack.
   }
 
-  // IV reuse
-  QHash<QByteArray, QByteArray> pt_hmac__iv;
-  for (auto& chunk : old_meta_.chunks()) pt_hmac__iv.insert(chunk.pt_hmac, chunk.iv);
-
   // Initializing chunker
   Rabin hasher{};
   hasher.average_bits = rabin_global_params.avg_bits;
@@ -247,32 +255,17 @@ void IndexerWorker::update_chunks() {
     data += c;
     if (rabin_next_chunk(&hasher, c)) {
       // Found a chunk
-      chunks += populate_chunk(data, pt_hmac__iv);
+      chunks += populate_chunk(data, secret_);
       data.truncate(0);
     }
   }
 
   if (!active_) throw AbortIndex("Indexing had been interruped");
-  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(data, pt_hmac__iv);
+  if (rabin_finalize(&hasher) != 0) chunks += populate_chunk(data, secret_);
 
   chunks.shrink_to_fit();
 
   new_meta_.set_chunks(chunks);
-}
-
-Meta::Chunk IndexerWorker::populate_chunk(const QByteArray& data, const QHash<QByteArray, QByteArray>& pt_hmac__iv) {
-  qCDebug(log_indexer) << "New chunk size:" << data.size();
-  Meta::Chunk chunk;
-
-  chunk.pt_hmac = data | crypto::KMAC_SHA3_224(secret_.get_Encryption_Key());
-
-  // IV reuse
-  chunk.iv = pt_hmac__iv.value(chunk.pt_hmac, crypto::AES_CBC::randomIv());
-
-  chunk.size = data.size();
-  chunk.ct_hash = Meta::Chunk::computeStrongHash(Meta::Chunk::encrypt(data, secret_.get_Encryption_Key(), chunk.iv),
-    new_meta_.strong_hash_type());
-  return chunk;
 }
 
 }  // namespace librevault

@@ -5,3 +5,4 @@ src/nodekey.rs
 src/path_normalize.rs
 src/secret.rs
 src/indexer.rs
+src/enc_storage.rs

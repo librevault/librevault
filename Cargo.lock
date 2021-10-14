@@ -443,6 +443,7 @@ dependencies = [
  "sha3",
  "signature",
  "simple_logger",
+ "tempfile",
  "unicode-normalization",
 ]
 

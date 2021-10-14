@@ -1,7 +1,7 @@
 use crate::aescbc::encrypt_chunk;
 use crate::indexer::IndexingError::IoError;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
-use crate::secret::{OpaqueSecret, SecretError};
+use crate::secret::OpaqueSecret;
 use log::{debug, trace, warn};
 use prost::Message;
 use rand::{thread_rng, Fill};

@@ -1,4 +1,5 @@
 mod aescbc;
+mod enc_storage;
 mod indexer;
 mod logger;
 mod nodekey;

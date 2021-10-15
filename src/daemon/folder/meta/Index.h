@@ -20,6 +20,8 @@
 #include "util/SQLiteWrapper.h"
 #include "util/log.h"
 
+#include <librevault-rs/src/index.rs.h>
+
 namespace librevault {
 
 struct FolderParams;
@@ -59,12 +61,11 @@ class Index : public QObject {
 
   // Better use SOCI library ( https://github.com/SOCI/soci ). My "reinvented wheel" isn't stable enough.
   std::unique_ptr<SQLiteDB> db_;
-
-  QList<SignedMeta> getMeta(const QString& sql,
-                            const std::map<QString, SQLValue>& values);
   void wipe();
 
   void notifyState();
+
+  rust::Box<bridge::Index> index_;
 };
 
 }  // namespace librevault

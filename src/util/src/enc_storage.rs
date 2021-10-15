@@ -1,9 +1,9 @@
+use log::debug;
 use serde::__private::fmt::Display;
 use std::fmt::Formatter;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
-use log::debug;
 
 #[derive(Debug)]
 struct EncryptedStorage {

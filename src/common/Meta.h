@@ -23,7 +23,7 @@ namespace librevault {
 
 class Meta {
  public:
-  enum Type : uint32_t { FILE = 0, DIRECTORY = 1, SYMLINK = 2, /*STREAM = 3,*/ DELETED = 255 };
+  enum Type : uint32_t { FILE = 1, DIRECTORY = 2, SYMLINK = 3, /*STREAM = 3,*/ DELETED = 0 };
   enum AlgorithmType : uint8_t { RABIN = 0 /*, RSYNC=1, RSYNC64=2*/ };
   enum StrongHashType : uint8_t { SHA3_224 = 0, SHA2_224 = 1 };
   struct Chunk {

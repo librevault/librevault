@@ -17,7 +17,7 @@
 #include <QFile>
 #include <QReadWriteLock>
 
-#include <librevault-rs/src/enc_storage.rs.h>
+#include <librevault_util/src/enc_storage.rs.h>
 
 namespace librevault {
 

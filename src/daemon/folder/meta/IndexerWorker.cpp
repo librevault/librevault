@@ -26,7 +26,7 @@
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
 #include "util/conv_fspath.h"
-#include <librevault-rs/src/indexer.rs.h>
+#include <librevault_util/src/indexer.rs.h>
 #ifdef Q_OS_UNIX
 #include <src/common/Meta_s.pb.h>
 #include <sys/stat.h>

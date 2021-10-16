@@ -19,7 +19,7 @@
 #include <csignal>
 #endif
 
-#include <librevault-rs/src/logger.rs.h>
+#include <librevault_util/src/logger.rs.h>
 #include <librevaultrs.hpp>
 #include "Client.h"
 #include "Secret.h"

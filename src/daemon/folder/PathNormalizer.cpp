@@ -16,7 +16,7 @@
 #include "PathNormalizer.h"
 
 #include <util/ffi.h>
-#include <librevault-rs/src/path_normalize.rs.h>
+#include <librevault_util/src/path_normalize.rs.h>
 
 #include "control/FolderParams.h"
 

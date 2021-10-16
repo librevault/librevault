@@ -20,7 +20,7 @@
 #include "util/SQLiteWrapper.h"
 #include "util/log.h"
 
-#include <librevault-rs/src/index.rs.h>
+#include <librevault_util/src/index.rs.h>
 
 namespace librevault {
 

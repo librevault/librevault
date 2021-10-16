@@ -7,7 +7,7 @@ use std::sync::{Mutex};
 use log::{debug, trace};
 use prost::Message;
 
-struct Index {
+pub struct Index {
     conn: Mutex<Connection>,
 }
 

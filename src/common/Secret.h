@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <librevault-rs/src/secret.rs.h>
+#include <librevault_util/src/secret.rs.h>
 
 #include <QByteArray>
 #include <QString>

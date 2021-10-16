@@ -11,7 +11,7 @@
 #include "AES_CBC.h"
 
 #include <util/ffi.h>
-#include <librevault-rs/src/aescbc.rs.h>
+#include <librevault_util/src/aescbc.rs.h>
 
 #include <utility>
 

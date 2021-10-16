@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "src/util"
+    "src/util",
+    "src/daemon-rs",
 ]

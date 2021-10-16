@@ -1,12 +1,12 @@
 mod aescbc;
 mod enc_storage;
-mod index;
+pub mod index;
 mod indexer;
 mod logger;
 mod nodekey;
 mod path_normalize;
 mod rabin;
-mod secret;
+pub mod secret;
 
 use rand::prelude::*;
 use rand::Fill;

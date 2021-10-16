@@ -16,7 +16,7 @@
 #include "NodeKey.h"
 
 #include <QDir>
-#include <librevault-rs/src/nodekey.rs.h>
+#include <librevault_util/src/nodekey.rs.h>
 
 #include "control/Paths.h"
 #include "util/log.h"

@@ -16,7 +16,7 @@
 #include "MLDHTProvider.h"
 
 #include <dht.h>
-#include <librevault-rs/src/lib.rs.h>
+#include <librevault_util/src/lib.rs.h>
 
 #include <QCryptographicHash>
 #include <QFile>

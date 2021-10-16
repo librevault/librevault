@@ -10,7 +10,7 @@
  */
 #include "Base32.h"
 
-#include <librevault-rs/src/lib.rs.h>
+#include <librevault_util/src/lib.rs.h>
 #include <util/ffi.h>
 
 namespace librevault::crypto {

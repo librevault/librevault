@@ -15,7 +15,7 @@
  */
 #include "random.h"
 
-#include <librevault-rs/src/lib.rs.h>
+#include <librevault_util/src/lib.rs.h>
 
 QByteArray randomBytes(int size) {
   QByteArray data(size, '\0');

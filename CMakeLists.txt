@@ -177,26 +177,29 @@ list(APPEND CORROSION_ENVIRONMENT_VARIABLES "OPENSSL_INCLUDE_DIR=${OpenSSL_INCLU
 add_subdirectory("contrib/corrosion")
 corrosion_import_crate(MANIFEST_PATH Cargo.toml)
 target_include_directories(librevault_util INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src/util")
+set_target_properties(daemon-rs PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
 set_target_properties(librevault_util PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
 target_link_libraries(librevault_util INTERFACE OpenSSL::SSL OpenSSL::Crypto)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/contrib/corrosion/cmake")
 find_package(Rust REQUIRED)
 
-# cxxbridge
-set(CXXBRIDGE_ROOT "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge")
+macro(add_cxxbridge CXXBRIDGE_LIBRARY_NAME CXXBRIDGES_TXT CRATE_NAME)
+	# cxxbridge
+	set(CXXBRIDGE_ROOT "${CMAKE_BINARY_DIR}/cargo/build/${Rust_CARGO_HOST_TARGET}/cxxbridge")
+	file(STRINGS ${CXXBRIDGES_TXT} CXX_BRIDGES)
+	foreach(module ${CXX_BRIDGES})
+		list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/${CRATE_NAME}/${module}.cc" "${CXXBRIDGE_ROOT}/${CRATE_NAME}/${module}.h")
+	endforeach()
+	list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/rust/cxx.h")
+	set_source_files_properties(${CXXBRIDGE_SRCS} PROPERTIES GENERATED 1)
+	add_library(${CXXBRIDGE_LIBRARY_NAME} STATIC ${CXXBRIDGE_SRCS})
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CXXBRIDGES_TXT})
+	set_target_properties(${CXXBRIDGE_LIBRARY_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+	target_include_directories(${CXXBRIDGE_LIBRARY_NAME} INTERFACE "${CXXBRIDGE_ROOT}")
+endmacro()
+add_cxxbridge(cxxbridge "src/util/cxx_bridges.txt" "librevault_util")
 
-file(STRINGS "src/util/cxx_bridges.txt" CXX_BRIDGES)
-foreach(module ${CXX_BRIDGES})
-	list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/librevault_util/${module}.cc" "${CXXBRIDGE_ROOT}/librevault_util/${module}.h")
-endforeach()
-list(APPEND CXXBRIDGE_SRCS "${CXXBRIDGE_ROOT}/rust/cxx.h")
-set_source_files_properties(${CXXBRIDGE_SRCS} PROPERTIES GENERATED 1)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "src/util/cxx_bridges.txt")
-
-add_library(cxxbridge STATIC ${CXXBRIDGE_SRCS})
-set_target_properties(cxxbridge PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(cxxbridge INTERFACE "${CXXBRIDGE_ROOT}")
 target_link_libraries(librevault_util INTERFACE cxxbridge)
 target_link_libraries(cxxbridge PUBLIC librevault_util)
 

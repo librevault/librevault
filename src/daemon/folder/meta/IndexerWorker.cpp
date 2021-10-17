@@ -25,18 +25,18 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
-#include "util/conv_fspath.h"
+#include "util/conv_fspath.h" 
 #include <librevault_util/src/indexer.rs.h>
 #ifdef Q_OS_UNIX
-#include <src/common/Meta_s.pb.h>
 #include <sys/stat.h>
-#include <util/ffi.h>
-
-#include <librevaultrs.hpp>
 #endif
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
+
+#include <util/ffi.h>
+#include <librevaultrs.hpp>
+#include <src/common/Meta_s.pb.h>
 
 Q_DECLARE_LOGGING_CATEGORY(log_indexer)
 

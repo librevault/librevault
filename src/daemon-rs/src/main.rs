@@ -1,18 +1,16 @@
 mod settings;
 
+use librevault_util;
+use log::info;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use log::info;
-use librevault_util;
-
 
 struct Bucket {
     secret: librevault_util::secret::OpaqueSecret,
     root: PathBuf,
     index: librevault_util::index::Index,
 }
-
 
 struct BucketCollection {
     buckets_byid: HashMap<Vec<u8>, Arc<Bucket>>,
@@ -38,7 +36,6 @@ impl BucketManager {
     }
 }
 
-
 fn main() {
     const BANNER: &'static str = r#"
    __    __ _                                _ __
@@ -54,7 +51,9 @@ fn main() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     info!("Librevault v{}", VERSION);
 
-    let config_path = Path::new("~/.librevault/Librevault").canonicalize().unwrap();
+    let config_path = Path::new("~/.librevault/Librevault")
+        .canonicalize()
+        .unwrap();
     let settings = settings::init_settings(config_path.as_path()).unwrap();
 
     // librevault_util::nodekey_write_new();

@@ -1,11 +1,11 @@
-use rusqlite::{Connection, Result, Params, named_params, OptionalExtension};
-use serde::{Deserialize, Deserializer, Serialize};
-use serde::Serializer;
-use std::fmt::{Display, Formatter};
-use std::path::Path;
-use std::sync::{Mutex};
 use log::{debug, trace};
 use prost::Message;
+use rusqlite::{named_params, Connection, OptionalExtension, Params, Result};
+use serde::Serializer;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::fmt::{Display, Formatter};
+use std::path::Path;
+use std::sync::Mutex;
 
 pub struct Index {
     conn: Mutex<Connection>,
@@ -16,7 +16,8 @@ fn as_base64<S: Serializer>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error> {
 }
 
 pub fn from_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     use serde::de::Error;
     String::deserialize(deserializer)
@@ -101,22 +102,35 @@ impl Index {
         }
     }
 
-    fn get_signed_meta<P: Params>(&self, query: &str, params: P) -> Result<Vec<SignedMeta>, IndexError> {
+    fn get_signed_meta<P: Params>(
+        &self,
+        query: &str,
+        params: P,
+    ) -> Result<Vec<SignedMeta>, IndexError> {
         let conn = self.conn.lock().unwrap();
 
-        let mut meta_stmt = (*conn).prepare(query).unwrap();  // If sql is invalid, panic!
-        let meta_iter = meta_stmt.query_map(params, |row| {
-            Ok(SignedMeta {
-                meta: row.get(0)?,
-                signature: row.get(1)?,
+        let mut meta_stmt = (*conn).prepare(query).unwrap(); // If sql is invalid, panic!
+        let meta_iter = meta_stmt
+            .query_map(params, |row| {
+                Ok(SignedMeta {
+                    meta: row.get(0)?,
+                    signature: row.get(1)?,
+                })
             })
-        }).ok().ok_or(IndexError::MetaNotFound)?;
+            .ok()
+            .ok_or(IndexError::MetaNotFound)?;
 
         Ok(meta_iter.map(|meta| meta.unwrap()).collect())
     }
 
     fn get_meta_by_path_id(&self, path_id: &[u8]) -> Result<SignedMeta, IndexError> {
-        self.get_signed_meta("SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1", named_params!{":path_id": path_id})?.first().cloned().ok_or(IndexError::MetaNotFound)
+        self.get_signed_meta(
+            "SELECT meta, signature FROM meta WHERE path_id=:path_id LIMIT 1",
+            named_params! {":path_id": path_id},
+        )?
+        .first()
+        .cloned()
+        .ok_or(IndexError::MetaNotFound)
     }
 
     fn get_meta_all(&self) -> Result<Vec<SignedMeta>, IndexError> {
@@ -124,7 +138,10 @@ impl Index {
     }
 
     fn get_meta_assembled(&self, assembled: bool) -> Result<Vec<SignedMeta>, IndexError> {
-        self.get_signed_meta("SELECT meta, signature FROM meta WHERE (type<>0)=1 AND assembled=:assembled", named_params!{":assembled": assembled})
+        self.get_signed_meta(
+            "SELECT meta, signature FROM meta WHERE (type<>0)=1 AND assembled=:assembled",
+            named_params! {":assembled": assembled},
+        )
     }
 
     fn get_meta_with_chunk(&self, chunk_id: &[u8]) -> Result<Vec<SignedMeta>, IndexError> {
@@ -137,8 +154,14 @@ impl Index {
 
         {
             let sp = tx.savepoint()?;
-            sp.execute("UPDATE meta SET assembled=1 WHERE path_id=:meta_id", named_params! {":meta_id": meta_id})?;
-            sp.execute("UPDATE openfs SET assembled=1 WHERE path_id=:meta_id", named_params! {":meta_id": meta_id})?;
+            sp.execute(
+                "UPDATE meta SET assembled=1 WHERE path_id=:meta_id",
+                named_params! {":meta_id": meta_id},
+            )?;
+            sp.execute(
+                "UPDATE openfs SET assembled=1 WHERE path_id=:meta_id",
+                named_params! {":meta_id": meta_id},
+            )?;
             sp.commit()?;
         }
         tx.commit()?;
@@ -162,7 +185,9 @@ impl Index {
 
     fn is_chunk_assembled(&self, chunk_id: &[u8]) -> Result<bool, IndexError> {
         let conn = self.conn.lock().unwrap();
-        let mut meta_stmt = (*conn).prepare("SELECT assembled FROM openfs WHERE ct_hash=:chunk_id AND openfs.assembled=1 LIMIT 1")?;
+        let mut meta_stmt = (*conn).prepare(
+            "SELECT assembled FROM openfs WHERE ct_hash=:chunk_id AND openfs.assembled=1 LIMIT 1",
+        )?;
         Ok(meta_stmt.exists(named_params! {":chunk_id": chunk_id})?)
     }
 
@@ -184,7 +209,9 @@ impl Index {
             })?;
 
             if de_meta.type_specific_metadata.is_some() {
-                if let proto::meta::TypeSpecificMetadata::FileMetadata(tsm) = de_meta.type_specific_metadata.unwrap() {
+                if let proto::meta::TypeSpecificMetadata::FileMetadata(tsm) =
+                    de_meta.type_specific_metadata.unwrap()
+                {
                     trace!("Putting {} chunks", tsm.chunks.len());
                     let mut offset = 0;
                     for chunk in tsm.chunks {
@@ -202,7 +229,12 @@ impl Index {
         }
         tx.commit()?;
 
-        debug!("Added Meta of {}, t: {:?}, a: {}", hex::encode(de_meta.path_id), de_meta.meta_type, fully_assembled);
+        debug!(
+            "Added Meta of {}, t: {:?}, a: {}",
+            hex::encode(de_meta.path_id),
+            de_meta.meta_type,
+            fully_assembled
+        );
         Ok(())
     }
 }

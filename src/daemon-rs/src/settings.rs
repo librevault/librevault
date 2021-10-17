@@ -1,10 +1,10 @@
+use figment::providers::{Format, Json, Serialized};
+use figment::Figment;
+use log::debug;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
-use figment::Figment;
-use figment::providers::{Format, Json, Serialized};
-use log::debug;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct RootConfig {
@@ -22,7 +22,7 @@ pub struct RootConfig {
     multicast_repeat_interval: u32,
     mainline_dht_enabled: bool,
     mainline_dht_port: u16,
-    mainline_dht_routers: Vec<String>
+    mainline_dht_routers: Vec<String>,
 }
 
 impl Default for RootConfig {
@@ -47,8 +47,8 @@ impl Default for RootConfig {
                 "router.bittorrent.com:6881".to_string(),
                 "dht.transmissionbt.com:6881".to_string(),
                 "dht.aelitis.com:6881".to_string(),
-                "dht.libtorrent.org:25401".to_string()
-            ]
+                "dht.libtorrent.org:25401".to_string(),
+            ],
         }
     }
 }

@@ -25,7 +25,7 @@
 #include "folder/IgnoreList.h"
 #include "folder/PathNormalizer.h"
 #include "util/human_size.h"
-#include "util/conv_fspath.h" 
+#include "util/conv_fspath.h"
 #include <librevault_util/src/indexer.rs.h>
 #ifdef Q_OS_UNIX
 #include <sys/stat.h>

@@ -2,25 +2,30 @@ use std::convert::TryFrom;
 use std::fs::{read, File};
 use std::io::Write;
 
-use log::trace;
-use openssl::asn1::Asn1Time;
-use openssl::ec::{EcGroup, EcKey};
-use openssl::error::ErrorStack;
-use openssl::hash::MessageDigest;
-use openssl::nid::Nid;
-use openssl::pkey::PKey;
-use openssl::x509::{X509Builder, X509Name, X509};
+use log::{debug, trace};
+use openssl::{
+    asn1::Asn1Time,
+    ec::{EcGroup, EcKey},
+    error::ErrorStack,
+    hash::MessageDigest,
+    nid::Nid,
+    pkey::PKey,
+    x509::{X509Builder, X509Name, X509},
+};
 
-fn nodekey_write_new(key_path: &str) {
+pub fn nodekey_write_new(key_path: &str) {
+    trace!("nodekey_write_new");
     let curve = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
     let keypair = EcKey::generate(curve.as_ref()).unwrap();
     let pem = keypair.private_key_to_pem().unwrap();
 
     let mut key_file = File::create(key_path).unwrap();
     key_file.write_all(pem.as_slice()).unwrap();
+    debug!("Wrote new key to {:?}", key_path);
 }
 
 fn build_certificate(private_key_pem: &[u8]) -> Result<X509, ErrorStack> {
+    trace!("build_certificate");
     let keypair = EcKey::private_key_from_pem(private_key_pem)?;
     let pkey = &PKey::try_from(keypair)?;
 

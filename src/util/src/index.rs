@@ -60,7 +60,15 @@ pub mod proto {
 }
 
 impl Index {
-    fn migrate(&self) -> rusqlite::Result<usize> {
+    pub fn new<P: AsRef<Path>>(db_path: P) -> Self {
+        debug!("Opening database: {:?}", db_path.as_ref());
+        let conn = Connection::open(db_path.as_ref()).unwrap();
+        Index {
+            conn: Mutex::new(conn),
+        }
+    }
+
+    pub fn migrate(&self) -> rusqlite::Result<usize> {
         debug!("Starting database migration");
 
         let conn = self.conn.lock().unwrap();
@@ -88,18 +96,12 @@ impl Index {
             [],
         )?; // For faster Index::containingChunk
 
+        debug!("Database migration OK");
+
         Ok(0)
         // db_->exec("CREATE TRIGGER IF NOT EXISTS chunk_deleter AFTER DELETE ON openfs BEGIN DELETE FROM chunk WHERE ct_hash
         // NOT IN (SELECT ct_hash FROM openfs); END;");   // Damn, there are more problems with this trigger than profit from
         // it. Anyway, we can add it anytime later.
-    }
-
-    fn new(db_path: &Path) -> Self {
-        debug!("Opening database, {:?}", db_path);
-        let conn = Connection::open(db_path).unwrap();
-        Index {
-            conn: Mutex::new(conn),
-        }
     }
 
     fn get_signed_meta<P: Params>(

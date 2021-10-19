@@ -3,7 +3,7 @@ mod enc_storage;
 pub mod index;
 mod indexer;
 mod logger;
-mod nodekey;
+pub mod nodekey;
 mod path_normalize;
 mod rabin;
 pub mod secret;

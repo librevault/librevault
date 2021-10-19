@@ -1,42 +1,23 @@
-mod settings;
-
-use librevault_util;
-use log::info;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
-struct Bucket {
-    secret: librevault_util::secret::OpaqueSecret,
-    root: PathBuf,
-    index: librevault_util::index::Index,
-}
+use directories::ProjectDirs;
+use igd::aio::search_gateway;
+use igd::SearchOptions;
+use log::{debug, info};
 
-struct BucketCollection {
-    buckets_byid: HashMap<Vec<u8>, Arc<Bucket>>,
-}
+use bucket::{BucketConfig, BucketManager};
+use librevault_util;
+use librevault_util::nodekey::nodekey_write_new;
+use librevault_util::secret::OpaqueSecret;
 
-impl BucketCollection {
-    fn new() -> BucketCollection {
-        BucketCollection {
-            buckets_byid: HashMap::new(),
-        }
-    }
-}
+mod settings;
+mod bucket;
+mod discover;
 
-struct BucketManager {
-    buckets: Arc<RwLock<BucketCollection>>,
-}
-
-impl BucketManager {
-    pub fn new() -> Self {
-        BucketManager {
-            buckets: Arc::new(RwLock::new(BucketCollection::new())),
-        }
-    }
-}
-
-fn main() {
+#[tokio::main]
+async fn main() {
     const BANNER: &'static str = r#"
    __    __ _                                _ __
   / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_
@@ -51,10 +32,20 @@ fn main() {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     info!("Librevault v{}", VERSION);
 
-    let config_path = Path::new("~/.librevault/Librevault")
-        .canonicalize()
-        .unwrap();
-    let settings = settings::init_settings(config_path.as_path()).unwrap();
+    let project_dirs = ProjectDirs::from("com", "librevault", "librevault").unwrap();
+    let config_dir = project_dirs.config_dir();
+    debug!("Config directory: {:?}", &config_dir);
+    std::fs::create_dir_all(&config_dir).expect("Could not create config directory");
 
-    // librevault_util::nodekey_write_new();
+    let settings = settings::init_settings(config_dir).unwrap();
+
+    librevault_util::nodekey::nodekey_write_new(config_dir.join("key.pem").to_str().unwrap());
+
+    let buckets = BucketManager::new();
+
+    let bucket = BucketConfig{ secret: OpaqueSecret::new(), path: PathBuf::from(Path::new("/home/gamepad/LibrevaultRs")) };
+    buckets.add_bucket(bucket).await;
+
+    // let gateway = search_gateway(SearchOptions::default()).await.unwrap();
+    // info!("Detected IGD gateway: {:?}", gateway);
 }

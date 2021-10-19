@@ -56,7 +56,7 @@ pub enum OpaqueSecret {
 const CURRENT_VERSION: char = '2';
 
 impl OpaqueSecret {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut rng = OsRng::default();
         let keypair: Keypair = Keypair::generate(&mut rng);
 
@@ -125,6 +125,10 @@ impl OpaqueSecret {
             .ok()
             .ok_or(SecretError::InvalidSignatureFormat)?;
         Ok(self.get_public_key()?.verify(message, &signature).is_ok())
+    }
+    
+    pub fn get_id(&self) -> Vec<u8> {
+        Sha3_256::digest(self.get_public_key().unwrap().as_bytes()).to_vec()
     }
 }
 
@@ -218,18 +222,18 @@ impl Clone for OpaqueSecret {
                 symmetric_key,
             } => OpaqueSecret::Signer {
                 private_key: SecretKey::from_bytes(&private_key.to_bytes()[..]).unwrap(),
-                public_key: public_key.clone(),
+                public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },
             OpaqueSecret::Decryptor {
                 public_key,
                 symmetric_key,
             } => OpaqueSecret::Decryptor {
-                public_key: public_key.clone(),
+                public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },
             OpaqueSecret::Verifier { public_key } => OpaqueSecret::Verifier {
-                public_key: public_key.clone(),
+                public_key: *public_key,
             },
         }
     }

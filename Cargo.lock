@@ -297,6 +297,7 @@ dependencies = [
 name = "daemon-rs"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "directories",
  "figment",
  "futures",
@@ -305,6 +306,7 @@ dependencies = [
  "log",
  "notify",
  "serde",
+ "serde_json",
  "simple_logger",
  "tokio",
 ]

@@ -18,6 +18,10 @@ use librevault_util::secret::OpaqueSecret;
 mod collection;
 mod watcher;
 
+fn make_index() {
+
+}
+
 pub struct Bucket {
     secret: OpaqueSecret,
     root: PathBuf,

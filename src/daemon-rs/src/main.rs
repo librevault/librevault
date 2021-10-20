@@ -11,6 +11,7 @@ use bucket::{BucketConfig, BucketManager};
 use librevault_util;
 use librevault_util::nodekey::nodekey_write_new;
 use librevault_util::secret::OpaqueSecret;
+use crate::discover::discover_mcast;
 
 mod settings;
 mod bucket;
@@ -45,6 +46,8 @@ async fn main() {
 
     let bucket = BucketConfig{ secret: OpaqueSecret::new(), path: PathBuf::from(Path::new("/home/gamepad/LibrevaultRs")) };
     buckets.add_bucket(bucket).await;
+
+    // discover_mcast().await;
 
     // let gateway = search_gateway(SearchOptions::default()).await.unwrap();
     // info!("Detected IGD gateway: {:?}", gateway);

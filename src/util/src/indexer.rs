@@ -10,17 +10,28 @@ use sha3::{Digest, Sha3_224};
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
 use std::str::FromStr;
+use std::time::{Duration, SystemTime};
+use crate::path_normalize::normalize;
+use crate::aescbc::encrypt_aes256;
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));
 }
 
+enum ObjectType {
+    TOMBSTONE = 0,
+    FILE = 1,
+    DIRECTORY = 2,
+    SYMLINK = 3,
+}
+
 #[derive(Debug)]
 pub enum IndexingError {
     IoError { io_error: io::Error },
+    UnsupportedType,
 }
 
 impl Display for IndexingError {
@@ -95,6 +106,64 @@ fn make_chunks(
     trace!("Total chunks for path {:?}: {}", path, chunks.len());
 
     Ok(chunks)
+}
+
+fn make_encrypted(data: &[u8], secret: &OpaqueSecret) -> proto::AesCbc {
+    let mut iv = vec![0u8; 16];
+    iv.try_fill(&mut thread_rng()).unwrap();
+
+    proto::AesCbc {
+        ct: encrypt_aes256(data, secret.get_symmetric_key().unwrap(), &*iv),
+        iv,
+    }
+}
+
+fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, IndexingError> {
+    let metadata = match preserve_symlinks {
+        true => fs::symlink_metadata(path),
+        false => fs::metadata(path),
+    };
+
+    if let Err(e) = metadata {
+        return match e.kind() {
+            ErrorKind::NotFound => Ok(ObjectType::TOMBSTONE),
+            _ => Err(IndexingError::IoError {io_error: e}),
+        };
+    }
+
+    let file_type = metadata.unwrap().file_type();
+    if file_type.is_file() {
+        Ok(ObjectType::FILE)
+    }else if file_type.is_dir() {
+        Ok(ObjectType::DIRECTORY)
+    }else if file_type.is_symlink() {
+        Ok(ObjectType::SYMLINK)
+    }else {
+        Err(IndexingError::UnsupportedType)
+    }
+}
+
+fn make_meta(path: &Path, root: &Path, secret: &OpaqueSecret) -> Result<proto::Meta, IndexingError> {
+    let mut meta = proto::Meta::default();
+
+    let path_norm = normalize(path, root, true).unwrap();
+    meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm.as_slice());
+    meta.path = Some(make_encrypted(path_norm.as_slice(), secret));
+    meta.meta_type = make_type(path, true).unwrap() as u32;
+    meta.revision = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64;
+
+    if meta.meta_type != (ObjectType::TOMBSTONE as u32) {
+        let metadata = fs::metadata(path).unwrap();
+        let generic_metadata = proto::meta::GenericMetadata {
+            mtime: metadata.modified().unwrap().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as i64,
+            windows_attrib: 0,
+            uid: 0,
+            gid: 0,
+            mode: 0,
+        };
+    }
+
+    Ok(meta)
 }
 
 fn c_make_chunks(path: &str, secret: &str) -> Result<Vec<u8>, IndexingError> {

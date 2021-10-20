@@ -13,7 +13,7 @@ use tokio::sync::watch;
 
 use collection::BucketCollection;
 use librevault_util::index::Index;
-use librevault_util::secret::OpaqueSecret;
+use librevault_util::secret::Secret;
 
 mod collection;
 mod watcher;
@@ -23,7 +23,7 @@ fn make_index() {
 }
 
 pub struct Bucket {
-    secret: OpaqueSecret,
+    secret: Secret,
     root: PathBuf,
 
     index: Index,
@@ -60,7 +60,7 @@ pub struct BucketManager {
 }
 
 pub struct BucketConfig {
-    pub secret: OpaqueSecret,
+    pub secret: Secret,
     pub path: PathBuf,
 }
 

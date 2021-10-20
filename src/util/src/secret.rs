@@ -38,7 +38,7 @@ impl Display for SecretError {
 }
 
 #[derive(Debug)]
-pub enum OpaqueSecret {
+pub enum Secret {
     Signer {
         private_key: SecretKey,
         symmetric_key: Vec<u8>,
@@ -55,12 +55,12 @@ pub enum OpaqueSecret {
 
 const CURRENT_VERSION: char = '2';
 
-impl OpaqueSecret {
+impl Secret {
     pub fn new() -> Self {
         let mut rng = OsRng::default();
         let keypair: Keypair = Keypair::generate(&mut rng);
 
-        OpaqueSecret::Signer {
+        Secret::Signer {
             symmetric_key: Sha3_256::digest(&keypair.secret.to_bytes()).to_vec(),
             public_key: keypair.public,
             private_key: keypair.secret,
@@ -69,39 +69,39 @@ impl OpaqueSecret {
 
     fn get_private_key(&self) -> Result<&SecretKey, SecretError> {
         match self {
-            OpaqueSecret::Signer { private_key, .. } => Ok(&private_key),
+            Secret::Signer { private_key, .. } => Ok(&private_key),
             _ => Err(SecretError::DeriveError),
         }
     }
 
     pub fn get_symmetric_key(&self) -> Result<&[u8], SecretError> {
         match self {
-            OpaqueSecret::Signer { symmetric_key, .. }
-            | OpaqueSecret::Decryptor { symmetric_key, .. } => Ok(&symmetric_key),
+            Secret::Signer { symmetric_key, .. }
+            | Secret::Decryptor { symmetric_key, .. } => Ok(&symmetric_key),
             _ => Err(SecretError::DeriveError),
         }
     }
 
     fn get_public_key(&self) -> Result<&PublicKey, SecretError> {
         match self {
-            OpaqueSecret::Signer { public_key, .. }
-            | OpaqueSecret::Decryptor { public_key, .. }
-            | OpaqueSecret::Verifier { public_key, .. } => Ok(&public_key),
+            Secret::Signer { public_key, .. }
+            | Secret::Decryptor { public_key, .. }
+            | Secret::Verifier { public_key, .. } => Ok(&public_key),
         }
     }
 
     fn derive(&self, ty: char) -> Result<Self, SecretError> {
         match ty {
-            'A' => Ok(OpaqueSecret::Signer {
+            'A' => Ok(Secret::Signer {
                 private_key: SecretKey::from_bytes(&self.get_private_key()?.to_bytes()).unwrap(),
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
                 public_key: self.get_public_key()?.clone(),
             }),
-            'B' => Ok(OpaqueSecret::Decryptor {
+            'B' => Ok(Secret::Decryptor {
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
                 public_key: self.get_public_key()?.clone(),
             }),
-            'C' => Ok(OpaqueSecret::Verifier {
+            'C' => Ok(Secret::Verifier {
                 public_key: self.get_public_key()?.clone(),
             }),
             _ => Err(SecretError::DeriveError),
@@ -132,7 +132,7 @@ impl OpaqueSecret {
     }
 }
 
-impl FromStr for OpaqueSecret {
+impl FromStr for Secret {
     type Err = SecretError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -164,7 +164,7 @@ impl FromStr for OpaqueSecret {
                 let private_key = SecretKey::from_bytes(&decrypted_payload)
                     .ok()
                     .ok_or(SecretError::CryptoError)?;
-                OpaqueSecret::Signer {
+                Secret::Signer {
                     public_key: PublicKey::from(&private_key),
                     symmetric_key: Sha3_256::digest(&private_key.to_bytes()).to_vec(),
                     private_key,
@@ -178,13 +178,13 @@ impl FromStr for OpaqueSecret {
                 let symmetric_key = secret_payload[PUBLIC_KEY_LENGTH..Sha3_256::output_size()]
                     .as_bytes()
                     .to_vec();
-                OpaqueSecret::Decryptor {
+                Secret::Decryptor {
                     symmetric_key,
                     public_key,
                 }
             }),
             'C' => Ok({
-                OpaqueSecret::Verifier {
+                Secret::Verifier {
                     public_key: PublicKey::from_bytes(&decrypted_payload)
                         .ok()
                         .ok_or(SecretError::CryptoError)?,
@@ -195,17 +195,17 @@ impl FromStr for OpaqueSecret {
     }
 }
 
-impl ToString for OpaqueSecret {
+impl ToString for Secret {
     fn to_string(&self) -> String {
         let (ty, payload) = match self {
-            OpaqueSecret::Signer { private_key, .. } => ('A', private_key.to_bytes().to_vec()),
-            OpaqueSecret::Decryptor {
+            Secret::Signer { private_key, .. } => ('A', private_key.to_bytes().to_vec()),
+            Secret::Decryptor {
                 public_key,
                 symmetric_key,
             } => ('B', {
                 [&public_key.to_bytes()[..], symmetric_key.as_slice()].concat()
             }),
-            OpaqueSecret::Verifier { public_key } => ('C', public_key.to_bytes().to_vec()),
+            Secret::Verifier { public_key } => ('C', public_key.to_bytes().to_vec()),
         };
         let encoded_payload = bs58::encode(payload).into_string();
         let luhn = LUHNGENERATOR.generate(&encoded_payload).unwrap();
@@ -213,26 +213,26 @@ impl ToString for OpaqueSecret {
     }
 }
 
-impl Clone for OpaqueSecret {
+impl Clone for Secret {
     fn clone(&self) -> Self {
         match self {
-            OpaqueSecret::Signer {
+            Secret::Signer {
                 private_key,
                 public_key,
                 symmetric_key,
-            } => OpaqueSecret::Signer {
+            } => Secret::Signer {
                 private_key: SecretKey::from_bytes(&private_key.to_bytes()[..]).unwrap(),
                 public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },
-            OpaqueSecret::Decryptor {
+            Secret::Decryptor {
                 public_key,
                 symmetric_key,
-            } => OpaqueSecret::Decryptor {
+            } => Secret::Decryptor {
                 public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },
-            OpaqueSecret::Verifier { public_key } => OpaqueSecret::Verifier {
+            Secret::Verifier { public_key } => Secret::Verifier {
                 public_key: *public_key,
             },
         }
@@ -245,23 +245,23 @@ mod tests {
 
     #[test]
     fn test_roundtrip() {
-        let secret = OpaqueSecret::new();
+        let secret = Secret::new();
         let serialized = secret.to_string();
-        let parsed = OpaqueSecret::from_str(serialized.as_str()).unwrap();
+        let parsed = Secret::from_str(serialized.as_str()).unwrap();
         let serialized_once_more = parsed.to_string();
         assert_eq!(serialized, serialized_once_more);
     }
 
     #[test]
     fn test_clone() {
-        let secret1 = OpaqueSecret::new();
+        let secret1 = Secret::new();
         let secret2 = secret1.clone();
         assert_eq!(secret1.to_string(), secret2.to_string());
     }
 
     #[test]
     fn test_signverify_good() {
-        let secret = OpaqueSecret::new();
+        let secret = Secret::new();
         let message = b"123123121";
         let signature = secret.sign(message).unwrap();
         assert!(secret.verify(message, &signature).unwrap());
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_signverify_bad() {
-        let secret = OpaqueSecret::new();
+        let secret = Secret::new();
         let message = b"123123121";
         let signature = b"aojdasjod";
         assert_eq!(
@@ -279,15 +279,15 @@ mod tests {
     }
 }
 
-fn secret_new() -> Box<OpaqueSecret> {
-    Box::new(OpaqueSecret::new())
+fn secret_new() -> Box<Secret> {
+    Box::new(Secret::new())
 }
 
-fn secret_from_str(s: &str) -> Result<Box<OpaqueSecret>, SecretError> {
-    Ok(Box::new(OpaqueSecret::from_str(s)?))
+fn secret_from_str(s: &str) -> Result<Box<Secret>, SecretError> {
+    Ok(Box::new(Secret::from_str(s)?))
 }
 
-impl OpaqueSecret {
+impl Secret {
     fn c_derive(&self, ty: c_char) -> Result<Box<Self>, SecretError> {
         Ok(Box::new(self.derive(ty as u8 as char)?))
     }
@@ -312,12 +312,13 @@ impl OpaqueSecret {
 #[cxx::bridge]
 mod ffx {
     extern "Rust" {
-        type OpaqueSecret;
-        fn to_string(self: &OpaqueSecret) -> String;
-        fn secret_new() -> Box<OpaqueSecret>;
-        fn secret_from_str(s: &str) -> Result<Box<OpaqueSecret>>;
-        fn c_derive(self: &OpaqueSecret, ty: c_char) -> Result<Box<OpaqueSecret>>;
-        fn c_clone(&self) -> Box<OpaqueSecret>;
+        #[cxx_name = "OpaqueSecret"]
+        type Secret;
+        fn to_string(self: &Secret) -> String;
+        fn secret_new() -> Box<Secret>;
+        fn secret_from_str(s: &str) -> Result<Box<Secret>>;
+        fn c_derive(self: &Secret, ty: c_char) -> Result<Box<Secret>>;
+        fn c_clone(&self) -> Box<Secret>;
         fn sign(&self, message: &[u8]) -> Result<Vec<u8>>;
         fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool>;
         fn c_get_private(&self) -> Result<Vec<u8>>;

@@ -1,7 +1,7 @@
 use crate::aescbc::encrypt_chunk;
 use crate::indexer::IndexingError::IoError;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
-use crate::secret::OpaqueSecret;
+use crate::secret::Secret;
 use log::{debug, trace, warn};
 use prost::Message;
 use rand::{thread_rng, Fill};
@@ -47,7 +47,7 @@ fn kmac_sha3_224(key: &[u8], data: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-fn populate_chunk(data: &[u8], secret: &OpaqueSecret) -> proto::meta::file_metadata::Chunk {
+fn populate_chunk(data: &[u8], secret: &Secret) -> proto::meta::file_metadata::Chunk {
     debug!("New chunk size: {}", data.len());
 
     let mut iv = vec![0u8; 16];
@@ -65,7 +65,7 @@ fn populate_chunk(data: &[u8], secret: &OpaqueSecret) -> proto::meta::file_metad
 
 fn make_chunks(
     path: &Path,
-    secret: &OpaqueSecret,
+    secret: &Secret,
 ) -> Result<Vec<proto::meta::file_metadata::Chunk>, IndexingError> {
     trace!("Trying to make chunks for: {:?}", path);
 
@@ -108,7 +108,7 @@ fn make_chunks(
     Ok(chunks)
 }
 
-fn make_encrypted(data: &[u8], secret: &OpaqueSecret) -> proto::AesCbc {
+fn make_encrypted(data: &[u8], secret: &Secret) -> proto::AesCbc {
     let mut iv = vec![0u8; 16];
     iv.try_fill(&mut thread_rng()).unwrap();
 
@@ -143,7 +143,7 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
     }
 }
 
-fn make_meta(path: &Path, root: &Path, secret: &OpaqueSecret) -> Result<proto::Meta, IndexingError> {
+fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, IndexingError> {
     let mut meta = proto::Meta::default();
 
     let path_norm = normalize(path, root, true).unwrap();
@@ -167,7 +167,7 @@ fn make_meta(path: &Path, root: &Path, secret: &OpaqueSecret) -> Result<proto::M
 }
 
 fn c_make_chunks(path: &str, secret: &str) -> Result<Vec<u8>, IndexingError> {
-    let chunks = make_chunks(Path::new(path), &OpaqueSecret::from_str(secret).unwrap())?;
+    let chunks = make_chunks(Path::new(path), &Secret::from_str(secret).unwrap())?;
     let chunks: Vec<String> = chunks
         .into_iter()
         .map(|chunk| base64::encode(chunk.encode_to_vec()))

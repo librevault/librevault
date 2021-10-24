@@ -2,7 +2,7 @@
 name = "librevault_util"
 version = "1.0.0-alpha.1"
 authors = ["Alexander Shishenko <alex@shishenko.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 rand = "0.8.4"

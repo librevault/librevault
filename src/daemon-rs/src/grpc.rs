@@ -1,3 +1,4 @@
+use std::error::Error;
 use tonic::{transport::Server, Request, Response, Status};
 
 use controller::controller_server::{Controller, ControllerServer};
@@ -25,7 +26,7 @@ impl Controller for LibrevaultController {
     }
 }
 
-pub async fn launch_grpc() {
+pub async fn run_grpc() -> Option<()> {
     let addr = "[::1]:50051".parse().unwrap();
     let greeter = LibrevaultController::default();
 
@@ -34,9 +35,10 @@ pub async fn launch_grpc() {
         .build()
         .unwrap();
 
-    Server::builder()
+    Some(Server::builder()
         .add_service(ControllerServer::new(greeter))
         .add_service(reflection)
         .serve(addr)
-        .await;
+        .await
+        .unwrap())
 }

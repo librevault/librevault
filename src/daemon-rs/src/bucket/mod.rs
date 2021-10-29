@@ -1,15 +1,5 @@
-use std::collections::HashMap;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
-
-use futures::{
-    channel::mpsc::{channel, Receiver},
-    SinkExt, StreamExt,
-};
-use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::sync::watch;
 
 use collection::BucketCollection;
 use librevault_util::index::Index;
@@ -46,8 +36,8 @@ impl Bucket {
     }
 
     async fn launch_bucket(&self) {
-        tokio::task::block_in_place(move || {
-            self.index.migrate();
+        let _ = tokio::task::block_in_place(move || {
+            self.index.migrate()
         });
 
         // loop {

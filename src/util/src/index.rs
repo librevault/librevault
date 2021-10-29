@@ -1,6 +1,6 @@
 use log::{debug, trace};
 use prost::Message;
-use rusqlite::{named_params, Connection, OptionalExtension, Params, Result};
+use rusqlite::{named_params, Connection, Params, Result};
 use serde::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt::{Display, Formatter};
@@ -201,7 +201,7 @@ impl Index {
         {
             let sp = tx.savepoint()?;
 
-            let res = sp.execute(
+            let _ = sp.execute(
                 "INSERT OR REPLACE INTO meta (path_id, meta, signature, type, assembled) VALUES (:path_id, :meta, :signature, :type, :assembled);", named_params! {
                 ":path_id": de_meta.path_id,
                 ":meta": meta.meta,

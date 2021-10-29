@@ -1,19 +1,14 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
 
 use directories::ProjectDirs;
 use igd::aio::search_gateway;
 use igd::SearchOptions;
 use log::{debug, info};
-use tonic::transport::Server;
 
 use bucket::{BucketConfig, BucketManager};
 use librevault_util;
 use librevault_util::nodekey::nodekey_write_new;
 use librevault_util::secret::Secret;
-
-use crate::discover::discover_mcast;
 
 mod bucket;
 mod discover;
@@ -43,7 +38,7 @@ async fn main() {
 
     let settings = settings::init_settings(config_dir).unwrap();
 
-    librevault_util::nodekey::nodekey_write_new(config_dir.join("key.pem").to_str().unwrap());
+    nodekey_write_new(config_dir.join("key.pem").to_str().unwrap());
 
     let buckets = BucketManager::new();
 
@@ -53,9 +48,9 @@ async fn main() {
     };
     buckets.add_bucket(bucket).await;
 
-    tokio::spawn(grpc::launch_grpc());
+    tokio::spawn(grpc::run_grpc());
 
-    tokio::signal::ctrl_c().await;
+    let _ = tokio::signal::ctrl_c().await;
 
     // discover_mcast().await;
 

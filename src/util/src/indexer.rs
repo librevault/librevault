@@ -15,7 +15,7 @@ use std::io;
 use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
 use std::str::FromStr;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));

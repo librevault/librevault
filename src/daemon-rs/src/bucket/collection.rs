@@ -17,7 +17,8 @@ impl BucketCollection {
     pub fn add_bucket(&mut self, bucket: Bucket) -> Arc<Bucket> {
         let bucket_arc = Arc::new(bucket);
 
-        self.buckets_byid.insert(bucket_arc.get_id(), bucket_arc.clone());
+        self.buckets_byid
+            .insert(bucket_arc.get_id(), bucket_arc.clone());
         bucket_arc
     }
 

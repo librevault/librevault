@@ -1,5 +1,7 @@
+use crate::aescbc::encrypt_aes256;
 use crate::aescbc::encrypt_chunk;
 use crate::indexer::IndexingError::IoError;
+use crate::path_normalize::normalize;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
 use crate::secret::Secret;
 use log::{debug, trace, warn};
@@ -14,8 +16,6 @@ use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use crate::path_normalize::normalize;
-use crate::aescbc::encrypt_aes256;
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));
@@ -127,18 +127,18 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
     if let Err(e) = metadata {
         return match e.kind() {
             ErrorKind::NotFound => Ok(ObjectType::TOMBSTONE),
-            _ => Err(IndexingError::IoError {io_error: e}),
+            _ => Err(IndexingError::IoError { io_error: e }),
         };
     }
 
     let file_type = metadata.unwrap().file_type();
     if file_type.is_file() {
         Ok(ObjectType::FILE)
-    }else if file_type.is_dir() {
+    } else if file_type.is_dir() {
         Ok(ObjectType::DIRECTORY)
-    }else if file_type.is_symlink() {
+    } else if file_type.is_symlink() {
         Ok(ObjectType::SYMLINK)
-    }else {
+    } else {
         Err(IndexingError::UnsupportedType)
     }
 }
@@ -150,12 +150,20 @@ fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, I
     meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm.as_slice());
     meta.path = Some(make_encrypted(path_norm.as_slice(), secret));
     meta.meta_type = make_type(path, true).unwrap() as u32;
-    meta.revision = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64;
+    meta.revision = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
 
     if meta.meta_type != (ObjectType::TOMBSTONE as u32) {
         let metadata = fs::metadata(path).unwrap();
         let generic_metadata = proto::meta::GenericMetadata {
-            mtime: metadata.modified().unwrap().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as i64,
+            mtime: metadata
+                .modified()
+                .unwrap()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos() as i64,
             windows_attrib: 0,
             uid: 0,
             gid: 0,

@@ -1,0 +1,12 @@
+syntax = "proto3";
+package librevault.controller.v1;
+import "google/protobuf/empty.proto";
+
+message ReindexPathRequest {
+  string bucket_id = 1;
+  string path = 2;
+}
+
+service Controller {
+  rpc ReindexPath(ReindexPathRequest) returns (google.protobuf.Empty);
+}

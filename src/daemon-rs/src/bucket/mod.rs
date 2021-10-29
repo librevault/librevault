@@ -18,10 +18,6 @@ use librevault_util::secret::Secret;
 mod collection;
 mod watcher;
 
-fn make_index() {
-
-}
-
 pub struct Bucket {
     secret: Secret,
     root: PathBuf,
@@ -37,7 +33,12 @@ impl Bucket {
         tokio::fs::create_dir_all(&system_dir).await.unwrap();
         let index = Index::new(system_dir.join("index.db").as_path());
 
-        Bucket { secret: config.secret, root: config.path, index, system_dir }
+        Bucket {
+            secret: config.secret,
+            root: config.path,
+            index,
+            system_dir,
+        }
     }
 
     fn get_id(&self) -> Vec<u8> {

@@ -4,12 +4,12 @@ from conans import ConanFile, CMake
 class LibrevaultConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = [
-        "docopt.cpp/0.6.2",
+        "docopt.cpp/0.6.3",
         "sqlite3/3.36.0",
-        "boost/1.76.0",
+        "boost/1.77.0",
         "protobuf/3.17.1",
         "websocketpp/0.8.2",
-        "openssl/1.1.1k",
+        "openssl/1.1.1l",
         "qt/5.15.2",
     ]
     generators = ["cmake_find_package", "cmake"]

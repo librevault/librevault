@@ -76,8 +76,9 @@ impl Secret {
 
     pub fn get_symmetric_key(&self) -> Result<&[u8], SecretError> {
         match self {
-            Secret::Signer { symmetric_key, .. }
-            | Secret::Decryptor { symmetric_key, .. } => Ok(&symmetric_key),
+            Secret::Signer { symmetric_key, .. } | Secret::Decryptor { symmetric_key, .. } => {
+                Ok(&symmetric_key)
+            }
             _ => Err(SecretError::DeriveError),
         }
     }
@@ -126,7 +127,7 @@ impl Secret {
             .ok_or(SecretError::InvalidSignatureFormat)?;
         Ok(self.get_public_key()?.verify(message, &signature).is_ok())
     }
-    
+
     pub fn get_id(&self) -> Vec<u8> {
         Sha3_256::digest(self.get_public_key().unwrap().as_bytes()).to_vec()
     }

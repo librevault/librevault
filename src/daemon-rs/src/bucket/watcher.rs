@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use futures::{SinkExt, StreamExt};
 use futures::channel::mpsc::{channel, Receiver};
+use futures::{SinkExt, StreamExt};
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 
 fn async_watcher() -> notify::Result<(RecommendedWatcher, Receiver<notify::Result<Event>>)> {

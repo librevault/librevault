@@ -6,16 +6,19 @@ use directories::ProjectDirs;
 use igd::aio::search_gateway;
 use igd::SearchOptions;
 use log::{debug, info};
+use tonic::transport::Server;
 
 use bucket::{BucketConfig, BucketManager};
 use librevault_util;
 use librevault_util::nodekey::nodekey_write_new;
 use librevault_util::secret::Secret;
+
 use crate::discover::discover_mcast;
 
-mod settings;
 mod bucket;
 mod discover;
+mod grpc;
+mod settings;
 
 #[tokio::main]
 async fn main() {
@@ -44,8 +47,15 @@ async fn main() {
 
     let buckets = BucketManager::new();
 
-    let bucket = BucketConfig{ secret: Secret::new(), path: PathBuf::from(Path::new("/home/gamepad/LibrevaultRs")) };
+    let bucket = BucketConfig {
+        secret: Secret::new(),
+        path: PathBuf::from(Path::new("/home/gamepad/LibrevaultRs")),
+    };
     buckets.add_bucket(bucket).await;
+
+    tokio::spawn(grpc::launch_grpc());
+
+    tokio::signal::ctrl_c().await;
 
     // discover_mcast().await;
 

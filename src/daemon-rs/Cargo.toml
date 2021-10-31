@@ -21,4 +21,4 @@ prost = "0.8.0"
 tonic-reflection = "0.2.0"
 
 [build-dependencies]
-tonic-build = "0.5.2"
+tonic-build = "0.6.0"

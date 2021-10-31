@@ -10,7 +10,7 @@ class LibrevaultConan(ConanFile):
         "protobuf/3.17.1",
         "websocketpp/0.8.2",
         "openssl/1.1.1l",
-        "qt/5.15.2",
+        "qt/6.2.1",
     ]
     generators = ["cmake_find_package", "cmake"]
     default_options = {

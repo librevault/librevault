@@ -16,7 +16,7 @@ igd = { version = "0.12.0", features = ["aio"] }
 futures = "0.3.17"
 bytes = "1.1.0"
 serde_json = "1"
-tonic = "0.5.2"
+tonic = "0.6.1"
 prost = "0.8.0"
 tonic-reflection = "0.2.0"
 

@@ -18,7 +18,7 @@ bytes = "1.1.0"
 serde_json = "1"
 tonic = "0.5.2"
 prost = "0.8.0"
-tonic-reflection = "0.2.0"
+tonic-reflection = "0.3.0"
 
 [build-dependencies]
 tonic-build = "0.5.2"

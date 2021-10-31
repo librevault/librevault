@@ -1,25 +1,43 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::bucket::Bucket;
 
-pub struct BucketCollection {
+struct BucketCollectionInner {
     buckets_byid: HashMap<Vec<u8>, Arc<Bucket>>,
+}
+
+pub struct BucketCollection {
+    inner: RwLock<BucketCollectionInner>,
 }
 
 impl BucketCollection {
     pub fn new() -> BucketCollection {
         BucketCollection {
-            buckets_byid: HashMap::new(),
+            inner: RwLock::new(BucketCollectionInner {
+                buckets_byid: HashMap::new(),
+            }),
         }
     }
 
     pub fn add_bucket(&mut self, bucket: Bucket) -> Arc<Bucket> {
         let bucket_arc = Arc::new(bucket);
 
-        self.buckets_byid
+        let mut inner_lock = self.inner.write().unwrap();
+        let mut inner = &mut *inner_lock;
+
+        inner
+            .buckets_byid
             .insert(bucket_arc.get_id(), bucket_arc.clone());
         bucket_arc
+    }
+
+    pub fn get_bucket_byid(&self, bucket_id: &[u8]) -> Option<Arc<Bucket>> {
+        let inner_lock = self.inner.read().unwrap();
+        match (*inner_lock).buckets_byid.get(bucket_id) {
+            Some(bucket) => Some(bucket.clone()),
+            None => None,
+        }
     }
 
     // pub fn drop_bucket(&mut self, bucket: Arc<Bucket>) -> Option<Arc<Bucket>> {

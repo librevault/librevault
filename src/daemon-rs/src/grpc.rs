@@ -1,8 +1,13 @@
 use std::error::Error;
+use std::path::Path;
+use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 
+use crate::bucket::BucketManager;
+use crate::settings::ConfigManager;
 use controller::controller_server::{Controller, ControllerServer};
 use controller::ReindexPathRequest;
+use log::debug;
 
 pub mod controller {
     tonic::include_proto!("librevault.controller.v1"); // The string specified here must match the proto package name
@@ -10,8 +15,9 @@ pub mod controller {
 
 const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("librevault.controller.v1");
 
-#[derive(Debug, Default)]
-pub struct LibrevaultController {}
+pub struct LibrevaultController {
+    buckets: Arc<BucketManager>,
+}
 
 #[tonic::async_trait]
 impl Controller for LibrevaultController {
@@ -19,26 +25,37 @@ impl Controller for LibrevaultController {
         &self,
         request: Request<ReindexPathRequest>,
     ) -> Result<Response<()>, Status> {
-        // Return an instance of type HelloReply
-        println!("Got a request: {:?}", request);
+        debug!("Got a request: {:?}", &request);
 
-        Ok(Response::new(())) // Send back our formatted greeting
+        let message = request.into_inner();
+        let bucket = self.buckets.get_bucket_byid(&*message.bucket_id);
+
+        match bucket {
+            Some(bucket) => {
+                tokio::spawn(async move {
+                    bucket.index_path(&Path::new(&message.path)).await;
+                });
+                Ok(Response::new(())) // Send back our formatted greeting
+            }
+            None => Err(Status::not_found("Bucket not found")),
+        }
     }
 }
 
-pub async fn run_grpc() -> Option<()> {
-    let addr = "[::1]:50051".parse().unwrap();
-    let greeter = LibrevaultController::default();
+pub async fn run_grpc(buckets: Arc<BucketManager>, config: Arc<ConfigManager>) -> Option<()> {
+    let greeter = LibrevaultController { buckets };
 
     let reflection = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(FILE_DESCRIPTOR_SET)
         .build()
         .unwrap();
 
-    Some(Server::builder()
-        .add_service(ControllerServer::new(greeter))
-        .add_service(reflection)
-        .serve(addr)
-        .await
-        .unwrap())
+    Some(
+        Server::builder()
+            .add_service(ControllerServer::new(greeter))
+            .add_service(reflection)
+            .serve(config.config().controller.bind)
+            .await
+            .unwrap(),
+    )
 }

@@ -7,6 +7,7 @@ use ed25519_dalek_fiat::{Keypair, PublicKey, SecretKey, Signer, Verifier, PUBLIC
 use lazy_static::lazy_static;
 use luhn::Luhn;
 use rand::rngs::OsRng;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 
 lazy_static! {
@@ -37,7 +38,8 @@ impl Display for SecretError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub enum Secret {
     Signer {
         private_key: SecretKey,
@@ -96,14 +98,14 @@ impl Secret {
             'A' => Ok(Secret::Signer {
                 private_key: SecretKey::from_bytes(&self.get_private_key()?.to_bytes()).unwrap(),
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
-                public_key: self.get_public_key()?.clone(),
+                public_key: *self.get_public_key()?,
             }),
             'B' => Ok(Secret::Decryptor {
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
-                public_key: self.get_public_key()?.clone(),
+                public_key: *self.get_public_key()?,
             }),
             'C' => Ok(Secret::Verifier {
-                public_key: self.get_public_key()?.clone(),
+                public_key: *self.get_public_key()?,
             }),
             _ => Err(SecretError::DeriveError),
         }
@@ -130,6 +132,12 @@ impl Secret {
 
     pub fn get_id(&self) -> Vec<u8> {
         Sha3_256::digest(self.get_public_key().unwrap().as_bytes()).to_vec()
+    }
+}
+
+impl Display for Secret {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from(self))
     }
 }
 
@@ -196,9 +204,17 @@ impl FromStr for Secret {
     }
 }
 
-impl ToString for Secret {
-    fn to_string(&self) -> String {
-        let (ty, payload) = match self {
+impl TryFrom<String> for Secret {
+    type Error = SecretError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Secret::from_str(value.as_str())
+    }
+}
+
+impl From<&Secret> for String {
+    fn from(secret: &Secret) -> Self {
+        let (ty, payload) = match secret {
             Secret::Signer { private_key, .. } => ('A', private_key.to_bytes().to_vec()),
             Secret::Decryptor {
                 public_key,
@@ -211,6 +227,12 @@ impl ToString for Secret {
         let encoded_payload = bs58::encode(payload).into_string();
         let luhn = LUHNGENERATOR.generate(&encoded_payload).unwrap();
         format!("{}{}{}{}", ty, CURRENT_VERSION, encoded_payload, luhn)
+    }
+}
+
+impl From<Secret> for String {
+    fn from(secret: Secret) -> Self {
+        String::from(&secret)
     }
 }
 

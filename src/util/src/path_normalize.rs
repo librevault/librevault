@@ -35,7 +35,7 @@ pub fn normalize(
         normalized.pop();
     }
 
-    log::trace!("path: \"{:?}\" normalized: \"{:?}\"", path, normalized);
+    log::trace!("path: {:?} normalized: {:?}", path, normalized);
 
     Ok(normalized.into_bytes())
 }

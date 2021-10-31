@@ -1,12 +1,13 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use directories::ProjectDirs;
 use igd::aio::search_gateway;
 use igd::SearchOptions;
 use log::{debug, info};
 
-use bucket::{BucketConfig, BucketManager};
-use librevault_util;
+use crate::settings::ConfigManager;
+use bucket::BucketManager;
 use librevault_util::nodekey::nodekey_write_new;
 use librevault_util::secret::Secret;
 
@@ -26,7 +27,7 @@ async fn main() {
 "#;
     print!("{}", BANNER);
 
-    simple_logger::SimpleLogger::new().env().init().unwrap();
+    env_logger::init();
 
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     info!("Librevault v{}", VERSION);
@@ -36,19 +37,15 @@ async fn main() {
     debug!("Config directory: {:?}", &config_dir);
     std::fs::create_dir_all(&config_dir).expect("Could not create config directory");
 
-    let settings = settings::init_settings(config_dir).unwrap();
+    let settings = Arc::new(ConfigManager::new(config_dir).unwrap());
+
+    let buckets = Arc::new(BucketManager::new());
+    for bucket_config in &settings.config().buckets {
+        buckets.add_bucket(bucket_config.clone()).await;
+    }
 
     nodekey_write_new(config_dir.join("key.pem").to_str().unwrap());
-
-    let buckets = BucketManager::new();
-
-    let bucket = BucketConfig {
-        secret: Secret::new(),
-        path: PathBuf::from(Path::new("/home/gamepad/LibrevaultRs")),
-    };
-    buckets.add_bucket(bucket).await;
-
-    tokio::spawn(grpc::run_grpc());
+    tokio::spawn(grpc::run_grpc(buckets.clone(), settings.clone()));
 
     let _ = tokio::signal::ctrl_c().await;
 

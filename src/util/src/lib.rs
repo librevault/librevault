@@ -1,7 +1,7 @@
 mod aescbc;
 mod enc_storage;
 pub mod index;
-mod indexer;
+pub mod indexer;
 mod logger;
 pub mod nodekey;
 mod path_normalize;

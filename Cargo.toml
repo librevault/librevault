@@ -2,4 +2,5 @@
 members = [
     "src/util",
     "src/daemon-rs",
+    "src/cli",
 ]

@@ -5,6 +5,8 @@ use crate::path_normalize::normalize;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
 use crate::secret::Secret;
 use log::{debug, trace, warn};
+use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
 use prost::Message;
 use rand::{thread_rng, Fill};
 use sha3::digest::Update;
@@ -21,6 +23,7 @@ pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));
 }
 
+#[derive(FromPrimitive)]
 enum ObjectType {
     TOMBSTONE = 0,
     FILE = 1,
@@ -143,7 +146,7 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
     }
 }
 
-fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, IndexingError> {
+pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, IndexingError> {
     let mut meta = proto::Meta::default();
 
     let path_norm = normalize(path, root, true).unwrap();
@@ -169,7 +172,23 @@ fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, I
             gid: 0,
             mode: 0,
         };
+        meta.generic_metadata = Some(generic_metadata);
     }
+
+    meta.type_specific_metadata = match FromPrimitive::from_u32(meta.meta_type) {
+        Some(ObjectType::FILE) => Some(proto::meta::TypeSpecificMetadata::FileMetadata(
+            proto::meta::FileMetadata {
+                algorithm_type: 0,
+                strong_hash_type: 0,
+                max_chunksize: 0,
+                min_chunksize: 0,
+                chunks: make_chunks(path, secret)?,
+            },
+        )),
+        // Some(ObjectType::DIRECTORY) => {}
+        // Some(ObjectType::SYMLINK) => {}
+        _ => None,
+    };
 
     Ok(meta)
 }

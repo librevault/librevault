@@ -3,7 +3,7 @@ package librevault.controller.v1;
 import "google/protobuf/empty.proto";
 
 message ReindexPathRequest {
-  string bucket_id = 1;
+  bytes bucket_id = 1;
   string path = 2;
 }
 

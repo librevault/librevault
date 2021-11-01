@@ -179,6 +179,7 @@ corrosion_import_crate(MANIFEST_PATH Cargo.toml)
 target_include_directories(librevault_util INTERFACE "${CMAKE_CURRENT_LIST_DIR}/src/util")
 set_target_properties(daemon-rs PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
 set_target_properties(librevault_util PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
+set_target_properties(cli PROPERTIES CORROSION_ENVIRONMENT_VARIABLES "${CORROSION_ENVIRONMENT_VARIABLES}")
 target_link_libraries(librevault_util INTERFACE OpenSSL::SSL OpenSSL::Crypto)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/contrib/corrosion/cmake")

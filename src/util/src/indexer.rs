@@ -1,6 +1,6 @@
 use crate::aescbc::encrypt_aes256;
 use crate::aescbc::encrypt_chunk;
-use crate::indexer::IndexingError::IoError;
+use crate::index::SignedMeta;
 use crate::path_normalize::normalize;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
 use crate::secret::Secret;
@@ -33,8 +33,14 @@ enum ObjectType {
 
 #[derive(Debug)]
 pub enum IndexingError {
-    IoError { io_error: io::Error },
+    IoError(io::Error),
     UnsupportedType,
+}
+
+impl From<io::Error> for IndexingError {
+    fn from(error: io::Error) -> Self {
+        IndexingError::IoError(error)
+    }
 }
 
 impl Display for IndexingError {
@@ -72,32 +78,25 @@ fn make_chunks(
 ) -> Result<Vec<proto::meta::file_metadata::Chunk>, IndexingError> {
     trace!("Trying to make chunks for: {:?}", path);
 
-    let f = match fs::File::open(path) {
-        Ok(f) => f,
-        Err(e) => return Err(IoError { io_error: e }),
-    };
+    let f = fs::File::open(path)?;
     let reader = BufReader::new(f);
 
     let mut chunks = vec![];
 
-    let mut chunker = Rabin::init();
+    let mut chunker = Rabin::default();
     rabin_init(&mut chunker);
 
     let mut chunk_data = Vec::with_capacity(chunker.maxsize as usize);
 
     for b in reader.bytes() {
-        if let Ok(b) = b {
-            chunk_data.push(b);
-            if rabin_next_chunk(&mut chunker, b) {
-                let chunk = populate_chunk(chunk_data.as_slice(), secret);
-                // Found a chunk
-                chunk_data.truncate(0);
+        let b = b?;
+        chunk_data.push(b);
+        if rabin_next_chunk(&mut chunker, b) {
+            let chunk = populate_chunk(chunk_data.as_slice(), secret);
+            // Found a chunk
+            chunk_data.truncate(0);
 
-                chunks.push(chunk);
-            }
-        } else if let Err(e) = b {
-            warn!("I/O Error: {:?}", e);
-            return Err(IndexingError::IoError { io_error: e });
+            chunks.push(chunk);
         }
     }
 
@@ -130,7 +129,7 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
     if let Err(e) = metadata {
         return match e.kind() {
             ErrorKind::NotFound => Ok(ObjectType::TOMBSTONE),
-            _ => Err(IndexingError::IoError { io_error: e }),
+            _ => Err(IndexingError::from(e)),
         };
     }
 
@@ -167,10 +166,10 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos() as i64,
-            windows_attrib: 0,
-            uid: 0,
-            gid: 0,
-            mode: 0,
+            windows_attrib: 0, // TODO: Windows attributes
+            uid: 0,            // TODO: Unix attributes
+            gid: 0,            // TODO: Unix attributes
+            mode: 0,           // TODO: Unix attributes
         };
         meta.generic_metadata = Some(generic_metadata);
     }
@@ -180,8 +179,8 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
             proto::meta::FileMetadata {
                 algorithm_type: 0,
                 strong_hash_type: 0,
-                max_chunksize: 0,
-                min_chunksize: 0,
+                max_chunksize: 1024 * 1024,
+                min_chunksize: 8 * 1024 * 1024,
                 chunks: make_chunks(path, secret)?,
             },
         )),
@@ -191,6 +190,15 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
     };
 
     Ok(meta)
+}
+
+pub fn sign_meta(meta: &proto::Meta, secret: &Secret) -> SignedMeta {
+    let serialized_meta = meta.encode_to_vec();
+    let signature = secret.sign(&*serialized_meta).unwrap();
+    SignedMeta {
+        meta: serialized_meta,
+        signature,
+    }
 }
 
 fn c_make_chunks(path: &str, secret: &str) -> Result<Vec<u8>, IndexingError> {

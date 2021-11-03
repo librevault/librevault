@@ -27,7 +27,7 @@ pub(crate) struct RootConfig {
 }
 
 impl Default for RootConfig {
-    fn default() -> RootConfig {
+    fn default() -> Self {
         RootConfig {
             client_name: "Librevault".to_string(),
             buckets: vec![],

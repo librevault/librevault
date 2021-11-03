@@ -24,7 +24,7 @@ impl BucketCollection {
         let bucket_arc = Arc::new(bucket);
 
         let mut inner_lock = self.inner.write().unwrap();
-        let mut inner = &mut *inner_lock;
+        let inner = &mut *inner_lock;
 
         inner
             .buckets_byid
@@ -34,10 +34,7 @@ impl BucketCollection {
 
     pub fn get_bucket_byid(&self, bucket_id: &[u8]) -> Option<Arc<Bucket>> {
         let inner_lock = self.inner.read().unwrap();
-        match (*inner_lock).buckets_byid.get(bucket_id) {
-            Some(bucket) => Some(bucket.clone()),
-            None => None,
-        }
+        (*inner_lock).buckets_byid.get(bucket_id).cloned()
     }
 
     // pub fn drop_bucket(&mut self, bucket: Arc<Bucket>) -> Option<Arc<Bucket>> {

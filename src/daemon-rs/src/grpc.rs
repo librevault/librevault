@@ -1,15 +1,14 @@
-use std::error::Error;
 use std::path::Path;
 use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::bucket::BucketManager;
 use crate::settings::ConfigManager;
-use controller::controller_server::{Controller, ControllerServer};
-use controller::ReindexPathRequest;
 use log::debug;
+use proto::controller_server::{Controller, ControllerServer};
+use proto::ReindexPathRequest;
 
-pub mod controller {
+pub mod proto {
     tonic::include_proto!("librevault.controller.v1"); // The string specified here must match the proto package name
 }
 
@@ -33,16 +32,16 @@ impl Controller for LibrevaultController {
         match bucket {
             Some(bucket) => {
                 tokio::spawn(async move {
-                    bucket.index_path(&Path::new(&message.path)).await;
+                    bucket.index_path(Path::new(&message.path)).await;
                 });
-                Ok(Response::new(())) // Send back our formatted greeting
+                Ok(Response::new(()))
             }
             None => Err(Status::not_found("Bucket not found")),
         }
     }
 }
 
-pub async fn run_grpc(buckets: Arc<BucketManager>, config: Arc<ConfigManager>) -> Option<()> {
+pub async fn run_grpc(buckets: Arc<BucketManager>, config: Arc<ConfigManager>) {
     let greeter = LibrevaultController { buckets };
 
     let reflection = tonic_reflection::server::Builder::configure()
@@ -50,12 +49,10 @@ pub async fn run_grpc(buckets: Arc<BucketManager>, config: Arc<ConfigManager>) -
         .build()
         .unwrap();
 
-    Some(
-        Server::builder()
-            .add_service(ControllerServer::new(greeter))
-            .add_service(reflection)
-            .serve(config.config().controller.bind)
-            .await
-            .unwrap(),
-    )
+    Server::builder()
+        .add_service(ControllerServer::new(greeter))
+        .add_service(reflection)
+        .serve(config.config().controller.bind)
+        .await
+        .unwrap();
 }

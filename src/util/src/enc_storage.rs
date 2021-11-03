@@ -13,7 +13,13 @@ struct EncryptedStorage {
 #[derive(Debug)]
 enum StorageError {
     ChunkNotFound,
-    IoError { error: io::Error },
+    IoError(io::Error),
+}
+
+impl From<io::Error> for StorageError {
+    fn from(error: io::Error) -> Self {
+        StorageError::IoError(error)
+    }
 }
 
 impl Display for StorageError {
@@ -47,10 +53,8 @@ impl EncryptedStorage {
             Err(_) => return Err(StorageError::ChunkNotFound),
         };
         let mut data = vec![];
-        match f.read_to_end(&mut data) {
-            Ok(_) => Ok(data),
-            Err(err) => Err(StorageError::IoError { error: err }),
-        }
+        f.read_to_end(&mut data)?;
+        Ok(data)
     }
 
     fn put_chunk(&self, chunk_id: &[u8], data: &[u8]) {

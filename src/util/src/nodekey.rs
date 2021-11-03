@@ -30,7 +30,7 @@ fn build_certificate(private_key_pem: &[u8]) -> Result<X509, ErrorStack> {
     let pkey = &PKey::try_from(keypair)?;
 
     let mut cert_builder = X509Builder::new()?;
-    cert_builder.set_pubkey(&pkey)?;
+    cert_builder.set_pubkey(pkey)?;
 
     cert_builder.set_version(0)?;
     cert_builder.set_not_before(Asn1Time::days_from_now(0)?.as_ref())?;
@@ -42,7 +42,7 @@ fn build_certificate(private_key_pem: &[u8]) -> Result<X509, ErrorStack> {
 
     cert_builder.set_subject_name(&name)?;
     cert_builder.set_issuer_name(&name)?;
-    cert_builder.sign(&pkey, MessageDigest::sha256())?;
+    cert_builder.sign(pkey, MessageDigest::sha256())?;
 
     Ok(cert_builder.build())
 }

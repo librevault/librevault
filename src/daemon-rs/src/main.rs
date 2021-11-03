@@ -1,15 +1,12 @@
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use directories::ProjectDirs;
-use igd::aio::search_gateway;
-use igd::SearchOptions;
+
 use log::{debug, info};
 
 use crate::settings::ConfigManager;
 use bucket::BucketManager;
 use librevault_util::nodekey::nodekey_write_new;
-use librevault_util::secret::Secret;
 
 mod bucket;
 mod discover;
@@ -18,7 +15,7 @@ mod settings;
 
 #[tokio::main]
 async fn main() {
-    const BANNER: &'static str = r#"
+    const BANNER: &str = r#"
    __    __ _                                _ __
   / /   /_/ /_  ____ _____ _  __ ___  __  __/ / /_
  / /   __/ /_ \/ ___/ ___/ / / / __ \/ / / / / __/

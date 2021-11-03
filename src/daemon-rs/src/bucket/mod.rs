@@ -9,23 +9,26 @@ mod collection;
 mod watcher;
 use crate::settings::BucketConfig;
 use hex::ToHex;
-use librevault_util::indexer::make_meta;
+use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
 
 pub struct Bucket {
     secret: Secret,
     root: PathBuf,
 
-    index: Index,
+    index: Arc<Index>,
     system_dir: PathBuf,
 }
 
 impl Bucket {
     async fn new(config: BucketConfig) -> Self {
+        let bucket_id_hex: String = config.secret.get_id().encode_hex();
+        debug!("Creating bucket: {}", bucket_id_hex);
+
         let system_dir = config.path.join(".librevault");
 
         tokio::fs::create_dir_all(&system_dir).await.unwrap();
-        let index = Index::new(system_dir.join("index.db").as_path());
+        let index = Arc::new(Index::new(system_dir.join("index.db").as_path()));
 
         Bucket {
             secret: config.secret,
@@ -40,7 +43,7 @@ impl Bucket {
     }
 
     async fn launch_bucket(&self) {
-        let _ = tokio::task::block_in_place(move || self.index.migrate());
+        let _ = tokio::task::block_in_place(move || self.index.migrate()); // TODO: block somewhere else
 
         // loop {
         //     let ev = watcher::async_watch(&self.root, RecursiveMode::Recursive).await;
@@ -49,7 +52,11 @@ impl Bucket {
 
     pub(crate) async fn index_path(&self, path: &Path) {
         let meta = make_meta(path, &self.root, &self.secret);
-        debug!("Meta: {:?}", meta)
+        if let Ok(meta) = meta {
+            debug!("Meta: {:?}", &meta);
+            let signed_meta = sign_meta(&meta, &self.secret);
+            self.index.put_meta(signed_meta, true).unwrap();
+        }
     }
 }
 
@@ -66,9 +73,6 @@ impl BucketManager {
 
     pub async fn add_bucket(&self, config: BucketConfig) {
         let mut lock = self.buckets.write().unwrap();
-
-        let bucket_id_hex: String = config.secret.get_id().encode_hex();
-        debug!("Creating bucket: {}", bucket_id_hex);
 
         let bucket = Bucket::new(config).await;
         let bucket_arc = (*lock).add_bucket(bucket);

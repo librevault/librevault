@@ -34,7 +34,7 @@ fn deg(p: u64) -> i8 {
         mask >>= 1;
     }
 
-    return -1;
+    -1
 }
 
 // Mod calculates the remainder of x divided by p.
@@ -42,7 +42,7 @@ fn xmod(mut x: u64, p: u64) -> u64 {
     while deg(x) >= deg(p) {
         let shift = deg(x) - deg(p);
 
-        x = x ^ (p << shift);
+        x ^= p << shift;
     }
     x
 }
@@ -102,7 +102,7 @@ pub extern "C" fn rabin_append(h: &mut Rabin, b: u8) {
 pub extern "C" fn rabin_slide(h: &mut Rabin, b: u8) {
     let out: u8 = h.window[h.wpos];
     h.window[h.wpos] = b;
-    h.digest = h.digest ^ h.out_table[out as usize];
+    h.digest ^= h.out_table[out as usize];
     h.wpos = (h.wpos + 1) % WINSIZE;
     rabin_append(h, b);
 }
@@ -137,7 +137,7 @@ pub extern "C" fn rabin_next_chunk(h: &mut Rabin, b: u8) -> bool {
 
         return true;
     }
-    return false;
+    false
 }
 
 #[no_mangle]
@@ -161,11 +161,11 @@ pub extern "C" fn rabin_finalize(h: &mut Rabin) -> bool {
     h.chunk_length = h.count;
     h.chunk_cut_fingerprint = h.digest;
 
-    return true;
+    true
 }
 
-impl Rabin {
-    pub(crate) fn init() -> Self {
+impl Default for Rabin {
+    fn default() -> Self {
         Rabin {
             mod_table: [0; 256],
             out_table: [0; 256],
@@ -182,7 +182,7 @@ impl Rabin {
             polynomial_degree: 53,
             polynomial_shift: 53 - 8,
             average_bits: 20,
-            minsize: 1 * 1024 * 1024,
+            minsize: 1024 * 1024,
             maxsize: 8 * 1024 * 1024,
             mask: (1 << 20) - 1,
         }

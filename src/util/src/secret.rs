@@ -34,7 +34,7 @@ pub enum SecretError {
 
 impl Display for SecretError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Secret(\"{}\")", self.to_string())
+        write!(f, "{}", self)
     }
 }
 
@@ -46,7 +46,7 @@ pub enum Secret {
         symmetric_key: Vec<u8>,
         public_key: PublicKey,
     },
-    Decryptor {
+    Decrypter {
         symmetric_key: Vec<u8>,
         public_key: PublicKey,
     },
@@ -78,7 +78,7 @@ impl Secret {
 
     pub fn get_symmetric_key(&self) -> Result<&[u8], SecretError> {
         match self {
-            Secret::Signer { symmetric_key, .. } | Secret::Decryptor { symmetric_key, .. } => {
+            Secret::Signer { symmetric_key, .. } | Secret::Decrypter { symmetric_key, .. } => {
                 Ok(&symmetric_key)
             }
             _ => Err(SecretError::DeriveError),
@@ -88,7 +88,7 @@ impl Secret {
     fn get_public_key(&self) -> Result<&PublicKey, SecretError> {
         match self {
             Secret::Signer { public_key, .. }
-            | Secret::Decryptor { public_key, .. }
+            | Secret::Decrypter { public_key, .. }
             | Secret::Verifier { public_key, .. } => Ok(&public_key),
         }
     }
@@ -100,7 +100,7 @@ impl Secret {
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
                 public_key: *self.get_public_key()?,
             }),
-            'B' => Ok(Secret::Decryptor {
+            'B' => Ok(Secret::Decrypter {
                 symmetric_key: self.get_symmetric_key()?.to_vec(),
                 public_key: *self.get_public_key()?,
             }),
@@ -111,7 +111,7 @@ impl Secret {
         }
     }
 
-    fn sign(&self, message: &[u8]) -> Result<Vec<u8>, SecretError> {
+    pub(crate) fn sign(&self, message: &[u8]) -> Result<Vec<u8>, SecretError> {
         let keypair = Keypair::from_bytes(
             &([
                 self.get_private_key()?.to_bytes(),
@@ -187,7 +187,7 @@ impl FromStr for Secret {
                 let symmetric_key = secret_payload[PUBLIC_KEY_LENGTH..Sha3_256::output_size()]
                     .as_bytes()
                     .to_vec();
-                Secret::Decryptor {
+                Secret::Decrypter {
                     symmetric_key,
                     public_key,
                 }
@@ -216,7 +216,7 @@ impl From<&Secret> for String {
     fn from(secret: &Secret) -> Self {
         let (ty, payload) = match secret {
             Secret::Signer { private_key, .. } => ('A', private_key.to_bytes().to_vec()),
-            Secret::Decryptor {
+            Secret::Decrypter {
                 public_key,
                 symmetric_key,
             } => ('B', {
@@ -248,10 +248,10 @@ impl Clone for Secret {
                 public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },
-            Secret::Decryptor {
+            Secret::Decrypter {
                 public_key,
                 symmetric_key,
-            } => Secret::Decryptor {
+            } => Secret::Decrypter {
                 public_key: *public_key,
                 symmetric_key: symmetric_key.clone(),
             },

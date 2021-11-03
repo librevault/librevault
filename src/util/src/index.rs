@@ -1,35 +1,37 @@
+use std::fmt::{Display, Formatter};
+use std::path::Path;
+use std::sync::Mutex;
+
 use log::{debug, trace};
 use prost::Message;
 use rusqlite::{named_params, Connection, Params, Result};
 use serde::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::fmt::{Display, Formatter};
-use std::path::Path;
-use std::sync::Mutex;
 
 pub struct Index {
     conn: Mutex<Connection>,
 }
 
-fn as_base64<S: Serializer>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error> {
+fn as_base64<S: Serializer>(v: &Vec<u8>, s: S) -> rusqlite::Result<S::Ok, S::Error> {
     s.serialize_str(&base64::encode(v))
 }
 
-pub fn from_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+pub fn from_base64<'de, D>(deserializer: D) -> rusqlite::Result<Vec<u8>, D::Error>
 where
     D: Deserializer<'de>,
 {
     use serde::de::Error;
+    use serde::Deserialize;
     String::deserialize(deserializer)
         .and_then(|string| base64::decode(&string).map_err(|err| Error::custom(err.to_string())))
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-struct SignedMeta {
+pub struct SignedMeta {
     #[serde(serialize_with = "as_base64", deserialize_with = "from_base64")]
-    meta: Vec<u8>,
+    pub(crate) meta: Vec<u8>,
     #[serde(serialize_with = "as_base64", deserialize_with = "from_base64")]
-    signature: Vec<u8>,
+    pub(crate) signature: Vec<u8>,
 }
 
 #[derive(Serialize)]
@@ -38,7 +40,7 @@ struct Output {
 }
 
 #[derive(Debug)]
-enum IndexError {
+pub enum IndexError {
     SqlError(rusqlite::Error),
     MetaNotFound,
 }
@@ -193,7 +195,7 @@ impl Index {
         Ok(meta_stmt.exists(named_params! {":chunk_id": chunk_id})?)
     }
 
-    fn put_meta(&self, meta: SignedMeta, fully_assembled: bool) -> Result<(), IndexError> {
+    pub fn put_meta(&self, meta: SignedMeta, fully_assembled: bool) -> Result<(), IndexError> {
         let de_meta = proto::Meta::decode(&*meta.meta).unwrap();
 
         let mut conn = self.conn.lock().unwrap();

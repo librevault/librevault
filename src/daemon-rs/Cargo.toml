@@ -9,7 +9,7 @@ figment = { version = "0.10.6", features = ["toml"] }
 log = "0.4.14"
 serde = { version = "1", features = ["derive"] }
 #simple_logger = "1.13.0"
-directories = "3.0.2"
+directories = "4.0.1"
 tokio = { version = "1.12.0", features = ["rt", "macros", "rt-multi-thread", "fs", "sync", "net", "signal"] }
 notify = "5.0.0-pre.13"
 igd = { version = "0.12.0", features = ["aio"] }

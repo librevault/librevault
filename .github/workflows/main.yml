@@ -40,11 +40,11 @@ jobs:
           conan profile update settings.build_type=Release default
           conan install .. --build=outdated --build=cascade
           conan remove "*" --src --builds --system-reqs --force
-      - name: Build application
-        run: |
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries -DBUILD_UPDATER=OFF ..
-          cmake --build . --config Release
+#      - name: Build application
+#        run: |
+#          cd build
+#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=built_binaries -DBUILD_UPDATER=OFF ..
+#          cmake --build . --config Release
 #      - name: Package application
 #        run: |
 #          .venv\scripts\activate.ps1

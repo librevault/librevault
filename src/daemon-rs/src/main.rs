@@ -11,6 +11,7 @@ use librevault_util::nodekey::nodekey_write_new;
 mod bucket;
 mod discover;
 mod grpc;
+mod p2p_server;
 mod settings;
 
 #[tokio::main]

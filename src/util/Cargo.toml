@@ -21,7 +21,7 @@ serde_json = "1.0.59"
 serde = { version = "1.0", features = ["derive"] }
 base64 = "0.13.0"
 # Crypto
-openssl = "0.10.36"
+openssl = "0.10.38"
 block-modes = "0.8.1"
 aes = "0.7.5"
 sha3 = "0.9.1"

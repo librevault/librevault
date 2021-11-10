@@ -19,11 +19,17 @@ pub(crate) struct ControllerConfig {
     pub(crate) bind: SocketAddr,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub(crate) struct P2PConfig {
+    pub(crate) bind: Vec<SocketAddr>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub(crate) struct RootConfig {
     pub(crate) client_name: String,
     pub(crate) buckets: Vec<BucketConfig>,
     pub(crate) controller: ControllerConfig,
+    pub(crate) p2p: P2PConfig,
 }
 
 impl Default for RootConfig {
@@ -34,6 +40,11 @@ impl Default for RootConfig {
             controller: {
                 ControllerConfig {
                     bind: "[::1]:42346".parse().unwrap(),
+                }
+            },
+            p2p: {
+                P2PConfig {
+                    bind: vec!["0.0.0.0:0".parse().unwrap(), "[::]:0".parse().unwrap()],
                 }
             },
         }

@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tonic::{transport::Server, Request, Response, Status};
 
-use crate::bucket::BucketManager;
+use crate::bucket::manager::BucketManager;
 use crate::settings::ConfigManager;
 use log::debug;
 use proto::controller_server::{Controller, ControllerServer};

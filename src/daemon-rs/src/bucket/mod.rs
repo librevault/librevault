@@ -1,29 +1,38 @@
+use std::borrow::Cow;
+use std::fmt;
+use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
-use collection::BucketCollection;
-use librevault_util::index::Index;
+use librevault_util::index::{Index, SignedMeta};
 use librevault_util::secret::Secret;
 
 mod collection;
-mod watcher;
+pub mod manager;
+
 use crate::settings::BucketConfig;
-use hex::ToHex;
+// use librevault_util::index::proto::Meta;
 use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
+use tokio::sync::mpsc;
+
+#[derive(Clone, Debug)]
+pub enum BucketEvent {
+    MetaAdded { signed_meta: SignedMeta },
+}
 
 pub struct Bucket {
     secret: Secret,
     root: PathBuf,
 
     index: Arc<Index>,
-    system_dir: PathBuf,
+
+    event_sender: mpsc::Sender<BucketEvent>,
 }
 
 impl Bucket {
-    async fn new(config: BucketConfig) -> Self {
-        let bucket_id_hex: String = config.secret.get_id().encode_hex();
-        debug!("Creating bucket: {}", bucket_id_hex);
+    async fn new(config: BucketConfig, event_sender: mpsc::Sender<BucketEvent>) -> Self {
+        debug!("Creating bucket: {}", config.secret.get_id_hex());
 
         let system_dir = config.path.join(".librevault");
 
@@ -34,15 +43,19 @@ impl Bucket {
             secret: config.secret,
             root: config.path,
             index,
-            system_dir,
+            event_sender,
         }
     }
 
-    fn get_id(&self) -> Vec<u8> {
+    pub fn get_id(&self) -> Vec<u8> {
         self.secret.get_id()
     }
 
-    async fn launch_bucket(&self) {
+    pub fn get_id_hex(&self) -> String {
+        self.secret.get_id_hex()
+    }
+
+    async fn initialize(&self) {
         let _ = tokio::task::block_in_place(move || self.index.migrate()); // TODO: block somewhere else
 
         // loop {
@@ -55,31 +68,18 @@ impl Bucket {
         if let Ok(meta) = meta {
             debug!("Meta: {:?}", &meta);
             let signed_meta = sign_meta(&meta, &self.secret);
-            self.index.put_meta(signed_meta, true).unwrap();
+            self.index.put_meta(&signed_meta, true).unwrap();
+
+            self.event_sender
+                .send(BucketEvent::MetaAdded { signed_meta })
+                .await
+                .expect("Channel must be open");
         }
     }
 }
 
-pub struct BucketManager {
-    buckets: Arc<RwLock<BucketCollection>>,
-}
-
-impl BucketManager {
-    pub fn new() -> Self {
-        BucketManager {
-            buckets: Arc::new(RwLock::new(BucketCollection::new())),
-        }
-    }
-
-    pub async fn add_bucket(&self, config: BucketConfig) {
-        let mut lock = self.buckets.write().unwrap();
-
-        let bucket = Bucket::new(config).await;
-        let bucket_arc = (*lock).add_bucket(bucket);
-        bucket_arc.launch_bucket().await;
-    }
-
-    pub fn get_bucket_byid(&self, bucket_id: &[u8]) -> Option<Arc<Bucket>> {
-        self.buckets.read().unwrap().get_bucket_byid(bucket_id)
+impl fmt::Debug for Bucket {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "(Bucket: id={}, loc={:?})", self.get_id_hex(), self.root)
     }
 }

@@ -21,17 +21,16 @@ where
     D: Deserializer<'de>,
 {
     use serde::de::Error;
-    use serde::Deserialize;
     String::deserialize(deserializer)
         .and_then(|string| base64::decode(&string).map_err(|err| Error::custom(err.to_string())))
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SignedMeta {
     #[serde(serialize_with = "as_base64", deserialize_with = "from_base64")]
-    pub(crate) meta: Vec<u8>,
+    pub meta: Vec<u8>,
     #[serde(serialize_with = "as_base64", deserialize_with = "from_base64")]
-    pub(crate) signature: Vec<u8>,
+    pub signature: Vec<u8>,
 }
 
 #[derive(Serialize)]
@@ -195,7 +194,7 @@ impl Index {
         Ok(meta_stmt.exists(named_params! {":chunk_id": chunk_id})?)
     }
 
-    pub fn put_meta(&self, meta: SignedMeta, fully_assembled: bool) -> Result<(), IndexError> {
+    pub fn put_meta(&self, meta: &SignedMeta, fully_assembled: bool) -> Result<(), IndexError> {
         let de_meta = proto::Meta::decode(&*meta.meta).unwrap();
 
         let mut conn = self.conn.lock().unwrap();
@@ -275,7 +274,7 @@ impl Index {
     }
 
     fn c_put_meta(&self, signed_meta: &str, fully_assembled: bool) -> Result<(), IndexError> {
-        self.put_meta(serde_json::from_str(signed_meta).unwrap(), fully_assembled)
+        self.put_meta(&serde_json::from_str(signed_meta).unwrap(), fully_assembled)
     }
 }
 

@@ -8,5 +8,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .file_descriptor_set_path(descriptor_path)
         .format(true)
         .compile(&["src/proto/controller.proto"], &["src/proto/"])?;
+    prost_build::compile_protos(&["src/proto/protocol.proto"], &["src/proto/"]).unwrap();
     Ok(())
 }

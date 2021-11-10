@@ -4,7 +4,7 @@ use crate::index::SignedMeta;
 use crate::path_normalize::normalize;
 use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
 use crate::secret::Secret;
-use log::{debug, trace, warn};
+use log::{debug, trace};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use prost::Message;
@@ -25,10 +25,10 @@ pub mod proto {
 
 #[derive(FromPrimitive)]
 enum ObjectType {
-    TOMBSTONE = 0,
-    FILE = 1,
-    DIRECTORY = 2,
-    SYMLINK = 3,
+    Tombstone = 0,
+    File = 1,
+    Directory = 2,
+    Symlink = 3,
 }
 
 #[derive(Debug)]
@@ -128,18 +128,18 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
 
     if let Err(e) = metadata {
         return match e.kind() {
-            ErrorKind::NotFound => Ok(ObjectType::TOMBSTONE),
+            ErrorKind::NotFound => Ok(ObjectType::Tombstone),
             _ => Err(IndexingError::from(e)),
         };
     }
 
     let file_type = metadata.unwrap().file_type();
     if file_type.is_file() {
-        Ok(ObjectType::FILE)
+        Ok(ObjectType::File)
     } else if file_type.is_dir() {
-        Ok(ObjectType::DIRECTORY)
+        Ok(ObjectType::Directory)
     } else if file_type.is_symlink() {
-        Ok(ObjectType::SYMLINK)
+        Ok(ObjectType::Symlink)
     } else {
         Err(IndexingError::UnsupportedType)
     }
@@ -157,7 +157,7 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
         .unwrap()
         .as_secs() as i64;
 
-    if meta.meta_type != (ObjectType::TOMBSTONE as u32) {
+    if meta.meta_type != (ObjectType::Tombstone as u32) {
         let metadata = fs::metadata(path).unwrap();
         let generic_metadata = proto::meta::GenericMetadata {
             mtime: metadata
@@ -175,7 +175,7 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
     }
 
     meta.type_specific_metadata = match FromPrimitive::from_u32(meta.meta_type) {
-        Some(ObjectType::FILE) => Some(proto::meta::TypeSpecificMetadata::FileMetadata(
+        Some(ObjectType::File) => Some(proto::meta::TypeSpecificMetadata::FileMetadata(
             proto::meta::FileMetadata {
                 algorithm_type: 0,
                 strong_hash_type: 0,

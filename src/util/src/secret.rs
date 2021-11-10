@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use ed25519::signature::Signature;
 use ed25519_dalek_fiat::{Keypair, PublicKey, SecretKey, Signer, Verifier, PUBLIC_KEY_LENGTH};
+use hex::ToHex;
 use lazy_static::lazy_static;
 use luhn::Luhn;
 use rand::rngs::OsRng;
@@ -132,6 +133,10 @@ impl Secret {
 
     pub fn get_id(&self) -> Vec<u8> {
         Sha3_256::digest(self.get_public_key().unwrap().as_bytes()).to_vec()
+    }
+
+    pub fn get_id_hex(&self) -> String {
+        self.get_id().encode_hex()
     }
 }
 

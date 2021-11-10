@@ -4,14 +4,13 @@ use directories::ProjectDirs;
 
 use log::{debug, info};
 
+use crate::p2p::run_server;
 use crate::settings::ConfigManager;
-use bucket::BucketManager;
-use librevault_util::nodekey::nodekey_write_new;
+use bucket::manager::BucketManager;
 
 mod bucket;
-mod discover;
 mod grpc;
-mod p2p_server;
+mod p2p;
 mod settings;
 
 #[tokio::main]
@@ -36,18 +35,21 @@ async fn main() {
     std::fs::create_dir_all(&config_dir).expect("Could not create config directory");
 
     let settings = Arc::new(ConfigManager::new(config_dir).unwrap());
-
     let buckets = Arc::new(BucketManager::new());
+
+    tokio::spawn(grpc::run_grpc(buckets.clone(), settings.clone()));
+    tokio::spawn(run_server(
+        buckets.clone(),
+        settings.clone(),
+        buckets.get_event_channel(),
+    ));
+
+    // Add buckets only after passing to components
     for bucket_config in &settings.config().buckets {
         buckets.add_bucket(bucket_config.clone()).await;
     }
 
-    nodekey_write_new(config_dir.join("key.pem").to_str().unwrap());
-    tokio::spawn(grpc::run_grpc(buckets.clone(), settings.clone()));
-
     let _ = tokio::signal::ctrl_c().await;
-
-    // discover_mcast().await;
 
     // let gateway = search_gateway(SearchOptions::default()).await.unwrap();
     // info!("Detected IGD gateway: {:?}", gateway);

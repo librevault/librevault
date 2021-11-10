@@ -1,3 +1,4 @@
+use log::trace;
 use path_slash::{PathBufExt, PathExt};
 use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
@@ -35,7 +36,7 @@ pub fn normalize(
         normalized.pop();
     }
 
-    log::trace!("path: {:?} normalized: {:?}", path, normalized);
+    trace!("path: {:?} normalized: {:?}", path, normalized);
 
     Ok(normalized.into_bytes())
 }

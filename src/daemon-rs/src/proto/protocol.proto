@@ -1,0 +1,8 @@
+syntax = "proto3";
+package librevault.protocol.v1;
+import "google/protobuf/empty.proto";
+
+message HaveMeta {
+  bytes meta = 1;
+  bytes signature = 2;
+}

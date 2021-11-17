@@ -1,10 +1,10 @@
-mod aescbc;
-mod enc_storage;
+pub mod aescbc;
+pub mod enc_storage;
 pub mod index;
 pub mod indexer;
 mod logger;
 pub mod nodekey;
-mod path_normalize;
+pub mod path_normalize;
 mod rabin;
 pub mod secret;
 

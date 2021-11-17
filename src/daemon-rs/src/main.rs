@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 
 use directories::ProjectDirs;
@@ -10,6 +11,8 @@ use bucket::manager::BucketManager;
 
 mod bucket;
 mod grpc;
+#[cfg(unix)]
+mod lvfs;
 mod p2p;
 mod settings;
 
@@ -48,6 +51,14 @@ async fn main() {
     for bucket_config in &settings.config().buckets {
         buckets.add_bucket(bucket_config.clone()).await;
     }
+
+    let filesystem = lvfs::LibrevaultFs::new(buckets.get_bucket_one().unwrap());
+
+    let session = fuse_mt::spawn_mount(
+        fuse_mt::FuseMT::new(filesystem, 1),
+        Path::new("/home/gamepad/lvfs"),
+        Default::default(),
+    );
 
     let _ = tokio::signal::ctrl_c().await;
 

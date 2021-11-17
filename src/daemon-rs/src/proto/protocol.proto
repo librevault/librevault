@@ -6,3 +6,9 @@ message HaveMeta {
   bytes meta = 1;
   bytes signature = 2;
 }
+
+message PubSubMessage {
+  oneof message {
+    HaveMeta have_meta = 1;
+  }
+}

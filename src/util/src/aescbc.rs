@@ -4,13 +4,13 @@ use block_modes::{BlockMode, Cbc};
 
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
 
-pub(crate) fn encrypt_aes256(message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+pub fn encrypt_aes256(message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     Aes256Cbc::new_from_slices(key, iv)
         .unwrap()
         .encrypt_vec(message)
 }
 
-fn decrypt_aes256(message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+pub fn decrypt_aes256(message: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     Aes256Cbc::new_from_slices(key, iv)
         .unwrap()
         .decrypt_vec(message)

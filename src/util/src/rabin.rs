@@ -78,7 +78,7 @@ fn calc_tables(h: &mut Rabin) {
 
     // calculate table for reduction mod Polynomial
     let k = deg(h.polynomial);
-    for b in 0..255 {
+    for b in 0..255u64 {
         // mod_table[b] = A | B, where A = (b(x) * x^k mod pol) and  B = b(x) * x^k
         //
         // The 8 bits above deg(Polynomial) determine what happens next and so
@@ -86,7 +86,7 @@ fn calc_tables(h: &mut Rabin) {
         // two parts: Part A contains the result of the modulus operation, part
         // B is used to cancel out the 8 top bits so that one XOR operation is
         // enough to reduce modulo Polynomial
-        h.mod_table[b as usize] = xmod((b as u64) << k, h.polynomial) | ((b as u64) << k);
+        h.mod_table[b as usize] = xmod(b << k, h.polynomial) | (b << k);
     }
 }
 

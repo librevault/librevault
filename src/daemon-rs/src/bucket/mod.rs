@@ -1,6 +1,5 @@
-use std::borrow::Cow;
 use std::fmt;
-use std::fmt::Formatter;
+use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -12,6 +11,7 @@ pub mod manager;
 
 use crate::settings::BucketConfig;
 // use librevault_util::index::proto::Meta;
+use librevault_util::enc_storage::EncryptedStorage;
 use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
 use tokio::sync::mpsc;
@@ -22,16 +22,17 @@ pub enum BucketEvent {
 }
 
 pub struct Bucket {
-    secret: Secret,
+    pub secret: Secret,
     root: PathBuf,
 
-    index: Arc<Index>,
+    pub index: Arc<Index>,
+    block_storage: EncryptedStorage,
 
-    event_sender: mpsc::Sender<BucketEvent>,
+    event_tx: mpsc::Sender<BucketEvent>,
 }
 
 impl Bucket {
-    async fn new(config: BucketConfig, event_sender: mpsc::Sender<BucketEvent>) -> Self {
+    async fn new(config: BucketConfig, event_tx: mpsc::Sender<BucketEvent>) -> Self {
         debug!("Creating bucket: {}", config.secret.get_id_hex());
 
         let system_dir = config.path.join(".librevault");
@@ -43,7 +44,8 @@ impl Bucket {
             secret: config.secret,
             root: config.path,
             index,
-            event_sender,
+            block_storage: EncryptedStorage::new(&system_dir),
+            event_tx,
         }
     }
 
@@ -70,7 +72,7 @@ impl Bucket {
             let signed_meta = sign_meta(&meta, &self.secret);
             self.index.put_meta(&signed_meta, true).unwrap();
 
-            self.event_sender
+            self.event_tx
                 .send(BucketEvent::MetaAdded { signed_meta })
                 .await
                 .expect("Channel must be open");
@@ -78,7 +80,7 @@ impl Bucket {
     }
 }
 
-impl fmt::Debug for Bucket {
+impl Debug for Bucket {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "(Bucket: id={}, loc={:?})", self.get_id_hex(), self.root)
     }

@@ -1,12 +1,12 @@
 use crate::bucket::manager::{BucketManager, BucketManagerEvent};
-use crate::bucket::BucketEvent;
+use crate::bucket::{Bucket, BucketEvent};
 use crate::settings::ConfigManager;
 use futures::StreamExt;
 use libp2p::{
     core::{upgrade, Multiaddr},
     gossipsub::{
         Gossipsub, GossipsubConfigBuilder, GossipsubEvent, GossipsubMessage, IdentTopic as Topic,
-        MessageAuthenticity, MessageId, ValidationMode,
+        MessageAuthenticity, MessageId, TopicHash, ValidationMode,
     },
     identity,
     mdns::{Mdns, MdnsConfig, MdnsEvent},
@@ -20,7 +20,8 @@ use libp2p::{
 use log::{debug, info, trace};
 use prost::Message;
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::collections::HashMap;
+use std::hash::Hasher;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -47,14 +48,10 @@ impl From<GossipsubEvent> for ComposedEvent {
     }
 }
 
-// fn make_have_meta {
-//
-// }
-
 pub async fn run_server(
     buckets: Arc<BucketManager>,
     config: Arc<ConfigManager>,
-    mut receiver: Receiver<BucketManagerEvent>,
+    mut buckets_rx: Receiver<BucketManagerEvent>,
 ) {
     let id_keys = identity::Keypair::generate_ed25519();
     let peer_id = PeerId::from(id_keys.public());
@@ -91,29 +88,29 @@ pub async fn run_server(
         .collect();
 
     let mut swarm = {
-        let message_id_fn = |message: &GossipsubMessage| {
-            let mut s = DefaultHasher::new();
-            if let Some(peer_id) = message.source {
-                s.write(&*peer_id.to_bytes());
-            }
-            s.write(&*message.data);
-            MessageId::from(s.finish().to_string())
+        // build a gossipsub network behaviour
+        let gossipsub = {
+            let message_id_fn = |message: &GossipsubMessage| {
+                let mut s = DefaultHasher::new();
+                if let Some(peer_id) = message.source {
+                    s.write(&*peer_id.to_bytes());
+                }
+                s.write(&*message.data);
+                MessageId::from(s.finish().to_string())
+            };
+            let gossipsub_config = GossipsubConfigBuilder::default()
+                .heartbeat_interval(Duration::from_secs(10)) // This is set to aid debugging by not cluttering the log space
+                .validation_mode(ValidationMode::Strict) // This sets the kind of message validation. The default is Strict (enforce message signing)
+                .message_id_fn(message_id_fn) // content-address messages. No two messages of the same content will be propagated.
+                .build()
+                .expect("Valid config");
+            Gossipsub::new(MessageAuthenticity::Signed(id_keys), gossipsub_config)
+                .expect("Correct configuration")
         };
 
-        // Set a custom gossipsub
-        let gossipsub_config = GossipsubConfigBuilder::default()
-            .heartbeat_interval(Duration::from_secs(10)) // This is set to aid debugging by not cluttering the log space
-            .validation_mode(ValidationMode::Strict) // This sets the kind of message validation. The default is Strict (enforce message signing)
-            .message_id_fn(message_id_fn) // content-address messages. No two messages of the
-            // same content will be propagated.
-            .build()
-            .expect("Valid config");
-        // build a gossipsub network behaviour
-        let gossipsub: Gossipsub =
-            Gossipsub::new(MessageAuthenticity::Signed(id_keys), gossipsub_config)
-                .expect("Correct configuration");
-
-        let mdns = Mdns::new(MdnsConfig::default()).await.unwrap();
+        let mdns = Mdns::new(MdnsConfig::default())
+            .await
+            .expect("mdns initialization failed");
         let behaviour = MyBehaviour { mdns, gossipsub };
         SwarmBuilder::new(transport, behaviour, peer_id)
             .executor(Box::new(|fut| {
@@ -125,6 +122,8 @@ pub async fn run_server(
     for bound_multiaddr in bound_multiaddrs {
         swarm.listen_on(bound_multiaddr).unwrap();
     }
+
+    let mut topics: HashMap<TopicHash, Arc<Bucket>> = HashMap::default();
 
     trace!("Everything before loop is completed");
 
@@ -139,34 +138,44 @@ pub async fn run_server(
                             swarm.dial_addr(multiaddr);
                         }
                     }
+                    SwarmEvent::Behaviour(ComposedEvent::Gossipsub(GossipsubEvent::Message{message, ..})) => {
+                        debug!("got message: {:?}", message);
+                        if let Ok(pubsub_msg) = proto::PubSubMessage::decode(&*message.data) {
+                            debug!("got protobuf: {:?}", pubsub_msg);
+                        }
+                    }
                     SwarmEvent::NewListenAddr { address, .. } => {println!("Listening on {:?}", address);},
                     _ => {}
                 }
             },
             // Bucket events (useful for gossipsub)
-            event = receiver.recv() => {
+            Ok(event) = buckets_rx.recv() => {
                 info!("got event: {:?}", event);
                 match event {
-                    Ok(BucketManagerEvent::BucketAdded(bucket)) => {
+                    BucketManagerEvent::Added(bucket) => {
                         let topic = Topic::new(bucket.get_id_hex());
+                        topics.insert(topic.hash(), bucket.clone());
                         swarm.behaviour_mut().gossipsub.subscribe(&topic).unwrap();
                     }
-                    Ok(BucketManagerEvent::BucketRemoved(bucket)) => {
+                    BucketManagerEvent::Removed(bucket) => {
                         let topic = Topic::new(bucket.get_id_hex());
+                        topics.remove(&topic.hash());
                         swarm.behaviour_mut().gossipsub.unsubscribe(&topic).unwrap();
                     }
-                    Ok(BucketManagerEvent::BucketEvent {bucket, event}) => {
+                    BucketManagerEvent::BucketEvent {bucket, event} => {
                         let topic = Topic::new(bucket.get_id_hex());
                         match event {
                             BucketEvent::MetaAdded {signed_meta} => {
-                                let broadcast_msg = proto::HaveMeta {meta: signed_meta.meta, signature: signed_meta.signature};
-                                swarm.behaviour_mut().gossipsub.publish(topic, broadcast_msg.encode_to_vec());
+                                let pubsub_msg = proto::PubSubMessage {
+                                    message: Some(proto::pub_sub_message::Message::HaveMeta(proto::HaveMeta {meta: signed_meta.meta, signature: signed_meta.signature}))
+                                };
+                                swarm.behaviour_mut().gossipsub.publish(topic, pubsub_msg.encode_to_vec());
                             }
                         }
                     }
-                    Err(_) => {}
                 }
-            }
+            },
+            else => break,
         }
     }
 }

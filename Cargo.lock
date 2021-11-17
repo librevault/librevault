@@ -507,10 +507,10 @@ dependencies = [
 name = "daemon-rs"
 version = "0.1.0"
 dependencies = [
- "built",
  "directories",
  "env_logger",
  "figment",
+ "fuse_mt",
  "futures",
  "hex",
  "libp2p",
@@ -519,7 +519,6 @@ dependencies = [
  "prost",
  "prost-build",
  "serde",
- "serde_json",
  "tokio",
  "tonic",
  "tonic-build",
@@ -696,6 +695,29 @@ checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "fuse_mt"
+version = "0.6.0-dev"
+source = "git+https://github.com/wfraser/fuse-mt#1876f8200c5c391be28da74cab8de27198809be4"
+dependencies = [
+ "fuser",
+ "libc",
+ "log",
+ "threadpool",
+]
+
+[[package]]
+name = "fuser"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5cd519583b0984ff2afd39b0c5b64b9520ef754c6d0330c54631595aa1de170"
+dependencies = [
+ "libc",
+ "log",
+ "pkg-config",
+ "users",
 ]
 
 [[package]]
@@ -1349,6 +1371,7 @@ dependencies = [
  "signature",
  "simple_logger",
  "tempfile",
+ "tokio",
  "unicode-normalization",
 ]
 
@@ -2328,6 +2351,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "threadpool"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d050e60b33d41c19108b32cea32164033a9013fe3b46cbd4457559bfbf77afaa"
+dependencies = [
+ "num_cpus",
+]
+
+[[package]]
 name = "time"
 version = "0.1.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2665,6 +2697,16 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "users"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24cc0f6d6f267b73e5a2cadf007ba8f9bc39c6a6f9666f8cf25ea809a153b032"
+dependencies = [
+ "libc",
+ "log",
 ]
 
 [[package]]

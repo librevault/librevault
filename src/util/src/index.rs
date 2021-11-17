@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::sync::Mutex;
 
+use crate::indexer::proto;
 use log::{debug, trace};
 use prost::Message;
 use rusqlite::{named_params, Connection, Params, Result};
@@ -33,6 +34,12 @@ pub struct SignedMeta {
     pub signature: Vec<u8>,
 }
 
+impl SignedMeta {
+    pub fn parsed_meta(&self) -> proto::Meta {
+        proto::Meta::decode(&*self.meta).unwrap()
+    }
+}
+
 #[derive(Serialize)]
 struct Output {
     metas: Vec<SignedMeta>,
@@ -54,10 +61,6 @@ impl Display for IndexError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
-}
-
-pub mod proto {
-    include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));
 }
 
 impl Index {
@@ -136,7 +139,7 @@ impl Index {
         .ok_or(IndexError::MetaNotFound)
     }
 
-    fn get_meta_all(&self) -> Result<Vec<SignedMeta>, IndexError> {
+    pub fn get_meta_all(&self) -> Result<Vec<SignedMeta>, IndexError> {
         self.get_signed_meta("SELECT meta, signature FROM meta", [])
     }
 

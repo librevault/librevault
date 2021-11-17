@@ -32,21 +32,21 @@ pub fn normalize(
         normalized = normalized.nfc().collect::<String>();
     }
 
-    if normalized.ends_with("/") {
-        normalized.pop();
-    }
+    normalized = String::from(normalized.trim_matches('/'));
 
     trace!("path: {:?} normalized: {:?}", path, normalized);
 
     Ok(normalized.into_bytes())
 }
 
-pub fn denormalize(path: &[u8], root: &Path) -> Result<PathBuf, NormalizationError> {
+pub fn denormalize(path: &[u8], root: Option<&Path>) -> Result<PathBuf, NormalizationError> {
     let denormalized = String::from_utf8(path.to_vec())
         .ok()
         .ok_or(NormalizationError::UnicodeError)?;
-    let denormalized = PathBuf::from_slash(denormalized);
-    let denormalized = root.join(denormalized);
+    let mut denormalized = PathBuf::from_slash(denormalized);
+    if let Some(root) = root {
+        denormalized = root.join(denormalized);
+    }
 
     // macos uses a weird NFD-normalized form. It can be achieved using fileSystemRepresentation function
 
@@ -63,7 +63,7 @@ fn normalize_cxx(
 
 fn denormalize_cxx(path: &[u8], root: &str) -> Result<String, NormalizationError> {
     Ok(String::from(
-        denormalize(path, Path::new(root))?.to_str().unwrap(),
+        denormalize(path, Some(Path::new(root)))?.to_str().unwrap(),
     ))
 }
 

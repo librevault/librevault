@@ -37,6 +37,16 @@ impl BucketCollection {
         (*inner_lock).buckets_byid.get(bucket_id).cloned()
     }
 
+    pub fn get_bucket_one(&self) -> Option<Arc<Bucket>> {
+        let inner_lock = self.inner.read().unwrap();
+        (*inner_lock)
+            .buckets_byid
+            .iter()
+            .next()
+            .map(|x| x.1)
+            .cloned()
+    }
+
     // pub fn drop_bucket(&mut self, bucket: Arc<Bucket>) -> Option<Arc<Bucket>> {
     //     self.buckets_byid.remove(bucket.get_id().as_slice())
     // }

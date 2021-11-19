@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -54,10 +55,10 @@ async fn main() {
 
     let filesystem = lvfs::LibrevaultFs::new(buckets.get_bucket_one().unwrap());
 
-    let session = fuse_mt::spawn_mount(
+    let _ = fuse_mt::spawn_mount(
         fuse_mt::FuseMT::new(filesystem, 1),
         Path::new("/home/gamepad/lvfs"),
-        Default::default(),
+        vec![OsStr::new("-o"), OsStr::new("auto_unmount")].as_slice(),
     );
 
     let _ = tokio::signal::ctrl_c().await;

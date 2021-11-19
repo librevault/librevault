@@ -513,6 +513,7 @@ dependencies = [
  "fuse_mt",
  "futures",
  "hex",
+ "libc",
  "libp2p",
  "librevault_util",
  "log",

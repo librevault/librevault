@@ -55,7 +55,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "conan"
-version = "1.42.0"
+version = "1.42.2"
 description = "Conan C/C++ package manager"
 category = "main"
 optional = false
@@ -379,7 +379,7 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 conan = [
-    {file = "conan-1.42.0.tar.gz", hash = "sha256:ad19a75ecaefc1ce67dc73cda92a502bad62a6961f1ebd6bf034045a7cb1323d"},
+    {file = "conan-1.42.2.tar.gz", hash = "sha256:a3c25378d1e1b541006a7fa28ce40c5c852e46e8e899d6d10aaa6104962cd16f"},
 ]
 distlib = [
     {file = "distlib-0.3.3-py2.py3-none-any.whl", hash = "sha256:c8b54e8454e5bf6237cc84c20e8264c3e991e824ef27e8f1e81049867d861e31"},

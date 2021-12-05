@@ -16,7 +16,6 @@
 #pragma once
 
 #include <QByteArray>
-#include <librevaultrs.hpp>
 #include <librevault_util/src/lib.rs.h>
 
 namespace librevault {

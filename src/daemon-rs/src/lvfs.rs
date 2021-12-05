@@ -1,15 +1,15 @@
 use crate::bucket::Bucket;
 use fuse_mt::{
-    DirectoryEntry, FileAttr, FileType, FilesystemMT, RequestInfo, ResultEntry, ResultOpen,
-    ResultReaddir,
+    CreatedEntry, DirectoryEntry, FileAttr, FileType, FilesystemMT, RequestInfo, ResultCreate,
+    ResultEmpty, ResultEntry, ResultOpen, ResultReaddir,
 };
-use futures::StreamExt;
 use librevault_util::aescbc::decrypt_aes256;
 use librevault_util::index::SignedMeta;
-use librevault_util::indexer::proto;
-use librevault_util::path_normalize::denormalize;
+use librevault_util::indexer::{make_meta_empty_file, make_tombstone, proto, sign_meta};
+use librevault_util::path_normalize::{denormalize, normalize};
 use librevault_util::secret::Secret;
 use log::debug;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -54,6 +54,28 @@ fn make_denorm_path_fuse(fuse_path: &Path) -> PathBuf {
     indexed_path
 }
 
+fn meta_attr(meta: &proto::Meta) -> Result<FileAttr, libc::c_int> {
+    if meta.meta_type == 0 {
+        return Err(libc::ENOENT);
+    }
+
+    Ok(FileAttr {
+        size: meta_size(&meta),
+        blocks: 0,
+        atime: SystemTime::now(),
+        mtime: SystemTime::now(),
+        ctime: SystemTime::now(),
+        crtime: SystemTime::now(),
+        kind: meta_kind(&meta).unwrap(),
+        perm: 0,
+        nlink: 0,
+        uid: 0,
+        gid: 0,
+        rdev: 0,
+        flags: 0,
+    })
+}
+
 impl LibrevaultFs {
     pub(crate) fn new(bucket: Arc<Bucket>) -> Self {
         LibrevaultFs { bucket }
@@ -65,7 +87,7 @@ impl LibrevaultFs {
         for signed_meta in self.bucket.index.get_meta_all().unwrap() {
             let meta = signed_meta.parsed_meta();
             let decrypted_path = make_decrypted(meta.path.as_ref().unwrap(), &self.bucket.secret);
-            let denorm_path = denormalize(&*decrypted_path, None).unwrap();
+            let denorm_path = denormalize(decrypted_path, None).unwrap();
             debug!(
                 "path: {:?}, denorm_path: {:?}",
                 denorm_path_fuse, denorm_path
@@ -103,26 +125,17 @@ impl FilesystemMT for LibrevaultFs {
             ));
         } else if let Some(signed_meta) = self.get_meta_by_path(_path) {
             let meta = signed_meta.parsed_meta();
-            return Ok((
-                TTL,
-                FileAttr {
-                    size: meta_size(&meta),
-                    blocks: 0,
-                    atime: SystemTime::now(),
-                    mtime: SystemTime::now(),
-                    ctime: SystemTime::now(),
-                    crtime: SystemTime::now(),
-                    kind: meta_kind(&meta).unwrap(),
-                    perm: 0,
-                    nlink: 0,
-                    uid: 0,
-                    gid: 0,
-                    rdev: 0,
-                    flags: 0,
-                },
-            ));
+            return Ok((TTL, meta_attr(&meta)?));
         }
-        Err(libc::EINVAL)
+        Err(libc::ENOENT)
+    }
+
+    fn unlink(&self, _req: RequestInfo, _parent: &Path, _name: &OsStr) -> ResultEmpty {
+        let path = normalize(_parent.join(Path::new(_name)), Path::new(""), true);
+        let meta = make_tombstone(path.unwrap().as_slice(), &self.bucket.secret).unwrap();
+        let signed_meta = sign_meta(&meta, &self.bucket.secret);
+        self.bucket.index.put_meta(&signed_meta, true);
+        Ok(())
     }
 
     fn opendir(&self, _req: RequestInfo, _path: &Path, _flags: u32) -> ResultOpen {
@@ -154,4 +167,30 @@ impl FilesystemMT for LibrevaultFs {
         }
         Ok(res)
     }
+
+    fn create(
+        &self,
+        _req: RequestInfo,
+        _parent: &Path,
+        _name: &OsStr,
+        _mode: u32,
+        _flags: u32,
+    ) -> ResultCreate {
+        let path = normalize(_parent.join(Path::new(_name)), Path::new(""), true);
+        let meta = make_meta_empty_file(path.unwrap().as_slice(), &self.bucket.secret).unwrap();
+        let signed_meta = sign_meta(&meta, &self.bucket.secret);
+        self.bucket.index.put_meta(&signed_meta, true);
+        Ok(CreatedEntry {
+            ttl: TTL,
+            attr: meta_attr(&meta)?,
+            fh: 1666444,
+            flags: 0,
+        })
+    }
+
+    // fn open(&self, _req: RequestInfo, path: &Path, flags: u32) -> ResultOpen {
+    //     debug!("open: {:?} flags={:#x}", path, flags);
+    //     let fh = 0;
+    //     Ok((fh, flags))
+    // }
 }

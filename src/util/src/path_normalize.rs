@@ -17,11 +17,12 @@ impl Display for NormalizationError {
 }
 
 pub fn normalize(
-    path: &Path,
-    root: &Path,
+    path: impl AsRef<Path>,
+    root: impl AsRef<Path>,
     normalize_unicode: bool,
 ) -> Result<Vec<u8>, NormalizationError> {
     let mut normalized = path
+        .as_ref()
         .strip_prefix(root)
         .ok()
         .ok_or(NormalizationError::PrefixError)?
@@ -34,13 +35,16 @@ pub fn normalize(
 
     normalized = String::from(normalized.trim_matches('/'));
 
-    trace!("path: {:?} normalized: {:?}", path, normalized);
+    trace!("path: {:?} normalized: {:?}", path.as_ref(), normalized);
 
     Ok(normalized.into_bytes())
 }
 
-pub fn denormalize(path: &[u8], root: Option<&Path>) -> Result<PathBuf, NormalizationError> {
-    let denormalized = String::from_utf8(path.to_vec())
+pub fn denormalize(
+    path: impl Into<Vec<u8>>,
+    root: Option<&Path>,
+) -> Result<PathBuf, NormalizationError> {
+    let denormalized = String::from_utf8(Into::into(path))
         .ok()
         .ok_or(NormalizationError::UnicodeError)?;
     let mut denormalized = PathBuf::from_slash(denormalized);

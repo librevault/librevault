@@ -35,7 +35,6 @@
 #endif
 
 #include <util/ffi.h>
-#include <librevaultrs.hpp>
 #include <src/common/Meta_s.pb.h>
 
 Q_DECLARE_LOGGING_CATEGORY(log_indexer)

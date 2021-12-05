@@ -53,13 +53,16 @@ async fn main() {
         buckets.add_bucket(bucket_config.clone()).await;
     }
 
-    let filesystem = lvfs::LibrevaultFs::new(buckets.get_bucket_one().unwrap());
+    #[cfg(unix)]
+    {
+        let filesystem = lvfs::LibrevaultFs::new(buckets.get_bucket_one().unwrap());
 
-    let _ = fuse_mt::spawn_mount(
-        fuse_mt::FuseMT::new(filesystem, 1),
-        Path::new("/home/gamepad/lvfs"),
-        vec![OsStr::new("-o"), OsStr::new("auto_unmount")].as_slice(),
-    );
+        let _ = fuse_mt::spawn_mount(
+            fuse_mt::FuseMT::new(filesystem, 1),
+            Path::new("/home/gamepad/lvfs"),
+            vec![OsStr::new("-o"), OsStr::new("auto_unmount")].as_slice(),
+        );
+    }
 
     let _ = tokio::signal::ctrl_c().await;
 

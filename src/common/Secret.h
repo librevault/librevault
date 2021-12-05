@@ -19,7 +19,6 @@
 #include <QByteArray>
 #include <QString>
 #include <iostream>
-#include <librevaultrs.hpp>
 #include <memory>
 #include <stdexcept>
 

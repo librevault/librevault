@@ -20,7 +20,6 @@
 #endif
 
 #include <librevault_util/src/logger.rs.h>
-#include <librevaultrs.hpp>
 #include "Client.h"
 #include "Secret.h"
 #include "Version.h"

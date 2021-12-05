@@ -2,7 +2,7 @@ use crate::aescbc::encrypt_aes256;
 use crate::aescbc::encrypt_chunk;
 use crate::index::SignedMeta;
 use crate::path_normalize::normalize;
-use crate::rabin::{rabin_init, rabin_next_chunk, Rabin};
+use crate::rabin::Rabin;
 use crate::secret::Secret;
 use log::{debug, trace};
 use num_derive::FromPrimitive;
@@ -84,14 +84,13 @@ fn make_chunks(
     let mut chunks = vec![];
 
     let mut chunker = Rabin::default();
-    rabin_init(&mut chunker);
 
     let mut chunk_data = Vec::with_capacity(chunker.maxsize as usize);
 
     for b in reader.bytes() {
         let b = b?;
         chunk_data.push(b);
-        if rabin_next_chunk(&mut chunker, b) {
+        if chunker.rabin_next_chunk(b) {
             let chunk = populate_chunk(chunk_data.as_slice(), secret);
             // Found a chunk
             chunk_data.truncate(0);
@@ -188,6 +187,57 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
         // Some(ObjectType::SYMLINK) => {}
         _ => None,
     };
+
+    Ok(meta)
+}
+
+pub fn make_tombstone(path_norm: &[u8], secret: &Secret) -> Result<proto::Meta, IndexingError> {
+    let current_timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+
+    let mut meta = proto::Meta::default();
+
+    meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm);
+    meta.path = Some(make_encrypted(path_norm, secret));
+    meta.meta_type = ObjectType::Tombstone as u32;
+    meta.revision = current_timestamp.as_secs() as i64;
+
+    Ok(meta)
+}
+
+pub fn make_meta_empty_file(
+    path_norm: &[u8],
+    secret: &Secret,
+) -> Result<proto::Meta, IndexingError> {
+    let current_timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+
+    let mut meta = proto::Meta::default();
+
+    meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm);
+    meta.path = Some(make_encrypted(path_norm, secret));
+    meta.meta_type = ObjectType::File as u32;
+    meta.revision = current_timestamp.as_secs() as i64;
+
+    meta.generic_metadata = Some(proto::meta::GenericMetadata {
+        mtime: current_timestamp.as_nanos() as i64,
+        windows_attrib: 0, // TODO: Windows attributes
+        uid: 0,            // TODO: Unix attributes
+        gid: 0,            // TODO: Unix attributes
+        mode: 0,           // TODO: Unix attributes
+    });
+
+    meta.type_specific_metadata = Some(proto::meta::TypeSpecificMetadata::FileMetadata(
+        proto::meta::FileMetadata {
+            algorithm_type: 0,
+            strong_hash_type: 0,
+            max_chunksize: 1024 * 1024,
+            min_chunksize: 8 * 1024 * 1024,
+            chunks: vec![],
+        },
+    ));
 
     Ok(meta)
 }

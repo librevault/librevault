@@ -78,15 +78,6 @@ pub async fn run_server(
         gossipsub: Gossipsub,
     }
 
-    let config_bind = &config.config().p2p.bind;
-    let bound_multiaddrs: Vec<Multiaddr> = config_bind
-        .iter()
-        .map(|&sa| match sa.ip() {
-            IpAddr::V4(a) => multiaddr!(Ip4(a), Tcp(sa.port())),
-            IpAddr::V6(a) => multiaddr!(Ip6(a), Tcp(sa.port())),
-        })
-        .collect();
-
     let mut swarm = {
         // build a gossipsub network behaviour
         let gossipsub = {
@@ -119,6 +110,15 @@ pub async fn run_server(
             .build()
     };
 
+    // Add listeners
+    let config_bind = &config.config().p2p.bind;
+    let bound_multiaddrs: Vec<Multiaddr> = config_bind
+        .iter()
+        .map(|&sa| match sa.ip() {
+            IpAddr::V4(a) => multiaddr!(Ip4(a), Tcp(sa.port())),
+            IpAddr::V6(a) => multiaddr!(Ip6(a), Tcp(sa.port())),
+        })
+        .collect();
     for bound_multiaddr in bound_multiaddrs {
         swarm.listen_on(bound_multiaddr).unwrap();
     }
@@ -142,6 +142,12 @@ pub async fn run_server(
                         debug!("got message: {:?}", message);
                         if let Ok(pubsub_msg) = proto::PubSubMessage::decode(&*message.data) {
                             debug!("got protobuf: {:?}", pubsub_msg);
+                            match pubsub_msg.message {
+                                Some(proto::pub_sub_message::Message::HaveMeta(have_meta)) => {
+                                    debug!("got have_meta: {:?}", have_meta);
+                                }
+                                _ => {}
+                            }
                         }
                     }
                     SwarmEvent::NewListenAddr { address, .. } => {println!("Listening on {:?}", address);},

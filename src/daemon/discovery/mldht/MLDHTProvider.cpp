@@ -23,7 +23,6 @@
 #include <QJsonArray>
 #include <QtNetwork/QNetworkDatagram>
 #include <boost/asio/ip/address.hpp>
-#include <librevaultrs.hpp>
 
 #include "control/Config.h"
 #include "control/Paths.h"

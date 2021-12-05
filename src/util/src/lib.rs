@@ -5,7 +5,6 @@ pub mod indexer;
 mod logger;
 pub mod nodekey;
 pub mod path_normalize;
-mod rabin;
 pub mod secret;
 
 use rand::prelude::*;

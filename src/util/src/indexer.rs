@@ -2,12 +2,12 @@ use crate::aescbc::encrypt_aes256;
 use crate::aescbc::encrypt_chunk;
 use crate::index::SignedMeta;
 use crate::path_normalize::normalize;
-use crate::rabin::Rabin;
 use crate::secret::Secret;
 use log::{debug, trace};
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 use prost::Message;
+use rabin::{Rabin, RabinParams};
 use rand::{thread_rng, Fill};
 use sha3::digest::Update;
 use sha3::{Digest, Sha3_224};
@@ -83,24 +83,10 @@ fn make_chunks(
 
     let mut chunks = vec![];
 
-    let mut chunker = Rabin::default();
+    let chunker = Rabin::new(reader, RabinParams::default());
 
-    let mut chunk_data = Vec::with_capacity(chunker.maxsize as usize);
-
-    for b in reader.bytes() {
-        let b = b?;
-        chunk_data.push(b);
-        if chunker.rabin_next_chunk(b) {
-            let chunk = populate_chunk(chunk_data.as_slice(), secret);
-            // Found a chunk
-            chunk_data.truncate(0);
-
-            chunks.push(chunk);
-        }
-    }
-
-    if !chunk_data.is_empty() {
-        let chunk = populate_chunk(chunk_data.as_slice(), secret);
+    for chunk_data in chunker {
+        let chunk = populate_chunk(chunk_data?.as_slice(), secret);
         chunks.push(chunk);
     }
 

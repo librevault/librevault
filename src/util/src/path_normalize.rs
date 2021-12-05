@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn test_de_simple() {
         assert_eq!(
-            denormalize(b"123.txt", Path::new("/home/123")).unwrap(),
+            denormalize(b"123.txt".to_vec(), Some(Path::new("/home/123"))).unwrap(),
             PathBuf::from("/home/123/123.txt")
         );
     }

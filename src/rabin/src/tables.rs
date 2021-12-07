@@ -1,5 +1,5 @@
 use crate::WINSIZE;
-use memoize::memoize;
+use cached::proc_macro::cached;
 
 #[derive(Clone)]
 pub(crate) struct Tables {
@@ -7,12 +7,8 @@ pub(crate) struct Tables {
     pub(crate) out_table: [u64; 256],
 }
 
+#[cached]
 pub(crate) fn calc_tables(polynomial: u64) -> Tables {
-    calc_tables_inner(polynomial)
-}
-
-#[memoize]
-fn calc_tables_inner(polynomial: u64) -> Tables {
     let mut tables = Tables {
         mod_table: [0; 256],
         out_table: [0; 256],

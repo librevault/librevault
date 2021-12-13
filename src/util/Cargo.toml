@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 rand = "0.8.4"
 log = "0.4.14"
-simple_logger = "1.13.0"
+simple_logger = "1.15.1"
 hex = "0.4.3"
 luhn-rs = "0.0.1"
 bs58 = "0.4.0"

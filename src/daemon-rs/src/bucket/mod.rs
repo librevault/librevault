@@ -7,10 +7,12 @@ use librevault_util::index::{Index, SignedMeta};
 use librevault_util::secret::Secret;
 
 mod collection;
+mod indexer;
 pub mod manager;
 
 use crate::settings::BucketConfig;
 // use librevault_util::index::proto::Meta;
+use crate::bucket::indexer::make_changeset;
 use librevault_util::enc_storage::EncryptedStorage;
 use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
@@ -26,7 +28,7 @@ pub struct Bucket {
     root: PathBuf,
 
     pub index: Arc<Index>,
-    block_storage: EncryptedStorage,
+    chunk_storage: EncryptedStorage,
 
     event_tx: mpsc::Sender<BucketEvent>,
 }
@@ -44,7 +46,7 @@ impl Bucket {
             secret: config.secret,
             root: config.path,
             index,
-            block_storage: EncryptedStorage::new(&system_dir),
+            chunk_storage: EncryptedStorage::new(&system_dir),
             event_tx,
         }
     }
@@ -66,18 +68,21 @@ impl Bucket {
     }
 
     pub(crate) async fn index_path(&self, path: &Path) {
-        let meta = make_meta(path, &self.root, &self.secret);
-        if let Ok(meta) = meta {
-            debug!("Meta: {:?}", &meta);
-            let signed_meta = sign_meta(&meta, &self.secret);
-            self.index.put_meta(&signed_meta, true).unwrap();
-
-            self.event_tx
-                .send(BucketEvent::MetaAdded { signed_meta })
-                .await
-                .expect("Channel must be open");
-        }
+        let changeset = make_changeset(&[path], &self.root, &self.secret);
+        // let meta = make_meta(path, &self.root, &self.secret);
+        // if let Ok(meta) = meta {
+        //     debug!("Meta: {:?}", &meta);
+        //     let signed_meta = sign_meta(&meta, &self.secret);
+        //     self.index.put_meta(&signed_meta, true).unwrap();
+        //
+        //     self.event_tx
+        //         .send(BucketEvent::MetaAdded { signed_meta })
+        //         .await
+        //         .expect("Channel must be open");
+        // }
     }
+
+    async fn put_chunk_orphan(&self, chunk: Vec<u8>) {}
 }
 
 impl Debug for Bucket {

@@ -1,7 +1,8 @@
 use crate::bucket::Bucket;
 use fuse_mt::{
-    CreatedEntry, DirectoryEntry, FileAttr, FileType, FilesystemMT, RequestInfo, ResultCreate,
-    ResultEmpty, ResultEntry, ResultOpen, ResultReaddir,
+    CallbackResult, CreatedEntry, DirectoryEntry, FileAttr, FileType, FilesystemMT, RequestInfo,
+    ResultCreate, ResultData, ResultEmpty, ResultEntry, ResultOpen, ResultReaddir, ResultSlice,
+    ResultStatfs, ResultWrite, ResultXattr,
 };
 use librevault_util::aescbc::decrypt_aes256;
 use librevault_util::index::SignedMeta;
@@ -138,6 +139,12 @@ impl FilesystemMT for LibrevaultFs {
         Ok(())
     }
 
+    fn open(&self, _req: RequestInfo, path: &Path, flags: u32) -> ResultOpen {
+        debug!("open: {:?} flags={:#x}", path, flags);
+        let fh = 0;
+        Ok((fh, flags))
+    }
+
     fn opendir(&self, _req: RequestInfo, _path: &Path, _flags: u32) -> ResultOpen {
         Ok((1, 0))
     }
@@ -187,10 +194,4 @@ impl FilesystemMT for LibrevaultFs {
             flags: 0,
         })
     }
-
-    // fn open(&self, _req: RequestInfo, path: &Path, flags: u32) -> ResultOpen {
-    //     debug!("open: {:?} flags={:#x}", path, flags);
-    //     let fh = 0;
-    //     Ok((fh, flags))
-    // }
 }

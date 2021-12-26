@@ -23,6 +23,8 @@ pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.serialization.rs"));
 }
 
+type Chunk = proto::meta::file_metadata::Chunk;
+
 #[derive(FromPrimitive)]
 enum ObjectType {
     Tombstone = 0,
@@ -56,7 +58,7 @@ fn kmac_sha3_224(key: &[u8], data: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-fn populate_chunk(data: &[u8], secret: &Secret) -> proto::meta::file_metadata::Chunk {
+fn populate_chunk(data: &[u8], secret: &Secret) -> Chunk {
     debug!("New chunk size: {}", data.len());
 
     let mut iv = vec![0u8; 16];
@@ -72,23 +74,18 @@ fn populate_chunk(data: &[u8], secret: &Secret) -> proto::meta::file_metadata::C
     }
 }
 
-fn make_chunks(
-    path: &Path,
-    secret: &Secret,
-) -> Result<Vec<proto::meta::file_metadata::Chunk>, IndexingError> {
+fn make_chunks_for_buf<R: Read>(reader: R, secret: &Secret) -> Result<Vec<Chunk>, IndexingError> {
+    Rabin::new(reader, RabinParams::default())
+        .map(|chunk| Ok(populate_chunk(chunk?.as_slice(), secret)))
+        .collect()
+}
+
+fn make_chunks(path: &Path, secret: &Secret) -> Result<Vec<Chunk>, IndexingError> {
     trace!("Trying to make chunks for: {:?}", path);
 
     let f = fs::File::open(path)?;
     let reader = BufReader::new(f);
-
-    let mut chunks = vec![];
-
-    let chunker = Rabin::new(reader, RabinParams::default());
-
-    for chunk_data in chunker {
-        let chunk = populate_chunk(chunk_data?.as_slice(), secret);
-        chunks.push(chunk);
-    }
+    let chunks = make_chunks_for_buf(reader, secret)?;
 
     trace!("Total chunks for path {:?}: {}", path, chunks.len());
 
@@ -131,23 +128,14 @@ fn make_type(path: &Path, preserve_symlinks: bool) -> Result<ObjectType, Indexin
 }
 
 pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Meta, IndexingError> {
-    let mut meta = proto::Meta::default();
-
     let path_norm = normalize(path, root, true).unwrap();
-    meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm.as_slice());
-    meta.path = Some(make_encrypted(path_norm.as_slice(), secret));
-    meta.meta_type = make_type(path, true).unwrap() as u32;
-    meta.revision = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
+    let mut meta = make_basic_meta(make_type(path, true)?, &*path_norm, secret);
 
     if meta.meta_type != (ObjectType::Tombstone as u32) {
-        let metadata = fs::metadata(path).unwrap();
+        let metadata = fs::metadata(path)?;
         let generic_metadata = proto::meta::GenericMetadata {
             mtime: metadata
-                .modified()
-                .unwrap()
+                .modified()?
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos() as i64,
@@ -177,7 +165,7 @@ pub fn make_meta(path: &Path, root: &Path, secret: &Secret) -> Result<proto::Met
     Ok(meta)
 }
 
-pub fn make_tombstone(path_norm: &[u8], secret: &Secret) -> Result<proto::Meta, IndexingError> {
+fn make_basic_meta(objtype: ObjectType, path_norm: &[u8], secret: &Secret) -> proto::Meta {
     let current_timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
@@ -186,26 +174,25 @@ pub fn make_tombstone(path_norm: &[u8], secret: &Secret) -> Result<proto::Meta, 
 
     meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm);
     meta.path = Some(make_encrypted(path_norm, secret));
-    meta.meta_type = ObjectType::Tombstone as u32;
+    meta.meta_type = objtype as u32;
     meta.revision = current_timestamp.as_secs() as i64;
 
-    Ok(meta)
+    meta
+}
+
+pub fn make_tombstone(path_norm: &[u8], secret: &Secret) -> Result<proto::Meta, IndexingError> {
+    Ok(make_basic_meta(ObjectType::Tombstone, path_norm, secret))
 }
 
 pub fn make_meta_empty_file(
     path_norm: &[u8],
     secret: &Secret,
 ) -> Result<proto::Meta, IndexingError> {
+    let mut meta = make_basic_meta(ObjectType::File, path_norm, secret);
+
     let current_timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
-
-    let mut meta = proto::Meta::default();
-
-    meta.path_id = kmac_sha3_224(secret.get_symmetric_key().unwrap(), path_norm);
-    meta.path = Some(make_encrypted(path_norm, secret));
-    meta.meta_type = ObjectType::File as u32;
-    meta.revision = current_timestamp.as_secs() as i64;
 
     meta.generic_metadata = Some(proto::meta::GenericMetadata {
         mtime: current_timestamp.as_nanos() as i64,

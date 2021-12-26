@@ -1,13 +1,26 @@
 use log::trace;
 use path_slash::{PathBufExt, PathExt};
 use std::fmt::{Display, Formatter};
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, StripPrefixError};
+use std::string::FromUtf8Error;
 use unicode_normalization::UnicodeNormalization;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub enum NormalizationError {
     PrefixError,
     UnicodeError,
+}
+
+impl From<FromUtf8Error> for NormalizationError {
+    fn from(_: FromUtf8Error) -> Self {
+        NormalizationError::UnicodeError
+    }
+}
+
+impl From<StripPrefixError> for NormalizationError {
+    fn from(_: StripPrefixError) -> Self {
+        NormalizationError::PrefixError
+    }
 }
 
 impl Display for NormalizationError {
@@ -23,9 +36,7 @@ pub fn normalize(
 ) -> Result<Vec<u8>, NormalizationError> {
     let mut normalized = path
         .as_ref()
-        .strip_prefix(root)
-        .ok()
-        .ok_or(NormalizationError::PrefixError)?
+        .strip_prefix(root)?
         .to_slash()
         .ok_or(NormalizationError::PrefixError)?;
 
@@ -44,15 +55,19 @@ pub fn denormalize(
     path: impl Into<Vec<u8>>,
     root: Option<&Path>,
 ) -> Result<PathBuf, NormalizationError> {
-    let denormalized = String::from_utf8(Into::into(path))
-        .ok()
-        .ok_or(NormalizationError::UnicodeError)?;
-    let mut denormalized = PathBuf::from_slash(denormalized);
+    let normalized_str = String::from_utf8(Into::into(path))?;
+    let mut denormalized = PathBuf::from_slash(normalized_str.clone());
     if let Some(root) = root {
         denormalized = root.join(denormalized);
     }
 
     // macos uses a weird NFD-normalized form. It can be achieved using fileSystemRepresentation function
+
+    trace!(
+        "normalized: {:?} denormalized: {:?}",
+        normalized_str,
+        denormalized
+    );
 
     Ok(denormalized)
 }

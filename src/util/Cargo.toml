@@ -29,7 +29,7 @@ ed25519-dalek-fiat = "0.1.0"
 ed25519 = "1.2.0"
 signature = "1.4.0"
 # Database
-libsqlite3-sys = { version = "0.23.1", features = ["bundled"] }
+libsqlite3-sys = { version = "0.23.2", features = ["bundled"] }
 rusqlite = "0.26.1"
 tokio = {version = "1.13.0", features = ["fs", "io-util"] }
 

@@ -55,7 +55,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "conan"
-version = "1.42.0"
+version = "1.43.2"
 description = "Conan C/C++ package manager"
 category = "main"
 optional = false
@@ -351,7 +351,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "39a2c2aa9ac9da7b8f89a40f1f3c185cec917d14ebac499475f0b96ab1dc44e7"
+content-hash = "4998e05afbf1e8bc818a83c5721966e7b3fb93a1e8dba457ac6bf0480d558db0"
 
 [metadata.files]
 "backports.entry-points-selectable" = [
@@ -379,7 +379,7 @@ colorama = [
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
 ]
 conan = [
-    {file = "conan-1.42.0.tar.gz", hash = "sha256:ad19a75ecaefc1ce67dc73cda92a502bad62a6961f1ebd6bf034045a7cb1323d"},
+    {file = "conan-1.43.2.tar.gz", hash = "sha256:338e0cd9b814bc36f9c01bc9cc535629786abaa8a67759526aa08c329a219a24"},
 ]
 distlib = [
     {file = "distlib-0.3.3-py2.py3-none-any.whl", hash = "sha256:c8b54e8454e5bf6237cc84c20e8264c3e991e824ef27e8f1e81049867d861e31"},

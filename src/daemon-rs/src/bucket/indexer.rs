@@ -1,16 +1,15 @@
-use librevault_util::aescbc::{encrypt_aes256, encrypt_chunk};
+use librevault_util::aescbc::encrypt_chunk;
 use librevault_util::path_normalize::{normalize, NormalizationError};
 use librevault_util::secret::Secret;
 use log::{debug, trace};
 use rabin::{Rabin, RabinParams};
 use rand::{thread_rng, Fill};
-use sha3::digest::Update;
 use sha3::{Digest, Sha3_224};
-use std::fmt::{Display, Formatter};
+use std::fmt::Formatter;
 use std::fs;
 use std::io;
 use std::io::{BufReader, ErrorKind, Read};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.meta.v2.rs"));
@@ -102,9 +101,11 @@ fn make_objectmeta(
 
     if objectmeta_kind == ObjectKind::File {
         chunks = make_chunks(path, secret)?;
-        objectmeta
-            .data_streams
-            .insert(String::from(""), make_datastream(chunks.as_slice()));
+        if !chunks.is_empty() {
+            objectmeta
+                .data_streams
+                .insert(String::from(""), make_datastream(chunks.as_slice()));
+        }
     }
 
     debug!(

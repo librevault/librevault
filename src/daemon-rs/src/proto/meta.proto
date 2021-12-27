@@ -46,12 +46,12 @@ message EncryptedObjectMeta {
 // This structure represents a changeset, that is used to represent a state transition between one or more parent ChangeSets.
 message ChangeSet {
   bytes id = 1;
-  repeated bytes parent = 2;
+//  repeated bytes parent = 2;
 
   repeated EncryptedObjectMeta include_meta = 3;
-  repeated bytes exclude_meta = 4;
+//  repeated bytes exclude_meta = 4;
   repeated Chunk include_chunks = 5;
-  repeated bytes exclude_chunks = 6;
+//  repeated bytes exclude_chunks = 6;
 }
 
 message SignedChangeSet {

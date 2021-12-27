@@ -135,7 +135,7 @@ pub async fn run_server(
                     SwarmEvent::Behaviour(ComposedEvent::Mdns(MdnsEvent::Discovered(list))) => {
                         for (peer_id, multiaddr) in list {
                             debug!("Discovered peer using mDNS: {:?}, {:?}", peer_id, multiaddr);
-                            swarm.dial_addr(multiaddr);
+                            swarm.dial(multiaddr);
                         }
                     }
                     SwarmEvent::Behaviour(ComposedEvent::Gossipsub(GossipsubEvent::Message{message, ..})) => {

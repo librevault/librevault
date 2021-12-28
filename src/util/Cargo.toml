@@ -30,7 +30,7 @@ ed25519 = "1.2.0"
 signature = "1.4.0"
 # Database
 libsqlite3-sys = { version = "0.23.2", features = ["bundled"] }
-rusqlite = "0.26.1"
+rusqlite = "0.26.3"
 tokio = {version = "1.13.0", features = ["fs", "io-util"] }
 
 num-traits = "0.2.14"

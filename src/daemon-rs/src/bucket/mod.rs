@@ -81,8 +81,6 @@ impl Bucket {
         //         .expect("Channel must be open");
         // }
     }
-
-    async fn put_chunk_orphan(&self, chunk: Vec<u8>) {}
 }
 
 impl Debug for Bucket {

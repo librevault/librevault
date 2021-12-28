@@ -1,15 +1,14 @@
 use librevault_util::aescbc::encrypt_chunk;
 use librevault_util::path_normalize::{normalize, NormalizationError};
 use librevault_util::secret::Secret;
-use log::{debug, trace};
 use rabin::{Rabin, RabinParams};
 use rand::{thread_rng, Fill};
 use sha3::{Digest, Sha3_224};
-use std::fmt::Formatter;
 use std::fs;
 use std::io;
 use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
+use tracing::{debug, trace};
 
 pub mod proto {
     include!(concat!(env!("OUT_DIR"), "/librevault.meta.v2.rs"));
@@ -80,6 +79,7 @@ fn make_datastream(chunks: &[Chunk]) -> proto::DataStream {
     }
 }
 
+#[tracing::instrument]
 fn make_objectmeta(
     path: &Path,
     root: &Path,
@@ -116,6 +116,7 @@ fn make_objectmeta(
     Ok((objectmeta, chunks))
 }
 
+#[tracing::instrument]
 pub(crate) fn make_changeset(paths: &[&Path], root: &Path, secret: &Secret) {
     let mut chunks = vec![];
     let mut objectmetas = vec![];

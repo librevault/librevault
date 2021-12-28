@@ -1,4 +1,4 @@
-use clap::{AppSettings, Parser};
+use clap::Parser;
 use librevault_util::secret::Secret;
 use std::path::PathBuf;
 use url::Url;

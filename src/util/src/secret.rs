@@ -2,7 +2,6 @@ use std::fmt::{Display, Formatter};
 use std::os::raw::c_char;
 use std::str::FromStr;
 
-use ed25519::signature::Signature;
 use ed25519_dalek_fiat::{Keypair, PublicKey, SecretKey, Signer, Verifier, PUBLIC_KEY_LENGTH};
 use hex::ToHex;
 use lazy_static::lazy_static;

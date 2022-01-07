@@ -27,7 +27,7 @@ aes = "0.7.5"
 sha3 = "0.10.0"
 ed25519-dalek-fiat = "0.1.0"
 ed25519 = "1.2.0"
-signature = "1.4.0"
+signature = "1.5.0"
 # Database
 libsqlite3-sys = { version = "0.23.2", features = ["bundled"] }
 rusqlite = "0.26.3"

@@ -64,8 +64,4 @@ impl BucketManager {
     pub fn get_bucket_byid(&self, bucket_id: &[u8]) -> Option<Arc<Bucket>> {
         self.buckets.read().unwrap().get_bucket_byid(bucket_id)
     }
-
-    pub fn get_bucket_one(&self) -> Option<Arc<Bucket>> {
-        self.buckets.read().unwrap().get_bucket_one()
-    }
 }

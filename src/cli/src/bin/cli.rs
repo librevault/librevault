@@ -3,7 +3,7 @@ use librevault_util::secret::Secret;
 use std::path::PathBuf;
 use url::Url;
 
-use common_rs::proto::controller::{controller_client::ControllerClient, ReindexPathRequest};
+use librevault_core::proto::controller::{controller_client::ControllerClient, ReindexPathRequest};
 
 #[derive(Parser)]
 struct Cli {

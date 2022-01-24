@@ -1,10 +1,10 @@
 use clap::{Parser, Subcommand};
-use common_rs::encryption::decrypt;
-use common_rs::index::Index;
-use common_rs::indexer::{make_revision, sign_revision};
-use common_rs::meta_ext::{ObjectMetaExt, RevisionExt};
-use common_rs::proto::meta;
-use common_rs::proto::meta::{revision::EncryptedPart, ObjectKind, Revision, SignedRevision};
+use librevault_core::encryption::decrypt;
+use librevault_core::index::Index;
+use librevault_core::indexer::{make_revision, sign_revision};
+use librevault_core::meta_ext::{ObjectMetaExt, RevisionExt};
+use librevault_core::proto::meta;
+use librevault_core::proto::meta::{revision::EncryptedPart, ObjectKind, Revision, SignedRevision};
 use librevault_util::secret::Secret;
 use log::{debug, info, trace};
 use prost::Message;

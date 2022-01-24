@@ -4,7 +4,7 @@ members = [
     "src/daemon-rs",
     "src/cli",
     "src/rabin",
-    "src/common-rs",
+    "src/librevault-core",
 ]
 
 [profile.release]

@@ -10,9 +10,7 @@ mod collection;
 pub mod manager;
 
 use crate::settings::BucketConfig;
-// use librevault_util::index::proto::Meta;
 use librevault_util::enc_storage::EncryptedStorage;
-use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
 use tokio::sync::mpsc;
 
@@ -65,20 +63,7 @@ impl Bucket {
         // }
     }
 
-    pub(crate) async fn index_path(&self, path: &Path) {
-        // let changeset = make_revision(&[path], &self.root, &self.secret);
-        // let meta = make_meta(path, &self.root, &self.secret);
-        // if let Ok(meta) = meta {
-        //     debug!("Meta: {:?}", &meta);
-        //     let signed_meta = sign_meta(&meta, &self.secret);
-        //     self.index.put_meta(&signed_meta, true).unwrap();
-        //
-        //     self.event_tx
-        //         .send(BucketEvent::MetaAdded { signed_meta })
-        //         .await
-        //         .expect("Channel must be open");
-        // }
-    }
+    pub(crate) async fn index_path(&self, path: &Path) {}
 }
 
 impl Debug for Bucket {

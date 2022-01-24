@@ -1,5 +1,5 @@
 use crate::proto::meta::SignedRevision;
-use kv::{Bucket, Config, Raw, Store};
+use kv::{Config, Raw, Store};
 use multihash::{Code, MultihashDigest};
 use prost::Message;
 use std::path::{Path, PathBuf};
@@ -49,7 +49,6 @@ impl Index {
     }
     pub fn print_info(&self) {
         let stb_refs = self.store.bucket::<String, Raw>(Some("refs")).unwrap();
-        let stb_revision = self.store.bucket::<Raw, Raw>(Some("revisions")).unwrap();
 
         for _ref in stb_refs.iter() {
             let item = _ref.ok().unwrap();

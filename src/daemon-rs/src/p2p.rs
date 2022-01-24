@@ -31,7 +31,7 @@ use tokio::sync::broadcast::Receiver;
 //     include!(concat!(env!("OUT_DIR"), "/librevault.protocol.v1.rs"));
 // }
 
-use common_rs::proto::protocol;
+use librevault_core::proto::protocol;
 
 enum ComposedEvent {
     Mdns(MdnsEvent),

@@ -1,17 +1,12 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use librevault_util::secret::Secret;
 use std::path::PathBuf;
 use url::Url;
 
-pub mod controller {
-    tonic::include_proto!("librevault.controller.v1"); // The string specified here must match the proto package name
-}
-
-use controller::controller_client::ControllerClient;
-use controller::ReindexPathRequest;
+use common_rs::proto::controller::{controller_client::ControllerClient, ReindexPathRequest};
 
 #[derive(Parser)]
-struct Opts {
+struct Cli {
     #[clap(short, long, default_value = "http://[::1]:42346")]
     connect: Url,
 
@@ -19,21 +14,15 @@ struct Opts {
     subcmd: SubCommand,
 }
 
-#[derive(Parser)]
+#[derive(Subcommand)]
 enum SubCommand {
     GenerateSecret,
-    ReindexPath(ReindexPath),
-}
-
-#[derive(Parser)]
-struct ReindexPath {
-    bucket_id: String,
-    path: PathBuf,
+    ReindexPath { bucket_id: String, path: PathBuf },
 }
 
 #[tokio::main]
 async fn main() {
-    let opts = Opts::parse();
+    let opts = Cli::parse();
 
     match opts.subcmd {
         SubCommand::GenerateSecret => {
@@ -47,10 +36,10 @@ async fn main() {
         .unwrap();
 
     match opts.subcmd {
-        SubCommand::ReindexPath(args) => {
+        SubCommand::ReindexPath { bucket_id, path } => {
             let request = tonic::Request::new(ReindexPathRequest {
-                bucket_id: hex::decode(args.bucket_id).unwrap(),
-                path: String::from(args.path.to_str().unwrap()),
+                bucket_id: hex::decode(bucket_id).unwrap(),
+                path: String::from(path.to_str().unwrap()),
             });
 
             let response = client.reindex_path(request).await.unwrap();

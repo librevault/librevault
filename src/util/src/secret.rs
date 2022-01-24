@@ -111,7 +111,7 @@ impl Secret {
         }
     }
 
-    pub(crate) fn sign(&self, message: &[u8]) -> Result<Vec<u8>, SecretError> {
+    pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, SecretError> {
         let keypair = Keypair::from_bytes(
             &([
                 self.get_private_key()?.to_bytes(),
@@ -230,7 +230,7 @@ impl From<&Secret> for String {
         };
         let encoded_payload = bs58::encode(payload).into_string();
         let luhn = LUHNGENERATOR.generate(&encoded_payload).unwrap();
-        format!("{}{}{}{}", ty, CURRENT_VERSION, encoded_payload, luhn)
+        format!("{ty}{CURRENT_VERSION}{encoded_payload}{luhn}")
     }
 }
 

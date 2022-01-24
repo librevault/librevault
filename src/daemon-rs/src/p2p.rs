@@ -27,9 +27,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast::Receiver;
 
-pub mod proto {
-    include!(concat!(env!("OUT_DIR"), "/librevault.protocol.v1.rs"));
-}
+// pub mod proto {
+//     include!(concat!(env!("OUT_DIR"), "/librevault.protocol.v1.rs"));
+// }
+
+use common_rs::proto::protocol;
 
 enum ComposedEvent {
     Mdns(MdnsEvent),
@@ -140,10 +142,10 @@ pub async fn run_server(
                     }
                     SwarmEvent::Behaviour(ComposedEvent::Gossipsub(GossipsubEvent::Message{message, ..})) => {
                         debug!("got message: {:?}", message);
-                        if let Ok(pubsub_msg) = proto::PubSubMessage::decode(&*message.data) {
+                        if let Ok(pubsub_msg) = protocol::PubSubMessage::decode(&*message.data) {
                             debug!("got protobuf: {:?}", pubsub_msg);
                             match pubsub_msg.message {
-                                Some(proto::pub_sub_message::Message::HaveMeta(have_meta)) => {
+                                Some(protocol::pub_sub_message::Message::HaveMeta(have_meta)) => {
                                     debug!("got have_meta: {:?}", have_meta);
                                 }
                                 _ => {}
@@ -172,8 +174,8 @@ pub async fn run_server(
                         let topic = Topic::new(bucket.get_id_hex());
                         match event {
                             BucketEvent::MetaAdded {signed_meta} => {
-                                let pubsub_msg = proto::PubSubMessage {
-                                    message: Some(proto::pub_sub_message::Message::HaveMeta(proto::HaveMeta {meta: signed_meta.meta, signature: signed_meta.signature}))
+                                let pubsub_msg = protocol::PubSubMessage {
+                                    message: Some(protocol::pub_sub_message::Message::HaveMeta(protocol::HaveMeta {meta: signed_meta.meta, signature: signed_meta.signature}))
                                 };
                                 swarm.behaviour_mut().gossipsub.publish(topic, pubsub_msg.encode_to_vec());
                             }

@@ -1,0 +1,84 @@
+syntax = "proto3";
+package librevault.meta.v2;
+
+enum EncryptionAlgorithm {
+  PLAINTEXT = 0;
+//  AES_ECB = 1;
+//  AES_CBC = 2;
+//  AES_CFB = 3;
+//  AES_OFB = 4;
+//  AES_CTR = 5;
+//  AES_GCM = 6;
+//  AES_CCM = 7;
+//  AES_SIV = 8;
+  AES_GCM_SIV = 9;
+}
+
+message EncryptionMetadata {
+  EncryptionAlgorithm algorithm = 1;
+  bytes iv = 2;
+}
+
+message EncryptedData {
+  EncryptionMetadata metadata = 1;
+  bytes ciphertext = 2;
+}
+
+message ChunkMeta {
+  EncryptionMetadata encryption_metadata = 1;
+  bytes ciphertext_hash = 2;
+  uint32 size = 3;
+}
+
+message DataStream {
+  repeated bytes chunk_ids = 1;  // multihash or similar
+}
+
+enum ObjectKind {
+  TOMBSTONE = 0;
+  FILE = 1;
+  DIRECTORY = 2;
+//  SYMLINK = 3;
+}
+
+message ObjectMeta {
+  ObjectKind kind = 1;
+  bytes name = 2;
+  // Represents data streams for file. Maps to ADS on Win, xattr on Linux, Mac. Empty stream name is the main stream (file contents)
+  map<string, DataStream> data_streams = 3;
+//  bytes symlink_target = 4;
+
+  /* Times */
+//  int64 mtime = 4;  // Win: lpLastWriteTime
+//  int64 atime = 5;  // Win: lpLastAccessTime
+//  int64 ctime = 6;  // Win: -nothing-
+//  int64 crtime = 7;  // Win: lpCreationTime
+  // Unix-specific
+//  uint32 mode = 8;
+//  uint32 uid = 9;
+//  uint32 gid = 10;
+  // Windows-specific
+//  uint32 windows_attrib = 11;  // Win: dwFileAttributes
+}
+
+// This structure represents a changeset, that is used to represent a state transition between one or more parent ChangeSets.
+message Revision {
+  repeated bytes parent = 1;
+
+  enum Kind {
+    SNAPSHOT = 0;
+    // CHANGESET = 1;  // TODO: swap with SNAPSHOT for efficiency
+  }
+  Kind kind = 2;
+  repeated ChunkMeta chunks = 3;
+
+  message EncryptedPart {
+    repeated ObjectMeta objects = 1;
+  }
+  EncryptedData encrypted = 4;  // RevisionEncrypted
+}
+
+message SignedRevision {
+  bytes revision = 1;
+  bytes signature = 2;
+}

@@ -21,7 +21,7 @@ pub fn nodekey_write_new(key_path: &str) {
 
     let mut key_file = File::create(key_path).unwrap();
     key_file.write_all(pem.as_slice()).unwrap();
-    debug!("Wrote new key to {:?}", key_path);
+    debug!("Wrote new key to {key_path:?}");
 }
 
 fn build_certificate(private_key_pem: &[u8]) -> Result<X509, ErrorStack> {

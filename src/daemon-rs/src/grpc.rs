@@ -4,15 +4,11 @@ use tonic::{transport::Server, Request, Response, Status};
 
 use crate::bucket::manager::BucketManager;
 use crate::settings::ConfigManager;
+use common_rs::proto::controller::{
+    controller_server::{Controller, ControllerServer},
+    ReindexPathRequest, FILE_DESCRIPTOR_SET,
+};
 use log::debug;
-use proto::controller_server::{Controller, ControllerServer};
-use proto::ReindexPathRequest;
-
-pub mod proto {
-    tonic::include_proto!("librevault.controller.v1"); // The string specified here must match the proto package name
-}
-
-const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("librevault.controller.v1");
 
 pub struct LibrevaultController {
     buckets: Arc<BucketManager>,

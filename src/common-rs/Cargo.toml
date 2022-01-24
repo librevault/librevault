@@ -1,0 +1,27 @@
+[package]
+name = "common-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tonic = "0.6.2"
+prost = "0.9.0"
+#tonic-reflection = "0.3.0"
+rabin = {path= "../rabin"}
+rand = "0.8.4"
+librevault_util = { path = "../util" }
+tracing = "0.1"
+sha3 = "0.10.0"
+aes-gcm-siv = "0.10.3"
+multihash = "0.15.0"
+kv = "0.22.0"
+hex = "0.4.3"
+
+[build-dependencies]
+tonic-build = "0.6.0"
+prost-build = "0.9.0"
+
+[dev-dependencies]
+tempfile = "3.2.0"

@@ -7,12 +7,10 @@ use librevault_util::index::{Index, SignedMeta};
 use librevault_util::secret::Secret;
 
 mod collection;
-mod indexer;
 pub mod manager;
 
 use crate::settings::BucketConfig;
 // use librevault_util::index::proto::Meta;
-use crate::bucket::indexer::make_changeset;
 use librevault_util::enc_storage::EncryptedStorage;
 use librevault_util::indexer::{make_meta, sign_meta};
 use log::debug;
@@ -68,7 +66,7 @@ impl Bucket {
     }
 
     pub(crate) async fn index_path(&self, path: &Path) {
-        let changeset = make_changeset(&[path], &self.root, &self.secret);
+        // let changeset = make_revision(&[path], &self.root, &self.secret);
         // let meta = make_meta(path, &self.root, &self.secret);
         // if let Ok(meta) = meta {
         //     debug!("Meta: {:?}", &meta);

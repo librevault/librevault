@@ -63,11 +63,7 @@ pub fn denormalize(
 
     // macos uses a weird NFD-normalized form. It can be achieved using fileSystemRepresentation function
 
-    trace!(
-        "normalized: {:?} denormalized: {:?}",
-        normalized_str,
-        denormalized
-    );
+    trace!("normalized: {normalized_str:?} denormalized: {denormalized:?}");
 
     Ok(denormalized)
 }

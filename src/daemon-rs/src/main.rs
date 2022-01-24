@@ -9,7 +9,6 @@ use crate::settings::ConfigManager;
 use bucket::manager::BucketManager;
 
 mod bucket;
-mod grpc;
 mod p2p;
 mod settings;
 
@@ -37,7 +36,6 @@ async fn main() {
     let settings = Arc::new(ConfigManager::new(config_dir).unwrap());
     let buckets = Arc::new(BucketManager::new());
 
-    tokio::spawn(grpc::run_grpc(buckets.clone(), settings.clone()));
     tokio::spawn(run_server(
         buckets.clone(),
         settings.clone(),

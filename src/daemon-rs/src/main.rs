@@ -10,6 +10,7 @@ use settings::{BucketConfig, ConfigManager};
 use crate::engine::Engine;
 
 mod engine;
+mod p2p;
 mod settings;
 mod watcher;
 

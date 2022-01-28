@@ -1,56 +1,55 @@
 use crate::engine::BucketCommand::MakeSnapshot;
 use crate::watcher::WatcherWrapper;
 use crate::BucketConfig;
+use async_trait::async_trait;
 use librevault_core::index::Index;
 use librevault_core::indexer::{make_full_snapshot, sign_revision};
 use librevault_util::secret::Secret;
 use notify::RecursiveMode::Recursive;
 use notify::{DebouncedEvent, Watcher};
-use prost::Message;
+use prost::Message as ProstMessage;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use tiny_tokio_actor::{
+    Actor, ActorContext, ActorRef, ActorSystem, EventBus, Handler, Message as ActorMessage,
+    SystemEvent,
+};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::{debug, error, info, instrument, trace, warn};
 
-pub struct BucketState {
+pub struct BucketActor {
     secret: Secret,
     pub path: PathBuf,
 
     index: Index,
-
-    event_rx: mpsc::UnboundedReceiver<BucketCommand>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BucketCommand {
     MakeSnapshot,
 }
-// pub enum BucketEvent {}
 
-type Sender = mpsc::UnboundedSender<BucketCommand>;
-type Receiver = mpsc::UnboundedReceiver<BucketCommand>;
+impl ActorMessage for BucketCommand {
+    type Response = ();
+}
 
-impl BucketState {
+#[derive(Clone, Debug)]
+struct BucketEvent;
+
+impl SystemEvent for BucketEvent {}
+
+impl BucketActor {
     #[instrument]
-    pub(crate) fn new(
-        config: BucketConfig,
-        // cmd_tx: mpsc::UnboundedSender<BucketCommand>,
-    ) -> (BucketState, Sender) {
+    pub(crate) fn new(config: BucketConfig) -> BucketActor {
         debug!("Creating Bucket {:?}", config);
         let index = Index::init(Index::default_index_file(config.path.as_path()).as_path());
 
-        let (event_tx, event_rx) = mpsc::unbounded_channel();
-
-        (
-            BucketState {
-                secret: config.secret,
-                path: config.path,
-                index,
-                event_rx,
-            },
-            event_tx,
-        )
+        BucketActor {
+            secret: config.secret,
+            path: config.path,
+            index,
+        }
     }
 
     pub fn bucket_id(&self) -> Vec<u8> {
@@ -64,26 +63,20 @@ impl BucketState {
         info!("Revision size: {}", rev_size.len());
         trace!("{rev:?}");
     }
+}
 
-    pub async fn start(&mut self) {
-        loop {
-            tokio::select! {
-                Some(event) = self.event_rx.recv() => {
-                    debug!("{event:?}");
-                    match event {
-                        MakeSnapshot => {
-                            tokio::task::block_in_place(|| self.make_snapshot()).await;
-                        }
-                    }
-                }
-            }
-        }
+impl Actor<BucketEvent> for BucketActor {}
+
+#[async_trait]
+impl Handler<BucketEvent, BucketCommand> for BucketActor {
+    async fn handle(&mut self, msg: BucketCommand, ctx: &mut ActorContext<BucketEvent>) -> () {
+        tokio::task::block_in_place(|| self.make_snapshot()).await;
     }
 }
 
 struct BucketEntry {
     bucket_config: BucketConfig,
-    cmd_tx: Sender,
+    actor_ref: ActorRef<BucketEvent, BucketActor>,
 }
 
 pub struct Engine {
@@ -91,6 +84,8 @@ pub struct Engine {
     watcher_rx: UnboundedReceiver<notify::DebouncedEvent>,
 
     buckets: HashMap<Vec<u8>, BucketEntry>,
+
+    system: ActorSystem<BucketEvent>,
 }
 
 impl Engine {
@@ -100,24 +95,34 @@ impl Engine {
             watcher_tx.send(event);
         });
 
+        let bus = EventBus::new(1000);
+        let system = ActorSystem::new("buckets", bus);
+
         Self {
             watcher_wrapper,
             watcher_rx,
 
             buckets: HashMap::default(),
+            system,
         }
     }
 
     pub async fn add_bucket(&mut self, bucket_config: BucketConfig) {
-        let (mut bucket_state, cmd_tx) = BucketState::new(bucket_config.clone());
+        let bucket_actor = BucketActor::new(bucket_config.clone());
 
-        let bucket_id = bucket_state.bucket_id();
+        let bucket_id = bucket_actor.bucket_id();
+
+        let actor_ref = self
+            .system
+            .create_actor("bucket", bucket_actor)
+            .await
+            .unwrap();
 
         self.buckets.insert(
             bucket_id,
             BucketEntry {
                 bucket_config: bucket_config.clone(),
-                cmd_tx,
+                actor_ref,
             },
         );
 
@@ -125,8 +130,6 @@ impl Engine {
             .watcher
             .watch(bucket_config.path, Recursive)
             .expect("Cannot set up watch for bucket");
-
-        tokio::spawn(async move { bucket_state.start().await });
     }
 
     fn get_entry_for_path(&self, path: &Path) -> Option<&BucketEntry> {
@@ -156,7 +159,7 @@ impl Engine {
 
                     if let Some(path) = ev_path {
                         if let Some(entry) = self.get_entry_for_path(&path) {
-                            entry.cmd_tx.send(MakeSnapshot);
+                            entry.actor_ref.ask(MakeSnapshot).await.unwrap();
                         }else{
                             warn!("Path {path:?} is not assigned to bucket.");
                         }

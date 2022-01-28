@@ -1,16 +1,17 @@
+extern crate core;
+
 use std::sync::Arc;
 
 use directories::ProjectDirs;
+use tracing::{debug, info};
 
-use log::{debug, info};
+use settings::{BucketConfig, ConfigManager};
 
-use crate::p2p::run_server;
-use crate::settings::ConfigManager;
-use bucket::manager::BucketManager;
+use crate::engine::Engine;
 
-mod bucket;
-mod p2p;
+mod engine;
 mod settings;
+mod watcher;
 
 #[tokio::main]
 async fn main() {
@@ -21,12 +22,13 @@ async fn main() {
 / /___/ / /_/ / /  / ___/\ \/ / /_/ / /_/ / / /___
 \____/_/\____/_/  /____/  \__/_/ /_/\____/_/\____/
 "#;
-    print!("{}", BANNER);
+    print!("{BANNER}");
 
-    env_logger::init();
+    // env_logger::init();
+    tracing_subscriber::fmt::init();
+    // console_subscriber::init();
 
-    const VERSION: &str = env!("CARGO_PKG_VERSION");
-    info!("Librevault v{}", VERSION);
+    info!("Librevault v{}", env!("CARGO_PKG_VERSION"));
 
     let project_dirs = ProjectDirs::from("com", "librevault", "librevault").unwrap();
     let config_dir = project_dirs.config_dir();
@@ -34,18 +36,13 @@ async fn main() {
     std::fs::create_dir_all(&config_dir).expect("Could not create config directory");
 
     let settings = Arc::new(ConfigManager::new(config_dir).unwrap());
-    let buckets = Arc::new(BucketManager::new());
 
-    tokio::spawn(run_server(
-        buckets.clone(),
-        settings.clone(),
-        buckets.get_event_channel(),
-    ));
-
-    // Add buckets only after passing to components
+    let mut engine = Engine::new();
     for bucket_config in &settings.config().buckets {
-        buckets.add_bucket(bucket_config.clone()).await;
+        engine.add_bucket(bucket_config.clone()).await;
     }
+
+    engine.start().await;
 
     let _ = tokio::signal::ctrl_c().await;
 

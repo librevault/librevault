@@ -1,16 +1,13 @@
 use clap::{Parser, Subcommand};
 use librevault_core::encryption::decrypt;
 use librevault_core::index::Index;
-use librevault_core::indexer::{make_revision, sign_revision};
+use librevault_core::indexer::{make_full_snapshot, make_revision, sign_revision};
 use librevault_core::meta_ext::{ObjectMetaExt, RevisionExt};
-use librevault_core::proto::meta;
 use librevault_core::proto::meta::{revision::EncryptedPart, ObjectKind, Revision, SignedRevision};
 use librevault_util::secret::Secret;
 use log::{debug, info, trace};
 use prost::Message;
 use std::env;
-use std::path::Path;
-use walkdir::WalkDir;
 
 #[derive(Parser)]
 struct Cli {
@@ -34,19 +31,6 @@ enum SubCommand {
     },
 }
 
-fn make_rev(root: &Path, secret: &Secret) -> meta::Revision {
-    let mut entries = vec![];
-
-    for entry in WalkDir::new(root).min_depth(1) {
-        debug!("{:?}", entry);
-        entries.push(entry.unwrap().into_path())
-    }
-
-    let paths: Vec<&Path> = entries.iter().map(|f| f.as_path()).collect();
-
-    make_revision(paths.as_slice(), root, secret)
-}
-
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -62,7 +46,7 @@ async fn main() {
         SubCommand::MakeRevision { dry_run, secret } => {
             let secret: Secret = secret.parse().unwrap();
 
-            let rev = make_rev(root.as_path(), &secret);
+            let rev = make_full_snapshot(root.as_path(), &secret);
             let rev_signed = sign_revision(&rev, &secret);
             let rev_size: Vec<u8> = rev.encode_to_vec();
             info!("Revision size: {}", rev_size.len());

@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::os::raw::c_char;
 use std::str::FromStr;
 
@@ -34,11 +34,11 @@ pub enum SecretError {
 
 impl Display for SecretError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub enum Secret {
     Signer {
@@ -142,6 +142,12 @@ impl Secret {
 impl Display for Secret {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", String::from(self))
+    }
+}
+
+impl Debug for Secret {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Secret(\"{self}\")")
     }
 }
 

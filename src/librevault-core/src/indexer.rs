@@ -15,6 +15,7 @@ use std::io;
 use std::io::{BufReader, ErrorKind, Read};
 use std::path::Path;
 use tracing::{debug, trace};
+use walkdir::WalkDir;
 
 #[derive(Debug)]
 pub enum IndexingError {
@@ -152,6 +153,19 @@ pub fn make_revision(paths: &[&Path], root: &Path, secret: &Secret) -> meta::Rev
         encryption_metadata,
     ));
     revision
+}
+
+pub fn make_full_snapshot(root: &Path, secret: &Secret) -> Revision {
+    let mut entries = vec![];
+
+    for entry in WalkDir::new(root).min_depth(1) {
+        debug!("{:?}", entry);
+        entries.push(entry.unwrap().into_path())
+    }
+
+    let paths: Vec<&Path> = entries.iter().map(|f| f.as_path()).collect();
+
+    make_revision(paths.as_slice(), root, secret)
 }
 
 pub fn sign_revision(revision: &meta::Revision, secret: &Secret) -> SignedRevision {

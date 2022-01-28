@@ -1,14 +1,14 @@
 use figment::providers::{Format, Serialized, Toml};
 use figment::Figment;
 use librevault_util::secret::Secret;
-use log::debug;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use tracing::debug;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BucketConfig {
     pub path: PathBuf,
     pub secret: Secret,

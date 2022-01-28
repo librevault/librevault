@@ -11,7 +11,7 @@ pub struct Index {
 
 impl Index {
     pub fn init(root: &Path) -> Self {
-        let mut cfg = Config::new(root);
+        let cfg = Config::new(root);
         let store = Store::new(cfg).unwrap();
         Self { store }
     }
@@ -47,6 +47,7 @@ impl Index {
         stb_refs.set("HEAD", revision_hash.clone());
         info!("Set ref HEAD to {}", hex::encode(revision_hash));
     }
+
     pub fn print_info(&self) {
         let stb_refs = self.store.bucket::<String, Raw>(Some("refs")).unwrap();
 

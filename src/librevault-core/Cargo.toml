@@ -18,6 +18,7 @@ aes-gcm-siv = "0.10.3"
 multihash = "0.15.0"
 kv = "0.22.0"
 hex = "0.4.3"
+walkdir = "2"
 
 [build-dependencies]
 tonic-build = "0.6.0"

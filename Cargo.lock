@@ -648,9 +648,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.62"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5beeee74e023d146e6fb933296b3b5e07de146ff3c9498c5af6e53cabc986d51"
+checksum = "0f17f3c50dfde6280a2123396357de7b30650af75a3ebf2b65e1f2627747c48b"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -675,15 +675,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.62"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d2033701dc9a0cd15c14bb24d4423b6ba57f6eba079b65b7049b95288dad6b3"
+checksum = "f1c4ce53d80ef7b8fad81fbf5dff561a89cf8f3411a66001760bcb25c966315c"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.62"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94d7ddcc58b10f23413d3fef111d1bd64b2bfb76af53f31611e02e9d0b6537be"
+checksum = "b26c1bccad6af8c178ddb36f0a8a9ca1f41dc8a23d45bc2763c957532e33fdc2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2227,11 +2227,11 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.36"
+version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7342d5883fbccae1cc37a2353b09c87c9b0f3afd73f5fb9bba687a1f733b029"
+checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
- "unicode-xid",
+ "unicode-ident",
 ]
 
 [[package]]
@@ -2721,13 +2721,13 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.85"
+version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a684ac3dcd8913827e18cd09a68384ee66c1de24157e3c556c9ab16d85695fb7"
+checksum = "c50aef8a904de4c23c788f104b7dddc7d6f79c647c7c8ce4cc8f73eb0ca773dd"
 dependencies = [
  "proc-macro2",
  "quote",
- "unicode-xid",
+ "unicode-ident",
 ]
 
 [[package]]
@@ -3062,6 +3062,12 @@ name = "unicode-bidi"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a01404663e3db436ed2746d9fefef640d868edae3cceb81c3b8d5732fda678f"
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5bd2fe26506023ed7b5e1e315add59d6f584c621d037f9368fea9cfb988f368c"
 
 [[package]]
 name = "unicode-normalization"

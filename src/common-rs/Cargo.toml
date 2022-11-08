@@ -15,7 +15,7 @@ librevault_util = { path = "../util" }
 tracing = "0.1"
 sha3 = "0.10.0"
 aes-gcm-siv = "0.10.3"
-multihash = "0.15.0"
+multihash = "0.17.0"
 kv = "0.22.0"
 hex = "0.4.3"
 

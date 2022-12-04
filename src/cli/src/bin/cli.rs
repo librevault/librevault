@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use librevault_util::secret::Secret;
+use librevault_core::secret::Secret;
 use std::path::PathBuf;
 use url::Url;
 
@@ -26,7 +26,7 @@ async fn main() {
 
     match opts.subcmd {
         SubCommand::GenerateSecret => {
-            println!("{}", String::from(Secret::new()));
+            println!("{}", Secret::random());
         }
         _ => {}
     }

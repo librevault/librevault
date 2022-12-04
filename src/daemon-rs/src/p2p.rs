@@ -1,5 +1,3 @@
-// use crate::bucket::manager::{BucketManager, BucketManagerEvent};
-// use crate::bucket::{Bucket, BucketEvent};
 use crate::settings::ConfigManager;
 use futures::StreamExt;
 use libp2p::{
@@ -19,12 +17,10 @@ use libp2p::{
 };
 use prost::Message;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::Hasher;
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::broadcast::Receiver;
 use tracing::{debug, info, trace};
 
 use librevault_core::proto::protocol;

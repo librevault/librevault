@@ -1,9 +1,0 @@
-src/lib.rs
-src/aescbc.rs
-src/logger.rs
-src/nodekey.rs
-src/path_normalize.rs
-src/secret.rs
-src/indexer.rs
-src/enc_storage.rs
-src/index.rs

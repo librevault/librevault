@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="lang">
-    <file>librevault_en.qm</file>
-    <file>librevault_ru.qm</file>
-  </qresource>
-</RCC>

@@ -25,7 +25,6 @@ async fn main() {
 "#;
     print!("{BANNER}");
 
-    // env_logger::init();
     tracing_subscriber::fmt::init();
     // console_subscriber::init();
 

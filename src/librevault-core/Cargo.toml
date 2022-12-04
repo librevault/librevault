@@ -15,10 +15,17 @@ librevault_util = { path = "../util" }
 tracing = "0.1"
 sha3 = "0.10.0"
 aes-gcm-siv = "0.10.3"
-multihash = "0.15.0"
+multihash = "0.17.0"
 kv = "0.22.0"
 hex = "0.4.3"
 walkdir = "2"
+
+ed25519-dalek-fiat = "0.1.0"
+luhn-rs = "0.0.1"
+serde = { version = "1.0", features = ["derive"] }
+lazy_static = "1.4.0"
+bs58 = "0.4.0"
+ed25519 = "1.2.0"
 
 [build-dependencies]
 tonic-build = "0.6.0"

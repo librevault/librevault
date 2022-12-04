@@ -4,7 +4,7 @@ use crate::BucketConfig;
 use async_trait::async_trait;
 use librevault_core::index::Index;
 use librevault_core::indexer::{make_full_snapshot, sign_revision};
-use librevault_util::secret::Secret;
+use librevault_core::secret::Secret;
 use notify::RecursiveMode::Recursive;
 use notify::{DebouncedEvent, Watcher};
 use prost::Message as ProstMessage;
@@ -16,7 +16,7 @@ use tiny_tokio_actor::{
 };
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedReceiver;
-use tracing::{debug, error, info, instrument, trace, warn};
+use tracing::{debug, info, instrument, trace, warn};
 
 pub struct BucketActor {
     secret: Secret,

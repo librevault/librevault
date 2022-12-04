@@ -1,11 +1,11 @@
 use clap::{Parser, Subcommand};
 use librevault_core::encryption::decrypt;
 use librevault_core::index::Index;
-use librevault_core::indexer::{make_full_snapshot, make_revision, sign_revision};
+use librevault_core::indexer::{make_full_snapshot, sign_revision};
 use librevault_core::meta_ext::{ObjectMetaExt, RevisionExt};
 use librevault_core::proto::meta::{revision::EncryptedPart, ObjectKind, Revision, SignedRevision};
-use librevault_util::secret::Secret;
-use log::{debug, info, trace};
+use librevault_core::secret::Secret;
+use log::{info, trace};
 use prost::Message;
 use std::env;
 
@@ -41,7 +41,7 @@ async fn main() {
 
     match opts.subcmd {
         SubCommand::GenerateSecret => {
-            println!("{}", String::from(Secret::new()));
+            println!("{}", Secret::random());
         }
         SubCommand::MakeRevision { dry_run, secret } => {
             let secret: Secret = secret.parse().unwrap();

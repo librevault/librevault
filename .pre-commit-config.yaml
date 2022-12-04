@@ -1,7 +1,0 @@
-fail_fast: false
-repos:
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: python
-    hooks:
-      - id: clang-format
-        args: [-i]

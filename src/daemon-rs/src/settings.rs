@@ -1,6 +1,6 @@
 use figment::providers::{Format, Serialized, Toml};
 use figment::Figment;
-use librevault_util::secret::Secret;
+use librevault_core::secret::Secret;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;

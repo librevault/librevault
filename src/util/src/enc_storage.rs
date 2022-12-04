@@ -96,22 +96,6 @@ impl EncryptedStorage {
     }
 }
 
-fn encryptedstorage_new(root: &str) -> Box<EncryptedStorage> {
-    Box::new(EncryptedStorage::new(Path::new(root)))
-}
-
-#[cxx::bridge(namespace = "librevault::bridge")]
-mod ffi {
-    extern "Rust" {
-        type EncryptedStorage;
-        fn encryptedstorage_new(root: &str) -> Box<EncryptedStorage>;
-        fn have_chunk(self: &EncryptedStorage, chunk_id: &[u8]) -> bool;
-        fn get_chunk(self: &EncryptedStorage, chunk_id: &[u8]) -> Result<Vec<u8>>;
-        fn put_chunk(self: &EncryptedStorage, chunk_id: &[u8], data: &[u8]);
-        fn remove_chunk(self: &EncryptedStorage, chunk_id: &[u8]);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

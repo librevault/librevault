@@ -68,28 +68,6 @@ pub fn denormalize(
     Ok(denormalized)
 }
 
-fn normalize_cxx(
-    path: &str,
-    root: &str,
-    normalize_unicode: bool,
-) -> Result<Vec<u8>, NormalizationError> {
-    normalize(Path::new(path), Path::new(root), normalize_unicode)
-}
-
-fn denormalize_cxx(path: &[u8], root: &str) -> Result<String, NormalizationError> {
-    Ok(String::from(
-        denormalize(path, Some(Path::new(root)))?.to_str().unwrap(),
-    ))
-}
-
-#[cxx::bridge]
-mod ffi {
-    extern "Rust" {
-        fn normalize_cxx(path: &str, root: &str, normalize_unicode: bool) -> Result<Vec<u8>>;
-        fn denormalize_cxx(path: &[u8], root: &str) -> Result<String>;
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

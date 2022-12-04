@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Display, Formatter};
-use std::os::raw::c_char;
 use std::str::FromStr;
 
 use ed25519_dalek_fiat::{Keypair, PublicKey, SecretKey, Signer, Verifier, PUBLIC_KEY_LENGTH};
@@ -57,8 +56,14 @@ pub enum Secret {
 
 const CURRENT_VERSION: char = '2';
 
+impl Default for Secret {
+    fn default() -> Self {
+        Self::random()
+    }
+}
+
 impl Secret {
-    pub fn new() -> Self {
+    pub fn random() -> Self {
         let mut rng = OsRng::default();
         let keypair: Keypair = Keypair::generate(&mut rng);
 
@@ -71,7 +76,7 @@ impl Secret {
 
     fn get_private_key(&self) -> Result<&SecretKey, SecretError> {
         match self {
-            Secret::Signer { private_key, .. } => Ok(&private_key),
+            Secret::Signer { private_key, .. } => Ok(private_key),
             _ => Err(SecretError::DeriveError),
         }
     }
@@ -89,11 +94,11 @@ impl Secret {
         match self {
             Secret::Signer { public_key, .. }
             | Secret::Decrypter { public_key, .. }
-            | Secret::Verifier { public_key, .. } => Ok(&public_key),
+            | Secret::Verifier { public_key, .. } => Ok(public_key),
         }
     }
 
-    fn derive(&self, ty: char) -> Result<Self, SecretError> {
+    pub fn derive(&self, ty: char) -> Result<Self, SecretError> {
         match ty {
             'A' => Ok(Secret::Signer {
                 private_key: SecretKey::from_bytes(&self.get_private_key()?.to_bytes()).unwrap(),
@@ -123,7 +128,7 @@ impl Secret {
         Ok(keypair.sign(message).to_bytes().to_vec())
     }
 
-    fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, SecretError> {
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, SecretError> {
         let signature = ed25519::Signature::from_bytes(signature)
             .ok()
             .ok_or(SecretError::InvalidSignatureFormat)?;
@@ -155,7 +160,7 @@ impl FromStr for Secret {
     type Err = SecretError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let secret_type = s.chars().nth(0).ok_or(SecretError::ParseFailed)?;
+        let secret_type = s.chars().next().ok_or(SecretError::ParseFailed)?;
         let secret_version = s.chars().nth(1).ok_or(SecretError::ParseFailed)?;
         let secret_payload = &s[2..s.len() - 1];
         let secret_luhn = &s.chars().nth_back(0).ok_or(SecretError::ParseFailed)?;
@@ -309,53 +314,5 @@ mod tests {
             secret.verify(message, &*signature),
             Err(SecretError::InvalidSignatureFormat)
         );
-    }
-}
-
-fn secret_new() -> Box<Secret> {
-    Box::new(Secret::new())
-}
-
-fn secret_from_str(s: &str) -> Result<Box<Secret>, SecretError> {
-    Ok(Box::new(Secret::from_str(s)?))
-}
-
-impl Secret {
-    fn c_derive(&self, ty: c_char) -> Result<Box<Self>, SecretError> {
-        Ok(Box::new(self.derive(ty as u8 as char)?))
-    }
-
-    fn c_clone(&self) -> Box<Self> {
-        Box::new(self.clone())
-    }
-
-    fn c_get_private(&self) -> Result<Vec<u8>, SecretError> {
-        Ok(self.get_private_key()?.to_bytes().to_vec())
-    }
-
-    fn c_get_symmetric(&self) -> Result<Vec<u8>, SecretError> {
-        Ok(self.get_symmetric_key()?.to_vec())
-    }
-
-    fn c_get_public(&self) -> Result<Vec<u8>, SecretError> {
-        Ok(self.get_public_key()?.to_bytes().to_vec())
-    }
-}
-
-#[cxx::bridge]
-mod ffx {
-    extern "Rust" {
-        #[cxx_name = "OpaqueSecret"]
-        type Secret;
-        fn to_string(self: &Secret) -> String;
-        fn secret_new() -> Box<Secret>;
-        fn secret_from_str(s: &str) -> Result<Box<Secret>>;
-        fn c_derive(self: &Secret, ty: c_char) -> Result<Box<Secret>>;
-        fn c_clone(&self) -> Box<Secret>;
-        fn sign(&self, message: &[u8]) -> Result<Vec<u8>>;
-        fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool>;
-        fn c_get_private(&self) -> Result<Vec<u8>>;
-        fn c_get_symmetric(&self) -> Result<Vec<u8>>;
-        fn c_get_public(&self) -> Result<Vec<u8>>;
     }
 }

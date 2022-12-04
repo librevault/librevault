@@ -2,6 +2,7 @@ pub mod encryption;
 pub mod index;
 pub mod indexer;
 pub mod meta_ext;
+pub mod secret;
 
 pub mod proto {
     pub use self::meta::*;

@@ -6,7 +6,7 @@ use crate::proto::meta::{
 };
 
 use librevault_util::path_normalize::{normalize, NormalizationError};
-use librevault_util::secret::Secret;
+use crate::secret::Secret;
 use multihash::{Code, MultihashDigest};
 use prost::Message;
 use rabin::{Rabin, RabinParams};

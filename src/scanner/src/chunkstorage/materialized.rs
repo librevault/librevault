@@ -12,6 +12,7 @@ use sea_orm::{
 };
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tracing::debug;
+use walkdir::WalkDir;
 
 use crate::chunkstorage::{ChunkLocationHint, ChunkProvider, ChunkStorageError, QueryResult};
 use crate::datastream_storage::DataStreamStorage;
@@ -160,6 +161,16 @@ impl MaterializedFolder {
         }
 
         return Ok(QueryResult { chunk, hint });
+    }
+
+    /// List all actual paths, including dirty (not indexed)
+    pub fn list_actual_paths(&self) -> Vec<PathBuf> {
+        WalkDir::new(&self.root)
+            .min_depth(1)
+            .follow_links(false)
+            .into_iter()
+            .map(|entry| entry.unwrap().into_path())
+            .collect()
     }
 }
 

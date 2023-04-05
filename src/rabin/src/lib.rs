@@ -1,6 +1,7 @@
 use std::io;
 use std::io::{Bytes, Read};
 
+use bytes::{BufMut, BytesMut};
 use tables::Tables;
 
 mod tables;
@@ -80,6 +81,7 @@ pub struct Rabin<R> {
     params: RabinParams,
     tables: Tables,
     reader: Bytes<R>,
+    buffer: BytesMut,
 }
 
 impl<R> Rabin<R>
@@ -89,6 +91,7 @@ where
     pub fn new(reader: R, params: RabinParams) -> Self {
         let tables = tables::calc_tables(params.polynomial);
         Self {
+            buffer: BytesMut::with_capacity(params.maxsize),
             params,
             tables,
             reader: reader.bytes(),
@@ -104,20 +107,20 @@ impl<R> Iterator for Rabin<R>
 where
     R: Read,
 {
-    type Item = io::Result<Vec<u8>>;
+    type Item = io::Result<bytes::Bytes>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut accum = Accumulator::new(&self.params, &self.tables);
 
-        let mut chunk = Vec::with_capacity(self.params.maxsize);
+        self.buffer.reserve(self.params.maxsize);
 
         for b in &mut self.reader {
             match b {
                 Ok(b) => {
-                    chunk.push(b);
+                    self.buffer.put_u8(b);
                     accum.slide(b);
                     if accum.is_consumed() {
-                        return Some(Ok(chunk));
+                        return Some(Ok(self.buffer.split().freeze()));
                     }
                 }
                 Err(e) => {
@@ -126,8 +129,8 @@ where
             }
         }
 
-        if !chunk.is_empty() {
-            Some(Ok(chunk))
+        if !self.buffer.is_empty() {
+            Some(Ok(self.buffer.split().freeze()))
         } else {
             None
         }

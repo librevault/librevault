@@ -4,6 +4,7 @@ use librevault_core::indexer::reference::{ReferenceExt, ReferenceMaker};
 use librevault_core::proto::ReferenceHash;
 use prost::Message;
 use rocksdb::{IteratorMode, PrefixRange, ReadOptions, DB};
+use tracing::trace;
 
 pub trait RocksDBObjectCRUD<T: Default + Message + ReferenceMaker> {
     fn db(&self) -> &DB;
@@ -40,6 +41,10 @@ pub trait RocksDBObjectCRUD<T: Default + Message + ReferenceMaker> {
         self.db()
             .put(self.key_for_entity(&obj_refh), &obj_s)
             .unwrap();
+        trace!(
+            "{}::put_entity -> {obj_refh:?}",
+            std::any::type_name::<Self>()
+        );
         obj_refh
     }
 

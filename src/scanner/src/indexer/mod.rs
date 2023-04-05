@@ -1,23 +1,22 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use actix::{Actor, Addr, AsyncContext, Context, Handler, Message, SyncArbiter, WeakRecipient};
-use actix_rt::System;
-use librevault_core::path::PointerPath;
-use librevault_core::proto::{ChunkMetadata, DataStream, ObjectMetadata, ReferenceHash};
-use worker::IndexerWorker;
+use actix::{Message, WeakRecipient};
+use librevault_core::proto::{ChunkMetadata, DataStream, ObjectMetadata, ReferenceHash, Snapshot};
 
 use crate::chunkstorage::materialized::MaterializedFolder;
 
 pub mod bucket;
+pub mod pool;
 pub mod worker;
 
+#[derive(Clone)]
 pub enum Policy {
     Orphan,
     SnapshotParent(ReferenceHash),
 }
 
-#[derive(Message)]
+#[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct IndexingTask {
     pub policy: Policy,
@@ -51,30 +50,13 @@ struct IndexingTaskResult {
     datastreams: Vec<DataStream>,
 }
 
-pub struct GlobalIndexerActor {
-    arbiter: Addr<IndexerWorker>,
-}
-
-impl GlobalIndexerActor {
-    pub fn new() -> Self {
-        let threads = std::thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(1);
-        let arbiter = SyncArbiter::start(threads, || {
-            IndexerWorker::new(System::current().arbiter().clone())
-        });
-        Self { arbiter }
-    }
-}
-
-impl Actor for GlobalIndexerActor {
-    type Context = Context<Self>;
-}
-
-impl Handler<WrappedIndexingTask> for GlobalIndexerActor {
-    type Result = ();
-
-    fn handle(&mut self, msg: WrappedIndexingTask, _ctx: &mut Self::Context) -> Self::Result {
-        self.arbiter.do_send(msg);
-    }
+#[derive(Message, Debug)]
+#[rtype(result = "()")]
+pub enum IndexingEvent {
+    SnapshotCreated {
+        snapshot: Snapshot,
+        objects: Vec<ObjectMetadata>,
+        datastreams: Vec<DataStream>,
+        chunks: Vec<ChunkMetadata>,
+    },
 }

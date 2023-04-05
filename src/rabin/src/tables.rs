@@ -1,5 +1,6 @@
 use crate::WINSIZE;
 use cached::proc_macro::cached;
+use core::hash::Hasher;
 
 #[derive(Clone)]
 pub(crate) struct Tables {
@@ -7,12 +8,52 @@ pub(crate) struct Tables {
     pub(crate) out_table: [u64; 256],
 }
 
+impl Default for Tables {
+    fn default() -> Self {
+        Self {
+            mod_table: [0; 256],
+            out_table: [0; 256],
+        }
+    }
+}
+
+struct RabinHash {
+    state: u64,
+    polynomial: u64,
+}
+
+impl Hasher for RabinHash {
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.state
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        for &b in bytes {
+            self.write_u8(b)
+        }
+    }
+
+    fn write_u8(&mut self, i: u8) {
+        self.state <<= 8;
+        self.state |= i as u64;
+
+        self.state = xmod(self.state, self.polynomial)
+    }
+}
+
+impl RabinHash {
+    pub const fn new(polynomial: u64) -> Self {
+        Self {
+            state: 0,
+            polynomial,
+        }
+    }
+}
+
 #[cached]
 pub(crate) fn calc_tables(polynomial: u64) -> Tables {
-    let mut tables = Tables {
-        mod_table: [0; 256],
-        out_table: [0; 256],
-    };
+    let mut tables = Tables::default();
 
     // calculate table for sliding out bytes. The byte to slide out is used as
     // the index for the table, the value contains the following:
@@ -26,13 +67,10 @@ pub(crate) fn calc_tables(polynomial: u64) -> Tables {
     //
     // Afterwards a new byte can be shifted in.
     for b in 0..=255 {
-        let mut hash = 0;
-
-        hash = append_byte(hash, b, polynomial);
-        for _i in 0..WINSIZE {
-            hash = append_byte(hash, 0, polynomial);
-        }
-        tables.out_table[b as usize] = hash;
+        let mut hash = RabinHash::new(polynomial);
+        hash.write_u8(b);
+        hash.write(&[0; WINSIZE - 1]);
+        tables.out_table[b as usize] = hash.finish();
     }
 
     // calculate table for reduction mod Polynomial
@@ -51,25 +89,18 @@ pub(crate) fn calc_tables(polynomial: u64) -> Tables {
     tables
 }
 
-fn deg(p: u64) -> i8 {
+const fn deg(p: u64) -> i8 {
     ((u64::BITS as i32) - 1 - (p.leading_zeros() as i32)) as i8
 }
 
 // Mod calculates the remainder of x divided by p.
-fn xmod(mut x: u64, p: u64) -> u64 {
+const fn xmod(mut x: u64, p: u64) -> u64 {
     while deg(x) >= deg(p) {
         let shift = deg(x) - deg(p);
 
         x ^= p << shift;
     }
     x
-}
-
-fn append_byte(mut hash: u64, b: u8, pol: u64) -> u64 {
-    hash <<= 8;
-    hash |= b as u64;
-
-    xmod(hash, pol)
 }
 
 #[cfg(test)]

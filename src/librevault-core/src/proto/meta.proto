@@ -1,22 +1,15 @@
 syntax = "proto3";
 package librevault.meta.v2;
 
-enum EncryptionAlgorithm {
-  PLAINTEXT = 0;
-//  AES_ECB = 1;
-//  AES_CBC = 2;
-//  AES_CFB = 3;
-//  AES_OFB = 4;
-//  AES_CTR = 5;
-//  AES_GCM = 6;
-//  AES_CCM = 7;
-//  AES_SIV = 8;
-  AES_GCM_SIV = 9;
-}
-
 message EncryptionMetadata {
-  EncryptionAlgorithm algorithm = 1;
-  bytes iv = 2;
+  uint32 kid = 1;
+
+  message AesGcmSivAlgorithm {
+    bytes nonce = 1;
+  }
+  oneof algorithm {
+    AesGcmSivAlgorithm aes_gcm_siv = 2;
+  }
 }
 
 message EncryptedData {
@@ -24,61 +17,79 @@ message EncryptedData {
   bytes ciphertext = 2;
 }
 
-message ChunkMeta {
+message ReferenceHash {
+  bytes multihash = 1;
+}
+
+message ChunkMetadata {
   EncryptionMetadata encryption_metadata = 1;
-  bytes ciphertext_hash = 2;
+  ReferenceHash chunk = 2;
+  ReferenceHash chunk_pt = 4;
   uint32 size = 3;
 }
 
+// Represents data streams for file
 message DataStream {
-  repeated bytes chunk_ids = 1;  // multihash or similar
+  repeated ReferenceHash chunk_md = 1;
 }
 
-enum ObjectKind {
-  TOMBSTONE = 0;
-  FILE = 1;
-  DIRECTORY = 2;
-//  SYMLINK = 3;
-}
+message ObjectMetadata {
+  enum ObjectType {
+    FILE = 0;
+    DIRECTORY = 1;
+    SYMLINK = 2;
+  }
+  ObjectType type = 1;
 
-message ObjectMeta {
-  ObjectKind kind = 1;
-  bytes name = 2;
-  // Represents data streams for file. Maps to ADS on Win, xattr on Linux, Mac. Empty stream name is the main stream (file contents)
-  map<string, DataStream> data_streams = 3;
-//  bytes symlink_target = 4;
+  bytes path = 2;
 
-  /* Times */
-//  int64 mtime = 4;  // Win: lpLastWriteTime
-//  int64 atime = 5;  // Win: lpLastAccessTime
-//  int64 ctime = 6;  // Win: -nothing-
-//  int64 crtime = 7;  // Win: lpCreationTime
-  // Unix-specific
-//  uint32 mode = 8;
-//  uint32 uid = 9;
-//  uint32 gid = 10;
-  // Windows-specific
-//  uint32 windows_attrib = 11;  // Win: dwFileAttributes
+  message FileTimes {
+    // Unix: mtime
+    // Win: ftLastWriteTime
+    int64 mtime = 3;
+    // Unix: atime
+    // Win: ftLastAccessTime
+    int64 atime = 4;
+    // Linux: statx.btime
+    // Unix: stat.birthtime
+    // Win: ftCreationTime
+    int64 crtime = 5;
+  }
+  optional FileTimes filetimes = 3;
+
+  // Unix: mode
+  // Win: -nothing-
+  optional uint32 mode = 6;
+  // Unix: uid
+  // Win: -nothing-
+  optional uint32 uid = 7;
+  // Unix: gid
+  // Win: -nothing-
+  optional uint32 gid = 8;
+
+  optional string symlink_target = 9;
+
+  // Unix: -nothing-
+  // Win: dwFileAttributes
+  optional uint32 file_attributes = 10;
+
+  // DataStream reference.
+  optional ReferenceHash stream = 11;
+
+  /// Extended attributes
+  //pub attr_streams: Vec<Attribute>,
 }
 
 // This structure represents a changeset, that is used to represent a state transition between one or more parent ChangeSets.
-message Revision {
-  repeated bytes parent = 1;
+message Snapshot {
+  repeated ReferenceHash parents = 1;
 
-  enum Kind {
-    SNAPSHOT = 0;
-    // CHANGESET = 1;  // TODO: swap with SNAPSHOT for efficiency
+  enum Type {
+    FULL = 0;
+    DELTA = 1;
   }
-  Kind kind = 2;
-  repeated ChunkMeta chunks = 3;
+  Type type = 2;
 
-  message EncryptedPart {
-    repeated ObjectMeta objects = 1;
-  }
-  EncryptedData encrypted = 4;  // RevisionEncrypted
-}
-
-message SignedRevision {
-  bytes revision = 1;
-  bytes signature = 2;
+  repeated ReferenceHash object_md = 3;
+  repeated ReferenceHash datastream = 4;
 }

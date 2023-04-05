@@ -1,6 +1,5 @@
 use figment::providers::{Format, Serialized, Toml};
 use figment::Figment;
-use librevault_core::secret::Secret;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
@@ -11,19 +10,18 @@ use tracing::debug;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BucketConfig {
     pub path: PathBuf,
-    pub secret: Secret,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct P2PConfig {
-    pub(crate) bind: Vec<SocketAddr>,
+pub struct P2PConfig {
+    pub bind: Vec<SocketAddr>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct RootConfig {
-    pub(crate) client_name: String,
-    pub(crate) buckets: Vec<BucketConfig>,
-    pub(crate) p2p: P2PConfig,
+pub struct RootConfig {
+    pub client_name: String,
+    pub buckets: Vec<BucketConfig>,
+    pub p2p: P2PConfig,
 }
 
 impl Default for RootConfig {

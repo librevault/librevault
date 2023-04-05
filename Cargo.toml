@@ -2,9 +2,10 @@
 members = [
     "src/util",
     "src/daemon-rs",
-    "src/cli",
     "src/rabin",
     "src/librevault-core",
+    "src/scanner",
+    "src/migration",
 ]
 
 [profile.release]

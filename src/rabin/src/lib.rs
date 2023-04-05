@@ -1,6 +1,6 @@
-use std::borrow::BorrowMut;
 use std::io;
 use std::io::{Bytes, Read};
+
 use tables::Tables;
 
 mod tables;
@@ -9,11 +9,11 @@ pub const WINSIZE: usize = 64;
 
 #[derive(Clone)]
 pub struct RabinParams {
-    polynomial: u64,
-    polynomial_shift: u64,
-    minsize: usize,
+    pub polynomial: u64,
+    pub polynomial_shift: u64,
+    pub minsize: usize,
     pub maxsize: usize,
-    mask: u64,
+    pub mask: u64,
 }
 
 impl Default for RabinParams {
@@ -28,9 +28,9 @@ impl Default for RabinParams {
     }
 }
 
-struct Accumulator {
-    params: RabinParams,
-    tables: Tables,
+struct Accumulator<'a> {
+    params: &'a RabinParams,
+    tables: &'a Tables,
 
     window: [u8; WINSIZE],
     wpos: usize,
@@ -39,7 +39,7 @@ struct Accumulator {
     digest: u64,
 }
 
-impl Accumulator {
+impl<'a> Accumulator<'a> {
     fn append(&mut self, b: u8) {
         let index: u8 = (self.digest >> self.params.polynomial_shift) as u8;
         self.digest <<= 8;
@@ -57,12 +57,12 @@ impl Accumulator {
         self.count += 1;
     }
 
-    fn is_consumed(&self) -> bool {
+    const fn is_consumed(&self) -> bool {
         (self.count >= self.params.minsize && ((self.digest & self.params.mask) == 0))
             || self.count >= self.params.maxsize
     }
 
-    fn new(params: RabinParams, tables: Tables) -> Self {
+    fn new(params: &'a RabinParams, tables: &'a Tables) -> Self {
         let mut rabin = Self {
             params,
             tables,
@@ -94,6 +94,10 @@ where
             reader: reader.bytes(),
         }
     }
+
+    pub fn min_size(&self) -> usize {
+        self.params.minsize
+    }
 }
 
 impl<R> Iterator for Rabin<R>
@@ -103,11 +107,11 @@ where
     type Item = io::Result<Vec<u8>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut accum = Accumulator::new(self.params.clone(), self.tables.clone());
+        let mut accum = Accumulator::new(&self.params, &self.tables);
 
         let mut chunk = Vec::with_capacity(self.params.maxsize);
 
-        for b in self.reader.borrow_mut() {
+        for b in &mut self.reader {
             match b {
                 Ok(b) => {
                     chunk.push(b);

@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[derive(Debug)]
 pub struct EncryptedStorage {
@@ -44,11 +43,7 @@ impl EncryptedStorage {
     }
 
     pub fn have_chunk(&self, chunk_id: &[u8]) -> bool {
-        make_chunk_path(&*self.root, chunk_id).exists()
-    }
-
-    pub async fn have_chunk_async(&self, chunk_id: &[u8]) -> bool {
-        self.get_chunk_async(chunk_id).await.is_ok()
+        make_chunk_path(&self.root, chunk_id).exists()
     }
 
     pub fn get_chunk(&self, chunk_id: &[u8]) -> Result<Vec<u8>, StorageError> {
@@ -61,37 +56,14 @@ impl EncryptedStorage {
         Ok(data)
     }
 
-    pub async fn get_chunk_async(&self, chunk_id: &[u8]) -> Result<Vec<u8>, StorageError> {
-        let mut f = match tokio::fs::File::open(make_chunk_path(&*self.root, chunk_id)).await {
-            Ok(f) => f,
-            Err(_) => return Err(StorageError::ChunkNotFound),
-        };
-        let mut data = vec![];
-        f.read_to_end(&mut data).await?;
-        Ok(data)
-    }
-
     pub fn put_chunk(&self, chunk_id: &[u8], data: &[u8]) {
         let mut f = fs::File::create(make_chunk_path(&*self.root, chunk_id)).unwrap();
         let _ = f.write_all(data);
         debug!("Chunk {} pushed into EncStorage", hex::encode(chunk_id));
     }
 
-    pub async fn put_chunk_async(&self, chunk_id: &[u8], data: &[u8]) {
-        let mut f = tokio::fs::File::create(make_chunk_path(&*self.root, chunk_id))
-            .await
-            .unwrap();
-        let _ = f.write_all(data).await;
-        debug!("Chunk {} pushed into EncStorage", hex::encode(chunk_id));
-    }
-
     pub fn remove_chunk(&self, chunk_id: &[u8]) {
         let _ = fs::remove_file(make_chunk_path(&*self.root, chunk_id));
-        debug!("Chunk {} removed from EncStorage", hex::encode(chunk_id));
-    }
-
-    pub async fn remove_chunk_async(&self, chunk_id: &[u8]) {
-        let _ = tokio::fs::remove_file(make_chunk_path(&*self.root, chunk_id)).await;
         debug!("Chunk {} removed from EncStorage", hex::encode(chunk_id));
     }
 }

@@ -1,0 +1,7 @@
+syntax = "proto3";
+package librevault.internal.v1;
+import "meta.proto";
+
+message MaterializedChunkPlaintextEntry {
+  librevault.meta.v2.ReferenceHash chunk_md = 1;
+}

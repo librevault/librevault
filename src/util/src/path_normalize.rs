@@ -25,7 +25,7 @@ impl From<StripPrefixError> for NormalizationError {
 
 impl Display for NormalizationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -38,7 +38,8 @@ pub fn normalize(
         .as_ref()
         .strip_prefix(root)?
         .to_slash()
-        .ok_or(NormalizationError::PrefixError)?;
+        .ok_or(NormalizationError::PrefixError)?
+        .to_string();
 
     if normalize_unicode {
         normalized = normalized.nfc().collect::<String>();

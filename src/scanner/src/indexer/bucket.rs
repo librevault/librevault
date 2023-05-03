@@ -8,6 +8,7 @@ use slab::Slab;
 use tracing::{debug, error, warn};
 
 use crate::chunkstorage::materialized::MaterializedFolder;
+use crate::datastream_storage::DataStreamStorage;
 use crate::indexer::pool::IndexerWorkerPool;
 use crate::indexer::{
     IndexingEvent, IndexingTask, IndexingTaskResult, IndexingTaskRoutingInfo, WrappedIndexingTask,
@@ -66,14 +67,16 @@ pub struct BucketIndexer {
     groups: Slab<SnapshotTaskGroup>,
     groups_a: VecDeque<usize>,
 
-    ms: Arc<MaterializedFolder>,
+    ms: Addr<MaterializedFolder>,
+    dss: Arc<DataStreamStorage>,
     ev_handler: WeakRecipient<IndexingEvent>,
 }
 
 impl BucketIndexer {
     pub fn new(
         pool: Addr<IndexerWorkerPool>,
-        ms: Arc<MaterializedFolder>,
+        ms: Addr<MaterializedFolder>,
+        dss: Arc<DataStreamStorage>,
         ev_handler: WeakRecipient<IndexingEvent>,
     ) -> Self {
         Self {
@@ -81,6 +84,7 @@ impl BucketIndexer {
             groups: Default::default(),
             groups_a: Default::default(),
             ms,
+            dss,
             ev_handler,
         }
     }
@@ -114,7 +118,8 @@ impl Handler<IndexingTask> for BucketIndexer {
                 result_receiver: ctx.address().into(),
             },
             task,
-            ms: self.ms.clone(),
+            ms: self.ms.clone().downgrade(),
+            dss: self.dss.clone(),
         };
         self.pool.do_send(wrapped);
     }

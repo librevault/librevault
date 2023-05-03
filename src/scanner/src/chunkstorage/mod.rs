@@ -9,14 +9,15 @@ use prost::Message;
 use serde::{Deserialize, Serialize};
 use thiserror::Error as ThisError;
 
+pub mod actor;
 pub mod materialized;
 
 #[derive(ThisError, Debug)]
-enum ChunkStorageError {
+pub enum ChunkStorageError {
     #[error("Chunk not found")]
     ChunkNotFound,
     #[error("Internal error: {0}")]
-    InternalError(Box<dyn Error>),
+    InternalError(Box<dyn Error + Send>),
 }
 
 impl From<rocksdb::Error> for ChunkStorageError {
@@ -32,7 +33,7 @@ impl From<prost::DecodeError> for ChunkStorageError {
 }
 
 #[derive(Default)]
-enum ChunkLocationHint {
+pub enum ChunkLocationHint {
     #[default]
     Empty,
     MaterializedLocation {
@@ -43,7 +44,7 @@ enum ChunkLocationHint {
 }
 
 #[derive(Default)]
-struct QueryResult {
+pub struct QueryResult {
     chunk: Vec<u8>,
     hint: ChunkLocationHint,
 }

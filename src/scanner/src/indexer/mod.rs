@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use actix::{Message, WeakRecipient};
+use actix::{Message, WeakAddr, WeakRecipient};
 use librevault_core::proto::{ChunkMetadata, DataStream, ObjectMetadata, ReferenceHash, Snapshot};
 
 use crate::chunkstorage::materialized::MaterializedFolder;
+use crate::datastream_storage::DataStreamStorage;
 
 pub mod bucket;
 pub mod pool;
@@ -37,7 +38,8 @@ struct WrappedIndexingTask {
     routing_info: IndexingTaskRoutingInfo,
     task: IndexingTask,
 
-    ms: Arc<MaterializedFolder>,
+    ms: WeakAddr<MaterializedFolder>,
+    dss: Arc<DataStreamStorage>,
 }
 
 #[derive(Message, Debug)]

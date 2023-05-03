@@ -7,7 +7,7 @@ edition = "2021"
 librevault_util = { path = "../util" }
 figment = { version = "0.10.6", features = ["toml"] }
 serde = { version = "1", features = ["derive"] }
-directories = "4.0.1"
+directories = "5.0.0"
 tokio = { version = "1.23.0", features = ["rt", "macros", "rt-multi-thread", "fs", "sync", "net", "signal", "tracing"] }
 libp2p = { version = "0.51.0", features = ["tcp", "tokio", "gossipsub", "mplex", "yamux", "noise", "mdns", "kad", "identify", "request-response", "macros", "tls"], default-features = false }
 #librevault-core = {path= "../librevault-core" }

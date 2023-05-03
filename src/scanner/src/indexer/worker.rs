@@ -5,7 +5,7 @@ use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 use std::sync::Arc;
 
-use actix::{Actor, Handler, SyncContext};
+use actix::{Actor, Addr, Handler, SyncContext, WeakAddr};
 use actix_rt::ArbiterHandle;
 use librevault_core::indexer::chunk_metadata::ChunkMetadataIndexer;
 use librevault_core::indexer::object_metadata::ObjectMetadataIndexer;
@@ -15,7 +15,9 @@ use librevault_core::proto::{ChunkMetadata, DataStream, ObjectMetadata, Referenc
 use rabin::{Rabin, RabinParams};
 use tracing::{debug, span, warn, Level};
 
+use crate::chunkstorage::actor::{Command, Response};
 use crate::chunkstorage::materialized::MaterializedFolder;
+use crate::datastream_storage::DataStreamStorage;
 use crate::indexer::{IndexingTaskResult, WrappedIndexingTask};
 
 pub struct IndexerWorker {
@@ -30,7 +32,8 @@ impl IndexerWorker {
     fn make_chunk(
         &self,
         chunk: &[u8],
-        ms: Arc<MaterializedFolder>,
+        ms: Addr<MaterializedFolder>,
+        dss: Arc<DataStreamStorage>,
         cache: &mut HashMap<ReferenceHash, ChunkMetadata>,
     ) -> ChunkMetadata {
         let chunk_plaintext_refh = ChunkMetadata::compute_plaintext_hash(&chunk);
@@ -44,10 +47,19 @@ impl IndexerWorker {
             let (tx, rx) = tokio::sync::oneshot::channel();
             let chunk_plaintext_refh = chunk_plaintext_refh.clone();
             self.handle.spawn(async move {
-                let existing_chunk_md = ms
-                    .get_chunk_md_by_plaintext_hash(&chunk_plaintext_refh)
-                    .await;
-                tx.send(existing_chunk_md).unwrap();
+                let Response::GetChunk(response) = ms
+                    .send(Command::ResolveChunkMdByPlaintextHash {
+                        hash: chunk_plaintext_refh,
+                    })
+                    .await
+                    .unwrap() else { panic!() };
+
+                if let Ok(refh) = response {
+                    let existing_chunk_md = dss.get_chunk_md(&refh);
+                    tx.send(existing_chunk_md).unwrap();
+                } else {
+                    tx.send(None).unwrap();
+                }
             });
 
             rx.blocking_recv().unwrap()
@@ -68,7 +80,8 @@ impl IndexerWorker {
     fn make_datastream<R: Read>(
         &self,
         data: R,
-        ms: Arc<MaterializedFolder>,
+        ms: WeakAddr<MaterializedFolder>,
+        dss: Arc<DataStreamStorage>,
         size_hint: u64,
     ) -> Result<(Vec<ChunkMetadata>, DataStream), io::Error> {
         let chunker = Rabin::new(data, RabinParams::default());
@@ -79,7 +92,12 @@ impl IndexerWorker {
         let chunk_mds = {
             let mut chunk_mds = Vec::with_capacity(chunks_estimate);
             for chunk in chunker {
-                chunk_mds.push(self.make_chunk(&chunk?, ms.clone(), &mut cache))
+                chunk_mds.push(self.make_chunk(
+                    &chunk?,
+                    ms.clone().upgrade().unwrap(),
+                    dss.clone(),
+                    &mut cache,
+                ))
             }
             chunk_mds
         };
@@ -133,7 +151,8 @@ impl Handler<WrappedIndexingTask> for IndexerWorker {
         if object.r#type == ObjectType::File as i32 {
             let (f, size_hint) = Self::open_file(task.path.as_path()).unwrap();
 
-            let (ds_chunks, datastream) = self.make_datastream(f, msg.ms, size_hint).unwrap();
+            let (ds_chunks, datastream) =
+                self.make_datastream(f, msg.ms, msg.dss, size_hint).unwrap();
             chunks.extend(ds_chunks);
 
             datastreams.push(datastream.clone());

@@ -2,6 +2,7 @@ use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use actix::Addr;
 use librevault_core::path::PointerPath;
 use librevault_core::proto::object_metadata::ObjectType;
 use librevault_core::proto::{ChunkMetadata, DataStream, ReferenceHash};
@@ -16,6 +17,7 @@ use walkdir::WalkDir;
 
 use crate::chunkstorage::{ChunkLocationHint, ChunkProvider, ChunkStorageError, QueryResult};
 use crate::datastream_storage::DataStreamStorage;
+use crate::object_storage;
 use crate::object_storage::ObjectMetadataStorage;
 use crate::rdb::RocksDBObjectCRUD;
 use crate::sqlentity::materialized;
@@ -25,7 +27,7 @@ pub struct MaterializedFolder {
     db: Arc<DB>,
     rdb: Arc<DatabaseConnection>,
     dss: Arc<DataStreamStorage>,
-    objstore: Arc<ObjectMetadataStorage>,
+    objstore: Addr<ObjectMetadataStorage>,
 }
 
 impl MaterializedFolder {
@@ -34,7 +36,7 @@ impl MaterializedFolder {
         db: Arc<DB>,
         rdb: Arc<DatabaseConnection>,
         dss: Arc<DataStreamStorage>,
-        objstore: Arc<ObjectMetadataStorage>,
+        objstore: Addr<ObjectMetadataStorage>,
     ) -> Self {
         Self {
             root: root.into(),
@@ -88,17 +90,17 @@ impl MaterializedFolder {
         }
     }
 
-    pub async fn get_chunk_md_by_plaintext_hash(
+    pub async fn resolve_chunk_md_by_plaintext_hash(
         &self,
         chunk_pt_refh: &ReferenceHash,
-    ) -> Option<ChunkMetadata> {
+    ) -> Option<ReferenceHash> {
         let entry = materialized::Entity::find()
             .filter(materialized::Column::PlaintextHash.eq(chunk_pt_refh.clone().as_ref()))
             .one(&*self.rdb)
             .await
             .unwrap()?;
 
-        self.dss.get_chunk_md(&ReferenceHash {
+        Some(ReferenceHash {
             multihash: entry.chunk_md_hash,
         })
     }
@@ -106,8 +108,16 @@ impl MaterializedFolder {
     pub async fn assume_materialized(&self, object_md: &ReferenceHash) {
         // let txn = self.rdb.begin().await.unwrap();
 
-        let object_md = self.objstore.get_entity(object_md).unwrap();
+        let object_md = self
+            .objstore
+            .send(object_storage::Command::GetEntity {
+                refh: object_md.clone(),
+            })
+            .await
+            .unwrap();
 
+        let object_storage::Response::GetEntity {entity: object_md} = object_md else { panic!() };
+        let object_md = object_md.unwrap();
         let object_path: PointerPath = object_md.path.into();
 
         if object_md.r#type == ObjectType::File as i32 {
@@ -164,7 +174,7 @@ impl MaterializedFolder {
     }
 
     /// List all actual paths, including dirty (not indexed)
-    pub fn list_actual_paths(&self) -> Vec<PathBuf> {
+    pub fn list_dirty_paths(&self) -> Vec<PathBuf> {
         WalkDir::new(&self.root)
             .min_depth(1)
             .follow_links(false)

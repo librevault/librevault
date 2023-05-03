@@ -1,15 +1,45 @@
-use actix::{Actor, AsyncContext, Context, Handler, Message as ActixMessage};
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use actix::{Actor, AsyncContext, Context, Handler, Message as ActixMessage, WeakAddr};
 use librevault_core::indexer::reference::ReferenceMaker;
 use prost::Message;
+use ractor::{Actor as RactorActor, ActorProcessingErr, ActorRef};
+use rocksdb::DB;
+use sea_orm::DatabaseConnection;
 use tracing::info;
 
 use crate::bucket::Bucket;
 use crate::chunkstorage::actor::{
     Command as MaterializedStorageCommand, Response as MaterializedStorageResponse,
 };
+use crate::indexer::pool::IndexerWorkerPool;
 use crate::indexer::{IndexingEvent, IndexingTask, Policy};
 use crate::object_storage;
 use crate::rdb::RocksDBObjectCRUD;
+
+struct BucketActor;
+
+struct Arguments {
+    db: Arc<DB>,
+    rdb: Arc<DatabaseConnection>,
+    root: PathBuf,
+    indexer_pool: WeakAddr<IndexerWorkerPool>,
+}
+
+impl RactorActor for BucketActor {
+    type Msg = ();
+    type State = Bucket;
+    type Arguments = ();
+
+    async fn pre_start(
+        &self,
+        myself: ActorRef<Self::Msg>,
+        args: Self::Arguments,
+    ) -> Result<Self::State, ActorProcessingErr> {
+        todo!()
+    }
+}
 
 impl Actor for Bucket {
     type Context = Context<Self>;
@@ -68,13 +98,13 @@ impl Handler<ReindexAll> for Bucket {
             paths_tx.send(paths).unwrap();
         });
 
-        let paths = paths_rx.rec().unwrap();
-        for path in paths {
-            self.indexer.do_send(IndexingTask {
-                policy: Policy::Orphan,
-                root: self.root.clone(),
-                path,
-            });
-        }
+        // let paths = paths_rx.rec().unwrap();
+        // for path in paths {
+        //     self.indexer.do_send(IndexingTask {
+        //         policy: Policy::Orphan,
+        //         root: self.root.clone(),
+        //         path,
+        //     });
+        // }
     }
 }

@@ -42,7 +42,7 @@ async fn make_snapshot(db: Arc<DB>, rdb: Arc<DatabaseConnection>) {
             root.to_path_buf(),
             indexer_pool.clone().downgrade(),
             ctx.address().downgrade(),
-        )
+        ).await
     });
 
     bucket.do_send(ReindexAll {});

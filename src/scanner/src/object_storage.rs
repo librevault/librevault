@@ -13,7 +13,7 @@ pub struct ObjectMetadataStorage {
 
 impl RocksDBObjectCRUD<ObjectMetadata> for ObjectMetadataStorage {
     fn db(&self) -> &DB {
-        &*self.db
+        &self.db
     }
 
     fn prefix(&self) -> String {

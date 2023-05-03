@@ -32,3 +32,4 @@ libp2p-identity = { version = "0.1.1", features = ["peerid", "ed25519"] }
 directories = "5.0"
 libp2p = { version = "0.51.0", features = ["tcp", "tokio", "gossipsub", "yamux", "noise", "mdns", "kad", "identify", "request-response", "macros", "tls"], default-features = false }
 flume = "0.10.14"
+ractor = "0.8.0"

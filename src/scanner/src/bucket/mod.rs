@@ -5,11 +5,15 @@ use actix::{Actor, Addr, Handler, Message as ActixMessage, WeakAddr};
 use libp2p_identity::PeerId;
 use librevault_core::indexer::reference::ReferenceMaker;
 use prost::Message;
+use ractor::Actor as RactorActor;
+use ractor::ActorRef;
 use rocksdb::DB;
 use sea_orm::DatabaseConnection;
 
 use crate::chunkstorage::materialized::MaterializedFolder;
 use crate::datastream_storage::DataStreamStorage;
+use crate::directory_watcher;
+use crate::directory_watcher::actor::DirectoryWatcherActor;
 use crate::directory_watcher::DirectoryWatcher;
 use crate::indexer::bucket::BucketIndexer;
 use crate::indexer::pool::IndexerWorkerPool;
@@ -27,7 +31,7 @@ pub struct Bucket {
     dss: Arc<DataStreamStorage>,
     objstore: Addr<ObjectMetadataStorage>,
 
-    watcher: Addr<DirectoryWatcher>,
+    watcher: ActorRef<DirectoryWatcher>,
     indexer_pool: WeakAddr<IndexerWorkerPool>,
 
     materialized_storage: Addr<MaterializedFolder>,
@@ -37,14 +41,20 @@ pub struct Bucket {
 }
 
 impl Bucket {
-    pub fn new(
+    pub async fn new(
         db: Arc<DB>,
         rdb: Arc<DatabaseConnection>,
         root: PathBuf,
         indexer_pool: WeakAddr<IndexerWorkerPool>,
         addr: WeakAddr<Bucket>,
     ) -> Self {
-        let watcher = DirectoryWatcher::new(&root).start();
+        let (watcher, _) = RactorActor::spawn(
+            None,
+            DirectoryWatcherActor,
+            directory_watcher::actor::Arguments { root: root.clone() },
+        )
+        .await
+        .unwrap();
 
         let snapstore = Arc::new(SnapshotStorage::new(db.clone()));
         let dss = Arc::new(DataStreamStorage::new(db.clone()));

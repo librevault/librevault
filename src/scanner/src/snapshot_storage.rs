@@ -18,7 +18,7 @@ pub struct SnapshotStorage {
 
 impl RocksDBObjectCRUD<Snapshot> for SnapshotStorage {
     fn db(&self) -> &DB {
-        &*self.db
+        &self.db
     }
 
     fn prefix(&self) -> String {

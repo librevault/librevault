@@ -1454,6 +1454,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashmap"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "907076dfda823b0b36d2a1bb5f90c96660a5bbcd7729e10727f07858f22c4edc"
+dependencies = [
+ "cfg-if",
+ "hashbrown 0.12.3",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core 0.9.7",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4047,6 +4060,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ractor"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee5f69359cc472129b7d4ea638245cf0ba4f7b8c08a48e29c9563a3d32e37817"
+dependencies = [
+ "async-trait",
+ "dashmap",
+ "futures",
+ "log",
+ "once_cell",
+ "rand 0.8.5",
+ "tokio",
+]
+
+[[package]]
 name = "rand"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4441,6 +4469,7 @@ dependencies = [
  "notify",
  "prost",
  "rabin",
+ "ractor",
  "rocksdb",
  "sea-orm",
  "serde",
